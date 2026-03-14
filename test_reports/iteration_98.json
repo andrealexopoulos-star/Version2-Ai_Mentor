@@ -70,5 +70,5 @@
   "seed_data_creation": "None",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Mobile responsiveness verified at all viewports. One CSS bug fixed (integration carousel font size 10px->11px). All homepage sections, login page, and advisor page render correctly on mobile. Bottom nav text is 11px and readable. Cognition tabs have 46px min-height and are horizontally scrollable. Preview URL https://biqc-forensic.preview.emergentagent.com used for testing (not beta.thestrategysquad.com which caches old builds)."
+  "context_for_next_testing_agent": "Mobile responsiveness verified at all viewports. One CSS bug fixed (integration carousel font size 10px->11px). All homepage sections, login page, and advisor page render correctly on mobile. Bottom nav text is 11px and readable. Cognition tabs have 46px min-height and are horizontally scrollable. Preview URL https://cognition-ui-refresh.preview.emergentagent.com used for testing (not beta.thestrategysquad.com which caches old builds)."
 }

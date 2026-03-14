@@ -104,7 +104,17 @@ export default function ProtectedRoute({ children, adminOnly }) {
   const location = useLocation();
   const [adminChecked, setAdminChecked] = useState(!adminOnly);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [authGraceStart] = useState(() => Date.now());
   const isCalibrationRoute = location.pathname === '/calibration';
+
+  const hasStoredAuth = useMemo(() => {
+    try {
+      if (localStorage.getItem('biqc-auth')) return true;
+      return Object.keys(localStorage).some((key) => key.startsWith('sb-') && Boolean(localStorage.getItem(key)));
+    } catch {
+      return false;
+    }
+  }, []);
 
   // Check admin role from backend when adminOnly is true
   useEffect(() => {
@@ -157,6 +167,10 @@ export default function ProtectedRoute({ children, adminOnly }) {
 
   // No session → login
   if (!user && !session) {
+    // Grace window to avoid sign-in redirect loops during transient auth hydration.
+    if (hasStoredAuth && Date.now() - authGraceStart < 8000) {
+      return <LoadingScreen />;
+    }
     return <Navigate to="/login-supabase" replace />;
   }
 

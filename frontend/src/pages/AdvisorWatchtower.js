@@ -1,893 +1,1428 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useSnapshotProgress } from '../hooks/useSnapshotProgress';
-import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
-import { useSupabaseAuth } from '../context/SupabaseAuthContext';
-import { apiClient } from '../lib/api';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  AlertTriangle,
+  ArrowRight,
+  BriefcaseBusiness,
+  Building2,
+  CheckCircle2,
+  Clock3,
+  Compass,
+  Download,
+  Radar,
+  RefreshCw,
+  Search,
+  ShieldAlert,
+  Target,
+  ThumbsDown,
+  ThumbsUp,
+  UserRoundPlus,
+  XCircle,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
-import { CognitiveLoadingScreen } from '../components/CognitiveLoadingScreen';
-import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign, TrendingUp, Settings as SettingsIcon, User, Radar, RefreshCw, CheckCircle2, Plug, ArrowRight, Zap } from 'lucide-react';
-
-import DataConfidence from '../components/DataConfidence';
-import { DailyBriefCard, DailyBriefBanner } from '../components/DailyBriefCard';
-import { RiskSuggestions } from '../components/RiskSuggestions';
-import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
-import { PageErrorState } from '../components/PageStateComponents';
-import { StageProgressBar } from '../components/AsyncDataLoader';
-import IntelligenceCoverageBar from '../components/IntelligenceCoverageBar';
-import { trackEvent, EVENTS } from '../lib/analytics';
-import { trackPageRender } from '../lib/telemetry';
+import { useSnapshotProgress } from '../hooks/useSnapshotProgress';
+import { AUTH_STATE, useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { apiClient } from '../lib/api';
+import { SourceProvenanceBadge } from '../components/advisor/SourceProvenanceBadge';
+import { DelegateActionModal } from '../components/advisor/DelegateActionModal';
+import { EvidenceDrawer } from '../components/advisor/EvidenceDrawer';
 import { fontFamily } from '../design-system/tokens';
-import FirstTimeOnboarding, { useFirstTimeOnboarding } from '../components/FirstTimeOnboarding';
-import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
-import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
-
-/* ═══ ACTION BUTTONS ═══ */
-const ActionBtn = ({ icon: Icon, label, color }) => (
-  <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold transition-all hover:-translate-y-0.5 active:scale-95" style={{ background: `${color}15`, color, border: `1px solid ${color}30`, fontFamily: fontFamily.mono }} data-testid={`action-${label.toLowerCase().replace(/\s/g,'-')}`}>
-    <Icon className="w-3.5 h-3.5" />{label}
-  </button>
-);
-const ActionBar = ({ actions }) => {
-  if (!actions || actions.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-2 mt-3">
-      {actions.includes("auto-email") && <ActionBtn icon={Mail} label="Auto-Email" color="#3B82F6" />}
-      {actions.includes("quick-sms") && <ActionBtn icon={MessageSquare} label="Quick-SMS" color="#10B981" />}
-      {actions.includes("hand-off") && <ActionBtn icon={Users} label="Hand Off" color="#FF6A00" />}
-      <ActionBtn icon={CheckCircle2} label="Complete" color="#10B981" />
-      <ActionBtn icon={XCircle} label="Ignore" color="#64748B" />
-    </div>
-  );
+const SEVERITY_RANK = { critical: 0, high: 1, medium: 2, moderate: 2, low: 3, info: 4 };
+const SEVERITY_STYLE = {
+  critical: { bg: '#EF444415', border: '#EF444450', text: '#FCA5A5' },
+  high: { bg: '#F9731615', border: '#F9731650', text: '#FDBA74' },
+  medium: { bg: '#F59E0B15', border: '#F59E0B50', text: '#FCD34D' },
+  low: { bg: '#10B98115', border: '#10B98150', text: '#6EE7B7' },
+  info: { bg: '#64748B15', border: '#64748B50', text: '#CBD5E1' },
 };
 
-const GROUPS = {
-  money: { id: 'money', label: 'Money', icon: DollarSign, color: '#FF6A00', description: 'Cash, invoices, margins, runway, spend', requires: 'accounting' },
-  revenue: { id: 'revenue', label: 'Revenue', icon: TrendingUp, color: '#3B82F6', description: 'Pipeline, deals, leads, churn, pricing', requires: 'crm' },
-  operations: { id: 'operations', label: 'Operations', icon: SettingsIcon, color: '#10B981', description: 'Tasks, SOPs, bottlenecks, delivery', requires: 'crm' },
-  people: { id: 'people', label: 'People', icon: User, color: '#EF4444', description: 'Capacity, calendar, decisions, burnout', requires: 'email' },
-  market: { id: 'market', label: 'Market', icon: Radar, color: '#7C3AED', description: 'Competitors, positioning, trends, regulatory', requires: null },
+const DECISION_ACTIONS = {
+  resolve: { label: 'Resolve', icon: CheckCircle2, endpoint: 'complete', style: { bg: '#10B98115', border: '#10B98140', text: '#6EE7B7' } },
+  delegate: { label: 'Delegate', icon: UserRoundPlus, endpoint: 'hand-off', style: { bg: '#3B82F615', border: '#3B82F640', text: '#93C5FD' } },
+  ignore: { label: 'Ignore', icon: XCircle, endpoint: 'ignore', style: { bg: '#64748B15', border: '#64748B40', text: '#CBD5E1' } },
 };
 
-const ST = { STABLE: { c: '#10B981', bg: '#10B98108', b: '#10B98125', d: '#10B981' }, DRIFT: { c: '#F59E0B', bg: '#F59E0B08', b: '#F59E0B25', d: '#F59E0B' }, COMPRESSION: { c: '#FF6A00', bg: '#FF6A0008', b: '#FF6A0025', d: '#FF6A00' }, CRITICAL: { c: '#EF4444', bg: '#EF444408', b: '#EF444425', d: '#EF4444' } };
-const ST_LABELS = { STABLE: 'On Track', DRIFT: 'Market Shift', COMPRESSION: 'Under Pressure', CRITICAL: 'At Risk' };
-const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: { bg: '#F59E0B10', b: '#F59E0B25', d: '#F59E0B' }, low: { bg: '#10B98110', b: '#10B98125', d: '#10B981' } };
+const ROLE_OPTIONS = [
+  { id: 'ceo', label: 'CEO' },
+  { id: 'coo', label: 'COO' },
+  { id: 'finance', label: 'Finance Lead' },
+];
 
-const Card = ({ children, className = '', ...props }) => (<div className={`rounded-2xl ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} {...props}>{children}</div>);
+const DECISION_SLOTS = [
+  { id: 'decide-now', title: 'Decide Now', intent: 'What needs owner action in the next 48 hours?', icon: ShieldAlert },
+  { id: 'monitor-this-week', title: 'Monitor This Week', intent: 'Which pressure is rising and needs active monitoring?', icon: Radar },
+  { id: 'build-next', title: 'Build Next', intent: 'What system fix prevents repeated pressure this month?', icon: Target },
+];
 
-/* Integration-aware empty state — uses granular IntegrationStatusWidget */
-const GROUP_CATEGORY_MAP = {
-  revenue: ['crm'],
-  money: ['accounting'],
-  operations: ['crm'],
-  people: ['email'],
-  market: [],
+const normalizeSeverity = (severity) => {
+  const value = String(severity || '').toLowerCase();
+  if (SEVERITY_RANK[value] !== undefined) return value;
+  return 'medium';
 };
 
-const IntegrationRequired = ({ groupId, color, integrationStatus, integrationLoading, onRefresh, integrationSyncing }) => {
-  const categories = GROUP_CATEGORY_MAP[groupId] || [];
-  if (categories.length === 0) {
-    return (
-      <Card className="p-8 text-center">
-        <Radar className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
-        <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Market Data Unavailable</p>
-        <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Complete calibration to enable market positioning analysis.</p>
-        <a href="/calibration" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: color }}>Start Calibration</a>
-      </Card>
-    );
-  }
-  return (
-    <Card className="p-6">
-      <IntegrationStatusWidget
-        categories={categories}
-        status={integrationStatus}
-        loading={integrationLoading}
-        syncing={integrationSyncing}
-        onRefresh={onRefresh}
-        showRefresh={true}
-      />
-    </Card>
-  );
-};
-
-/* First-time user welcome — shown when zero integrations connected */
-const WelcomeBanner = ({ owner }) => (
-  <Card className="p-6 mb-6" data-testid="welcome-banner">
-    <div className="flex items-start gap-4">
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FF6A0015' }}>
-        <Zap className="w-5 h-5" style={{ color: '#FF6A00' }} />
-      </div>
-      <div className="flex-1">
-        <h3 className="text-base font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Welcome{owner ? `, ${owner}` : ''}. Let's activate your intelligence.</h3>
-        <p className="text-sm mb-4" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
-          BIQc needs to connect to your business tools to surface real intelligence. Connect at least one tool to get started.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { label: 'Connect CRM', desc: 'HubSpot, Salesforce', color: '#3B82F6' },
-            { label: 'Connect Accounting', desc: 'Xero, QuickBooks', color: '#FF6A00' },
-            { label: 'Connect Email', desc: 'Gmail, Outlook', color: '#10B981' },
-          ].map(tool => (
-            <a key={tool.label} href="/integrations" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:brightness-110" style={{ background: tool.color }} data-testid={`welcome-${tool.label.toLowerCase().replace(/\s/g, '-')}`}>
-              <Plug className="w-3 h-3" /> {tool.label}
-            </a>
-          ))}
-        </div>
-      </div>
-    </div>
-  </Card>
-);
-
-/* Daily summary — "What changed in 24h" */
-const DailySummary = ({ cognitive }) => {
-  const c = cognitive || {};
-  const rq = c.resolution_queue || [];
-  const newAlerts = rq.filter(r => {
-    if (!r.created_at) return false;
-    const created = new Date(r.created_at);
-    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    return created > dayAgo;
+const formatTime = (value) => {
+  if (!value) return 'Recent';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Recent';
+  return parsed.toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
-  const memo = c.executive_memo || c.memo || '';
-  if (!memo && newAlerts.length === 0) return null;
-  return (
-    <Card className="p-5 mb-6" data-testid="daily-summary">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#FF6A00' }} />
-        <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>What changed in 24h</span>
-      </div>
-      {newAlerts.length > 0 && (
-        <p className="text-xs mb-2" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
-          <span className="font-semibold" style={{ color: 'var(--biqc-text)' }}>{newAlerts.length} new signal{newAlerts.length > 1 ? 's' : ''}</span> detected across your systems.
-        </p>
-      )}
-      {memo && <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{memo.substring(0, 200)}{memo.length > 200 ? '...' : ''}</p>}
-    </Card>
-  );
 };
 
-// Parse cognitive data into group structure — only from verified integration data
-function parseToGroups(c, connectedIntegrations) {
-  const groups = {
-    money: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false, score: 0 },
-    revenue: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false, score: 0 },
-    operations: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false, score: 0 },
-    people: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false, score: 0 },
-    market: { alerts: 0, severity: 'low', resolutions: [], insight: '', metrics: [], details: null, hasData: false, score: 0 },
-  };
-  if (!c) return groups;
+const prettySignal = (value = '') => value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
-  const hasCRM = connectedIntegrations.includes('crm') || connectedIntegrations.includes('hubspot') || connectedIntegrations.includes('salesforce') || connectedIntegrations.includes('pipedrive');
-  const hasAccounting = connectedIntegrations.includes('accounting') || connectedIntegrations.includes('xero') || connectedIntegrations.includes('quickbooks') || connectedIntegrations.includes('myob');
-  // hasEmail: check integration status OR snapshot founder_vitals (Outlook calendar data = email connected)
-  const hasEmailFromStatus = connectedIntegrations.includes('email') || connectedIntegrations.includes('gmail') || connectedIntegrations.includes('outlook');
-  const hasEmailFromSnapshot = !!(c.founder_vitals?.calendar && c.founder_vitals.calendar !== 'No calendar data available.' && !c.founder_vitals.calendar.includes('not available')) || !!(c.founder_vitals?.email_stress && !c.founder_vitals.email_stress.includes('No email'));
-  const hasEmail = hasEmailFromStatus || hasEmailFromSnapshot;
-
-  // Map resolution_queue items to groups — only if integration available
-  const rq = c.resolution_queue || [];
-  for (const item of rq) {
-    const t = item.type || '';
-    let g = 'operations';
-    let allowed = hasCRM;
-    if (t.includes('payment') || t.includes('invoice') || t.includes('cash') || t.includes('budget')) { g = 'money'; allowed = hasAccounting; }
-    else if (t.includes('deal') || t.includes('lead') || t.includes('churn') || t.includes('revenue') || t.includes('pipeline')) { g = 'revenue'; allowed = hasCRM; }
-    else if (t.includes('sop') || t.includes('task') || t.includes('overtime') || t.includes('breach')) { g = 'operations'; allowed = hasCRM; }
-    else if (t.includes('capacity') || t.includes('burnout') || t.includes('fatigue') || t.includes('team')) { g = 'people'; allowed = hasEmail; }
-    else if (t.includes('competitor') || t.includes('market') || t.includes('regulatory') || t.includes('compliance')) { g = 'market'; allowed = true; }
-    if (!allowed) continue;
-    groups[g].resolutions.push(item);
-    groups[g].alerts++;
-    groups[g].hasData = true;
-    if (item.severity === 'high') groups[g].severity = 'high';
-    else if (item.severity === 'medium' && groups[g].severity !== 'high') groups[g].severity = 'medium';
-  }
-
-  // Map inevitabilities to groups
-  const inv = c.inevitabilities || [];
-  for (const item of inv) {
-    const d = (item.domain || '').toLowerCase();
-    let g = 'operations';
-    let allowed = hasCRM;
-    if (d.includes('financ') || d.includes('money') || d.includes('cash')) { g = 'money'; allowed = hasAccounting; }
-    else if (d.includes('revenue') || d.includes('sales') || d.includes('pipeline')) { g = 'revenue'; allowed = hasCRM; }
-    else if (d.includes('operation') || d.includes('execution')) { g = 'operations'; allowed = hasCRM; }
-    else if (d.includes('people') || d.includes('team') || d.includes('founder')) { g = 'people'; allowed = hasEmail; }
-    else if (d.includes('market') || d.includes('compet') || d.includes('strategic')) { g = 'market'; allowed = true; }
-    if (!allowed) continue;
-    groups[g].resolutions.push({ severity: item.intensity === 'imminent' ? 'high' : 'medium', title: item.signal || item.domain, detail: item.if_ignored || '', actions: item.actions || ["hand-off", "dismiss"], probability: item.probability, impact: item.impact, window: item.window });
-    groups[g].alerts++;
-    groups[g].hasData = true;
-    if (!groups[g].insight) groups[g].insight = item.signal;
-  }
-
-  // ═══ MONEY TAB — Only with accounting integration ═══
-  if (hasAccounting) {
-    const cap = c.capital || {};
-    if (cap.runway || cap.margin || cap.alert) {
-      groups.money.details = cap;
-      groups.money.hasData = true;
-      groups.money.metrics = [
-        cap.runway != null && { label: 'Runway', value: `${cap.runway}mo`, color: cap.runway < 6 ? '#EF4444' : cap.runway < 12 ? '#F59E0B' : '#10B981' },
-        cap.margin && { label: 'Margin', value: cap.margin, color: (cap.margin || '').includes('compress') ? '#EF4444' : '#10B981' },
-        cap.spend && { label: 'Spend', value: cap.spend, color: '#3B82F6' },
-      ].filter(Boolean);
-      groups.money.insight = cap.alert || cap.best || groups.money.insight;
-    }
-  }
-
-  // ═══ REVENUE TAB — Only with CRM integration ═══
-  if (hasCRM) {
-    const rev = c.revenue || {};
-    if (rev.pipeline || rev.weighted || rev.churn) {
-      groups.revenue.details = rev;
-      groups.revenue.hasData = true;
-      groups.revenue.metrics = [
-        rev.pipeline != null && { label: 'Pipeline', value: `$${Math.round((rev.pipeline || 0) / 1000)}K`, color: '#3B82F6' },
-        rev.weighted != null && { label: 'Weighted', value: `$${Math.round((rev.weighted || 0) / 1000)}K`, color: '#10B981' },
-        rev.entropy && { label: 'Concentration', value: rev.entropy, color: '#F59E0B' },
-      ].filter(Boolean);
-      groups.revenue.insight = rev.churn || groups.revenue.insight;
-    }
-  }
-
-  // ═══ OPERATIONS TAB — Only with CRM/PM integration ═══
-  if (hasCRM) {
-    const exec = c.execution || {};
-    if (exec.sla_breaches != null || exec.bottleneck || exec.task_aging) {
-      groups.operations.details = exec;
-      groups.operations.hasData = true;
-      groups.operations.metrics = [
-        exec.sla_breaches != null && { label: 'SLA Breaches', value: String(exec.sla_breaches), color: exec.sla_breaches > 0 ? '#EF4444' : '#10B981' },
-        exec.task_aging != null && { label: 'Task Aging', value: `${exec.task_aging}%`, color: exec.task_aging > 30 ? '#F59E0B' : '#10B981' },
-        exec.bottleneck && { label: 'Bottleneck', value: exec.bottleneck, color: '#F59E0B' },
-      ].filter(Boolean);
-      groups.operations.insight = exec.bottleneck || groups.operations.insight;
-    }
-  }
-
-  // ═══ PEOPLE TAB — Only with email/calendar integration ═══
-  if (hasEmail) {
-    const fv = c.founder_vitals || {};
-    if (fv.capacity_index || fv.fatigue || fv.recommendation) {
-      groups.people.details = fv;
-      groups.people.hasData = true;
-      groups.people.metrics = [
-        fv.capacity_index != null && { label: 'Capacity', value: `${fv.capacity_index}%`, color: fv.capacity_index > 100 ? '#EF4444' : fv.capacity_index > 80 ? '#F59E0B' : '#10B981' },
-        fv.fatigue && { label: 'Fatigue', value: fv.fatigue, color: fv.fatigue === 'high' ? '#EF4444' : fv.fatigue === 'medium' ? '#F59E0B' : '#10B981' },
-        fv.decisions != null && { label: 'Pending Decisions', value: String(fv.decisions), color: fv.decisions > 5 ? '#F59E0B' : '#10B981' },
-      ].filter(Boolean);
-      groups.people.insight = fv.recommendation || groups.people.insight;
-    }
-  }
-
-  // ═══ MARKET TAB — Always allowed (from web scraping/calibration) ═══
-  const mkt = c.market || {};
-  const mi = c.market_intelligence || {};
-  if (mkt.narrative || mi.positioning_verdict) {
-    groups.market.details = { ...mkt, ...mi };
-    groups.market.hasData = true;
-    groups.market.metrics = [
-      mi.positioning_verdict && { label: 'Position', value: mi.positioning_verdict, color: mi.positioning_verdict === 'STABLE' ? '#10B981' : mi.positioning_verdict === 'DRIFT' ? '#F59E0B' : '#EF4444' },
-      mi.misalignment_index != null && { label: 'Misalignment', value: `${mi.misalignment_index}/100`, color: mi.misalignment_index > 50 ? '#EF4444' : mi.misalignment_index > 25 ? '#F59E0B' : '#10B981' },
-      mi.probability_of_goal_achievement != null && { label: 'Goal Prob', value: `${mi.probability_of_goal_achievement}%`, color: mi.probability_of_goal_achievement > 60 ? '#10B981' : '#F59E0B' },
-    ].filter(Boolean);
-    groups.market.insight = mkt.narrative || groups.market.insight;
-  }
-
-  // ═══ WEIGHTED SCORING FORMULA ═══
-  // Score = (severity_weight * alert_count * data_quality_multiplier)
-  // severity_weight: high=3, medium=2, low=1
-  // data_quality_multiplier: based on number of metrics and integration status
-  const sevWeights = { high: 3, medium: 2, low: 1 };
-  for (const gid of Object.keys(groups)) {
-    const g = groups[gid];
-    if (!g.hasData) { g.score = 0; continue; }
-    const sevWeight = sevWeights[g.severity] || 1;
-    const alertScore = g.alerts * sevWeight;
-    const metricBonus = g.metrics.length * 5;
-    const detailBonus = g.details ? 10 : 0;
-    const insightBonus = g.insight ? 5 : 0;
-    g.score = Math.min(Math.round(alertScore + metricBonus + detailBonus + insightBonus), 100);
-  }
-
-  return groups;
-}
-
-/* ═══ STABILITY SCORE CARD ═══ */
-const StabilityScoreCard = ({ score, status, velocity, interpretation, cognitionConf, indices }) => {
-  const statusConfig = {
-    STABLE: { color: '#10B981', label: 'Stable', bg: '#10B98108' },
-    DRIFT: { color: '#F59E0B', label: 'Drifting', bg: '#F59E0B08' },
-    COMPRESSION: { color: '#FF6A00', label: 'Under Pressure', bg: '#FF6A0008' },
-    CRITICAL: { color: '#EF4444', label: 'Critical', bg: '#EF444408' },
-  };
-  const cfg = statusConfig[status] || statusConfig.STABLE;
-  const velIcon = velocity === 'worsening' ? '↘' : velocity === 'improving' ? '↗' : '→';
-  const scoreColor = score >= 75 ? '#10B981' : score >= 50 ? '#F59E0B' : score >= 30 ? '#FF6A00' : '#EF4444';
-  const circumference = 2 * Math.PI * 28;
-  const offset = circumference * (1 - score / 100);
-
-  return (
-    <Card className="p-5 mb-6" data-testid="stability-score-card">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-5">
-          {/* Circular Score */}
-          <div className="relative w-20 h-20 shrink-0">
-            <svg className="w-20 h-20 -rotate-90" viewBox="0 0 64 64">
-              <circle cx="32" cy="32" r="28" fill="none" stroke="#243140" strokeWidth="5" />
-              <circle cx="32" cy="32" r="28" fill="none" stroke={scoreColor} strokeWidth="5"
-                strokeDasharray={circumference} strokeDashoffset={offset}
-                strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease' }} />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-bold leading-none" style={{ color: scoreColor, fontFamily: fontFamily.mono }}>{score}</span>
-              <span className="text-[8px] tracking-widest uppercase mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>SCORE</span>
-            </div>
-          </div>
-          {/* Status Info */}
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full" style={{ background: cfg.color }} />
-              <span className="text-sm font-semibold" style={{ color: cfg.color, fontFamily: fontFamily.mono }}>{cfg.label}</span>
-              {velocity && <span className="text-xs" style={{ color: cfg.color }}>{velIcon} {velocity}</span>}
-            </div>
-            <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Business Stability</h2>
-            {interpretation && <p className="text-xs max-w-xs leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{interpretation.substring(0, 120)}{interpretation.length > 120 ? '...' : ''}</p>}
-            {!interpretation && <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Overall operational health across all connected systems.</p>}
-          </div>
-        </div>
-
-        {/* Instability Indices — from cognition core */}
-        {indices && (
-          <div className="hidden sm:grid grid-cols-2 gap-2 shrink-0">
-            {[
-              { key: 'revenue_volatility_index', label: 'RVI', title: 'Revenue Volatility' },
-              { key: 'engagement_decay_score', label: 'EDS', title: 'Engagement Decay' },
-              { key: 'cash_deviation_ratio', label: 'CDR', title: 'Cash Deviation' },
-              { key: 'anomaly_density_score', label: 'ADS', title: 'Anomaly Density' },
-            ].map(({ key, label, title }) => {
-              const val = indices[key];
-              if (val == null) return null;
-              const pct = Math.round(val * 100);
-              const ic = pct > 60 ? '#EF4444' : pct > 30 ? '#F59E0B' : '#10B981';
-              return (
-                <div key={key} className="p-2 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', minWidth: 80 }}>
-                  <span className="text-[9px] font-bold tracking-widest uppercase block" style={{ color: ic, fontFamily: fontFamily.mono }}>{label}</span>
-                  <span className="text-base font-bold" style={{ color: ic, fontFamily: fontFamily.mono }}>{pct}%</span>
-                  <span className="text-[9px] block" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{title}</span>
-                </div>
-              );
-            }).filter(Boolean)}
-          </div>
-        )}
-
-        {/* Confidence badge */}
-        {cognitionConf != null && (
-          <div className="hidden sm:flex flex-col items-end gap-1 shrink-0">
-            <span className="text-[9px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Confidence</span>
-            <span className="text-lg font-bold" style={{ color: cognitionConf > 0.6 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{Math.round(cognitionConf * 100)}%</span>
-          </div>
-        )}
-      </div>
-    </Card>
-  );
+const inferSource = (rawSource = '', domain = '', signal = '') => {
+  const text = `${rawSource} ${domain} ${signal}`.toLowerCase();
+  if (/(hubspot|salesforce|crm|deal|pipeline)/.test(text)) return 'CRM';
+  if (/(xero|quickbooks|account|invoice|cash|finance)/.test(text)) return 'Accounting';
+  if (/(gmail|outlook|email|calendar|thread|response)/.test(text)) return 'Email/Calendar';
+  if (/(observation|watchtower|event)/.test(text)) return 'Observation Events';
+  if (/(market|competitor|benchmark)/.test(text)) return 'Market Feed';
+  return 'Snapshot';
 };
 
-const AdvisorWatchtower = () => {
-  const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh, stage, progress, startedAt, resumeSnapshot } = useSnapshotProgress();
-  const c = useMemo(() => cognitive || {}, [cognitive]);
-  const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
-  const [cognitionData, setCognitionData] = useState(null);
+const toSignal = (item = {}, fallbackSource = 'snapshot') => {
+  const title = item.title || prettySignal(item.signal || item.event || item.type || item.domain || 'Signal detected');
+  const detail = item.detail || item.description || item.impact || item.executive_summary || 'Review this signal in context with your owner team.';
+  const action = item.action || item.recommendation || item.suggested_action || 'Assign an owner and execute this cycle.';
+  const signalType = String(item.signal || item.event || item.type || item.signal_name || title || 'business_signal').replace(/\s+/g, '_').toLowerCase();
+  const domain = String(item.domain || 'general').toLowerCase();
+  const source = inferSource(item.source || item.data_source || fallbackSource, item.domain, signalType);
+  const actionId = String(item.id || `${signalType}-${domain}`);
 
-  // Resolve display name with fallbacks + capitalize first letter
-  const { user } = useSupabaseAuth();
-  const rawName = owner ||
-    user?.user_metadata?.full_name?.split(' ')[0] ||
-    user?.email?.split('@')[0] ||
-    'there';
-  const displayName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : 'there';
-  const displayTimeOfDay = timeOfDay || (() => {
-    const h = new Date().getHours();
-    return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
-  })();
+  return {
+    id: actionId,
+    signalType,
+    title,
+    detail,
+    action,
+    ifIgnored: item.if_ignored || item.impact || detail,
+    domain,
+    severity: normalizeSeverity(item.severity || item.priority),
+    source,
+    createdAt: item.created_at || item.observed_at || item.timestamp || null,
+    occurrences: 1,
+    actionIds: [actionId],
+    dedupeKey: `${signalType}|${domain}|${source}`,
+  };
+};
 
-  // Derive connectedIntegrations from unified status for parseToGroups compatibility
-  const connectedIntegrations = useMemo(() => {
-    if (!integrationStatus?.integrations) return [];
-    return integrationStatus.integrations
-      .filter(i => i.connected)
-      .map(i => i.category.toLowerCase());
-  }, [integrationStatus]);
+const dedupeSignals = (signals) => {
+  const map = new Map();
 
-  const hasEmail = useMemo(() => {
-    const fromStatus = connectedIntegrations.some((integration) => integration.includes('email') || integration.includes('gmail') || integration.includes('outlook'));
-    const fromSnapshot = Boolean(
-      (c?.founder_vitals?.calendar && !String(c.founder_vitals.calendar).toLowerCase().includes('no calendar')) ||
-      (c?.founder_vitals?.email_stress && !String(c.founder_vitals.email_stress).toLowerCase().includes('no email'))
-    );
-    return fromStatus || fromSnapshot;
-  }, [connectedIntegrations, c]);
+  signals.forEach((signal) => {
+    const key = signal.dedupeKey;
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, signal);
+      return;
+    }
 
-  const shouldShowOnboarding = !integrationLoading
-    && connectedIntegrations.length === 0
-    && !(cognitionData?.integrations_connected > 0)
-    && !(c?.live_signal_count > 0);
-  const { show: showOnboarding, dismiss: dismissOnboarding, emailConnectedProvider } = useFirstTimeOnboarding({ enabled: shouldShowOnboarding });
+    const incomingRank = SEVERITY_RANK[signal.severity] ?? 9;
+    const existingRank = SEVERITY_RANK[existing.severity] ?? 9;
+    const keep = incomingRank < existingRank ? signal : existing;
+
+    map.set(key, {
+      ...keep,
+      occurrences: (existing.occurrences || 1) + 1,
+      detail: keep.detail,
+      action: keep.action,
+      ifIgnored: keep.ifIgnored,
+      createdAt: keep.createdAt || existing.createdAt,
+      actionIds: [...new Set([...(existing.actionIds || []), ...(signal.actionIds || [])])],
+      dedupeKey: key,
+    });
+  });
+
+  return [...map.values()].sort((a, b) => {
+    const rankDelta = (SEVERITY_RANK[a.severity] ?? 9) - (SEVERITY_RANK[b.severity] ?? 9);
+    if (rankDelta !== 0) return rankDelta;
+
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
+};
+
+const buildSignals = (overview, cognitive, watchtowerEvents = []) => {
+  const raw = [];
+  const topAlerts = overview?.top_alerts || cognitive?.top_alerts || [];
+  const resolutionQueue = cognitive?.resolution_queue || overview?.resolution_queue || [];
+  const propagationMap = overview?.propagation_map || [];
+
+  topAlerts.forEach((entry) => raw.push(toSignal(entry, 'observation_events')));
+  resolutionQueue.forEach((entry) => raw.push(toSignal(entry, 'snapshot')));
+  (watchtowerEvents || []).forEach((entry) => raw.push(toSignal(entry, 'observation_events')));
+
+  propagationMap
+    .filter((entry) => Number(entry?.probability || 0) >= 0.55)
+    .slice(0, 2)
+    .forEach((entry) => {
+      raw.push(toSignal({
+        signal: `propagation_${entry.source || 'domain'}_${entry.target || 'domain'}`,
+        domain: entry.target || entry.source || 'general',
+        severity: Number(entry.probability || 0) >= 0.8 ? 'high' : 'medium',
+        title: `${prettySignal(entry.source || 'domain')} pressure moving into ${prettySignal(entry.target || 'domain')}`,
+        detail: entry.description || `${Math.round(Number(entry.probability || 0) * 100)}% risk chain is active.`,
+        recommendation: 'Set mitigation owner before pressure compounds.',
+        source: 'propagation_map',
+      }, 'propagation_map'));
+    });
+
+  return dedupeSignals(raw);
+};
+
+const scoreIntent = (text = '') => {
+  const value = String(text).toLowerCase();
+  const increase = /(increase|invest|expand|scale|hire|accelerate|push|raise|grow)/.test(value);
+  const reduce = /(reduce|cut|pause|defer|delay|hold|conserve|freeze|slow)/.test(value);
+  if (increase && !reduce) return 'increase';
+  if (reduce && !increase) return 'reduce';
+  return 'neutral';
+};
+
+const detectConflicts = (signals) => {
+  const conflicts = [];
+  const seen = new Set();
+  const candidateSignals = signals.slice(0, 12);
+
+  for (let i = 0; i < candidateSignals.length; i += 1) {
+    for (let j = i + 1; j < candidateSignals.length; j += 1) {
+      const left = candidateSignals[i];
+      const right = candidateSignals[j];
+
+      if (left.domain !== right.domain) continue;
+
+      const leftIntent = scoreIntent(`${left.action} ${left.title}`);
+      const rightIntent = scoreIntent(`${right.action} ${right.title}`);
+      if (leftIntent === 'neutral' || rightIntent === 'neutral' || leftIntent === rightIntent) continue;
+
+      const key = `${left.domain}|${leftIntent}|${rightIntent}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const leftRank = SEVERITY_RANK[left.severity] ?? 9;
+      const rightRank = SEVERITY_RANK[right.severity] ?? 9;
+      const preferred = leftRank <= rightRank ? left : right;
+
+      conflicts.push({
+        id: key,
+        domain: left.domain,
+        left,
+        right,
+        recommendation: `Prioritise: ${preferred.title}`,
+      });
+    }
+  }
+
+  return conflicts;
+};
+
+const signalPriorityScore = (signal, role) => {
+  const severityWeight = { critical: 120, high: 90, medium: 60, low: 30, info: 10 };
+  const severityScore = severityWeight[signal.severity] || 25;
+  const recencyScore = signal.createdAt ? Math.max(0, 24 - (Date.now() - new Date(signal.createdAt).getTime()) / (1000 * 60 * 60)) : 5;
+  const frequencyScore = Math.min((signal.occurrences || 1) * 8, 30);
+  const roleBoostMap = {
+    ceo: /(revenue|cash|market|growth|risk)/.test(signal.domain) ? 18 : 8,
+    coo: /(operations|delivery|execution|people|capacity)/.test(signal.domain) ? 22 : 6,
+    finance: /(revenue|cash|invoice|margin|finance|payment)/.test(signal.domain) ? 24 : 4,
+  };
+  const roleBoost = roleBoostMap[role] || 0;
+  return severityScore + recencyScore + frequencyScore + roleBoost;
+};
+
+const buildProjections = (signal) => {
+  const base = signal.severity === 'critical' ? 34 : signal.severity === 'high' ? 26 : signal.severity === 'medium' ? 18 : 10;
+  const multiplier = Math.min(signal.occurrences || 1, 4);
+  const risk30 = Math.min(95, Math.round(base + multiplier * 4));
+  const risk60 = Math.min(99, Math.round(risk30 + 11));
+  const risk90 = Math.min(99, Math.round(risk60 + 9));
+  const action30 = Math.max(4, risk30 - 14);
+  const action60 = Math.max(6, risk60 - 18);
+  const action90 = Math.max(8, risk90 - 22);
+  return {
+    ignored: [risk30, risk60, risk90],
+    actioned: [action30, action60, action90],
+  };
+};
+
+const buildDecisionSurface = (signals, overview, cognitive) => {
+  const memo = overview?.executive_memo || cognitive?.executive_memo || cognitive?.memo;
+  const fallbackSignal = toSignal({
+    signal: 'executive_priority',
+    title: overview?.priority_action || 'Set one owner-accountable action for this cycle.',
+    detail: memo || 'No critical signal currently exceeds threshold. Keep active monitoring.',
+    recommendation: 'Capture this as a tracked decision and assign a deadline.',
+    severity: 'low',
+    source: 'snapshot',
+  }, 'snapshot');
+
+  return DECISION_SLOTS.map((slot, index) => {
+    const signal = signals[index] || fallbackSignal;
+    return {
+      ...slot,
+      signal,
+      severity: signal.severity,
+      whyNow: signal.occurrences > 1
+        ? `${signal.occurrences} matching signals were grouped into one decision.`
+        : signal.detail,
+    };
+  });
+};
+
+const getStateLabel = (overview, cognitive) => {
+  const raw = overview?.system_state?.status || cognitive?.system_state?.status || cognitive?.system_state || 'STABLE';
+  const value = String(raw).toUpperCase();
+  if (value === 'CRITICAL') return 'Critical';
+  if (value === 'COMPRESSION') return 'Under Pressure';
+  if (value === 'DRIFT') return 'Drifting';
+  return 'Stable';
+};
+
+export default function AdvisorWatchtower() {
+  const { user, authState } = useSupabaseAuth();
+  const {
+    cognitive,
+    owner,
+    timeOfDay,
+    loading: snapshotLoading,
+    error: snapshotError,
+    refreshing: snapshotRefreshing,
+    refresh: refreshSnapshot,
+  } = useSnapshotProgress();
+
+  const [overview, setOverview] = useState(null);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+  const [overviewError, setOverviewError] = useState('');
+  const [overviewRefreshing, setOverviewRefreshing] = useState(false);
+  const [loadingGuardExpired, setLoadingGuardExpired] = useState(false);
+  const [watchtowerEvents, setWatchtowerEvents] = useState([]);
+  const [watchtowerLoading, setWatchtowerLoading] = useState(false);
+  const [watchtowerError, setWatchtowerError] = useState('');
+  const [actionState, setActionState] = useState({ byKey: {}, byAlertId: {} });
+  const [actionsHydrated, setActionsHydrated] = useState(false);
+  const [actionLoadingKey, setActionLoadingKey] = useState('');
+  const [rolePreference, setRolePreference] = useState(() => localStorage.getItem('advisor-role-preference') || 'ceo');
+  const [feedbackByDecision, setFeedbackByDecision] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('advisor-decision-feedback') || '{}');
+    } catch {
+      return {};
+    }
+  });
+  const [delegateModalDecision, setDelegateModalDecision] = useState(null);
+  const [delegateSubmitting, setDelegateSubmitting] = useState(false);
+  const [delegateProviders, setDelegateProviders] = useState([]);
+  const [delegateProviderOptions, setDelegateProviderOptions] = useState({
+    provider: 'auto',
+    recommendedProvider: 'auto',
+    assignees: [],
+    collections: [],
+  });
+  const [delegateProviderHealthLoaded, setDelegateProviderHealthLoaded] = useState(false);
+  const [delegateProviderHealth, setDelegateProviderHealth] = useState({
+    ticketing_provider: null,
+    outlook_exchange: false,
+    outlook_connected: false,
+    outlook_expired: false,
+    outlook_expires_at: null,
+    google_workspace: false,
+    gmail_connected: false,
+    gmail_needs_reconnect: false,
+  });
+  const [delegateOptionsLoading, setDelegateOptionsLoading] = useState(false);
+  const [evidenceDrawerDecision, setEvidenceDrawerDecision] = useState(null);
+  const [auditActionFilter, setAuditActionFilter] = useState('all');
+  const [auditSearch, setAuditSearch] = useState('');
+
+  const actionStorageKey = useMemo(() => `advisor-actions-${user?.id || 'anon'}`, [user?.id]);
 
   useEffect(() => {
-    // Cognition core (Phase B)
-    apiClient.get('/cognition/overview').then(res => {
-      if (res.data && res.data.status !== 'MIGRATION_REQUIRED') {
-        setCognitionData(res.data);
-      }
-    }).catch(() => {});
-    trackEvent(EVENTS.DASHBOARD_VIEW, { page: 'advisor' });
-    trackPageRender('advisor');
+    const timer = setTimeout(() => setLoadingGuardExpired(true), 8000);
+    return () => clearTimeout(timer);
   }, []);
 
-  // Parse system state (handle both string and object formats)
-  const stateStatus = typeof c.system_state === 'object' ? c.system_state?.status : c.system_state;
-  const stateConf = typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level;
-  const stateInterp = typeof c.system_state === 'object' ? c.system_state?.interpretation : c.system_state_interpretation;
-  const stateVelocity = typeof c.system_state === 'object' ? c.system_state?.velocity : null;
-  const st = ST[stateStatus] || ST.STABLE;
+  const fetchOverview = useCallback(async (refreshMode = false) => {
+    if (refreshMode) setOverviewRefreshing(true);
+    if (!refreshMode) setOverviewLoading(true);
 
-  const groupData = useMemo(() => parseToGroups(c, connectedIntegrations), [c, connectedIntegrations]);
-  const sortedGroups = useMemo(() => Object.values(GROUPS).sort((a, b) => {
-    const sevW = { high: 3, medium: 2, low: 1 };
-    return (groupData[b.id].alerts * (sevW[groupData[b.id].severity] || 1)) - (groupData[a.id].alerts * (sevW[groupData[a.id].severity] || 1));
-  }), [groupData]);
-
-  const [activeGroup, setActiveGroup] = useState(null);
-  const activeId = activeGroup || sortedGroups[0]?.id || 'market';
-  const gd = groupData[activeId];
-  const group = GROUPS[activeId];
-
-  // Check if the active tab's required integration is connected
-  // For email: check both integration status AND snapshot founder_vitals (Outlook data)
-  const isTabConnected = !group.requires ||
-    (group.requires === 'email' ? hasEmail : connectedIntegrations.some(i => i.includes(group.requires)));
-
-  const [briefOpen, setBriefOpen] = useState(false);
-  const [memoOpen, setMemoOpen] = useState(false);
-
-  const memo = c.executive_memo || c.memo || '';
-  const alignment = c.strategic_alignment_check || c.alignment?.narrative || '';
-  const contradictions = c.alignment?.contradictions || [];
-  const wb = c.weekly_brief || {};
-
-  // ═══ COMPOSITE STABILITY SCORE — Phase B ═══
-  // Uses cognition core score when available, derives from snapshot otherwise
-  const stabilityScore = useMemo(() => {
-    if (cognitionData?.composite_risk_score != null) {
-      return Math.round((1 - Math.min(cognitionData.composite_risk_score, 1)) * 100);
+    try {
+      const response = await apiClient.get('/cognition/overview', { timeout: 12000 });
+      setOverview(response.data || null);
+      setOverviewError('');
+    } catch (error) {
+      setOverviewError(error?.response?.data?.detail || 'Unable to load cognition overview.');
+    } finally {
+      setOverviewLoading(false);
+      setOverviewRefreshing(false);
     }
-    const baseScores = { STABLE: 87, DRIFT: 64, COMPRESSION: 42, CRITICAL: 22 };
-    const base = baseScores[stateStatus] || 75;
-    const totalAlerts = Object.values(groupData).reduce((s, g) => s + g.alerts, 0);
-    return Math.max(5, Math.min(99, base - totalAlerts * 3));
-  }, [cognitionData, stateStatus, groupData]);
+  }, []);
 
-  const instabilityIndices = cognitionData?.instability_indices || null;
-  const propagationMap = cognitionData?.propagation_map || null;
-  const cognitionConfidence = cognitionData?.confidence_score ?? null;
+  const fetchWatchtower = useCallback(async () => {
+    setWatchtowerLoading(true);
+    try {
+      const response = await apiClient.get('/intelligence/watchtower', { timeout: 12000 });
+      setWatchtowerEvents(response?.data?.events || []);
+      setWatchtowerError('');
+    } catch (error) {
+      setWatchtowerError(error?.response?.data?.detail || 'Unable to load watchtower events.');
+      setWatchtowerEvents([]);
+    } finally {
+      setWatchtowerLoading(false);
+    }
+  }, []);
 
-  const explainability = {
-    whyVisible: gd?.hasData
-      ? `BIQc is showing ${group.label} because live signals were detected from your connected ${group.requires || 'systems'} inputs.`
-      : `No strong ${group.label.toLowerCase()} signal yet — this view is ready to surface early change as new data lands.`,
-    whyNow: gd?.alerts > 0
-      ? `${gd.alerts} active ${group.label.toLowerCase()} alert${gd.alerts === 1 ? '' : 's'} are currently affecting your business stability score.`
-      : 'Current pressure is low, but BIQc keeps tracking this domain for drift.',
-    nextAction: gd?.resolutions?.[0]?.title
-      ? `Start with: ${gd.resolutions[0].title}`
-      : `Review ${group.label.toLowerCase()} metrics and set one owner-accountable action this week.`,
-    ifIgnored: gd?.resolutions?.[0]?.detail
-      ? gd.resolutions[0].detail
-      : `If ${group.label.toLowerCase()} drift is ignored, hidden pressure can spread into revenue, cash, and execution outcomes.`,
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(actionStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setActionState({
+          byKey: parsed?.byKey || {},
+          byAlertId: parsed?.byAlertId || {},
+        });
+      }
+    } catch {}
+  }, [actionStorageKey]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(actionStorageKey, JSON.stringify(actionState));
+    } catch {}
+  }, [actionState, actionStorageKey]);
+
+  useEffect(() => {
+    localStorage.setItem('advisor-role-preference', rolePreference);
+  }, [rolePreference]);
+
+  useEffect(() => {
+    localStorage.setItem('advisor-decision-feedback', JSON.stringify(feedbackByDecision));
+  }, [feedbackByDecision]);
+
+  const hydrateActionHistory = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/intelligence/alerts/actions', { params: { limit: 150 }, timeout: 10000 });
+      const actions = response?.data?.actions || [];
+      const byAlertId = {};
+      actions.forEach((item) => {
+        if (!item?.alert_id) return;
+        if (!DECISION_ACTIONS.resolve.endpoint && !DECISION_ACTIONS.ignore.endpoint) return;
+        if (!['complete', 'ignore', 'hand-off'].includes(item.action)) return;
+        byAlertId[item.alert_id] = {
+          action: item.action,
+          at: item.created_at,
+          source: 'server',
+          alertId: item.alert_id,
+        };
+      });
+      setActionState((prev) => ({ ...prev, byAlertId: { ...prev.byAlertId, ...byAlertId } }));
+    } catch {
+      // Non-blocking: local action state still works.
+    } finally {
+      setActionsHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOverview(false);
+    fetchWatchtower();
+    hydrateActionHistory();
+  }, [fetchOverview, fetchWatchtower, hydrateActionHistory]);
+
+  const handleRefresh = async () => {
+    await Promise.allSettled([
+      refreshSnapshot(),
+      fetchOverview(true),
+      fetchWatchtower(),
+      fetchDelegateProviders(),
+    ]);
   };
 
-  const actionOwnership = {
-    owner: gd?.severity === 'high' ? 'Founder + domain owner' : `${group.label} owner`,
-    deadline: gd?.alerts > 0 ? 'Next 48 hours' : 'By end of this week',
-    checkpoint: gd?.resolutions?.[0]?.title
-      ? gd.resolutions[0].title
-      : `Set one accountable ${group.label.toLowerCase()} action and review in the next operating cadence.`,
-    successMetric: `Alerts ${gd?.alerts || 0} · ${group.label} score ${gd?.score || 0}`,
-  };
+  const hasOverviewData = Boolean(overview);
+  const hasSnapshotData = Boolean(cognitive);
+  const hasWatchtowerData = (watchtowerEvents || []).length > 0;
+  const hasData = hasSnapshotData || hasOverviewData || hasWatchtowerData;
+  const isLoading = !loadingGuardExpired
+    && !hasData
+    && !overviewError
+    && !watchtowerError
+    && (overviewLoading || watchtowerLoading);
+  const dataErrorMessage = snapshotError || overviewError || watchtowerError || '';
+  const criticalError = !isLoading && !hasData && Boolean(dataErrorMessage);
+
+  useEffect(() => {
+    if (authState === AUTH_STATE.LOADING) return;
+    if (hasData || overviewLoading || watchtowerLoading) return;
+    fetchOverview(true);
+    fetchWatchtower();
+    hydrateActionHistory();
+  }, [
+    authState,
+    hasData,
+    overviewLoading,
+    watchtowerLoading,
+    fetchOverview,
+    fetchWatchtower,
+    hydrateActionHistory,
+  ]);
+
+  const displayName = useMemo(() => {
+    const source = owner
+      || user?.user_metadata?.full_name?.split(' ')[0]
+      || user?.email?.split('@')[0]
+      || 'there';
+    return source.charAt(0).toUpperCase() + source.slice(1);
+  }, [owner, user]);
+
+  const displayTimeOfDay = useMemo(() => {
+    if (timeOfDay) return timeOfDay;
+    const hour = new Date().getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
+  }, [timeOfDay]);
+
+  const signals = useMemo(() => buildSignals(overview, cognitive, watchtowerEvents), [overview, cognitive, watchtowerEvents]);
+
+  const isSignalActioned = useCallback((signal) => {
+    if (actionState.byKey?.[signal.dedupeKey]) return true;
+    return (signal.actionIds || []).some((alertId) => Boolean(actionState.byAlertId?.[alertId]));
+  }, [actionState]);
+
+  const openSignals = useMemo(
+    () => signals.filter((signal) => !isSignalActioned(signal)),
+    [signals, isSignalActioned],
+  );
+
+  const prioritizedSignals = useMemo(() => {
+    return [...openSignals].sort((left, right) => {
+      return signalPriorityScore(right, rolePreference) - signalPriorityScore(left, rolePreference);
+    });
+  }, [openSignals, rolePreference]);
+
+  const decisions = useMemo(
+    () => buildDecisionSurface(prioritizedSignals, overview, cognitive),
+    [prioritizedSignals, overview, cognitive],
+  );
+
+  const conflicts = useMemo(() => detectConflicts(prioritizedSignals), [prioritizedSignals]);
+
+  const actionAuditRows = useMemo(() => {
+    const keyRows = Object.entries(actionState.byKey || {}).map(([dedupeKey, entry]) => ({
+      dedupeKey,
+      ...entry,
+    }));
+    return keyRows
+      .sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime())
+      .slice(0, 8);
+  }, [actionState]);
+
+  const filteredAuditRows = useMemo(() => {
+    const query = auditSearch.trim().toLowerCase();
+    return actionAuditRows.filter((row) => {
+      const filterMatch = auditActionFilter === 'all' || row.action === auditActionFilter;
+      if (!filterMatch) return false;
+      if (!query) return true;
+      const blob = `${row.title || ''} ${row.domain || ''} ${row.source || ''}`.toLowerCase();
+      return blob.includes(query);
+    });
+  }, [actionAuditRows, auditActionFilter, auditSearch]);
+
+  const fetchDelegateProviders = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/workflows/delegate/providers', { timeout: 10000 });
+      const providers = response?.data?.providers || [];
+      const recommendedProvider = response?.data?.recommended_provider || 'auto';
+      const health = response?.data?.connected_business_tools || {};
+      setDelegateProviders(providers);
+      setDelegateProviderHealth((prev) => ({ ...prev, ...health }));
+      setDelegateProviderHealthLoaded(true);
+      setDelegateProviderOptions((prev) => ({
+        ...prev,
+        recommendedProvider,
+      }));
+      return recommendedProvider;
+    } catch {
+      // Fallback to existing stable APIs to avoid false negatives during transient failures.
+      try {
+        const [outlookRes, gmailRes, mergeRes] = await Promise.allSettled([
+          apiClient.get('/outlook/status', { timeout: 8000 }),
+          apiClient.get('/gmail/status', { timeout: 8000 }),
+          apiClient.get('/integrations/merge/connected', { timeout: 8000 }),
+        ]);
+
+        const outlookData = outlookRes.status === 'fulfilled' ? (outlookRes.value?.data || {}) : {};
+        const gmailData = gmailRes.status === 'fulfilled' ? (gmailRes.value?.data || {}) : {};
+        const mergeData = mergeRes.status === 'fulfilled' ? (mergeRes.value?.data || {}) : {};
+
+        const integrations = mergeData?.integrations || {};
+        const ticketingEntry = Object.values(integrations).find((item) => item?.category === 'ticketing' && item?.connected);
+        const ticketingProvider = ticketingEntry?.provider ? String(ticketingEntry.provider).toLowerCase() : null;
+
+        const outlookExchangeReady = Boolean(outlookData?.connected) && !Boolean(outlookData?.token_expired);
+        const googleWorkspaceReady = Boolean(gmailData?.connected) && !Boolean(gmailData?.needs_reconnect);
+
+        const derivedProviders = [
+          { id: 'auto', label: 'Auto (based on connected tools)', available: Boolean(ticketingProvider || outlookExchangeReady || googleWorkspaceReady) },
+          { id: 'manual', label: 'Manual follow-up', available: true },
+          { id: 'jira', label: 'Jira (via Merge)', available: ticketingProvider?.includes('jira') || false },
+          { id: 'asana', label: 'Asana (via Merge)', available: ticketingProvider?.includes('asana') || false },
+          { id: 'merge-ticketing', label: 'Connected Ticketing Tool (via Merge)', available: Boolean(ticketingProvider) },
+          { id: 'outlook-exchange', label: 'Outlook / Exchange', available: outlookExchangeReady },
+          { id: 'google-calendar', label: 'Google Calendar', available: googleWorkspaceReady },
+        ];
+
+        setDelegateProviders(derivedProviders);
+        setDelegateProviderHealth({
+          ticketing_provider: ticketingProvider,
+          outlook_exchange: outlookExchangeReady,
+          outlook_connected: Boolean(outlookData?.connected),
+          outlook_expired: Boolean(outlookData?.token_expired),
+          outlook_expires_at: outlookData?.expires_at || null,
+          google_workspace: googleWorkspaceReady,
+          gmail_connected: Boolean(gmailData?.connected),
+          gmail_needs_reconnect: Boolean(gmailData?.needs_reconnect),
+        });
+        setDelegateProviderHealthLoaded(true);
+
+        const recommended = ticketingProvider
+          ? 'merge-ticketing'
+          : outlookExchangeReady
+            ? 'outlook-exchange'
+            : googleWorkspaceReady
+              ? 'google-calendar'
+              : 'manual';
+
+        setDelegateProviderOptions((prev) => ({ ...prev, recommendedProvider: recommended }));
+        return recommended;
+      } catch {
+        setDelegateProviderHealthLoaded(false);
+        setDelegateProviders((prev) => {
+          if (prev.length) return prev;
+          return [
+            { id: 'auto', label: 'Auto (based on connected tools)', available: false },
+            { id: 'manual', label: 'Manual follow-up', available: true },
+            { id: 'merge-ticketing', label: 'Merge Ticketing', available: false },
+            { id: 'outlook-exchange', label: 'Outlook / Exchange', available: false },
+            { id: 'google-calendar', label: 'Google Calendar', available: false },
+          ];
+        });
+        return 'manual';
+      }
+    }
+  }, []);
+
+  const fetchDelegateOptions = useCallback(async (providerChoice = 'auto') => {
+    setDelegateOptionsLoading(true);
+    try {
+      const response = await apiClient.get('/workflows/delegate/options', {
+        params: { provider: providerChoice },
+        timeout: 12000,
+      });
+      setDelegateProviderOptions((prev) => ({
+        ...prev,
+        provider: response?.data?.provider || providerChoice,
+        assignees: response?.data?.assignees || [],
+        collections: response?.data?.collections || [],
+      }));
+    } catch {
+      setDelegateProviderOptions((prev) => ({
+        ...prev,
+        provider: providerChoice,
+        assignees: [],
+        collections: [],
+      }));
+    } finally {
+      setDelegateOptionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDelegateProviders();
+  }, [fetchDelegateProviders]);
+
+  const handleDecisionAction = useCallback(async (decision, actionType) => {
+    const actionConfig = DECISION_ACTIONS[actionType];
+    if (!actionConfig) return;
+
+    const signal = decision.signal;
+    const alertId = (signal.actionIds && signal.actionIds[0]) || signal.id || signal.dedupeKey;
+    const loadingKey = `${decision.id}-${actionType}`;
+    setActionLoadingKey(loadingKey);
+
+    const persistLocalAction = () => {
+      const nextRecord = {
+        action: actionConfig.endpoint,
+        at: new Date().toISOString(),
+        title: signal.title,
+        source: signal.source,
+        domain: signal.domain,
+        alertId,
+      };
+
+      setActionState((prev) => ({
+        byKey: {
+          ...prev.byKey,
+          [signal.dedupeKey]: nextRecord,
+        },
+        byAlertId: {
+          ...prev.byAlertId,
+          [alertId]: nextRecord,
+        },
+      }));
+    };
+
+    // Optimistic update: move queue immediately, then sync backend.
+    persistLocalAction();
+
+    try {
+      await apiClient.post('/intelligence/alerts/action', {
+        alert_id: alertId,
+        action: actionConfig.endpoint,
+      }, { timeout: 10000 });
+
+      if (actionType !== 'ignore') {
+        try {
+          await apiClient.post('/cognition/decisions', {
+            decision_category: signal.domain || 'operational_change',
+            decision_statement: `${actionConfig.label}: ${signal.title}. ${signal.action}`,
+            affected_domains: [signal.domain || 'operations'],
+            expected_time_horizon: actionType === 'delegate' ? 14 : 30,
+            evidence_refs: signal.actionIds || [alertId],
+          }, { timeout: 10000 });
+        } catch {
+          // Non-blocking: decision record can be retried later.
+        }
+      }
+
+      toast.success(`${actionConfig.label} logged. Next decision surfaced automatically.`);
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Action saved locally. Sync will retry in background.');
+    } finally {
+      setActionLoadingKey('');
+    }
+  }, []);
+
+  const handleReopenDecision = useCallback((dedupeKey, alertId) => {
+    setActionState((prev) => {
+      const nextByKey = { ...prev.byKey };
+      const nextByAlertId = { ...prev.byAlertId };
+      delete nextByKey[dedupeKey];
+      if (alertId) delete nextByAlertId[alertId];
+      return { byKey: nextByKey, byAlertId: nextByAlertId };
+    });
+    toast.success('Decision reopened and moved back into active queue.');
+  }, []);
+
+  const handleOpenDelegateModal = useCallback(async (decision) => {
+    setDelegateModalDecision(decision);
+    const recommended = await fetchDelegateProviders();
+    await fetchDelegateOptions(recommended || 'auto');
+  }, [fetchDelegateProviders, fetchDelegateOptions]);
+
+  const handleDelegateSubmit = useCallback(async (form) => {
+    if (!delegateModalDecision) return;
+    setDelegateSubmitting(true);
+    try {
+      await apiClient.post('/workflows/delegate/execute', {
+        decision_id: delegateModalDecision.signal.id,
+        decision_title: delegateModalDecision.signal.title,
+        decision_summary: delegateModalDecision.signal.detail,
+        domain: delegateModalDecision.signal.domain,
+        severity: delegateModalDecision.signal.severity,
+        provider_preference: form.providerPreference,
+        assignee_name: form.assigneeName || null,
+        assignee_email: form.assigneeEmail || null,
+        assignee_remote_id: form.assigneeRemoteId || null,
+        due_at: form.dueAt ? new Date(form.dueAt).toISOString() : null,
+        collection_remote_id: form.collectionRemoteId || null,
+        create_calendar_event: Boolean(form.createCalendarEvent),
+      }, { timeout: 20000 });
+
+      await handleDecisionAction(delegateModalDecision, 'delegate');
+      setDelegateModalDecision(null);
+      toast.success('Delegation executed through your connected business workflow.');
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Delegation failed. Please check provider connection.');
+    } finally {
+      setDelegateSubmitting(false);
+    }
+  }, [delegateModalDecision, handleDecisionAction]);
+
+  const handleDecisionFeedback = useCallback(async (decision, helpful) => {
+    const key = decision.signal?.dedupeKey || decision.id;
+    setFeedbackByDecision((prev) => ({ ...prev, [key]: helpful ? 'helpful' : 'not-helpful' }));
+
+    try {
+      await apiClient.post('/workflows/decision-feedback', {
+        decision_key: key,
+        helpful,
+      }, { timeout: 8000 });
+    } catch {
+      // local persistence still retained for confidence UX.
+    }
+  }, []);
+
+  const exportAuditCsv = useCallback(() => {
+    if (!filteredAuditRows.length) {
+      toast.error('No audit rows match the current filter.');
+      return;
+    }
+
+    const header = ['decision', 'action', 'source', 'domain', 'timestamp'];
+    const rows = filteredAuditRows.map((row) => [
+      row.title || '',
+      row.action || '',
+      row.source || '',
+      row.domain || '',
+      row.at || '',
+    ]);
+
+    const csvContent = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'advisor-decision-audit.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [filteredAuditRows]);
+
+  const integrationTruth = overview?.integrations || cognitive?.integrations || {};
+  const connectedSources = useMemo(() => {
+    const list = [];
+    if (integrationTruth.crm) list.push('CRM');
+    if (integrationTruth.accounting) list.push('Accounting');
+    if (integrationTruth.email) list.push('Email');
+    return list;
+  }, [integrationTruth]);
+
+  const liveSignalCount = overview?.live_signal_count || cognitive?.live_signal_count || signals.length;
+  const confidenceRaw = overview?.confidence_score ?? overview?.confidence ?? cognitive?.system_state?.confidence ?? null;
+  const confidence = typeof confidenceRaw === 'number' ? Math.round(confidenceRaw <= 1 ? confidenceRaw * 100 : confidenceRaw) : null;
+  const executiveMemo = overview?.executive_memo || cognitive?.executive_memo || cognitive?.memo;
+  const migrationRequired = overview?.status === 'MIGRATION_REQUIRED';
+  const queuedBeyondThree = Math.max(openSignals.length - 3, 0);
 
   return (
     <DashboardLayout>
-      {/* First-time onboarding modal */}
-      {showOnboarding && (
-        <FirstTimeOnboarding
-          onClose={dismissOnboarding}
-          initialEmailProvider={emailConnectedProvider}
-          hasConnections={connectedIntegrations.length > 0}
-          connectedCount={connectedIntegrations.length}
-          connectedNames={connectedIntegrations.slice(0, 3).join(', ')}
-          firstName={displayName !== 'there' ? displayName : ''}
-        />
-      )}
-
-      <div className="min-h-[calc(100vh-56px)]" style={{ background: 'var(--biqc-bg)', fontFamily: fontFamily.display }} data-testid="biqc-insights-page">
-
-        {/* LOADING — Animated cognitive screen with progress bar */}
-        {loading && (
-          <>
-            <CognitiveLoadingScreen
-              mode={cacheAge === null ? 'first' : 'returning'}
-              ownerName={owner}
-            />
-            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-6" data-testid="advisor-progress-bar">
-              <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
-                <StageProgressBar stage={stage} progress={progress} startedAt={startedAt} />
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* INTELLIGENCE COVERAGE BAR — always visible once integration status loads */}
-        {!integrationLoading && integrationStatus && (
-          <div className="max-w-5xl mx-auto px-6 pt-4 flex justify-end">
-            <IntelligenceCoverageBar integrationStatus={integrationStatus} loading={integrationLoading} />
-          </div>
-        )}
-
-        {/* ERROR */}
-        {error && !loading && !cognitive && (
-          <div className="max-w-3xl mx-auto px-6 py-16">
-            <PageErrorState error={error} onRetry={resumeSnapshot} moduleName="BIQc Overview" />
-          </div>
-        )}
-
-        {/* EMPTY STATE — no data yet, no error — hide if any integration connected including email */}
-        {!loading && !cognitive && !error && integrationStatus?.total_connected === 0 && (
-          <div className="max-w-5xl mx-auto px-6 py-12">
-            <WelcomeBanner owner={displayName} />
-          </div>
-        )}
-
-        {/* MAIN CONTENT */}
-        {!loading && cognitive && (
-          <>
-            {/* STICKY HEADER */}
-            <div className="sticky top-14 z-30" style={{ background: st.bg, borderBottom: `1px solid ${st.b}` }}>
-              <div className="max-w-5xl mx-auto px-6 py-2 flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: st.d, boxShadow: `0 0 8px ${st.d}50` }} />
-                  <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: st.c, fontFamily: fontFamily.mono }}>{ST_LABELS[stateStatus] || 'On Track'}</span>
-                  {stateVelocity && <span className="text-[11px]" style={{ color: st.c }}>{stateVelocity === 'worsening' ? '↘' : stateVelocity === 'improving' ? '↗' : '→'} {stateVelocity}</span>}
-                  {stateConf && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: st.c, background: `${st.c}15`, fontFamily: fontFamily.mono }}>{typeof stateConf === 'number' ? `${stateConf}%` : stateConf}</span>}
-                </div>
-                <button onClick={refresh} disabled={refreshing} className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg hover:bg-white/5" style={{ color: '#64748B' }} data-testid="refresh-btn">
-                  <RefreshCw className="w-3 h-3" />
-                </button>
-              </div>
-              {stateInterp && <div className="max-w-5xl mx-auto px-6 pb-2"><p className="text-[12px]" style={{ color: st.c, fontFamily: fontFamily.body }}>{stateInterp}</p></div>}
+      <div
+        className="min-h-[calc(100vh-56px)]"
+        style={{
+          background: 'radial-gradient(circle at 15% -10%, rgba(249,115,22,0.15), transparent 35%), var(--biqc-bg)',
+          fontFamily: fontFamily.body,
+        }}
+        data-testid="advisor-screen"
+      >
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+          <div className="mb-8 flex flex-wrap items-start justify-between gap-4" data-testid="advisor-page-header">
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-header-kicker">
+                Today · Executive Cognition
+              </p>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-header-title">
+                Good {displayTimeOfDay}, {displayName}.
+              </h1>
+              <p className="text-sm sm:text-base" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
+                Three decisions. Clear evidence. Owner-ready actions.
+              </p>
             </div>
 
-            <div className="max-w-5xl mx-auto px-6 py-8">
-              <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-                <h1 className="text-3xl font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
-                  Good {displayTimeOfDay}, {displayName}.
-                </h1>
-                <div className="flex items-center gap-3">
-                  <DataConfidence cognitive={cognitive} />
-                </div>
+            <button
+              onClick={handleRefresh}
+              disabled={snapshotRefreshing || overviewRefreshing}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-4 py-2 text-sm transition-colors hover:bg-white/5"
+              style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text)' }}
+              data-testid="advisor-refresh-button"
+            >
+              <RefreshCw className={`h-4 w-4 ${(snapshotRefreshing || overviewRefreshing) ? 'animate-spin' : ''}`} />
+              Refresh intelligence
+            </button>
+          </div>
+
+          <div className="mb-8 space-y-3" data-testid="advisor-ia-consistency-strip">
+            <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-breadcrumbs">
+              <Link to="/advisor" className="hover:text-white" data-testid="advisor-breadcrumb-today">Today</Link>
+              <span>›</span>
+              <span data-testid="advisor-breadcrumb-current">Advisor</span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2" data-testid="advisor-context-nav-links">
+                <Link to="/market" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-context-nav-market">
+                  <Compass className="h-3.5 w-3.5" /> Market
+                </Link>
+                <Link to="/revenue" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-context-nav-revenue">
+                  <Building2 className="h-3.5 w-3.5" /> Revenue
+                </Link>
+                <Link to="/operations" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-context-nav-operations">
+                  <BriefcaseBusiness className="h-3.5 w-3.5" /> Operations
+                </Link>
               </div>
 
-              {/* STABILITY SCORE — Phase B: Key Intelligence Number */}
-              <StabilityScoreCard
-                score={stabilityScore}
-                status={stateStatus}
-                velocity={stateVelocity}
-                interpretation={stateInterp}
-                cognitionConf={cognitionConfidence}
-                indices={instabilityIndices}
-              />
-
-              {/* DAILY BRIEF CARD — Proactive intelligence */}
-              <DailyBriefCard />
-
-              {/* RISK SUGGESTIONS — Signal-driven actionable risks */}
-              <RiskSuggestions />
-
-              {/* WELCOME BANNER — shown when no integrations connected AND cognition says none */}
-              {/* Welcome banner — only show if truly no integrations at all */}
-              {connectedIntegrations.length === 0 &&
-               integrationStatus?.total_connected === 0 &&
-               (!cognitionData?.integrations?.crm && !cognitionData?.integrations?.email && !cognitionData?.integrations?.accounting) &&
-               <WelcomeBanner owner={displayName} />}
-
-              {/* DAILY SUMMARY — "What changed in 24h" */}
-              {(connectedIntegrations.length > 0 || (cognitionData?.integrations && (cognitionData.integrations.crm || cognitionData.integrations.email || cognitionData.integrations.accounting))) && <DailySummary cognitive={cognitive} />}
-
-              {/* 5 COGNITION TABS */}
-              <div className="relative mb-6">
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" data-testid="cognition-tabs" style={{ WebkitOverflowScrolling: 'touch', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-                {sortedGroups.map((g) => {
-                  const d = groupData[g.id];
-                  const isActive = activeId === g.id;
-                  const Icon = g.icon;
-                  return (
-                    <button key={g.id} onClick={() => setActiveGroup(g.id)}
-                      className="flex items-center gap-2.5 px-4 py-3 min-h-[48px] rounded-xl transition-all shrink-0"
-                      style={{ background: isActive ? g.color : '#141C26', color: isActive ? 'white' : '#9FB0C3', border: `1.5px solid ${isActive ? g.color : '#243140'}`, boxShadow: isActive ? `0 4px 16px ${g.color}30` : 'none', fontFamily: fontFamily.display }}
-                      data-testid={`tab-${g.id}`}>
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-semibold">{g.label}</span>
-                      {d.alerts > 0 && d.hasData && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: isActive ? 'rgba(255,255,255,0.25)' : SEV[d.severity].bg, color: isActive ? 'white' : SEV[d.severity].d, fontFamily: fontFamily.mono }}>{d.alerts}</span>}
-                    </button>
-                  );
-                })}
-                </div>
-                <div className="absolute right-0 top-0 bottom-2 w-8 pointer-events-none sm:hidden" style={{ background: 'linear-gradient(to right, transparent, #0F1720)' }} />
+              <div className="flex items-center gap-2" data-testid="advisor-role-personalization-control">
+                <label className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} htmlFor="advisor-role-select">View as</label>
+                <select
+                  id="advisor-role-select"
+                  value={rolePreference}
+                  onChange={(event) => setRolePreference(event.target.value)}
+                  className="rounded-xl border px-3 py-2 text-xs"
+                  style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0', fontFamily: fontFamily.mono }}
+                  data-testid="advisor-role-select"
+                >
+                  {ROLE_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>{option.label}</option>
+                  ))}
+                </select>
               </div>
+            </div>
+          </div>
 
-              {/* ACTIVE GROUP */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${group.color}15` }}>
-                    <group.icon className="w-4 h-4" style={{ color: group.color }} />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{group.label}</h2>
-                    <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{group.description}</p>
-                  </div>
-                  {gd.score > 0 && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full ml-auto" style={{ color: gd.score > 50 ? '#EF4444' : gd.score > 20 ? '#F59E0B' : '#10B981', background: (gd.score > 50 ? '#EF4444' : gd.score > 20 ? '#F59E0B' : '#10B981') + '15', fontFamily: fontFamily.mono }} data-testid="insight-score">
-                      Score: {gd.score}
-                    </span>
+          {criticalError && (
+            <div
+              className="mb-8 rounded-2xl border px-4 py-3 text-sm"
+              style={{ borderColor: '#F59E0B60', background: '#F59E0B15', color: '#FDE68A' }}
+              data-testid="advisor-critical-error"
+            >
+              Live cognition feed is delayed right now. Showing fallback executive decisions while BIQc reconnects.
+            </div>
+          )}
+
+          {migrationRequired && (
+            <div
+              className="mb-8 rounded-2xl border px-4 py-3 text-sm"
+              style={{ borderColor: '#F59E0B60', background: '#F59E0B15', color: '#FDE68A' }}
+              data-testid="advisor-migration-warning"
+            >
+              Cognition migration is required for full contract output. Snapshot-backed decisions are still active.
+            </div>
+          )}
+
+          {isLoading && (
+            <div className="space-y-4" data-testid="advisor-loading-state">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="h-28 animate-pulse rounded-2xl" style={{ background: '#111827', border: '1px solid #1F2937' }} data-testid={`advisor-loading-skeleton-${item}`} />
+              ))}
+            </div>
+          )}
+
+          {!isLoading && (
+            <>
+              <section className="mb-8 grid gap-3 md:grid-cols-3" data-testid="advisor-top-metrics">
+                <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-state-card">
+                  <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
+                  <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{getStateLabel(overview, cognitive)}</p>
+                </div>
+                <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-signals-card">
+                  <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-signals-label">Live Signals</p>
+                  <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-signals-value">{liveSignalCount} active</p>
+                </div>
+                <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-coverage-card">
+                  <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-coverage-label">Connected Sources</p>
+                  <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-coverage-value">
+                    {connectedSources.length > 0 ? connectedSources.join(' · ') : 'None connected'}
+                  </p>
+                  {confidence !== null && (
+                    <p className="mt-1 text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-confidence-value">Confidence {confidence}%</p>
                   )}
                 </div>
+              </section>
 
-                <InsightExplainabilityStrip
-                  whyVisible={explainability.whyVisible}
-                  whyNow={explainability.whyNow}
-                  nextAction={explainability.nextAction}
-                  ifIgnored={explainability.ifIgnored}
-                  testIdPrefix={`advisor-${activeId}-explainability`}
-                />
+              <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-queue-status-section">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-status-label">
+                      Decision Queue Status
+                    </p>
+                    <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-queue-status-value">
+                      {openSignals.length} open signal{openSignals.length === 1 ? '' : 's'} · showing top 3 executive decisions now.
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-queue-backlog-count">
+                      {queuedBeyondThree}
+                    </p>
+                    <p className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-backlog-label">Queued after top 3</p>
+                  </div>
+                </div>
+              </section>
 
-                <ActionOwnershipCard
-                  title={`${group.label} owner action plan`}
-                  owner={actionOwnership.owner}
-                  deadline={actionOwnership.deadline}
-                  checkpoint={actionOwnership.checkpoint}
-                  successMetric={actionOwnership.successMetric}
-                  testIdPrefix={`advisor-${activeId}-action-ownership`}
-                />
+              <section className="mb-8" data-testid="advisor-provider-health-section">
+                <div className="mb-3 flex items-center gap-2">
+                  <Radar className="h-4 w-4 text-[#3B82F6]" />
+                  <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-provider-health-title">
+                    Delegate Provider Health
+                  </h2>
+                </div>
 
-                {/* Show integration-required state if tab needs unconnected integration */}
-                {!isTabConnected && !gd.hasData ? (
-                  <IntegrationRequired
-                    groupId={activeId}
-                    color={group.color}
-                    integrationStatus={integrationStatus}
-                    integrationLoading={integrationLoading}
-                    integrationSyncing={integrationSyncing}
-                    onRefresh={refreshIntegrations}
-                  />
+                <div className="grid gap-3 md:grid-cols-3" data-testid="advisor-provider-health-grid">
+                  <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-provider-health-ticketing-card">
+                    <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-ticketing-label">
+                      Jira / Asana via Merge
+                    </p>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-provider-health-ticketing-value">
+                      {!delegateProviderHealthLoaded
+                        ? 'Status unavailable'
+                        : (delegateProviderHealth.ticketing_provider ? `Connected: ${delegateProviderHealth.ticketing_provider}` : 'Not connected')}
+                    </p>
+                    {delegateProviderHealthLoaded && !delegateProviderHealth.ticketing_provider && (
+                      <Link
+                        to="/integrations"
+                        className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                        data-testid="advisor-provider-health-ticketing-connect-cta"
+                      >
+                        Connect Merge Ticketing
+                      </Link>
+                    )}
+                  </article>
+
+                  <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-provider-health-outlook-card">
+                    <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-outlook-label">
+                      Outlook / Exchange
+                    </p>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-provider-health-outlook-value">
+                      {!delegateProviderHealthLoaded
+                        ? 'Status unavailable'
+                        : (delegateProviderHealth.outlook_exchange
+                          ? 'Ready for delegation'
+                          : delegateProviderHealth.outlook_connected
+                            ? 'Connected but token refresh required'
+                            : 'Not connected')}
+                    </p>
+                    {delegateProviderHealthLoaded && delegateProviderHealth.outlook_expires_at && (
+                      <p className="mt-1 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-outlook-expiry">
+                        Token expiry: {formatTime(delegateProviderHealth.outlook_expires_at)}
+                      </p>
+                    )}
+                    {delegateProviderHealthLoaded && !delegateProviderHealth.outlook_exchange && (
+                      <Link
+                        to="/connect-email"
+                        className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                        data-testid="advisor-provider-health-outlook-reconnect-cta"
+                      >
+                        Reconnect Outlook
+                      </Link>
+                    )}
+                  </article>
+
+                  <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-provider-health-google-card">
+                    <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-google-label">
+                      Google Calendar
+                    </p>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-provider-health-google-value">
+                      {!delegateProviderHealthLoaded
+                        ? 'Status unavailable'
+                        : (delegateProviderHealth.google_workspace
+                          ? 'Ready for delegation'
+                          : delegateProviderHealth.gmail_connected
+                            ? 'Connected but token refresh required'
+                            : 'Not connected')}
+                    </p>
+                    {delegateProviderHealthLoaded && !delegateProviderHealth.google_workspace && (
+                      <Link
+                        to="/connect-email"
+                        className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                        data-testid="advisor-provider-health-google-connect-cta"
+                      >
+                        Connect Google
+                      </Link>
+                    )}
+                  </article>
+                </div>
+              </section>
+
+              <section className="mb-10" data-testid="advisor-conflict-resolver-section">
+                <div className="mb-4 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-[#F59E0B]" />
+                  <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-conflict-resolver-title">
+                    Conflict Resolver
+                  </h2>
+                </div>
+
+                {conflicts.length > 0 ? (
+                  <div className="space-y-3" data-testid="advisor-conflict-list">
+                    {conflicts.slice(0, 3).map((conflict) => (
+                      <article
+                        key={conflict.id}
+                        className="rounded-2xl border p-4"
+                        style={{ borderColor: '#F59E0B50', background: '#F59E0B10' }}
+                        data-testid={`advisor-conflict-item-${conflict.id.replace(/\|/g, '-')}`}
+                      >
+                        <p className="text-xs uppercase tracking-[0.12em]" style={{ color: '#FCD34D', fontFamily: fontFamily.mono }} data-testid={`advisor-conflict-domain-${conflict.id.replace(/\|/g, '-')}`}>
+                          Domain · {conflict.domain}
+                        </p>
+                        <p className="mt-2 text-sm" style={{ color: '#FDE68A' }} data-testid={`advisor-conflict-summary-${conflict.id.replace(/\|/g, '-')}`}>
+                          Conflicting guidance detected between “{conflict.left.title}” and “{conflict.right.title}”.
+                        </p>
+                        <p className="mt-2 text-sm" style={{ color: '#FDE68A' }} data-testid={`advisor-conflict-recommendation-${conflict.id.replace(/\|/g, '-')}`}>
+                          Recommended priority: {conflict.recommendation}
+                        </p>
+                        <Link
+                          to="/war-room"
+                          className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-black/10"
+                          style={{ borderColor: '#F59E0B60', color: '#FDE68A', fontFamily: fontFamily.mono }}
+                          data-testid={`advisor-conflict-open-war-room-${conflict.id.replace(/\|/g, '-')}`}
+                        >
+                          Resolve conflict in War Room <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
                 ) : (
-                  <>
-                    {/* AI Insight */}
-                    {gd.insight ? (
-                      <Card className="p-5"><p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{gd.insight}</p></Card>
-                    ) : (
-                      <Card className="p-5"><p className="text-sm" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
-                        {gd.hasData ? 'Insufficient data to generate insight.' : 'No active signals detected. Connect relevant integrations to activate monitoring.'}
-                      </p></Card>
-                    )}
+                  <div className="rounded-2xl border p-4 text-sm" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)' }} data-testid="advisor-conflict-empty-state">
+                    No conflicting action directions detected in current high-priority signals.
+                  </div>
+                )}
+              </section>
 
-                    {/* Tab Metrics — from cognitive snapshot */}
-                    {gd.metrics.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {gd.metrics.map((m, i) => (
-                          <Card key={i} className="p-4">
-                            <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
-                            <span className="text-lg font-bold block" style={{ color: m.color, fontFamily: fontFamily.mono }}>{m.value}</span>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
+              <section className="mb-10" data-testid="advisor-decision-surface">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-decision-title">
+                    Three-Decision Executive Surface
+                  </h2>
+                  <Link
+                    to="/alerts"
+                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                    style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                    data-testid="advisor-view-alerts-link"
+                  >
+                    View full signal inbox <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
 
-                    {/* Tab-specific detail panels */}
-                    {activeId === 'revenue' && gd.details?.deals?.length > 0 && (
-                      <div>
-                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Deal Pipeline</h3>
-                        <div className="space-y-2">
-                          {gd.details.deals.slice(0, 5).map((d, i) => (
-                            <Card key={i} className="p-4 flex items-center justify-between">
-                              <div>
-                                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{d.name}</span>
-                                {d.stall > 0 && <span className="text-[10px] ml-2" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{d.stall}d stalled</span>}
-                              </div>
-                              <div className="text-right">
-                                {d.value != null && <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>${d.value}K</span>}
-                                {d.prob != null && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>{d.prob}% prob</span>}
-                              </div>
-                            </Card>
-                          ))}
+                <div className="grid gap-4 lg:grid-cols-3" data-testid="advisor-decision-grid">
+                  {decisions.map((decision, index) => {
+                    const Icon = decision.icon;
+                    const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;
+                    const signal = decision.signal;
+                    const actionRecord = actionState.byKey?.[signal.dedupeKey];
+                    const feedbackState = feedbackByDecision[signal.dedupeKey];
+                    const projections = buildProjections(signal);
+
+                    return (
+                      <article
+                        key={decision.id}
+                        className="rounded-2xl border p-5"
+                        style={{ borderColor: style.border, background: 'var(--biqc-bg-card)' }}
+                        data-testid={`advisor-decision-card-${decision.id}`}
+                      >
+                        <div className="mb-4 flex items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em]" style={{ background: style.bg, color: style.text, fontFamily: fontFamily.mono }} data-testid={`advisor-decision-slot-${decision.id}`}>
+                            <Icon className="h-3 w-3" />
+                            {decision.title}
+                          </span>
+                          <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-severity-${decision.id}`}>
+                            {decision.severity}
+                          </span>
                         </div>
-                      </div>
-                    )}
 
-                    {activeId === 'money' && gd.details && (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {[
-                          gd.details.best && { label: 'Best Case (30d)', value: gd.details.best, color: '#10B981' },
-                          gd.details.base && { label: 'Base Case (30d)', value: gd.details.base, color: '#F59E0B' },
-                          gd.details.worst && { label: 'Worst Case (30d)', value: gd.details.worst, color: '#EF4444' },
-                        ].filter(Boolean).map((s, i) => (
-                          <Card key={i} className="p-4">
-                            <span className="text-[10px] font-semibold block mb-1" style={{ color: s.color, fontFamily: fontFamily.mono }}>{s.label}</span>
-                            <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{s.value}</p>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
+                        <p className="mb-1 text-sm" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-intent-${decision.id}`}>
+                          {decision.intent}
+                        </p>
+                        <h3 className="mb-3 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>
+                          {signal.title}
+                        </h3>
 
-                    {activeId === 'operations' && gd.details?.recs?.length > 0 && (
-                      <div>
-                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Recommendations</h3>
-                        <div className="space-y-2">
-                          {gd.details.recs.map((r, i) => (
-                            <Card key={i} className="p-4">
-                              <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{r}</p>
-                            </Card>
-                          ))}
+                        <SourceProvenanceBadge
+                          source={signal.source}
+                          signalType={signal.signalType}
+                          timestamp={signal.createdAt}
+                          testId={`advisor-provenance-${decision.id}`}
+                        />
+
+                        <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
+                          <p data-testid={`advisor-decision-why-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Why now:</strong> {decision.whyNow}</p>
+                          <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal.ifIgnored}</p>
+                          <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal.action}</p>
                         </div>
-                      </div>
-                    )}
 
-                    {activeId === 'people' && gd.details && (
-                      <div className="space-y-3">
-                        {gd.details.calendar && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Calendar</span><p className="text-sm text-[#9FB0C3]">{gd.details.calendar}</p></Card>}
-                        {gd.details.email_stress && <Card className="p-4"><span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Email Stress</span><p className="text-sm text-[#9FB0C3]">{gd.details.email_stress}</p></Card>}
-                      </div>
-                    )}
-
-                    {activeId === 'market' && gd.details?.competitors?.length > 0 && (
-                      <div>
-                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Competitor Signals</h3>
-                        <div className="space-y-2">
-                          {gd.details.competitors.map((comp, i) => (
-                            <Card key={i} className="p-4 flex items-start gap-3">
-                              <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#7C3AED' }} />
-                              <div>
-                                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{comp.name}</span>
-                                <p className="text-xs text-[#9FB0C3] mt-0.5">{comp.signal}</p>
-                              </div>
-                            </Card>
-                          ))}
+                        <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-projection-${decision.id}`}>
+                          <p data-testid={`advisor-decision-projection-title-${decision.id}`}><strong>30/60/90 outlook</strong></p>
+                          <p data-testid={`advisor-decision-projection-ignored-${decision.id}`}>If ignored → risk {projections.ignored[0]}% / {projections.ignored[1]}% / {projections.ignored[2]}%</p>
+                          <p data-testid={`advisor-decision-projection-actioned-${decision.id}`}>If actioned → risk {projections.actioned[0]}% / {projections.actioned[1]}% / {projections.actioned[2]}%</p>
                         </div>
-                      </div>
-                    )}
 
-                    {/* Resolution Items */}
-                    {gd.resolutions.length > 0 ? (
-                      <div>
-                        <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Needs Attention</h3>
-                        <div className="space-y-3">
-                          {gd.resolutions.map((item, i) => {
-                            const sv = SEV[item.severity] || SEV.medium;
+                        <div className="mt-4 flex flex-wrap gap-2" data-testid={`advisor-decision-actions-${decision.id}`}>
+                          {Object.entries(DECISION_ACTIONS).map(([actionType, config]) => {
+                            const ActionIcon = config.icon;
+                            const loadingThisAction = actionLoadingKey === `${decision.id}-${actionType}`;
+
                             return (
-                              <div key={i} className="rounded-2xl p-5" style={{ background: sv.bg, border: `1px solid ${sv.b}` }}>
-                                <div className="flex items-start gap-3">
-                                  <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
-                                  <div className="flex-1">
-                                    <p className="text-sm font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{item.title}</p>
-                                    {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{item.detail}</p>}
-                                    <ActionBar actions={item.actions || ["hand-off", "dismiss"]} />
-                                  </div>
-                                </div>
-                              </div>
+                              <button
+                                key={actionType}
+                                onClick={() => {
+                                  if (actionType === 'delegate') {
+                                    handleOpenDelegateModal(decision);
+                                    return;
+                                  }
+                                  handleDecisionAction(decision, actionType);
+                                }}
+                                disabled={loadingThisAction || Boolean(actionRecord)}
+                                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                                style={{
+                                  background: config.style.bg,
+                                  borderColor: config.style.border,
+                                  color: config.style.text,
+                                  fontFamily: fontFamily.mono,
+                                }}
+                                data-testid={`advisor-decision-${actionType}-${decision.id}`}
+                              >
+                                <ActionIcon className="h-3.5 w-3.5" />
+                                {actionType === 'delegate'
+                                  ? 'Delegate'
+                                  : (loadingThisAction ? 'Saving...' : config.label)}
+                              </button>
                             );
                           })}
                         </div>
-                      </div>
-                    ) : (
-                      !gd.hasData ? null : <Card className="p-6 text-center"><p className="text-sm" style={{ color: '#64748B', fontFamily: fontFamily.body }}>No items need attention right now. All clear.</p></Card>
-                    )}
-                  </>
-                )}
 
-                {/* Alignment Gaps — only if from real data */}
-                {isTabConnected && (alignment || contradictions.length > 0) && (
-                  <div>
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Alignment</h3>
-                    {alignment && <Card className="p-5 mb-3"><p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{alignment}</p></Card>}
-                    {contradictions.map((ct, i) => (<div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#F59E0B10', border: '1px solid #F59E0B25' }}><p className="text-xs" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>&#x26A0; {ct}</p></div>))}
-                  </div>
-                )}
-              </div>
+                        {actionRecord && (
+                          <div className="mt-3 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-action-record-${decision.id}`}>
+                            Last action: {actionRecord.action} · {formatTime(actionRecord.at)}
+                          </div>
+                        )}
 
-              {/* PROPAGATION MAP — Phase B: shows risk chain when cognition deployed */}
-              {propagationMap && propagationMap.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Risk Propagation</h3>
-                  <div className="space-y-2">
-                    {propagationMap.slice(0, 3).map((chain, i) => (
-                      <Card key={i} className="p-4">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {(chain.chain || [chain.source, chain.target]).filter(Boolean).map((node, ni, arr) => (
-                            <React.Fragment key={ni}>
-                              <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>{node}</span>
-                              {ni < arr.length - 1 && <span className="text-[10px]" style={{ color: '#64748B' }}>→</span>}
-                            </React.Fragment>
-                          ))}
-                          {chain.probability && <span className="text-[10px] ml-2" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{Math.round(chain.probability * 100)}% likelihood</span>}
+                        <button
+                          onClick={() => setEvidenceDrawerDecision(decision)}
+                          className="mt-3 inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                          data-testid={`advisor-decision-evidence-toggle-${decision.id}`}
+                        >
+                          View full context
+                        </button>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2" data-testid={`advisor-decision-feedback-${decision.id}`}>
+                          <span className="text-[10px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-feedback-label-${decision.id}`}>
+                            Helpful?
+                          </span>
+                          <button
+                            onClick={() => handleDecisionFeedback(decision, true)}
+                            className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px]"
+                            style={{
+                              borderColor: feedbackState === 'helpful' ? '#10B98160' : '#334155',
+                              color: feedbackState === 'helpful' ? '#86EFAC' : '#CBD5E1',
+                              background: feedbackState === 'helpful' ? '#10B98115' : '#0F172A',
+                              fontFamily: fontFamily.mono,
+                            }}
+                            data-testid={`advisor-decision-feedback-yes-${decision.id}`}
+                          >
+                            <ThumbsUp className="h-3 w-3" /> Yes
+                          </button>
+                          <button
+                            onClick={() => handleDecisionFeedback(decision, false)}
+                            className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px]"
+                            style={{
+                              borderColor: feedbackState === 'not-helpful' ? '#EF444460' : '#334155',
+                              color: feedbackState === 'not-helpful' ? '#FCA5A5' : '#CBD5E1',
+                              background: feedbackState === 'not-helpful' ? '#EF444415' : '#0F172A',
+                              fontFamily: fontFamily.mono,
+                            }}
+                            data-testid={`advisor-decision-feedback-no-${decision.id}`}
+                          >
+                            <ThumbsDown className="h-3 w-3" /> No
+                          </button>
                         </div>
-                        {chain.description && <p className="text-xs mt-2" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{chain.description}</p>}
-                      </Card>
+
+                        <Link
+                          to="/soundboard"
+                          className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                          data-testid={`advisor-decision-open-soundboard-${decision.id}`}
+                        >
+                          Open in SoundBoard <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+
+                        {signal.occurrences > 1 && (
+                          <p className="mt-3 text-xs" style={{ color: '#FCD34D', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-dedupe-note-${decision.id}`}>
+                            Deduplicated {signal.occurrences} repeated signals into one decision.
+                          </p>
+                        )}
+
+                        {index === 2 && queuedBeyondThree > 0 && (
+                          <p className="mt-3 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-next-up-indicator">
+                            Next up automatically after action: {queuedBeyondThree} queued signal{queuedBeyondThree === 1 ? '' : 's'}.
+                          </p>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section className="mb-10" data-testid="advisor-action-audit-section">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Clock3 className="h-4 w-4 text-[#3B82F6]" />
+                    <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-action-audit-title">
+                      Decision Action Audit
+                    </h2>
+                  </div>
+
+                  <button
+                    onClick={exportAuditCsv}
+                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                    style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                    data-testid="advisor-action-audit-export-button"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Export CSV
+                  </button>
+                </div>
+
+                <div className="mb-3 flex flex-wrap gap-2" data-testid="advisor-action-audit-filters">
+                  <select
+                    value={auditActionFilter}
+                    onChange={(event) => setAuditActionFilter(event.target.value)}
+                    className="rounded-xl border px-3 py-2 text-xs"
+                    style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0', fontFamily: fontFamily.mono }}
+                    data-testid="advisor-action-audit-action-filter"
+                  >
+                    <option value="all">All actions</option>
+                    <option value="complete">Resolved</option>
+                    <option value="hand-off">Delegated</option>
+                    <option value="ignore">Ignored</option>
+                  </select>
+
+                  <div className="flex items-center gap-1 rounded-xl border px-3 py-2" style={{ borderColor: '#334155', background: '#0F172A' }}>
+                    <Search className="h-3.5 w-3.5 text-[#94A3B8]" />
+                    <input
+                      value={auditSearch}
+                      onChange={(event) => setAuditSearch(event.target.value)}
+                      placeholder="Search decision, source, domain"
+                      className="w-56 bg-transparent text-xs outline-none"
+                      style={{ color: '#E2E8F0', fontFamily: fontFamily.mono }}
+                      data-testid="advisor-action-audit-search-input"
+                    />
+                  </div>
+                </div>
+
+                {!actionsHydrated ? (
+                  <div className="rounded-2xl border p-4 text-sm" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)' }} data-testid="advisor-action-audit-loading">
+                    Loading decision action history...
+                  </div>
+                ) : filteredAuditRows.length === 0 ? (
+                  <div className="rounded-2xl border p-4 text-sm" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)' }} data-testid="advisor-action-audit-empty">
+                    No recorded actions yet. Resolve, delegate, or ignore a decision to start the audit trail.
+                  </div>
+                ) : (
+                  <div className="space-y-2" data-testid="advisor-action-audit-list">
+                    {filteredAuditRows.map((row) => (
+                      <div key={row.dedupeKey} className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid={`advisor-action-audit-row-${row.dedupeKey.replace(/\|/g, '-')}`}>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm" style={{ color: 'var(--biqc-text)' }} data-testid={`advisor-action-audit-row-title-${row.dedupeKey.replace(/\|/g, '-')}`}>
+                            {row.title}
+                          </p>
+                          <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-action-audit-row-meta-${row.dedupeKey.replace(/\|/g, '-')}`}>
+                            {row.action} · {formatTime(row.at)}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <p className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-action-audit-row-source-${row.dedupeKey.replace(/\|/g, '-')}`}>
+                            {row.source} · {row.domain}
+                          </p>
+                          <button
+                            onClick={() => handleReopenDecision(row.dedupeKey, row.alertId)}
+                            className="inline-flex min-h-[36px] items-center rounded-lg border px-2.5 py-1 text-[10px] hover:bg-white/5"
+                            style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                            data-testid={`advisor-action-audit-row-reopen-${row.dedupeKey.replace(/\|/g, '-')}`}
+                          >
+                            Reopen
+                          </button>
+                        </div>
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
+              </section>
 
-              {/* WEEKLY BRIEF — only show if integrations provide real data */}
-              {connectedIntegrations.length > 0 && (wb.cashflow_recovered || wb.hours_saved || wb.actions_taken) && (
-                <div className="mt-8 mb-4">
-                  <Card className="p-0 overflow-hidden">
-                    <button onClick={() => setBriefOpen(!briefOpen)} className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors">
-                      <div className="flex items-center gap-1 sm:gap-6 flex-wrap">
-                        <span className="text-[10px] font-semibold tracking-widest uppercase mr-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>This Week</span>
-                        {wb.cashflow_recovered && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#FF6A00', fontFamily: fontFamily.display }}>${(wb.cashflow_recovered || 0).toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>recovered</span></div>}
-                        {wb.hours_saved && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#10B981', fontFamily: fontFamily.display }}>{wb.hours_saved}h</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>saved</span></div>}
-                        {wb.actions_taken && <div className="text-left"><span className="text-xl font-bold" style={{ color: '#3B82F6', fontFamily: fontFamily.display }}>{wb.actions_taken}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>actions</span></div>}
+              <section className="mb-10" data-testid="advisor-signal-inbox-section">
+                <div className="mb-4 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-[#F59E0B]" />
+                  <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-signal-inbox-title">
+                    Signal Inbox (Deduplicated)
+                  </h2>
+                </div>
+
+                <div className="space-y-3" data-testid="advisor-signal-inbox-list">
+                  {prioritizedSignals.slice(0, 8).map((signal) => (
+                    <div key={`${signal.id}-${signal.signalType}`} className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid={`advisor-signal-row-${signal.signalType}`}>
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <h3 className="text-base" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-signal-title-${signal.signalType}`}>{signal.title}</h3>
+                        {signal.occurrences > 1 && (
+                          <span className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: '#1E293B', color: '#E2E8F0', fontFamily: fontFamily.mono }} data-testid={`advisor-signal-duplicates-${signal.signalType}`}>
+                            x{signal.occurrences}
+                          </span>
+                        )}
                       </div>
-                      {briefOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
-                    </button>
-                    {briefOpen && (
-                      <div className="px-6 pb-5 pt-2 space-y-2" style={{ borderTop: '1px solid var(--biqc-border)' }}>
-                        {wb.cashflow_recovered && <p className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}><strong style={{ color: '#FF6A00' }}>Cash:</strong> Recovered ${(wb.cashflow_recovered || 0).toLocaleString()} via payment follow-ups.</p>}
-                        {wb.hours_saved && <p className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}><strong style={{ color: '#10B981' }}>Time:</strong> Handled {wb.tasks_handled || 0} tasks, saving {wb.hours_saved || 0} hours.</p>}
-                      </div>
-                    )}
-                  </Card>
+
+                      <SourceProvenanceBadge
+                        source={signal.source}
+                        signalType={signal.signalType}
+                        timestamp={signal.createdAt}
+                        testId={`advisor-signal-provenance-${signal.signalType}`}
+                      />
+
+                      <p className="mt-3 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid={`advisor-signal-detail-${signal.signalType}`}>
+                        {signal.detail}
+                      </p>
+                    </div>
+                  ))}
+
+                  {openSignals.length === 0 && (
+                    <div className="rounded-2xl border p-5 text-sm" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)' }} data-testid="advisor-signal-empty-state">
+                      All active signals are currently actioned. New decisions will appear automatically when fresh signals arrive.
+                    </div>
+                  )}
                 </div>
+              </section>
+
+              {executiveMemo && (
+                <section className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-executive-memo-section">
+                  <h2 className="mb-3 text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-executive-memo-title">
+                    Executive Memo
+                  </h2>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-executive-memo-content">
+                    {executiveMemo}
+                  </p>
+                </section>
               )}
 
-              {/* Connect integrations prompt if nothing connected */}
-              {connectedIntegrations.length === 0 && !loading && (
-                <div className="mt-8 mb-4">
-                  <Card className="p-6 text-center">
-                    <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Connect your business tools</p>
-                    <p className="text-xs text-[#64748B] mb-4 max-w-lg mx-auto">Connect your CRM, accounting, and email integrations to unlock verified intelligence across all modules.</p>
-                    <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="overview-connect-cta">
-                      <Plug className="w-4 h-4" /> Connect Integrations
-                    </a>
-                  </Card>
-                </div>
-              )}
+              <DelegateActionModal
+                open={Boolean(delegateModalDecision)}
+                decision={delegateModalDecision}
+                providers={delegateProviders}
+                providerOptions={delegateProviderOptions}
+                optionsLoading={delegateOptionsLoading}
+                submitting={delegateSubmitting}
+                onClose={() => setDelegateModalDecision(null)}
+                onProviderChange={fetchDelegateOptions}
+                onSubmit={handleDelegateSubmit}
+              />
 
-              {/* EXECUTIVE MEMO */}
-              {memo && (
-                <div className="mb-8">
-                  <button onClick={() => setMemoOpen(!memoOpen)} className="flex items-center justify-between w-full mb-3">
-                    <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Executive Memo</h3>
-                    {memoOpen ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
-                  </button>
-                  {memoOpen && <Card className="p-8"><p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>{memo}</p></Card>}
-                </div>
-              )}
+              <EvidenceDrawer
+                open={Boolean(evidenceDrawerDecision)}
+                decision={evidenceDrawerDecision}
+                onClose={() => setEvidenceDrawerDecision(null)}
+              />
+            </>
+          )}
 
-              {/* Sources */}
-              {sources && sources.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-4 pb-8" style={{ borderTop: '1px solid var(--biqc-border)' }}>
-                  <span className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>
-                  {sources.map((s, i) => (<span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', fontFamily: fontFamily.mono }}>{s}</span>))}
-                </div>
-              )}
-            </div>
-          </>
-        )}
+          {!isLoading && !hasData && !criticalError && null}
+        </div>
       </div>
     </DashboardLayout>
   );
-};
-
-export default AdvisorWatchtower;
+}

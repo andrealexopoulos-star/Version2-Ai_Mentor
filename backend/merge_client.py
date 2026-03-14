@@ -306,6 +306,63 @@ class MergeClient:
             params=params
         )
 
+    # ==================== TICKETING ENDPOINTS ====================
+
+    async def get_ticketing_users(
+        self,
+        account_token: str,
+        cursor: Optional[str] = None,
+        page_size: int = 100
+    ) -> Dict[str, Any]:
+        """
+        Get ticketing users from Merge Unified API (Jira, Asana, etc).
+        """
+        params = {"page_size": page_size}
+        if cursor:
+            params["cursor"] = cursor
+
+        return await self._make_request(
+            "GET",
+            "/ticketing/v1/users",
+            account_token,
+            params=params,
+        )
+
+    async def get_ticketing_collections(
+        self,
+        account_token: str,
+        cursor: Optional[str] = None,
+        page_size: int = 100
+    ) -> Dict[str, Any]:
+        """
+        Get ticketing collections (projects/boards) from Merge Unified API.
+        """
+        params = {"page_size": page_size}
+        if cursor:
+            params["cursor"] = cursor
+
+        return await self._make_request(
+            "GET",
+            "/ticketing/v1/collections",
+            account_token,
+            params=params,
+        )
+
+    async def create_ticket(
+        self,
+        account_token: str,
+        model: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Create ticket/task through Merge ticketing Unified API.
+        """
+        return await self._make_request(
+            "POST",
+            "/ticketing/v1/tickets",
+            account_token,
+            json={"model": model},
+        )
+
 
     # ==================== ACCOUNTING ENDPOINTS ====================
     
