@@ -102,32 +102,42 @@ async def _get_ticketing_integration(user_id: str) -> Optional[Dict[str, Any]]:
 
 
 async def _get_outlook_access_token(user_id: str) -> Optional[str]:
-    def _is_valid_expiry(expires_at_value: Optional[str]) -> bool:
+    from routes.email import get_outlook_tokens, refresh_outlook_token_supabase
+
+    try:
+        tokens = await get_outlook_tokens(user_id)
+        if not tokens:
+            return None
+
+        access_token = tokens.get("access_token")
+        refresh_token = tokens.get("refresh_token")
+        expires_at_value = tokens.get("expires_at")
+
+        if not access_token:
+            return None
+
+        # If no expiry is present, use token as-is.
         if not expires_at_value:
-            return True
+            return access_token
+
         try:
             expiry = datetime.fromisoformat(str(expires_at_value).replace("Z", "+00:00"))
-            return expiry > datetime.now(timezone.utc)
+            if expiry > datetime.now(timezone.utc):
+                return access_token
         except Exception:
-            return True
+            # On parse errors, fail open with current token.
+            return access_token
 
-    try:
-        outlook = get_sb().table("outlook_oauth_tokens").select("access_token, expires_at").eq("user_id", user_id).limit(1).execute()
-        if outlook.data:
-            row = outlook.data[0]
-            if _is_valid_expiry(row.get("expires_at")):
-                return row.get("access_token")
-    except Exception:
-        pass
+        # Token is expired. Attempt refresh if refresh token exists.
+        if refresh_token:
+            try:
+                refreshed = await refresh_outlook_token_supabase(user_id, refresh_token)
+                return refreshed.get("access_token")
+            except Exception as refresh_error:
+                logger.warning(f"[delegate/outlook] token refresh failed for {user_id}: {refresh_error}")
 
-    try:
-        legacy = get_sb().table("m365_tokens").select("access_token, expires_at").eq("user_id", user_id).limit(1).execute()
-        if legacy.data:
-            row = legacy.data[0]
-            if _is_valid_expiry(row.get("expires_at")):
-                return row.get("access_token")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"[delegate/outlook] token lookup failed for {user_id}: {e}")
 
     return None
 
