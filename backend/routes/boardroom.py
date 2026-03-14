@@ -115,6 +115,43 @@ def _derive_explainability(sb, user_id: str, primary_domain: str = "business", p
     return payload
 
 
+def _normalise_war_room_analysis_text(data: Dict[str, object]) -> Optional[str]:
+    analysis = data.get("analysis") if isinstance(data, dict) else None
+    if not isinstance(analysis, dict):
+        return None
+
+    title = str(analysis.get("analysis_title") or "").strip()
+    customer_insight = str(analysis.get("customer_insight") or "").strip()
+    revenue_opportunity = str(analysis.get("revenue_opportunity") or "").strip()
+
+    recommendations = [
+        str(item).strip()
+        for item in (analysis.get("recommendations") or [])
+        if str(item).strip()
+    ]
+    risks = [
+        str(item).strip()
+        for item in (analysis.get("risks_to_watch") or [])
+        if str(item).strip()
+    ]
+
+    lines: List[str] = []
+    if title:
+        lines.append(title)
+    if customer_insight:
+        lines.append(f"Situation: {customer_insight}")
+    if revenue_opportunity:
+        lines.append(f"Opportunity: {revenue_opportunity}")
+    if recommendations:
+        lines.append("Recommended actions:")
+        lines.extend([f"- {item}" for item in recommendations[:3]])
+    if risks:
+        lines.append("Risks to watch:")
+        lines.extend([f"- {item}" for item in risks[:2]])
+
+    return "\n".join(lines).strip() or None
+
+
 async def _post_with_retries(url: str, headers: Dict[str, str], payload: Dict[str, object], timeout_seconds: int = 45, retries: int = 2):
     last_error = None
     for attempt in range(1, retries + 1):
@@ -538,14 +575,23 @@ async def war_room_respond_proxy(request: Request, payload: WarRoomAskRequest):
             }
         raise HTTPException(status_code=response.status_code, detail=response.text[:500])
     data = response.json()
-    if isinstance(data, dict) and data.get("answer"):
-        data["answer"] = sanitise_output(data["answer"])
     if isinstance(data, dict):
+        if data.get("answer"):
+            data["answer"] = sanitise_output(data["answer"])
+        elif data.get("response"):
+            data["answer"] = sanitise_output(str(data.get("response")))
+        else:
+            analysis_text = _normalise_war_room_analysis_text(data)
+            if analysis_text:
+                sanitised_analysis_text = sanitise_output(analysis_text)
+                data["answer"] = sanitised_analysis_text
+                data.setdefault("response", sanitised_analysis_text)
+
         explainability = _derive_explainability(
             sb,
             user_id,
             primary_domain="war-room",
-            primary_detail=(data.get("answer") or data.get("response") or "")[:200],
+            primary_detail=(data.get("answer") or data.get("response") or ((data.get("analysis") or {}).get("analysis_title") if isinstance(data.get("analysis"), dict) else "") or "")[:200],
         )
         data.setdefault("why_visible", explainability["why_visible"])
         data.setdefault("why_now", explainability["why_now"])

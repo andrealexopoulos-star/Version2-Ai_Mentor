@@ -4,7 +4,6 @@ import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import DashboardLayout from '../components/DashboardLayout';
-import { CheckInAlerts } from '../components/CheckInAlerts';
 import { CognitiveLoadingScreen } from '../components/CognitiveLoadingScreen';
 import { Mail, MessageSquare, Users, XCircle, ChevronDown, ChevronUp, DollarSign, TrendingUp, Settings as SettingsIcon, User, Radar, RefreshCw, CheckCircle2, Plug, ArrowRight, Zap } from 'lucide-react';
 
@@ -578,9 +577,6 @@ const AdvisorWatchtower = () => {
                   <DataConfidence cognitive={cognitive} />
                 </div>
               </div>
-
-              {/* CHECK-IN ALERTS */}
-              <CheckInAlerts />
 
               {/* STABILITY SCORE — Phase B: Key Intelligence Number */}
               <StabilityScoreCard

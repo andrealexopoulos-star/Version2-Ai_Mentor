@@ -1,124 +1,84 @@
 <analysis>**original_problem_statement:**
-The user's primary goal is to build a high-performance, enterprise-grade AI Cognition-as-a-Platform called BIQc. The user has mandated that the platform must be military-grade and achieve a 10/10 rating under intense scrutiny, focusing on being user-friendly, insightful, and actionable for SMB owners in 2026 and beyond.
+The user's primary goal is to build a high-performance, enterprise-grade AI Cognition-as-a-Platform called BIQc. The platform must be military-grade, achieving a 10/10 rating under intense scrutiny. It must be user-friendly, insightful, and actionable for SMB owners.
 
 **PRODUCT REQUIREMENTS:**
--   **No Emergent Dependencies:** The platform must not use any Emergent-managed libraries or keys, relying solely on direct integrations with providers like OpenAI, Gemini, Claude, Supabase, Azure, and Google Cloud Console, using the latest and most powerful models available.
--   **Production Stability:** The production environment must be stable, with no crashes or authentication loops. Deployments must be deterministic and reliable.
--   **Admin-Controlled Rate Limiting:** Implement a rate-limiting system based on subscription tiers (monthly quotas and burst protection). A new Admin panel, visible only to , must allow for viewing and overriding these limits on a per-user basis.
--   **10/10 User Experience & Insight Quality:** All AI-generated insights must be specific, actionable, and reference data from connected integrations. The platform must clearly explain *why* data is presented and what it means. All generic content, confusing loaders, and placeholder states must be eliminated.
--   **Promise Alignment:** The platform must live up to its marketing promise: identify, interpret, and act before problems arise. This requires proactive alerting, deep causal analysis in features like the War Room and Board Room, and clear, actionable recommendations.
--   **Security Hardening:** The platform must be secure, including rate limiting, protection against prompt injection, and secure authentication (MFA).
+-   **No Emergent Dependencies:** The platform must not use any Emergent-managed libraries or keys, relying solely on direct integrations with providers like OpenAI, Gemini, and Claude, using the user's own API keys.
+-   **Production Stability:** The production environment must be stable, with no crashes or authentication loops.
+-   **Admin-Controlled Rate Limiting:** Implement a rate-limiting system based on subscription tiers, with an admin panel for overrides.
+-   **10/10 User Experience & Insight Quality:** All AI-generated insights must be specific, actionable, and data-grounded. The platform must clearly explain *why* data is presented. All generic content, confusing loaders, and placeholder states must be eliminated.
+-   **Advanced Cognition:** The platform must feature a Trinity mode, orchestrating the latest models from OpenAI, Gemini, and Anthropic to deliver superior, human-like analysis that feels like BIQc knows the user's business better than they do.
+-   **Flawless Onboarding:** The initial calibration and onboarding experience must be a 10/10 showcase of the platform's power, using the Trinity model for all new users to deliver a deep, insightful analysis of their business from a single URL.
+-   **Rigorous Testing:** The core AI features (Soundboard, War Room, Board Room) must pass a test of 60 consecutive correct, non-hallucinated, context-aware responses to complex business questions.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack platform with a React frontend, FastAPI backend, and Supabase database.
-
-In this session, the agent resolved a series of critical platform-wide regressions. After a deep audit that identified 15 shortfalls (truth fragmentation), the agent:
-1.  Fixed the backend APIs that were returning stale or incorrect data about integration statuses, leading to a cascade of UI failures.
-2.  Diagnosed and guided the user to fix a complex production deployment issue, enforcing the use of immutable Docker image SHA tags instead of  in Azure, which resolved the persistent stale frontend problem.
-3.  Patched the GitHub Actions  workflow to use  for image tagging to prevent future drift.
-4.  Resolved a recurring user calibration loop.
-5.  Began implementing a master closure checklist to elevate the platform to military-grade status. This included starting work on security hardening (rate limiting, CORS), improving UI explainability, and enhancing the executive depth of the War Room and Board Room.
-6.  Implemented the backend and initial frontend for the new Admin-controlled rate-limiting feature, as requested by the user.
+The application is a full-stack platform with a React frontend, FastAPI backend, and Supabase database. In this session, the agent integrated Anthropic and implemented a sophisticated Trinity AI model orchestrator using OpenAI, Gemini, and Anthropic in parallel. This was rolled out to premium users and to all users during the onboarding/calibration phase as requested. The agent also performed a de-branding pass to remove non-runtime references to Emergent and guided the user through securely setting API keys in Azure, Supabase, and GitHub Actions. The core of the session has been a user-directed, high-stakes forensic testing cycle on the live production environment, which has revealed several critical bugs.
 
 **Last working item**:
--   **Last item agent was working:** Implementing the comprehensive, user-requested rate-limiting system. This involved creating tier-based monthly quotas and short-term burst protection on the backend, and building a new Admin panel (visible only to ) to view and override these limits for any user. This is part of the larger military-grade hardening and cross-platform audit.
--   **Status:** IN PROGRESS
--   **Agent Testing Done:** Y (Backend endpoints for the admin controls were created and linted; frontend components were created and linted.)
--   **Which testing method agent to use?** both.
-    -   **Backend:** Use  with an admin-authenticated token to test the new endpoints for managing rate limits: , , .
-    -   **Frontend:** After deployment, the user needs to manually verify the new Admin dashboard functionality for their account. The testing agent can also be used to validate the UI components for viewing and editing user rate limits.
--   **User Testing Done:** N
+-   **Last item agent was working:** Debugging a  error to enable forensic testing of the War Room feature on the live production environment (). The user mandated a rigorous 60-question stress test, but the agent is blocked from starting it due to this authentication failure. The agent and user have been trying various  and  commands, with the last step being a custom JavaScript snippet to extract the auth token directly from .
+-   **Status:** BLOCKED
+-   **Agent Testing Done:** N (Agent is blocked from initiating the user-mandated test).
+-   **Which testing method agent to use?** Manual testing using browser console. The agent must first resolve the authentication issue using the provided JavaScript snippets. Once a single API call to  is successful, the agent must proceed with the full 60-question forensic test for Soundboard, War Room, and Board Room.
+-   **User Testing Done:** N (User is actively assisting the agent's debugging).
 
 **All Pending/In progress Issue list**:
-The agent created a master closure checklist based on a deep platform audit. All items are considered P0 by the user.
-
--   **Issue 1: Full Security & Trust Hardening (P0)**
-    -   **Description:** The platform requires further security enhancements to be considered military-grade.
+-   **Issue 1: Production AI Features Failing Forensic Test (P0)**
+    -   **Description:** The core AI features (War Room, Soundboard, Board Room) are failing the user's 60 consecutive correct answers test on production. The last full test run failed due to API key errors and  service unavailability. Two specific features are confirmed broken on production: the War Room ( error, indicating stale code) and the Calibration deep scan (). The agent is currently blocked on a  error just to begin testing the War Room.
+    -   **Attempted fixes:** The agent provided multiple PowerShell  and browser  snippets. The last script correctly identified the  key as  but failed to extract the  from within its JSON value.
     -   **Next debug checklist:**
-        1.  Implement a plan for Multi-Factor Authentication (MFA).
-        2.  Expand prompt-injection protection beyond the Board Room to all AI-input endpoints, including Supabase edge functions.
-        3.  Finalize and production-test the new rate-limiting system.
-    -   **Why fix this issue and what will be achieved with the fix?** To build trust and make the platform enterprise-ready and secure against abuse.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Both
-
--   **Issue 2: Executive Cognition Depth (War Room / Board Room) (P0)**
-    -   **Description:** The War Room and Board Room are functional but lack the deep causal analysis and so what explanations needed for an executive audience.
-    -   **Next debug checklist:**
-        1.  Rewrite the core prompts to focus on causality, cross-domain signal synthesis, and if-you-do-nothing scenarios.
-        2.  Ensure the UI clearly presents the chain of evidence behind each insight.
-    -   **Why fix this issue and what will be achieved with the fix?** To deliver on the core promise of providing high-level, decision-ready intelligence, not just data summaries.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Both
-
--   **Issue 3: SMB Explainability & Actionability Audit (P0)**
-    -   **Description:** While core data is now correct, the platform does not consistently explain insights in a way an SMB owner can understand and act upon.
-    -   **Next debug checklist:**
-        1.  Conduct a full cross-page audit (Advisor, Revenue, Operations, etc.).
-        2.  For every piece of data, ensure the UI answers: Why am I seeing this?, Why does it matter now?, and What should I do next?.
-        3.  Eliminate information overload or data duplication between pages.
-    -   **Why fix this issue and what will be achieved with the fix?** To make the platform genuinely useful and intuitive for its target audience, moving beyond a technical tool to a business partner.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Frontend
-
--   **Issue 4: Production Deployment Instability (P1)**
-    -   **Description:** The deployment process has been historically fragile, causing regressions. The agent fixed the immediate issue but the CI/CD workflow needs to be hardened.
-    -   **Next debug checklist:**
-        1.  Validate that the  changes (using ) work correctly over several deployments.
-        2.  Add a post-deploy smoke test step to the workflow to automatically verify key APIs and prevent a broken version from staying live.
-    -   **Why fix this issue and what will be achieved with the fix?** To create a reliable and predictable release process, which is critical for platform stability and user trust.
-    -   **Status:** IN PROGRESS
+        1.  In the browser console, run  to inspect the actual structure of the auth object.
+        2.  Modify the last provided JavaScript snippet to use the correct path to the  based on the inspected object.
+        3.  Once a single authenticated call to  succeeds, immediately begin the 60-question forensic test.
+        4.  Investigate and fix the  error in the calibration backend logic, likely by adding a null-check.
+    -   **Why fix this issue and what will be achieved with the fix?** This is the user's highest priority. The platform's value proposition rests on these AI features being flawless and military-grade.
+    -   **Status:** BLOCKED
     -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** N/A (DevOps)
+    -   **Should Test frontend/backend/both after fix?** Both
 
 **In progress Task List**:
--   **Task 1: Complete Admin Rate-Limiting Dashboard & System (P0)**
-    -   **Where to resume:** The backend APIs and frontend UI components are built. The next step is to fully integrate them, test the end-to-end flow (from an admin changing a limit to the backend enforcing it), and deploy.
-    -   **What will be achieved with this?** The user will have granular control over AI usage costs and user access, a key requirement for managing the platform.
+-   **Task 1: Forensic Testing & Remediation of AI Core (P0)**
+    -   **Where to resume:** In the browser console on the production site, logged in as the user. The immediate next step is to inspect the JSON structure of the  item in  and adjust the JavaScript test script to correctly extract the Bearer token.
+    -   **What will be achieved with this?** This will unblock the agent to perform the mandatory 60-question stress test on Soundboard, War Room, and Board Room, and to subsequently fix all identified bugs to meet the user's 10/10 quality standard.
     -   **Status:** IN PROGRESS
     -   **Should Test frontend/backend/both after fix?** Both
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   (P1) Finalize and deploy remaining upgraded Supabase edge functions (, ).
-    -   (P2) Implement a Forgot Password flow via Supabase Auth.
-    -   (P2) Add reCAPTCHA to sign-in/sign-up forms.
+    -   (P0) **Fix Calibration Deep Scan:** The user noted that the onboarding/calibration scan, despite being upgraded to use Trinity, still lacks detail (competitor analysis, trust signals, social handles, executive summary). This needs to be fixed alongside the  error.
+    -   (P1) **Full Cross-Page SMB Cognition Audit:** A standing user request to audit every page to ensure it answers why this data is shown, why it matters, and what to do next.
+    -   (P1) **Finalize Security & Trust Hardening:** Implement Multi-Factor Authentication (MFA) and expand prompt-injection protection.
 -   **Future Tasks:**
-    -   (P2) Improve Xero integration re-linking resilience.
-    -   (P2) Build out Coming Soon marketing integrations (Google Ads, Instagram, etc.).
-    -   (P3) Build out E-commerce integrations (Shopify, Netsuite).
-    -   (P3) Create a customer-exposed API for data access.
-    -   (P3) Build a Presentation Mode for client demos.
+    -   (P2) Improve Xero Integration re-linking resilience.
+    -   (P2) Implement a Forgot Password flow and add reCAPTCHA.
+    -   (P3) Build out marketing and E-commerce integrations (Google Ads, Shopify, etc.).
 
 **Completed work in this session**
--   **Platform-wide Audit & Stabilisation:** Audited the live platform, identified 15 critical shortfalls (truth fragmentation), and fixed the root causes.
--   **Backend Truth Fix:** Corrected multiple backend APIs (, , etc.) to return live, accurate data.
--   **Production Deployment Fix:** Resolved a critical production issue by guiding the user to pin the live frontend to an immutable SHA-based Docker image, fixing a stale UI that was causing massive confusion.
--   **CI/CD Hardening:** Patched the  file to tag images with the git SHA, a crucial step toward preventing future deployment drift.
--   **Admin Rate-Limiting Feature:** Built the backend APIs and frontend UI for a new Admin dashboard to control user-based rate limits for AI features.
--   **Initial Security Hardening:** Implemented backend rate-limiting middleware, tightened CORS policies, and added input/output sanitization to key AI routes.
--   **Regression Fixes:** Fixed a recurring user calibration loop.
--   **UX Improvements:** Improved multiple pages (Revenue, Operations, Risk) to show Verifying... states instead of false disconnected messages, and enhanced the  component to be more explanatory.
+-   **Anthropic Integration & Trinity Model Rollout:**
+    -   Integrated Anthropic as a third core LLM provider.
+    -   Implemented a  backend module to orchestrate a Trinity model, using OpenAI, Gemini, and Anthropic in parallel for superior cognitive tasks.
+    -   Deployed Trinity to Pro/Enterprise users for all AI features and to all users during the onboarding/calibration phase for a wow factor.
+-   **Soundboard UX Overhaul:**
+    -   Restored the previous multi-option model selector UI.
+    -   Removed all third-party LLM branding from the UI, reframing them as proprietary BIQc models.
+    -   Synced the functionality of the main Soundboard page with the smaller left-side panel.
+-   **Production Debugging & Guidance:**
+    -   Guided the user through securely setting API keys for all three LLMs in GitHub Actions, Azure App Service, and Supabase.
+    -   Systematically troubleshot the user's PowerShell and browser console errors during API testing.
+-   **Codebase De-Branding:**
+    -   Performed a safe refactoring pass to remove non-runtime mentions of Emergent from code comments and UI strings.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Xero Integration Re-linking Resilience**
-    -   **Debug checklist:** Investigate Merge.dev's documentation for a server-side token refresh mechanism or implement a proactive cron job to refresh tokens before they expire.
-    -   **Why to solve this issue and what will be achieved with this?** To improve UX by reducing the need for users to manually re-link their Xero account every 30 minutes.
-    -   **Should Test frontend/backend/both after fix:** Backend
+-   **Issue 1: Production Deployment Instability**
+    -   **Debug checklist:** The fact that the War Room API is failing on production with an error () that was already fixed in the codebase indicates a severe disconnect between development and deployment. The CI/CD workflow needs to be audited to ensure the latest backend code is always deployed.
+    -   **Why to solve this issue and what will be achieved with this?** To stop wasting time debugging issues that are already fixed and ensure a stable, predictable production environment.
+    -   **Should Test frontend/backend/both after fix:** Backend (DevOps).
     -   **Is recurring issue?** Y
 
 **Known issue recurrence from previous fork**
 -   **Issue recurrence in previous fork:** Production Deployment Instability.
--   **Recurrence count:** 2+
--   **Status:** IN PROGRESS (The immediate bug is fixed, but the underlying workflow is being hardened to prevent recurrence).
--   **Issue recurrence in previous fork:** Calibration Loop.
--   **Recurrence count:** 2
--   **Status:** RESOLVED
+-   **Recurrence count:** 3+
+-   **Status:** IN PROGRESS (This is a persistent, unresolved issue).
 
 **Code Architecture**
 
@@ -126,86 +86,85 @@ The agent created a master closure checklist based on a deep platform audit. All
 **Key Technical Concepts**
 -   **Full Stack:** React frontend, FastAPI (Python) backend.
 -   **Database:** Supabase (PostgreSQL).
--   **Serverless:** Supabase Edge Functions (Deno/TypeScript).
--   **Integrations:** Merge.dev, Stripe, and **direct API clients** for OpenAI, Google, and Anthropic.
+-   **Integrations:** Merge.dev, Stripe, and direct API clients for **OpenAI, Google (Gemini), and Anthropic**.
 -   **CI/CD:** GitHub Actions deploying to Azure App Service.
--   **Deployment Strategy:** Immutable deployments using specific Docker image SHA tags (not ).
--   **Security:** Admin-controlled, tier-based Rate Limiting.
+-   **AI Architecture:** **Multi-LLM Orchestration (Trinity Model)** that runs models in parallel and synthesizes a superior response, with routing based on user subscription tier.
 
 **key DB schema**
--   **user_rate_limit_overrides:**  (new table for admin overrides).
--   **ai_usage_log:**  (used to track usage against limits).
--   **users:**  (used to determine default rate limits).
+-   No changes to the DB schema were made in this session.
 
 **changes in tech stack**
--   **Architectural Shift:** A hard rule to avoid all  or platform-managed keys, relying exclusively on direct, user-provided API keys and official SDKs.
--   **Deployment Philosophy:** A strict move from  tag deployments to immutable, SHA-pinned releases to ensure production stability.
+-   **Anthropic Integration:** Anthropic is now a core, actively used LLM provider.
+-   **Multi-LLM Routing:** A sophisticated routing and orchestration layer () was built to manage calls to OpenAI, Gemini, and Anthropic based on the required task and user tier.
 
 **All files of reference**
--   : Modified to use  for deterministic image tagging.
--   : New file for the rate-limiting admin controls.
--   : New middleware for enforcing AI usage limits.
--   : New components for the rate-limiting dashboard.
--   : Updated to provide clear explanations for its status.
--   Multiple backend routes (, , ) were patched to return correct, live data.
--   Multiple frontend pages (, , , ) were patched to handle data loading states more gracefully.
+-   : New file. The brain for the multi-LLM Trinity strategy.
+-   : Modified to integrate the new .
+-   , , , : All updated to use the new Trinity model routing for enhanced cognitive power.
+-   : Updated to handle the richer data from the new calibration deep scan.
+-   : Contains the failed production forensic test results.
+-   : Contains a list of potential fixes that were likely bypassed, as requested by the user.
 
 **Areas that need refactoring**:
--   The user has requested a full, cross-page audit for SMB-friendliness and actionability. This will likely lead to significant refactoring of UI components and prompts across the entire application to meet the 10/10 standard.
+-   **Deployment Workflow:** The recurring problem of stale code on production is a critical failure point. The process needs to be audited and hardened to ensure the latest backend changes are reliably deployed, preventing the agent and user from debugging already-solved issues.
 
 **key api endpoints**
--   : View default rate limits by subscription tier.
--   : View specific limits and current usage for a user.
--   : Create or update a rate-limit override for a user.
--   : Reset a user's overrides to the tier default.
+-   : The focus of the current production debugging effort.
+-   : The endpoint for the Soundboard feature.
+-   : The endpoint for the Board Room feature.
+-   : The endpoint for the enhanced onboarding deep scan.
 
 **Critical Info for New Agent**
--   **The User's Mandate is Paramount:** Your primary directive is to achieve a 10/10, military-grade platform. This is not about just fixing bugs, but about deep improvements to user experience, explainability, and insight quality. Do not mark anything as done unless it meets this exceptionally high bar.
--   **Do Not Drop The Checklist:** You must continue executing the master closure checklist derived from the platform audit. The user has explicitly said not to miss a single item. The current focus is on Security, Executive Depth, and SMB Explainability.
--   **Admin-Only Features:** The new rate-limiting Admin panel must ONLY be visible to the user . This user account has super-user privileges.
--   **Platform is Now Stable:** The previous agent invested significant effort in stabilizing the platform's foundation (data truth and deployments). You should not have to re-fight those battles. Build upon this stable base. The focus is now on quality and depth, not just functionality.
+-   **User Mandate is Absolute:** The user's demand for a 10/10, military-grade platform and 60 consecutive correct answers is the sole priority. Do not move on until this is achieved. The user is highly technical and will scrutinize every detail.
+-   **PRODUCTION is the ONLY Testbed:** All testing must be done on the live production URL (). The user has provided credentials ( / ) and will provide fresh magic links. Preview environments are insufficient.
+-   **Immediate Blocker is Auth:** You cannot proceed until you solve the  error for the War Room API. The last step was to inspect the  item . Start there.
+-   **Stale Production Code:** Be aware that the production environment may be running older backend code than what's in the repo. An API failing for a reason you know was fixed is a strong indicator of a deployment issue.
 
 **documents and test reports created in this job**
--   
--   
--   
--   
--   
+-   : A list of potential fixes that may have been bypassed.
+-   : The report from the failed 100-question production test run.
+-   : A report verifying UI fixes in a preview environment.
+-   Multiple screenshots from the forensic testing are stored in .
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Press forward ensuring everything done is military grade - Confirms the high-quality standard.
-2.  **User:** continue - Agrees with the plan to implement admin controls and the cognition audit.
-3.  **User:** yes do not drop anything from entire plan - Re-iterates that the full master checklist is mandatory.
-4.  **User:** (explains their choice for rate limiting) - Confirms they want both monthly quotas and burst protection (Option D/A).
-5.  **User:** this is great however continue with your roadmap and also the full cross page...audit...and included a dashboard to control on my end ratelimitingl... - Greenlights the full plan and formally requests the admin rate-limiting dashboard.
-6.  **User:** proceed YOU MUST NOT MISS ONE THING THAT you mentioned - Gives the final go-ahead to execute the comprehensive master closure checklist.
-7.  **User:** Asks for clarification after reviewing the agent's audit of missing items.
-8.  **User:** lets push through all next items in parelle... - Asks to proceed with all fixes and to start a new audit on SMB-friendliness and insight quality.
-9.  **User:** Provides magic link after being told the frontend is fixed and deployed.
-10. **User:** Provides screenshots of Azure deployment and mentions the frontend creates new images, which helped diagnose the deployment drift issue.
+1.  **User:** Requests step-by-step instructions for running PowerShell commands.
+2.  **User:** Sends screenshot of running step 2.
+3.  **User:** Sends screenshot of running steps 3 & 4.
+4.  **User:** Sends screenshot of getting a  error.
+5.  **User:** States they don't know how to get the auth token.
+6.  **Agent:** Provides a JS snippet to run in the browser console that doesn't require manually getting the token.
+7.  **User:** Sends screenshot of the JS snippet also failing with a .
+8.  **Agent:** Points out the onboarding modal is still open and provides a more robust JS snippet with .
+9.  **User:** States it is keep happening and sends a screenshot showing the same  error.
+10. **Agent:** Realizes  needs a Bearer token and provides a final, comprehensive JS script to extract the token from  and make the call. The user runs it, and it fails to find the token. The next step is to inspect the  object.
 
 **Project Health Check:**
--   **Broken**: The platform is no longer in a critically broken state. Core functionality is restored. However, many pages are underperforming against the user's new 10/10 quality standard.
--   **Mocked**: None.
+-   **Broken:** Core AI features (War Room, Calibration) are confirmed to be failing on the live production server. The platform is not meeting its primary value proposition.
 
 **3rd Party Integrations**
 -   **Supabase:** Primary database, authentication, serverless functions.
--   **Merge.dev:** Unified API for CRM, accounting integrations. Requires user .
--   **Stripe:** For subscription payments. Requires user .
--   **OpenAI:** Uses user's .
--   **Google:** Uses user's .
--   **Anthropic:** Uses user's .
--   **Google OAuth & Microsoft OAuth:** For user login.
+-   **Merge.dev:** Unified API for CRM/accounting.
+-   **Stripe:** For payments.
+-   **OpenAI:** Actively used via user's .
+-   **Google (Gemini):** Actively used via user's .
+-   **Anthropic:** Actively used via user's .
 -   **STRICT NO-GO:** No  or platform-managed keys are to be used.
 
 **Testing status**
--   **Testing agent used after significant changes:** NO, but the agent performed extensive manual debugging with user assistance via  and browser console commands, which was highly effective.
+-   **Testing agent used after significant changes:** NO. The agent is performing intensive, user-directed manual forensic testing on the live production environment.
 -   **Troubleshoot agent used after agent stuck in loop:** NO.
--   **Test files created:** None.
--   **Known regressions:** The  regression was fixed. The  regression was fixed and the CI/CD workflow hardened to prevent recurrence.
+-   **Test files created:**
+    -   
+    -   
+    -   
+-   **Known regressions:**
+    -   War Room API is broken on production due to stale code.
+    -   Calibration Deep Scan is broken on production ().
 
 **Credentials to test flow:**
-The user will provide a magic link for the account  upon request. This account has admin privileges required to test new admin features.
+-   **Username:** 
+-   **Password:** 
+-   The agent should use these or request a fresh magic link for the production site to ensure a valid session.
 
 **What agent forgot to execute**
-The agent has successfully captured and started executing a comprehensive plan based on user requests and a deep audit. The key is for the next agent to maintain this momentum and not drop any of the items from the master closure checklist, especially the lower-priority but still important tasks like Forgot Password and reCAPTCHA when the time is right.</analysis>
+The agent has been following the user's high-priority demands very closely. The broader tasks from the original plan, like the full cross-page SMB actionability audit, have been necessarily postponed to address these critical, user-reported bugs in the core AI functionality. The agent should resume these once the platform is stable.</analysis>
