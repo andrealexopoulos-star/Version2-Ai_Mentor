@@ -252,19 +252,131 @@ const buildProjections = (signal) => {
   };
 };
 
-const buildDecisionSurface = (signals, overview, cognitive) => {
-  const memo = overview?.executive_memo || cognitive?.executive_memo || cognitive?.memo;
-  const fallbackSignal = toSignal({
-    signal: 'executive_priority',
-    title: overview?.priority_action || 'Set one owner-accountable action for this cycle.',
-    detail: memo || 'No critical signal currently exceeds threshold. Keep active monitoring.',
-    recommendation: 'Capture this as a tracked decision and assign a deadline.',
-    severity: 'low',
-    source: 'snapshot',
-  }, 'snapshot');
+const formatCurrency = (value) => {
+  const numeric = Number(value || 0);
+  if (!Number.isFinite(numeric)) return '$0';
+  return new Intl.NumberFormat('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
+    maximumFractionDigits: 0,
+  }).format(numeric);
+};
 
+const ageInDays = (isoDate) => {
+  if (!isoDate) return 0;
+  const parsed = new Date(isoDate);
+  if (Number.isNaN(parsed.getTime())) return 0;
+  return Math.max(0, Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24)));
+};
+
+const buildIntegrationSignals = (integrationContext) => {
+  const raw = [];
+  const deals = integrationContext?.crmDeals || [];
+  const accounting = integrationContext?.accountingSummary || {};
+  const priority = integrationContext?.priorityInbox || {};
+  const calibration = integrationContext?.calibrationStatus || {};
+
+  const openDeals = deals.filter((deal) => String(deal?.status || '').toUpperCase() === 'OPEN');
+  const stalledDeals = openDeals
+    .map((deal) => ({ ...deal, days_stalled: ageInDays(deal?.last_activity_at || deal?.created_at) }))
+    .filter((deal) => deal.days_stalled >= 14)
+    .sort((a, b) => b.days_stalled - a.days_stalled);
+
+  if (stalledDeals.length > 0) {
+    const topDeals = stalledDeals.slice(0, 3);
+    const names = topDeals.map((deal) => `${deal.name || 'Unnamed deal'} (${deal.days_stalled}d)`).join(', ');
+    raw.push(toSignal({
+      id: 'crm-stalled-deals',
+      signal: 'stalled_deals',
+      domain: 'sales',
+      severity: stalledDeals.length >= 6 ? 'high' : 'medium',
+      title: `${stalledDeals.length} HubSpot deals stalled 14+ days`,
+      detail: `Top stalled deals: ${names}.`,
+      recommendation: 'Assign deal owners and trigger follow-up workflows today.',
+      if_ignored: 'Pipeline conversion probability drops as stalled deals age without movement.',
+      source: 'hubspot',
+      created_at: topDeals[0]?.last_activity_at || null,
+    }, 'crm'));
+  }
+
+  if (openDeals.length > 0) {
+    raw.push(toSignal({
+      id: 'crm-open-pipeline',
+      signal: 'open_pipeline_pressure',
+      domain: 'revenue',
+      severity: openDeals.length >= 20 ? 'medium' : 'low',
+      title: `${openDeals.length} open opportunities in CRM`,
+      detail: `Open pipeline requires active owner updates to keep forecast reliable.`,
+      recommendation: 'Review stage progression and close-date confidence for top opportunities.',
+      if_ignored: 'Forecast confidence degrades when open opportunities are not refreshed weekly.',
+      source: 'hubspot',
+    }, 'crm'));
+  }
+
+  const metrics = accounting?.metrics || {};
+  if (accounting?.connected && Number(metrics.overdue_count || 0) > 0) {
+    raw.push(toSignal({
+      id: 'accounting-overdue-invoices',
+      signal: 'overdue_invoices',
+      domain: 'cash',
+      severity: Number(metrics.overdue_count || 0) >= 3 ? 'high' : 'medium',
+      title: `${metrics.overdue_count} overdue invoice${metrics.overdue_count === 1 ? '' : 's'} in Xero`,
+      detail: `Total overdue value ${formatCurrency(metrics.total_overdue)}. Outstanding ledger ${formatCurrency(metrics.total_outstanding)}.`,
+      recommendation: 'Launch collections sequence and escalate invoices older than terms.',
+      if_ignored: 'Working capital gets trapped and short-term runway tightens.',
+      source: 'xero',
+    }, 'accounting'));
+  }
+
+  const highPriorityEmails = priority?.analysis?.high_priority || priority?.high_priority || [];
+  if (Array.isArray(highPriorityEmails) && highPriorityEmails.length > 0) {
+    const topSubjects = highPriorityEmails
+      .slice(0, 2)
+      .map((email) => email.subject || email.reason || 'Priority thread')
+      .join(' | ');
+
+    raw.push(toSignal({
+      id: 'email-priority-inbox',
+      signal: 'priority_email_threads',
+      domain: 'communications',
+      severity: highPriorityEmails.length >= 5 ? 'high' : 'medium',
+      title: `${highPriorityEmails.length} high-priority email thread${highPriorityEmails.length === 1 ? '' : 's'}`,
+      detail: topSubjects || 'Priority inbox has unresolved time-sensitive threads.',
+      recommendation: 'Open Priority Inbox and respond to urgent customer and cash-impacting emails.',
+      if_ignored: 'Delayed responses increase churn and payment friction risk.',
+      source: 'outlook',
+    }, 'email'));
+  }
+
+  if (calibration?.status && String(calibration.status).toUpperCase() !== 'COMPLETE') {
+    raw.push(toSignal({
+      id: 'calibration-incomplete',
+      signal: 'calibration_incomplete',
+      domain: 'platform',
+      severity: 'medium',
+      title: 'Calibration is incomplete',
+      detail: `Current calibration state: ${calibration.status}.`,
+      recommendation: 'Complete calibration to unlock full executive precision and role weighting.',
+      if_ignored: 'Decision confidence and intent accuracy remain below full potential.',
+      source: 'snapshot',
+    }, 'snapshot'));
+  }
+
+  return dedupeSignals(raw);
+};
+
+const buildDecisionSurface = (signals) => {
   return DECISION_SLOTS.map((slot, index) => {
-    const signal = signals[index] || fallbackSignal;
+    const signal = signals[index] || null;
+    if (!signal) {
+      return {
+        ...slot,
+        signal: null,
+        severity: 'info',
+        whyNow: 'No verified signal currently ranks into this decision bucket.',
+      };
+    }
+
     return {
       ...slot,
       signal,
@@ -305,6 +417,16 @@ export default function AdvisorWatchtower() {
   const [watchtowerEvents, setWatchtowerEvents] = useState([]);
   const [watchtowerLoading, setWatchtowerLoading] = useState(false);
   const [watchtowerError, setWatchtowerError] = useState('');
+  const [integrationContext, setIntegrationContext] = useState({
+    mergeConnected: {},
+    crmDeals: [],
+    accountingSummary: null,
+    priorityInbox: null,
+    outlookStatus: null,
+    calibrationStatus: null,
+  });
+  const [integrationContextLoading, setIntegrationContextLoading] = useState(false);
+  const [integrationContextError, setIntegrationContextError] = useState('');
   const [actionState, setActionState] = useState({ byKey: {}, byAlertId: {} });
   const [actionsHydrated, setActionsHydrated] = useState(false);
   const [actionLoadingKey, setActionLoadingKey] = useState('');
@@ -378,6 +500,44 @@ export default function AdvisorWatchtower() {
     }
   }, []);
 
+  const fetchIntegrationContext = useCallback(async () => {
+    setIntegrationContextLoading(true);
+    setIntegrationContextError('');
+
+    try {
+      const requests = await Promise.allSettled([
+        apiClient.get('/integrations/merge/connected', { timeout: 12000 }),
+        apiClient.get('/integrations/crm/deals', { params: { page_size: 50 }, timeout: 15000 }),
+        apiClient.get('/integrations/accounting/summary', { timeout: 15000 }),
+        apiClient.get('/outlook/status', { timeout: 10000 }),
+        apiClient.get('/email/priority-inbox', { timeout: 12000 }),
+        apiClient.get('/calibration/status', { timeout: 10000 }),
+      ]);
+
+      const [mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
+
+      const mergeConnected = mergeRes.status === 'fulfilled' ? (mergeRes.value?.data?.integrations || {}) : {};
+      const crmDeals = crmRes.status === 'fulfilled' ? (crmRes.value?.data?.results || []) : [];
+      const accountingSummary = accountingRes.status === 'fulfilled' ? (accountingRes.value?.data || null) : null;
+      const outlookStatus = outlookRes.status === 'fulfilled' ? (outlookRes.value?.data || null) : null;
+      const priorityInbox = priorityRes.status === 'fulfilled' ? (priorityRes.value?.data || null) : null;
+      const calibrationStatus = calibrationRes.status === 'fulfilled' ? (calibrationRes.value?.data || null) : null;
+
+      setIntegrationContext({
+        mergeConnected,
+        crmDeals,
+        accountingSummary,
+        priorityInbox,
+        outlookStatus,
+        calibrationStatus,
+      });
+    } catch (error) {
+      setIntegrationContextError(error?.response?.data?.detail || 'Unable to load integration context.');
+    } finally {
+      setIntegrationContextLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(actionStorageKey);
@@ -432,14 +592,16 @@ export default function AdvisorWatchtower() {
   useEffect(() => {
     fetchOverview(false);
     fetchWatchtower();
+    fetchIntegrationContext();
     hydrateActionHistory();
-  }, [fetchOverview, fetchWatchtower, hydrateActionHistory]);
+  }, [fetchOverview, fetchWatchtower, fetchIntegrationContext, hydrateActionHistory]);
 
   const handleRefresh = async () => {
     await Promise.allSettled([
       refreshSnapshot(),
       fetchOverview(true),
       fetchWatchtower(),
+      fetchIntegrationContext(),
       fetchDelegateProviders(),
     ]);
   };
@@ -447,13 +609,20 @@ export default function AdvisorWatchtower() {
   const hasOverviewData = Boolean(overview);
   const hasSnapshotData = Boolean(cognitive);
   const hasWatchtowerData = (watchtowerEvents || []).length > 0;
-  const hasData = hasSnapshotData || hasOverviewData || hasWatchtowerData;
+  const hasIntegrationData = (integrationContext.crmDeals || []).length > 0
+    || Boolean(integrationContext.accountingSummary?.connected)
+    || Boolean(integrationContext.outlookStatus?.connected)
+    || Boolean(integrationContext.priorityInbox?.analysis)
+    || Boolean(integrationContext.priorityInbox?.high_priority)
+    || Boolean(integrationContext.calibrationStatus?.status);
+  const hasData = hasSnapshotData || hasOverviewData || hasWatchtowerData || hasIntegrationData;
   const isLoading = !loadingGuardExpired
     && !hasData
     && !overviewError
     && !watchtowerError
-    && (overviewLoading || watchtowerLoading);
-  const dataErrorMessage = snapshotError || overviewError || watchtowerError || '';
+    && !integrationContextError
+    && (overviewLoading || watchtowerLoading || integrationContextLoading);
+  const dataErrorMessage = snapshotError || overviewError || watchtowerError || integrationContextError || '';
   const criticalError = !isLoading && !hasData && Boolean(dataErrorMessage);
 
   useEffect(() => {
@@ -461,14 +630,17 @@ export default function AdvisorWatchtower() {
     if (hasData || overviewLoading || watchtowerLoading) return;
     fetchOverview(true);
     fetchWatchtower();
+    fetchIntegrationContext();
     hydrateActionHistory();
   }, [
     authState,
     hasData,
     overviewLoading,
     watchtowerLoading,
+    integrationContextLoading,
     fetchOverview,
     fetchWatchtower,
+    fetchIntegrationContext,
     hydrateActionHistory,
   ]);
 
@@ -488,7 +660,11 @@ export default function AdvisorWatchtower() {
     return 'evening';
   }, [timeOfDay]);
 
-  const signals = useMemo(() => buildSignals(overview, cognitive, watchtowerEvents), [overview, cognitive, watchtowerEvents]);
+  const signals = useMemo(() => {
+    const coreSignals = buildSignals(overview, cognitive, watchtowerEvents);
+    const integrationSignals = buildIntegrationSignals(integrationContext);
+    return dedupeSignals([...coreSignals, ...integrationSignals]);
+  }, [overview, cognitive, watchtowerEvents, integrationContext]);
 
   const isSignalActioned = useCallback((signal) => {
     if (actionState.byKey?.[signal.dedupeKey]) return true;
@@ -507,8 +683,8 @@ export default function AdvisorWatchtower() {
   }, [openSignals, rolePreference]);
 
   const decisions = useMemo(
-    () => buildDecisionSurface(prioritizedSignals, overview, cognitive),
-    [prioritizedSignals, overview, cognitive],
+    () => buildDecisionSurface(prioritizedSignals),
+    [prioritizedSignals],
   );
 
   const conflicts = useMemo(() => detectConflicts(prioritizedSignals), [prioritizedSignals]);
@@ -802,11 +978,41 @@ export default function AdvisorWatchtower() {
   const integrationTruth = overview?.integrations || cognitive?.integrations || {};
   const connectedSources = useMemo(() => {
     const list = [];
-    if (integrationTruth.crm) list.push('CRM');
-    if (integrationTruth.accounting) list.push('Accounting');
-    if (integrationTruth.email) list.push('Email');
-    return list;
-  }, [integrationTruth]);
+    const mergeMap = integrationContext.mergeConnected || {};
+
+    Object.values(mergeMap).forEach((entry) => {
+      if (entry?.connected && entry?.provider) list.push(entry.provider);
+    });
+
+    if (integrationContext.outlookStatus?.connected) list.push('Outlook');
+
+    if (!list.length) {
+      if (integrationTruth.crm) list.push('CRM');
+      if (integrationTruth.accounting) list.push('Accounting');
+      if (integrationTruth.email) list.push('Email');
+    }
+
+    return [...new Set(list)];
+  }, [integrationTruth, integrationContext]);
+
+  const executiveSnapshot = useMemo(() => {
+    const metrics = integrationContext.accountingSummary?.metrics || {};
+    const deals = integrationContext.crmDeals || [];
+    const openDeals = deals.filter((deal) => String(deal?.status || '').toUpperCase() === 'OPEN').length;
+    const stalledDeals = deals.filter((deal) => ageInDays(deal?.last_activity_at || deal?.created_at) >= 14).length;
+    const priority = integrationContext.priorityInbox?.analysis || integrationContext.priorityInbox || {};
+    const highPriorityEmails = (priority.high_priority || []).length;
+
+    return {
+      openDeals,
+      stalledDeals,
+      overdueCount: Number(metrics.overdue_count || 0),
+      overdueValue: Number(metrics.total_overdue || 0),
+      outstandingValue: Number(metrics.total_outstanding || 0),
+      highPriorityEmails,
+      calibrationStatus: integrationContext.calibrationStatus?.status || null,
+    };
+  }, [integrationContext]);
 
   const liveSignalCount = overview?.live_signal_count || cognitive?.live_signal_count || signals.length;
   const confidenceRaw = overview?.confidence_score ?? overview?.confidence ?? cognitive?.system_state?.confidence ?? null;
@@ -835,7 +1041,9 @@ export default function AdvisorWatchtower() {
                 Good {displayTimeOfDay}, {displayName}.
               </h1>
               <p className="text-sm sm:text-base" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
-                Three decisions. Clear evidence. Owner-ready actions.
+                {connectedSources.length > 0
+                  ? `Three decisions from ${connectedSources.join(', ')} evidence. Clear owner-ready actions.`
+                  : 'Three decision buckets are active. Connect integrations to unlock verified signals.'}
               </p>
             </div>
 
@@ -937,6 +1145,52 @@ export default function AdvisorWatchtower() {
                     <p className="mt-1 text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-confidence-value">Confidence {confidence}%</p>
                   )}
                 </div>
+              </section>
+
+              <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-executive-snapshot-section">
+                <div className="mb-3 flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-[#FF6A00]" />
+                  <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-executive-snapshot-title">
+                    Executive Snapshot (Live Integration Truth)
+                  </h2>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-4" data-testid="advisor-executive-snapshot-grid">
+                  <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-crm">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>CRM Pipeline</p>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-crm-value">
+                      {executiveSnapshot.openDeals} open · {executiveSnapshot.stalledDeals} stalled 14+d
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-cash">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Cash Exposure</p>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-cash-value">
+                      {executiveSnapshot.overdueCount} overdue · {formatCurrency(executiveSnapshot.overdueValue)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-email">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Priority Inbox</p>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-email-value">
+                      {executiveSnapshot.highPriorityEmails} high-priority threads
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-calibration">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Calibration</p>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-calibration-value">
+                      {executiveSnapshot.calibrationStatus || 'Unknown'}
+                    </p>
+                  </div>
+                </div>
+
+                {connectedSources.length === 0 && (
+                  <div className="mt-3 rounded-xl border p-3 text-sm" style={{ borderColor: '#F59E0B60', background: '#F59E0B12', color: '#FDE68A' }} data-testid="advisor-integration-onboarding-prompt">
+                    No integrations detected yet. Connect HubSpot, Xero, and Outlook to activate personalized executive signals.
+                    <Link to="/integrations" className="ml-2 underline" data-testid="advisor-integration-onboarding-link">Open Integrations</Link>
+                  </div>
+                )}
               </section>
 
               <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-queue-status-section">
@@ -1109,9 +1363,9 @@ export default function AdvisorWatchtower() {
                     const Icon = decision.icon;
                     const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;
                     const signal = decision.signal;
-                    const actionRecord = actionState.byKey?.[signal.dedupeKey];
-                    const feedbackState = feedbackByDecision[signal.dedupeKey];
-                    const projections = buildProjections(signal);
+                    const actionRecord = signal ? actionState.byKey?.[signal.dedupeKey] : null;
+                    const feedbackState = signal ? feedbackByDecision[signal.dedupeKey] : null;
+                    const projections = signal ? buildProjections(signal) : null;
 
                     return (
                       <article
@@ -1134,27 +1388,35 @@ export default function AdvisorWatchtower() {
                           {decision.intent}
                         </p>
                         <h3 className="mb-3 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>
-                          {signal.title}
+                          {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}
                         </h3>
 
-                        <SourceProvenanceBadge
-                          source={signal.source}
-                          signalType={signal.signalType}
-                          timestamp={signal.createdAt}
-                          testId={`advisor-provenance-${decision.id}`}
-                        />
+                        {signal ? (
+                          <SourceProvenanceBadge
+                            source={signal.source}
+                            signalType={signal.signalType}
+                            timestamp={signal.createdAt}
+                            testId={`advisor-provenance-${decision.id}`}
+                          />
+                        ) : (
+                          <p className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-provenance-${decision.id}`}>
+                            Waiting for verified events from connected tools.
+                          </p>
+                        )}
 
                         <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
                           <p data-testid={`advisor-decision-why-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Why now:</strong> {decision.whyNow}</p>
-                          <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal.ifIgnored}</p>
-                          <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal.action}</p>
+                          <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal ? signal.ifIgnored : 'No immediate execution risk detected in this bucket.'}</p>
+                          <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal ? signal.action : 'Trigger sync or wait for next watchtower signal.'}</p>
                         </div>
 
-                        <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-projection-${decision.id}`}>
-                          <p data-testid={`advisor-decision-projection-title-${decision.id}`}><strong>30/60/90 outlook</strong></p>
-                          <p data-testid={`advisor-decision-projection-ignored-${decision.id}`}>If ignored → risk {projections.ignored[0]}% / {projections.ignored[1]}% / {projections.ignored[2]}%</p>
-                          <p data-testid={`advisor-decision-projection-actioned-${decision.id}`}>If actioned → risk {projections.actioned[0]}% / {projections.actioned[1]}% / {projections.actioned[2]}%</p>
-                        </div>
+                        {signal && projections && (
+                          <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-projection-${decision.id}`}>
+                            <p data-testid={`advisor-decision-projection-title-${decision.id}`}><strong>30/60/90 outlook</strong></p>
+                            <p data-testid={`advisor-decision-projection-ignored-${decision.id}`}>If ignored → risk {projections.ignored[0]}% / {projections.ignored[1]}% / {projections.ignored[2]}%</p>
+                            <p data-testid={`advisor-decision-projection-actioned-${decision.id}`}>If actioned → risk {projections.actioned[0]}% / {projections.actioned[1]}% / {projections.actioned[2]}%</p>
+                          </div>
+                        )}
 
                         <div className="mt-4 flex flex-wrap gap-2" data-testid={`advisor-decision-actions-${decision.id}`}>
                           {Object.entries(DECISION_ACTIONS).map(([actionType, config]) => {
@@ -1165,13 +1427,14 @@ export default function AdvisorWatchtower() {
                               <button
                                 key={actionType}
                                 onClick={() => {
+                                  if (!signal) return;
                                   if (actionType === 'delegate') {
                                     handleOpenDelegateModal(decision);
                                     return;
                                   }
                                   handleDecisionAction(decision, actionType);
                                 }}
-                                disabled={loadingThisAction || Boolean(actionRecord)}
+                                disabled={!signal || loadingThisAction || Boolean(actionRecord)}
                                 className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-60"
                                 style={{
                                   background: config.style.bg,
@@ -1190,22 +1453,24 @@ export default function AdvisorWatchtower() {
                           })}
                         </div>
 
-                        {actionRecord && (
+                        {signal && actionRecord && (
                           <div className="mt-3 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-action-record-${decision.id}`}>
                             Last action: {actionRecord.action} · {formatTime(actionRecord.at)}
                           </div>
                         )}
 
                         <button
-                          onClick={() => setEvidenceDrawerDecision(decision)}
+                          onClick={() => signal ? setEvidenceDrawerDecision(decision) : null}
                           className="mt-3 inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
                           style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
                           data-testid={`advisor-decision-evidence-toggle-${decision.id}`}
+                          disabled={!signal}
                         >
-                          View full context
+                          {signal ? 'View full context' : 'No context yet'}
                         </button>
 
-                        <div className="mt-3 flex flex-wrap items-center gap-2" data-testid={`advisor-decision-feedback-${decision.id}`}>
+                        {signal && (
+                          <div className="mt-3 flex flex-wrap items-center gap-2" data-testid={`advisor-decision-feedback-${decision.id}`}>
                           <span className="text-[10px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-feedback-label-${decision.id}`}>
                             Helpful?
                           </span>
@@ -1235,7 +1500,8 @@ export default function AdvisorWatchtower() {
                           >
                             <ThumbsDown className="h-3 w-3" /> No
                           </button>
-                        </div>
+                          </div>
+                        )}
 
                         <Link
                           to="/soundboard"
@@ -1246,7 +1512,7 @@ export default function AdvisorWatchtower() {
                           Open in SoundBoard <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
 
-                        {signal.occurrences > 1 && (
+                        {signal && signal.occurrences > 1 && (
                           <p className="mt-3 text-xs" style={{ color: '#FCD34D', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-dedupe-note-${decision.id}`}>
                             Deduplicated {signal.occurrences} repeated signals into one decision.
                           </p>
