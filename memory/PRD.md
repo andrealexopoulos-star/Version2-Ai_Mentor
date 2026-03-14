@@ -1,4 +1,12 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 12 — Production Forensic Recovery + Panel UX Move (Complete — Mar 2026)
+- **Production recovery verified** — Post-deploy production retest (`iteration_133`) confirms previously broken modules are now working live on `https://biqc.thestrategysquad.com`: War Room Q&A, Ops Advisory, Documents, and Priority Inbox
+- **War Room resilience** — `backend/routes/boardroom.py` now normalizes analysis-only upstream payloads into readable `answer` / `response` text; `frontend/src/components/WarRoomConsole.js` renders the normalized output and uses a longer request timeout for live production latency
+- **Ops Advisory + Documents backend fixes** — Removed broken `supabase_admin` read paths in `backend/routes/profile.py` and `backend/routes/generation.py`; OAC now has deterministic fallback recommendations when AI generation fails, and `/api/documents` no longer 500s
+- **Priority Inbox recovery** — `backend/routes/email.py` now uses valid OpenAI model names for email analysis, includes deterministic fallback priority classification, and `frontend/src/pages/EmailInbox.js` prefers backend-backed analysis flow instead of brittle direct edge JWT dependency
+- **Requested UX move completed** — Weekly Check-In banner moved into the SoundBoard side panel directly under Forensic Market Exposure (`frontend/src/components/SoundboardPanel.js`) and removed from the advisor page body (`frontend/src/pages/AdvisorWatchtower.js`)
+- **Schema preview fix** — Added missing `decision_pressure` table creation to `supabase/migrations/017_calibrate_pressure.sql` so Supabase Preview no longer fails on `relation "decision_pressure" does not exist`
+
 ### Sprint 9 — Soundboard Stability Pass (In Progress — Mar 2026)
 - **Soundboard direct-provider hardening** — Fixed backend request schema to accept `mode`, added missing `os` import for env-key access, and implemented OpenAI/Gemini fallback routing in `backend/routes/soundboard.py`
 - **Graceful provider failure handling** — Soundboard now returns clear `503` configuration/auth messages when provider keys are missing/invalid instead of opaque crashes/toasts
