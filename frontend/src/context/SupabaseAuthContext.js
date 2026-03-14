@@ -22,6 +22,19 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   }
 });
 
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 8000) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 const SupabaseAuthContext = createContext(null);
 
 export const SupabaseAuthProvider = ({ children }) => {
@@ -279,8 +292,18 @@ export const SupabaseAuthProvider = ({ children }) => {
     let cancelled = false;
 
     const bootstrap = async () => {
+      let bootstrapHardTimeout = null;
       try {
         setAuthState(AUTH_STATE.LOADING);
+
+        // Fail-open guard: never allow LOADING to hang forever.
+        bootstrapHardTimeout = setTimeout(() => {
+          if (!cancelled) {
+            console.warn('[AUTH BOOTSTRAP] Timeout reached; fail-open to READY');
+            lastBootstrapUserId.current = currentUserId;
+            setAuthState(AUTH_STATE.READY);
+          }
+        }, 12000);
 
         const activeSession = session || (await supabase.auth.getSession()).data.session;
         if (!activeSession?.access_token) {
@@ -297,7 +320,7 @@ export const SupabaseAuthProvider = ({ children }) => {
         // SINGLE CHECK: backend /api/calibration/status (service_role key, RLS-safe)
         try {
           const calUrl = `${getBackendUrl()}/api/calibration/status?_t=${Date.now()}`;
-          const calRes = await fetch(calUrl, {
+          const calRes = await fetchWithTimeout(calUrl, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${accessToken}`,
@@ -306,7 +329,7 @@ export const SupabaseAuthProvider = ({ children }) => {
               'Pragma': 'no-cache',
               'Expires': '0',
             }
-          });
+          }, 7000);
           const contentType = calRes.headers.get('content-type') || '';
           if (calRes.ok && contentType.includes('application/json')) {
             const cal = await calRes.json();
@@ -319,13 +342,13 @@ export const SupabaseAuthProvider = ({ children }) => {
             // Auth error — session may not have propagated yet. Retry once.
             console.warn(`[CALIBRATION ROUTING] Auth error ${calRes.status} — retrying once`);
             await new Promise(r => setTimeout(r, 1500));
-            const retryRes = await fetch(calUrl, {
+            const retryRes = await fetchWithTimeout(calUrl, {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Accept': 'application/json',
               }
-            });
+            }, 7000);
             if (retryRes.ok) {
               const retryCal = await retryRes.json();
               calibrationComplete = retryCal.status === 'COMPLETE';
@@ -358,13 +381,13 @@ export const SupabaseAuthProvider = ({ children }) => {
         // Calibration complete — now fetch onboarding status ONCE
         let obStatus = { completed: true }; // default fail-open
         try {
-          const obRes = await fetch(`${getBackendUrl()}/api/onboarding/status`, {
+          const obRes = await fetchWithTimeout(`${getBackendUrl()}/api/onboarding/status`, {
             method: 'GET', headers: {
               'Authorization': `Bearer ${accessToken}`,
               'Cache-Control': 'no-cache, no-store, must-revalidate',
               'Pragma': 'no-cache',
             }
-          });
+          }, 7000);
           if (obRes.ok) {
             const obData = await obRes.json();
             obStatus = {
@@ -397,6 +420,8 @@ export const SupabaseAuthProvider = ({ children }) => {
       } catch (err) {
         console.error('[AUTH BOOTSTRAP ERROR]', err.message);
         if (!cancelled) setAuthState(AUTH_STATE.READY);
+      } finally {
+        if (bootstrapHardTimeout) clearTimeout(bootstrapHardTimeout);
       }
     };
 
