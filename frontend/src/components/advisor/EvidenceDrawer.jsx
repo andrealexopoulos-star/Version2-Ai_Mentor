@@ -53,6 +53,16 @@ export const EvidenceDrawer = ({ open, decision, onClose }) => {
         />
 
         <div className="mt-4 space-y-4 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
+          <section className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-evidence-drawer-chain">
+            <h4 className="mb-1 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Signal → Decision → Action</h4>
+            <p data-testid="advisor-evidence-drawer-chain-signal"><strong>Signal:</strong> {signal.detail}</p>
+            <p data-testid="advisor-evidence-drawer-chain-decision"><strong>Decision:</strong> {decision.headline || decision.whyNow}</p>
+            <p data-testid="advisor-evidence-drawer-chain-action"><strong>Action:</strong> {signal.action}</p>
+            <p className="mt-1 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-evidence-drawer-thread-id">
+              Evidence thread key: {signal.dedupeKey || signal.id}
+            </p>
+          </section>
+
           <section className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-evidence-drawer-why-now">
             <h4 className="mb-1 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Why this decision surfaced</h4>
             <p>{decision.whyNow}</p>
