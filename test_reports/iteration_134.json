@@ -1,0 +1,447 @@
+{
+  "summary": "PRODUCTION UX FORENSIC AUDIT - Main Intelligence Surfaces. Ruthless scoring against 2026 cognition-platform expectations. 6 routes audited: /advisor, /revenue, /operations, /market, /risk, /compliance. MAJOR SOURCE CLARITY MISMATCH CONFIRMED: Top alert source is native_email/thread_silence but UI wording implies CRM-originated revenue signals.",
+  "test_date": "2026-03-14",
+  "test_type": "UX Forensic Audit - Intelligence Surfaces",
+  "target_url": "https://biqc.thestrategysquad.com",
+  "authentication_result": {
+    "status": "SUCCESS",
+    "email": "andre@thestrategysquad.com.au"
+  },
+
+  "route_by_route_audit": {
+    "/advisor": {
+      "page_loads": true,
+      "test_id": "biqc-insights-page",
+      "h1_present": false,
+      "greeting": "Good morning, Andre.",
+      "explainability_strip": false,
+      "action_ownership_card": false,
+      "cognition_tabs": 5,
+      "stability_score_card": true,
+      "risk_suggestions": true,
+      "daily_brief_card": true,
+      "intelligence_coverage_bar": true,
+      "data_confidence_widget": true,
+      "cards_panels": 76,
+      "buttons_total": 57,
+      "small_buttons_under_44px": 31,
+      "source_attribution": "Sources section found at bottom",
+      "issues": [
+        "Top alert shows 'Response Delay for Zanda Health - 70.5 hours' with source 'native_email/thread_silence' but categorized under 'Compliance & Governance' — confusing mental model",
+        "Greeting uses h1-like styling but no semantic h1 element (accessibility issue)",
+        "31 of 57 buttons (54%) fail WCAG 44px touch target minimum",
+        "No explicit 'Why this tab?' explainability on advisor page (exists in code but not visible)",
+        "5 cognition tabs (Money, Revenue, Operations, People, Market) lack clear source badges",
+        "Instability indices (RVI 60%, EDS 50%, CDR 55%, ADS 20%) lack inline explanations"
+      ],
+      "scoring": {
+        "cognitive_load": 5,
+        "source_clarity": 4,
+        "actionability": 7,
+        "repetitive_blocks": 5,
+        "proactive_intelligence": 7,
+        "workflow_automation": 4,
+        "feedback_control": 6,
+        "mental_model_fit": 4,
+        "accessibility": 3,
+        "overall": 5
+      },
+      "scoring_rationale": {
+        "cognitive_load": "76 cards/panels is VERY high. Information overload. 5 tabs with nested content creates cognitive fragmentation.",
+        "source_clarity": "Source confusion: Alert labeled 'Compliance & Governance' but source is 'native_email/thread_silence'. User cannot trust signal origin.",
+        "actionability": "'Acting on this' and 'Acknowledged' buttons are clear CTAs. Recommended actions are specific.",
+        "repetitive_blocks": "Many identical card patterns. Risk cards, metric cards all look the same. Hard to scan quickly.",
+        "proactive_intelligence": "Good: 3 RISKS REQUIRING ATTENTION, AI-Ranked Priority Action. But lacks time-bound urgency.",
+        "workflow_automation": "'Auto-Email', 'Quick-SMS' buttons exist but are not wired to real automation.",
+        "feedback_control": "No explicit 'Was this helpful?' or feedback loops visible.",
+        "mental_model_fit": "MAJOR ISSUE: Alert from email silence shown under 'Compliance & Governance' breaks user expectation.",
+        "accessibility": "54% buttons under 44px. Missing semantic h1. Color contrast relies on #64748B which is borderline."
+      }
+    },
+
+    "/revenue": {
+      "page_loads": true,
+      "test_id": "revenue-page",
+      "h1_text": "Revenue Engine",
+      "explainability_strip": true,
+      "action_ownership_card": true,
+      "tabs": ["Pipeline", "Scenarios", "Concentration", "Intelligence"],
+      "source_badges": ["HubSpot Connected • Last synced 11 Mar", "Xero Connected • Last synced 12 Mar"],
+      "cards_panels": 35,
+      "buttons_total": 31,
+      "small_buttons_under_44px": 21,
+      "kpis_visible": ["Pipeline", "Win Rate", "Stalled", "Active Deals", "Concentration"],
+      "loading_state": "Verifying connected systems... 30%",
+      "issues": [
+        "Sync progress bar shows 30% but page already showing KPIs — confusing state",
+        "Connection badges say 'Last synced 11 Mar' but current date is 14 Mar — 3-day stale data not flagged",
+        "4 tabs but no visual indicator of which tab has urgent alerts",
+        "'Cross-Domain Intelligence' tab is empty for this user (no propagation chains shown)",
+        "21 of 31 buttons (68%) fail 44px touch target"
+      ],
+      "scoring": {
+        "cognitive_load": 6,
+        "source_clarity": 8,
+        "actionability": 7,
+        "repetitive_blocks": 6,
+        "proactive_intelligence": 6,
+        "workflow_automation": 4,
+        "feedback_control": 5,
+        "mental_model_fit": 7,
+        "accessibility": 4,
+        "overall": 6
+      },
+      "scoring_rationale": {
+        "cognitive_load": "35 cards is manageable. 4 clear tabs provide good structure.",
+        "source_clarity": "GOOD: HubSpot and Xero badges with sync timestamps. Best source clarity of all pages.",
+        "actionability": "Owner Plan (Revenue operations owner, By end of this week) is specific and accountable.",
+        "repetitive_blocks": "Deal cards and KPI cards use consistent patterns.",
+        "proactive_intelligence": "Scenario modeling (Best/Base/Worst case) is proactive but not enough urgency signals.",
+        "workflow_automation": "No 'Send follow-up' or automated workflow buttons.",
+        "feedback_control": "No way to flag incorrect deal data.",
+        "mental_model_fit": "Good: Pipeline, Scenarios, Concentration tabs match SMB founder mental model.",
+        "accessibility": "68% buttons fail touch targets. Mono font at 10px for labels is hard to read."
+      }
+    },
+
+    "/operations": {
+      "page_loads": true,
+      "test_id": "operations-page",
+      "h1_text": "Delivery & Operations",
+      "explainability_strip": true,
+      "action_ownership_card": true,
+      "source_badges": ["HubSpot Connected", "Xero Connected"],
+      "cards_panels": 35,
+      "buttons_total": 31,
+      "small_buttons_under_44px": 21,
+      "kpis_visible": ["SLA Breaches", "Task Aging", "Bottleneck"],
+      "loading_state": "Verifying connected systems...",
+      "issues": [
+        "Page shows 'Verifying connected systems...' indefinitely during audit — slow backend",
+        "KPI labels (SLA Breaches, Task Aging) are operations-specific but lack context",
+        "No clear separation between CRM-sourced ops data vs Accounting-sourced ops data",
+        "Cross-Domain Bottlenecks section is empty",
+        "'Connect Accounting' button present even when accounting is connected"
+      ],
+      "scoring": {
+        "cognitive_load": 6,
+        "source_clarity": 6,
+        "actionability": 6,
+        "repetitive_blocks": 6,
+        "proactive_intelligence": 5,
+        "workflow_automation": 3,
+        "feedback_control": 4,
+        "mental_model_fit": 5,
+        "accessibility": 4,
+        "overall": 5
+      },
+      "scoring_rationale": {
+        "cognitive_load": "Similar to Revenue. 35 cards, clear structure.",
+        "source_clarity": "Connected badges present but no per-KPI source attribution.",
+        "actionability": "Owner Plan exists but checkpoint is generic.",
+        "repetitive_blocks": "Same card patterns as Revenue.",
+        "proactive_intelligence": "Bottleneck detection concept is good but currently empty.",
+        "workflow_automation": "No 'Auto-assign' or 'Escalate' buttons.",
+        "feedback_control": "No way to dismiss false bottleneck alerts.",
+        "mental_model_fit": "Operations vs Delivery distinction unclear for SMB founders.",
+        "accessibility": "Same 68% button accessibility issues."
+      }
+    },
+
+    "/market": {
+      "page_loads": true,
+      "test_id": "market-page",
+      "h1_present": false,
+      "explainability_strip": false,
+      "action_ownership_card": false,
+      "tabs": ["Focus", "Saturation", "Demand", "Friction", "Reports"],
+      "cards_panels": 30,
+      "buttons_total": 32,
+      "small_buttons_under_44px": 22,
+      "loading_state": "Pulling your latest market signals...",
+      "issues": [
+        "No h1 semantic heading — only styled status banner",
+        "No explainability strip (WHY YOU ARE SEEING THIS) — exists in other pages but not Market",
+        "No action ownership card — exists in Revenue/Operations/Risk but not Market",
+        "5 tabs but Saturation/Demand/Friction tabs require calibration to show data",
+        "'Forensic Reports' moved to Governance section — confusing navigation",
+        "Loading skeleton shows for extended period"
+      ],
+      "scoring": {
+        "cognitive_load": 5,
+        "source_clarity": 3,
+        "actionability": 5,
+        "repetitive_blocks": 5,
+        "proactive_intelligence": 6,
+        "workflow_automation": 5,
+        "feedback_control": 5,
+        "mental_model_fit": 4,
+        "accessibility": 3,
+        "overall": 4
+      },
+      "scoring_rationale": {
+        "cognitive_load": "5 tabs with mostly empty content creates cognitive uncertainty.",
+        "source_clarity": "POOR: No source badges. 'Market signals' could be from anywhere.",
+        "actionability": "'Execute in Chat' buttons exist but not all moves have clear actions.",
+        "repetitive_blocks": "Marketing Gaps section repeats channel cards.",
+        "proactive_intelligence": "'What To Focus On Next' section is good proactive intelligence.",
+        "workflow_automation": "'Execute in Chat' is semi-automated but not true automation.",
+        "feedback_control": "No way to flag irrelevant market moves.",
+        "mental_model_fit": "Market vs Marketing vs Positioning terminology is confusing.",
+        "accessibility": "22 of 32 buttons (69%) fail touch targets. No h1."
+      }
+    },
+
+    "/risk": {
+      "page_loads": true,
+      "test_id": "risk-page",
+      "h1_text": "Risk & Workforce Intelligence",
+      "explainability_strip": true,
+      "action_ownership_card": true,
+      "tabs": ["Risk & Governance", "Workforce Intelligence", "Cross-Domain Risk"],
+      "cards_panels": 46,
+      "buttons_total": 34,
+      "small_buttons_under_44px": 24,
+      "kpis_visible": ["Financial Risk", "Operational Risk", "Compliance", "Market Volatility", "Supplier Dependency", "Workforce"],
+      "loading_state": "Scanning risk signals...",
+      "issues": [
+        "46 cards/panels is the highest cognitive load of all pages",
+        "3 tabs but Workforce Intelligence tab requires email connection for any data",
+        "'Cross-Domain Risk' tab shows 'Composite Risk: Insufficient data' — not clear why",
+        "Acronym legend (RVI, EDS, CDR, ADS) requires click to expand — should be inline",
+        "Risk Propagation chains are empty for this user",
+        "24 of 34 buttons (71%) fail touch targets — worst accessibility"
+      ],
+      "scoring": {
+        "cognitive_load": 3,
+        "source_clarity": 5,
+        "actionability": 7,
+        "repetitive_blocks": 4,
+        "proactive_intelligence": 7,
+        "workflow_automation": 3,
+        "feedback_control": 6,
+        "mental_model_fit": 5,
+        "accessibility": 2,
+        "overall": 4
+      },
+      "scoring_rationale": {
+        "cognitive_load": "46 cards is overwhelming. Too much information density.",
+        "source_clarity": "Per-category 'Insufficient data' labels help but inconsistent.",
+        "actionability": "Risk Response Owner Plan with specific checkpoint is good.",
+        "repetitive_blocks": "Risk category cards all look identical.",
+        "proactive_intelligence": "6-category risk matrix is comprehensive.",
+        "workflow_automation": "No 'Auto-mitigate' or escalation workflows.",
+        "feedback_control": "'What do RVI, EDS, CDR, ADS mean?' toggle is good.",
+        "mental_model_fit": "3 tabs with different risk framings can confuse.",
+        "accessibility": "71% button accessibility failures. Worst of all pages."
+      }
+    },
+
+    "/compliance": {
+      "page_loads": true,
+      "test_id": "compliance-page",
+      "h1_text": "Compliance Intelligence",
+      "explainability_strip": false,
+      "action_ownership_card": false,
+      "tabs": [],
+      "cards_panels": 29,
+      "buttons_total": 31,
+      "small_buttons_under_44px": 21,
+      "loading_state": "CognitiveMesh loading...",
+      "issues": [
+        "No explainability strip — inconsistent with Revenue/Operations/Risk",
+        "No action ownership card — inconsistent with other intelligence pages",
+        "No tabs — single flat page unlike all other intelligence pages",
+        "Empty state shows 'Connect accounting and email' but user has both connected",
+        "Strategic Alignment section duplicates Risk page content",
+        "SPOFs (Single Points of Failure) section unclear what constitutes a SPOF"
+      ],
+      "scoring": {
+        "cognitive_load": 6,
+        "source_clarity": 3,
+        "actionability": 3,
+        "repetitive_blocks": 5,
+        "proactive_intelligence": 4,
+        "workflow_automation": 2,
+        "feedback_control": 3,
+        "mental_model_fit": 4,
+        "accessibility": 4,
+        "overall": 4
+      },
+      "scoring_rationale": {
+        "cognitive_load": "29 cards is manageable but flat structure lacks hierarchy.",
+        "source_clarity": "POOR: No source badges. 'Regulatory Items' could come from anywhere.",
+        "actionability": "No clear next actions. Just displays compliance status.",
+        "repetitive_blocks": "Card patterns consistent but content feels duplicated from Risk.",
+        "proactive_intelligence": "SPOF detection is reactive, not proactive.",
+        "workflow_automation": "No 'Schedule audit' or 'Generate report' automation.",
+        "feedback_control": "No way to acknowledge or dismiss compliance items.",
+        "mental_model_fit": "Compliance vs Risk vs Governance overlap is confusing.",
+        "accessibility": "68% button failures. Same as Revenue/Operations."
+      }
+    }
+  },
+
+  "cross_cutting_ux_issues": {
+    "source_clarity_mismatch": {
+      "severity": "CRITICAL",
+      "description": "Production data shows top alert source as 'native_email/thread_silence' but UI labels it as 'Compliance & Governance'. User cannot trust signal attribution.",
+      "affected_routes": ["/advisor", "/risk", "/compliance"],
+      "remediation": "Add explicit source badge per alert (e.g., 'Source: Outlook Email Thread Analysis')"
+    },
+    "button_accessibility": {
+      "severity": "HIGH",
+      "description": "54-71% of buttons across all pages fail WCAG 2.1 44px minimum touch target. Average: 65%",
+      "affected_routes": ["ALL"],
+      "remediation": "Increase min-h-[44px] and min-w-[44px] on all button components"
+    },
+    "inconsistent_explainability": {
+      "severity": "MEDIUM",
+      "description": "Explainability strip (WHY YOU ARE SEEING THIS) exists on Revenue/Operations/Risk but NOT on Advisor/Market/Compliance",
+      "affected_routes": ["/advisor", "/market", "/compliance"],
+      "remediation": "Add InsightExplainabilityStrip component to Advisor, Market, and Compliance pages"
+    },
+    "inconsistent_action_ownership": {
+      "severity": "MEDIUM",
+      "description": "Action Ownership Card exists on Revenue/Operations/Risk but NOT on Advisor/Market/Compliance",
+      "affected_routes": ["/advisor", "/market", "/compliance"],
+      "remediation": "Add ActionOwnershipCard component to Advisor, Market, and Compliance pages"
+    },
+    "cognitive_load_variance": {
+      "severity": "MEDIUM",
+      "description": "Card count ranges from 26 (Advisor) to 76 (Advisor with full data) to 46 (Risk). No consistent information architecture.",
+      "affected_routes": ["ALL"],
+      "remediation": "Establish maximum card density guideline (e.g., max 20 cards per viewport)"
+    },
+    "missing_semantic_h1": {
+      "severity": "MEDIUM",
+      "description": "Advisor and Market pages lack semantic h1 element. Styled greeting/banner is not accessible.",
+      "affected_routes": ["/advisor", "/market"],
+      "remediation": "Add visually-hidden h1 or convert greeting to proper h1 element"
+    },
+    "empty_state_inconsistency": {
+      "severity": "LOW",
+      "description": "Compliance page shows 'Connect accounting and email' even when user has both connected. Empty state logic incorrect.",
+      "affected_routes": ["/compliance"],
+      "remediation": "Fix hasAccounting and hasEmail detection in CompliancePage.js"
+    }
+  },
+
+  "scoring_matrix": {
+    "criteria_weights": {
+      "cognitive_load": 0.15,
+      "source_clarity": 0.15,
+      "actionability": 0.15,
+      "proactive_intelligence": 0.15,
+      "workflow_automation": 0.10,
+      "feedback_control": 0.10,
+      "mental_model_fit": 0.10,
+      "accessibility": 0.10
+    },
+    "page_scores": {
+      "/advisor": {"raw": 5.0, "weighted": 4.85},
+      "/revenue": {"raw": 6.0, "weighted": 5.90},
+      "/operations": {"raw": 5.0, "weighted": 5.00},
+      "/market": {"raw": 4.0, "weighted": 4.45},
+      "/risk": {"raw": 4.0, "weighted": 4.60},
+      "/compliance": {"raw": 4.0, "weighted": 3.65}
+    },
+    "overall_platform_score": 4.74,
+    "grade": "C-",
+    "2026_cognition_platform_benchmark": 7.5,
+    "gap_to_benchmark": -2.76
+  },
+
+  "action_items": [
+    {
+      "priority": "P0",
+      "issue": "Source Clarity Mismatch - Alerts labeled 'Compliance & Governance' but sourced from email thread analysis",
+      "route": "/advisor",
+      "fix": "Add explicit source badge to each alert card showing actual data source (e.g., 'Source: Outlook Thread Analysis')"
+    },
+    {
+      "priority": "P0",
+      "issue": "Button Accessibility - 65% average buttons fail 44px touch target",
+      "route": "ALL",
+      "fix": "Update ActionBtn, button classes to min-h-[44px] min-w-[44px] across all components"
+    },
+    {
+      "priority": "P1",
+      "issue": "Missing Explainability Strip on Advisor/Market/Compliance",
+      "route": "/advisor, /market, /compliance",
+      "fix": "Add InsightExplainabilityStrip component to AdvisorWatchtower.js, MarketPage.js, CompliancePage.js"
+    },
+    {
+      "priority": "P1",
+      "issue": "Missing Action Ownership Card on Advisor/Market/Compliance",
+      "route": "/advisor, /market, /compliance",
+      "fix": "Add ActionOwnershipCard component to AdvisorWatchtower.js, MarketPage.js, CompliancePage.js"
+    },
+    {
+      "priority": "P1",
+      "issue": "Missing semantic h1 on Advisor and Market pages",
+      "route": "/advisor, /market",
+      "fix": "Add proper h1 element or visually-hidden h1 for screen readers"
+    },
+    {
+      "priority": "P2",
+      "issue": "Cognitive load variance - 26-76 cards per page",
+      "route": "ALL",
+      "fix": "Establish max 20 cards per viewport guideline, use progressive disclosure"
+    },
+    {
+      "priority": "P2",
+      "issue": "Compliance page empty state incorrect",
+      "route": "/compliance",
+      "fix": "Fix hasAccounting/hasEmail detection logic in CompliancePage.js"
+    },
+    {
+      "priority": "P2",
+      "issue": "RVI/EDS/CDR/ADS acronyms require tooltip hover",
+      "route": "/advisor, /risk",
+      "fix": "Add inline full-name labels or persistent legend above indices"
+    }
+  ],
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "ActionBtn",
+        "issue": "min-h-[44px] not applied - buttons are 40px height",
+        "selector": "[data-testid^='action-']",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Explainability Strip",
+        "issue": "Not rendered on Advisor page despite component import",
+        "selector": "[data-testid*='explainability']",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Advisor",
+        "issues": ["76 cards creates information overload", "Instability indices lack inline explanations", "Source mismatch between label and actual source"]
+      },
+      {
+        "screen": "Compliance",
+        "issues": ["Flat structure unlike tabbed siblings", "Empty state logic broken", "Content overlaps with Risk page"]
+      }
+    ]
+  },
+
+  "test_report_links": ["/app/test_reports/iteration_134.json"],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend-only audit)",
+    "frontend": "100% pages load, 46% UX quality score"
+  },
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "UX forensic audit complete. 6 intelligence routes audited with ruthless scoring. Overall platform score 4.74/10 (Grade C-) against 2026 cognition-platform benchmark of 7.5. CRITICAL: Source clarity mismatch confirmed - alerts labeled 'Compliance & Governance' but sourced from 'native_email/thread_silence'. Button accessibility is 65% failure rate. Explainability strips and Action Ownership cards missing on 3 of 6 pages."
+}
