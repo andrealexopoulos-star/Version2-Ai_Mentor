@@ -1,0 +1,34 @@
+{
+  "authentication": {
+    "status_code": 200,
+    "response_time": 3.930100679397583,
+    "success": false,
+    "error": "No access_token in response"
+  },
+  "soundboard_stress_test": {
+    "total_runs": 0,
+    "successful_runs": 0,
+    "failed_runs": 0,
+    "rate_limited_runs": 0,
+    "retry_attempts": 0,
+    "response_times": [],
+    "suggested_actions_count": 0,
+    "status_codes": {},
+    "errors": [],
+    "runs_with_suggested_actions": 0
+  },
+  "conversation_persistence": {
+    "conversations_created": 0,
+    "conversations_retrievable": 0,
+    "conversation_ids": [],
+    "persistence_errors": []
+  },
+  "advisor_feed_dependencies": {
+    "tested_endpoints": {},
+    "critical_failures": [],
+    "overall_health": true
+  },
+  "defects": [],
+  "test_start_time": "2026-03-14T14:17:16.998396",
+  "test_duration": 3.930237293243408
+}

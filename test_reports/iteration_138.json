@@ -1,0 +1,110 @@
+{
+  "summary": "Iteration 138 - Advisor Watchtower & Soundboard Testing. Backend tests: 18/19 passed. Soundboard chat API returns 503 due to AI provider keys being placeholder values (CONFIGURED_IN_AZURE). Frontend testing confirmed: Role-based personalization selector (CEO dropdown), Integration onboarding prompts working, Decision cards with domain tabs (Market/Revenue/Operations), Soundboard conversation UI functional. CRITICAL: Soundboard chat requires real OPENAI_API_KEY or GOOGLE_API_KEY - preview env has placeholder values.",
+  "test_date": "2026-03-14",
+  "features_tested": {
+    "advisor_executive_snapshot_live_context": {
+      "status": "PARTIAL",
+      "findings": "API endpoints work (/integrations/merge/connected returns live integration count, /workflows/delegate/providers returns health cards), but Soundboard chat fails with 503 due to AI key placeholder"
+    },
+    "advisor_decision_cards_no_fake_fallback": {
+      "status": "PASS",
+      "findings": "Decision cards show real domain tabs (Market, Revenue, Operations). Soundboard shows WHY YOU ARE SEEING THIS/WHY THIS MATTERS NOW/WHAT TO DO NEXT cards with meaningful text, not vague placeholders"
+    },
+    "advisor_role_personalization_selector": {
+      "status": "PASS",
+      "findings": "CEO dropdown visible at /advisor page, allows View as role selection"
+    },
+    "advisor_integration_onboarding_prompt": {
+      "status": "PASS",
+      "findings": "Strategic Console shows 'Connect core systems to generate a live strategic brief' when viewing /watchtower. Also 'Connect integrations to unlock verified signals' on /advisor"
+    },
+    "delegate_provider_health_cards": {
+      "status": "PASS",
+      "findings": "/workflows/delegate/providers returns recommended_provider, connected_business_tools with outlook_connected, gmail_connected, outlook_expired status fields"
+    },
+    "auth_callback_no_integration_routing": {
+      "status": "PASS",
+      "findings": "Login redirects to /advisor which shows integration onboarding messaging when connections are needed"
+    },
+    "soundboard_conversation_persistence": {
+      "status": "PASS",
+      "findings": "/soundboard/conversations returns list successfully, /soundboard/conversations/{id} returns conversation with messages"
+    },
+    "soundboard_chat_stability": {
+      "status": "FAIL - INFRA",
+      "findings": "Soundboard chat returns 503 with error: 'AI provider keys are not configured. Add a valid OPENAI_API_KEY and/or GOOGLE_API_KEY'. Current backend has OPENAI_API_KEY=CONFIGURED_IN_AZURE which is rejected as placeholder value"
+    }
+  },
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/soundboard/chat",
+        "issue": "Returns 503 - AI provider keys are placeholders (OPENAI_API_KEY=CONFIGURED_IN_AZURE)",
+        "priority": "HIGH",
+        "root_cause": "config.py _has_configured_key() correctly rejects 'CONFIGURED_IN_AZURE' as invalid. Preview env needs real keys."
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "/api/integrations/accounting/summary",
+        "issue": "Merge API timeout (504) or unauthorized (401) when account token expires",
+        "priority": "LOW"
+      },
+      {
+        "endpoint": "External: logo.clearbit.com",
+        "issue": "ERR_NAME_NOT_RESOLVED causing 60+ console errors on /integrations - cosmetic only",
+        "priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "/integrations",
+        "issues": ["Clearbit logo service failing (ERR_NAME_NOT_RESOLVED) - logos show fallback text initials"]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration138_advisor_soundboard.py",
+    "/app/test_reports/pytest/pytest_results_iteration138.xml"
+  ],
+  "action_items": [
+    "CRITICAL: Set real OPENAI_API_KEY or GOOGLE_API_KEY in backend/.env to enable Soundboard chat",
+    "OPTIONAL: Cache integration logos locally to avoid Clearbit service failures"
+  ],
+  "critical_code_review_comments": [
+    "Soundboard correctly rejects placeholder AI keys with clear error message - this is good defensive coding",
+    "Conversation persistence endpoints working well (/soundboard/conversations, /soundboard/conversations/{id})",
+    "Delegate provider health cards properly expose token expiry status for reconnect messaging"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration138_advisor_soundboard.py"
+  ],
+  "success_rate": {
+    "backend": "94% (18/19 passed, 1 skipped - no conversations)",
+    "frontend": "90% (all pages load, soundboard chat blocked by AI key)"
+  },
+  "test_credentials": {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "MasterMind2025*"
+  },
+  "seed_data_creation": "None required - using existing user data",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend APIs verified working for Advisor Watchtower features. Soundboard conversation persistence works. Soundboard chat requires real AI keys - currently returns 503. Clearbit logo errors are cosmetic. Integration health cards and reconnect messaging working via /workflows/delegate/providers.",
+  "rca_of_the_issue": {
+    "soundboard_503_error": {
+      "root_cause": "OPENAI_API_KEY environment variable is set to 'CONFIGURED_IN_AZURE' which is rejected by _has_configured_key() in core/config.py as a placeholder value",
+      "reproduction_steps": [
+        "1. Login with valid credentials",
+        "2. Navigate to /soundboard",
+        "3. Send any message via POST /api/soundboard/chat",
+        "4. Observe 503 error with message about AI keys not configured"
+      ],
+      "mitigation": "Set a valid OPENAI_API_KEY or GOOGLE_API_KEY in the backend/.env file"
+    }
+  }
+}

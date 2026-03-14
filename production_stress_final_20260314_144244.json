@@ -1,0 +1,171 @@
+{
+  "timestamp": "2026-03-14T14:36:52.722234",
+  "test_target": "https://biqc.thestrategysquad.com",
+  "auth": {
+    "success": true,
+    "user_id": "52a60959-b8f7-4032-a744-e164d8749ce6",
+    "response_time": 1.7088539600372314,
+    "status_code": 200
+  },
+  "soundboard_stress": {
+    "total_runs": 50,
+    "successful_runs": 26,
+    "failed_runs": 24,
+    "rate_limited_runs": 24,
+    "runs_with_suggested_actions": 18,
+    "response_times": [
+      12.863967657089233,
+      11.120569467544556,
+      11.297974348068237,
+      9.125863075256348,
+      6.776940584182739,
+      6.425812005996704,
+      7.092527151107788,
+      6.284746170043945,
+      6.645764112472534,
+      6.452287673950195,
+      6.410866975784302,
+      7.026431560516357,
+      9.356312990188599,
+      7.984823942184448,
+      7.738936424255371,
+      5.948738098144531,
+      6.56165885925293,
+      7.10927677154541,
+      7.223393678665161,
+      6.225376129150391,
+      7.553569078445435,
+      6.411064863204956,
+      6.490944862365723,
+      7.064760684967041,
+      0.29106593132019043,
+      0.27415919303894043,
+      0.2285149097442627,
+      0.2473735809326172,
+      0.2477579116821289,
+      0.2339317798614502,
+      0.25599122047424316,
+      0.2437117099761963,
+      0.23595976829528809,
+      0.24862384796142578,
+      0.25270891189575195,
+      0.22549915313720703,
+      0.24171733856201172,
+      0.2344214916229248,
+      0.25070714950561523,
+      0.27164793014526367,
+      0.23963618278503418,
+      0.23668408393859863,
+      0.2418971061706543,
+      0.23853278160095215,
+      0.23745942115783691,
+      12.211558818817139,
+      0.2654719352722168,
+      8.413718700408936,
+      0.2747936248779297,
+      0.2847757339477539
+    ],
+    "status_codes": {
+      "200": 26,
+      "429": 24
+    },
+    "errors": [
+      "Run 25: Rate limited - retry after 111s",
+      "Run 26: Rate limited - retry after 106s",
+      "Run 27: Rate limited - retry after 101s",
+      "Run 28: Rate limited - retry after 95s",
+      "Run 29: Rate limited - retry after 90s",
+      "Run 30: Rate limited - retry after 84s",
+      "Run 31: Rate limited - retry after 79s",
+      "Run 32: Rate limited - retry after 73s",
+      "Run 33: Rate limited - retry after 68s",
+      "Run 34: Rate limited - retry after 62s",
+      "Run 35: Rate limited - retry after 57s",
+      "Run 36: Rate limited - retry after 52s",
+      "Run 37: Rate limited - retry after 46s",
+      "Run 38: Rate limited - retry after 41s",
+      "Run 39: Rate limited - retry after 35s",
+      "Run 40: Rate limited - retry after 30s",
+      "Run 41: Rate limited - retry after 24s",
+      "Run 42: Rate limited - retry after 19s",
+      "Run 43: Rate limited - retry after 13s",
+      "Run 44: Rate limited - retry after 8s",
+      "Run 45: Rate limited - retry after 3s",
+      "Run 47: Rate limited - retry after 1s",
+      "Run 49: Rate limited - retry after 1s",
+      "Run 50: Rate limited - retry after 1s"
+    ]
+  },
+  "conversation_persistence": {
+    "list_endpoint": {
+      "success": true,
+      "status_code": 200
+    },
+    "individual_retrieval": {
+      "tested": 5,
+      "retrieved": 0,
+      "success_rate": 0.0
+    }
+  },
+  "advisor_endpoints": {
+    "total": 8,
+    "successful": 8,
+    "health_percentage": 100.0,
+    "details": {
+      "/api/cognition/overview": {
+        "success": true,
+        "status_code": 200,
+        "response_time": 1.109771728515625
+      },
+      "/api/snapshot/latest": {
+        "success": true,
+        "status_code": 200,
+        "response_time": 1.0539751052856445
+      },
+      "/api/intelligence/watchtower": {
+        "success": true,
+        "status_code": 200,
+        "response_time": 0.7864193916320801
+      },
+      "/api/integrations/merge/connected": {
+        "success": true,
+        "status_code": 200,
+        "response_time": 1.4153733253479004
+      },
+      "/api/integrations/crm/deals?page_size=50": {
+        "success": true,
+        "status_code": 200,
+        "response_time": 3.4666554927825928
+      },
+      "/api/integrations/accounting/summary": {
+        "success": true,
+        "status_code": 200,
+        "response_time": 6.706637859344482
+      },
+      "/api/outlook/status": {
+        "success": true,
+        "status_code": 200,
+        "response_time": 0.8690276145935059
+      },
+      "/api/calibration/status": {
+        "success": true,
+        "status_code": 200,
+        "response_time": 0.4888613224029541
+      }
+    }
+  },
+  "defects": [
+    {
+      "severity": "HIGH",
+      "component": "Soundboard Chat API",
+      "issue": "Success rate 52.0% below acceptable threshold (90%)",
+      "impact": "Unreliable advisor chat experience"
+    },
+    {
+      "severity": "MEDIUM",
+      "component": "Rate Limiting",
+      "issue": "24 rate limited requests",
+      "impact": "User experience degradation under load"
+    }
+  ]
+}

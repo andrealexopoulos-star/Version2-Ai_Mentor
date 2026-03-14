@@ -632,7 +632,15 @@ async def get_soundboard_conversation_detail(conversation_id: str, current_user:
     if not result.data:
         raise HTTPException(status_code=404, detail="Conversation not found")
     conversation = result.data[0]
-    return {"conversation": conversation, "messages": conversation.get("messages", [])}
+    try:
+        messages_result = sb.table("soundboard_messages").select(
+            "role, content, timestamp"
+        ).eq("conversation_id", conversation_id).eq("user_id", current_user["id"]).order("timestamp", desc=False).execute()
+        messages = messages_result.data or []
+    except Exception:
+        # Backward compatibility for deployments storing messages in conversation JSON column.
+        messages = conversation.get("messages", [])
+    return {"conversation": conversation, "messages": messages}
 
 
 @router.post("/soundboard/chat")
@@ -655,7 +663,17 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         if result.data:
             conversation = result.data[0]
 
-    messages_history = (conversation.get("messages", [])[-20:]) if conversation else []
+    messages_history = []
+    if conversation:
+        try:
+            history_result = sb.table("soundboard_messages").select(
+                "role, content, timestamp"
+            ).eq("conversation_id", conversation["id"]).eq("user_id", user_id).order("timestamp", desc=True).limit(20).execute()
+            history_rows = list(reversed(history_result.data or []))
+            messages_history = [{"role": row.get("role"), "content": row.get("content")} for row in history_rows]
+        except Exception:
+            # Backward compatibility when soundboard_messages table is unavailable.
+            messages_history = (conversation.get("messages", [])[-20:]) if isinstance(conversation.get("messages"), list) else []
 
     # Cognitive Core context
     core_context = await cognitive_core.get_context_for_agent(user_id, "MySoundboard")
@@ -1318,20 +1336,59 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             {"role": "assistant", "content": response, "timestamp": now}
         ]
 
-        # Save to Supabase
+        # Save to Supabase (conversation header + message rows)
         if req.conversation_id and conversation:
-            updated_messages = conversation.get("messages", []) + new_messages
-            await update_soundboard_conversation_supabase(sb, req.conversation_id, {
-                "messages": updated_messages, "updated_at": now
-            })
             conversation_id = req.conversation_id
+            sb.table("soundboard_conversations").update({
+                "updated_at": now,
+            }).eq("id", conversation_id).eq("user_id", user_id).execute()
         else:
             conversation_id = str(uuid.uuid4())
-            await create_soundboard_conversation_supabase(sb, {
-                "id": conversation_id, "user_id": user_id,
+            conv_insert = sb.table("soundboard_conversations").insert({
+                "id": conversation_id,
+                "user_id": user_id,
                 "title": conversation_title or "New Conversation",
-                "messages": new_messages, "created_at": now, "updated_at": now
-            })
+                "created_at": now,
+                "updated_at": now,
+            }).execute()
+            if not conv_insert.data:
+                raise HTTPException(status_code=500, detail="Failed to create SoundBoard conversation")
+
+        message_rows = [
+            {
+                "conversation_id": conversation_id,
+                "user_id": user_id,
+                "role": item["role"],
+                "content": item["content"],
+                "timestamp": item["timestamp"],
+            }
+            for item in new_messages
+        ]
+        messages_persisted = False
+        try:
+            msg_insert = sb.table("soundboard_messages").insert(message_rows).execute()
+            messages_persisted = bool(msg_insert.data)
+        except Exception:
+            messages_persisted = False
+
+        if not messages_persisted:
+            # Backward compatibility path: persist messages JSON directly in conversation row.
+            if req.conversation_id and conversation:
+                updated_messages = (conversation.get("messages", []) if isinstance(conversation.get("messages"), list) else []) + new_messages
+                fallback_update = sb.table("soundboard_conversations").update({
+                    "messages": updated_messages,
+                    "updated_at": now,
+                }).eq("id", conversation_id).eq("user_id", user_id).execute()
+                messages_persisted = bool(fallback_update.data)
+            else:
+                fallback_update = sb.table("soundboard_conversations").update({
+                    "messages": new_messages,
+                    "updated_at": now,
+                }).eq("id", conversation_id).eq("user_id", user_id).execute()
+                messages_persisted = bool(fallback_update.data)
+
+        if not messages_persisted:
+            raise HTTPException(status_code=500, detail="Failed to persist SoundBoard messages")
 
         # ═══ AUTO SESSION SUMMARISATION — always save ═══
         try:

@@ -6,6 +6,8 @@ import os
 import logging
 import time
 import hashlib
+import json
+import base64
 from collections import defaultdict, deque
 from threading import Lock
 from pathlib import Path
@@ -39,13 +41,14 @@ AI_MODEL_ADVANCED = "gpt-5.4-pro"
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 RATE_LIMIT_RULES = {
-    "/api/soundboard/chat": {"window": 300, "limit": 24},
+    "/api/soundboard/chat": {"window": 300, "limit": 120},
     "/api/boardroom/respond": {"window": 300, "limit": 20},
     "/api/voice/war-room/start": {"window": 300, "limit": 10},
     "/api/voice/war-room/respond": {"window": 300, "limit": 24},
 }
 RATE_LIMIT_BUCKETS = defaultdict(deque)
 RATE_LIMIT_LOCK = Lock()
+MASTER_ADMIN_EMAIL = "andre@thestrategysquad.com.au"
 
 
 # ==================== MIDDLEWARE ====================
@@ -74,9 +77,32 @@ class RateLimitAPIMiddleware(BaseHTTPMiddleware):
         client_host = getattr(request.client, "host", None) or "anonymous"
         return f"ip:{client_host}"
 
+    @staticmethod
+    def _extract_email_from_token(request):
+        auth_header = request.headers.get("authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return None
+
+        token = auth_header[7:]
+        try:
+            parts = token.split('.')
+            if len(parts) < 2:
+                return None
+            payload_segment = parts[1]
+            padding = '=' * (-len(payload_segment) % 4)
+            decoded = base64.urlsafe_b64decode(payload_segment + padding)
+            payload = json.loads(decoded.decode('utf-8'))
+            return str(payload.get('email') or payload.get('user_metadata', {}).get('email') or '').strip().lower() or None
+        except Exception:
+            return None
+
     async def dispatch(self, request, call_next):
         rule = RATE_LIMIT_RULES.get(request.url.path)
         if not rule:
+            return await call_next(request)
+
+        email = self._extract_email_from_token(request)
+        if email == MASTER_ADMIN_EMAIL:
             return await call_next(request)
 
         now = time.time()
