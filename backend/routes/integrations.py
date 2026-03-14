@@ -469,6 +469,8 @@ async def _sync_category_counts(sb, user_id: str, category: str):
 class MergeDisconnectRequest(BaseModel):
     provider: str
     category: str
+    provider_hint: Optional[str] = None
+    integration_slug: Optional[str] = None
 
 
 @router.post("/merge/disconnect")
@@ -480,10 +482,87 @@ async def disconnect_merge_integration(request: Request, payload: MergeDisconnec
     except Exception:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
-        result = get_sb().table("integration_accounts").delete().eq(
-            "user_id", user_id
-        ).eq("provider", payload.provider).execute()
-        logger.info(f"[merge/disconnect] Disconnected {payload.provider} for {user_id}")
+        sb = get_sb()
+
+        requested_category = normalize_category(payload.category, payload.provider, payload.integration_slug)
+        candidate_tokens = {
+            str(payload.provider or "").strip().lower(),
+            str(payload.provider_hint or "").strip().lower(),
+            str(payload.integration_slug or "").strip().lower(),
+        }
+
+        expanded_tokens = set()
+        for token in candidate_tokens:
+            if not token:
+                continue
+            expanded_tokens.add(token)
+            if ":" in token:
+                expanded_tokens.add(token.split(":", 1)[1])
+            expanded_tokens.add(token.replace("-", " "))
+            expanded_tokens.add(token.replace("_", " "))
+
+        rows_result = sb.table("integration_accounts").select("*").eq("user_id", user_id).execute()
+
+        rows = rows_result.data or []
+        rows_to_delete = []
+
+        for row in rows:
+            row_category = normalize_category(row.get("category"), row.get("provider"), row.get("integration_slug"))
+            if requested_category and row_category != requested_category:
+                continue
+
+            provider_norm = str(row.get("provider") or "").strip().lower()
+            slug_norm = str(row.get("integration_slug") or "").strip().lower()
+            provider_spaced = provider_norm.replace("-", " ").replace("_", " ")
+            slug_spaced = slug_norm.replace("-", " ").replace("_", " ")
+
+            matched = (
+                provider_norm in expanded_tokens
+                or slug_norm in expanded_tokens
+                or provider_spaced in expanded_tokens
+                or slug_spaced in expanded_tokens
+                or any(token and token in {provider_norm, slug_norm, provider_spaced, slug_spaced} for token in expanded_tokens)
+            )
+
+            if matched:
+                rows_to_delete.append(row)
+
+        if not rows_to_delete:
+            raise HTTPException(status_code=404, detail="Integration record not found for disconnect")
+
+        row_ids = [row["id"] for row in rows_to_delete if row.get("id")]
+        if row_ids:
+            sb.table("integration_accounts").delete().in_("id", row_ids).execute()
+        else:
+            for row in rows_to_delete:
+                provider_value = row.get("provider")
+                category_value = row.get("category")
+                if provider_value:
+                    delete_query = sb.table("integration_accounts").delete().eq("user_id", user_id).eq("provider", provider_value)
+                    if category_value:
+                        delete_query = delete_query.eq("category", category_value)
+                    delete_query.execute()
+
+        # Also mark integration_status disconnected so downstream UI updates immediately.
+        for row in rows_to_delete:
+            provider_label = row.get("provider") or row.get("integration_slug") or payload.provider
+            category_label = normalize_category(row.get("category"), row.get("provider"), row.get("integration_slug"))
+            try:
+                await _upsert_integration_status(
+                    sb,
+                    user_id,
+                    provider_label,
+                    category_label,
+                    connected=False,
+                    provider=provider_label,
+                    records_count=0,
+                    record_type="records",
+                    error_message="Disconnected by user",
+                )
+            except Exception:
+                pass
+
+        logger.info(f"[merge/disconnect] Disconnected {len(rows_to_delete)} integration record(s) for {user_id}")
         
         # GOVERNANCE: Record disconnection
         try:
@@ -503,7 +582,9 @@ async def disconnect_merge_integration(request: Request, payload: MergeDisconnec
         except Exception as gov_err:
             logger.warning(f"⚠️ Governance disconnect event failed: {gov_err}")
         
-        return {"ok": True, "provider": payload.provider}
+        return {"ok": True, "provider": payload.provider, "deleted_count": len(rows_to_delete)}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"[merge/disconnect] Error: {e}")
         raise HTTPException(status_code=500, detail="Disconnect failed")

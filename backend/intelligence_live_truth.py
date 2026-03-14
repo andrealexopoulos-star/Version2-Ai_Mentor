@@ -61,7 +61,7 @@ def merge_row_is_connected(row: Dict[str, Any]) -> bool:
         str(row.get("state") or "").strip().lower(),
     }
     positive_status = {"connected", "active", "synced", "complete", "ok", "healthy"}
-    negative_status = {"disconnected", "deleted", "revoked", "inactive", "failed", "error"}
+    negative_status = {"disconnected", "deleted", "revoked", "inactive", "failed", "error", "token_expired", "expired"}
 
     has_auth_artifact = bool(
         row.get("merge_account_id")
@@ -72,11 +72,15 @@ def merge_row_is_connected(row: Dict[str, Any]) -> bool:
         or row.get("active") is True
     )
 
+    # Explicit negative states must win (prevents stale "connected" when old tokens/connected_at still exist).
+    if any(s in negative_status for s in status_values):
+        return False
+
+    if row.get("connected") is False or row.get("is_connected") is False or row.get("active") is False:
+        return False
+
     if any(s in positive_status for s in status_values):
         return True
-
-    if any(s in negative_status for s in status_values) and not has_auth_artifact:
-        return False
 
     return has_auth_artifact
 

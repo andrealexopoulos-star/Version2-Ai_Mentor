@@ -360,20 +360,38 @@ export default function Integrations() {
         setGmailStatus({ connected: false, connected_email: null });
         toast.success('Gmail disconnected');
       } else {
-        const key = Object.keys(mergeIntegrations).find(k =>
-          k.toLowerCase() === integration.id || k.toLowerCase() === integration.name.toLowerCase() || k.toLowerCase().includes(integration.id)
-        );
-        if (key) {
-          await apiClient.post('/merge/disconnect', { provider: key, category: integration.category });
+        const match = Object.entries(mergeIntegrations).find(([key, meta]) => {
+          const k = key.toLowerCase();
+          const provider = String(meta?.provider || '').toLowerCase();
+          const slug = String(meta?.integration_slug || '').toLowerCase();
+          return k === integration.id
+            || k === integration.name.toLowerCase()
+            || k.includes(integration.id)
+            || provider === integration.name.toLowerCase()
+            || provider.includes(integration.id)
+            || slug === integration.id;
+        });
+
+        if (match) {
+          const [key, meta] = match;
+          await apiClient.post('/merge/disconnect', {
+            provider: meta?.provider || key,
+            provider_hint: key,
+            integration_slug: integration.id,
+            category: integration.category,
+          });
           setMergeIntegrations(prev => { const n = { ...prev }; delete n[key]; return n; });
+          await loadMergeIntegrations();
           toast.success(`${integration.name} disconnected`);
+        } else {
+          toast.error('Could not find an active integration record to disconnect. Please refresh and try again.');
         }
       }
     } catch (e) {
       toast.error(`Failed to disconnect: ${e.response?.data?.detail || e.message}`);
     }
     setDisconnecting(null);
-  }, [mergeIntegrations]);
+  }, [mergeIntegrations, loadMergeIntegrations]);
 
   const isConnected = useCallback((integration) => {
     if (integration.type === 'outlook' || integration.type === 'outlook_cal') return outlookStatus.connected;
