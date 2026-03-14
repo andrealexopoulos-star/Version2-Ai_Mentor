@@ -1376,7 +1376,35 @@ async def get_delegate_providers(current_user: dict = Depends(get_current_user))
     ticketing_row = await _get_ticketing_integration(user_id)
     ticketing_provider = _normalize_provider((ticketing_row or {}).get("provider"))
     has_outlook = bool(await _get_outlook_access_token(user_id))
-    has_google_workspace = await _has_gmail_connection(user_id)
+
+    outlook_connected = False
+    outlook_expired = False
+    outlook_expires_at = None
+    try:
+        outlook_row = get_sb().table("outlook_oauth_tokens").select("expires_at").eq("user_id", user_id).limit(1).execute()
+        if outlook_row.data:
+            outlook_connected = True
+            outlook_expires_at = outlook_row.data[0].get("expires_at")
+            if outlook_expires_at:
+                expiry = datetime.fromisoformat(str(outlook_expires_at).replace("Z", "+00:00"))
+                outlook_expired = expiry <= datetime.now(timezone.utc)
+    except Exception:
+        pass
+
+    gmail_connected = False
+    gmail_needs_reconnect = False
+    try:
+        gmail_row = get_sb().table("gmail_connections").select("token_expiry").eq("user_id", user_id).limit(1).execute()
+        if gmail_row.data:
+            gmail_connected = True
+            token_expiry = gmail_row.data[0].get("token_expiry")
+            if token_expiry:
+                expiry = datetime.fromisoformat(str(token_expiry).replace("Z", "+00:00"))
+                gmail_needs_reconnect = expiry <= datetime.now(timezone.utc)
+    except Exception:
+        pass
+
+    has_google_workspace = gmail_connected and not gmail_needs_reconnect
 
     task_pref = None
     cal_pref = None
@@ -1443,7 +1471,12 @@ async def get_delegate_providers(current_user: dict = Depends(get_current_user))
         "connected_business_tools": {
             "ticketing_provider": ticketing_provider or None,
             "outlook_exchange": has_outlook,
+            "outlook_connected": outlook_connected,
+            "outlook_expired": outlook_expired,
+            "outlook_expires_at": outlook_expires_at,
             "google_workspace": has_google_workspace,
+            "gmail_connected": gmail_connected,
+            "gmail_needs_reconnect": gmail_needs_reconnect,
         },
     }
 

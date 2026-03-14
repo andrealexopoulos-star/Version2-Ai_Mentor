@@ -325,6 +325,17 @@ export default function AdvisorWatchtower() {
     assignees: [],
     collections: [],
   });
+  const [delegateProviderHealthLoaded, setDelegateProviderHealthLoaded] = useState(false);
+  const [delegateProviderHealth, setDelegateProviderHealth] = useState({
+    ticketing_provider: null,
+    outlook_exchange: false,
+    outlook_connected: false,
+    outlook_expired: false,
+    outlook_expires_at: null,
+    google_workspace: false,
+    gmail_connected: false,
+    gmail_needs_reconnect: false,
+  });
   const [delegateOptionsLoading, setDelegateOptionsLoading] = useState(false);
   const [evidenceDrawerDecision, setEvidenceDrawerDecision] = useState(null);
   const [auditActionFilter, setAuditActionFilter] = useState('all');
@@ -429,7 +440,7 @@ export default function AdvisorWatchtower() {
       refreshSnapshot(),
       fetchOverview(true),
       fetchWatchtower(),
-      apiClient.get('/workflows/delegate/providers', { timeout: 10000 }),
+      fetchDelegateProviders(),
     ]);
   };
 
@@ -528,20 +539,82 @@ export default function AdvisorWatchtower() {
       const response = await apiClient.get('/workflows/delegate/providers', { timeout: 10000 });
       const providers = response?.data?.providers || [];
       const recommendedProvider = response?.data?.recommended_provider || 'auto';
+      const health = response?.data?.connected_business_tools || {};
       setDelegateProviders(providers);
+      setDelegateProviderHealth((prev) => ({ ...prev, ...health }));
+      setDelegateProviderHealthLoaded(true);
       setDelegateProviderOptions((prev) => ({
         ...prev,
         recommendedProvider,
       }));
       return recommendedProvider;
     } catch {
-      setDelegateProviders([
-        { id: 'auto', label: 'Auto (based on connected tools)', available: true },
-        { id: 'merge-ticketing', label: 'Merge Ticketing', available: false },
-        { id: 'outlook-exchange', label: 'Outlook / Exchange', available: false },
-        { id: 'google-calendar', label: 'Google Calendar', available: false },
-      ]);
-      return 'auto';
+      // Fallback to existing stable APIs to avoid false negatives during transient failures.
+      try {
+        const [outlookRes, gmailRes, mergeRes] = await Promise.allSettled([
+          apiClient.get('/outlook/status', { timeout: 8000 }),
+          apiClient.get('/gmail/status', { timeout: 8000 }),
+          apiClient.get('/integrations/merge/connected', { timeout: 8000 }),
+        ]);
+
+        const outlookData = outlookRes.status === 'fulfilled' ? (outlookRes.value?.data || {}) : {};
+        const gmailData = gmailRes.status === 'fulfilled' ? (gmailRes.value?.data || {}) : {};
+        const mergeData = mergeRes.status === 'fulfilled' ? (mergeRes.value?.data || {}) : {};
+
+        const integrations = mergeData?.integrations || {};
+        const ticketingEntry = Object.values(integrations).find((item) => item?.category === 'ticketing' && item?.connected);
+        const ticketingProvider = ticketingEntry?.provider ? String(ticketingEntry.provider).toLowerCase() : null;
+
+        const outlookExchangeReady = Boolean(outlookData?.connected) && !Boolean(outlookData?.token_expired);
+        const googleWorkspaceReady = Boolean(gmailData?.connected) && !Boolean(gmailData?.needs_reconnect);
+
+        const derivedProviders = [
+          { id: 'auto', label: 'Auto (based on connected tools)', available: Boolean(ticketingProvider || outlookExchangeReady || googleWorkspaceReady) },
+          { id: 'manual', label: 'Manual follow-up', available: true },
+          { id: 'jira', label: 'Jira (via Merge)', available: ticketingProvider?.includes('jira') || false },
+          { id: 'asana', label: 'Asana (via Merge)', available: ticketingProvider?.includes('asana') || false },
+          { id: 'merge-ticketing', label: 'Connected Ticketing Tool (via Merge)', available: Boolean(ticketingProvider) },
+          { id: 'outlook-exchange', label: 'Outlook / Exchange', available: outlookExchangeReady },
+          { id: 'google-calendar', label: 'Google Calendar', available: googleWorkspaceReady },
+        ];
+
+        setDelegateProviders(derivedProviders);
+        setDelegateProviderHealth({
+          ticketing_provider: ticketingProvider,
+          outlook_exchange: outlookExchangeReady,
+          outlook_connected: Boolean(outlookData?.connected),
+          outlook_expired: Boolean(outlookData?.token_expired),
+          outlook_expires_at: outlookData?.expires_at || null,
+          google_workspace: googleWorkspaceReady,
+          gmail_connected: Boolean(gmailData?.connected),
+          gmail_needs_reconnect: Boolean(gmailData?.needs_reconnect),
+        });
+        setDelegateProviderHealthLoaded(true);
+
+        const recommended = ticketingProvider
+          ? 'merge-ticketing'
+          : outlookExchangeReady
+            ? 'outlook-exchange'
+            : googleWorkspaceReady
+              ? 'google-calendar'
+              : 'manual';
+
+        setDelegateProviderOptions((prev) => ({ ...prev, recommendedProvider: recommended }));
+        return recommended;
+      } catch {
+        setDelegateProviderHealthLoaded(false);
+        setDelegateProviders((prev) => {
+          if (prev.length) return prev;
+          return [
+            { id: 'auto', label: 'Auto (based on connected tools)', available: false },
+            { id: 'manual', label: 'Manual follow-up', available: true },
+            { id: 'merge-ticketing', label: 'Merge Ticketing', available: false },
+            { id: 'outlook-exchange', label: 'Outlook / Exchange', available: false },
+            { id: 'google-calendar', label: 'Google Calendar', available: false },
+          ];
+        });
+        return 'manual';
+      }
     }
   }, []);
 
@@ -882,6 +955,93 @@ export default function AdvisorWatchtower() {
                     </p>
                     <p className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-backlog-label">Queued after top 3</p>
                   </div>
+                </div>
+              </section>
+
+              <section className="mb-8" data-testid="advisor-provider-health-section">
+                <div className="mb-3 flex items-center gap-2">
+                  <Radar className="h-4 w-4 text-[#3B82F6]" />
+                  <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-provider-health-title">
+                    Delegate Provider Health
+                  </h2>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3" data-testid="advisor-provider-health-grid">
+                  <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-provider-health-ticketing-card">
+                    <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-ticketing-label">
+                      Jira / Asana via Merge
+                    </p>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-provider-health-ticketing-value">
+                      {!delegateProviderHealthLoaded
+                        ? 'Status unavailable'
+                        : (delegateProviderHealth.ticketing_provider ? `Connected: ${delegateProviderHealth.ticketing_provider}` : 'Not connected')}
+                    </p>
+                    {delegateProviderHealthLoaded && !delegateProviderHealth.ticketing_provider && (
+                      <Link
+                        to="/integrations"
+                        className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                        data-testid="advisor-provider-health-ticketing-connect-cta"
+                      >
+                        Connect Merge Ticketing
+                      </Link>
+                    )}
+                  </article>
+
+                  <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-provider-health-outlook-card">
+                    <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-outlook-label">
+                      Outlook / Exchange
+                    </p>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-provider-health-outlook-value">
+                      {!delegateProviderHealthLoaded
+                        ? 'Status unavailable'
+                        : (delegateProviderHealth.outlook_exchange
+                          ? 'Ready for delegation'
+                          : delegateProviderHealth.outlook_connected
+                            ? 'Connected but token refresh required'
+                            : 'Not connected')}
+                    </p>
+                    {delegateProviderHealthLoaded && delegateProviderHealth.outlook_expires_at && (
+                      <p className="mt-1 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-outlook-expiry">
+                        Token expiry: {formatTime(delegateProviderHealth.outlook_expires_at)}
+                      </p>
+                    )}
+                    {delegateProviderHealthLoaded && !delegateProviderHealth.outlook_exchange && (
+                      <Link
+                        to="/connect-email"
+                        className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                        data-testid="advisor-provider-health-outlook-reconnect-cta"
+                      >
+                        Reconnect Outlook
+                      </Link>
+                    )}
+                  </article>
+
+                  <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-provider-health-google-card">
+                    <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-google-label">
+                      Google Calendar
+                    </p>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-provider-health-google-value">
+                      {!delegateProviderHealthLoaded
+                        ? 'Status unavailable'
+                        : (delegateProviderHealth.google_workspace
+                          ? 'Ready for delegation'
+                          : delegateProviderHealth.gmail_connected
+                            ? 'Connected but token refresh required'
+                            : 'Not connected')}
+                    </p>
+                    {delegateProviderHealthLoaded && !delegateProviderHealth.google_workspace && (
+                      <Link
+                        to="/connect-email"
+                        className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                        data-testid="advisor-provider-health-google-connect-cta"
+                      >
+                        Connect Google
+                      </Link>
+                    )}
+                  </article>
                 </div>
               </section>
 
