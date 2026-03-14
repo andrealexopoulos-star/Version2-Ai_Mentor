@@ -548,7 +548,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 f"URL: {url}\n"
                 "Return JSON keys: business_name, description, industry, main_products_services, target_market, "
                 "unique_value_proposition, competitive_advantages, competitors, competitor_analysis, market_position, "
-                "abn, confidence.\n"
+                "abn, social_handles, trust_signals, executive_summary, confidence.\n"
                 "If unknown, return empty string. competitors must be array of names.\n\n"
                 f"DATA:\n{combined_text[:18000]}"
             )
@@ -574,6 +574,15 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "market_position": "",
                 "abn": abn_candidates[0] if abn_candidates else "",
                 "abn_candidates": abn_candidates,
+                "social_handles": {
+                    "linkedin": "",
+                    "instagram": "",
+                    "facebook": "",
+                    "x": "",
+                    "youtube": "",
+                },
+                "trust_signals": [],
+                "executive_summary": "",
                 "confidence": "medium",
                 "sources": {
                     "company": company_search.get("results") or [],
@@ -588,8 +597,45 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     enrichment.update({k: parsed.get(k, enrichment.get(k)) for k in enrichment.keys() if k in parsed})
                     if isinstance(parsed.get("competitors"), list):
                         enrichment["competitors"] = parsed.get("competitors")
+                    if isinstance(parsed.get("trust_signals"), list):
+                        enrichment["trust_signals"] = parsed.get("trust_signals")
             except Exception:
                 logger.warning("[enrichment/website] Could not parse AI JSON synthesis; using deterministic fallback")
+
+            # deterministic social handle fallback extraction
+            for platform, pattern in {
+                "linkedin": r"https?://(?:www\.)?linkedin\.com/[\w\-/]+",
+                "instagram": r"https?://(?:www\.)?instagram\.com/[\w\./-]+",
+                "facebook": r"https?://(?:www\.)?facebook\.com/[\w\./-]+",
+                "x": r"https?://(?:www\.)?(?:x|twitter)\.com/[\w\./-]+",
+                "youtube": r"https?://(?:www\.)?youtube\.com/[\w\./?=&-]+",
+            }.items():
+                if not enrichment["social_handles"].get(platform):
+                    m = re.search(pattern, combined_text, re.IGNORECASE)
+                    if m:
+                        enrichment["social_handles"][platform] = m.group(0)
+
+            if not enrichment.get("trust_signals"):
+                inferred = []
+                lowered = combined_text.lower()
+                for token, label in [
+                    ("iso", "ISO / certification mention"),
+                    ("award", "Awards mention"),
+                    ("testimonial", "Testimonials / social proof"),
+                    ("case study", "Case studies"),
+                    ("partner", "Partnership mention"),
+                    ("accredited", "Accreditation mention"),
+                ]:
+                    if token in lowered:
+                        inferred.append(label)
+                enrichment["trust_signals"] = inferred
+
+            if not enrichment.get("executive_summary"):
+                enrichment["executive_summary"] = (
+                    f"{enrichment.get('business_name') or 'Business'} appears positioned in {enrichment.get('industry') or 'its sector'} with "
+                    f"focus on {enrichment.get('main_products_services') or 'core services'}. "
+                    f"Top competitor pressure: {enrichment.get('competitor_analysis') or 'to be validated through market signals'}."
+                )
 
             return {
                 "status": "draft",

@@ -28,6 +28,7 @@ class BoardRoomDiagnosisRequest(BaseModel):
 
 class WarRoomAskRequest(BaseModel):
     question: str
+    product_or_service: Optional[str] = None
 
 
 DIAGNOSIS_FOCUS_AREAS = {
@@ -479,7 +480,7 @@ async def war_room_respond_proxy(request: Request, payload: WarRoomAskRequest):
         "Content-Type": "application/json",
     }
 
-    product_or_service = "General business advisory"
+    product_or_service = payload.product_or_service or "General business advisory"
     try:
         profile_row = sb.table("business_profiles").select("product_or_service, industry, value_proposition").eq("user_id", user_id).maybe_single().execute().data or {}
         candidate = profile_row.get("product_or_service") or profile_row.get("value_proposition") or profile_row.get("industry")

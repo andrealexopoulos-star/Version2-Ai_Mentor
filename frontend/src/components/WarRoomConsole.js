@@ -43,12 +43,21 @@ const WarRoomConsole = () => {
     setConversation(function(prev) { return prev.concat([{ role: 'user', text: q }]); });
     setAsking(true);
     try {
-      var res = await apiClient.post('/war-room/respond', { question: q });
+      const inferredProductOrService =
+        c?.product_or_service ||
+        c?.business_model ||
+        c?.market_position ||
+        'General business advisory';
+
+      var res = await apiClient.post('/war-room/respond', {
+        question: q,
+        product_or_service: String(inferredProductOrService).slice(0, 200),
+      });
       var data = res.data;
       setConversation(function(prev) {
         return prev.concat([{
           role: 'advisor',
-          text: data.answer || data.error || 'Unable to process.',
+          text: data.answer || data.response || data.error || 'Unable to process.',
           sources: data.data_sources,
           degraded: Boolean(data.degraded),
           explainability: {
