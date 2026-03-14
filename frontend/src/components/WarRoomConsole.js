@@ -14,6 +14,40 @@ const STATE_CFG = {
   CRITICAL:    { label: 'Critical', color: '#991B1B', bg: '#FEF2F2', border: '#FECACA', dot: '#EF4444' },
 };
 
+const summariseWarRoomAnalysis = (analysis) => {
+  if (!analysis || typeof analysis !== 'object') return '';
+
+  const title = analysis.analysis_title || '';
+  const customerInsight = analysis.customer_insight || '';
+  const opportunity = analysis.revenue_opportunity || '';
+  const recommendations = Array.isArray(analysis.recommendations)
+    ? analysis.recommendations.filter(Boolean).slice(0, 3)
+    : [];
+  const risks = Array.isArray(analysis.risks_to_watch)
+    ? analysis.risks_to_watch.filter(Boolean).slice(0, 2)
+    : [];
+
+  const parts = [];
+  if (title) parts.push(title);
+  if (customerInsight) parts.push(`Situation: ${customerInsight}`);
+  if (opportunity) parts.push(`Opportunity: ${opportunity}`);
+  if (recommendations.length) {
+    parts.push('Recommended actions:');
+    recommendations.forEach((item) => parts.push(`- ${item}`));
+  }
+  if (risks.length) {
+    parts.push('Risks to watch:');
+    risks.forEach((item) => parts.push(`- ${item}`));
+  }
+
+  return parts.join('\n').trim();
+};
+
+const getWarRoomReplyText = (data) => {
+  if (!data || typeof data !== 'object') return 'Unable to process.';
+  return data.answer || data.response || data.error || summariseWarRoomAnalysis(data.analysis) || 'Unable to process.';
+};
+
 const WarRoomConsole = () => {
   const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
   const { status: integrationStatus } = useIntegrationStatus();
@@ -52,12 +86,14 @@ const WarRoomConsole = () => {
       var res = await apiClient.post('/war-room/respond', {
         question: q,
         product_or_service: String(inferredProductOrService).slice(0, 200),
+      }, {
+        timeout: 60000,
       });
       var data = res.data;
       setConversation(function(prev) {
         return prev.concat([{
           role: 'advisor',
-          text: data.answer || data.response || data.error || 'Unable to process.',
+          text: getWarRoomReplyText(data),
           sources: data.data_sources,
           degraded: Boolean(data.degraded),
           explainability: {
@@ -203,6 +239,7 @@ const WarRoomConsole = () => {
               {conversation.map(function(msg, i) { return (
                 <div key={i} className={'flex ' + (msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                   <div className="max-w-[85%] p-4 rounded-2xl"
+                    data-testid={`war-room-message-${msg.role}-${i}`}
                     style={msg.role === 'user'
                       ? { background: 'rgba(255,106,0,0.12)', color: '#F4F7FA', border: '1px solid rgba(255,106,0,0.2)' }
                       : { background: 'rgba(255,255,255,0.04)', border: '1px solid var(--biqc-border,#1E2D3D)', color: 'var(--biqc-text,#F4F7FA)' }}>

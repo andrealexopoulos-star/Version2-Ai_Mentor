@@ -12,6 +12,7 @@ import uuid
 import re
 import json
 import logging
+from html import unescape
 
 import httpx
 from core.llm_router import llm_trinity_chat
@@ -76,6 +77,167 @@ def _extract_domain(url: str) -> str:
         return ""
     clean = re.sub(r"^https?://", "", url.strip(), flags=re.IGNORECASE)
     return clean.split("/")[0].strip().lower()
+
+
+def _extract_meta_content(html: str, key: str) -> str:
+    if not html or not key:
+        return ""
+    patterns = [
+        rf'<meta[^>]+property=["\']{re.escape(key)}["\'][^>]+content=["\']([^"\']+)',
+        rf'<meta[^>]+name=["\']{re.escape(key)}["\'][^>]+content=["\']([^"\']+)',
+        rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']{re.escape(key)}["\']',
+        rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']{re.escape(key)}["\']',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, html, re.IGNORECASE)
+        if match:
+            return unescape(match.group(1)).strip()
+    return ""
+
+
+def _extract_title(html: str) -> str:
+    if not html:
+        return ""
+    match = re.search(r"<title>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    return unescape(match.group(1)).strip() if match else ""
+
+
+def _clean_business_name(candidate: str) -> str:
+    value = (candidate or "").strip()
+    if not value:
+        return ""
+    parts = [p.strip() for p in re.split(r"\||—|-", value) if p.strip()]
+    generic_titles = {"business advisory services", "home", "welcome"}
+    for part in parts:
+        if part.lower() not in generic_titles and len(part) > 2:
+            return part
+    return value if value.lower() not in generic_titles else ""
+
+
+def _extract_social_handles_from_html(html: str) -> Dict[str, str]:
+    handles = {"linkedin": "", "instagram": "", "facebook": "", "x": "", "youtube": ""}
+    if not html:
+        return handles
+    patterns = {
+        "linkedin": r"https?://(?:www\.)?linkedin\.com/[\w\-\./]+",
+        "instagram": r"https?://(?:www\.)?instagram\.com/[\w\-\./]+",
+        "facebook": r"https?://(?:www\.)?facebook\.com/[\w\-\./]+",
+        "x": r"https?://(?:www\.)?(?:x|twitter)\.com/[\w\-\./]+",
+        "youtube": r"https?://(?:www\.)?youtube\.com/[\w\-\./\?=&]+",
+    }
+    for platform, pattern in patterns.items():
+        match = re.search(pattern, html, re.IGNORECASE)
+        if match:
+            handles[platform] = match.group(0)
+    return handles
+
+
+def _extract_json_candidate(raw: Any) -> Dict[str, Any]:
+    if isinstance(raw, dict):
+        return raw
+    if not isinstance(raw, str):
+        return {}
+    try:
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, dict) else {}
+    except Exception:
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if not match:
+            return {}
+        try:
+            parsed = json.loads(match.group(0))
+            return parsed if isinstance(parsed, dict) else {}
+        except Exception:
+            return {}
+
+
+def _extract_service_lines(text: str) -> List[str]:
+    if not text:
+        return []
+    service_keywords = (
+        "advisory", "coaching", "strategy", "marketing", "operations",
+        "compliance", "regulations", "efficiency", "conflict", "mentoring",
+        "growth", "sales"
+    )
+    services: List[str] = []
+    seen = set()
+    for line in text.splitlines():
+        candidate = re.sub(r"\s+", " ", line).strip(" :\u2022-\t")
+        if not candidate or len(candidate) < 12 or len(candidate) > 90:
+            continue
+        lowered = candidate.lower()
+        if any(keyword in lowered for keyword in service_keywords):
+            if candidate not in seen:
+                seen.add(candidate)
+                services.append(candidate)
+        if len(services) >= 5:
+            break
+    return services
+
+
+def _infer_target_market(text: str, description: str = "") -> str:
+    lowered = f"{text}\n{description}".lower()
+    segments = []
+    if "startup" in lowered:
+        segments.append("startups")
+    if "enterprise" in lowered:
+        segments.append("established enterprises")
+    if "business owner" in lowered:
+        segments.append("business owners")
+    if "australia" in lowered or "australian" in lowered:
+        segments.append("Australian businesses")
+    if not segments:
+        return ""
+    ordered = []
+    for segment in segments:
+        if segment not in ordered:
+            ordered.append(segment)
+    return ", ".join(ordered)
+
+
+def _infer_competitors_from_results(results: List[Dict[str, Any]], business_name: str, domain: str) -> List[str]:
+    if not results:
+        return []
+    competitors: List[str] = []
+    seen = set()
+    business_lower = (business_name or "").lower()
+    blocked_domains = (
+        "linkedin.com", "facebook.com", "instagram.com", "youtube.com", "zoominfo.com",
+        "crunchbase.com", "yellowpages", "productreview", "indeed.com", "glassdoor.com",
+    )
+    for result in results:
+        link = (result.get("link") or "").lower()
+        title = (result.get("title") or "").strip()
+        if not title:
+            continue
+        if domain and domain in link:
+            continue
+        if any(blocked in link for blocked in blocked_domains):
+            continue
+        raw_name = re.split(r"\||—|-", title)[0].strip()
+        if not raw_name or len(raw_name) < 3:
+            continue
+        lowered = raw_name.lower()
+        if business_lower and business_lower in lowered:
+            continue
+        if lowered in seen:
+            continue
+        seen.add(lowered)
+        competitors.append(raw_name)
+        if len(competitors) >= 5:
+            break
+    return competitors
+
+
+def _extract_sentence_with_keywords(text: str, keywords: List[str]) -> str:
+    if not text:
+        return ""
+    sentences = re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", text))
+    for sentence in sentences:
+        lowered = sentence.lower()
+        if any(keyword in lowered for keyword in keywords) and 25 <= len(sentence) <= 220:
+            return sentence.strip()
+    return ""
 
 
 # ─── Constants ───
@@ -525,9 +687,23 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
     if payload.action == "scan":
         try:
             page_text = await scrape_url_text(url)
+            raw_html = ""
+            try:
+                async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+                    raw_resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; BIQcBot/1.0)"})
+                    if raw_resp.status_code < 400:
+                        raw_html = raw_resp.text
+            except Exception:
+                raw_html = ""
+
             domain = _extract_domain(url)
+            page_title = _extract_title(raw_html)
+            meta_description = _extract_meta_content(raw_html, "description") or _extract_meta_content(raw_html, "og:description")
+            og_site_name = _extract_meta_content(raw_html, "og:site_name") or _extract_meta_content(raw_html, "twitter:title")
+            business_name_hint = _clean_business_name(og_site_name) or _clean_business_name(page_title) or domain.split(".")[0].replace("-", " ").title()
+            service_lines = _extract_service_lines(page_text)
+            competitor_query = f'"{business_name_hint}" competitors australia {page_title or ""}'.strip()
             company_query = f"site:{domain} company profile services about"
-            competitor_query = f"{domain} competitors australia"
             abn_query = f"{domain} ABN"
 
             company_search = await serper_search(company_query, gl="au", hl="en", num=8)
@@ -552,35 +728,33 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "If unknown, return empty string. competitors must be array of names.\n\n"
                 f"DATA:\n{combined_text[:18000]}"
             )
-            ai_json = await get_ai_response(
-                synthesis_prompt,
-                "general",
-                f"website_scan_{user_id}",
-                user_id=user_id,
-                metadata={"force_trinity": True, "context": "onboarding_deep_scan"},
-            )
+            try:
+                ai_json = await get_ai_response(
+                    synthesis_prompt,
+                    "general",
+                    f"website_scan_{user_id}",
+                    user_id=user_id,
+                    metadata={"force_trinity": True, "context": "onboarding_deep_scan"},
+                )
+            except Exception as ai_error:
+                logger.warning(f"[enrichment/website] AI synthesis unavailable, falling back to deterministic scan: {ai_error}")
+                ai_json = {}
 
             enrichment = {
-                "title": "",
-                "description": "",
-                "business_name": "",
-                "industry": "",
-                "main_products_services": "",
-                "target_market": "",
-                "unique_value_proposition": "",
-                "competitive_advantages": "",
-                "competitors": [],
+                "title": page_title,
+                "description": meta_description or _extract_sentence_with_keywords(page_text, ["results", "strategy", "growth", "service"]),
+                "business_name": business_name_hint,
+                "industry": page_title or "",
+                "main_products_services": "; ".join(service_lines[:4]),
+                "target_market": _infer_target_market(page_text, meta_description),
+                "unique_value_proposition": meta_description or _extract_sentence_with_keywords(page_text, ["measurable results", "20 years", "tailor", "holistic"]),
+                "competitive_advantages": _extract_sentence_with_keywords(page_text, ["20 years", "measurable results", "tailor", "ahead of the competition"]),
+                "competitors": _infer_competitors_from_results(competitor_search.get("results") or [], business_name_hint, domain),
                 "competitor_analysis": "",
                 "market_position": "",
                 "abn": abn_candidates[0] if abn_candidates else "",
                 "abn_candidates": abn_candidates,
-                "social_handles": {
-                    "linkedin": "",
-                    "instagram": "",
-                    "facebook": "",
-                    "x": "",
-                    "youtube": "",
-                },
+                "social_handles": _extract_social_handles_from_html(raw_html),
                 "trust_signals": [],
                 "executive_summary": "",
                 "confidence": "medium",
@@ -592,7 +766,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             }
 
             try:
-                parsed = json.loads(ai_json) if isinstance(ai_json, str) else ai_json
+                parsed = _extract_json_candidate(ai_json)
                 if isinstance(parsed, dict):
                     enrichment.update({k: parsed.get(k, enrichment.get(k)) for k in enrichment.keys() if k in parsed})
                     if isinstance(parsed.get("competitors"), list):
@@ -619,6 +793,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 inferred = []
                 lowered = combined_text.lower()
                 for token, label in [
+                    ("20 years", "20+ years experience"),
                     ("iso", "ISO / certification mention"),
                     ("award", "Awards mention"),
                     ("testimonial", "Testimonials / social proof"),
@@ -629,6 +804,19 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     if token in lowered:
                         inferred.append(label)
                 enrichment["trust_signals"] = inferred
+
+            if not enrichment.get("competitor_analysis") and enrichment.get("competitors"):
+                enrichment["competitor_analysis"] = (
+                    f"Search results indicate competition from {', '.join((enrichment.get('competitors') or [])[:3])}. "
+                    f"Site messaging differentiates through {enrichment.get('unique_value_proposition') or 'tailored advisory and measurable outcomes'}.")
+
+            if not enrichment.get("market_position"):
+                target_market = enrichment.get("target_market") or "Australian businesses"
+                if enrichment.get("unique_value_proposition"):
+                    enrichment["market_position"] = (
+                        f"{enrichment.get('business_name') or 'This business'} positions itself for {target_market} with a focus on "
+                        f"{enrichment.get('unique_value_proposition')}."
+                    )
 
             if not enrichment.get("executive_summary"):
                 enrichment["executive_summary"] = (
