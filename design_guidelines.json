@@ -1,107 +1,116 @@
 {
-  "project_name": "BIQc Integrations",
+  "project_name": "BIQc Advisor Redesign",
+  "version": "1.0",
   "design_philosophy": {
-    "archetype": "The Performance Pro",
-    "vibe": "Command Center, Technical, High-Precision",
-    "core_principle": "Density without clutter. Information is beautiful."
+    "persona": "E1: The Anti-AI Designer",
+    "core_principles": [
+      "Fusion over Imitation: Mix disparate disciplines.",
+      "Emotion First: Design maps to feeling.",
+      "Content is King: Directed storytelling.",
+      "Zoom In: Bold focus on details.",
+      "Negative Space: Value empty areas.",
+      "Contrast: Light vs Dark, Big vs Small."
+    ],
+    "anti_patterns": [
+      "Purple/Teal for CTA",
+      "Inter everywhere (Use Cormorant for headings)",
+      "Center-Everything",
+      "Gradient Overload",
+      "Generic 'SaaS Blue'"
+    ]
   },
   "theme": {
-    "mode": "dark",
+    "mode": "light",
+    "archetype": "ARCHETYPE 4: SWISS & HIGH-CONTRAST (Authority, Clarity, Truth)",
     "colors": {
-      "background": "#070E18",
-      "card_bg": "#0B121C",
-      "card_hover": "#111925",
-      "border": "rgba(255, 255, 255, 0.08)",
-      "border_active": "#FF6A00",
-      "primary": "#FF6A00",
-      "success": "#10B981",
-      "text_primary": "#F4F7FA",
-      "text_secondary": "#9FB0C3",
-      "text_muted": "#5A6B80"
+      "background": {
+        "page": "#F8FAFC",
+        "card": "#FFFFFF",
+        "sidebar": "#FFFFFF",
+        "input": "#F1F5F9"
+      },
+      "text": {
+        "primary": "#0F172A",
+        "secondary": "#475569",
+        "muted": "#94A3B8",
+        "brand": "#FF6A00"
+      },
+      "border": {
+        "default": "#E2E8F0",
+        "focus": "#FF6A00"
+      },
+      "status": {
+        "success": "#10B981",
+        "warning": "#F59E0B",
+        "error": "#EF4444",
+        "info": "#3B82F6"
+      }
+    }
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Cormorant Garamond, serif",
+      "weights": ["600", "700"],
+      "usage": "All H1-H3, Hero text, Key Metrics"
     },
-    "typography": {
-      "heading": "Cormorant Garamond",
-      "body": "Inter",
-      "mono": "JetBrains Mono"
+    "body": {
+      "font_family": "Inter, sans-serif",
+      "usage": "Paragraphs, UI labels, Inputs"
+    },
+    "data": {
+      "font_family": "JetBrains Mono, monospace",
+      "usage": "Numbers, IDs, Code snippets, Status badges"
     }
   },
   "layout_strategy": {
-    "type": "Bento Grid / High Density",
-    "grid_columns": "grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4",
-    "gap": "gap-5",
-    "padding": "p-8"
-  },
-  "components": {
-    "page_container": {
-      "classes": "min-h-screen bg-[#070E18] text-[#F4F7FA] w-full"
-    },
-    "header": {
-      "style": "Clean, minimal, editorial",
-      "title_classes": "text-4xl font-display font-medium tracking-tight text-[#F4F7FA]",
-      "subtitle_classes": "text-[#9FB0C3] mt-2 font-body text-lg font-light max-w-2xl"
-    },
-    "hero_cta": {
-      "style": "The 'Merge Link' Trigger",
-      "description": "A prominent but sleek banner/button area to trigger the global connection flow",
-      "classes": "w-full border border-[#FF6A00]/20 bg-[#FF6A00]/5 rounded-xl p-6 flex items-center justify-between hover:bg-[#FF6A00]/10 transition-all duration-300 group cursor-pointer"
-    },
-    "category_tabs": {
-      "style": "Sticky, Glassmorphism",
-      "wrapper_classes": "sticky top-0 z-40 bg-[#070E18]/80 backdrop-blur-xl border-b border-white/5 py-4 mb-8",
-      "list_classes": "flex gap-2 overflow-x-auto no-scrollbar pb-1",
-      "item_active": "bg-white/10 text-white border-white/20",
-      "item_inactive": "text-[#9FB0C3] hover:text-white hover:bg-white/5 border-transparent"
-    },
-    "integration_card": {
-      "style": "Technical Grid Border",
-      "base_classes": "group relative flex flex-col p-5 rounded-lg border border-white/5 bg-[#0B121C] transition-all duration-200 hover:-translate-y-1 hover:border-[#FF6A00]/30 hover:shadow-[0_4px_20px_-10px_rgba(255,106,0,0.2)]",
-      "connected_classes": "border-[#10B981]/30 bg-[#10B981]/5 hover:border-[#10B981]/50",
-      "logo_size": "h-10 w-10 rounded-md object-contain bg-white p-1"
-    },
-    "status_badge": {
-      "font": "JetBrains Mono",
-      "classes": "text-[10px] uppercase tracking-wider font-medium px-2 py-1 rounded-sm",
-      "connected": "bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20",
-      "disconnected": "hidden",
-      "coming_soon": "bg-white/5 text-[#9FB0C3] border border-white/10"
+    "grid_system": "Bento Grid (Mode B: High Density)",
+    "container_padding": "p-6 md:p-8 lg:p-12",
+    "gap": "gap-4 md:gap-6",
+    "border_radius": "rounded-none or rounded-sm (Sharp/Technical feel)",
+    "structure": {
+      "advisor_page": {
+        "hero_section": "col-span-full",
+        "stability_score": "col-span-1 md:col-span-1",
+        "daily_brief": "col-span-1 md:col-span-2",
+        "cognition_tabs": "col-span-full (Horizontal Segmented Control)",
+        "active_insight_panel": "col-span-full",
+        "risk_list": "col-span-full"
+      }
     }
   },
-  "data_structure": {
-    "categories": [
-      "All", "Email", "CRM", "Financial", "HR & Payroll", "ATS", "Ticketing", "File Storage", "Knowledge Base", "Marketing"
-    ],
-    "integrations_sample": [
-      { "id": "gmail", "name": "Gmail", "domain": "google.com", "category": "Email", "desc": "Sync emails and calendar events." },
-      { "id": "outlook", "name": "Outlook", "domain": "microsoft.com", "category": "Email", "desc": "Enterprise email and scheduling." },
-      { "id": "salesforce", "name": "Salesforce", "domain": "salesforce.com", "category": "CRM", "desc": "The world's #1 CRM platform." },
-      { "id": "hubspot", "name": "HubSpot", "domain": "hubspot.com", "category": "CRM", "desc": "Inbound marketing, sales, and service." },
-      { "id": "xero", "name": "Xero", "domain": "xero.com", "category": "Financial", "desc": "Beautiful business and accounting software." },
-      { "id": "quickbooks", "name": "QuickBooks", "domain": "quickbooks.intuit.com", "category": "Financial", "desc": "Smart accounting software for small business." },
-      { "id": "slack", "name": "Slack", "domain": "slack.com", "category": "Communication", "desc": "Team communication and collaboration." },
-      { "id": "jira", "name": "Jira", "domain": "atlassian.com", "category": "Ticketing", "desc": "Issue and project tracking software." },
-      { "id": "notion", "name": "Notion", "domain": "notion.so", "category": "Knowledge Base", "desc": "All-in-one workspace for notes and docs." },
-      { "id": "linear", "name": "Linear", "domain": "linear.app", "category": "Ticketing", "desc": "Issue tracking built for speed." },
-      { "id": "google-ads", "name": "Google Ads", "domain": "ads.google.com", "category": "Marketing", "desc": "Reach customers across Google's network." },
-      { "id": "meta-ads", "name": "Meta Ads", "domain": "facebook.com", "category": "Marketing", "desc": "Advertise on Facebook and Instagram." },
-      { "id": "linkedin-ads", "name": "LinkedIn Ads", "domain": "linkedin.com", "category": "Marketing", "desc": "Target professionals on LinkedIn." }
-    ]
+  "components": {
+    "cards": {
+      "style": "Flat background, 1px subtle border, no shadow (or very subtle hover shadow).",
+      "classes": "bg-white border border-slate-200 p-6"
+    },
+    "buttons": {
+      "primary": "bg-[#FF6A00] text-white hover:bg-[#E65D00] rounded-md px-6 py-2.5 font-medium tracking-wide shadow-sm",
+      "secondary": "bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md px-4 py-2"
+    },
+    "badges": {
+      "style": "Outline style with subtle background tint. Monospace font.",
+      "classes": "text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded-sm border"
+    },
+    "visual_enhancers": {
+      "noise_overlay": "Add a subtle noise texture to the page background if possible for 'paper' feel.",
+      "trinity_icons": "Use Lucide icons (Stroke width 1.5px) for crispness."
+    }
   },
-  "image_strategy": {
-    "source": "Clearbit Logo API",
-    "pattern": "https://logo.clearbit.com/{domain}",
-    "fallback": "UI Avatar with initials"
-  },
-  "implementation_steps": [
-    "1. Create /app/frontend/src/pages/IntegrationsPage.js",
-    "2. Implement the 'Email & Calendar' sovereign section at the top (Gmail/Outlook special handling).",
-    "3. Implement the Category Tabs with horizontal scroll.",
-    "4. Implement the Grid of Cards using the sample data.",
-    "5. Add the 'Coming Soon' Marketing section with reduced opacity.",
-    "6. Ensure all interactions (hover, click) have the 'Technical' feel (sharp transitions, mono fonts)."
+  "instructions_to_main_agent": [
+    "Refactor '/app/frontend/src/pages/AdvisorWatchtower.js' to use the new design system.",
+    "Remove all inline styles that force dark mode colors (e.g., background: '#0F1720'). Use Tailwind classes.",
+    "Ensure 'Cormorant Garamond' is applied to the Greeting and Section Headings.",
+    "Implement the 'Bento Grid' layout for the main dashboard area.",
+    "Preserve all data fetching logic (useSnapshotProgress, useIntegrationStatus).",
+    "Preserve all 'data-testid' attributes for testing.",
+    "Simplify the 'Cognition Tabs' into a clean, horizontal list that controls the view below.",
+    "Make 'Risk Suggestions' more prominent/integrated, not just a list at the bottom.",
+    "Ensure the 'Daily Brief' feels like a narrative/story (Typography focus).",
+    "Use 'sonner' for any notifications/toasts."
   ],
-  "universal_guidelines": {
-    "font_rendering": "antialiased subpixel-antialiased",
-    "border_radius": "rounded-lg",
-    "animation": "transition-all duration-200 ease-out"
+  "accessibility": {
+    "contrast": "Ensure text contrast ratio of 4.5:1 minimum.",
+    "focus_states": "Visible focus rings on all interactive elements.",
+    "aria_labels": "Ensure all icon-only buttons have aria-labels."
   }
 }
