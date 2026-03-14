@@ -112,6 +112,7 @@ const toSignal = (item = {}, fallbackSource = 'snapshot') => {
     occurrences: 1,
     actionIds: [actionId],
     dedupeKey: `${signalType}|${domain}|${source}`,
+    evidenceRefs: item.evidence_refs || item.evidence || [],
   };
 };
 
@@ -368,6 +369,25 @@ const buildIntegrationSignals = (integrationContext) => {
   return dedupeSignals(raw);
 };
 
+const buildSignalsFromExecutiveSurface = (executiveSurface) => {
+  const cards = executiveSurface?.cards || {};
+  const ordered = [cards.decide_now, cards.monitor_this_week, cards.build_next].filter(Boolean);
+  return dedupeSignals(
+    ordered.map((card, index) => toSignal({
+      id: card.signal_key || `exec-signal-${index + 1}`,
+      signal: card.signal_key || `executive_signal_${index + 1}`,
+      domain: card.bucket_hint || 'general',
+      severity: Number(card.risk_score || 0) >= 80 ? 'high' : Number(card.risk_score || 0) >= 60 ? 'medium' : 'low',
+      title: card.signal_summary,
+      detail: `${card.evidence_summary || ''}`.trim() || card.decision_summary,
+      recommendation: card.action_summary,
+      if_ignored: card.consequence,
+      source: card.source || 'snapshot',
+      created_at: card.timestamp,
+    }, 'snapshot')),
+  );
+};
+
 const scoreRiskForBucket = (signal, bucketId) => {
   if (!signal) return 0;
   const base = { critical: 92, high: 78, medium: 58, low: 38, info: 25 }[signal.severity] || 30;
@@ -485,6 +505,17 @@ const getStateLabel = (overview, cognitive) => {
   return 'Stable';
 };
 
+const getExecutiveStateLabel = ({ executiveSnapshot, decisions, fallbackState }) => {
+  const maxRisk = Math.max(...decisions.map((decision) => decision.riskScore || 0), 0);
+  const overdue = Number(executiveSnapshot?.overdueCount || 0);
+  const stalled = Number(executiveSnapshot?.stalledDeals || 0);
+  const priorityThreads = Number(executiveSnapshot?.highPriorityEmails || 0);
+
+  if (maxRisk >= 85 || overdue >= 10 || stalled >= 20) return 'Under Pressure';
+  if (maxRisk >= 70 || overdue > 0 || stalled > 0 || priorityThreads > 0) return 'Monitoring';
+  return fallbackState;
+};
+
 export default function AdvisorWatchtower() {
   const { user, authState } = useSupabaseAuth();
   const {
@@ -512,6 +543,7 @@ export default function AdvisorWatchtower() {
     priorityInbox: null,
     outlookStatus: null,
     calibrationStatus: null,
+    executiveSurface: null,
   });
   const [integrationContextLoading, setIntegrationContextLoading] = useState(false);
   const [integrationContextError, setIntegrationContextError] = useState('');
@@ -544,6 +576,7 @@ export default function AdvisorWatchtower() {
   const [evidenceDrawerDecision, setEvidenceDrawerDecision] = useState(null);
   const [auditActionFilter, setAuditActionFilter] = useState('all');
   const [auditSearch, setAuditSearch] = useState('');
+  const [showAdvancedSections, setShowAdvancedSections] = useState(false);
 
   const actionStorageKey = useMemo(() => `advisor-actions-${user?.id || 'anon'}`, [user?.id]);
 
@@ -588,6 +621,7 @@ export default function AdvisorWatchtower() {
 
     try {
       const requests = await Promise.allSettled([
+        apiClient.get('/advisor/executive-surface', { timeout: 15000 }),
         apiClient.get('/integrations/merge/connected', { timeout: 12000 }),
         apiClient.get('/integrations/crm/deals', { params: { page_size: 50 }, timeout: 15000 }),
         apiClient.get('/integrations/accounting/summary', { timeout: 15000 }),
@@ -596,7 +630,9 @@ export default function AdvisorWatchtower() {
         apiClient.get('/calibration/status', { timeout: 10000 }),
       ]);
 
-      const [mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
+      const [surfaceRes, mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
+
+      const executiveSurface = surfaceRes.status === 'fulfilled' ? (surfaceRes.value?.data || null) : null;
 
       const mergeConnected = mergeRes.status === 'fulfilled' ? (mergeRes.value?.data?.integrations || {}) : {};
       const crmDeals = crmRes.status === 'fulfilled' ? (crmRes.value?.data?.results || []) : [];
@@ -612,6 +648,7 @@ export default function AdvisorWatchtower() {
         priorityInbox,
         outlookStatus,
         calibrationStatus,
+        executiveSurface,
       });
     } catch (error) {
       setIntegrationContextError(error?.response?.data?.detail || 'Unable to load integration context.');
@@ -745,8 +782,14 @@ export default function AdvisorWatchtower() {
   }, [timeOfDay]);
 
   const signals = useMemo(() => {
+    const surfaceSignals = buildSignalsFromExecutiveSurface(integrationContext.executiveSurface);
     const coreSignals = buildSignals(overview, cognitive, watchtowerEvents);
     const integrationSignals = buildIntegrationSignals(integrationContext);
+
+    if (surfaceSignals.length > 0) {
+      return dedupeSignals([...surfaceSignals, ...coreSignals]);
+    }
+
     return dedupeSignals([...coreSignals, ...integrationSignals]);
   }, [overview, cognitive, watchtowerEvents, integrationContext]);
 
@@ -1063,7 +1106,7 @@ export default function AdvisorWatchtower() {
   const integrationTruth = overview?.integrations || cognitive?.integrations || {};
   const connectedSources = useMemo(() => {
     const list = [];
-    const mergeMap = integrationContext.mergeConnected || {};
+    const mergeMap = integrationContext.mergeConnected || integrationContext.executiveSurface?.connected_tools || {};
 
     Object.values(mergeMap).forEach((entry) => {
       if (entry?.connected && entry?.provider) list.push(entry.provider);
@@ -1077,10 +1120,30 @@ export default function AdvisorWatchtower() {
       if (integrationTruth.email) list.push('Email');
     }
 
-    return [...new Set(list)];
+    const normalize = (value) => String(value || '').trim().toLowerCase();
+    const uniqueByNormalized = new Map();
+    list.forEach((item) => {
+      const key = normalize(item);
+      if (!key || uniqueByNormalized.has(key)) return;
+      uniqueByNormalized.set(key, item);
+    });
+    return [...uniqueByNormalized.values()];
   }, [integrationTruth, integrationContext]);
 
   const executiveSnapshot = useMemo(() => {
+    const surfaceSnapshot = integrationContext.executiveSurface?.snapshot;
+    if (surfaceSnapshot) {
+      return {
+        openDeals: Number(surfaceSnapshot.open_deals || 0),
+        stalledDeals: Number(surfaceSnapshot.stalled_deals_72h || 0),
+        overdueCount: Number(surfaceSnapshot.overdue_invoices || 0),
+        overdueValue: Number(surfaceSnapshot.total_overdue || 0),
+        outstandingValue: Number(surfaceSnapshot.total_outstanding || 0),
+        highPriorityEmails: Number(surfaceSnapshot.high_priority_threads || 0),
+        calibrationStatus: integrationContext.calibrationStatus?.status || null,
+      };
+    }
+
     const metrics = integrationContext.accountingSummary?.metrics || {};
     const deals = integrationContext.crmDeals || [];
     const openDeals = deals.filter((deal) => String(deal?.status || '').toUpperCase() === 'OPEN').length;
@@ -1105,6 +1168,39 @@ export default function AdvisorWatchtower() {
   const executiveMemo = overview?.executive_memo || cognitive?.executive_memo || cognitive?.memo;
   const migrationRequired = overview?.status === 'MIGRATION_REQUIRED';
   const queuedBeyondThree = Math.max(openSignals.length - 3, 0);
+  const noActiveDecisions = decisions.every((decision) => !decision.signal);
+  const fallbackState = getStateLabel(overview, cognitive);
+  const executiveState = getExecutiveStateLabel({
+    executiveSnapshot,
+    decisions,
+    fallbackState,
+  });
+
+  const snapshotLabels = useMemo(() => {
+    const hasAccounting = Boolean(integrationContext.accountingSummary?.connected) || executiveSnapshot.overdueCount > 0 || executiveSnapshot.overdueValue > 0;
+    const hasCRM = connectedSources.some((source) => /hubspot|salesforce|crm/i.test(source)) || executiveSnapshot.openDeals > 0;
+    const hasOutlook = Boolean(integrationContext.outlookStatus?.connected);
+
+    const crmLabel = hasCRM
+      ? `${executiveSnapshot.openDeals} open · ${executiveSnapshot.stalledDeals} stalled >72h`
+      : 'CRM sync pending';
+
+    const cashLabel = hasAccounting
+      ? (executiveSnapshot.overdueCount > 0
+          ? `${executiveSnapshot.overdueCount} overdue · ${formatCurrency(executiveSnapshot.overdueValue)}`
+          : 'No overdue invoices detected')
+      : 'Xero sync pending';
+
+    const inboxLabel = hasOutlook
+      ? (executiveSnapshot.highPriorityEmails > 0
+          ? `${executiveSnapshot.highPriorityEmails} high-priority threads`
+          : 'No urgent inbox threads')
+      : 'Outlook sync pending';
+
+    const calibrationLabel = executiveSnapshot.calibrationStatus || 'Pending';
+
+    return { crmLabel, cashLabel, inboxLabel, calibrationLabel };
+  }, [integrationContext, executiveSnapshot, connectedSources]);
 
   return (
     <DashboardLayout>
@@ -1215,7 +1311,7 @@ export default function AdvisorWatchtower() {
               <section className="mb-8 grid gap-3 md:grid-cols-3" data-testid="advisor-top-metrics">
                 <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-state-card">
                   <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
-                  <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{getStateLabel(overview, cognitive)}</p>
+                  <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{executiveState}</p>
                 </div>
                 <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-signals-card">
                   <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-signals-label">Live Signals</p>
@@ -1244,28 +1340,28 @@ export default function AdvisorWatchtower() {
                   <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-crm">
                     <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>CRM Pipeline</p>
                     <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-crm-value">
-                      {executiveSnapshot.openDeals} open · {executiveSnapshot.stalledDeals} stalled 14+d
+                      {snapshotLabels.crmLabel}
                     </p>
                   </div>
 
                   <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-cash">
                     <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Cash Exposure</p>
                     <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-cash-value">
-                      {executiveSnapshot.overdueCount} overdue · {formatCurrency(executiveSnapshot.overdueValue)}
+                      {snapshotLabels.cashLabel}
                     </p>
                   </div>
 
                   <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-email">
                     <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Priority Inbox</p>
                     <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-email-value">
-                      {executiveSnapshot.highPriorityEmails} high-priority threads
+                      {snapshotLabels.inboxLabel}
                     </p>
                   </div>
 
                   <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-calibration">
                     <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Calibration</p>
                     <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-calibration-value">
-                      {executiveSnapshot.calibrationStatus || 'Unknown'}
+                      {snapshotLabels.calibrationLabel}
                     </p>
                   </div>
                 </div>
@@ -1297,93 +1393,23 @@ export default function AdvisorWatchtower() {
                 </div>
               </section>
 
-              <section className="mb-8" data-testid="advisor-provider-health-section">
-                <div className="mb-3 flex items-center gap-2">
-                  <Radar className="h-4 w-4 text-[#3B82F6]" />
-                  <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-provider-health-title">
-                    Delegate Provider Health
-                  </h2>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-3" data-testid="advisor-provider-health-grid">
-                  <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-provider-health-ticketing-card">
-                    <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-ticketing-label">
-                      Jira / Asana via Merge
-                    </p>
-                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-provider-health-ticketing-value">
-                      {!delegateProviderHealthLoaded
-                        ? 'Status unavailable'
-                        : (delegateProviderHealth.ticketing_provider ? `Connected: ${delegateProviderHealth.ticketing_provider}` : 'Not connected')}
-                    </p>
-                    {delegateProviderHealthLoaded && !delegateProviderHealth.ticketing_provider && (
-                      <Link
-                        to="/integrations"
-                        className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                        data-testid="advisor-provider-health-ticketing-connect-cta"
-                      >
-                        Connect Merge Ticketing
-                      </Link>
-                    )}
-                  </article>
-
-                  <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-provider-health-outlook-card">
-                    <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-outlook-label">
-                      Outlook / Exchange
-                    </p>
-                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-provider-health-outlook-value">
-                      {!delegateProviderHealthLoaded
-                        ? 'Status unavailable'
-                        : (delegateProviderHealth.outlook_exchange
-                          ? 'Ready for delegation'
-                          : delegateProviderHealth.outlook_connected
-                            ? 'Connected but token refresh required'
-                            : 'Not connected')}
-                    </p>
-                    {delegateProviderHealthLoaded && delegateProviderHealth.outlook_expires_at && (
-                      <p className="mt-1 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-outlook-expiry">
-                        Token expiry: {formatTime(delegateProviderHealth.outlook_expires_at)}
-                      </p>
-                    )}
-                    {delegateProviderHealthLoaded && !delegateProviderHealth.outlook_exchange && (
-                      <Link
-                        to="/connect-email"
-                        className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                        data-testid="advisor-provider-health-outlook-reconnect-cta"
-                      >
-                        Reconnect Outlook
-                      </Link>
-                    )}
-                  </article>
-
-                  <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-provider-health-google-card">
-                    <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-provider-health-google-label">
-                      Google Calendar
-                    </p>
-                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-provider-health-google-value">
-                      {!delegateProviderHealthLoaded
-                        ? 'Status unavailable'
-                        : (delegateProviderHealth.google_workspace
-                          ? 'Ready for delegation'
-                          : delegateProviderHealth.gmail_connected
-                            ? 'Connected but token refresh required'
-                            : 'Not connected')}
-                    </p>
-                    {delegateProviderHealthLoaded && !delegateProviderHealth.google_workspace && (
-                      <Link
-                        to="/connect-email"
-                        className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                        data-testid="advisor-provider-health-google-connect-cta"
-                      >
-                        Connect Google
-                      </Link>
-                    )}
-                  </article>
+              <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-advanced-toggle-section">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-advanced-toggle-copy">
+                    Need deeper diagnostics (provider health, conflict resolver, signal inbox, full audit)?
+                  </p>
+                  <button
+                    onClick={() => setShowAdvancedSections((prev) => !prev)}
+                    className="inline-flex min-h-[40px] items-center rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                    style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                    data-testid="advisor-advanced-toggle-button"
+                  >
+                    {showAdvancedSections ? 'Hide diagnostics' : 'Show diagnostics'}
+                  </button>
                 </div>
               </section>
 
+              {showAdvancedSections && (
               <section className="mb-10" data-testid="advisor-conflict-resolver-section">
                 <div className="mb-4 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-[#F59E0B]" />
@@ -1427,6 +1453,7 @@ export default function AdvisorWatchtower() {
                   </div>
                 )}
               </section>
+              )}
 
               <section className="mb-10" data-testid="advisor-decision-surface">
                 <div className="mb-4 flex items-center justify-between gap-3">
@@ -1443,6 +1470,19 @@ export default function AdvisorWatchtower() {
                   </Link>
                 </div>
 
+                {noActiveDecisions ? (
+                  <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-all-clear-state">
+                    <h3 className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-all-clear-title">
+                      All clear right now — no high-priority decision signal detected.
+                    </h3>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-all-clear-summary">
+                      Current live scan: {executiveSnapshot.openDeals} open deals, {executiveSnapshot.overdueCount} overdue invoices, {executiveSnapshot.highPriorityEmails} high-priority threads.
+                    </p>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-all-clear-next-step">
+                      Keep monitoring this week and sync integrations if you expected active risks.
+                    </p>
+                  </div>
+                ) : (
                 <div className="grid gap-4 lg:grid-cols-3" data-testid="advisor-decision-grid">
                   {decisions.map((decision, index) => {
                     const Icon = decision.icon;
@@ -1467,9 +1507,11 @@ export default function AdvisorWatchtower() {
                             <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-severity-${decision.id}`}>
                               {decision.severity}
                             </span>
-                            <span className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-risk-score-${decision.id}`}>
-                              Risk {decision.riskScore}
-                            </span>
+                            {signal && (
+                              <span className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-risk-score-${decision.id}`}>
+                                Risk {decision.riskScore}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -1479,9 +1521,11 @@ export default function AdvisorWatchtower() {
                         <p className="mb-1 text-sm" style={{ color: style.text }} data-testid={`advisor-decision-headline-${decision.id}`}>
                           {decision.headline}
                         </p>
-                        <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
-                          Confidence interval: {decision.confidenceInterval}
-                        </p>
+                        {signal && (
+                          <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
+                            Confidence interval: {decision.confidenceInterval}
+                          </p>
+                        )}
                         <h3 className="mb-3 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>
                           {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}
                         </h3>
@@ -1592,6 +1636,7 @@ export default function AdvisorWatchtower() {
                     );
                   })}
                 </div>
+                )}
               </section>
 
               <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-page-feedback-section">
@@ -1635,6 +1680,7 @@ export default function AdvisorWatchtower() {
                 </div>
               </section>
 
+              {showAdvancedSections && (
               <section className="mb-10" data-testid="advisor-action-audit-section">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -1719,7 +1765,9 @@ export default function AdvisorWatchtower() {
                   </div>
                 )}
               </section>
+              )}
 
+              {showAdvancedSections && (
               <section className="mb-10" data-testid="advisor-signal-inbox-section">
                 <div className="mb-4 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-[#F59E0B]" />
@@ -1760,6 +1808,7 @@ export default function AdvisorWatchtower() {
                   )}
                 </div>
               </section>
+              )}
 
               {executiveMemo && (
                 <section className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-executive-memo-section">

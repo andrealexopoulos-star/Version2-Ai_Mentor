@@ -18,6 +18,7 @@ export const EvidenceDrawer = ({ open, decision, onClose }) => {
 
   const signal = decision.signal;
   const targetRoute = SOURCE_ROUTE[signal.source] || '/alerts';
+  const evidenceRefs = Array.isArray(signal.evidenceRefs) ? signal.evidenceRefs : [];
 
   return (
     <div className="fixed inset-0 z-[60] flex justify-end bg-black/50" data-testid="advisor-evidence-drawer-overlay">
@@ -77,6 +78,21 @@ export const EvidenceDrawer = ({ open, decision, onClose }) => {
             <h4 className="mb-1 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Recommended owner action</h4>
             <p>{signal.action}</p>
           </section>
+
+          {evidenceRefs.length > 0 && (
+            <section className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-evidence-drawer-refs">
+              <h4 className="mb-2 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Evidence examples</h4>
+              <ul className="list-disc space-y-1 pl-5 text-xs" data-testid="advisor-evidence-drawer-refs-list">
+                {evidenceRefs.slice(0, 5).map((item, index) => (
+                  <li key={`${signal.id}-ref-${index}`} data-testid={`advisor-evidence-drawer-ref-${index}`}>
+                    {typeof item === 'string'
+                      ? item
+                      : (item.name || item.subject || item.summary || item.reason || JSON.stringify(item).slice(0, 120))}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2">
