@@ -79,6 +79,15 @@ const formatTime = (value) => {
 
 const prettySignal = (value = '') => value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
+const settledErrorMessage = (result) => {
+  if (!result || result.status !== 'rejected') return '';
+  const reason = result.reason;
+  return reason?.response?.data?.detail
+    || reason?.response?.data?.message
+    || reason?.message
+    || 'Request failed';
+};
+
 const inferSource = (rawSource = '', domain = '', signal = '') => {
   const text = `${rawSource} ${domain} ${signal}`.toLowerCase();
   if (/(hubspot|salesforce|crm|deal|pipeline)/.test(text)) return 'CRM';
@@ -544,6 +553,11 @@ export default function AdvisorWatchtower() {
     outlookStatus: null,
     calibrationStatus: null,
     executiveSurface: null,
+    sourceHealth: {
+      crm: { provider: 'CRM', connected: false, live: false, status: 'pending', endpoint: '/integrations/crm/deals', error: '' },
+      accounting: { provider: 'Xero', connected: false, live: false, status: 'pending', endpoint: '/integrations/accounting/summary', error: '' },
+      email: { provider: 'Outlook', connected: false, live: false, status: 'pending', endpoint: '/email/priority-inbox', error: '' },
+    },
   });
   const [integrationContextLoading, setIntegrationContextLoading] = useState(false);
   const [integrationContextError, setIntegrationContextError] = useState('');
@@ -638,8 +652,86 @@ export default function AdvisorWatchtower() {
       const crmDeals = crmRes.status === 'fulfilled' ? (crmRes.value?.data?.results || []) : [];
       const accountingSummary = accountingRes.status === 'fulfilled' ? (accountingRes.value?.data || null) : null;
       const outlookStatus = outlookRes.status === 'fulfilled' ? (outlookRes.value?.data || null) : null;
-      const priorityInbox = priorityRes.status === 'fulfilled' ? (priorityRes.value?.data || null) : null;
+      let priorityInbox = priorityRes.status === 'fulfilled' ? (priorityRes.value?.data || null) : null;
       const calibrationStatus = calibrationRes.status === 'fulfilled' ? (calibrationRes.value?.data || null) : null;
+
+      const getProviderByCategory = (category, fallback) => {
+        const found = Object.values(mergeConnected).find((entry) => String(entry?.category || '').toLowerCase() === category && entry?.provider);
+        return found?.provider || fallback;
+      };
+
+      const mergeEmailConnected = Object.values(mergeConnected).some((entry) => String(entry?.category || '').toLowerCase() === 'email' && Boolean(entry?.connected));
+
+      // If Outlook is connected but no priority analysis exists, trigger first-pass analysis and retry inbox fetch.
+      const needsPriorityAnalysis = Boolean(
+        (outlookStatus?.connected || mergeEmailConnected)
+        && priorityInbox?.message
+        && String(priorityInbox.message).toLowerCase().includes('no priority analysis available')
+      );
+
+      if (needsPriorityAnalysis) {
+        try {
+          const analyzeRes = await apiClient.post('/email/analyze-priority', {}, { timeout: 25000 });
+          const refreshedPriority = await apiClient.get('/email/priority-inbox', { timeout: 12000 });
+          const analyzedPayload = analyzeRes?.data || {};
+          const refreshedPayload = refreshedPriority?.data || {};
+          if (refreshedPayload?.analysis || refreshedPayload?.high_priority) {
+            priorityInbox = refreshedPayload;
+          } else if (analyzedPayload?.high_priority || analyzedPayload?.medium_priority || analyzedPayload?.low_priority) {
+            priorityInbox = {
+              analysis: analyzedPayload,
+              strategic_insights: analyzedPayload?.strategic_insights || '',
+              source: 'live-analyze-priority',
+            };
+          } else {
+            priorityInbox = refreshedPayload || priorityInbox;
+          }
+        } catch {
+          // Non-blocking: source health below captures this as unavailable.
+        }
+      }
+
+      const crmError = settledErrorMessage(crmRes);
+      const accountingError = accountingSummary?.error || settledErrorMessage(accountingRes);
+      const outlookError = settledErrorMessage(outlookRes)
+        || (outlookStatus?.token_expired ? 'Outlook token expired' : '')
+        || (outlookStatus?.connected === false && mergeEmailConnected ? 'Outlook disconnected at provider level' : '');
+      const priorityError = settledErrorMessage(priorityRes)
+        || priorityInbox?.error
+        || ((priorityInbox?.message && String(priorityInbox.message).toLowerCase().includes('no priority analysis available'))
+          ? 'Priority inbox analysis not generated yet'
+          : '');
+
+      const crmConnected = Object.values(mergeConnected).some((entry) => String(entry?.category || '').toLowerCase() === 'crm' && Boolean(entry?.connected));
+      const accountingConnected = Object.values(mergeConnected).some((entry) => String(entry?.category || '').toLowerCase() === 'accounting' && Boolean(entry?.connected));
+      const emailConnected = Boolean(outlookStatus?.connected) || mergeEmailConnected;
+
+      const sourceHealth = {
+        crm: {
+          provider: getProviderByCategory('crm', 'CRM'),
+          connected: crmConnected,
+          live: crmConnected && !crmError,
+          status: !crmConnected ? 'pending' : (crmError ? 'unavailable' : 'live'),
+          endpoint: '/integrations/crm/deals',
+          error: crmError || '',
+        },
+        accounting: {
+          provider: getProviderByCategory('accounting', 'Xero'),
+          connected: accountingConnected,
+          live: accountingConnected && !accountingError,
+          status: !accountingConnected ? 'pending' : (accountingError ? 'unavailable' : 'live'),
+          endpoint: '/integrations/accounting/summary',
+          error: accountingError || '',
+        },
+        email: {
+          provider: getProviderByCategory('email', 'Outlook'),
+          connected: emailConnected,
+          live: emailConnected && !outlookError && !priorityError,
+          status: !emailConnected ? 'pending' : ((outlookError || priorityError) ? 'unavailable' : 'live'),
+          endpoint: '/email/priority-inbox',
+          error: outlookError || priorityError || '',
+        },
+      };
 
       setIntegrationContext({
         mergeConnected,
@@ -649,6 +741,7 @@ export default function AdvisorWatchtower() {
         outlookStatus,
         calibrationStatus,
         executiveSurface,
+        sourceHealth,
       });
     } catch (error) {
       setIntegrationContextError(error?.response?.data?.detail || 'Unable to load integration context.');
@@ -1116,13 +1209,21 @@ export default function AdvisorWatchtower() {
   const integrationTruth = overview?.integrations || cognitive?.integrations || {};
   const connectedSources = useMemo(() => {
     const list = [];
-    const mergeMap = integrationContext.mergeConnected || integrationContext.executiveSurface?.connected_tools || {};
+    const sourceHealth = integrationContext.sourceHealth || {};
 
-    Object.values(mergeMap).forEach((entry) => {
-      if (entry?.connected && entry?.provider) list.push(entry.provider);
+    Object.values(sourceHealth).forEach((entry) => {
+      if (entry?.live && entry?.provider) list.push(entry.provider);
     });
 
-    if (integrationContext.outlookStatus?.connected) list.push('Outlook');
+    const mergeMap = integrationContext.mergeConnected || integrationContext.executiveSurface?.connected_tools || {};
+
+    if (!list.length) {
+      Object.values(mergeMap).forEach((entry) => {
+        if (entry?.connected && entry?.provider) list.push(entry.provider);
+      });
+
+      if (integrationContext.outlookStatus?.connected) list.push('Outlook');
+    }
 
     if (!list.length) {
       if (integrationTruth.crm) list.push('CRM');
@@ -1189,13 +1290,17 @@ export default function AdvisorWatchtower() {
   const snapshotLabels = useMemo(() => {
     const accountingSyncError = integrationContext.accountingSummary?.error
       || integrationContext.executiveSurface?.snapshot?.accounting_error
+      || integrationContext.sourceHealth?.accounting?.error
       || '';
+    const emailSyncError = integrationContext.sourceHealth?.email?.error || '';
     const currentEmail = String(user?.email || '').toLowerCase();
     const isFounderOpsAccount = currentEmail === 'andre@thestrategysquad.com.au';
-    const hasAccounting = (Boolean(integrationContext.accountingSummary?.connected) || executiveSnapshot.overdueCount > 0 || executiveSnapshot.overdueValue > 0)
-      && !accountingSyncError;
-    const hasCRM = connectedSources.some((source) => /hubspot|salesforce|crm/i.test(source)) || executiveSnapshot.openDeals > 0;
-    const hasOutlook = Boolean(integrationContext.outlookStatus?.connected);
+    const hasAccounting = Boolean(integrationContext.sourceHealth?.accounting?.live)
+      || ((Boolean(integrationContext.accountingSummary?.connected) || executiveSnapshot.overdueCount > 0 || executiveSnapshot.overdueValue > 0) && !accountingSyncError);
+    const hasCRM = Boolean(integrationContext.sourceHealth?.crm?.live)
+      || connectedSources.some((source) => /hubspot|salesforce|crm/i.test(source))
+      || executiveSnapshot.openDeals > 0;
+    const hasOutlook = Boolean(integrationContext.sourceHealth?.email?.live) || Boolean(integrationContext.outlookStatus?.connected);
 
     const crmLabel = hasCRM
       ? `${executiveSnapshot.openDeals} open · ${executiveSnapshot.stalledDeals} stalled >72h`
@@ -1211,11 +1316,15 @@ export default function AdvisorWatchtower() {
             : 'No overdue invoices detected')
         : 'Xero sync pending';
 
-    const inboxLabel = hasOutlook
-      ? (executiveSnapshot.highPriorityEmails > 0
-          ? `${executiveSnapshot.highPriorityEmails} high-priority threads`
-          : 'No urgent inbox threads')
-      : 'Outlook sync pending';
+    const inboxLabel = emailSyncError
+      ? (isFounderOpsAccount
+          ? 'ERROR · non-live email API'
+          : 'Reconnect integration or contact support')
+      : hasOutlook
+        ? (executiveSnapshot.highPriorityEmails > 0
+            ? `${executiveSnapshot.highPriorityEmails} high-priority threads`
+            : 'No urgent inbox threads')
+        : 'Outlook sync pending';
 
     const calibrationLabel = executiveSnapshot.calibrationStatus || 'Pending';
 
@@ -1225,7 +1334,9 @@ export default function AdvisorWatchtower() {
   const cashExposureProvenance = integrationContext.executiveSurface?.provenance?.cash_exposure || null;
   const accountingSyncError = integrationContext.accountingSummary?.error
     || integrationContext.executiveSurface?.snapshot?.accounting_error
+    || integrationContext.sourceHealth?.accounting?.error
     || '';
+  const emailSyncError = integrationContext.sourceHealth?.email?.error || '';
 
   const cashExposureSourceNote = useMemo(() => {
     const currentEmail = String(user?.email || '').toLowerCase();
@@ -1243,6 +1354,29 @@ export default function AdvisorWatchtower() {
     }
     return 'Cash exposure source appears after accounting sync completes.';
   }, [cashExposureProvenance, executiveSnapshot.overdueCount, accountingSyncError, user?.email]);
+
+  const priorityInboxSourceNote = useMemo(() => {
+    const currentEmail = String(user?.email || '').toLowerCase();
+    const isFounderOpsAccount = currentEmail === 'andre@thestrategysquad.com.au';
+
+    if (emailSyncError) {
+      if (isFounderOpsAccount) {
+        return `ERROR: non-live email API state detected. Root detail: ${String(emailSyncError).slice(0, 140)}`;
+      }
+      return 'Email feed unavailable. Reconnect integration or contact support.';
+    }
+
+    if (executiveSnapshot.highPriorityEmails > 0) {
+      return 'Source: /email/priority-inbox, generated from Outlook synced email corpus.';
+    }
+
+    return 'No high-priority inbox threads detected in latest analysis window.';
+  }, [emailSyncError, executiveSnapshot.highPriorityEmails, user?.email]);
+
+  const soundboardDiscussHref = useCallback((topic) => {
+    const prompt = topic ? `Discuss this with context: ${topic}` : 'Discuss advisor context and next best owner action.';
+    return `/soundboard?origin=advisor&prompt=${encodeURIComponent(prompt)}`;
+  }, []);
 
   return (
     <DashboardLayout>
@@ -1359,172 +1493,322 @@ export default function AdvisorWatchtower() {
 
           {!isLoading && (
             <>
-              <section className="mb-8 grid gap-3 md:grid-cols-3" data-testid="advisor-top-metrics">
-                <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-state-card">
-                  <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
-                  <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{executiveState}</p>
-                </div>
-                <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-signals-card">
-                  <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-signals-label">Live Signals</p>
-                  <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-signals-value">{liveSignalCount} active</p>
-                </div>
-                <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-coverage-card">
-                  <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-coverage-label">Connected Sources</p>
-                  <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-coverage-value">
-                    {connectedSources.length > 0 ? connectedSources.join(' · ') : 'None connected'}
-                  </p>
-                  {confidence !== null && (
-                    <p className="mt-1 text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-confidence-value">Confidence {confidence}%</p>
-                  )}
-                </div>
-              </section>
-
-              <section className="mb-8" data-testid="advisor-priority-snapshot-fold-section">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-priority-snapshot-title">
-                      BIQc Priority Snapshot
-                    </h2>
-                    <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-priority-snapshot-subtitle">
-                      Three owner decisions above the fold. Pick one and execute now.
-                    </p>
-                  </div>
-                  <a
-                    href="#advisor-priority-detail-section"
-                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                    style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                    data-testid="advisor-priority-snapshot-jump-detail"
-                  >
-                    View full detail <ArrowRight className="h-3.5 w-3.5" />
-                  </a>
-                </div>
-
-                {noActiveDecisions ? (
-                  <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-priority-snapshot-all-clear">
-                    <h3 className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-priority-snapshot-all-clear-title">
-                      All clear right now — no high-priority decision signal detected.
-                    </h3>
-                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-priority-snapshot-all-clear-summary">
-                      Live scan: {executiveSnapshot.openDeals} open deals, {executiveSnapshot.overdueCount} overdue invoices, {executiveSnapshot.highPriorityEmails} high-priority threads.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-3" data-testid="advisor-priority-snapshot-grid">
-                    {decisions.map((decision) => {
-                      const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;
-                      const signal = decision.signal;
-
-                      return (
-                        <article
-                          key={decision.id}
-                          className="flex min-h-[290px] flex-col rounded-2xl border p-4 md:aspect-square"
-                          style={{ borderColor: style.border, background: 'var(--biqc-bg-card)' }}
-                          data-testid={`advisor-priority-snapshot-card-${decision.id}`}
-                        >
-                          <div className="mb-3 flex items-center justify-between gap-2">
-                            <span
-                              className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em]"
-                              style={{ background: style.bg, color: style.text, fontFamily: fontFamily.mono }}
-                              data-testid={`advisor-priority-snapshot-slot-${decision.id}`}
-                            >
-                              {decision.title}
-                            </span>
-                            <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-priority-snapshot-risk-${decision.id}`}>
-                              Risk {decision.riskScore || 0}
-                            </span>
-                          </div>
-
-                          <h3 className="text-base" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-priority-snapshot-card-title-${decision.id}`}>
-                            {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}
-                          </h3>
-
-                          <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid={`advisor-priority-snapshot-card-why-${decision.id}`}>
-                            {signal ? signal.detail : decision.headline}
-                          </p>
-
-                          <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid={`advisor-priority-snapshot-card-action-${decision.id}`}>
-                            <strong>Action:</strong> {signal ? signal.action : 'No immediate action required.'}
-                          </p>
-
-                          <div className="mt-auto space-y-1 pt-3">
-                            <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-priority-snapshot-card-source-${decision.id}`}>
-                              Source: {signal ? signal.source : 'Awaiting verified feed'}
-                            </p>
-                            <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-priority-snapshot-card-time-${decision.id}`}>
-                              Updated: {signal ? formatTime(signal.createdAt) : 'Recent'}
-                            </p>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-
-              <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-executive-snapshot-section">
-                <div className="mb-3 flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4 text-[#FF6A00]" />
-                  <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-executive-snapshot-title">
-                    Executive Snapshot (Live Integration Truth)
+              <section id="advisor-priority-detail-section" className="mb-10" data-testid="advisor-decision-surface">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-decision-title">
+                    BIQc Priority Snapshot · Full Decision Context
                   </h2>
+                  <Link
+                    to="/alerts"
+                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                    style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                    data-testid="advisor-view-alerts-link"
+                  >
+                    View full signal inbox <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-4" data-testid="advisor-executive-snapshot-grid">
-                  <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-crm">
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>CRM Pipeline</p>
-                    <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-crm-value">
-                      {snapshotLabels.crmLabel}
-                    </p>
-                  </div>
+                <div className="grid gap-4 xl:grid-cols-[340px_1fr]" data-testid="advisor-priority-layout-grid">
+                  <aside className="space-y-3" data-testid="advisor-priority-left-rail">
+                    <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-state-card">
+                      <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
+                      <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{executiveState}</p>
+                      <Link
+                        to={soundboardDiscussHref(`Business state is ${executiveState}. Explain immediate owner priorities.`)}
+                        className="mt-3 inline-flex min-h-[38px] items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] hover:bg-white/5"
+                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                        data-testid="advisor-state-discuss-soundboard"
+                      >
+                        Discuss with BIQc SoundBoard <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </article>
 
-                  <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-cash">
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Cash Exposure</p>
-                    <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-cash-value">
-                      {snapshotLabels.cashLabel}
-                    </p>
-                    <p className="mt-2 text-[10px] leading-relaxed" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-cash-source-note">
-                      {cashExposureSourceNote}
-                    </p>
-                  </div>
+                    <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-signals-card">
+                      <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-signals-label">Live Signals</p>
+                      <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-signals-value">{liveSignalCount} active</p>
+                      {confidence !== null && (
+                        <p className="mt-1 text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-confidence-value">Confidence {confidence}%</p>
+                      )}
+                      <Link
+                        to={soundboardDiscussHref(`We have ${liveSignalCount} active signals with ${confidence || 0}% confidence. Prioritize for me.`)}
+                        className="mt-3 inline-flex min-h-[38px] items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] hover:bg-white/5"
+                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                        data-testid="advisor-signals-discuss-soundboard"
+                      >
+                        Discuss with BIQc SoundBoard <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </article>
 
-                  <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-email">
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Priority Inbox</p>
-                    <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-email-value">
-                      {snapshotLabels.inboxLabel}
-                    </p>
-                  </div>
+                    <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-coverage-card">
+                      <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-coverage-label">Connected Sources (Live)</p>
+                      <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-coverage-value">
+                        {connectedSources.length > 0 ? connectedSources.join(' · ') : 'No live provider feed'}
+                      </p>
+                      <div className="mt-3 space-y-2" data-testid="advisor-source-health-list">
+                        {['crm', 'accounting', 'email'].map((key) => {
+                          const source = integrationContext.sourceHealth?.[key] || {};
+                          const statusColor = source.status === 'live' ? '#10B981' : source.status === 'unavailable' ? '#EF4444' : '#F59E0B';
+                          const statusLabel = source.status === 'live' ? 'LIVE' : source.status === 'unavailable' ? 'ERROR' : 'PENDING';
+                          return (
+                            <div key={key} className="rounded-lg border px-2.5 py-2" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid={`advisor-source-health-${key}`}>
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-source-health-name-${key}`}>
+                                  {source.provider || key}
+                                </p>
+                                <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: statusColor, fontFamily: fontFamily.mono }} data-testid={`advisor-source-health-status-${key}`}>
+                                  {statusLabel}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-[10px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-source-health-endpoint-${key}`}>
+                                API: {source.endpoint || 'n/a'}
+                              </p>
+                              {source.error ? (
+                                <p className="mt-1 text-[10px]" style={{ color: '#FCA5A5', fontFamily: fontFamily.mono }} data-testid={`advisor-source-health-error-${key}`}>
+                                  {String(source.error).slice(0, 140)}
+                                </p>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <Link
+                        to={soundboardDiscussHref('Review source health and explain which API is failing and why.')}
+                        className="mt-3 inline-flex min-h-[38px] items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] hover:bg-white/5"
+                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                        data-testid="advisor-source-health-discuss-soundboard"
+                      >
+                        Discuss with BIQc SoundBoard <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </article>
 
-                  <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-calibration">
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Calibration</p>
-                    <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-calibration-value">
-                      {snapshotLabels.calibrationLabel}
-                    </p>
-                  </div>
-                </div>
+                    <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-executive-snapshot-section">
+                      <div className="mb-3 flex items-center gap-2">
+                        <ShieldAlert className="h-4 w-4 text-[#FF6A00]" />
+                        <h3 className="text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-executive-snapshot-title">
+                          Executive Snapshot (Live Integration Truth)
+                        </h3>
+                      </div>
 
-                {connectedSources.length === 0 && (
-                  <div className="mt-3 rounded-xl border p-3 text-sm" style={{ borderColor: '#F59E0B60', background: '#F59E0B12', color: '#FDE68A' }} data-testid="advisor-integration-onboarding-prompt">
-                    No integrations detected yet. Connect HubSpot, Xero, and Outlook to activate personalized executive signals.
-                    <Link to="/integrations" className="ml-2 underline" data-testid="advisor-integration-onboarding-link">Open Integrations</Link>
-                  </div>
-                )}
-              </section>
+                      <div className="space-y-2" data-testid="advisor-executive-snapshot-grid">
+                        <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-crm">
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>CRM Pipeline</p>
+                          <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-crm-value">{snapshotLabels.crmLabel}</p>
+                          <Link to={soundboardDiscussHref(snapshotLabels.crmLabel)} className="mt-2 inline-flex min-h-[34px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px] hover:bg-white/5" style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-crm-discuss">Discuss</Link>
+                        </div>
 
-              <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-queue-status-section">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-status-label">
-                      Decision Queue Status
-                    </p>
-                    <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-queue-status-value">
-                      {openSignals.length} open signal{openSignals.length === 1 ? '' : 's'} · showing top 3 executive decisions now.
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-queue-backlog-count">
-                      {queuedBeyondThree}
-                    </p>
-                    <p className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-backlog-label">Queued after top 3</p>
+                        <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-cash">
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Cash Exposure</p>
+                          <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-cash-value">{snapshotLabels.cashLabel}</p>
+                          <p className="mt-2 text-[10px] leading-relaxed" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-cash-source-note">{cashExposureSourceNote}</p>
+                          <Link to={soundboardDiscussHref(cashExposureSourceNote)} className="mt-2 inline-flex min-h-[34px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px] hover:bg-white/5" style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-cash-discuss">Discuss</Link>
+                        </div>
+
+                        <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-email">
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Priority Inbox</p>
+                          <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-email-value">{snapshotLabels.inboxLabel}</p>
+                          <p className="mt-2 text-[10px] leading-relaxed" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-email-source-note">{priorityInboxSourceNote}</p>
+                          <Link to={soundboardDiscussHref(priorityInboxSourceNote)} className="mt-2 inline-flex min-h-[34px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px] hover:bg-white/5" style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-email-discuss">Discuss</Link>
+                        </div>
+
+                        <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-calibration">
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Calibration</p>
+                          <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-calibration-value">{snapshotLabels.calibrationLabel}</p>
+                          <Link to={soundboardDiscussHref(`Calibration status: ${snapshotLabels.calibrationLabel}`)} className="mt-2 inline-flex min-h-[34px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px] hover:bg-white/5" style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-calibration-discuss">Discuss</Link>
+                        </div>
+                      </div>
+
+                      {connectedSources.length === 0 && (
+                        <div className="mt-3 rounded-xl border p-3 text-sm" style={{ borderColor: '#F59E0B60', background: '#F59E0B12', color: '#FDE68A' }} data-testid="advisor-integration-onboarding-prompt">
+                          No integrations detected yet. Connect HubSpot, Xero, and Outlook to activate personalized executive signals.
+                          <Link to="/integrations" className="ml-2 underline" data-testid="advisor-integration-onboarding-link">Open Integrations</Link>
+                        </div>
+                      )}
+                    </article>
+
+                    <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-queue-status-section">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-status-label">Decision Queue Status</p>
+                          <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-queue-status-value">{openSignals.length} open signal{openSignals.length === 1 ? '' : 's'} · showing top 3 executive decisions now.</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-queue-backlog-count">{queuedBeyondThree}</p>
+                          <p className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-backlog-label">Queued after top 3</p>
+                        </div>
+                      </div>
+                      <Link
+                        to={soundboardDiscussHref(`Decision queue has ${openSignals.length} open signals with ${queuedBeyondThree} queued after top 3.`)}
+                        className="mt-3 inline-flex min-h-[38px] items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] hover:bg-white/5"
+                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                        data-testid="advisor-queue-discuss-soundboard"
+                      >
+                        Discuss with BIQc SoundBoard <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </article>
+                  </aside>
+
+                  <div data-testid="advisor-priority-main-rail">
+                    {noActiveDecisions ? (
+                      <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-all-clear-state">
+                        <h3 className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-all-clear-title">
+                          All clear right now — no high-priority decision signal detected.
+                        </h3>
+                        <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-all-clear-summary">
+                          Current live scan: {executiveSnapshot.openDeals} open deals, {executiveSnapshot.overdueCount} overdue invoices, {executiveSnapshot.highPriorityEmails} high-priority threads.
+                        </p>
+                        <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-all-clear-next-step">
+                          Keep monitoring this week and sync integrations if you expected active risks.
+                        </p>
+                        <Link
+                          to={soundboardDiscussHref('No high-priority signal detected. What proactive actions should I take this week?')}
+                          className="mt-4 inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                          data-testid="advisor-all-clear-discuss-soundboard"
+                        >
+                          Discuss with BIQc SoundBoard <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="grid gap-4 lg:grid-cols-3" data-testid="advisor-decision-grid">
+                        {decisions.map((decision, index) => {
+                          const Icon = decision.icon;
+                          const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;
+                          const signal = decision.signal;
+                          const actionRecord = signal ? actionState.byKey?.[signal.dedupeKey] : null;
+                          const projections = signal ? buildProjections(signal) : null;
+
+                          return (
+                            <article
+                              key={decision.id}
+                              className="rounded-2xl border p-5"
+                              style={{ borderColor: style.border, background: 'var(--biqc-bg-card)' }}
+                              data-testid={`advisor-decision-card-${decision.id}`}
+                            >
+                              <div className="mb-4 flex items-center justify-between gap-2">
+                                <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em]" style={{ background: style.bg, color: style.text, fontFamily: fontFamily.mono }} data-testid={`advisor-decision-slot-${decision.id}`}>
+                                  <Icon className="h-3 w-3" />
+                                  {decision.title}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-severity-${decision.id}`}>
+                                    {decision.severity}
+                                  </span>
+                                  {signal && (
+                                    <span className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-risk-score-${decision.id}`}>
+                                      Risk {decision.riskScore}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <p className="mb-1 text-sm" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-intent-${decision.id}`}>{decision.intent}</p>
+                              <p className="mb-1 text-sm" style={{ color: style.text }} data-testid={`advisor-decision-headline-${decision.id}`}>{decision.headline}</p>
+                              {signal && (
+                                <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
+                                  Confidence interval: {decision.confidenceInterval}
+                                </p>
+                              )}
+                              <h3 className="mb-3 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>
+                                {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}
+                              </h3>
+
+                              {signal ? (
+                                <SourceProvenanceBadge source={signal.source} signalType={signal.signalType} timestamp={signal.createdAt} testId={`advisor-provenance-${decision.id}`} />
+                              ) : (
+                                <p className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-provenance-${decision.id}`}>
+                                  Waiting for verified events from connected tools.
+                                </p>
+                              )}
+
+                              <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
+                                <p data-testid={`advisor-decision-why-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Why now:</strong> {decision.whyNow}</p>
+                                <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal ? signal.ifIgnored : 'No immediate execution risk detected in this bucket.'}</p>
+                                <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal ? signal.action : 'Trigger sync or wait for next watchtower signal.'}</p>
+                              </div>
+
+                              <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-loop-${decision.id}`}>
+                                <p data-testid={`advisor-decision-loop-signal-${decision.id}`}><strong>Signal:</strong> {signal ? signal.detail : 'No signal above threshold.'}</p>
+                                <p data-testid={`advisor-decision-loop-decision-${decision.id}`}><strong>Decision:</strong> {decision.headline}</p>
+                                <p data-testid={`advisor-decision-loop-action-${decision.id}`}><strong>Action:</strong> {signal ? signal.action : 'No action required.'}</p>
+                              </div>
+
+                              {signal && projections && (
+                                <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-projection-${decision.id}`}>
+                                  <p data-testid={`advisor-decision-projection-title-${decision.id}`}><strong>30/60/90 outlook</strong></p>
+                                  <p data-testid={`advisor-decision-projection-ignored-${decision.id}`}>If ignored → risk {projections.ignored[0]}% / {projections.ignored[1]}% / {projections.ignored[2]}%</p>
+                                  <p data-testid={`advisor-decision-projection-actioned-${decision.id}`}>If actioned → risk {projections.actioned[0]}% / {projections.actioned[1]}% / {projections.actioned[2]}%</p>
+                                </div>
+                              )}
+
+                              <div className="mt-4 flex flex-wrap gap-2" data-testid={`advisor-decision-actions-${decision.id}`}>
+                                {Object.entries(DECISION_ACTIONS).map(([actionType, config]) => {
+                                  const ActionIcon = config.icon;
+                                  const loadingThisAction = actionLoadingKey === `${decision.id}-${actionType}`;
+
+                                  return (
+                                    <button
+                                      key={actionType}
+                                      onClick={() => {
+                                        if (!signal) return;
+                                        if (actionType === 'delegate') {
+                                          handleOpenDelegateModal(decision);
+                                          return;
+                                        }
+                                        handleDecisionAction(decision, actionType);
+                                      }}
+                                      disabled={!signal || loadingThisAction || Boolean(actionRecord)}
+                                      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                                      style={{ background: config.style.bg, borderColor: config.style.border, color: config.style.text, fontFamily: fontFamily.mono }}
+                                      data-testid={`advisor-decision-${actionType}-${decision.id}`}
+                                    >
+                                      <ActionIcon className="h-3.5 w-3.5" />
+                                      {loadingThisAction ? 'Saving...' : config.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              {signal && actionRecord && (
+                                <div className="mt-3 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-action-record-${decision.id}`}>
+                                  Last action: {actionRecord.action} · {formatTime(actionRecord.at)}
+                                </div>
+                              )}
+
+                              <button
+                                onClick={() => signal ? setEvidenceDrawerDecision(decision) : null}
+                                className="mt-3 inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                                style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                                data-testid={`advisor-decision-evidence-toggle-${decision.id}`}
+                                disabled={!signal}
+                              >
+                                {signal ? 'View full context' : 'No context yet'}
+                              </button>
+
+                              <Link
+                                to={soundboardDiscussHref(signal ? `${signal.title}. ${signal.detail}. Recommended action: ${signal.action}` : `No verified signal in ${decision.title}`)}
+                                className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                                style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                                data-testid={`advisor-decision-open-soundboard-${decision.id}`}
+                              >
+                                Open in SoundBoard <ArrowRight className="h-3.5 w-3.5" />
+                              </Link>
+
+                              {signal && signal.occurrences > 1 && (
+                                <p className="mt-3 text-xs" style={{ color: '#FCD34D', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-dedupe-note-${decision.id}`}>
+                                  Deduplicated {signal.occurrences} repeated signals into one decision.
+                                </p>
+                              )}
+
+                              {index === 2 && queuedBeyondThree > 0 && (
+                                <p className="mt-3 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-next-up-indicator">
+                                  Next up automatically after action: {queuedBeyondThree} queued signal{queuedBeyondThree === 1 ? '' : 's'}.
+                                </p>
+                              )}
+                            </article>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>
@@ -1590,190 +1874,6 @@ export default function AdvisorWatchtower() {
                 )}
               </section>
               )}
-
-              <section id="advisor-priority-detail-section" className="mb-10" data-testid="advisor-decision-surface">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-decision-title">
-                    BIQc Priority Snapshot · Full Decision Context
-                  </h2>
-                  <Link
-                    to="/alerts"
-                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                    style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                    data-testid="advisor-view-alerts-link"
-                  >
-                    View full signal inbox <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
-
-                {noActiveDecisions ? (
-                  <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-all-clear-state">
-                    <h3 className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-all-clear-title">
-                      All clear right now — no high-priority decision signal detected.
-                    </h3>
-                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-all-clear-summary">
-                      Current live scan: {executiveSnapshot.openDeals} open deals, {executiveSnapshot.overdueCount} overdue invoices, {executiveSnapshot.highPriorityEmails} high-priority threads.
-                    </p>
-                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-all-clear-next-step">
-                      Keep monitoring this week and sync integrations if you expected active risks.
-                    </p>
-                  </div>
-                ) : (
-                <div className="grid gap-4 lg:grid-cols-3" data-testid="advisor-decision-grid">
-                  {decisions.map((decision, index) => {
-                    const Icon = decision.icon;
-                    const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;
-                    const signal = decision.signal;
-                    const actionRecord = signal ? actionState.byKey?.[signal.dedupeKey] : null;
-                    const projections = signal ? buildProjections(signal) : null;
-
-                    return (
-                      <article
-                        key={decision.id}
-                        className="rounded-2xl border p-5"
-                        style={{ borderColor: style.border, background: 'var(--biqc-bg-card)' }}
-                        data-testid={`advisor-decision-card-${decision.id}`}
-                      >
-                        <div className="mb-4 flex items-center justify-between gap-2">
-                          <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em]" style={{ background: style.bg, color: style.text, fontFamily: fontFamily.mono }} data-testid={`advisor-decision-slot-${decision.id}`}>
-                            <Icon className="h-3 w-3" />
-                            {decision.title}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-severity-${decision.id}`}>
-                              {decision.severity}
-                            </span>
-                            {signal && (
-                              <span className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-risk-score-${decision.id}`}>
-                                Risk {decision.riskScore}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <p className="mb-1 text-sm" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-intent-${decision.id}`}>
-                          {decision.intent}
-                        </p>
-                        <p className="mb-1 text-sm" style={{ color: style.text }} data-testid={`advisor-decision-headline-${decision.id}`}>
-                          {decision.headline}
-                        </p>
-                        {signal && (
-                          <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
-                            Confidence interval: {decision.confidenceInterval}
-                          </p>
-                        )}
-                        <h3 className="mb-3 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>
-                          {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}
-                        </h3>
-
-                        {signal ? (
-                          <SourceProvenanceBadge
-                            source={signal.source}
-                            signalType={signal.signalType}
-                            timestamp={signal.createdAt}
-                            testId={`advisor-provenance-${decision.id}`}
-                          />
-                        ) : (
-                          <p className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-provenance-${decision.id}`}>
-                            Waiting for verified events from connected tools.
-                          </p>
-                        )}
-
-                        <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
-                          <p data-testid={`advisor-decision-why-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Why now:</strong> {decision.whyNow}</p>
-                          <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal ? signal.ifIgnored : 'No immediate execution risk detected in this bucket.'}</p>
-                          <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal ? signal.action : 'Trigger sync or wait for next watchtower signal.'}</p>
-                        </div>
-
-                        <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-loop-${decision.id}`}>
-                          <p data-testid={`advisor-decision-loop-signal-${decision.id}`}><strong>Signal:</strong> {signal ? signal.detail : 'No signal above threshold.'}</p>
-                          <p data-testid={`advisor-decision-loop-decision-${decision.id}`}><strong>Decision:</strong> {decision.headline}</p>
-                          <p data-testid={`advisor-decision-loop-action-${decision.id}`}><strong>Action:</strong> {signal ? signal.action : 'No action required.'}</p>
-                        </div>
-
-                        {signal && projections && (
-                          <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-projection-${decision.id}`}>
-                            <p data-testid={`advisor-decision-projection-title-${decision.id}`}><strong>30/60/90 outlook</strong></p>
-                            <p data-testid={`advisor-decision-projection-ignored-${decision.id}`}>If ignored → risk {projections.ignored[0]}% / {projections.ignored[1]}% / {projections.ignored[2]}%</p>
-                            <p data-testid={`advisor-decision-projection-actioned-${decision.id}`}>If actioned → risk {projections.actioned[0]}% / {projections.actioned[1]}% / {projections.actioned[2]}%</p>
-                          </div>
-                        )}
-
-                        <div className="mt-4 flex flex-wrap gap-2" data-testid={`advisor-decision-actions-${decision.id}`}>
-                          {Object.entries(DECISION_ACTIONS).map(([actionType, config]) => {
-                            const ActionIcon = config.icon;
-                            const loadingThisAction = actionLoadingKey === `${decision.id}-${actionType}`;
-
-                            return (
-                              <button
-                                key={actionType}
-                                onClick={() => {
-                                  if (!signal) return;
-                                  if (actionType === 'delegate') {
-                                    handleOpenDelegateModal(decision);
-                                    return;
-                                  }
-                                  handleDecisionAction(decision, actionType);
-                                }}
-                                disabled={!signal || loadingThisAction || Boolean(actionRecord)}
-                                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-60"
-                                style={{
-                                  background: config.style.bg,
-                                  borderColor: config.style.border,
-                                  color: config.style.text,
-                                  fontFamily: fontFamily.mono,
-                                }}
-                                data-testid={`advisor-decision-${actionType}-${decision.id}`}
-                              >
-                                <ActionIcon className="h-3.5 w-3.5" />
-                                {loadingThisAction ? 'Saving...' : config.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {signal && actionRecord && (
-                          <div className="mt-3 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-action-record-${decision.id}`}>
-                            Last action: {actionRecord.action} · {formatTime(actionRecord.at)}
-                          </div>
-                        )}
-
-                        <button
-                          onClick={() => signal ? setEvidenceDrawerDecision(decision) : null}
-                          className="mt-3 inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                          data-testid={`advisor-decision-evidence-toggle-${decision.id}`}
-                          disabled={!signal}
-                        >
-                          {signal ? 'View full context' : 'No context yet'}
-                        </button>
-
-                        <Link
-                          to="/soundboard"
-                          className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                          data-testid={`advisor-decision-open-soundboard-${decision.id}`}
-                        >
-                          Open in SoundBoard <ArrowRight className="h-3.5 w-3.5" />
-                        </Link>
-
-                        {signal && signal.occurrences > 1 && (
-                          <p className="mt-3 text-xs" style={{ color: '#FCD34D', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-dedupe-note-${decision.id}`}>
-                            Deduplicated {signal.occurrences} repeated signals into one decision.
-                          </p>
-                        )}
-
-                        {index === 2 && queuedBeyondThree > 0 && (
-                          <p className="mt-3 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-next-up-indicator">
-                            Next up automatically after action: {queuedBeyondThree} queued signal{queuedBeyondThree === 1 ? '' : 's'}.
-                          </p>
-                        )}
-                      </article>
-                    );
-                  })}
-                </div>
-                )}
-              </section>
 
               <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-page-feedback-section">
                 <div className="flex flex-wrap items-center justify-between gap-3">

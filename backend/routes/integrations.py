@@ -1960,12 +1960,23 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     accounting_error = accounting_summary.get("error") if isinstance(accounting_summary, dict) else None
 
     high_priority_threads = priority_analysis.get("high_priority") or []
+    medium_priority_threads = priority_analysis.get("medium_priority") or []
+    low_priority_threads = priority_analysis.get("low_priority") or []
+    priority_analysis_available = bool(high_priority_threads or medium_priority_threads or low_priority_threads)
 
     accounting_provider = "Accounting System"
+    email_provider = "Outlook"
     for entry in connected_tools.values():
         if str(entry.get("category") or "").lower() == "accounting" and entry.get("provider"):
             accounting_provider = str(entry.get("provider"))
             break
+
+    email_connected = False
+    for entry in connected_tools.values():
+        if str(entry.get("category") or "").lower() == "email" and bool(entry.get("connected")):
+            email_connected = True
+            if entry.get("provider"):
+                email_provider = str(entry.get("provider"))
 
     response_delay_events = []
     for event in watchtower_events:
@@ -2077,6 +2088,35 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "evidence_refs": high_priority_threads[:5],
         })
 
+    if email_connected and not priority_analysis_available and not response_delay_events:
+        if is_founder_ops_account:
+            email_signal_summary = f"ERROR: {email_provider} priority inbox analysis is unavailable."
+            email_decision_summary = "Email API output is non-live or not generated yet, so communication risk cannot be trusted for client-facing decisions."
+            email_action_summary = "ERROR — run email priority analysis now and verify Outlook pipeline health."
+        else:
+            email_signal_summary = f"{email_provider} priority inbox analysis is unavailable."
+            email_decision_summary = "Communication risk cannot be verified until inbox analysis is generated."
+            email_action_summary = "Reconnect integration or contact support, then re-run intelligence refresh."
+
+        candidate_signals.append({
+            "signal_key": "priority-inbox-unavailable",
+            "bucket_hint": "monitor_this_week",
+            "risk_score": 74,
+            "confidence_interval": "83–92%",
+            "source": f"{email_provider} / Priority Inbox",
+            "timestamp": generated_at,
+            "signal_summary": email_signal_summary,
+            "evidence_summary": "No persisted priority inbox analysis found for this user session.",
+            "decision_summary": email_decision_summary,
+            "consequence": "Client follow-up and escalation risks may go unnoticed without an owner-prioritized inbox.",
+            "action_summary": email_action_summary,
+            "evidence_refs": [{
+                "provider": email_provider,
+                "source_endpoint": "/email/priority-inbox",
+                "analysis_present": priority_analysis_available,
+            }],
+        })
+
     if stalled_deals or overdue_count > 0 or response_delay_events:
         candidate_signals.append({
             "signal_key": "systemic-followup-gap",
@@ -2148,6 +2188,8 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "total_outstanding": total_outstanding,
             "response_delay_events": len(response_delay_events),
             "high_priority_threads": len(high_priority_threads),
+            "priority_analysis_available": priority_analysis_available,
+            "email_connected": email_connected,
             "accounting_error": accounting_error,
             "accounting_live_status": "unavailable" if accounting_error else "live",
         },
