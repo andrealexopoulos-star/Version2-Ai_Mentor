@@ -39,9 +39,9 @@ const SEVERITY_STYLE = {
 };
 
 const DECISION_ACTIONS = {
-  resolve: { label: 'Resolve', icon: CheckCircle2, endpoint: 'complete', style: { bg: '#10B98115', border: '#10B98140', text: '#6EE7B7' } },
-  delegate: { label: 'Delegate', icon: UserRoundPlus, endpoint: 'hand-off', style: { bg: '#3B82F615', border: '#3B82F640', text: '#93C5FD' } },
-  ignore: { label: 'Ignore', icon: XCircle, endpoint: 'ignore', style: { bg: '#64748B15', border: '#64748B40', text: '#CBD5E1' } },
+  resolve: { label: 'Mark resolved', icon: CheckCircle2, endpoint: 'complete', style: { bg: '#10B98115', border: '#10B98140', text: '#6EE7B7' } },
+  delegate: { label: 'Assign owner + due date', icon: UserRoundPlus, endpoint: 'hand-off', style: { bg: '#3B82F615', border: '#3B82F640', text: '#93C5FD' } },
+  ignore: { label: 'Ignore this signal', icon: XCircle, endpoint: 'ignore', style: { bg: '#64748B15', border: '#64748B40', text: '#CBD5E1' } },
 };
 
 const ROLE_OPTIONS = [
@@ -55,6 +55,9 @@ const DECISION_SLOTS = [
   { id: 'monitor-this-week', title: 'Monitor This Week', intent: 'Which pressure is rising and needs active monitoring?', icon: Radar },
   { id: 'build-next', title: 'Build Next', intent: 'What system fix prevents repeated pressure this month?', icon: Target },
 ];
+
+const HIGH_URGENCY_SIGNAL_MATCH = /(overdue|response_delay|cash|invoice|compliance|churn|critical|payment)/;
+const SYSTEM_PATTERN_MATCH = /(propagation|trend|capacity|bottleneck|stalled|pipeline|repeat|drift)/;
 
 const normalizeSeverity = (severity) => {
   const value = String(severity || '').toLowerCase();
@@ -365,15 +368,97 @@ const buildIntegrationSignals = (integrationContext) => {
   return dedupeSignals(raw);
 };
 
+const scoreRiskForBucket = (signal, bucketId) => {
+  if (!signal) return 0;
+  const base = { critical: 92, high: 78, medium: 58, low: 38, info: 25 }[signal.severity] || 30;
+  const frequencyBoost = Math.min((signal.occurrences || 1) * 5, 16);
+  const bucketBoost = bucketId === 'decide-now' ? 10 : bucketId === 'monitor-this-week' ? 4 : 0;
+  return Math.min(99, Math.round(base + frequencyBoost + bucketBoost));
+};
+
+const confidenceIntervalForSignal = (signal) => {
+  if (!signal) return 'N/A';
+  const sourceMid = {
+    CRM: 74,
+    Accounting: 78,
+    'Email/Calendar': 69,
+    'Observation Events': 63,
+    'Market Feed': 61,
+    Snapshot: 56,
+  };
+  const mid = sourceMid[signal.source] || 58;
+  const spread = signal.occurrences > 1 ? 7 : 10;
+  return `${Math.max(0, mid - spread)}–${Math.min(99, mid + spread)}%`;
+};
+
+const bucketHeadline = (slotId, signal) => {
+  if (!signal) {
+    if (slotId === 'decide-now') return 'No imminent owner-critical signal from verified feeds.';
+    if (slotId === 'monitor-this-week') return 'No weekly pressure trend currently above threshold.';
+    return 'No repeated pattern currently requiring systems build action.';
+  }
+
+  if (slotId === 'decide-now') {
+    if (/(cash|invoice|payment|revenue)/.test(signal.domain)) return 'Imminent commercial impact in next 48 hours.';
+    if (/(compliance|risk|operations)/.test(signal.domain)) return 'Imminent execution/compliance impact in next 48 hours.';
+    return 'Imminent owner decision required in next 48 hours.';
+  }
+  if (slotId === 'monitor-this-week') {
+    return 'Rising pressure trend this week; active monitoring required.';
+  }
+  return 'System pattern detected; this month’s build fix can prevent recurrence.';
+};
+
 const buildDecisionSurface = (signals) => {
-  return DECISION_SLOTS.map((slot, index) => {
-    const signal = signals[index] || null;
+  const remaining = [...signals];
+
+  const pull = (predicate) => {
+    const idx = remaining.findIndex(predicate);
+    if (idx === -1) return null;
+    const [picked] = remaining.splice(idx, 1);
+    return picked;
+  };
+
+  const decideSignal = pull((signal) => {
+    if (!signal) return false;
+    return signal.severity === 'critical'
+      || signal.severity === 'high'
+      || HIGH_URGENCY_SIGNAL_MATCH.test(`${signal.signalType} ${signal.domain} ${signal.title}`.toLowerCase());
+  }) || remaining.shift() || null;
+
+  const monitorSignal = pull((signal) => {
+    if (!signal) return false;
+    return signal.severity === 'medium'
+      || SYSTEM_PATTERN_MATCH.test(`${signal.signalType} ${signal.domain} ${signal.title}`.toLowerCase());
+  }) || remaining.shift() || null;
+
+  const buildSignal = pull((signal) => {
+    if (!signal) return false;
+    return (signal.occurrences || 1) > 1
+      || SYSTEM_PATTERN_MATCH.test(`${signal.signalType} ${signal.domain} ${signal.title}`.toLowerCase());
+  }) || remaining.shift() || null;
+
+  const mappedSignals = {
+    'decide-now': decideSignal,
+    'monitor-this-week': monitorSignal,
+    'build-next': buildSignal,
+  };
+
+  return DECISION_SLOTS.map((slot) => {
+    const signal = mappedSignals[slot.id] || null;
+    const riskScore = scoreRiskForBucket(signal, slot.id);
+    const confidenceInterval = confidenceIntervalForSignal(signal);
+    const headline = bucketHeadline(slot.id, signal);
+
     if (!signal) {
       return {
         ...slot,
         signal: null,
         severity: 'info',
-        whyNow: 'No verified signal currently ranks into this decision bucket.',
+        riskScore,
+        confidenceInterval,
+        headline,
+        whyNow: headline,
       };
     }
 
@@ -381,6 +466,9 @@ const buildDecisionSurface = (signals) => {
       ...slot,
       signal,
       severity: signal.severity,
+      riskScore,
+      confidenceInterval,
+      headline,
       whyNow: signal.occurrences > 1
         ? `${signal.occurrences} matching signals were grouped into one decision.`
         : signal.detail,
@@ -431,13 +519,7 @@ export default function AdvisorWatchtower() {
   const [actionsHydrated, setActionsHydrated] = useState(false);
   const [actionLoadingKey, setActionLoadingKey] = useState('');
   const [rolePreference, setRolePreference] = useState(() => localStorage.getItem('advisor-role-preference') || 'ceo');
-  const [feedbackByDecision, setFeedbackByDecision] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('advisor-decision-feedback') || '{}');
-    } catch {
-      return {};
-    }
-  });
+  const [pageFeedback, setPageFeedback] = useState(() => localStorage.getItem('advisor-page-feedback') || '');
   const [delegateModalDecision, setDelegateModalDecision] = useState(null);
   const [delegateSubmitting, setDelegateSubmitting] = useState(false);
   const [delegateProviders, setDelegateProviders] = useState([]);
@@ -562,8 +644,10 @@ export default function AdvisorWatchtower() {
   }, [rolePreference]);
 
   useEffect(() => {
-    localStorage.setItem('advisor-decision-feedback', JSON.stringify(feedbackByDecision));
-  }, [feedbackByDecision]);
+    if (pageFeedback) {
+      localStorage.setItem('advisor-page-feedback', pageFeedback);
+    }
+  }, [pageFeedback]);
 
   const hydrateActionHistory = useCallback(async () => {
     try {
@@ -931,17 +1015,18 @@ export default function AdvisorWatchtower() {
     }
   }, [delegateModalDecision, handleDecisionAction]);
 
-  const handleDecisionFeedback = useCallback(async (decision, helpful) => {
-    const key = decision.signal?.dedupeKey || decision.id;
-    setFeedbackByDecision((prev) => ({ ...prev, [key]: helpful ? 'helpful' : 'not-helpful' }));
+  const handlePageFeedback = useCallback(async (helpful) => {
+    const value = helpful ? 'helpful' : 'not-helpful';
+    setPageFeedback(value);
 
     try {
       await apiClient.post('/workflows/decision-feedback', {
-        decision_key: key,
+        decision_key: 'advisor-page',
         helpful,
       }, { timeout: 8000 });
+      toast.success('Thanks — feedback saved for advisor quality tuning.');
     } catch {
-      // local persistence still retained for confidence UX.
+      // local persistence retained even if API write fails.
     }
   }, []);
 
@@ -1364,7 +1449,6 @@ export default function AdvisorWatchtower() {
                     const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;
                     const signal = decision.signal;
                     const actionRecord = signal ? actionState.byKey?.[signal.dedupeKey] : null;
-                    const feedbackState = signal ? feedbackByDecision[signal.dedupeKey] : null;
                     const projections = signal ? buildProjections(signal) : null;
 
                     return (
@@ -1379,13 +1463,24 @@ export default function AdvisorWatchtower() {
                             <Icon className="h-3 w-3" />
                             {decision.title}
                           </span>
-                          <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-severity-${decision.id}`}>
-                            {decision.severity}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-severity-${decision.id}`}>
+                              {decision.severity}
+                            </span>
+                            <span className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-risk-score-${decision.id}`}>
+                              Risk {decision.riskScore}
+                            </span>
+                          </div>
                         </div>
 
                         <p className="mb-1 text-sm" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-intent-${decision.id}`}>
                           {decision.intent}
+                        </p>
+                        <p className="mb-1 text-sm" style={{ color: style.text }} data-testid={`advisor-decision-headline-${decision.id}`}>
+                          {decision.headline}
+                        </p>
+                        <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
+                          Confidence interval: {decision.confidenceInterval}
                         </p>
                         <h3 className="mb-3 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>
                           {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}
@@ -1408,6 +1503,12 @@ export default function AdvisorWatchtower() {
                           <p data-testid={`advisor-decision-why-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Why now:</strong> {decision.whyNow}</p>
                           <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal ? signal.ifIgnored : 'No immediate execution risk detected in this bucket.'}</p>
                           <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal ? signal.action : 'Trigger sync or wait for next watchtower signal.'}</p>
+                        </div>
+
+                        <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-loop-${decision.id}`}>
+                          <p data-testid={`advisor-decision-loop-signal-${decision.id}`}><strong>Signal:</strong> {signal ? signal.detail : 'No signal above threshold.'}</p>
+                          <p data-testid={`advisor-decision-loop-decision-${decision.id}`}><strong>Decision:</strong> {decision.headline}</p>
+                          <p data-testid={`advisor-decision-loop-action-${decision.id}`}><strong>Action:</strong> {signal ? signal.action : 'No action required.'}</p>
                         </div>
 
                         {signal && projections && (
@@ -1445,9 +1546,7 @@ export default function AdvisorWatchtower() {
                                 data-testid={`advisor-decision-${actionType}-${decision.id}`}
                               >
                                 <ActionIcon className="h-3.5 w-3.5" />
-                                {actionType === 'delegate'
-                                  ? 'Delegate'
-                                  : (loadingThisAction ? 'Saving...' : config.label)}
+                                {loadingThisAction ? 'Saving...' : config.label}
                               </button>
                             );
                           })}
@@ -1468,40 +1567,6 @@ export default function AdvisorWatchtower() {
                         >
                           {signal ? 'View full context' : 'No context yet'}
                         </button>
-
-                        {signal && (
-                          <div className="mt-3 flex flex-wrap items-center gap-2" data-testid={`advisor-decision-feedback-${decision.id}`}>
-                          <span className="text-[10px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-feedback-label-${decision.id}`}>
-                            Helpful?
-                          </span>
-                          <button
-                            onClick={() => handleDecisionFeedback(decision, true)}
-                            className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px]"
-                            style={{
-                              borderColor: feedbackState === 'helpful' ? '#10B98160' : '#334155',
-                              color: feedbackState === 'helpful' ? '#86EFAC' : '#CBD5E1',
-                              background: feedbackState === 'helpful' ? '#10B98115' : '#0F172A',
-                              fontFamily: fontFamily.mono,
-                            }}
-                            data-testid={`advisor-decision-feedback-yes-${decision.id}`}
-                          >
-                            <ThumbsUp className="h-3 w-3" /> Yes
-                          </button>
-                          <button
-                            onClick={() => handleDecisionFeedback(decision, false)}
-                            className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px]"
-                            style={{
-                              borderColor: feedbackState === 'not-helpful' ? '#EF444460' : '#334155',
-                              color: feedbackState === 'not-helpful' ? '#FCA5A5' : '#CBD5E1',
-                              background: feedbackState === 'not-helpful' ? '#EF444415' : '#0F172A',
-                              fontFamily: fontFamily.mono,
-                            }}
-                            data-testid={`advisor-decision-feedback-no-${decision.id}`}
-                          >
-                            <ThumbsDown className="h-3 w-3" /> No
-                          </button>
-                          </div>
-                        )}
 
                         <Link
                           to="/soundboard"
@@ -1526,6 +1591,47 @@ export default function AdvisorWatchtower() {
                       </article>
                     );
                   })}
+                </div>
+              </section>
+
+              <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-page-feedback-section">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-page-feedback-label">
+                      Single feedback loop
+                    </p>
+                    <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-page-feedback-copy">
+                      Is this advisor page helping you decide faster with confidence?
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2" data-testid="advisor-page-feedback-actions">
+                    <button
+                      onClick={() => handlePageFeedback(true)}
+                      className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border px-2.5 py-1 text-xs"
+                      style={{
+                        borderColor: pageFeedback === 'helpful' ? '#10B98160' : '#334155',
+                        color: pageFeedback === 'helpful' ? '#86EFAC' : '#CBD5E1',
+                        background: pageFeedback === 'helpful' ? '#10B98115' : '#0F172A',
+                        fontFamily: fontFamily.mono,
+                      }}
+                      data-testid="advisor-page-feedback-yes"
+                    >
+                      <ThumbsUp className="h-3.5 w-3.5" /> Helpful
+                    </button>
+                    <button
+                      onClick={() => handlePageFeedback(false)}
+                      className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border px-2.5 py-1 text-xs"
+                      style={{
+                        borderColor: pageFeedback === 'not-helpful' ? '#EF444460' : '#334155',
+                        color: pageFeedback === 'not-helpful' ? '#FCA5A5' : '#CBD5E1',
+                        background: pageFeedback === 'not-helpful' ? '#EF444415' : '#0F172A',
+                        fontFamily: fontFamily.mono,
+                      }}
+                      data-testid="advisor-page-feedback-no"
+                    >
+                      <ThumbsDown className="h-3.5 w-3.5" /> Not helpful
+                    </button>
+                  </div>
                 </div>
               </section>
 
