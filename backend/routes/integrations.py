@@ -469,6 +469,8 @@ async def _sync_category_counts(sb, user_id: str, category: str):
 class MergeDisconnectRequest(BaseModel):
     provider: str
     category: str
+    provider_hint: Optional[str] = None
+    integration_slug: Optional[str] = None
 
 
 @router.post("/merge/disconnect")
@@ -480,10 +482,87 @@ async def disconnect_merge_integration(request: Request, payload: MergeDisconnec
     except Exception:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
-        result = get_sb().table("integration_accounts").delete().eq(
-            "user_id", user_id
-        ).eq("provider", payload.provider).execute()
-        logger.info(f"[merge/disconnect] Disconnected {payload.provider} for {user_id}")
+        sb = get_sb()
+
+        requested_category = normalize_category(payload.category, payload.provider, payload.integration_slug)
+        candidate_tokens = {
+            str(payload.provider or "").strip().lower(),
+            str(payload.provider_hint or "").strip().lower(),
+            str(payload.integration_slug or "").strip().lower(),
+        }
+
+        expanded_tokens = set()
+        for token in candidate_tokens:
+            if not token:
+                continue
+            expanded_tokens.add(token)
+            if ":" in token:
+                expanded_tokens.add(token.split(":", 1)[1])
+            expanded_tokens.add(token.replace("-", " "))
+            expanded_tokens.add(token.replace("_", " "))
+
+        rows_result = sb.table("integration_accounts").select("*").eq("user_id", user_id).execute()
+
+        rows = rows_result.data or []
+        rows_to_delete = []
+
+        for row in rows:
+            row_category = normalize_category(row.get("category"), row.get("provider"), row.get("integration_slug"))
+            if requested_category and row_category != requested_category:
+                continue
+
+            provider_norm = str(row.get("provider") or "").strip().lower()
+            slug_norm = str(row.get("integration_slug") or "").strip().lower()
+            provider_spaced = provider_norm.replace("-", " ").replace("_", " ")
+            slug_spaced = slug_norm.replace("-", " ").replace("_", " ")
+
+            matched = (
+                provider_norm in expanded_tokens
+                or slug_norm in expanded_tokens
+                or provider_spaced in expanded_tokens
+                or slug_spaced in expanded_tokens
+                or any(token and token in {provider_norm, slug_norm, provider_spaced, slug_spaced} for token in expanded_tokens)
+            )
+
+            if matched:
+                rows_to_delete.append(row)
+
+        if not rows_to_delete:
+            raise HTTPException(status_code=404, detail="Integration record not found for disconnect")
+
+        row_ids = [row["id"] for row in rows_to_delete if row.get("id")]
+        if row_ids:
+            sb.table("integration_accounts").delete().in_("id", row_ids).execute()
+        else:
+            for row in rows_to_delete:
+                provider_value = row.get("provider")
+                category_value = row.get("category")
+                if provider_value:
+                    delete_query = sb.table("integration_accounts").delete().eq("user_id", user_id).eq("provider", provider_value)
+                    if category_value:
+                        delete_query = delete_query.eq("category", category_value)
+                    delete_query.execute()
+
+        # Also mark integration_status disconnected so downstream UI updates immediately.
+        for row in rows_to_delete:
+            provider_label = row.get("provider") or row.get("integration_slug") or payload.provider
+            category_label = normalize_category(row.get("category"), row.get("provider"), row.get("integration_slug"))
+            try:
+                await _upsert_integration_status(
+                    sb,
+                    user_id,
+                    provider_label,
+                    category_label,
+                    connected=False,
+                    provider=provider_label,
+                    records_count=0,
+                    record_type="records",
+                    error_message="Disconnected by user",
+                )
+            except Exception:
+                pass
+
+        logger.info(f"[merge/disconnect] Disconnected {len(rows_to_delete)} integration record(s) for {user_id}")
         
         # GOVERNANCE: Record disconnection
         try:
@@ -503,7 +582,9 @@ async def disconnect_merge_integration(request: Request, payload: MergeDisconnec
         except Exception as gov_err:
             logger.warning(f"⚠️ Governance disconnect event failed: {gov_err}")
         
-        return {"ok": True, "provider": payload.provider}
+        return {"ok": True, "provider": payload.provider, "deleted_count": len(rows_to_delete)}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"[merge/disconnect] Error: {e}")
         raise HTTPException(status_code=500, detail="Disconnect failed")
@@ -973,25 +1054,54 @@ async def get_accounting_summary(current_user: dict = Depends(get_current_user))
     summary = {"connected": True, "invoices": [], "payments": [], "metrics": {}}
     
     try:
-        invoices = await merge_client.get_invoices(account_token=account_token, page_size=50)
-        invoice_list = invoices.get("results", [])
+        invoice_list = []
+        cursor = None
+        pages_fetched = 0
+        max_pages = 10
+
+        for _ in range(max_pages):
+            invoice_page = await merge_client.get_invoices(account_token=account_token, cursor=cursor, page_size=100)
+            batch = invoice_page.get("results", []) or []
+            invoice_list.extend(batch)
+            pages_fetched += 1
+            cursor = invoice_page.get("next")
+            if not cursor or not batch:
+                break
+
         summary["invoices"] = invoice_list
         
         total_outstanding = 0
         total_overdue = 0
         overdue_count = 0
+        today_date = datetime.now(timezone.utc).date()
+
+        def _parse_due_date(raw_value):
+            if not raw_value:
+                return None
+            raw = str(raw_value)
+            try:
+                return datetime.fromisoformat(raw.replace("Z", "+00:00")).date()
+            except Exception:
+                try:
+                    return datetime.strptime(raw[:10], "%Y-%m-%d").date()
+                except Exception:
+                    return None
         
         for inv in invoice_list:
             amount = float(inv.get("total_amount") or inv.get("amount") or 0)
             status = (inv.get("status") or "").upper()
             if status in ("SUBMITTED", "AUTHORIZED", "OPEN"):
                 total_outstanding += amount
-            if status == "OVERDUE" or (inv.get("due_date") and inv.get("due_date") < str(__import__('datetime').date.today())):
+
+            due_date = _parse_due_date(inv.get("due_date"))
+            is_overdue = status == "OVERDUE" or (due_date is not None and due_date < today_date)
+            if is_overdue:
                 total_overdue += amount
                 overdue_count += 1
         
         summary["metrics"] = {
             "total_invoices": len(invoice_list),
+            "invoice_pages_fetched": pages_fetched,
             "total_outstanding": round(total_outstanding, 2),
             "total_overdue": round(total_overdue, 2),
             "overdue_count": overdue_count,
@@ -1777,6 +1887,8 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     This endpoint is designed for high-trust card summaries on /advisor.
     """
     user_id = current_user["id"]
+    user_email = str(current_user.get("email") or "").strip().lower()
+    is_founder_ops_account = user_email == "andre@thestrategysquad.com.au"
 
     def _parse_dt(value: Optional[str]) -> Optional[datetime]:
         if not value:
@@ -1799,7 +1911,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     priority_analysis: Dict[str, Any] = {}
 
     try:
-        merge_connected = await get_merge_connected(current_user=current_user)
+        merge_connected = await get_connected_merge_integrations(current_user=current_user)
         connected_tools = merge_connected.get("integrations", {})
     except Exception:
         connected_tools = {}
@@ -1827,6 +1939,8 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     except Exception:
         priority_analysis = {}
 
+    generated_at = datetime.now(timezone.utc).isoformat()
+
     open_deals = [deal for deal in crm_deals if str(deal.get("status") or "").upper() == "OPEN"]
     stalled_deals = []
     for deal in open_deals:
@@ -1843,8 +1957,15 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     overdue_count = int(metrics.get("overdue_count") or 0)
     total_overdue = float(metrics.get("total_overdue") or 0)
     total_outstanding = float(metrics.get("total_outstanding") or 0)
+    accounting_error = accounting_summary.get("error") if isinstance(accounting_summary, dict) else None
 
     high_priority_threads = priority_analysis.get("high_priority") or []
+
+    accounting_provider = "Accounting System"
+    for entry in connected_tools.values():
+        if str(entry.get("category") or "").lower() == "accounting" and entry.get("provider"):
+            accounting_provider = str(entry.get("provider"))
+            break
 
     response_delay_events = []
     for event in watchtower_events:
@@ -1862,7 +1983,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "risk_score": min(95, 55 + len(stalled_deals)),
             "confidence_interval": "68–84%",
             "source": "HubSpot CRM",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": generated_at,
             "signal_summary": f"{len(stalled_deals)} opportunities have had no activity for more than 72 hours.",
             "evidence_summary": f"Examples: {top_examples}",
             "decision_summary": "Revenue conversion is at risk unless owners re-engage these opportunities immediately.",
@@ -1878,13 +1999,50 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "risk_score": min(97, 58 + overdue_count),
             "confidence_interval": "72–88%",
             "source": "Xero Accounting",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": generated_at,
             "signal_summary": f"{overdue_count} invoices are overdue with {total_overdue:,.0f} outstanding.",
-            "evidence_summary": f"Outstanding ledger snapshot: {total_outstanding:,.0f}.",
+            "evidence_summary": (
+                f"Source: {accounting_provider} via Merge accounting sync. "
+                f"Computed from paginated invoice scan (up to 1,000 records) where status is OVERDUE or due date is past today. "
+                f"Outstanding ledger snapshot: {total_outstanding:,.0f}."
+            ),
             "decision_summary": "Cashflow pressure is rising and collections actions should be triggered now.",
             "consequence": "Ignoring this may create near-term cash shortfall and delayed payroll/vendor payments.",
             "action_summary": "Trigger reminder sequence and call top overdue clients today.",
-            "evidence_refs": [{"overdue_count": overdue_count, "total_overdue": total_overdue, "total_outstanding": total_outstanding}],
+            "evidence_refs": [{
+                "provider": accounting_provider,
+                "source_endpoint": "/integrations/accounting/summary",
+                "window": "paginated scan up to 1,000 invoices",
+                "rule": "status == OVERDUE OR due_date < today",
+                "overdue_count": overdue_count,
+                "total_overdue": total_overdue,
+                "total_outstanding": total_outstanding,
+            }],
+        })
+
+    if accounting_error:
+        if is_founder_ops_account:
+            error_signal_summary = "ERROR: Xero live data feed is unavailable."
+            error_decision_summary = "A non-live or failed accounting API state was detected and requires immediate remediation before client-facing use."
+            error_action_summary = "ERROR — investigate Merge/Xero token health and API state immediately, then run Refresh intelligence."
+        else:
+            error_signal_summary = "Xero data could not be refreshed."
+            error_decision_summary = "Cash exposure cannot be verified until accounting authentication is restored."
+            error_action_summary = "Reconnect integration. If this persists, contact support."
+
+        candidate_signals.append({
+            "signal_key": "accounting-sync-unavailable",
+            "bucket_hint": "decide_now",
+            "risk_score": 86,
+            "confidence_interval": "91–97%",
+            "source": f"{accounting_provider} Accounting",
+            "timestamp": generated_at,
+            "signal_summary": error_signal_summary,
+            "evidence_summary": str(accounting_error),
+            "decision_summary": error_decision_summary,
+            "consequence": "You may be making cash decisions blind while receivables risk is hidden.",
+            "action_summary": error_action_summary,
+            "evidence_refs": [{"provider": accounting_provider, "error": str(accounting_error)}],
         })
 
     if response_delay_events:
@@ -1910,7 +2068,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "risk_score": min(88, 48 + len(high_priority_threads) * 5),
             "confidence_interval": "64–82%",
             "source": "Priority Inbox",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": generated_at,
             "signal_summary": f"{len(high_priority_threads)} high-priority threads need owner attention.",
             "evidence_summary": high_priority_threads[0].get("reason") or high_priority_threads[0].get("subject") or "High-priority thread detected.",
             "decision_summary": "Customer and commercial communications need focused triage this week.",
@@ -1926,7 +2084,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "risk_score": 62,
             "confidence_interval": "58–74%",
             "source": "Cross-Integration Pattern",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": generated_at,
             "signal_summary": "Recurring follow-up gaps are appearing across CRM, accounting, and communications.",
             "evidence_summary": "Signals show repeated delay patterns rather than a one-off anomaly.",
             "decision_summary": "A system-level process fix is needed to stop repeated follow-up failures.",
@@ -1955,6 +2113,30 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
 
     all_clear = all(card is None for card in cards.values())
 
+    cash_provenance = {
+        "source": f"{accounting_provider} via Merge Accounting API",
+        "query": "GET /integrations/accounting/summary",
+        "window": "paginated scan up to 1,000 invoices",
+        "rule": "overdue_count increments when status == OVERDUE OR due_date < today",
+        "summary": (
+            f"From {accounting_provider} via Merge: {overdue_count} overdue invoices totaling "
+            f"{total_overdue:,.0f}, with {total_outstanding:,.0f} total outstanding."
+        ),
+        "generated_at": generated_at,
+        "status": "ok",
+    }
+
+    if accounting_error:
+        if is_founder_ops_account:
+            cash_error_summary = f"ERROR: non-live accounting API detected — {str(accounting_error)}"
+        else:
+            cash_error_summary = "Accounting feed unavailable. Reconnect integration or contact support."
+
+        cash_provenance.update({
+            "status": "unavailable",
+            "summary": cash_error_summary,
+        })
+
     return {
         "all_clear": all_clear,
         "connected_tools": connected_tools,
@@ -1966,6 +2148,11 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "total_outstanding": total_outstanding,
             "response_delay_events": len(response_delay_events),
             "high_priority_threads": len(high_priority_threads),
+            "accounting_error": accounting_error,
+            "accounting_live_status": "unavailable" if accounting_error else "live",
+        },
+        "provenance": {
+            "cash_exposure": cash_provenance
         },
         "cards": cards,
     }

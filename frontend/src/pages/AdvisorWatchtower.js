@@ -781,6 +781,16 @@ export default function AdvisorWatchtower() {
     return 'evening';
   }, [timeOfDay]);
 
+  const greetingDateTime = useMemo(() => {
+    return new Date().toLocaleString([], {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }, []);
+
   const signals = useMemo(() => {
     const surfaceSignals = buildSignalsFromExecutiveSurface(integrationContext.executiveSurface);
     const coreSignals = buildSignals(overview, cognitive, watchtowerEvents);
@@ -1177,7 +1187,13 @@ export default function AdvisorWatchtower() {
   });
 
   const snapshotLabels = useMemo(() => {
-    const hasAccounting = Boolean(integrationContext.accountingSummary?.connected) || executiveSnapshot.overdueCount > 0 || executiveSnapshot.overdueValue > 0;
+    const accountingSyncError = integrationContext.accountingSummary?.error
+      || integrationContext.executiveSurface?.snapshot?.accounting_error
+      || '';
+    const currentEmail = String(user?.email || '').toLowerCase();
+    const isFounderOpsAccount = currentEmail === 'andre@thestrategysquad.com.au';
+    const hasAccounting = (Boolean(integrationContext.accountingSummary?.connected) || executiveSnapshot.overdueCount > 0 || executiveSnapshot.overdueValue > 0)
+      && !accountingSyncError;
     const hasCRM = connectedSources.some((source) => /hubspot|salesforce|crm/i.test(source)) || executiveSnapshot.openDeals > 0;
     const hasOutlook = Boolean(integrationContext.outlookStatus?.connected);
 
@@ -1185,11 +1201,15 @@ export default function AdvisorWatchtower() {
       ? `${executiveSnapshot.openDeals} open · ${executiveSnapshot.stalledDeals} stalled >72h`
       : 'CRM sync pending';
 
-    const cashLabel = hasAccounting
-      ? (executiveSnapshot.overdueCount > 0
-          ? `${executiveSnapshot.overdueCount} overdue · ${formatCurrency(executiveSnapshot.overdueValue)}`
-          : 'No overdue invoices detected')
-      : 'Xero sync pending';
+    const cashLabel = accountingSyncError
+      ? (isFounderOpsAccount
+          ? 'ERROR · non-live accounting API'
+          : 'Reconnect integration or contact support')
+      : hasAccounting
+        ? (executiveSnapshot.overdueCount > 0
+            ? `${executiveSnapshot.overdueCount} overdue · ${formatCurrency(executiveSnapshot.overdueValue)}`
+            : 'No overdue invoices detected')
+        : 'Xero sync pending';
 
     const inboxLabel = hasOutlook
       ? (executiveSnapshot.highPriorityEmails > 0
@@ -1200,7 +1220,29 @@ export default function AdvisorWatchtower() {
     const calibrationLabel = executiveSnapshot.calibrationStatus || 'Pending';
 
     return { crmLabel, cashLabel, inboxLabel, calibrationLabel };
-  }, [integrationContext, executiveSnapshot, connectedSources]);
+  }, [integrationContext, executiveSnapshot, connectedSources, user?.email]);
+
+  const cashExposureProvenance = integrationContext.executiveSurface?.provenance?.cash_exposure || null;
+  const accountingSyncError = integrationContext.accountingSummary?.error
+    || integrationContext.executiveSurface?.snapshot?.accounting_error
+    || '';
+
+  const cashExposureSourceNote = useMemo(() => {
+    const currentEmail = String(user?.email || '').toLowerCase();
+    const isFounderOpsAccount = currentEmail === 'andre@thestrategysquad.com.au';
+
+    if (accountingSyncError) {
+      if (isFounderOpsAccount) {
+        return `ERROR: non-live accounting API state detected. Root detail: ${String(accountingSyncError).slice(0, 140)}`;
+      }
+      return 'Accounting feed unavailable. Reconnect integration or contact support.';
+    }
+    if (cashExposureProvenance?.summary) return cashExposureProvenance.summary;
+    if (executiveSnapshot.overdueCount > 0) {
+      return 'From accounting sync via Merge: paginated scan (up to 1,000 invoices), overdue means status is OVERDUE or due date is past today.';
+    }
+    return 'Cash exposure source appears after accounting sync completes.';
+  }, [cashExposureProvenance, executiveSnapshot.overdueCount, accountingSyncError, user?.email]);
 
   return (
     <DashboardLayout>
@@ -1218,9 +1260,18 @@ export default function AdvisorWatchtower() {
               <p className="text-xs uppercase tracking-[0.18em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-header-kicker">
                 Today · Executive Cognition
               </p>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-header-title">
-                Good {displayTimeOfDay}, {displayName}.
-              </h1>
+              <div className="flex flex-wrap items-end gap-3" data-testid="advisor-header-title-row">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-header-title">
+                  Good {displayTimeOfDay}, {displayName}.
+                </h1>
+                <p
+                  className="pb-2 text-xs"
+                  style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}
+                  data-testid="advisor-header-datetime"
+                >
+                  {greetingDateTime}
+                </p>
+              </div>
               <p className="text-sm sm:text-base" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
                 {connectedSources.length > 0
                   ? `Three decisions from ${connectedSources.join(', ')} evidence. Clear owner-ready actions.`
@@ -1328,6 +1379,88 @@ export default function AdvisorWatchtower() {
                 </div>
               </section>
 
+              <section className="mb-8" data-testid="advisor-priority-snapshot-fold-section">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-priority-snapshot-title">
+                      BIQc Priority Snapshot
+                    </h2>
+                    <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-priority-snapshot-subtitle">
+                      Three owner decisions above the fold. Pick one and execute now.
+                    </p>
+                  </div>
+                  <a
+                    href="#advisor-priority-detail-section"
+                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                    style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                    data-testid="advisor-priority-snapshot-jump-detail"
+                  >
+                    View full detail <ArrowRight className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+
+                {noActiveDecisions ? (
+                  <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-priority-snapshot-all-clear">
+                    <h3 className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-priority-snapshot-all-clear-title">
+                      All clear right now — no high-priority decision signal detected.
+                    </h3>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-priority-snapshot-all-clear-summary">
+                      Live scan: {executiveSnapshot.openDeals} open deals, {executiveSnapshot.overdueCount} overdue invoices, {executiveSnapshot.highPriorityEmails} high-priority threads.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-3" data-testid="advisor-priority-snapshot-grid">
+                    {decisions.map((decision) => {
+                      const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;
+                      const signal = decision.signal;
+
+                      return (
+                        <article
+                          key={decision.id}
+                          className="flex min-h-[290px] flex-col rounded-2xl border p-4 md:aspect-square"
+                          style={{ borderColor: style.border, background: 'var(--biqc-bg-card)' }}
+                          data-testid={`advisor-priority-snapshot-card-${decision.id}`}
+                        >
+                          <div className="mb-3 flex items-center justify-between gap-2">
+                            <span
+                              className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em]"
+                              style={{ background: style.bg, color: style.text, fontFamily: fontFamily.mono }}
+                              data-testid={`advisor-priority-snapshot-slot-${decision.id}`}
+                            >
+                              {decision.title}
+                            </span>
+                            <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-priority-snapshot-risk-${decision.id}`}>
+                              Risk {decision.riskScore || 0}
+                            </span>
+                          </div>
+
+                          <h3 className="text-base" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-priority-snapshot-card-title-${decision.id}`}>
+                            {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}
+                          </h3>
+
+                          <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid={`advisor-priority-snapshot-card-why-${decision.id}`}>
+                            {signal ? signal.detail : decision.headline}
+                          </p>
+
+                          <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid={`advisor-priority-snapshot-card-action-${decision.id}`}>
+                            <strong>Action:</strong> {signal ? signal.action : 'No immediate action required.'}
+                          </p>
+
+                          <div className="mt-auto space-y-1 pt-3">
+                            <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-priority-snapshot-card-source-${decision.id}`}>
+                              Source: {signal ? signal.source : 'Awaiting verified feed'}
+                            </p>
+                            <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-priority-snapshot-card-time-${decision.id}`}>
+                              Updated: {signal ? formatTime(signal.createdAt) : 'Recent'}
+                            </p>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
               <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-executive-snapshot-section">
                 <div className="mb-3 flex items-center gap-2">
                   <ShieldAlert className="h-4 w-4 text-[#FF6A00]" />
@@ -1348,6 +1481,9 @@ export default function AdvisorWatchtower() {
                     <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Cash Exposure</p>
                     <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-cash-value">
                       {snapshotLabels.cashLabel}
+                    </p>
+                    <p className="mt-2 text-[10px] leading-relaxed" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-cash-source-note">
+                      {cashExposureSourceNote}
                     </p>
                   </div>
 
@@ -1455,10 +1591,10 @@ export default function AdvisorWatchtower() {
               </section>
               )}
 
-              <section className="mb-10" data-testid="advisor-decision-surface">
+              <section id="advisor-priority-detail-section" className="mb-10" data-testid="advisor-decision-surface">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-decision-title">
-                    Three-Decision Executive Surface
+                    BIQc Priority Snapshot · Full Decision Context
                   </h2>
                   <Link
                     to="/alerts"
