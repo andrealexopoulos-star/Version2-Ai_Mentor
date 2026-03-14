@@ -12,7 +12,9 @@ import asyncio
 import logging
 import re
 import jwt
+import uuid
 from urllib.parse import quote
+from dateutil import parser as dateutil_parser
 
 import httpx
 from core.llm_router import llm_chat
@@ -31,11 +33,13 @@ from supabase_email_helpers import (
     delete_user_calendar_events_supabase,
     get_user_calendar_events_supabase,
     find_email_by_id_supabase,
+    delete_user_sync_jobs_supabase,
 )
 from supabase_intelligence_helpers import (
     get_email_intelligence_supabase, update_email_intelligence_supabase,
     get_priority_analysis_supabase, update_priority_analysis_supabase,
     get_business_profile_supabase,
+    update_calendar_intelligence_supabase,
 )
 from config.urls import get_backend_url, get_frontend_url
 
@@ -67,6 +71,63 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 # Prompt fallbacks
 _EMAIL_PRIORITY_FALLBACK = "You are a strategic business email analyst. Always respond with valid JSON only."
 _EMAIL_REPLY_FALLBACK = "You are BIQC, a decisive business intelligence advisor. Generate concise, action-oriented email replies."
+
+
+def _heuristic_priority(email: Dict[str, Any]) -> Dict[str, Any]:
+    subject = str(email.get("subject") or "")
+    preview = str(email.get("body_preview") or "")
+    combined = f"{subject} {preview}".lower()
+
+    high_tokens = ["urgent", "overdue", "invoice", "payment", "contract", "deadline", "escalat", "proposal", "quote"]
+    medium_tokens = ["meeting", "follow up", "follow-up", "review", "update", "decision", "client"]
+
+    if any(token in combined for token in high_tokens):
+        priority = "high"
+        reason = "Contains urgency, commercial risk, or deadline language."
+        action = "Review today and send a decisive reply or escalation."
+    elif any(token in combined for token in medium_tokens):
+        priority = "medium"
+        reason = "Requires owner attention but is not obviously time-critical."
+        action = "Review this cycle and confirm next step or owner."
+    else:
+        priority = "low"
+        reason = "Appears informational and can be triaged after urgent items."
+        action = "Archive, delegate, or batch with other low-priority messages."
+
+    return {
+        "priority": priority,
+        "reason": reason,
+        "suggested_action": action,
+        "action_item": None,
+        "due_date": None,
+    }
+
+
+def _normalize_priority_response(priority_analysis: Dict[str, Any], recent_emails: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def enrich_priority(items):
+        enriched = []
+        for item in items:
+            idx = int(item.get("email_index", 1) or 1) - 1
+            if 0 <= idx < len(recent_emails):
+                email = recent_emails[idx]
+                enriched.append({
+                    **item,
+                    "email_id": email.get("id"),
+                    "from": email.get("from_name") or email.get("from_address"),
+                    "subject": email.get("subject"),
+                    "received": email.get("received_date"),
+                    "snippet": email.get("body_preview") or "",
+                })
+        return enriched
+
+    normalized = dict(priority_analysis or {})
+    normalized.setdefault("high_priority", [])
+    normalized.setdefault("medium_priority", [])
+    normalized.setdefault("low_priority", [])
+    normalized["high_priority"] = enrich_priority(normalized.get("high_priority", []))
+    normalized["medium_priority"] = enrich_priority(normalized.get("medium_priority", []))
+    normalized["low_priority"] = enrich_priority(normalized.get("low_priority", []))
+    return normalized
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -954,7 +1015,7 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
         
         if not tokens or not tokens.get("access_token"):
             await update_sync_job_supabase(
-                supabase_admin,
+                get_sb(),
                 job_id,
                 {"status": "failed", "error_message": "No access token", "completed_at": datetime.now(timezone.utc).isoformat()}
             )
@@ -972,8 +1033,6 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
         async with httpx.AsyncClient(timeout=30) as client:
             folders_response = await client.get(folders_url, headers=headers)
             folders_data = folders_response.json()
-        
-        all_folders = folders_data.get("value", [])
         
         # ========================================
         # PHASE 1 INGESTION PROTOCOL
@@ -993,7 +1052,6 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
         
         total_emails = 0
         emails_by_sender = {}
-        emails_by_topic = {}
         client_communications = []
         
         # Process each folder
@@ -1090,7 +1148,7 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
                 "insights_generated": 0
             }
             await update_sync_job_supabase(
-                supabase_admin,
+                get_sb(),
                 job_id,
                 {"progress": current_progress}
             )
@@ -1118,7 +1176,7 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
     except Exception as e:
         logger.error(f"Comprehensive sync error: {e}")
         await update_sync_job_supabase(
-            supabase_admin,
+            get_sb(),
             job_id,
             {
                 "status": "failed",
@@ -1669,7 +1727,7 @@ Return ONLY valid JSON, no markdown."""
 
     try:
         email_sys = await get_prompt("email_priority_analysis_v1", _EMAIL_PRIORITY_FALLBACK)
-        response = await llm_chat(system_message=email_sys, user_message=priority_prompt, model=AI_MODEL, api_key=OPENAI_KEY)
+        response = await llm_chat(system_message=email_sys, user_message=priority_prompt, model="gpt-4o-mini", api_key=OPENAI_KEY)
         
         # Parse AI response
         import json
@@ -1684,26 +1742,7 @@ Return ONLY valid JSON, no markdown."""
             else:
                 priority_analysis = {"error": "Could not parse AI response", "raw": response[:500]}
         
-        # Enrich with email details
-        def enrich_priority(items):
-            enriched = []
-            for item in items:
-                idx = item.get("email_index", 1) - 1
-                if 0 <= idx < len(recent_emails):
-                    email = recent_emails[idx]
-                    enriched.append({
-                        **item,
-                        "email_id": email.get("id"),
-                        "from": email.get("from_name") or email.get("from_address"),
-                        "subject": email.get("subject"),
-                        "received": email.get("received_date")
-                    })
-            return enriched
-        
-        if "high_priority" in priority_analysis:
-            priority_analysis["high_priority"] = enrich_priority(priority_analysis.get("high_priority", []))
-            priority_analysis["medium_priority"] = enrich_priority(priority_analysis.get("medium_priority", []))
-            priority_analysis["low_priority"] = enrich_priority(priority_analysis.get("low_priority", []))
+        priority_analysis = _normalize_priority_response(priority_analysis, recent_emails)
         
         # Store analysis in Supabase
         analysis_data = {
@@ -1716,7 +1755,24 @@ Return ONLY valid JSON, no markdown."""
         
     except Exception as e:
         logger.error(f"Email priority analysis error: {e}")
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        heuristic = {"high_priority": [], "medium_priority": [], "low_priority": []}
+        for idx, email in enumerate(recent_emails[:20]):
+            classified = _heuristic_priority(email)
+            heuristic[f"{classified['priority']}_priority"].append({
+                "email_index": idx + 1,
+                "reason": classified["reason"],
+                "suggested_action": classified["suggested_action"],
+                "action_item": classified["action_item"],
+                "due_date": classified["due_date"],
+            })
+        heuristic["strategic_insights"] = "AI classification is temporarily degraded, so BIQc used deterministic priority rules based on urgency, commercial risk, and response signals."
+        normalized = _normalize_priority_response(heuristic, recent_emails)
+        analysis_data = {
+            "analysis": normalized,
+            "emails_analyzed": len(recent_emails),
+        }
+        await update_priority_analysis_supabase(get_sb(), user_id, analysis_data)
+        return normalized
 
 
 @router.post("/email/suggest-reply/{email_id}")
@@ -1833,7 +1889,7 @@ Return ONLY valid JSON in this exact format:
 
         # 6. Generate with LLM
         reply_sys = await get_prompt("email_reply_generator_v1", _EMAIL_REPLY_FALLBACK)
-        response = await llm_chat(system_message=reply_sys, user_message=reply_prompt, model=AI_MODEL, api_key=OPENAI_KEY)
+        response = await llm_chat(system_message=reply_sys, user_message=reply_prompt, model="gpt-4o-mini", api_key=OPENAI_KEY)
         
         # 7. Parse response
         import json

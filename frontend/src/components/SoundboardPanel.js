@@ -4,6 +4,7 @@ import { apiClient } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { trackEvent, EVENTS } from '../lib/analytics';
 import DataCoverageGate from './DataCoverageGate';
+import { CheckInAlerts } from './CheckInAlerts';
 import { fontFamily } from '../design-system/tokens';
 
 
@@ -348,6 +349,10 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             </button>
           );
         })()}
+      </div>
+
+      <div className="px-3 pt-2 shrink-0" data-testid="soundboard-checkin-alerts-slot">
+        <CheckInAlerts />
       </div>
 
       {/* History dropdown */}
