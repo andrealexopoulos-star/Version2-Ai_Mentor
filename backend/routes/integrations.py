@@ -1799,7 +1799,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     priority_analysis: Dict[str, Any] = {}
 
     try:
-        merge_connected = await get_merge_connected(current_user=current_user)
+        merge_connected = await get_connected_merge_integrations(current_user=current_user)
         connected_tools = merge_connected.get("integrations", {})
     except Exception:
         connected_tools = {}
@@ -1827,6 +1827,8 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     except Exception:
         priority_analysis = {}
 
+    generated_at = datetime.now(timezone.utc).isoformat()
+
     open_deals = [deal for deal in crm_deals if str(deal.get("status") or "").upper() == "OPEN"]
     stalled_deals = []
     for deal in open_deals:
@@ -1846,6 +1848,12 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
 
     high_priority_threads = priority_analysis.get("high_priority") or []
 
+    accounting_provider = "Accounting System"
+    for entry in connected_tools.values():
+        if str(entry.get("category") or "").lower() == "accounting" and entry.get("provider"):
+            accounting_provider = str(entry.get("provider"))
+            break
+
     response_delay_events = []
     for event in watchtower_events:
         title_blob = f"{event.get('title', '')} {event.get('event', '')} {event.get('summary', '')}".lower()
@@ -1862,7 +1870,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "risk_score": min(95, 55 + len(stalled_deals)),
             "confidence_interval": "68–84%",
             "source": "HubSpot CRM",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": generated_at,
             "signal_summary": f"{len(stalled_deals)} opportunities have had no activity for more than 72 hours.",
             "evidence_summary": f"Examples: {top_examples}",
             "decision_summary": "Revenue conversion is at risk unless owners re-engage these opportunities immediately.",
@@ -1878,13 +1886,25 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "risk_score": min(97, 58 + overdue_count),
             "confidence_interval": "72–88%",
             "source": "Xero Accounting",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": generated_at,
             "signal_summary": f"{overdue_count} invoices are overdue with {total_overdue:,.0f} outstanding.",
-            "evidence_summary": f"Outstanding ledger snapshot: {total_outstanding:,.0f}.",
+            "evidence_summary": (
+                f"Source: {accounting_provider} via Merge accounting sync. "
+                f"Computed from latest 50 invoices where status is OVERDUE or due date is past today. "
+                f"Outstanding ledger snapshot: {total_outstanding:,.0f}."
+            ),
             "decision_summary": "Cashflow pressure is rising and collections actions should be triggered now.",
             "consequence": "Ignoring this may create near-term cash shortfall and delayed payroll/vendor payments.",
             "action_summary": "Trigger reminder sequence and call top overdue clients today.",
-            "evidence_refs": [{"overdue_count": overdue_count, "total_overdue": total_overdue, "total_outstanding": total_outstanding}],
+            "evidence_refs": [{
+                "provider": accounting_provider,
+                "source_endpoint": "/integrations/accounting/summary",
+                "window": "latest 50 invoices",
+                "rule": "status == OVERDUE OR due_date < today",
+                "overdue_count": overdue_count,
+                "total_overdue": total_overdue,
+                "total_outstanding": total_outstanding,
+            }],
         })
 
     if response_delay_events:
@@ -1910,7 +1930,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "risk_score": min(88, 48 + len(high_priority_threads) * 5),
             "confidence_interval": "64–82%",
             "source": "Priority Inbox",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": generated_at,
             "signal_summary": f"{len(high_priority_threads)} high-priority threads need owner attention.",
             "evidence_summary": high_priority_threads[0].get("reason") or high_priority_threads[0].get("subject") or "High-priority thread detected.",
             "decision_summary": "Customer and commercial communications need focused triage this week.",
@@ -1926,7 +1946,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "risk_score": 62,
             "confidence_interval": "58–74%",
             "source": "Cross-Integration Pattern",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": generated_at,
             "signal_summary": "Recurring follow-up gaps are appearing across CRM, accounting, and communications.",
             "evidence_summary": "Signals show repeated delay patterns rather than a one-off anomaly.",
             "decision_summary": "A system-level process fix is needed to stop repeated follow-up failures.",
@@ -1966,6 +1986,19 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "total_outstanding": total_outstanding,
             "response_delay_events": len(response_delay_events),
             "high_priority_threads": len(high_priority_threads),
+        },
+        "provenance": {
+            "cash_exposure": {
+                "source": f"{accounting_provider} via Merge Accounting API",
+                "query": "GET /integrations/accounting/summary",
+                "window": "latest 50 invoices",
+                "rule": "overdue_count increments when status == OVERDUE OR due_date < today",
+                "summary": (
+                    f"From {accounting_provider} via Merge: {overdue_count} overdue invoices totaling "
+                    f"{total_overdue:,.0f}, with {total_outstanding:,.0f} total outstanding."
+                ),
+                "generated_at": generated_at,
+            }
         },
         "cards": cards,
     }
