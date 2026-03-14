@@ -1806,6 +1806,8 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     This endpoint is designed for high-trust card summaries on /advisor.
     """
     user_id = current_user["id"]
+    user_email = str(current_user.get("email") or "").strip().lower()
+    is_founder_ops_account = user_email == "andre@thestrategysquad.com.au"
 
     def _parse_dt(value: Optional[str]) -> Optional[datetime]:
         if not value:
@@ -1938,6 +1940,15 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
         })
 
     if accounting_error:
+        if is_founder_ops_account:
+            error_signal_summary = "ERROR: Xero live data feed is unavailable."
+            error_decision_summary = "A non-live or failed accounting API state was detected and requires immediate remediation before client-facing use."
+            error_action_summary = "ERROR — investigate Merge/Xero token health and API state immediately, then run Refresh intelligence."
+        else:
+            error_signal_summary = "Xero data could not be refreshed."
+            error_decision_summary = "Cash exposure cannot be verified until accounting authentication is restored."
+            error_action_summary = "Reconnect integration. If this persists, contact support."
+
         candidate_signals.append({
             "signal_key": "accounting-sync-unavailable",
             "bucket_hint": "decide_now",
@@ -1945,11 +1956,11 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "confidence_interval": "91–97%",
             "source": f"{accounting_provider} Accounting",
             "timestamp": generated_at,
-            "signal_summary": f"{accounting_provider} data could not be refreshed.",
+            "signal_summary": error_signal_summary,
             "evidence_summary": str(accounting_error),
-            "decision_summary": "Cash exposure cannot be verified until accounting authentication is restored.",
+            "decision_summary": error_decision_summary,
             "consequence": "You may be making cash decisions blind while receivables risk is hidden.",
-            "action_summary": "Reconnect Xero/accounting integration and re-run Refresh intelligence.",
+            "action_summary": error_action_summary,
             "evidence_refs": [{"provider": accounting_provider, "error": str(accounting_error)}],
         })
 
@@ -2035,9 +2046,14 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     }
 
     if accounting_error:
+        if is_founder_ops_account:
+            cash_error_summary = f"ERROR: non-live accounting API detected — {str(accounting_error)}"
+        else:
+            cash_error_summary = "Accounting feed unavailable. Reconnect integration or contact support."
+
         cash_provenance.update({
             "status": "unavailable",
-            "summary": f"Unavailable: {str(accounting_error)}",
+            "summary": cash_error_summary,
         })
 
     return {
@@ -2052,6 +2068,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "response_delay_events": len(response_delay_events),
             "high_priority_threads": len(high_priority_threads),
             "accounting_error": accounting_error,
+            "accounting_live_status": "unavailable" if accounting_error else "live",
         },
         "provenance": {
             "cash_exposure": cash_provenance

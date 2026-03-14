@@ -1190,6 +1190,8 @@ export default function AdvisorWatchtower() {
     const accountingSyncError = integrationContext.accountingSummary?.error
       || integrationContext.executiveSurface?.snapshot?.accounting_error
       || '';
+    const currentEmail = String(user?.email || '').toLowerCase();
+    const isFounderOpsAccount = currentEmail === 'andre@thestrategysquad.com.au';
     const hasAccounting = (Boolean(integrationContext.accountingSummary?.connected) || executiveSnapshot.overdueCount > 0 || executiveSnapshot.overdueValue > 0)
       && !accountingSyncError;
     const hasCRM = connectedSources.some((source) => /hubspot|salesforce|crm/i.test(source)) || executiveSnapshot.openDeals > 0;
@@ -1200,7 +1202,9 @@ export default function AdvisorWatchtower() {
       : 'CRM sync pending';
 
     const cashLabel = accountingSyncError
-      ? 'Accounting sync unavailable · reconnect required'
+      ? (isFounderOpsAccount
+          ? 'ERROR · non-live accounting API'
+          : 'Reconnect integration or contact support')
       : hasAccounting
         ? (executiveSnapshot.overdueCount > 0
             ? `${executiveSnapshot.overdueCount} overdue · ${formatCurrency(executiveSnapshot.overdueValue)}`
@@ -1216,7 +1220,7 @@ export default function AdvisorWatchtower() {
     const calibrationLabel = executiveSnapshot.calibrationStatus || 'Pending';
 
     return { crmLabel, cashLabel, inboxLabel, calibrationLabel };
-  }, [integrationContext, executiveSnapshot, connectedSources]);
+  }, [integrationContext, executiveSnapshot, connectedSources, user?.email]);
 
   const cashExposureProvenance = integrationContext.executiveSurface?.provenance?.cash_exposure || null;
   const accountingSyncError = integrationContext.accountingSummary?.error
@@ -1224,15 +1228,21 @@ export default function AdvisorWatchtower() {
     || '';
 
   const cashExposureSourceNote = useMemo(() => {
+    const currentEmail = String(user?.email || '').toLowerCase();
+    const isFounderOpsAccount = currentEmail === 'andre@thestrategysquad.com.au';
+
     if (accountingSyncError) {
-      return `Accounting feed unavailable: ${String(accountingSyncError).slice(0, 140)}`;
+      if (isFounderOpsAccount) {
+        return `ERROR: non-live accounting API state detected. Root detail: ${String(accountingSyncError).slice(0, 140)}`;
+      }
+      return 'Accounting feed unavailable. Reconnect integration or contact support.';
     }
     if (cashExposureProvenance?.summary) return cashExposureProvenance.summary;
     if (executiveSnapshot.overdueCount > 0) {
       return 'From accounting sync via Merge: paginated scan (up to 1,000 invoices), overdue means status is OVERDUE or due date is past today.';
     }
     return 'Cash exposure source appears after accounting sync completes.';
-  }, [cashExposureProvenance, executiveSnapshot.overdueCount, accountingSyncError]);
+  }, [cashExposureProvenance, executiveSnapshot.overdueCount, accountingSyncError, user?.email]);
 
   return (
     <DashboardLayout>
