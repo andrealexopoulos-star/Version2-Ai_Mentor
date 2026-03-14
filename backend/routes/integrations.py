@@ -973,25 +973,54 @@ async def get_accounting_summary(current_user: dict = Depends(get_current_user))
     summary = {"connected": True, "invoices": [], "payments": [], "metrics": {}}
     
     try:
-        invoices = await merge_client.get_invoices(account_token=account_token, page_size=50)
-        invoice_list = invoices.get("results", [])
+        invoice_list = []
+        cursor = None
+        pages_fetched = 0
+        max_pages = 10
+
+        for _ in range(max_pages):
+            invoice_page = await merge_client.get_invoices(account_token=account_token, cursor=cursor, page_size=100)
+            batch = invoice_page.get("results", []) or []
+            invoice_list.extend(batch)
+            pages_fetched += 1
+            cursor = invoice_page.get("next")
+            if not cursor or not batch:
+                break
+
         summary["invoices"] = invoice_list
         
         total_outstanding = 0
         total_overdue = 0
         overdue_count = 0
+        today_date = datetime.now(timezone.utc).date()
+
+        def _parse_due_date(raw_value):
+            if not raw_value:
+                return None
+            raw = str(raw_value)
+            try:
+                return datetime.fromisoformat(raw.replace("Z", "+00:00")).date()
+            except Exception:
+                try:
+                    return datetime.strptime(raw[:10], "%Y-%m-%d").date()
+                except Exception:
+                    return None
         
         for inv in invoice_list:
             amount = float(inv.get("total_amount") or inv.get("amount") or 0)
             status = (inv.get("status") or "").upper()
             if status in ("SUBMITTED", "AUTHORIZED", "OPEN"):
                 total_outstanding += amount
-            if status == "OVERDUE" or (inv.get("due_date") and inv.get("due_date") < str(__import__('datetime').date.today())):
+
+            due_date = _parse_due_date(inv.get("due_date"))
+            is_overdue = status == "OVERDUE" or (due_date is not None and due_date < today_date)
+            if is_overdue:
                 total_overdue += amount
                 overdue_count += 1
         
         summary["metrics"] = {
             "total_invoices": len(invoice_list),
+            "invoice_pages_fetched": pages_fetched,
             "total_outstanding": round(total_outstanding, 2),
             "total_overdue": round(total_overdue, 2),
             "overdue_count": overdue_count,
@@ -1845,6 +1874,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     overdue_count = int(metrics.get("overdue_count") or 0)
     total_overdue = float(metrics.get("total_overdue") or 0)
     total_outstanding = float(metrics.get("total_outstanding") or 0)
+    accounting_error = accounting_summary.get("error") if isinstance(accounting_summary, dict) else None
 
     high_priority_threads = priority_analysis.get("high_priority") or []
 
@@ -1890,7 +1920,7 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "signal_summary": f"{overdue_count} invoices are overdue with {total_overdue:,.0f} outstanding.",
             "evidence_summary": (
                 f"Source: {accounting_provider} via Merge accounting sync. "
-                f"Computed from latest 50 invoices where status is OVERDUE or due date is past today. "
+                f"Computed from paginated invoice scan (up to 1,000 records) where status is OVERDUE or due date is past today. "
                 f"Outstanding ledger snapshot: {total_outstanding:,.0f}."
             ),
             "decision_summary": "Cashflow pressure is rising and collections actions should be triggered now.",
@@ -1899,12 +1929,28 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "evidence_refs": [{
                 "provider": accounting_provider,
                 "source_endpoint": "/integrations/accounting/summary",
-                "window": "latest 50 invoices",
+                "window": "paginated scan up to 1,000 invoices",
                 "rule": "status == OVERDUE OR due_date < today",
                 "overdue_count": overdue_count,
                 "total_overdue": total_overdue,
                 "total_outstanding": total_outstanding,
             }],
+        })
+
+    if accounting_error:
+        candidate_signals.append({
+            "signal_key": "accounting-sync-unavailable",
+            "bucket_hint": "decide_now",
+            "risk_score": 86,
+            "confidence_interval": "91–97%",
+            "source": f"{accounting_provider} Accounting",
+            "timestamp": generated_at,
+            "signal_summary": f"{accounting_provider} data could not be refreshed.",
+            "evidence_summary": str(accounting_error),
+            "decision_summary": "Cash exposure cannot be verified until accounting authentication is restored.",
+            "consequence": "You may be making cash decisions blind while receivables risk is hidden.",
+            "action_summary": "Reconnect Xero/accounting integration and re-run Refresh intelligence.",
+            "evidence_refs": [{"provider": accounting_provider, "error": str(accounting_error)}],
         })
 
     if response_delay_events:
@@ -1975,6 +2021,25 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
 
     all_clear = all(card is None for card in cards.values())
 
+    cash_provenance = {
+        "source": f"{accounting_provider} via Merge Accounting API",
+        "query": "GET /integrations/accounting/summary",
+        "window": "paginated scan up to 1,000 invoices",
+        "rule": "overdue_count increments when status == OVERDUE OR due_date < today",
+        "summary": (
+            f"From {accounting_provider} via Merge: {overdue_count} overdue invoices totaling "
+            f"{total_overdue:,.0f}, with {total_outstanding:,.0f} total outstanding."
+        ),
+        "generated_at": generated_at,
+        "status": "ok",
+    }
+
+    if accounting_error:
+        cash_provenance.update({
+            "status": "unavailable",
+            "summary": f"Unavailable: {str(accounting_error)}",
+        })
+
     return {
         "all_clear": all_clear,
         "connected_tools": connected_tools,
@@ -1986,19 +2051,10 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "total_outstanding": total_outstanding,
             "response_delay_events": len(response_delay_events),
             "high_priority_threads": len(high_priority_threads),
+            "accounting_error": accounting_error,
         },
         "provenance": {
-            "cash_exposure": {
-                "source": f"{accounting_provider} via Merge Accounting API",
-                "query": "GET /integrations/accounting/summary",
-                "window": "latest 50 invoices",
-                "rule": "overdue_count increments when status == OVERDUE OR due_date < today",
-                "summary": (
-                    f"From {accounting_provider} via Merge: {overdue_count} overdue invoices totaling "
-                    f"{total_overdue:,.0f}, with {total_outstanding:,.0f} total outstanding."
-                ),
-                "generated_at": generated_at,
-            }
+            "cash_exposure": cash_provenance
         },
         "cards": cards,
     }

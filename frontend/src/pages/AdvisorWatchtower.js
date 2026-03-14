@@ -1187,7 +1187,11 @@ export default function AdvisorWatchtower() {
   });
 
   const snapshotLabels = useMemo(() => {
-    const hasAccounting = Boolean(integrationContext.accountingSummary?.connected) || executiveSnapshot.overdueCount > 0 || executiveSnapshot.overdueValue > 0;
+    const accountingSyncError = integrationContext.accountingSummary?.error
+      || integrationContext.executiveSurface?.snapshot?.accounting_error
+      || '';
+    const hasAccounting = (Boolean(integrationContext.accountingSummary?.connected) || executiveSnapshot.overdueCount > 0 || executiveSnapshot.overdueValue > 0)
+      && !accountingSyncError;
     const hasCRM = connectedSources.some((source) => /hubspot|salesforce|crm/i.test(source)) || executiveSnapshot.openDeals > 0;
     const hasOutlook = Boolean(integrationContext.outlookStatus?.connected);
 
@@ -1195,11 +1199,13 @@ export default function AdvisorWatchtower() {
       ? `${executiveSnapshot.openDeals} open · ${executiveSnapshot.stalledDeals} stalled >72h`
       : 'CRM sync pending';
 
-    const cashLabel = hasAccounting
-      ? (executiveSnapshot.overdueCount > 0
-          ? `${executiveSnapshot.overdueCount} overdue · ${formatCurrency(executiveSnapshot.overdueValue)}`
-          : 'No overdue invoices detected')
-      : 'Xero sync pending';
+    const cashLabel = accountingSyncError
+      ? 'Accounting sync unavailable · reconnect required'
+      : hasAccounting
+        ? (executiveSnapshot.overdueCount > 0
+            ? `${executiveSnapshot.overdueCount} overdue · ${formatCurrency(executiveSnapshot.overdueValue)}`
+            : 'No overdue invoices detected')
+        : 'Xero sync pending';
 
     const inboxLabel = hasOutlook
       ? (executiveSnapshot.highPriorityEmails > 0
@@ -1213,14 +1219,20 @@ export default function AdvisorWatchtower() {
   }, [integrationContext, executiveSnapshot, connectedSources]);
 
   const cashExposureProvenance = integrationContext.executiveSurface?.provenance?.cash_exposure || null;
+  const accountingSyncError = integrationContext.accountingSummary?.error
+    || integrationContext.executiveSurface?.snapshot?.accounting_error
+    || '';
 
   const cashExposureSourceNote = useMemo(() => {
+    if (accountingSyncError) {
+      return `Accounting feed unavailable: ${String(accountingSyncError).slice(0, 140)}`;
+    }
     if (cashExposureProvenance?.summary) return cashExposureProvenance.summary;
     if (executiveSnapshot.overdueCount > 0) {
-      return 'From accounting sync via Merge: latest 50 invoices, overdue means status is OVERDUE or due date is past today.';
+      return 'From accounting sync via Merge: paginated scan (up to 1,000 invoices), overdue means status is OVERDUE or due date is past today.';
     }
     return 'Cash exposure source appears after accounting sync completes.';
-  }, [cashExposureProvenance, executiveSnapshot.overdueCount]);
+  }, [cashExposureProvenance, executiveSnapshot.overdueCount, accountingSyncError]);
 
   return (
     <DashboardLayout>
