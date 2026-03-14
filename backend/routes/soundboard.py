@@ -1147,6 +1147,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     ANTHROPIC_DIRECT_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
     has_openai_key = _has_configured_key(OPENAI_DIRECT_KEY)
     has_google_key = _has_configured_key(GOOGLE_DIRECT_KEY)
+    has_anthropic_key = _has_configured_key(ANTHROPIC_DIRECT_KEY)
 
     # Step 1: Intent classification with o4-mini (fast thinking, direct OpenAI key)
     intent_domain, intent_action, complexity = _infer_intent_heuristic(req.message)
@@ -1205,14 +1206,36 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
             reasoning_mode = mode == "thinking" or intent_action in ("forecast", "diagnose") or complexity == "high"
             if provider == "openai":
-                response, resolved_model = await _call_openai_with_fallback(
-                    api_key=OPENAI_DIRECT_KEY,
-                    system_message=system_message,
-                    clean_message=clean_message,
-                    messages_history=messages_history,
-                    model_candidates=model_candidates,
-                    reasoning=reasoning_mode,
-                )
+                try:
+                    response, resolved_model = await _call_openai_with_fallback(
+                        api_key=OPENAI_DIRECT_KEY,
+                        system_message=system_message,
+                        clean_message=clean_message,
+                        messages_history=messages_history,
+                        model_candidates=model_candidates,
+                        reasoning=reasoning_mode,
+                    )
+                except Exception as openai_error:
+                    if has_anthropic_key:
+                        logger.warning(f"[SOUNDBOARD] OpenAI route failed, falling back to Anthropic: {openai_error}")
+                        response, resolved_model = await _call_anthropic_with_fallback(
+                            api_key=ANTHROPIC_DIRECT_KEY,
+                            system_message=system_message,
+                            clean_message=clean_message,
+                            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+                        )
+                        provider = "anthropic-fallback"
+                    elif has_google_key:
+                        logger.warning(f"[SOUNDBOARD] OpenAI route failed, falling back to Gemini: {openai_error}")
+                        response, resolved_model = await _call_gemini_with_fallback(
+                            api_key=GOOGLE_DIRECT_KEY,
+                            system_message=system_message,
+                            clean_message=clean_message,
+                            model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+                        )
+                        provider = "gemini-fallback"
+                    else:
+                        raise
             else:
                 try:
                     response, resolved_model = await _call_gemini_with_fallback(

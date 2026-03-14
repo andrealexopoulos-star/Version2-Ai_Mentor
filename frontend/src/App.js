@@ -261,6 +261,8 @@ function AppRoutes() {
         <Route path="/email-inbox" element={<ProtectedRoute><TierGate><EmailInbox /></TierGate></ProtectedRoute>} />
         <Route path="/war-room" element={<ProtectedRoute><TierGate><div className="h-screen bg-black"><WarRoomConsole /></div></TierGate></ProtectedRoute>} />
         <Route path="/board-room" element={<ProtectedRoute><TierGate><div className="h-screen bg-black"><BoardRoom /></div></TierGate></ProtectedRoute>} />
+        <Route path="/warroom" element={<Navigate to="/war-room" replace />} />
+        <Route path="/boardroom" element={<Navigate to="/board-room" replace />} />
         <Route path="/sop-generator" element={<ProtectedRoute><TierGate><SOPGenerator /></TierGate></ProtectedRoute>} />
         <Route path="/decisions" element={<ProtectedRoute><DecisionsPage /></ProtectedRoute>} />
         <Route path="/diagnosis" element={<ProtectedRoute><TierGate><Diagnosis /></TierGate></ProtectedRoute>} />
