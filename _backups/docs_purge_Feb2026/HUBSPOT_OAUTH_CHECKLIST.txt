@@ -71,7 +71,7 @@ PART C: TEST IN BIQC
 ───────────────────────────────────────────────────────────────────────
 
 Step 11: Open BIQC Integrations
-  □ Navigate to: https://biqc-forensic.preview.emergentagent.com/integrations
+  □ Navigate to: https://cognition-ui-refresh.preview.emergentagent.com/integrations
   □ Login as: andre@thestrategysquad.com.au (if not already logged in)
   
 Step 12: Connect HubSpot

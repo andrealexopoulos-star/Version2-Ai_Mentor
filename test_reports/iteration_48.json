@@ -65,7 +65,7 @@
   ],
   "action_items": [
     "SCROLL FIX VERIFIED WORKING - No action required",
-    "All tests passed on https://biqc-forensic.preview.emergentagent.com"
+    "All tests passed on https://cognition-ui-refresh.preview.emergentagent.com"
   ],
   "critical_code_review_comments": [
     "PASS: CSS fix correctly makes html the ONLY scroll container (overflow-y:scroll)",

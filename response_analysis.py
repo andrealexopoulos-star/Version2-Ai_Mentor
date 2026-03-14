@@ -7,7 +7,7 @@ import httpx
 import json
 from datetime import datetime, timezone
 
-BASE_URL = "https://biqc-forensic.preview.emergentagent.com/api"
+BASE_URL = "https://cognition-ui-refresh.preview.emergentagent.com/api"
 
 async def analyze_soundboard_responses():
     """Analyze detailed soundboard response content"""

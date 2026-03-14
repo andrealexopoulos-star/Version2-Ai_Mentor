@@ -7,7 +7,7 @@ Tests the critical regression fixes:
 3. Authentication still works correctly
 
 Credentials: andre@thestrategysquad.com.au / MasterMind2025*
-Target: https://biqc-forensic.preview.emergentagent.com
+Target: https://cognition-ui-refresh.preview.emergentagent.com
 """
 
 import asyncio
@@ -17,7 +17,7 @@ import sys
 from typing import Dict, Any, Optional
 
 # Test Configuration
-BASE_URL = "https://biqc-forensic.preview.emergentagent.com"
+BASE_URL = "https://cognition-ui-refresh.preview.emergentagent.com"
 TEST_EMAIL = "andre@thestrategysquad.com.au"
 TEST_PASSWORD = "MasterMind2025*"
 
