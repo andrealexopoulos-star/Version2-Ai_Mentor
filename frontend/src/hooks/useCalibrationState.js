@@ -335,6 +335,9 @@ export const useCalibrationState = () => {
             competitor_scan_result: deepEnrichment.competitor_analysis || exRaw.competitor_scan_result,
             abn: deepEnrichment.abn || exRaw.abn,
             competitors: Array.isArray(deepEnrichment.competitors) ? deepEnrichment.competitors : (exRaw.competitors || []),
+            social_media_links: deepEnrichment.social_handles || exRaw.social_media_links || {},
+            trust_signals: deepEnrichment.trust_signals || exRaw.trust_signals || [],
+            executive_summary: deepEnrichment.executive_summary || exRaw.executive_summary || '',
             deep_scan_sources: deepEnrichment.sources || null,
           } : {}),
         };

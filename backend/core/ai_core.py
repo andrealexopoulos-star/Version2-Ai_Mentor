@@ -68,13 +68,17 @@ async def get_ai_response(
             else:
                 business_knowledge = f"────────────────────────────────────────\nCOGNITIVE CORE CONTEXT\n────────────────────────────────────────\n{cognitive_context}"
 
-            # Record interaction as observation
-            await cognitive_core.observe(user_id, {
-                "type": "message",
-                "content": message[:500],
-                "agent": agent_name,
-                "context_type": context_type
-            })
+            # Record interaction as observation (if cognitive core is initialised)
+            if cognitive_core is not None:
+                try:
+                    await cognitive_core.observe(user_id, {
+                        "type": "message",
+                        "content": message[:500],
+                        "agent": agent_name,
+                        "context_type": context_type,
+                    })
+                except Exception as observe_err:
+                    logger.warning(f"[ai_core] observe skipped: {observe_err}")
 
         # STEP 3: Generate system prompt and call LLM
         system_prompt = await get_system_prompt(context_type, user_data, business_knowledge, metadata)

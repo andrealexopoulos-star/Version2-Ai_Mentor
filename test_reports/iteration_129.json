@@ -1,0 +1,120 @@
+{
+  "summary": "Iteration 129 - Post OpenAI key rotation testing. CRITICAL: OPENAI_API_KEY is still set to placeholder 'CONFIGURED_IN_AZURE' in backend/.env, causing Soundboard and enrichment failures. Board Room works via Supabase Edge Functions. War Room has validation error (product_or_service required). Calibration lacks competitor/trust signal/social handles data (0/100 quality score).",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/soundboard/chat",
+        "issue": "Returns 500 with message: '503: AI provider keys are not configured. Add a valid OPENAI_API_KEY and/or GOOGLE_API_KEY in the backend environment to restore Soundboard replies.' - OPENAI_API_KEY in backend/.env is set to 'CONFIGURED_IN_AZURE' placeholder, NOT an actual key",
+        "priority": "CRITICAL"
+      },
+      {
+        "endpoint": "/api/enrichment/website",
+        "issue": "Returns 500: AI service error: 'NoneType' object has no attribute 'observe'. Calibration website deep scan failing - likely related to LangSmith/tracing when AI keys are missing",
+        "priority": "CRITICAL"
+      },
+      {
+        "endpoint": "/api/war-room/respond",
+        "issue": "Returns 200 but answer field is empty. Frontend shows error: {\"error\":\"product_or_service is required\"}. Backend validation requires product_or_service field but frontend not sending it.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "/api/calibration/enrichment",
+        "issue": "Calibration depth quality score: 0/100 - Missing: competitors, competitor_analysis, ABN, market_position, unique_value_proposition, social handles"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "War Room Ask",
+        "issue": "Frontend WarRoomConsole.js sends question but doesn't include product_or_service field required by backend /api/war-room/respond endpoint. Error displayed to user: {\"error\":\"product_or_service is required\"}",
+        "affected_selectors": ["[data-testid='ask-input']", "[data-testid='ask-submit']"]
+      },
+      {
+        "flow": "Soundboard Chat",
+        "issue": "Soundboard input accepts queries but backend returns AI key configuration error. Users see no response or generic error.",
+        "affected_selectors": ["textarea", "button svg.lucide-send"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ai_modules_iteration129.py",
+    "/app/test_reports/pytest/pytest_results_iter129.xml"
+  ],
+  "action_items": [
+    "CRITICAL: Set actual OPENAI_API_KEY in backend/.env - current value 'CONFIGURED_IN_AZURE' is a placeholder that was NOT replaced with real key after user's key rotation",
+    "CRITICAL: Fix /api/enrichment/website 'NoneType' object error - likely needs null check on LangSmith tracer when keys are missing",
+    "HIGH: Fix War Room /respond endpoint to either make product_or_service optional OR update WarRoomConsole.js to send it from business profile",
+    "MEDIUM: Enhance calibration enrichment to capture competitors, trust signals (ABN), social handles, executive summary during website deep scan"
+  ],
+  "critical_code_review_comments": [
+    "backend/.env has OPENAI_API_KEY=CONFIGURED_IN_AZURE - this is placeholder NOT actual key - user said they updated key but it wasn't applied to this environment",
+    "llm_router.py line 179-181 correctly throws ValueError when OPENAI_API_KEY missing, but soundboard.py catches this and returns 503 - this is correct resilience behavior but user sees 'AI service unavailable'",
+    "War Room /respond validation requires product_or_service but frontend doesn't send it - schema mismatch between frontend and backend"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_ai_modules_iteration129.py"
+  ],
+  "success_rate": {
+    "backend": "67% (6/9 tests passed)",
+    "frontend": "60% (Board Room working, War Room showing error, Soundboard failing)"
+  },
+  "test_credentials": {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "MasterMind2025*",
+    "production_url": "https://biqc.thestrategysquad.com"
+  },
+  "seed_data_creation": "None - using existing Andre account",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Key finding: OPENAI_API_KEY in preview/staging env is still placeholder 'CONFIGURED_IN_AZURE'. Board Room diagnosis works via Supabase Edge Functions (separate from direct OpenAI calls). War Room has frontend->backend field mismatch (product_or_service). Calibration depth data (competitors, trust signals, social handles) returns empty - enrichment endpoint failing with NoneType error.",
+  "rca_of_issues": {
+    "soundboard_failure": {
+      "root_cause": "OPENAI_API_KEY environment variable in backend/.env is set to 'CONFIGURED_IN_AZURE' placeholder instead of actual API key. User reported rotating key but the new key was NOT applied to this preview environment.",
+      "reproduction_steps": [
+        "1. Login as andre@thestrategysquad.com.au",
+        "2. Navigate to /advisor or use Soundboard sidebar",
+        "3. Send any message to Soundboard",
+        "4. Backend returns 500 with '503: AI provider keys are not configured'"
+      ],
+      "mitigation": "Replace OPENAI_API_KEY=CONFIGURED_IN_AZURE with actual OpenAI API key in backend/.env and restart backend service"
+    },
+    "war_room_failure": {
+      "root_cause": "Backend /api/war-room/respond endpoint requires 'product_or_service' field in request body, but frontend WarRoomConsole.js only sends 'question' field",
+      "reproduction_steps": [
+        "1. Login and navigate to /war-room",
+        "2. Type question in 'Ask about your business...' input",
+        "3. Click send",
+        "4. Error displayed: {\"error\":\"product_or_service is required\"}"
+      ],
+      "mitigation": "Either make product_or_service optional in backend validation OR update WarRoomConsole.js to include business profile's product_or_service in request"
+    },
+    "calibration_depth_failure": {
+      "root_cause": "Website enrichment scan /api/enrichment/website failing with 'NoneType' object has no attribute 'observe' - likely LangSmith tracing code not handling null API keys gracefully",
+      "reproduction_steps": [
+        "1. Call POST /api/enrichment/website with url='https://thestrategysquad.com.au'",
+        "2. Backend returns: {\"status\":\"error\",\"message\":\"Failed to scan: 500: AI service error...\"}"
+      ],
+      "mitigation": "Add null checks for LangSmith tracer initialization when API keys are missing. Also need to implement actual competitor/trust signal extraction in enrichment logic."
+    }
+  },
+  "modules_tested": {
+    "authentication": "PASS - Supabase auth working correctly",
+    "calibration_status": "PASS - Returns COMPLETE status",
+    "soundboard_chat": "FAIL - 500 AI keys not configured",
+    "soundboard_multi_turn": "FAIL - 0/3 turns succeeded",
+    "war_room_respond": "PARTIAL - Returns 200 but empty answer due to validation error",
+    "boardroom_diagnosis": "PASS - Working via Supabase Edge Functions",
+    "calibration_enrichment": "FAIL - 0/100 quality score, scan error",
+    "llm_router_health": "PASS - Backend responding"
+  },
+  "consecutive_success_count": {
+    "soundboard": 0,
+    "war_room": 0,
+    "board_room": 1
+  }
+}
