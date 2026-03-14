@@ -112,6 +112,7 @@ const toSignal = (item = {}, fallbackSource = 'snapshot') => {
     occurrences: 1,
     actionIds: [actionId],
     dedupeKey: `${signalType}|${domain}|${source}`,
+    evidenceRefs: item.evidence_refs || item.evidence || [],
   };
 };
 
@@ -368,6 +369,25 @@ const buildIntegrationSignals = (integrationContext) => {
   return dedupeSignals(raw);
 };
 
+const buildSignalsFromExecutiveSurface = (executiveSurface) => {
+  const cards = executiveSurface?.cards || {};
+  const ordered = [cards.decide_now, cards.monitor_this_week, cards.build_next].filter(Boolean);
+  return dedupeSignals(
+    ordered.map((card, index) => toSignal({
+      id: card.signal_key || `exec-signal-${index + 1}`,
+      signal: card.signal_key || `executive_signal_${index + 1}`,
+      domain: card.bucket_hint || 'general',
+      severity: Number(card.risk_score || 0) >= 80 ? 'high' : Number(card.risk_score || 0) >= 60 ? 'medium' : 'low',
+      title: card.signal_summary,
+      detail: `${card.evidence_summary || ''}`.trim() || card.decision_summary,
+      recommendation: card.action_summary,
+      if_ignored: card.consequence,
+      source: card.source || 'snapshot',
+      created_at: card.timestamp,
+    }, 'snapshot')),
+  );
+};
+
 const scoreRiskForBucket = (signal, bucketId) => {
   if (!signal) return 0;
   const base = { critical: 92, high: 78, medium: 58, low: 38, info: 25 }[signal.severity] || 30;
@@ -512,6 +532,7 @@ export default function AdvisorWatchtower() {
     priorityInbox: null,
     outlookStatus: null,
     calibrationStatus: null,
+    executiveSurface: null,
   });
   const [integrationContextLoading, setIntegrationContextLoading] = useState(false);
   const [integrationContextError, setIntegrationContextError] = useState('');
@@ -588,6 +609,7 @@ export default function AdvisorWatchtower() {
 
     try {
       const requests = await Promise.allSettled([
+        apiClient.get('/advisor/executive-surface', { timeout: 15000 }),
         apiClient.get('/integrations/merge/connected', { timeout: 12000 }),
         apiClient.get('/integrations/crm/deals', { params: { page_size: 50 }, timeout: 15000 }),
         apiClient.get('/integrations/accounting/summary', { timeout: 15000 }),
@@ -596,7 +618,9 @@ export default function AdvisorWatchtower() {
         apiClient.get('/calibration/status', { timeout: 10000 }),
       ]);
 
-      const [mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
+      const [surfaceRes, mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
+
+      const executiveSurface = surfaceRes.status === 'fulfilled' ? (surfaceRes.value?.data || null) : null;
 
       const mergeConnected = mergeRes.status === 'fulfilled' ? (mergeRes.value?.data?.integrations || {}) : {};
       const crmDeals = crmRes.status === 'fulfilled' ? (crmRes.value?.data?.results || []) : [];
@@ -612,6 +636,7 @@ export default function AdvisorWatchtower() {
         priorityInbox,
         outlookStatus,
         calibrationStatus,
+        executiveSurface,
       });
     } catch (error) {
       setIntegrationContextError(error?.response?.data?.detail || 'Unable to load integration context.');
@@ -745,8 +770,14 @@ export default function AdvisorWatchtower() {
   }, [timeOfDay]);
 
   const signals = useMemo(() => {
+    const surfaceSignals = buildSignalsFromExecutiveSurface(integrationContext.executiveSurface);
     const coreSignals = buildSignals(overview, cognitive, watchtowerEvents);
     const integrationSignals = buildIntegrationSignals(integrationContext);
+
+    if (surfaceSignals.length > 0) {
+      return dedupeSignals([...surfaceSignals, ...coreSignals]);
+    }
+
     return dedupeSignals([...coreSignals, ...integrationSignals]);
   }, [overview, cognitive, watchtowerEvents, integrationContext]);
 
@@ -1063,7 +1094,7 @@ export default function AdvisorWatchtower() {
   const integrationTruth = overview?.integrations || cognitive?.integrations || {};
   const connectedSources = useMemo(() => {
     const list = [];
-    const mergeMap = integrationContext.mergeConnected || {};
+    const mergeMap = integrationContext.mergeConnected || integrationContext.executiveSurface?.connected_tools || {};
 
     Object.values(mergeMap).forEach((entry) => {
       if (entry?.connected && entry?.provider) list.push(entry.provider);
@@ -1081,6 +1112,19 @@ export default function AdvisorWatchtower() {
   }, [integrationTruth, integrationContext]);
 
   const executiveSnapshot = useMemo(() => {
+    const surfaceSnapshot = integrationContext.executiveSurface?.snapshot;
+    if (surfaceSnapshot) {
+      return {
+        openDeals: Number(surfaceSnapshot.open_deals || 0),
+        stalledDeals: Number(surfaceSnapshot.stalled_deals_72h || 0),
+        overdueCount: Number(surfaceSnapshot.overdue_invoices || 0),
+        overdueValue: Number(surfaceSnapshot.total_overdue || 0),
+        outstandingValue: Number(surfaceSnapshot.total_outstanding || 0),
+        highPriorityEmails: Number(surfaceSnapshot.high_priority_threads || 0),
+        calibrationStatus: integrationContext.calibrationStatus?.status || null,
+      };
+    }
+
     const metrics = integrationContext.accountingSummary?.metrics || {};
     const deals = integrationContext.crmDeals || [];
     const openDeals = deals.filter((deal) => String(deal?.status || '').toUpperCase() === 'OPEN').length;
@@ -1105,6 +1149,7 @@ export default function AdvisorWatchtower() {
   const executiveMemo = overview?.executive_memo || cognitive?.executive_memo || cognitive?.memo;
   const migrationRequired = overview?.status === 'MIGRATION_REQUIRED';
   const queuedBeyondThree = Math.max(openSignals.length - 3, 0);
+  const noActiveDecisions = decisions.every((decision) => !decision.signal);
 
   return (
     <DashboardLayout>
@@ -1443,6 +1488,19 @@ export default function AdvisorWatchtower() {
                   </Link>
                 </div>
 
+                {noActiveDecisions ? (
+                  <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-all-clear-state">
+                    <h3 className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-all-clear-title">
+                      All clear right now — no high-priority decision signal detected.
+                    </h3>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-all-clear-summary">
+                      Current live scan: {executiveSnapshot.openDeals} open deals, {executiveSnapshot.overdueCount} overdue invoices, {executiveSnapshot.highPriorityEmails} high-priority threads.
+                    </p>
+                    <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-all-clear-next-step">
+                      Keep monitoring this week and sync integrations if you expected active risks.
+                    </p>
+                  </div>
+                ) : (
                 <div className="grid gap-4 lg:grid-cols-3" data-testid="advisor-decision-grid">
                   {decisions.map((decision, index) => {
                     const Icon = decision.icon;
@@ -1467,9 +1525,11 @@ export default function AdvisorWatchtower() {
                             <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-severity-${decision.id}`}>
                               {decision.severity}
                             </span>
-                            <span className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-risk-score-${decision.id}`}>
-                              Risk {decision.riskScore}
-                            </span>
+                            {signal && (
+                              <span className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-risk-score-${decision.id}`}>
+                                Risk {decision.riskScore}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -1479,9 +1539,11 @@ export default function AdvisorWatchtower() {
                         <p className="mb-1 text-sm" style={{ color: style.text }} data-testid={`advisor-decision-headline-${decision.id}`}>
                           {decision.headline}
                         </p>
-                        <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
-                          Confidence interval: {decision.confidenceInterval}
-                        </p>
+                        {signal && (
+                          <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
+                            Confidence interval: {decision.confidenceInterval}
+                          </p>
+                        )}
                         <h3 className="mb-3 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>
                           {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}
                         </h3>
@@ -1592,6 +1654,7 @@ export default function AdvisorWatchtower() {
                     );
                   })}
                 </div>
+                )}
               </section>
 
               <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-page-feedback-section">

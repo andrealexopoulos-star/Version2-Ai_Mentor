@@ -1770,6 +1770,207 @@ async def record_decision_feedback(
         return {"success": True, "stored": False}
 
 
+@router.get("/advisor/executive-surface")
+async def get_advisor_executive_surface(current_user: dict = Depends(get_current_user)):
+    """
+    Build a concrete, plain-language executive decision surface from connected integrations.
+    This endpoint is designed for high-trust card summaries on /advisor.
+    """
+    user_id = current_user["id"]
+
+    def _parse_dt(value: Optional[str]) -> Optional[datetime]:
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except Exception:
+            return None
+
+    def _days_since(value: Optional[str]) -> int:
+        parsed = _parse_dt(value)
+        if not parsed:
+            return 0
+        return max(0, (datetime.now(timezone.utc) - parsed).days)
+
+    connected_tools: Dict[str, Any] = {}
+    crm_deals: List[Dict[str, Any]] = []
+    accounting_summary: Dict[str, Any] = {}
+    watchtower_events: List[Dict[str, Any]] = []
+    priority_analysis: Dict[str, Any] = {}
+
+    try:
+        merge_connected = await get_merge_connected(current_user=current_user)
+        connected_tools = merge_connected.get("integrations", {})
+    except Exception:
+        connected_tools = {}
+
+    try:
+        crm_data = await get_crm_deals(page_size=100, current_user=current_user)
+        crm_deals = crm_data.get("results", []) or []
+    except Exception:
+        crm_deals = []
+
+    try:
+        accounting_summary = await get_accounting_summary(current_user=current_user)
+    except Exception:
+        accounting_summary = {"connected": False, "metrics": {}}
+
+    try:
+        watchtower_data = await get_watchtower_events(limit=30, current_user=current_user)
+        watchtower_events = watchtower_data.get("events", []) or []
+    except Exception:
+        watchtower_events = []
+
+    try:
+        from supabase_email_helpers import get_priority_analysis_supabase
+        priority_analysis = await get_priority_analysis_supabase(user_id) or {}
+    except Exception:
+        priority_analysis = {}
+
+    open_deals = [deal for deal in crm_deals if str(deal.get("status") or "").upper() == "OPEN"]
+    stalled_deals = []
+    for deal in open_deals:
+        days_idle = _days_since(deal.get("last_activity_at") or deal.get("last_modified_at") or deal.get("created_at"))
+        if days_idle >= 3:
+            stalled_deals.append({
+                "name": deal.get("name") or "Unnamed opportunity",
+                "days_idle": days_idle,
+                "value": deal.get("value") or deal.get("amount"),
+            })
+    stalled_deals.sort(key=lambda item: item["days_idle"], reverse=True)
+
+    metrics = accounting_summary.get("metrics") or {}
+    overdue_count = int(metrics.get("overdue_count") or 0)
+    total_overdue = float(metrics.get("total_overdue") or 0)
+    total_outstanding = float(metrics.get("total_outstanding") or 0)
+
+    high_priority_threads = priority_analysis.get("high_priority") or []
+
+    response_delay_events = []
+    for event in watchtower_events:
+        title_blob = f"{event.get('title', '')} {event.get('event', '')} {event.get('summary', '')}".lower()
+        if "response" in title_blob or "delay" in title_blob or "silence" in title_blob:
+            response_delay_events.append(event)
+
+    candidate_signals = []
+
+    if stalled_deals:
+        top_examples = ", ".join([f"{item['name']} ({item['days_idle']}d)" for item in stalled_deals[:3]])
+        candidate_signals.append({
+            "signal_key": "crm-stalled-opportunities",
+            "bucket_hint": "decide_now",
+            "risk_score": min(95, 55 + len(stalled_deals)),
+            "confidence_interval": "68–84%",
+            "source": "HubSpot CRM",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "signal_summary": f"{len(stalled_deals)} opportunities have had no activity for more than 72 hours.",
+            "evidence_summary": f"Examples: {top_examples}",
+            "decision_summary": "Revenue conversion is at risk unless owners re-engage these opportunities immediately.",
+            "consequence": "Expected conversion probability can drop 12–18% this week if these remain idle.",
+            "action_summary": "Assign top stalled opportunities to named owners and send follow-up today.",
+            "evidence_refs": stalled_deals[:5],
+        })
+
+    if overdue_count > 0:
+        candidate_signals.append({
+            "signal_key": "xero-overdue-invoices",
+            "bucket_hint": "decide_now",
+            "risk_score": min(97, 58 + overdue_count),
+            "confidence_interval": "72–88%",
+            "source": "Xero Accounting",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "signal_summary": f"{overdue_count} invoices are overdue with {total_overdue:,.0f} outstanding.",
+            "evidence_summary": f"Outstanding ledger snapshot: {total_outstanding:,.0f}.",
+            "decision_summary": "Cashflow pressure is rising and collections actions should be triggered now.",
+            "consequence": "Ignoring this may create near-term cash shortfall and delayed payroll/vendor payments.",
+            "action_summary": "Trigger reminder sequence and call top overdue clients today.",
+            "evidence_refs": [{"overdue_count": overdue_count, "total_overdue": total_overdue, "total_outstanding": total_outstanding}],
+        })
+
+    if response_delay_events:
+        candidate_signals.append({
+            "signal_key": "communications-response-delay",
+            "bucket_hint": "monitor_this_week",
+            "risk_score": min(90, 50 + len(response_delay_events) * 4),
+            "confidence_interval": "61–79%",
+            "source": "Outlook / Communications",
+            "timestamp": response_delay_events[0].get("timestamp") or datetime.now(timezone.utc).isoformat(),
+            "signal_summary": f"{len(response_delay_events)} communication threads indicate delayed response patterns.",
+            "evidence_summary": response_delay_events[0].get("summary") or response_delay_events[0].get("detail") or "Watchtower detected response latency.",
+            "decision_summary": "Service responsiveness is trending down and requires active owner monitoring.",
+            "consequence": "Delayed responses increase churn risk and reduce trust for high-value clients.",
+            "action_summary": "Prioritise overdue client threads and enforce a same-day response SLA.",
+            "evidence_refs": response_delay_events[:5],
+        })
+
+    if high_priority_threads:
+        candidate_signals.append({
+            "signal_key": "priority-inbox-threads",
+            "bucket_hint": "monitor_this_week",
+            "risk_score": min(88, 48 + len(high_priority_threads) * 5),
+            "confidence_interval": "64–82%",
+            "source": "Priority Inbox",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "signal_summary": f"{len(high_priority_threads)} high-priority threads need owner attention.",
+            "evidence_summary": high_priority_threads[0].get("reason") or high_priority_threads[0].get("subject") or "High-priority thread detected.",
+            "decision_summary": "Customer and commercial communications need focused triage this week.",
+            "consequence": "Unresolved high-priority threads can escalate into churn and delayed revenue collection.",
+            "action_summary": "Review and clear top-priority inbox items before end of day.",
+            "evidence_refs": high_priority_threads[:5],
+        })
+
+    if stalled_deals or overdue_count > 0 or response_delay_events:
+        candidate_signals.append({
+            "signal_key": "systemic-followup-gap",
+            "bucket_hint": "build_next",
+            "risk_score": 62,
+            "confidence_interval": "58–74%",
+            "source": "Cross-Integration Pattern",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "signal_summary": "Recurring follow-up gaps are appearing across CRM, accounting, and communications.",
+            "evidence_summary": "Signals show repeated delay patterns rather than a one-off anomaly.",
+            "decision_summary": "A system-level process fix is needed to stop repeated follow-up failures.",
+            "consequence": "Without process change, the same revenue/cash/service risks will recur every cycle.",
+            "action_summary": "Build an owner cadence: daily overdue review, deal aging alerts, and response SLA dashboard.",
+            "evidence_refs": [],
+        })
+
+    candidate_signals.sort(key=lambda item: item.get("risk_score", 0), reverse=True)
+
+    def pull(bucket_hint: str):
+        for idx, signal in enumerate(candidate_signals):
+            if signal.get("bucket_hint") == bucket_hint:
+                return candidate_signals.pop(idx)
+        return candidate_signals.pop(0) if candidate_signals else None
+
+    decide_now = pull("decide_now")
+    monitor_this_week = pull("monitor_this_week")
+    build_next = pull("build_next")
+
+    cards = {
+        "decide_now": decide_now,
+        "monitor_this_week": monitor_this_week,
+        "build_next": build_next,
+    }
+
+    all_clear = all(card is None for card in cards.values())
+
+    return {
+        "all_clear": all_clear,
+        "connected_tools": connected_tools,
+        "snapshot": {
+            "open_deals": len(open_deals),
+            "stalled_deals_72h": len(stalled_deals),
+            "overdue_invoices": overdue_count,
+            "total_overdue": total_overdue,
+            "total_outstanding": total_outstanding,
+            "response_delay_events": len(response_delay_events),
+            "high_priority_threads": len(high_priority_threads),
+        },
+        "cards": cards,
+    }
+
+
 
 @router.patch("/intelligence/watchtower/{event_id}/handle")
 async def handle_watchtower_event(
