@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import os
 import uuid
 import json
@@ -43,6 +43,147 @@ router = APIRouter()
 class MergeLinkTokenRequest(BaseModel):
     categories: Optional[List[str]] = None
     integration: Optional[str] = None  # Pre-select specific integration (e.g. "Stripe", "HubSpot")
+
+
+class DelegateWorkflowRequest(BaseModel):
+    decision_id: Optional[str] = None
+    decision_title: str
+    decision_summary: Optional[str] = None
+    domain: Optional[str] = None
+    severity: Optional[str] = None
+    provider_preference: Optional[str] = "auto"
+    assignee_name: Optional[str] = None
+    assignee_email: Optional[str] = None
+    assignee_remote_id: Optional[str] = None
+    due_at: Optional[str] = None
+    collection_remote_id: Optional[str] = None
+    create_calendar_event: Optional[bool] = False
+
+
+class DecisionFeedbackRequest(BaseModel):
+    decision_key: str
+    helpful: bool
+    reason: Optional[str] = None
+
+
+def _normalize_provider(provider: Optional[str]) -> str:
+    return str(provider or "").strip().lower()
+
+
+def _severity_to_priority(severity: Optional[str]) -> str:
+    sev = _normalize_provider(severity)
+    if sev in ("critical", "high"):
+        return "HIGH"
+    if sev in ("low", "info"):
+        return "LOW"
+    return "NORMAL"
+
+
+def _provider_matches_ticketing(provider_preference: str, ticketing_provider: str) -> bool:
+    pref = _normalize_provider(provider_preference)
+    ticket = _normalize_provider(ticketing_provider)
+    if pref in ("", "auto", "merge-ticketing"):
+        return True
+    if pref in ("jira", "asana"):
+        return pref in ticket
+    return False
+
+
+async def _get_ticketing_integration(user_id: str) -> Optional[Dict[str, Any]]:
+    try:
+        result = get_sb().table("integration_accounts").select(
+            "provider, category, account_token, connected_at"
+        ).eq("user_id", user_id).eq("category", "ticketing").order("connected_at", desc=True).limit(1).execute()
+        if result.data:
+            return result.data[0]
+    except Exception:
+        pass
+    return None
+
+
+async def _get_outlook_access_token(user_id: str) -> Optional[str]:
+    def _is_valid_expiry(expires_at_value: Optional[str]) -> bool:
+        if not expires_at_value:
+            return True
+        try:
+            expiry = datetime.fromisoformat(str(expires_at_value).replace("Z", "+00:00"))
+            return expiry > datetime.now(timezone.utc)
+        except Exception:
+            return True
+
+    try:
+        outlook = get_sb().table("outlook_oauth_tokens").select("access_token, expires_at").eq("user_id", user_id).limit(1).execute()
+        if outlook.data:
+            row = outlook.data[0]
+            if _is_valid_expiry(row.get("expires_at")):
+                return row.get("access_token")
+    except Exception:
+        pass
+
+    try:
+        legacy = get_sb().table("m365_tokens").select("access_token, expires_at").eq("user_id", user_id).limit(1).execute()
+        if legacy.data:
+            row = legacy.data[0]
+            if _is_valid_expiry(row.get("expires_at")):
+                return row.get("access_token")
+    except Exception:
+        pass
+
+    return None
+
+
+async def _has_gmail_connection(user_id: str) -> bool:
+    try:
+        row = get_sb().table("gmail_connections").select("id").eq("user_id", user_id).limit(1).execute()
+        return bool(row.data)
+    except Exception:
+        return False
+
+
+def _auto_delegate_provider(
+    provider_preference: str,
+    ticketing_provider: Optional[str],
+    has_outlook: bool,
+    has_google_workspace: bool,
+    task_preference: Optional[str] = None,
+    calendar_preference: Optional[str] = None,
+) -> str:
+    pref = _normalize_provider(provider_preference)
+    ticketing = _normalize_provider(ticketing_provider)
+    task_pref = _normalize_provider(task_preference)
+    cal_pref = _normalize_provider(calendar_preference)
+
+    if pref in ("jira", "asana") and _provider_matches_ticketing(pref, ticketing):
+        return pref
+    if pref == "manual":
+        return "manual"
+    if pref in ("merge-ticketing", "ticketing") and ticketing:
+        return ticketing
+    if pref in ("outlook", "exchange", "outlook-exchange", "microsoft") and has_outlook:
+        return "outlook-exchange"
+    if pref in ("google", "google-calendar") and has_google_workspace:
+        return "google-calendar"
+
+    if task_pref in ("jira", "asana") and _provider_matches_ticketing(task_pref, ticketing):
+        return task_pref
+    if ticketing:
+        if "jira" in ticketing:
+            return "jira"
+        if "asana" in ticketing:
+            return "asana"
+        return "merge-ticketing"
+
+    if cal_pref in ("outlook", "exchange", "outlook-exchange") and has_outlook:
+        return "outlook-exchange"
+    if cal_pref in ("google", "google-calendar") and has_google_workspace:
+        return "google-calendar"
+
+    if has_outlook:
+        return "outlook-exchange"
+    if has_google_workspace:
+        return "google-calendar"
+
+    return "manual"
 
 
 # ==================== MERGE.DEV INTEGRATION ====================
@@ -1215,6 +1356,375 @@ async def list_alert_actions(limit: int = 100, current_user: dict = Depends(get_
             "actions": [],
             "count": 0,
         }
+
+
+@router.get("/workflows/delegate/providers")
+async def get_delegate_providers(current_user: dict = Depends(get_current_user)):
+    """Return available delegate providers and recommended auto-routing for this user."""
+    user_id = current_user["id"]
+
+    ticketing_row = await _get_ticketing_integration(user_id)
+    ticketing_provider = _normalize_provider((ticketing_row or {}).get("provider"))
+    has_outlook = bool(await _get_outlook_access_token(user_id))
+    has_google_workspace = await _has_gmail_connection(user_id)
+
+    task_pref = None
+    cal_pref = None
+    try:
+        pref_row = get_sb().table("user_provider_preferences").select(
+            "primary_task_provider, primary_calendar_provider"
+        ).eq("user_id", user_id).maybe_single().execute()
+        if pref_row and pref_row.data:
+            task_pref = pref_row.data.get("primary_task_provider")
+            cal_pref = pref_row.data.get("primary_calendar_provider")
+    except Exception:
+        pass
+
+    recommended = _auto_delegate_provider(
+        provider_preference="auto",
+        ticketing_provider=ticketing_provider,
+        has_outlook=has_outlook,
+        has_google_workspace=has_google_workspace,
+        task_preference=task_pref,
+        calendar_preference=cal_pref,
+    )
+
+    providers = [
+        {
+            "id": "auto",
+            "label": "Auto (based on connected business tools)",
+            "available": recommended != "manual",
+        },
+        {
+            "id": "manual",
+            "label": "Manual follow-up",
+            "available": True,
+        },
+        {
+            "id": "jira",
+            "label": "Jira (via Merge)",
+            "available": "jira" in ticketing_provider,
+        },
+        {
+            "id": "asana",
+            "label": "Asana (via Merge)",
+            "available": "asana" in ticketing_provider,
+        },
+        {
+            "id": "merge-ticketing",
+            "label": "Connected Ticketing Tool (via Merge)",
+            "available": bool(ticketing_provider),
+        },
+        {
+            "id": "outlook-exchange",
+            "label": "Outlook / Exchange",
+            "available": has_outlook,
+        },
+        {
+            "id": "google-calendar",
+            "label": "Google Calendar",
+            "available": has_google_workspace,
+        },
+    ]
+
+    return {
+        "providers": providers,
+        "recommended_provider": recommended,
+        "connected_business_tools": {
+            "ticketing_provider": ticketing_provider or None,
+            "outlook_exchange": has_outlook,
+            "google_workspace": has_google_workspace,
+        },
+    }
+
+
+@router.get("/workflows/delegate/options")
+async def get_delegate_options(
+    provider: str = "auto",
+    current_user: dict = Depends(get_current_user),
+):
+    """Return provider-specific delegate options (assignees/projects/collaborators)."""
+    from merge_client import get_merge_client
+
+    user_id = current_user["id"]
+    ticketing_row = await _get_ticketing_integration(user_id)
+    ticketing_provider = _normalize_provider((ticketing_row or {}).get("provider"))
+    has_outlook = bool(await _get_outlook_access_token(user_id))
+    has_google_workspace = await _has_gmail_connection(user_id)
+
+    selected_provider = _auto_delegate_provider(
+        provider_preference=provider,
+        ticketing_provider=ticketing_provider,
+        has_outlook=has_outlook,
+        has_google_workspace=has_google_workspace,
+    )
+
+    if selected_provider in ("jira", "asana", "merge-ticketing"):
+        token = (ticketing_row or {}).get("account_token")
+        if not token:
+            return {"provider": selected_provider, "assignees": [], "collections": []}
+
+        merge_client = get_merge_client()
+        users_data, collections_data = await asyncio.gather(
+            merge_client.get_ticketing_users(account_token=token, page_size=100),
+            merge_client.get_ticketing_collections(account_token=token, page_size=100),
+            return_exceptions=True,
+        )
+
+        users_results = users_data.get("results", []) if isinstance(users_data, dict) else []
+        collections_results = collections_data.get("results", []) if isinstance(collections_data, dict) else []
+
+        assignees = []
+        for user in users_results[:100]:
+            name = user.get("display_name") or " ".join(filter(None, [user.get("first_name"), user.get("last_name")])).strip()
+            assignees.append({
+                "id": user.get("id"),
+                "name": name or user.get("email") or "Unlabelled user",
+                "email": user.get("email"),
+            })
+
+        collections = [
+            {
+                "id": collection.get("id"),
+                "name": collection.get("name") or collection.get("remote_data", {}).get("name") or "Untitled project",
+            }
+            for collection in collections_results[:100]
+        ]
+
+        return {
+            "provider": selected_provider,
+            "connected_provider": ticketing_provider,
+            "assignees": assignees,
+            "collections": collections,
+        }
+
+    if selected_provider == "outlook-exchange":
+        collaborators = []
+        try:
+            intel = get_sb().table("calendar_intelligence").select("top_collaborators").eq("user_id", user_id).order("synced_at", desc=True).limit(1).execute()
+            row = (intel.data or [{}])[0]
+            top = row.get("top_collaborators") or []
+            collaborators = [
+                {
+                    "id": person.get("name"),
+                    "name": person.get("name"),
+                    "email": person.get("email"),
+                }
+                for person in top if person.get("name")
+            ]
+        except Exception:
+            collaborators = []
+
+        return {
+            "provider": selected_provider,
+            "assignees": collaborators,
+            "collections": [],
+        }
+
+    return {
+        "provider": selected_provider,
+        "assignees": [],
+        "collections": [],
+    }
+
+
+@router.post("/workflows/delegate/execute")
+async def execute_delegate_workflow(
+    payload: DelegateWorkflowRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Execute delegate action through Merge (Jira/Asana) or Outlook/Exchange."""
+    from merge_client import get_merge_client
+
+    user_id = current_user["id"]
+    ticketing_row = await _get_ticketing_integration(user_id)
+    ticketing_provider = _normalize_provider((ticketing_row or {}).get("provider"))
+    has_outlook = bool(await _get_outlook_access_token(user_id))
+    has_google_workspace = await _has_gmail_connection(user_id)
+
+    task_pref = None
+    cal_pref = None
+    try:
+        pref_row = get_sb().table("user_provider_preferences").select(
+            "primary_task_provider, primary_calendar_provider"
+        ).eq("user_id", user_id).maybe_single().execute()
+        if pref_row and pref_row.data:
+            task_pref = pref_row.data.get("primary_task_provider")
+            cal_pref = pref_row.data.get("primary_calendar_provider")
+    except Exception:
+        pass
+
+    provider_used = _auto_delegate_provider(
+        provider_preference=payload.provider_preference or "auto",
+        ticketing_provider=ticketing_provider,
+        has_outlook=has_outlook,
+        has_google_workspace=has_google_workspace,
+        task_preference=task_pref,
+        calendar_preference=cal_pref,
+    )
+
+    if provider_used == "manual":
+        raise HTTPException(status_code=409, detail="No connected delegate provider found. Connect Jira/Asana via Merge or Outlook/Exchange.")
+
+    external_reference = None
+    execution_detail: Dict[str, Any] = {"provider": provider_used}
+
+    if provider_used in ("jira", "asana", "merge-ticketing"):
+        if not ticketing_row or not ticketing_row.get("account_token"):
+            raise HTTPException(status_code=409, detail="Ticketing integration is not connected. Connect Jira/Asana via Merge first.")
+
+        if provider_used in ("jira", "asana") and not _provider_matches_ticketing(provider_used, ticketing_provider):
+            raise HTTPException(status_code=409, detail=f"{provider_used.title()} is not the connected ticketing provider for this workspace.")
+
+        merge_client = get_merge_client()
+        model: Dict[str, Any] = {
+            "name": payload.decision_title[:180],
+            "description": "\n".join([
+                f"Decision: {payload.decision_title}",
+                f"Summary: {payload.decision_summary or 'No summary provided.'}",
+                f"Domain: {payload.domain or 'general'}",
+                f"Severity: {payload.severity or 'medium'}",
+                f"Assignee: {payload.assignee_name or payload.assignee_email or 'Unassigned'}",
+                f"Due: {payload.due_at or 'Not set'}",
+            ]),
+            "priority": _severity_to_priority(payload.severity),
+        }
+        if payload.assignee_remote_id:
+            model["assignees"] = [payload.assignee_remote_id]
+        if payload.collection_remote_id:
+            model["collections"] = [payload.collection_remote_id]
+        if payload.due_at:
+            model["due_date"] = payload.due_at
+
+        created = await merge_client.create_ticket(
+            account_token=ticketing_row["account_token"],
+            model=model,
+        )
+        external_reference = created.get("id") or created.get("remote_id")
+        execution_detail["result"] = created
+
+    elif provider_used == "outlook-exchange":
+        access_token = await _get_outlook_access_token(user_id)
+        if not access_token:
+            raise HTTPException(status_code=409, detail="Outlook/Exchange is not connected for this workspace.")
+
+        start_dt = None
+        if payload.due_at:
+            try:
+                start_dt = datetime.fromisoformat(payload.due_at.replace("Z", "+00:00")) - timedelta(minutes=30)
+            except Exception:
+                start_dt = None
+        if not start_dt:
+            start_dt = datetime.now(timezone.utc) + timedelta(hours=24)
+        end_dt = start_dt + timedelta(minutes=30)
+
+        event_body = {
+            "subject": f"Delegate: {payload.decision_title}",
+            "body": {
+                "contentType": "Text",
+                "content": payload.decision_summary or "Delegated from BIQc Advisor workflow.",
+            },
+            "start": {
+                "dateTime": start_dt.astimezone(timezone.utc).isoformat(),
+                "timeZone": "UTC",
+            },
+            "end": {
+                "dateTime": end_dt.astimezone(timezone.utc).isoformat(),
+                "timeZone": "UTC",
+            },
+        }
+        if payload.assignee_email:
+            event_body["attendees"] = [{
+                "emailAddress": {
+                    "address": payload.assignee_email,
+                    "name": payload.assignee_name or payload.assignee_email,
+                },
+                "type": "required",
+            }]
+
+        async with httpx.AsyncClient(timeout=25) as client:
+            response = await client.post(
+                "https://graph.microsoft.com/v1.0/me/events",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                },
+                json=event_body,
+            )
+        if response.status_code not in (200, 201):
+            error_text = response.text or ""
+            if "InvalidAuthenticationToken" in error_text or "token is expired" in error_text.lower():
+                raise HTTPException(status_code=409, detail="Outlook/Exchange token expired. Please reconnect Outlook and retry delegation.")
+            raise HTTPException(status_code=502, detail=f"Outlook delegation failed: {response.text}")
+
+        created_event = response.json()
+        external_reference = created_event.get("id")
+        execution_detail["result"] = {
+            "id": created_event.get("id"),
+            "webLink": created_event.get("webLink"),
+        }
+
+    elif provider_used == "google-calendar":
+        raise HTTPException(status_code=409, detail="Google Calendar delegation requires a dedicated Calendar OAuth token. Connect Google Calendar first.")
+
+    try:
+        get_sb().table("alert_actions").insert({
+            "user_id": user_id,
+            "alert_id": str(payload.decision_id or payload.decision_title),
+            "action": "hand-off",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+    except Exception:
+        pass
+
+    try:
+        get_sb().table("workflow_actions").insert({
+            "user_id": user_id,
+            "provider": provider_used,
+            "action_type": "delegate",
+            "payload": {
+                "decision_id": payload.decision_id,
+                "decision_title": payload.decision_title,
+                "assignee_name": payload.assignee_name,
+                "assignee_email": payload.assignee_email,
+                "due_at": payload.due_at,
+                "domain": payload.domain,
+                "severity": payload.severity,
+            },
+            "status": "completed",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+    except Exception:
+        # Non-blocking if workflow_actions table is not present in environment.
+        pass
+
+    return {
+        "success": True,
+        "provider_used": provider_used,
+        "external_reference": external_reference,
+        "detail": execution_detail,
+    }
+
+
+@router.post("/workflows/decision-feedback")
+async def record_decision_feedback(
+    payload: DecisionFeedbackRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Store decision helpfulness feedback for cognition tuning loops."""
+    user_id = current_user["id"]
+
+    try:
+        get_sb().table("decision_feedback").insert({
+            "user_id": user_id,
+            "decision_key": payload.decision_key,
+            "helpful": payload.helpful,
+            "reason": payload.reason,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+        return {"success": True, "stored": True}
+    except Exception:
+        return {"success": True, "stored": False}
 
 
 

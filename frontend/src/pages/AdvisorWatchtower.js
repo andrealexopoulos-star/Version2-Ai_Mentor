@@ -3,14 +3,19 @@ import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowRight,
+  BriefcaseBusiness,
+  Building2,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
   Clock3,
+  Compass,
+  Download,
   Radar,
   RefreshCw,
+  Search,
   ShieldAlert,
   Target,
+  ThumbsDown,
+  ThumbsUp,
   UserRoundPlus,
   XCircle,
 } from 'lucide-react';
@@ -20,6 +25,8 @@ import { useSnapshotProgress } from '../hooks/useSnapshotProgress';
 import { AUTH_STATE, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { SourceProvenanceBadge } from '../components/advisor/SourceProvenanceBadge';
+import { DelegateActionModal } from '../components/advisor/DelegateActionModal';
+import { EvidenceDrawer } from '../components/advisor/EvidenceDrawer';
 import { fontFamily } from '../design-system/tokens';
 
 const SEVERITY_RANK = { critical: 0, high: 1, medium: 2, moderate: 2, low: 3, info: 4 };
@@ -36,6 +43,12 @@ const DECISION_ACTIONS = {
   delegate: { label: 'Delegate', icon: UserRoundPlus, endpoint: 'hand-off', style: { bg: '#3B82F615', border: '#3B82F640', text: '#93C5FD' } },
   ignore: { label: 'Ignore', icon: XCircle, endpoint: 'ignore', style: { bg: '#64748B15', border: '#64748B40', text: '#CBD5E1' } },
 };
+
+const ROLE_OPTIONS = [
+  { id: 'ceo', label: 'CEO' },
+  { id: 'coo', label: 'COO' },
+  { id: 'finance', label: 'Finance Lead' },
+];
 
 const DECISION_SLOTS = [
   { id: 'decide-now', title: 'Decide Now', intent: 'What needs owner action in the next 48 hours?', icon: ShieldAlert },
@@ -210,6 +223,35 @@ const detectConflicts = (signals) => {
   return conflicts;
 };
 
+const signalPriorityScore = (signal, role) => {
+  const severityWeight = { critical: 120, high: 90, medium: 60, low: 30, info: 10 };
+  const severityScore = severityWeight[signal.severity] || 25;
+  const recencyScore = signal.createdAt ? Math.max(0, 24 - (Date.now() - new Date(signal.createdAt).getTime()) / (1000 * 60 * 60)) : 5;
+  const frequencyScore = Math.min((signal.occurrences || 1) * 8, 30);
+  const roleBoostMap = {
+    ceo: /(revenue|cash|market|growth|risk)/.test(signal.domain) ? 18 : 8,
+    coo: /(operations|delivery|execution|people|capacity)/.test(signal.domain) ? 22 : 6,
+    finance: /(revenue|cash|invoice|margin|finance|payment)/.test(signal.domain) ? 24 : 4,
+  };
+  const roleBoost = roleBoostMap[role] || 0;
+  return severityScore + recencyScore + frequencyScore + roleBoost;
+};
+
+const buildProjections = (signal) => {
+  const base = signal.severity === 'critical' ? 34 : signal.severity === 'high' ? 26 : signal.severity === 'medium' ? 18 : 10;
+  const multiplier = Math.min(signal.occurrences || 1, 4);
+  const risk30 = Math.min(95, Math.round(base + multiplier * 4));
+  const risk60 = Math.min(99, Math.round(risk30 + 11));
+  const risk90 = Math.min(99, Math.round(risk60 + 9));
+  const action30 = Math.max(4, risk30 - 14);
+  const action60 = Math.max(6, risk60 - 18);
+  const action90 = Math.max(8, risk90 - 22);
+  return {
+    ignored: [risk30, risk60, risk90],
+    actioned: [action30, action60, action90],
+  };
+};
+
 const buildDecisionSurface = (signals, overview, cognitive) => {
   const memo = overview?.executive_memo || cognitive?.executive_memo || cognitive?.memo;
   const fallbackSignal = toSignal({
@@ -266,7 +308,27 @@ export default function AdvisorWatchtower() {
   const [actionState, setActionState] = useState({ byKey: {}, byAlertId: {} });
   const [actionsHydrated, setActionsHydrated] = useState(false);
   const [actionLoadingKey, setActionLoadingKey] = useState('');
-  const [expandedEvidence, setExpandedEvidence] = useState({});
+  const [rolePreference, setRolePreference] = useState(() => localStorage.getItem('advisor-role-preference') || 'ceo');
+  const [feedbackByDecision, setFeedbackByDecision] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('advisor-decision-feedback') || '{}');
+    } catch {
+      return {};
+    }
+  });
+  const [delegateModalDecision, setDelegateModalDecision] = useState(null);
+  const [delegateSubmitting, setDelegateSubmitting] = useState(false);
+  const [delegateProviders, setDelegateProviders] = useState([]);
+  const [delegateProviderOptions, setDelegateProviderOptions] = useState({
+    provider: 'auto',
+    recommendedProvider: 'auto',
+    assignees: [],
+    collections: [],
+  });
+  const [delegateOptionsLoading, setDelegateOptionsLoading] = useState(false);
+  const [evidenceDrawerDecision, setEvidenceDrawerDecision] = useState(null);
+  const [auditActionFilter, setAuditActionFilter] = useState('all');
+  const [auditSearch, setAuditSearch] = useState('');
 
   const actionStorageKey = useMemo(() => `advisor-actions-${user?.id || 'anon'}`, [user?.id]);
 
@@ -324,6 +386,14 @@ export default function AdvisorWatchtower() {
     } catch {}
   }, [actionState, actionStorageKey]);
 
+  useEffect(() => {
+    localStorage.setItem('advisor-role-preference', rolePreference);
+  }, [rolePreference]);
+
+  useEffect(() => {
+    localStorage.setItem('advisor-decision-feedback', JSON.stringify(feedbackByDecision));
+  }, [feedbackByDecision]);
+
   const hydrateActionHistory = useCallback(async () => {
     try {
       const response = await apiClient.get('/intelligence/alerts/actions', { params: { limit: 150 }, timeout: 10000 });
@@ -359,6 +429,7 @@ export default function AdvisorWatchtower() {
       refreshSnapshot(),
       fetchOverview(true),
       fetchWatchtower(),
+      apiClient.get('/workflows/delegate/providers', { timeout: 10000 }),
     ]);
   };
 
@@ -418,12 +489,18 @@ export default function AdvisorWatchtower() {
     [signals, isSignalActioned],
   );
 
+  const prioritizedSignals = useMemo(() => {
+    return [...openSignals].sort((left, right) => {
+      return signalPriorityScore(right, rolePreference) - signalPriorityScore(left, rolePreference);
+    });
+  }, [openSignals, rolePreference]);
+
   const decisions = useMemo(
-    () => buildDecisionSurface(openSignals, overview, cognitive),
-    [openSignals, overview, cognitive],
+    () => buildDecisionSurface(prioritizedSignals, overview, cognitive),
+    [prioritizedSignals, overview, cognitive],
   );
 
-  const conflicts = useMemo(() => detectConflicts(openSignals), [openSignals]);
+  const conflicts = useMemo(() => detectConflicts(prioritizedSignals), [prioritizedSignals]);
 
   const actionAuditRows = useMemo(() => {
     const keyRows = Object.entries(actionState.byKey || {}).map(([dedupeKey, entry]) => ({
@@ -434,6 +511,68 @@ export default function AdvisorWatchtower() {
       .sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime())
       .slice(0, 8);
   }, [actionState]);
+
+  const filteredAuditRows = useMemo(() => {
+    const query = auditSearch.trim().toLowerCase();
+    return actionAuditRows.filter((row) => {
+      const filterMatch = auditActionFilter === 'all' || row.action === auditActionFilter;
+      if (!filterMatch) return false;
+      if (!query) return true;
+      const blob = `${row.title || ''} ${row.domain || ''} ${row.source || ''}`.toLowerCase();
+      return blob.includes(query);
+    });
+  }, [actionAuditRows, auditActionFilter, auditSearch]);
+
+  const fetchDelegateProviders = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/workflows/delegate/providers', { timeout: 10000 });
+      const providers = response?.data?.providers || [];
+      const recommendedProvider = response?.data?.recommended_provider || 'auto';
+      setDelegateProviders(providers);
+      setDelegateProviderOptions((prev) => ({
+        ...prev,
+        recommendedProvider,
+      }));
+      return recommendedProvider;
+    } catch {
+      setDelegateProviders([
+        { id: 'auto', label: 'Auto (based on connected tools)', available: true },
+        { id: 'merge-ticketing', label: 'Merge Ticketing', available: false },
+        { id: 'outlook-exchange', label: 'Outlook / Exchange', available: false },
+        { id: 'google-calendar', label: 'Google Calendar', available: false },
+      ]);
+      return 'auto';
+    }
+  }, []);
+
+  const fetchDelegateOptions = useCallback(async (providerChoice = 'auto') => {
+    setDelegateOptionsLoading(true);
+    try {
+      const response = await apiClient.get('/workflows/delegate/options', {
+        params: { provider: providerChoice },
+        timeout: 12000,
+      });
+      setDelegateProviderOptions((prev) => ({
+        ...prev,
+        provider: response?.data?.provider || providerChoice,
+        assignees: response?.data?.assignees || [],
+        collections: response?.data?.collections || [],
+      }));
+    } catch {
+      setDelegateProviderOptions((prev) => ({
+        ...prev,
+        provider: providerChoice,
+        assignees: [],
+        collections: [],
+      }));
+    } finally {
+      setDelegateOptionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDelegateProviders();
+  }, [fetchDelegateProviders]);
 
   const handleDecisionAction = useCallback(async (decision, actionType) => {
     const actionConfig = DECISION_ACTIONS[actionType];
@@ -508,6 +647,85 @@ export default function AdvisorWatchtower() {
     toast.success('Decision reopened and moved back into active queue.');
   }, []);
 
+  const handleOpenDelegateModal = useCallback(async (decision) => {
+    setDelegateModalDecision(decision);
+    const recommended = await fetchDelegateProviders();
+    await fetchDelegateOptions(recommended || 'auto');
+  }, [fetchDelegateProviders, fetchDelegateOptions]);
+
+  const handleDelegateSubmit = useCallback(async (form) => {
+    if (!delegateModalDecision) return;
+    setDelegateSubmitting(true);
+    try {
+      await apiClient.post('/workflows/delegate/execute', {
+        decision_id: delegateModalDecision.signal.id,
+        decision_title: delegateModalDecision.signal.title,
+        decision_summary: delegateModalDecision.signal.detail,
+        domain: delegateModalDecision.signal.domain,
+        severity: delegateModalDecision.signal.severity,
+        provider_preference: form.providerPreference,
+        assignee_name: form.assigneeName || null,
+        assignee_email: form.assigneeEmail || null,
+        assignee_remote_id: form.assigneeRemoteId || null,
+        due_at: form.dueAt ? new Date(form.dueAt).toISOString() : null,
+        collection_remote_id: form.collectionRemoteId || null,
+        create_calendar_event: Boolean(form.createCalendarEvent),
+      }, { timeout: 20000 });
+
+      await handleDecisionAction(delegateModalDecision, 'delegate');
+      setDelegateModalDecision(null);
+      toast.success('Delegation executed through your connected business workflow.');
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Delegation failed. Please check provider connection.');
+    } finally {
+      setDelegateSubmitting(false);
+    }
+  }, [delegateModalDecision, handleDecisionAction]);
+
+  const handleDecisionFeedback = useCallback(async (decision, helpful) => {
+    const key = decision.signal?.dedupeKey || decision.id;
+    setFeedbackByDecision((prev) => ({ ...prev, [key]: helpful ? 'helpful' : 'not-helpful' }));
+
+    try {
+      await apiClient.post('/workflows/decision-feedback', {
+        decision_key: key,
+        helpful,
+      }, { timeout: 8000 });
+    } catch {
+      // local persistence still retained for confidence UX.
+    }
+  }, []);
+
+  const exportAuditCsv = useCallback(() => {
+    if (!filteredAuditRows.length) {
+      toast.error('No audit rows match the current filter.');
+      return;
+    }
+
+    const header = ['decision', 'action', 'source', 'domain', 'timestamp'];
+    const rows = filteredAuditRows.map((row) => [
+      row.title || '',
+      row.action || '',
+      row.source || '',
+      row.domain || '',
+      row.at || '',
+    ]);
+
+    const csvContent = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'advisor-decision-audit.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [filteredAuditRows]);
+
   const integrationTruth = overview?.integrations || cognitive?.integrations || {};
   const connectedSources = useMemo(() => {
     const list = [];
@@ -558,6 +776,44 @@ export default function AdvisorWatchtower() {
               <RefreshCw className={`h-4 w-4 ${(snapshotRefreshing || overviewRefreshing) ? 'animate-spin' : ''}`} />
               Refresh intelligence
             </button>
+          </div>
+
+          <div className="mb-8 space-y-3" data-testid="advisor-ia-consistency-strip">
+            <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-breadcrumbs">
+              <Link to="/advisor" className="hover:text-white" data-testid="advisor-breadcrumb-today">Today</Link>
+              <span>›</span>
+              <span data-testid="advisor-breadcrumb-current">Advisor</span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2" data-testid="advisor-context-nav-links">
+                <Link to="/market" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-context-nav-market">
+                  <Compass className="h-3.5 w-3.5" /> Market
+                </Link>
+                <Link to="/revenue" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-context-nav-revenue">
+                  <Building2 className="h-3.5 w-3.5" /> Revenue
+                </Link>
+                <Link to="/operations" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-context-nav-operations">
+                  <BriefcaseBusiness className="h-3.5 w-3.5" /> Operations
+                </Link>
+              </div>
+
+              <div className="flex items-center gap-2" data-testid="advisor-role-personalization-control">
+                <label className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} htmlFor="advisor-role-select">View as</label>
+                <select
+                  id="advisor-role-select"
+                  value={rolePreference}
+                  onChange={(event) => setRolePreference(event.target.value)}
+                  className="rounded-xl border px-3 py-2 text-xs"
+                  style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0', fontFamily: fontFamily.mono }}
+                  data-testid="advisor-role-select"
+                >
+                  {ROLE_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
           {criticalError && (
@@ -694,7 +950,8 @@ export default function AdvisorWatchtower() {
                     const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;
                     const signal = decision.signal;
                     const actionRecord = actionState.byKey?.[signal.dedupeKey];
-                    const evidenceOpen = Boolean(expandedEvidence[decision.id]);
+                    const feedbackState = feedbackByDecision[signal.dedupeKey];
+                    const projections = buildProjections(signal);
 
                     return (
                       <article
@@ -733,6 +990,12 @@ export default function AdvisorWatchtower() {
                           <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal.action}</p>
                         </div>
 
+                        <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-projection-${decision.id}`}>
+                          <p data-testid={`advisor-decision-projection-title-${decision.id}`}><strong>30/60/90 outlook</strong></p>
+                          <p data-testid={`advisor-decision-projection-ignored-${decision.id}`}>If ignored → risk {projections.ignored[0]}% / {projections.ignored[1]}% / {projections.ignored[2]}%</p>
+                          <p data-testid={`advisor-decision-projection-actioned-${decision.id}`}>If actioned → risk {projections.actioned[0]}% / {projections.actioned[1]}% / {projections.actioned[2]}%</p>
+                        </div>
+
                         <div className="mt-4 flex flex-wrap gap-2" data-testid={`advisor-decision-actions-${decision.id}`}>
                           {Object.entries(DECISION_ACTIONS).map(([actionType, config]) => {
                             const ActionIcon = config.icon;
@@ -741,7 +1004,13 @@ export default function AdvisorWatchtower() {
                             return (
                               <button
                                 key={actionType}
-                                onClick={() => handleDecisionAction(decision, actionType)}
+                                onClick={() => {
+                                  if (actionType === 'delegate') {
+                                    handleOpenDelegateModal(decision);
+                                    return;
+                                  }
+                                  handleDecisionAction(decision, actionType);
+                                }}
                                 disabled={loadingThisAction || Boolean(actionRecord)}
                                 className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-60"
                                 style={{
@@ -753,7 +1022,9 @@ export default function AdvisorWatchtower() {
                                 data-testid={`advisor-decision-${actionType}-${decision.id}`}
                               >
                                 <ActionIcon className="h-3.5 w-3.5" />
-                                {loadingThisAction ? 'Saving...' : config.label}
+                                {actionType === 'delegate'
+                                  ? 'Delegate'
+                                  : (loadingThisAction ? 'Saving...' : config.label)}
                               </button>
                             );
                           })}
@@ -766,25 +1037,45 @@ export default function AdvisorWatchtower() {
                         )}
 
                         <button
-                          onClick={() => setExpandedEvidence((prev) => ({ ...prev, [decision.id]: !prev[decision.id] }))}
+                          onClick={() => setEvidenceDrawerDecision(decision)}
                           className="mt-3 inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
                           style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
                           data-testid={`advisor-decision-evidence-toggle-${decision.id}`}
                         >
-                          {evidenceOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                          {evidenceOpen ? 'Hide evidence' : 'View evidence'}
+                          View full context
                         </button>
 
-                        {evidenceOpen && (
-                          <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-evidence-panel-${decision.id}`}>
-                            <p data-testid={`advisor-decision-evidence-rank-${decision.id}`}><strong>Ranking:</strong> Severity + recency + frequency based.</p>
-                            <p data-testid={`advisor-decision-evidence-source-${decision.id}`}><strong>Source:</strong> {signal.source}</p>
-                            <p data-testid={`advisor-decision-evidence-domain-${decision.id}`}><strong>Domain:</strong> {signal.domain}</p>
-                            <p data-testid={`advisor-decision-evidence-signal-${decision.id}`}><strong>Signal type:</strong> {prettySignal(signal.signalType)}</p>
-                            <p data-testid={`advisor-decision-evidence-captured-${decision.id}`}><strong>Captured:</strong> {formatTime(signal.createdAt)}</p>
-                            <p data-testid={`advisor-decision-evidence-occurrences-${decision.id}`}><strong>Occurrences grouped:</strong> {signal.occurrences}</p>
-                          </div>
-                        )}
+                        <div className="mt-3 flex flex-wrap items-center gap-2" data-testid={`advisor-decision-feedback-${decision.id}`}>
+                          <span className="text-[10px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-feedback-label-${decision.id}`}>
+                            Helpful?
+                          </span>
+                          <button
+                            onClick={() => handleDecisionFeedback(decision, true)}
+                            className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px]"
+                            style={{
+                              borderColor: feedbackState === 'helpful' ? '#10B98160' : '#334155',
+                              color: feedbackState === 'helpful' ? '#86EFAC' : '#CBD5E1',
+                              background: feedbackState === 'helpful' ? '#10B98115' : '#0F172A',
+                              fontFamily: fontFamily.mono,
+                            }}
+                            data-testid={`advisor-decision-feedback-yes-${decision.id}`}
+                          >
+                            <ThumbsUp className="h-3 w-3" /> Yes
+                          </button>
+                          <button
+                            onClick={() => handleDecisionFeedback(decision, false)}
+                            className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px]"
+                            style={{
+                              borderColor: feedbackState === 'not-helpful' ? '#EF444460' : '#334155',
+                              color: feedbackState === 'not-helpful' ? '#FCA5A5' : '#CBD5E1',
+                              background: feedbackState === 'not-helpful' ? '#EF444415' : '#0F172A',
+                              fontFamily: fontFamily.mono,
+                            }}
+                            data-testid={`advisor-decision-feedback-no-${decision.id}`}
+                          >
+                            <ThumbsDown className="h-3 w-3" /> No
+                          </button>
+                        </div>
 
                         <Link
                           to="/soundboard"
@@ -813,24 +1104,62 @@ export default function AdvisorWatchtower() {
               </section>
 
               <section className="mb-10" data-testid="advisor-action-audit-section">
-                <div className="mb-4 flex items-center gap-2">
-                  <Clock3 className="h-4 w-4 text-[#3B82F6]" />
-                  <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-action-audit-title">
-                    Decision Action Audit
-                  </h2>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Clock3 className="h-4 w-4 text-[#3B82F6]" />
+                    <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-action-audit-title">
+                      Decision Action Audit
+                    </h2>
+                  </div>
+
+                  <button
+                    onClick={exportAuditCsv}
+                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                    style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                    data-testid="advisor-action-audit-export-button"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Export CSV
+                  </button>
+                </div>
+
+                <div className="mb-3 flex flex-wrap gap-2" data-testid="advisor-action-audit-filters">
+                  <select
+                    value={auditActionFilter}
+                    onChange={(event) => setAuditActionFilter(event.target.value)}
+                    className="rounded-xl border px-3 py-2 text-xs"
+                    style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0', fontFamily: fontFamily.mono }}
+                    data-testid="advisor-action-audit-action-filter"
+                  >
+                    <option value="all">All actions</option>
+                    <option value="complete">Resolved</option>
+                    <option value="hand-off">Delegated</option>
+                    <option value="ignore">Ignored</option>
+                  </select>
+
+                  <div className="flex items-center gap-1 rounded-xl border px-3 py-2" style={{ borderColor: '#334155', background: '#0F172A' }}>
+                    <Search className="h-3.5 w-3.5 text-[#94A3B8]" />
+                    <input
+                      value={auditSearch}
+                      onChange={(event) => setAuditSearch(event.target.value)}
+                      placeholder="Search decision, source, domain"
+                      className="w-56 bg-transparent text-xs outline-none"
+                      style={{ color: '#E2E8F0', fontFamily: fontFamily.mono }}
+                      data-testid="advisor-action-audit-search-input"
+                    />
+                  </div>
                 </div>
 
                 {!actionsHydrated ? (
                   <div className="rounded-2xl border p-4 text-sm" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)' }} data-testid="advisor-action-audit-loading">
                     Loading decision action history...
                   </div>
-                ) : actionAuditRows.length === 0 ? (
+                ) : filteredAuditRows.length === 0 ? (
                   <div className="rounded-2xl border p-4 text-sm" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)' }} data-testid="advisor-action-audit-empty">
                     No recorded actions yet. Resolve, delegate, or ignore a decision to start the audit trail.
                   </div>
                 ) : (
                   <div className="space-y-2" data-testid="advisor-action-audit-list">
-                    {actionAuditRows.map((row) => (
+                    {filteredAuditRows.map((row) => (
                       <div key={row.dedupeKey} className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid={`advisor-action-audit-row-${row.dedupeKey.replace(/\|/g, '-')}`}>
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="text-sm" style={{ color: 'var(--biqc-text)' }} data-testid={`advisor-action-audit-row-title-${row.dedupeKey.replace(/\|/g, '-')}`}>
@@ -868,7 +1197,7 @@ export default function AdvisorWatchtower() {
                 </div>
 
                 <div className="space-y-3" data-testid="advisor-signal-inbox-list">
-                  {openSignals.slice(0, 8).map((signal) => (
+                  {prioritizedSignals.slice(0, 8).map((signal) => (
                     <div key={`${signal.id}-${signal.signalType}`} className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid={`advisor-signal-row-${signal.signalType}`}>
                       <div className="mb-2 flex flex-wrap items-center gap-2">
                         <h3 className="text-base" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-signal-title-${signal.signalType}`}>{signal.title}</h3>
@@ -910,6 +1239,24 @@ export default function AdvisorWatchtower() {
                   </p>
                 </section>
               )}
+
+              <DelegateActionModal
+                open={Boolean(delegateModalDecision)}
+                decision={delegateModalDecision}
+                providers={delegateProviders}
+                providerOptions={delegateProviderOptions}
+                optionsLoading={delegateOptionsLoading}
+                submitting={delegateSubmitting}
+                onClose={() => setDelegateModalDecision(null)}
+                onProviderChange={fetchDelegateOptions}
+                onSubmit={handleDelegateSubmit}
+              />
+
+              <EvidenceDrawer
+                open={Boolean(evidenceDrawerDecision)}
+                decision={evidenceDrawerDecision}
+                onClose={() => setEvidenceDrawerDecision(null)}
+              />
             </>
           )}
 
