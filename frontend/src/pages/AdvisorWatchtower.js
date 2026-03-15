@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -423,6 +423,43 @@ const buildSignalsFromExecutiveSurface = (executiveSurface) => {
   );
 };
 
+const buildSignalsFromBrainConcerns = (brainPayload) => {
+  const concerns = brainPayload?.concerns || [];
+  if (!Array.isArray(concerns) || concerns.length === 0) return [];
+
+  const toSeverity = (priorityScore = 0, impact = 0, urgency = 0) => {
+    const blended = Number(priorityScore || 0) + Number(impact || 0) + Number(urgency || 0);
+    if (blended >= 26) return 'critical';
+    if (blended >= 20) return 'high';
+    if (blended >= 12) return 'medium';
+    return 'low';
+  };
+
+  const domainForConcern = (concernId = '') => {
+    const id = String(concernId).toLowerCase();
+    if (id.includes('cash') || id.includes('margin') || id.includes('revenue')) return 'finance';
+    if (id.includes('pipeline') || id.includes('response')) return 'sales';
+    if (id.includes('operations')) return 'operations';
+    return 'general';
+  };
+
+  return dedupeSignals(
+    concerns.map((concern, index) => toSignal({
+      id: `brain-${concern.concern_id || index}`,
+      signal: concern.concern_id || `brain_concern_${index + 1}`,
+      domain: domainForConcern(concern.concern_id),
+      severity: toSeverity(concern.priority_score, concern.impact, concern.urgency),
+      title: concern.explanation || concern.concern_id || `Priority concern ${index + 1}`,
+      detail: `Impact ${concern.impact ?? 0} · Urgency ${concern.urgency ?? 0} · Confidence ${Math.round(Number(concern.confidence || 0) * 100)}%.`,
+      recommendation: concern.recommendation || 'Review concern and assign owner action now.',
+      if_ignored: concern.explanation || 'Priority concern remains unresolved and may compound over time.',
+      source: 'BIQc Business Brain',
+      created_at: concern?.time_window?.evaluated_at || null,
+      evidence_refs: concern.evidence || [],
+    }, 'business_brain')),
+  );
+};
+
 const scoreRiskForBucket = (signal, bucketId) => {
   if (!signal) return 0;
   const base = { critical: 92, high: 78, medium: 58, low: 38, info: 25 }[signal.severity] || 30;
@@ -587,10 +624,21 @@ export default function AdvisorWatchtower() {
       crm: { provider: 'CRM', connected: false, live: false, status: 'pending', endpoint: '/integrations/crm/deals', error: '' },
       accounting: { provider: 'Xero', connected: false, live: false, status: 'pending', endpoint: '/integrations/accounting/summary', error: '' },
       email: { provider: 'Outlook', connected: false, live: false, status: 'pending', endpoint: '/email/priority-inbox', error: '' },
+      brain: { provider: 'BIQc Business Brain', connected: true, live: false, status: 'unavailable', endpoint: '/brain/priorities', error: 'Awaiting first successful Brain response.' },
     },
+  });
+  const [brainContext, setBrainContext] = useState({
+    businessCoreReady: false,
+    mode: 'unknown',
+    tierMode: 'free',
+    allClear: false,
+    concerns: [],
+    generatedAt: null,
+    error: '',
   });
   const [integrationContextLoading, setIntegrationContextLoading] = useState(false);
   const [integrationContextError, setIntegrationContextError] = useState('');
+  const integrationFetchInFlightRef = useRef(false);
   const [actionState, setActionState] = useState({ byKey: {}, byAlertId: {} });
   const [actionsHydrated, setActionsHydrated] = useState(false);
   const [actionLoadingKey, setActionLoadingKey] = useState('');
@@ -659,13 +707,23 @@ export default function AdvisorWatchtower() {
     }
   }, []);
 
-  const fetchIntegrationContext = useCallback(async () => {
+  const fetchIntegrationContext = useCallback(async (recomputeBrain = false) => {
+    if (integrationFetchInFlightRef.current) return;
+    integrationFetchInFlightRef.current = true;
+
     setIntegrationContextLoading(true);
     setIntegrationContextError('');
 
     try {
+      let brainRes;
+      try {
+        const brainValue = await apiClient.get('/brain/priorities', { params: { recompute: recomputeBrain }, timeout: 45000 });
+        brainRes = { status: 'fulfilled', value: brainValue };
+      } catch (brainErr) {
+        brainRes = { status: 'rejected', reason: brainErr };
+      }
+
       const requests = await Promise.allSettled([
-        apiClient.get('/advisor/executive-surface', { timeout: 15000 }),
         apiClient.get('/integrations/merge/connected', { timeout: 12000 }),
         apiClient.get('/integrations/crm/deals', { params: { page_size: 50 }, timeout: 15000 }),
         apiClient.get('/integrations/accounting/summary', { timeout: 15000 }),
@@ -674,9 +732,22 @@ export default function AdvisorWatchtower() {
         apiClient.get('/calibration/status', { timeout: 10000 }),
       ]);
 
-      const [surfaceRes, mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
+      const [mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
 
-      const executiveSurface = surfaceRes.status === 'fulfilled' ? (surfaceRes.value?.data || null) : null;
+      const executiveSurface = null;
+      const brainPayload = brainRes.status === 'fulfilled' ? (brainRes.value?.data || null) : null;
+      const brainRequestFailed = brainRes.status === 'rejected' || !brainPayload;
+      const brainRequestError = settledErrorMessage(brainRes) || (brainRequestFailed ? 'Business Brain request did not return data.' : '');
+
+      setBrainContext({
+        businessCoreReady: Boolean(brainPayload?.business_core_ready),
+        mode: brainPayload?.mode || 'unknown',
+        tierMode: brainPayload?.tier_mode || 'free',
+        allClear: Boolean(brainPayload?.all_clear),
+        concerns: brainPayload?.concerns || [],
+        generatedAt: brainPayload?.generated_at || null,
+        error: brainRequestError,
+      });
 
       const mergeConnected = mergeRes.status === 'fulfilled' ? (mergeRes.value?.data?.integrations || {}) : {};
       const crmDeals = crmRes.status === 'fulfilled' ? (crmRes.value?.data?.results || []) : [];
@@ -731,6 +802,8 @@ export default function AdvisorWatchtower() {
         || ((priorityInbox?.message && String(priorityInbox.message).toLowerCase().includes('no priority analysis available'))
           ? 'Priority inbox analysis not generated yet'
           : '');
+      const brainError = brainRequestError
+        || (brainPayload && Array.isArray(brainPayload.concerns) && brainPayload.concerns.length === 0 ? 'No brain concerns generated from current data window' : '');
 
       const crmConnected = Object.values(mergeConnected).some((entry) => String(entry?.category || '').toLowerCase() === 'crm' && Boolean(entry?.connected));
       const accountingConnected = Object.values(mergeConnected).some((entry) => String(entry?.category || '').toLowerCase() === 'accounting' && Boolean(entry?.connected));
@@ -761,6 +834,14 @@ export default function AdvisorWatchtower() {
           endpoint: '/email/priority-inbox',
           error: outlookError || priorityError || '',
         },
+        brain: {
+          provider: 'BIQc Business Brain',
+          connected: true,
+          live: Boolean(brainPayload) && !brainRequestFailed && !brainError,
+          status: brainRequestFailed || brainError ? 'unavailable' : 'live',
+          endpoint: '/brain/priorities',
+          error: brainError || '',
+        },
       };
 
       setIntegrationContext({
@@ -774,9 +855,15 @@ export default function AdvisorWatchtower() {
         sourceHealth,
       });
     } catch (error) {
-      setIntegrationContextError(error?.response?.data?.detail || 'Unable to load integration context.');
+      const message = error?.response?.data?.detail || 'Unable to load integration context.';
+      setIntegrationContextError(message);
+      setBrainContext((prev) => ({
+        ...prev,
+        error: prev.error || message,
+      }));
     } finally {
       setIntegrationContextLoading(false);
+      integrationFetchInFlightRef.current = false;
     }
   }, []);
 
@@ -836,7 +923,7 @@ export default function AdvisorWatchtower() {
   useEffect(() => {
     fetchOverview(false);
     fetchWatchtower();
-    fetchIntegrationContext();
+    fetchIntegrationContext(false);
     hydrateActionHistory();
   }, [fetchOverview, fetchWatchtower, fetchIntegrationContext, hydrateActionHistory]);
 
@@ -845,7 +932,7 @@ export default function AdvisorWatchtower() {
       refreshSnapshot(),
       fetchOverview(true),
       fetchWatchtower(),
-      fetchIntegrationContext(),
+      fetchIntegrationContext(true),
       fetchDelegateProviders(),
     ]);
   };
@@ -874,7 +961,7 @@ export default function AdvisorWatchtower() {
     if (hasData || overviewLoading || watchtowerLoading) return;
     fetchOverview(true);
     fetchWatchtower();
-    fetchIntegrationContext();
+    fetchIntegrationContext(false);
     hydrateActionHistory();
   }, [
     authState,
@@ -915,16 +1002,10 @@ export default function AdvisorWatchtower() {
   }, []);
 
   const signals = useMemo(() => {
-    const surfaceSignals = buildSignalsFromExecutiveSurface(integrationContext.executiveSurface);
-    const coreSignals = buildSignals(overview, cognitive, watchtowerEvents);
-    const integrationSignals = buildIntegrationSignals(integrationContext);
-
-    if (surfaceSignals.length > 0) {
-      return dedupeSignals([...surfaceSignals, ...integrationSignals]);
-    }
-
-    return dedupeSignals([...coreSignals, ...integrationSignals]);
-  }, [overview, cognitive, watchtowerEvents, integrationContext]);
+    const brainSignals = buildSignalsFromBrainConcerns(brainContext);
+    if (brainSignals.length > 0) return brainSignals;
+    return [];
+  }, [brainContext]);
 
   const isSignalActioned = useCallback((signal) => {
     if (actionState.byKey?.[signal.dedupeKey]) return true;
@@ -1310,6 +1391,12 @@ export default function AdvisorWatchtower() {
   const migrationRequired = overview?.status === 'MIGRATION_REQUIRED';
   const queuedBeyondThree = Math.max(openSignals.length - 3, 0);
   const noActiveDecisions = decisions.every((decision) => !decision.signal);
+  const brainLive = Boolean(integrationContext.sourceHealth?.brain?.live);
+  const brainSourceUnavailable = integrationContext.sourceHealth?.brain?.status === 'unavailable';
+  const brainUnavailable = Boolean(brainContext.error)
+    || Boolean(integrationContextError)
+    || brainSourceUnavailable
+    || (!integrationContextLoading && !brainLive && !brainContext.allClear);
   const fallbackState = getStateLabel(overview, cognitive);
   const executiveState = getExecutiveStateLabel({
     executiveSnapshot,
@@ -1434,7 +1521,7 @@ export default function AdvisorWatchtower() {
       Promise.allSettled([
         fetchOverview(true),
         fetchWatchtower(),
-        fetchIntegrationContext(),
+        fetchIntegrationContext(true),
       ]);
     }, 5 * 60 * 1000);
 
@@ -1470,9 +1557,11 @@ export default function AdvisorWatchtower() {
                 </p>
               </div>
               <p className="text-xs sm:text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
-                {connectedSources.length > 0
-                  ? `Three decisions from ${connectedSources.join(', ')} evidence. Clear owner-ready actions.`
-                  : 'Three decision buckets are active. Connect integrations to unlock verified signals.'}
+                {!brainLive
+                  ? 'Business Brain is currently unavailable. Priority decisions are paused until data feed recovers.'
+                  : (brainContext.allClear
+                      ? 'Business Brain is live. No high-priority concerns are currently triggered.'
+                      : `Three decisions from BIQc Business Brain with ${connectedSources.join(', ')} evidence.`)}
               </p>
             </div>
 
@@ -1547,7 +1636,7 @@ export default function AdvisorWatchtower() {
               style={{ borderColor: '#F59E0B60', background: '#F59E0B15', color: '#FDE68A' }}
               data-testid="advisor-critical-error"
             >
-              Live cognition feed is delayed right now. Showing fallback executive decisions while BIQc reconnects.
+              Live cognition feed is delayed right now. BIQc Business Brain decisions are temporarily unavailable.
             </div>
           )}
 
@@ -1557,7 +1646,7 @@ export default function AdvisorWatchtower() {
               style={{ borderColor: '#F59E0B60', background: '#F59E0B15', color: '#FDE68A' }}
               data-testid="advisor-migration-warning"
             >
-              Cognition migration is required for full contract output. Snapshot-backed decisions are still active.
+              Cognition migration is required for full contract output. Business Brain remains the only priority decision source.
             </div>
           )}
 
@@ -1623,10 +1712,10 @@ export default function AdvisorWatchtower() {
                         {connectedSources.length > 0 ? connectedSources.join(' · ') : 'No live provider feed'}
                       </p>
                       <div className="mt-3 space-y-2" data-testid="advisor-source-health-list">
-                        {['crm', 'accounting', 'email'].map((key) => {
+                        {['brain', 'crm', 'accounting', 'email'].map((key) => {
                           const source = integrationContext.sourceHealth?.[key] || {};
                           const statusColor = source.status === 'live' ? '#10B981' : source.status === 'unavailable' ? '#EF4444' : '#F59E0B';
-                          const statusLabel = source.status === 'live' ? 'LIVE' : source.status === 'unavailable' ? 'ERROR' : 'PENDING';
+                          const statusLabel = source.status === 'live' ? 'LIVE' : source.status === 'unavailable' ? 'UNAVAILABLE' : 'PENDING';
                           return (
                             <div key={key} className="rounded-lg border px-2.5 py-2" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid={`advisor-source-health-${key}`}>
                               <div className="flex items-center justify-between gap-2">
@@ -1726,7 +1815,27 @@ export default function AdvisorWatchtower() {
                   </aside>
 
                   <div className="order-1" data-testid="advisor-priority-main-rail">
-                    {noActiveDecisions ? (
+                    {brainUnavailable ? (
+                      <div className="rounded-2xl border p-5" style={{ borderColor: '#EF444460', background: '#450A0A' }} data-testid="advisor-brain-unavailable-state">
+                        <h3 className="text-lg" style={{ color: '#FCA5A5', fontFamily: fontFamily.display }} data-testid="advisor-brain-unavailable-title">
+                          BIQc Business Brain data is currently unavailable.
+                        </h3>
+                        <p className="mt-2 text-sm" style={{ color: '#FECACA' }} data-testid="advisor-brain-unavailable-summary">
+                          {brainContext.error || 'Brain priorities did not load from /brain/priorities in this cycle.'}
+                        </p>
+                        <p className="mt-2 text-sm" style={{ color: '#FECACA' }} data-testid="advisor-brain-unavailable-next-step">
+                          This state is not treated as all-clear. Use Refresh intelligence and verify integrations health before making decisions.
+                        </p>
+                        <Link
+                          to={soundboardDiscussHref(`Business Brain unavailable: ${brainContext.error || 'No concerns returned'}. Diagnose root cause and next actions.`)}
+                          className="mt-4 inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                          style={{ borderColor: '#FCA5A5', color: '#FECACA', fontFamily: fontFamily.mono }}
+                          data-testid="advisor-brain-unavailable-discuss-soundboard"
+                        >
+                          Discuss with BIQc SoundBoard <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    ) : noActiveDecisions ? (
                       <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-all-clear-state">
                         <h3 className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-all-clear-title">
                           All clear right now — no high-priority decision signal detected.

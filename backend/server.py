@@ -286,6 +286,9 @@ api_router.include_router(cognition_router)
 from routes.tutorials import router as tutorials_router
 api_router.include_router(tutorials_router)
 
+from routes.business_brain import router as business_brain_router
+api_router.include_router(business_brain_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
