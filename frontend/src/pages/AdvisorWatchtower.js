@@ -1586,8 +1586,8 @@ export default function AdvisorWatchtower() {
                   </Link>
                 </div>
 
-                <div className="grid gap-4 xl:grid-cols-[180px_1fr] 2xl:grid-cols-[200px_1fr]" data-testid="advisor-priority-layout-grid">
-                  <aside className="space-y-3" data-testid="advisor-priority-left-rail">
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px] 2xl:grid-cols-[minmax(0,1fr)_280px]" data-testid="advisor-priority-layout-grid">
+                  <aside className="order-2 grid gap-3 sm:grid-cols-2 xl:order-2 xl:grid-cols-1 self-start" data-testid="advisor-priority-left-rail">
                     <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-state-card">
                       <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
                       <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{executiveState}</p>
@@ -1725,7 +1725,7 @@ export default function AdvisorWatchtower() {
                     </article>
                   </aside>
 
-                  <div data-testid="advisor-priority-main-rail">
+                  <div className="order-1" data-testid="advisor-priority-main-rail">
                     {noActiveDecisions ? (
                       <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-all-clear-state">
                         <h3 className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-all-clear-title">
