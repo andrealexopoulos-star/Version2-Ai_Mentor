@@ -1378,6 +1378,39 @@ export default function AdvisorWatchtower() {
     return `/soundboard?origin=advisor&prompt=${encodeURIComponent(prompt)}`;
   }, []);
 
+  const sourceHealthValues = Object.values(integrationContext.sourceHealth || {});
+  const awaitingSources = sourceHealthValues.filter((entry) => entry?.connected && entry?.status !== 'live');
+  const liveSources = sourceHealthValues.filter((entry) => entry?.live);
+  const hasConnectedSources = sourceHealthValues.some((entry) => entry?.connected);
+
+  const syncExpectationMessage = useMemo(() => {
+    if (awaitingSources.length > 0) {
+      const labels = awaitingSources.map((entry) => entry.provider || 'integration').join(', ');
+      return `Connected: ${labels}. First intelligence sync usually takes 2–5 minutes. BIQc is processing in background.`;
+    }
+
+    if (hasConnectedSources && liveSources.length > 0) {
+      const labels = liveSources.map((entry) => entry.provider || 'integration').join(', ');
+      return `Live data active from: ${labels}. BIQc auto-refreshes this page in background every 5 minutes.`;
+    }
+
+    return '';
+  }, [awaitingSources, hasConnectedSources, liveSources]);
+
+  useEffect(() => {
+    if (authState === AUTH_STATE.LOADING) return undefined;
+
+    const interval = setInterval(() => {
+      Promise.allSettled([
+        fetchOverview(true),
+        fetchWatchtower(),
+        fetchIntegrationContext(),
+      ]);
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [authState, fetchOverview, fetchWatchtower, fetchIntegrationContext]);
+
   return (
     <DashboardLayout>
       <div
@@ -1389,24 +1422,24 @@ export default function AdvisorWatchtower() {
         data-testid="advisor-screen"
       >
         <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
-          <div className="mb-8 flex flex-wrap items-start justify-between gap-4" data-testid="advisor-page-header">
-            <div className="space-y-2">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-header-kicker">
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-3" data-testid="advisor-page-header">
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-header-kicker">
                 Today · Executive Cognition
               </p>
               <div className="flex flex-wrap items-end gap-3" data-testid="advisor-header-title-row">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-header-title">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-header-title">
                   Good {displayTimeOfDay}, {displayName}.
                 </h1>
                 <p
-                  className="pb-2 text-xs"
+                  className="pb-1 text-[10px]"
                   style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}
                   data-testid="advisor-header-datetime"
                 >
                   {greetingDateTime}
                 </p>
               </div>
-              <p className="text-sm sm:text-base" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
+              <p className="text-xs sm:text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
                 {connectedSources.length > 0
                   ? `Three decisions from ${connectedSources.join(', ')} evidence. Clear owner-ready actions.`
                   : 'Three decision buckets are active. Connect integrations to unlock verified signals.'}
@@ -1416,7 +1449,7 @@ export default function AdvisorWatchtower() {
             <button
               onClick={handleRefresh}
               disabled={snapshotRefreshing || overviewRefreshing}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-4 py-2 text-sm transition-colors hover:bg-white/5"
+              className="inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-colors hover:bg-white/5"
               style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text)' }}
               data-testid="advisor-refresh-button"
             >
@@ -1424,6 +1457,21 @@ export default function AdvisorWatchtower() {
               Refresh intelligence
             </button>
           </div>
+
+          {syncExpectationMessage && (
+            <div
+              className="mb-6 rounded-xl border px-3 py-2 text-xs"
+              style={{
+                borderColor: awaitingSources.length > 0 ? '#F59E0B60' : '#10B98140',
+                background: awaitingSources.length > 0 ? '#F59E0B14' : '#10B98114',
+                color: awaitingSources.length > 0 ? '#FDE68A' : '#A7F3D0',
+                fontFamily: fontFamily.mono,
+              }}
+              data-testid="advisor-sync-expectation-message"
+            >
+              {syncExpectationMessage}
+            </div>
+          )}
 
           <div className="mb-8 space-y-3" data-testid="advisor-ia-consistency-strip">
             <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-breadcrumbs">
@@ -1508,7 +1556,7 @@ export default function AdvisorWatchtower() {
                   </Link>
                 </div>
 
-                <div className="grid gap-4 xl:grid-cols-[340px_1fr]" data-testid="advisor-priority-layout-grid">
+                <div className="grid gap-4 xl:grid-cols-[180px_1fr] 2xl:grid-cols-[200px_1fr]" data-testid="advisor-priority-layout-grid">
                   <aside className="space-y-3" data-testid="advisor-priority-left-rail">
                     <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-state-card">
                       <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
