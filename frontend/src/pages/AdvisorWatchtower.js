@@ -1350,7 +1350,7 @@ export default function AdvisorWatchtower() {
     }
     if (cashExposureProvenance?.summary) return cashExposureProvenance.summary;
     if (executiveSnapshot.overdueCount > 0) {
-      return 'From accounting sync via Merge: paginated scan (up to 1,000 invoices), overdue means status is OVERDUE or due date is past today.';
+      return 'From accounting sync via Merge: CLIENT invoices only (AR), excluding supplier bills (AP). Overdue means status is OVERDUE or due date is past today.';
     }
     return 'Cash exposure source appears after accounting sync completes.';
   }, [cashExposureProvenance, executiveSnapshot.overdueCount, accountingSyncError, user?.email]);
