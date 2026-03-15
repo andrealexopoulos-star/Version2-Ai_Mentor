@@ -1,93 +1,77 @@
 {
   "design_guidelines": {
-    "project_name": "BIQc Advisor Layout Refinement",
-    "version": "1.0",
-    "description": "Refining the AdvisorWatchtower layout to align with executive focus: horizontal card layout, removal of right sidebar, and cleaner stacking of status cards.",
-    "files_to_modify": [
-      "/app/frontend/src/pages/AdvisorWatchtower.js"
-    ],
-    "universal_guidelines": {
-      "theme": "dark",
-      "font_family_base": "Inter, sans-serif",
-      "font_family_display": "Barlow Condensed, sans-serif",
-      "font_family_mono": "JetBrains Mono, monospace",
-      "spacing_scale": "relaxed"
-    },
+    "project_name": "BIQc Advisor Watchtower Card Redesign",
+    "theme": "Dark Mode (Preserve existing BIQc visual language)",
+    "font_family": "Existing font tokens (fontFamily.body, fontFamily.display, fontFamily.mono)",
     "layout_changes": {
-      "target_section": "advisor-priority-detail-section",
-      "instruction": "Replace the existing 2-column grid layout (Sidebar + Main) with a single-column vertical stack. The status cards should sit above the main decision cards.",
-      "steps": [
-        {
-          "action": "remove_element",
-          "selector": "aside[data-testid='advisor-priority-left-rail']",
-          "note": "Remove the entire sidebar container but KEEP the content of 'Business State' and 'Decision Queue Status' cards for relocation. DELETE 'Executive Snapshot' section entirely."
-        },
-        {
-          "action": "update_structure",
-          "description": "Create a new flex/grid layout inside 'advisor-priority-detail-section'.",
-          "structure": [
-            {
-              "row": 1,
-              "content": "Header (Title + View full signal inbox link) - Keep existing header code."
-            },
-            {
-              "row": 2,
-              "layout": "grid grid-cols-1 md:grid-cols-2 gap-4 mb-6",
-              "content": [
-                "Business State Card (Extracted from sidebar)",
-                "Decision Queue Status Card (Extracted from sidebar)"
-              ]
-            },
-            {
-              "row": 3,
-              "layout": "grid grid-cols-1 md:grid-cols-3 gap-6",
-              "content": "The 3 Main Priority Cards (decisions.map loop). Force 3 columns on medium+ screens."
-            }
-          ]
-        },
-        {
-          "action": "refine_styles",
-          "target": "Business State Card",
-          "styles": "h-full min-h-[100px] flex flex-row items-center justify-between p-5 rounded-2xl border bg-[var(--biqc-bg-card)] border-[var(--biqc-border)]"
-        },
-        {
-          "action": "refine_styles",
-          "target": "Decision Queue Status Card",
-          "styles": "h-full min-h-[100px] flex flex-row items-center justify-between p-5 rounded-2xl border bg-[var(--biqc-bg-card)] border-[var(--biqc-border)]"
-        }
+      "card_structure": [
+        "Header (Icon, Title, Severity, Risk Score)",
+        "Core Context (Intent, Headline, Confidence, Main Title, Provenance)",
+        "Primary Action Button (View full context) - MOVED: To be placed ABOVE 'Why Now' section",
+        "Why Now Section",
+        "Action Now Section - MOVED: To be placed UNDER 'Why Now' section",
+        "Action Controls Row - NEW: Contains 'Soundboard chat' button and 'Actions' dropdown",
+        "If Ignored Section - MOVED: To be placed UNDER the Action Controls Row",
+        "Data Logic Box (Signal/Decision/Action) - UPDATE: Add Info Icon with Tooltip",
+        "Projections Box (30/60/90) - UPDATE: Add Info Icon with Tooltip",
+        "Footer (Dedupe note, Next up indicator)"
       ]
     },
-    "component_specifications": {
-      "business_state_card": {
-        "elements": [
-          "Label: 'Business State' (uppercase, tracking-wide, text-muted)",
-          "Value: executiveState (Display font, large text)",
-          "Action: Soundboard link (Discuss...)"
+    "component_specs": {
+      "ActionsDropdown": {
+        "description": "Shadcn DropdownMenu for secondary actions",
+        "trigger": "Button with 'Actions' label and ChevronDown icon",
+        "items": [
+          {"label": "Add to calendar", "icon": "Calendar", "action": "open_delegate_modal_calendar"},
+          {"label": "Assign Owner", "icon": "UserPlus", "action": "open_delegate_modal"},
+          {"label": "Mark as actioned", "icon": "CheckCircle", "action": "mark_resolved_flow"},
+          {"label": "Ignore", "icon": "XCircle", "action": "ignore_signal"}
         ],
-        "layout_direction": "horizontal_compact"
+        "styling": "Dark theme, consistent with BIQc cards"
       },
-      "decision_queue_card": {
-        "elements": [
-          "Label: 'Decision Queue Status'",
-          "Value: Open signal count + 'showing top 3...'",
-          "Metric: Backlog count (queuedBeyondThree)",
-          "Action: Soundboard link"
-        ],
-        "layout_direction": "horizontal_compact"
-      },
-      "main_decision_grid": {
-        "grid_class": "grid grid-cols-1 md:grid-cols-3 gap-6",
-        "card_style": "min-w-0 rounded-2xl border p-6 bg-[var(--biqc-bg-card)] border-[var(--biqc-border)] flex flex-col justify-between"
+      "InfoTooltip": {
+        "description": "Shadcn Tooltip for context explanation",
+        "trigger": "Info icon (lucide-react) size-3 text-slate-400 hover:text-white",
+        "content_signal_box": "Explanation of how this signal was detected and grouped.",
+        "content_projection_box": "Risk probability progression over 30/60/90 days if ignored vs actioned."
       }
     },
-    "code_snippets": {
-      "new_layout_jsx": "<section id=\"advisor-priority-detail-section\" className=\"mb-10\" data-testid=\"advisor-decision-surface\">\n  {/* ROW 1: HEADER */}\n  <div className=\"mb-6 flex items-center justify-between gap-3\">\n    <h2 className=\"text-base md:text-lg\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid=\"advisor-decision-title\">\n      BIQc Priority Snapshot\n    </h2>\n    <Link\n      to=\"/alerts\"\n      className=\"inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5\"\n      style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }}\n      data-testid=\"advisor-view-alerts-link\"\n    >\n      View full signal inbox <ArrowRight className=\"h-3.5 w-3.5\" />\n    </Link>\n  </div>\n\n  {/* ROW 2: STATUS CARDS (Formerly Sidebar) */}\n  <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4 mb-6\">\n    {/* Business State */}\n    <article className=\"rounded-2xl border p-5 flex flex-col justify-between\" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid=\"advisor-state-card\">\n      <div className=\"flex items-start justify-between\">\n        <div>\n          <p className=\"text-xs uppercase tracking-[0.14em] text-[#94A3B8]\" style={{ fontFamily: fontFamily.mono }} data-testid=\"advisor-state-label\">Business State</p>\n          <p className=\"mt-2 text-2xl\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid=\"advisor-state-value\">{executiveState}</p>\n        </div>\n        <Link\n          to={soundboardDiscussHref(`Business state is ${executiveState}. Explain immediate owner priorities.`)}\n          className=\"inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-white/5\"\n          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}\n          data-testid=\"advisor-state-discuss-soundboard\"\n        >\n          Discuss <ArrowRight className=\"h-3 w-3\" />\n        </Link>\n      </div>\n    </article>\n\n    {/* Decision Queue */}\n    <article className=\"rounded-2xl border p-5 flex flex-col justify-between\" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid=\"advisor-queue-status-section\">\n      <div className=\"flex items-start justify-between w-full\">\n        <div>\n          <p className=\"text-xs uppercase tracking-[0.14em] text-[#94A3B8]\" style={{ fontFamily: fontFamily.mono }} data-testid=\"advisor-queue-status-label\">Decision Queue</p>\n          <p className=\"mt-2 text-sm\" style={{ color: 'var(--biqc-text-2)' }} data-testid=\"advisor-queue-status-value\">\n            {openSignals.length} open signal{openSignals.length === 1 ? '' : 's'} · Showing top 3\n          </p>\n        </div>\n        <div className=\"text-right\">\n           <div className=\"flex items-center gap-2 justify-end\">\n              <p className=\"text-2xl\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid=\"advisor-queue-backlog-count\">{queuedBeyondThree}</p>\n              <p className=\"text-xs text-[#94A3B8] max-w-[60px] leading-tight text-right\" style={{ fontFamily: fontFamily.mono }} data-testid=\"advisor-queue-backlog-label\">Queued after top 3</p>\n           </div>\n        </div>\n      </div>\n      <div className=\"mt-3\">\n         <Link\n          to={soundboardDiscussHref(`Decision queue has ${openSignals.length} open signals with ${queuedBeyondThree} queued after top 3.`)}\n          className=\"inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-white/5\"\n          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}\n          data-testid=\"advisor-queue-discuss-soundboard\"\n        >\n          Discuss queue strategy <ArrowRight className=\"h-3 w-3\" />\n        </Link>\n      </div>\n    </article>\n  </div>\n\n  {/* ROW 3: MAIN CARDS */}\n  <div data-testid=\"advisor-priority-main-rail\">\n    {brainUnavailable ? (\n       /* Keep existing brainUnavailable block */\n       <div className=\"rounded-2xl border p-5\" style={{ borderColor: '#EF444460', background: '#450A0A' }} data-testid=\"advisor-brain-unavailable-state\">\n          {/* ... existing content ... */}\n          <h3 className=\"text-lg\" style={{ color: '#FCA5A5', fontFamily: fontFamily.display }} data-testid=\"advisor-brain-unavailable-title\">\n            BIQc Business Brain data is currently unavailable.\n          </h3>\n           {/* ... copy existing children ... */}\n       </div>\n    ) : brainLoading ? (\n       /* Keep existing brainLoading block */\n       <div className=\"rounded-2xl border p-5\" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid=\"advisor-brain-loading-state\">\n           {/* ... existing content ... */}\n           <h3 className=\"text-lg\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid=\"advisor-brain-loading-title\">\n              BIQc Business Brain is syncing live signals.\n           </h3>\n           {/* ... copy existing children ... */}\n       </div>\n    ) : noActiveDecisions ? (\n       /* Keep existing noActiveDecisions block */\n       <div className=\"rounded-2xl border p-5\" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid=\"advisor-all-clear-state\">\n            {/* ... existing content ... */}\n            <h3 className=\"text-lg\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid=\"advisor-all-clear-title\">\n              All clear right now — no high-priority decision signal detected.\n            </h3>\n            {/* ... copy existing children ... */}\n       </div>\n    ) : (\n      <div\n        className=\"grid gap-6 grid-cols-1 md:grid-cols-3\"\n        data-testid=\"advisor-decision-grid\"\n      >\n        {decisions.map((decision, index) => {\n          /* Keep existing decision map logic exactly as is, just ensure grid columns above handles layout */\n          const Icon = decision.icon;\n          const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;\n          const signal = decision.signal;\n          const actionRecord = signal ? actionState.byKey?.[signal.dedupeKey] : null;\n          const projections = signal ? buildProjections(signal) : null;\n\n          return (\n            <article\n              key={decision.id}\n              className=\"min-w-0 rounded-2xl border p-6 flex flex-col h-full\"\n              style={{ borderColor: style.border, background: 'var(--biqc-bg-card)' }}\n              data-testid={`advisor-decision-card-${decision.id}`}\n            >\n               {/* ... Keep existing card content ... */}\n               <div className=\"mb-4 flex items-center justify-between gap-2\">\n                  <span className=\"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em]\" style={{ background: style.bg, color: style.text, fontFamily: fontFamily.mono }} data-testid={`advisor-decision-slot-${decision.id}`}>\n                    <Icon className=\"h-3 w-3\" />\n                    {decision.title}\n                  </span>\n                  {/* ... rest of header ... */}\n               </div>\n\n               {/* ... content body ... */}\n               <p className=\"mb-1 text-sm\" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-intent-${decision.id}`}>{decision.intent}</p>\n               {/* ... etc ... */}\n               \n               {/* IMPORTANT: Ensure 'h-full' and flex-grow behavior for uniform height cards */}\n               <div className=\"flex-1\">\n                  <h3 className=\"mb-3 text-lg\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>\n                    {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}\n                  </h3>\n                  {/* ... rest of body ... */}\n               </div>\n\n               {/* ... Actions at bottom ... */}\n            </article>\n          );\n        })}\n      </div>\n    )}\n  </div>\n</section>"
+    "interaction_flows": {
+      "mark_as_actioned": {
+        "step_1": "User clicks 'Mark as actioned' in dropdown",
+        "step_2": "Card content is replaced by a temporary success state (Green check icon + 'Action recorded' text) for 1.5 seconds",
+        "step_3": "Card is removed/refreshed from the list"
+      },
+      "assign_owner": {
+        "step_1": "User clicks 'Assign Owner' in dropdown",
+        "step_2": "Open existing DelegateActionModal",
+        "step_3": "User completes delegation flow (Email + Due Date + Calendar)"
+      },
+      "add_to_calendar": {
+        "step_1": "User clicks 'Add to calendar'",
+        "step_2": "Open DelegateActionModal (Reuse existing component)",
+        "step_3": "Pre-check 'Also create calendar event' if possible, or guide user to set due date"
+      },
+      "soundboard_chat": {
+        "step_1": "User clicks 'Soundboard chat' button",
+        "step_2": "Navigate to Soundboard with context prompt (Reuse existing logic)"
+      }
     },
-    "general_instructions": [
-      "Ensure all classNames use Tailwind utilities for spacing (p-5, gap-6, etc.).",
-      "Ensure font families (fontFamily.display, fontFamily.mono) are preserved.",
-      "Do not delete the 'conflicts' logic or imports.",
-      "The 'Executive Snapshot' section (CRM Pipeline, Cash Exposure, etc.) is REMOVED completely."
+    "copy_refinements": {
+      "why_now_label": "Why Now",
+      "action_now_label": "Recommended Action",
+      "if_ignored_label": "If Ignored",
+      "view_context_button": "View full context"
+    },
+    "implementation_files": [
+      "/app/frontend/src/pages/AdvisorWatchtower.js"
+    ],
+    "universal_guidelines": [
+      "Use Lucide icons for all visual indicators.",
+      "Ensure all interactive elements have data-testid attributes.",
+      "Maintain the existing dark mode color palette (slate-900/slate-800 for backgrounds, slate-400 for secondary text).",
+      "Do not use generic 'Inter' for headings; stick to fontFamily.display.",
+      "Use 'sonner' for toasts."
     ]
   }
 }
