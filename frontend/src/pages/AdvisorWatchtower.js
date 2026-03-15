@@ -639,6 +639,7 @@ export default function AdvisorWatchtower() {
   const [integrationContextLoading, setIntegrationContextLoading] = useState(false);
   const [integrationContextError, setIntegrationContextError] = useState('');
   const integrationFetchInFlightRef = useRef(false);
+  const [brainRetryCount, setBrainRetryCount] = useState(0);
   const [actionState, setActionState] = useState({ byKey: {}, byAlertId: {} });
   const [actionsHydrated, setActionsHydrated] = useState(false);
   const [actionLoadingKey, setActionLoadingKey] = useState('');
@@ -748,6 +749,10 @@ export default function AdvisorWatchtower() {
         generatedAt: brainPayload?.generated_at || null,
         error: brainRequestError,
       });
+
+      if (!brainRequestError && brainPayload) {
+        setBrainRetryCount(0);
+      }
 
       const mergeConnected = mergeRes.status === 'fulfilled' ? (mergeRes.value?.data?.integrations || {}) : {};
       const crmDeals = crmRes.status === 'fulfilled' ? (crmRes.value?.data?.results || []) : [];
@@ -1527,6 +1532,20 @@ export default function AdvisorWatchtower() {
 
     return () => clearInterval(interval);
   }, [authState, fetchOverview, fetchWatchtower, fetchIntegrationContext]);
+
+  useEffect(() => {
+    if (integrationContextLoading) return undefined;
+    if (!brainUnavailable) return undefined;
+    if (brainRetryCount >= 3) return undefined;
+
+    const delayMs = 2500 * (brainRetryCount + 1);
+    const timer = setTimeout(() => {
+      setBrainRetryCount((prev) => prev + 1);
+      fetchIntegrationContext(false);
+    }, delayMs);
+
+    return () => clearTimeout(timer);
+  }, [integrationContextLoading, brainUnavailable, brainRetryCount, fetchIntegrationContext]);
 
   return (
     <DashboardLayout>
