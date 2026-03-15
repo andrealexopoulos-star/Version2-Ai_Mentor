@@ -624,7 +624,7 @@ export default function AdvisorWatchtower() {
       crm: { provider: 'CRM', connected: false, live: false, status: 'pending', endpoint: '/integrations/crm/deals', error: '' },
       accounting: { provider: 'Xero', connected: false, live: false, status: 'pending', endpoint: '/integrations/accounting/summary', error: '' },
       email: { provider: 'Outlook', connected: false, live: false, status: 'pending', endpoint: '/email/priority-inbox', error: '' },
-      brain: { provider: 'BIQc Business Brain', connected: false, live: false, status: 'pending', endpoint: '/brain/priorities', error: '' },
+      brain: { provider: 'BIQc Business Brain', connected: true, live: false, status: 'unavailable', endpoint: '/brain/priorities', error: 'Awaiting first successful Brain response.' },
     },
   });
   const [brainContext, setBrainContext] = useState({
@@ -1391,9 +1391,12 @@ export default function AdvisorWatchtower() {
   const migrationRequired = overview?.status === 'MIGRATION_REQUIRED';
   const queuedBeyondThree = Math.max(openSignals.length - 3, 0);
   const noActiveDecisions = decisions.every((decision) => !decision.signal);
+  const brainLive = Boolean(integrationContext.sourceHealth?.brain?.live);
+  const brainSourceUnavailable = integrationContext.sourceHealth?.brain?.status === 'unavailable';
   const brainUnavailable = Boolean(brainContext.error)
     || Boolean(integrationContextError)
-    || (!integrationContextLoading && !brainContext.allClear && !brainContext.concerns?.length && !brainContext.generatedAt);
+    || brainSourceUnavailable
+    || (!integrationContextLoading && !brainLive && !brainContext.allClear);
   const fallbackState = getStateLabel(overview, cognitive);
   const executiveState = getExecutiveStateLabel({
     executiveSnapshot,
@@ -1554,13 +1557,11 @@ export default function AdvisorWatchtower() {
                 </p>
               </div>
               <p className="text-xs sm:text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
-                {connectedSources.length > 0
-                  ? (brainUnavailable
-                      ? 'Business Brain is currently unavailable. Priority decisions are paused until data feed recovers.'
-                      : brainContext.allClear
-                        ? 'Business Brain is live. No high-priority concerns are currently triggered.'
-                      : `Three decisions from BIQc Business Brain with ${connectedSources.join(', ')} evidence.`)
-                  : 'Business Brain is active. Connect integrations to unlock live concern ranking.'}
+                {!brainLive
+                  ? 'Business Brain is currently unavailable. Priority decisions are paused until data feed recovers.'
+                  : (brainContext.allClear
+                      ? 'Business Brain is live. No high-priority concerns are currently triggered.'
+                      : `Three decisions from BIQc Business Brain with ${connectedSources.join(', ')} evidence.`)}
               </p>
             </div>
 
