@@ -1,0 +1,53 @@
+{
+  "browser_setup": {
+    "success": true
+  },
+  "login": {
+    "success": true
+  },
+  "advisor_ui_forensics": {
+    "success": false,
+    "checks": {
+      "brain_feed_unavailable": {
+        "success": true,
+        "has_unavailable_state": true,
+        "shows_false_all_clear": false
+      },
+      "source_health_badge": {
+        "success": false,
+        "health_section_present": true,
+        "shows_live": true,
+        "shows_unavailable": false,
+        "shows_pending": true
+      },
+      "header_subtitle": {
+        "success": false,
+        "claims_brain_decisions": true,
+        "brain_api_success": false,
+        "header_text_preview": "good morning, andre. biqc priority snapshot \u00b7 full decision context executive snapshot (live integration truth) biqc business brain data is currently unavailable. "
+      },
+      "no_placeholder_text": {
+        "success": true,
+        "found_placeholders": []
+      }
+    }
+  },
+  "regression_checks": {
+    "success": true,
+    "checks": {
+      "no_crash": {
+        "success": true,
+        "has_substantial_content": true,
+        "content_length": 87138,
+        "contains_advisor": true
+      },
+      "refresh_intelligence": {
+        "success": true,
+        "button_found": true,
+        "page_stable_after_click": true,
+        "content_length_after": 2549
+      }
+    }
+  },
+  "overall_success": false
+}

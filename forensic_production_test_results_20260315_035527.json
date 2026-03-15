@@ -1,0 +1,124 @@
+{
+  "auth": {
+    "success": true,
+    "has_token": true,
+    "token_length": 1294,
+    "user_id": "52a60959-b8f7-4032-a744-e164d8749ce6",
+    "response_keys": [
+      "message",
+      "user",
+      "session"
+    ]
+  },
+  "brain_apis": {
+    "success": true,
+    "endpoints": {
+      "metrics": {
+        "success": true,
+        "status_code": 200,
+        "has_top100_coverage": true,
+        "has_counts": true,
+        "response_keys": [
+          "tenant_id",
+          "catalog_source",
+          "business_core_ready",
+          "total_metrics",
+          "computed_metrics",
+          "pending_source_metrics",
+          "pending_implementation_metrics",
+          "pending_schema_metrics",
+          "source_availability",
+          "message",
+          "metrics"
+        ],
+        "catalog_source": "biqc_top100_metrics_authoritative",
+        "total_metrics": 20,
+        "computed_metrics": 0
+      },
+      "concerns": {
+        "success": true,
+        "status_code": 200,
+        "has_concerns_list": true,
+        "response_keys": [
+          "business_core_ready",
+          "tier_mode",
+          "concerns"
+        ],
+        "concerns_count": 2
+      },
+      "priorities": {
+        "success": true,
+        "status_code": 200,
+        "returns_200": true,
+        "has_concern_outputs": true,
+        "controlled_unavailable": false,
+        "no_crash": true,
+        "response_keys": [
+          "tenant_id",
+          "business_core_ready",
+          "mode",
+          "tier_mode",
+          "all_clear",
+          "model_execution_id",
+          "source_event_ids",
+          "concerns",
+          "generated_at"
+        ]
+      }
+    }
+  },
+  "data_lineage": {
+    "success": true,
+    "endpoints": {
+      "accounting_summary": {
+        "success": true,
+        "status_code": 200,
+        "has_connected_status": true,
+        "has_overdue_metrics": true,
+        "response_keys": [
+          "connected",
+          "invoices",
+          "payments",
+          "metrics"
+        ],
+        "response_preview": "{'connected': True, 'invoices': [{'id': '823542e6-ce3a-48b4-8593-0da67332b8d9', 'remote_id': 'a6fbebcb-792d-45af-98b9-9f096b2fb55b', 'created_at': '2026-03-15T01:52:56.451321Z', 'modified_at': '2026-0"
+      },
+      "email_priority": {
+        "success": true,
+        "status_code": 200,
+        "has_priority_analysis": true,
+        "is_coherent": true,
+        "response_keys": [
+          "user_id",
+          "analysis",
+          "emails_analyzed",
+          "analyzed_at",
+          "created_at"
+        ],
+        "response_preview": "{'user_id': '52a60959-b8f7-4032-a744-e164d8749ce6', 'analysis': {'high_priority': [{'from': 'Margaret BAINBRIDGE', 'reason': 'Contains urgency, commercial risk, or deadline language.', 'snippet': '\\u2"
+      },
+      "outlook_status": {
+        "success": true,
+        "status_code": 200,
+        "has_status_info": true,
+        "response_keys": [
+          "connected",
+          "emails_synced",
+          "user_email",
+          "connected_email",
+          "connected_name",
+          "token_expired",
+          "token_needs_refresh",
+          "expires_at",
+          "source"
+        ],
+        "response_preview": "{'connected': True, 'emails_synced': 27, 'user_email': 'andre@thestrategysquad.com.au', 'connected_email': 'andre@thestrategysquad.com.au', 'connected_name': None, 'token_expired': False, 'token_needs"
+      }
+    },
+    "invoice_mixing_check": {
+      "success": true,
+      "note": "Requires manual inspection of accounting summary values"
+    }
+  },
+  "overall_success": true
+}
