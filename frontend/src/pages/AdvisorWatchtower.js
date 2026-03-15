@@ -1694,8 +1694,8 @@ export default function AdvisorWatchtower() {
                   </Link>
                 </div>
 
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px] 2xl:grid-cols-[minmax(0,1fr)_280px]" data-testid="advisor-priority-layout-grid">
-                  <aside className="order-2 grid gap-3 sm:grid-cols-2 xl:order-2 xl:grid-cols-1 self-start" data-testid="advisor-priority-left-rail">
+                <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_280px]" data-testid="advisor-priority-layout-grid">
+                  <aside className="order-2 grid gap-3 sm:grid-cols-2 2xl:order-2 2xl:grid-cols-1 self-start" data-testid="advisor-priority-left-rail">
                     <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-state-card">
                       <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
                       <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{executiveState}</p>
@@ -1875,7 +1875,11 @@ export default function AdvisorWatchtower() {
                         </Link>
                       </div>
                     ) : (
-                      <div className="grid gap-4 lg:grid-cols-3" data-testid="advisor-decision-grid">
+                      <div
+                        className="grid gap-4"
+                        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}
+                        data-testid="advisor-decision-grid"
+                      >
                         {decisions.map((decision, index) => {
                           const Icon = decision.icon;
                           const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;
@@ -1886,7 +1890,7 @@ export default function AdvisorWatchtower() {
                           return (
                             <article
                               key={decision.id}
-                              className="rounded-2xl border p-5"
+                              className="min-w-0 rounded-2xl border p-5"
                               style={{ borderColor: style.border, background: 'var(--biqc-bg-card)' }}
                               data-testid={`advisor-decision-card-${decision.id}`}
                             >
