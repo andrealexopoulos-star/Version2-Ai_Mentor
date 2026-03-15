@@ -193,43 +193,11 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
 
   const navSections = [
     { id: 'intelligence', label: 'Intelligence', items: [
-      {
-        icon: LayoutDashboard, label: 'BIQc Overview', path: '/advisor', showBadge: true,
-        children: [
-          { icon: MessageSquare, label: 'Boardroom', path: '/board-room' },
-          { icon: BookOpen, label: 'Intel Centre', path: '/intel-centre' },
-          { icon: Zap, label: 'Soundboard', path: '/soundboard' },
-          { icon: Target, label: 'War Room', path: '/war-room' },
-        ],
-      },
-      {
-        icon: Radar, label: 'Market & Positioning', path: '/market',
-        children: [
-          { icon: Workflow, label: 'Automations', path: '/automations' },
-          { icon: Target, label: 'Competitive Benchmark', path: '/competitive-benchmark' },
-          { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
-          { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
-          { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
-        ],
-      },
-      { icon: Settings, label: 'Operations', path: '/operations',
-        children: [
-          { icon: Activity, label: 'Ops Advisory', path: '/ops-advisory' },
-          { icon: FileText, label: 'SOP Generator', path: '/sop-generator' },
-        ],
-      },
+      { icon: LayoutDashboard, label: 'BIQc Overview', path: '/advisor', showBadge: true },
+      { icon: Radar, label: 'Market & Positioning', path: '/market' },
+      { icon: Settings, label: 'Operations', path: '/operations' },
       { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
-      {
-        icon: AlertTriangle, label: 'Risk', path: '/risk',
-        children: [
-          { icon: BarChart3, label: 'Analysis', path: '/analysis' },
-          { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
-          { icon: Shield, label: 'Compliance', path: '/compliance' },
-          { icon: Target, label: 'Decisions', path: '/decisions' },
-          { icon: Eye, label: 'Diagnosis', path: '/diagnosis' },
-          { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
-        ],
-      },
+      { icon: AlertTriangle, label: 'Risk', path: '/risk' },
     ]},
     { id: 'execution', label: 'Execution', items: [
       { icon: Zap, label: 'Actions', path: '/actions' },

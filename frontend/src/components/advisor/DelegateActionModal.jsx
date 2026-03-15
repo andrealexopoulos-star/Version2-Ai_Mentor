@@ -19,6 +19,7 @@ export const DelegateActionModal = ({
   providerOptions,
   optionsLoading,
   submitting,
+  defaultCreateCalendarEvent = false,
   onClose,
   onProviderChange,
   onSubmit,
@@ -35,8 +36,9 @@ export const DelegateActionModal = ({
     setForm({
       ...DEFAULT_FORM,
       providerPreference: safeProvider,
+      createCalendarEvent: defaultCreateCalendarEvent,
     });
-  }, [open, decision, providerOptions?.recommendedProvider, providers]);
+  }, [open, decision, providerOptions?.recommendedProvider, providers, defaultCreateCalendarEvent]);
 
   const assigneeOptions = useMemo(() => providerOptions?.assignees || [], [providerOptions]);
   const collectionOptions = useMemo(() => providerOptions?.collections || [], [providerOptions]);

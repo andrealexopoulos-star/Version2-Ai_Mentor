@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowRight,
+  CalendarPlus,
   CheckCircle2,
   Clock3,
   Download,
+  Info,
   Radar,
   RefreshCw,
   Search,
@@ -25,6 +27,22 @@ import { SourceProvenanceBadge } from '../components/advisor/SourceProvenanceBad
 import { DelegateActionModal } from '../components/advisor/DelegateActionModal';
 import { EvidenceDrawer } from '../components/advisor/EvidenceDrawer';
 import { fontFamily } from '../design-system/tokens';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
 
 const SEVERITY_RANK = { critical: 0, high: 1, medium: 2, moderate: 2, low: 3, info: 4 };
 const SEVERITY_STYLE = {
@@ -36,7 +54,7 @@ const SEVERITY_STYLE = {
 };
 
 const DECISION_ACTIONS = {
-  resolve: { label: 'Mark resolved', icon: CheckCircle2, endpoint: 'complete', style: { bg: '#10B98115', border: '#10B98140', text: '#6EE7B7' } },
+  resolve: { label: 'Mark as actioned', icon: CheckCircle2, endpoint: 'complete', style: { bg: '#10B98115', border: '#10B98140', text: '#6EE7B7' } },
   delegate: { label: 'Assign owner + due date', icon: UserRoundPlus, endpoint: 'hand-off', style: { bg: '#3B82F615', border: '#3B82F640', text: '#93C5FD' } },
   ignore: { label: 'Ignore this signal', icon: XCircle, endpoint: 'ignore', style: { bg: '#64748B15', border: '#64748B40', text: '#CBD5E1' } },
 };
@@ -75,6 +93,16 @@ const formatTime = (value) => {
 };
 
 const prettySignal = (value = '') => value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+
+const InlineInfo = ({ description, testId }) => (
+  <span
+    className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#334155] text-[#94A3B8]"
+    title={description}
+    data-testid={testId}
+  >
+    <Info className="h-3 w-3" />
+  </span>
+);
 
 const isPlaceholderText = (value = '') => {
   const normalized = String(value || '').trim().toLowerCase();
@@ -141,7 +169,7 @@ const toSignal = (item = {}, fallbackSource = 'snapshot') => {
     severity: normalizeSeverity(item.severity || item.priority),
     source,
     createdAt: item.created_at || item.observed_at || item.timestamp || null,
-    occurrences: 1,
+    occurrences: Number(item.repeat_count || 1),
     actionIds: [actionId],
     dedupeKey: `${signalType}|${domain}|${source}`,
     evidenceRefs: item.evidence_refs || item.evidence || [],
@@ -617,6 +645,7 @@ const getExecutiveStateLabel = ({ executiveSnapshot, decisions, fallbackState })
 
 export default function AdvisorWatchtower() {
   const { user, authState } = useSupabaseAuth();
+  const navigate = useNavigate();
   const {
     cognitive,
     owner,
@@ -691,6 +720,7 @@ export default function AdvisorWatchtower() {
   });
   const [delegateOptionsLoading, setDelegateOptionsLoading] = useState(false);
   const [evidenceDrawerDecision, setEvidenceDrawerDecision] = useState(null);
+  const [pendingMenuAction, setPendingMenuAction] = useState(null);
   const [auditActionFilter, setAuditActionFilter] = useState('all');
   const [auditSearch, setAuditSearch] = useState('');
   const [showAdvancedSections, setShowAdvancedSections] = useState(false);
@@ -1319,6 +1349,49 @@ export default function AdvisorWatchtower() {
     }
   }, [delegateModalDecision, handleDecisionAction]);
 
+  const handleCardMenuAction = useCallback((decision, actionType) => {
+    if (!decision?.signal) return;
+
+    if (actionType === 'assign-owner') {
+      navigate('/actions', {
+        state: {
+          advisorAssignment: {
+            title: decision.signal.issueBrief || decision.signal.title,
+            summary: decision.signal.actionBrief || decision.signal.action,
+            whyNow: decision.signal.whyNowBrief || decision.whyNow,
+            ifIgnored: decision.signal.ifIgnored,
+            domain: decision.signal.domain,
+            severity: decision.signal.severity,
+            alertId: (decision.signal.actionIds && decision.signal.actionIds[0]) || decision.signal.id,
+            createCalendarEvent: true,
+          },
+        },
+      });
+      return;
+    }
+
+    if (actionType === 'add-to-calendar') {
+      navigate('/calendar', {
+        state: {
+          advisorFollowUp: {
+            title: decision.signal.issueBrief || decision.signal.title,
+            summary: decision.signal.actionBrief || decision.signal.action,
+            dueHint: 'Review today',
+          },
+        },
+      });
+      return;
+    }
+
+    setPendingMenuAction({ decision, actionType });
+  }, [navigate]);
+
+  const confirmPendingMenuAction = useCallback(async () => {
+    if (!pendingMenuAction) return;
+    await handleDecisionAction(pendingMenuAction.decision, pendingMenuAction.actionType);
+    setPendingMenuAction(null);
+  }, [pendingMenuAction, handleDecisionAction]);
+
   const handlePageFeedback = useCallback(async (helpful) => {
     const value = helpful ? 'helpful' : 'not-helpful';
     setPageFeedback(value);
@@ -1725,7 +1798,7 @@ export default function AdvisorWatchtower() {
                           const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;
                           const signal = decision.signal;
                           const actionRecord = signal ? actionState.byKey?.[signal.dedupeKey] : null;
-                          const projections = signal ? buildProjections(signal) : null;
+                          const projections = signal ? (signal.outlook || buildProjections(signal)) : null;
 
                           return (
                             <article
@@ -1756,11 +1829,11 @@ export default function AdvisorWatchtower() {
                                 <p className="mb-1 text-sm" style={{ color: style.text }} data-testid={`advisor-decision-headline-${decision.id}`}>{decision.headline}</p>
                                 {signal && (
                                   <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
-                                    Confidence interval: {decision.confidenceInterval}
+                                    {signal.confidenceNote || `Confidence interval: ${decision.confidenceInterval}`}
                                   </p>
                                 )}
                                 <h3 className="mb-3 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>
-                                  {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}
+                                  {signal ? (signal.issueBrief || signal.title) : `No verified ${decision.title.toLowerCase()} signal`}
                                 </h3>
 
                                 {signal ? (
@@ -1771,79 +1844,110 @@ export default function AdvisorWatchtower() {
                                   </p>
                                 )}
 
+                                <button
+                                  onClick={() => signal ? setEvidenceDrawerDecision(decision) : null}
+                                  className="mt-4 inline-flex min-h-[36px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                                  style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                                  data-testid={`advisor-decision-evidence-toggle-${decision.id}`}
+                                  disabled={!signal}
+                                >
+                                  {signal ? 'View full context' : 'No context yet'}
+                                </button>
+
+                                {signal?.sourceSummary || signal?.factPoints?.length ? (
+                                  <div className="mt-4 rounded-xl border p-3 text-sm" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-signal-block-${decision.id}`}>
+                                    <div className="mb-2 flex items-center gap-2">
+                                      <strong style={{ color: 'var(--biqc-text)' }}>Signal</strong>
+                                      <InlineInfo description="What BIQc directly observed in connected systems or supporting evidence." testId={`advisor-decision-signal-info-${decision.id}`} />
+                                    </div>
+                                    {signal.sourceSummary ? <p className="text-sm">{signal.sourceSummary}</p> : null}
+                                    {signal.factPoints?.length ? (
+                                      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-[#CBD5E1]" data-testid={`advisor-decision-fact-points-${decision.id}`}>
+                                        {signal.factPoints.map((point, pointIndex) => (
+                                          <li key={`${decision.id}-fact-${pointIndex}`}>{point}</li>
+                                        ))}
+                                      </ul>
+                                    ) : null}
+                                  </div>
+                                ) : null}
+
                                 <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
                                   <p data-testid={`advisor-decision-why-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Why now:</strong> {decision.whyNow}</p>
-                                  <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal ? signal.ifIgnored : 'No immediate execution risk detected in this bucket.'}</p>
-                                  <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal ? signal.action : 'Trigger sync or wait for next watchtower signal.'}</p>
+                                  <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal ? (signal.actionBrief || signal.action) : 'Trigger sync or wait for next watchtower signal.'}</p>
                                 </div>
 
-                                <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-loop-${decision.id}`}>
-                                  <p data-testid={`advisor-decision-loop-signal-${decision.id}`}><strong>Signal:</strong> {signal ? signal.detail : 'No signal above threshold.'}</p>
-                                  <p data-testid={`advisor-decision-loop-decision-${decision.id}`}><strong>Decision:</strong> {decision.headline}</p>
-                                  <p data-testid={`advisor-decision-loop-action-${decision.id}`}><strong>Action:</strong> {signal ? signal.action : 'No action required.'}</p>
+                                <div className="mt-4 flex flex-wrap gap-2" data-testid={`advisor-decision-primary-controls-${decision.id}`}>
+                                  <Link
+                                    to={soundboardDiscussHref(signal ? `${signal.issueBrief || signal.title}. ${signal.whyNowBrief || signal.detail}. Recommended action: ${signal.actionBrief || signal.action}` : `No verified signal in ${decision.title}`)}
+                                    className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                                    style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                                    data-testid={`advisor-decision-open-soundboard-${decision.id}`}
+                                  >
+                                    SoundBoard chat <ArrowRight className="h-3.5 w-3.5" />
+                                  </Link>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button
+                                        className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                                        data-testid={`advisor-decision-more-actions-${decision.id}`}
+                                        disabled={!signal}
+                                      >
+                                        More actions <ArrowRight className="h-3.5 w-3.5" />
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-56" data-testid={`advisor-decision-more-actions-menu-${decision.id}`}>
+                                      <DropdownMenuItem onClick={() => handleCardMenuAction(decision, 'add-to-calendar')} data-testid={`advisor-decision-add-calendar-${decision.id}`}>
+                                        <CalendarPlus className="h-4 w-4" /> Add to calendar
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleCardMenuAction(decision, 'assign-owner')} data-testid={`advisor-decision-assign-owner-${decision.id}`}>
+                                        <UserRoundPlus className="h-4 w-4" /> Assign owner
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleCardMenuAction(decision, 'resolve')} data-testid={`advisor-decision-mark-actioned-${decision.id}`}>
+                                        <CheckCircle2 className="h-4 w-4" /> Mark as actioned
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </div>
 
                                 {signal && projections && (
                                   <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-projection-${decision.id}`}>
-                                    <p data-testid={`advisor-decision-projection-title-${decision.id}`}><strong>30/60/90 outlook</strong></p>
+                                    <div className="mb-2 flex items-center gap-2">
+                                      <strong data-testid={`advisor-decision-projection-title-${decision.id}`}>30/60/90 outlook</strong>
+                                      <InlineInfo description={projections.meaning || 'Projected risk over 30, 60, and 90 days if this is ignored versus actioned now.'} testId={`advisor-decision-projection-info-${decision.id}`} />
+                                    </div>
                                     <p data-testid={`advisor-decision-projection-ignored-${decision.id}`}>If ignored → risk {projections.ignored[0]}% / {projections.ignored[1]}% / {projections.ignored[2]}%</p>
                                     <p data-testid={`advisor-decision-projection-actioned-${decision.id}`}>If actioned → risk {projections.actioned[0]}% / {projections.actioned[1]}% / {projections.actioned[2]}%</p>
                                   </div>
                                 )}
-                              </div>
 
-                              <div className="mt-4 flex flex-wrap gap-2" data-testid={`advisor-decision-actions-${decision.id}`}>
-                                {Object.entries(DECISION_ACTIONS).map(([actionType, config]) => {
-                                  const ActionIcon = config.icon;
-                                  const loadingThisAction = actionLoadingKey === `${decision.id}-${actionType}`;
+                                <div className="mt-3 rounded-xl border p-3 text-sm" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-decision-block-${decision.id}`}>
+                                  <div className="mb-2 flex items-center gap-2">
+                                    <strong style={{ color: 'var(--biqc-text)' }}>Decision</strong>
+                                    <InlineInfo description="What BIQc believes the owner should conclude from the current signal pattern." testId={`advisor-decision-decision-info-${decision.id}`} />
+                                  </div>
+                                  <p data-testid={`advisor-decision-loop-decision-${decision.id}`}>{decision.headline}</p>
+                                </div>
 
-                                  return (
-                                    <button
-                                      key={actionType}
-                                      onClick={() => {
-                                        if (!signal) return;
-                                        if (actionType === 'delegate') {
-                                          handleOpenDelegateModal(decision);
-                                          return;
-                                        }
-                                        handleDecisionAction(decision, actionType);
-                                      }}
-                                      disabled={!signal || loadingThisAction || Boolean(actionRecord)}
-                                      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-60"
-                                      style={{ background: config.style.bg, borderColor: config.style.border, color: config.style.text, fontFamily: fontFamily.mono }}
-                                      data-testid={`advisor-decision-${actionType}-${decision.id}`}
-                                    >
-                                      <ActionIcon className="h-3.5 w-3.5" />
-                                      {loadingThisAction ? 'Saving...' : config.label}
-                                    </button>
-                                  );
-                                })}
+                                <div className="mt-4 space-y-2 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
+                                  <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal ? signal.ifIgnored : 'No immediate execution risk detected in this bucket.'}</p>
+                                  <button
+                                    onClick={() => handleCardMenuAction(decision, 'ignore')}
+                                    className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border px-2.5 py-1 text-xs hover:bg-white/5"
+                                    style={{ borderColor: '#64748B40', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                                    data-testid={`advisor-decision-ignore-inline-${decision.id}`}
+                                    disabled={!signal || Boolean(actionRecord)}
+                                  >
+                                    <XCircle className="h-3.5 w-3.5" /> Ignore for now
+                                  </button>
+                                </div>
                               </div>
 
                               {signal && actionRecord && (
                                 <div className="mt-3 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-action-record-${decision.id}`}>
-                                  Last action: {actionRecord.action} · {formatTime(actionRecord.at)}
+                                  Action recorded: {actionRecord.action} · {formatTime(actionRecord.at)}
                                 </div>
                               )}
-
-                              <button
-                                onClick={() => signal ? setEvidenceDrawerDecision(decision) : null}
-                                className="mt-3 inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                                style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                                data-testid={`advisor-decision-evidence-toggle-${decision.id}`}
-                                disabled={!signal}
-                              >
-                                {signal ? 'View full context' : 'No context yet'}
-                              </button>
-
-                              <Link
-                                to={soundboardDiscussHref(signal ? `${signal.title}. ${signal.detail}. Recommended action: ${signal.action}` : `No verified signal in ${decision.title}`)}
-                                className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                                style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                                data-testid={`advisor-decision-open-soundboard-${decision.id}`}
-                              >
-                                Open in SoundBoard <ArrowRight className="h-3.5 w-3.5" />
-                              </Link>
 
                               {signal && signal.occurrences > 1 && (
                                 <p className="mt-3 text-xs" style={{ color: '#FCD34D', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-dedupe-note-${decision.id}`}>
@@ -2120,6 +2224,27 @@ export default function AdvisorWatchtower() {
                 onProviderChange={fetchDelegateOptions}
                 onSubmit={handleDelegateSubmit}
               />
+
+              <AlertDialog open={Boolean(pendingMenuAction)} onOpenChange={(open) => { if (!open) setPendingMenuAction(null); }}>
+                <AlertDialogContent data-testid="advisor-card-action-confirm-dialog">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle data-testid="advisor-card-action-confirm-title">
+                      {pendingMenuAction?.actionType === 'resolve' ? 'Mark this priority as actioned?' : 'Ignore this priority for now?'}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription data-testid="advisor-card-action-confirm-description">
+                      {pendingMenuAction?.actionType === 'resolve'
+                        ? 'BIQc will record the action and surface the next queued priority card.'
+                        : 'BIQc will remove this priority from the active queue and keep an audit trail of the ignore action.'}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="advisor-card-action-confirm-cancel">Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmPendingMenuAction} data-testid="advisor-card-action-confirm-submit">
+                      Confirm
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
               <EvidenceDrawer
                 open={Boolean(evidenceDrawerDecision)}
