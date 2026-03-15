@@ -90,6 +90,9 @@ API_ACCESS = {
     '/ingestion': 'free',           # Gated by counter, not tier
     '/forensic': 'free',            # Gated by counter
     '/market-intelligence': 'free',
+    '/brain/priorities': 'free',
+    '/brain/metrics': 'free',
+    '/brain/concerns': 'starter',
 
     # PAID
     '/revenue': 'starter',
