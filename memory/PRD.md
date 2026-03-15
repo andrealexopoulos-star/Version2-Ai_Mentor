@@ -1,4 +1,13 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 14 — Tier-Aware KPI Access + Business DNA KPI Policy Tab (Complete — Mar 2026)
+- **Tier-aware Brain KPI policy implemented** — Existing plans now map to KPI visibility limits: Free 10, Foundation 25, Performance 50, Growth 75, Custom/Super Admin 100
+- **Brain API policy layer added** — `backend/business_brain_engine.py` and `backend/routes/business_brain.py` now expose `brain_policy` metadata, enforce visible KPI limits in `/api/brain/metrics`, and provide new `GET/PUT /api/brain/kpis` endpoints for per-user KPI threshold configuration
+- **Threshold persistence without schema migration** — KPI threshold settings are stored in `business_profiles.intelligence_configuration.brain_kpis`, allowing live Brain policy updates on refresh without adding a new table
+- **Business DNA KPI tab shipped** — `frontend/src/components/business-dna/KpiThresholdTab.js` added under `frontend/src/pages/BusinessProfile.js`, with plan summary, KPI search, threshold controls, and save flow
+- **Business DNA UX hardening** — Removed the auto tutorial overlay for `/business-profile` and changed profile enrichment / score loading to be non-blocking so the KPI tab is reachable faster
+- **Pricing copy aligned** — `frontend/src/config/pricingTiers.js` now reflects the KPI counts per existing plan
+- **Verification completed** — Backend testing agent iteration_140 passed 13/13 backend tests; frontend specialist verified KPI tab load, 100 KPI rows for custom/super admin, and successful save flow via `/api/brain/kpis`
+
 ### Sprint 13 — Business Brain 100-Metric Recovery + Advisor Pending-State Guard (Complete — Mar 2026)
 - **Root cause confirmed** — Production Brain metric count was collapsing to 20 because Azure’s backend image copies `backend/` contents into `/app`, while the catalog loader was hardcoded to `/app/backend/business_brain_top100_catalog.json`
 - **Portable catalog lookup fix** — `backend/business_brain_engine.py` now resolves `business_brain_top100_catalog.json` relative to `Path(__file__).resolve().parent`, plus `/app/business_brain_top100_catalog.json` and existing fallback candidates, so both preview and Azure container layouts can find the authoritative 100-KPI catalog
