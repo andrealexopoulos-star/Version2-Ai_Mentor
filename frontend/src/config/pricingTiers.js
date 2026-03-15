@@ -13,6 +13,7 @@ export const PRICING_TIERS = [
     period: '/month',
     color: '#64748B',
     features: [
+      '10 KPI monitors with custom thresholds',
       'Market Intelligence (basic)',
       'Business DNA',
       '1 Forensic Audit/month',
@@ -29,6 +30,7 @@ export const PRICING_TIERS = [
     period: '/month',
     color: '#10B981',
     features: [
+      '25 KPI monitors with custom thresholds',
       'Live market metrics (with integrations)',
       'Revenue intelligence',
       'Workforce baseline monitoring',
@@ -46,6 +48,7 @@ export const PRICING_TIERS = [
     color: '#3B82F6',
     popular: true,
     features: [
+      '50 KPI monitors with custom thresholds',
       'Everything in Foundation',
       'Service-line profitability insight',
       'Hiring trigger detection',
@@ -64,6 +67,7 @@ export const PRICING_TIERS = [
     period: '/month',
     color: '#7C3AED',
     features: [
+      '75 KPI monitors with custom thresholds',
       'Everything in Performance',
       'Hiring vs outsource modelling',
       'Revenue expansion simulation',
@@ -82,6 +86,7 @@ export const PRICING_TIERS = [
     color: '#EF4444',
     cta: 'Speak to Sales',
     features: [
+      '100 KPI monitors with custom thresholds',
       'Everything in Growth',
       'Multi-division reporting',
       'Custom KPI frameworks',

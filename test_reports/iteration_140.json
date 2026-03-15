@@ -1,0 +1,106 @@
+{
+  "summary": "Iteration 140 - KPI Threshold Configuration Testing. Backend tests: 13/13 PASSED. Frontend: Business DNA page shows skeleton loaders and tutorial overlay blocking interaction on preview environment.",
+  "test_date": "2026-03-15",
+  "features_tested": {
+    "backend_tier_policy_mapping": {
+      "status": "PASS",
+      "findings": "tier_resolver.py correctly defines BRAIN_METRIC_LIMITS: free=10, starter=25, professional=50, enterprise=75, super_admin=100. BRAIN_PLAN_LABELS: Free, Foundation, Performance, Growth, Custom."
+    },
+    "backend_get_brain_kpis": {
+      "status": "PASS",
+      "findings": "GET /api/brain/kpis returns 200 OK with plan_tier, plan_label, visible_metric_limit, metrics array with threshold_config. For super_admin account, returns visible_metric_limit=100."
+    },
+    "backend_put_brain_kpis": {
+      "status": "PASS",
+      "findings": "PUT /api/brain/kpis successfully saves threshold configs. Save/restore roundtrip verified - threshold values persist correctly."
+    },
+    "backend_brain_metrics_with_coverage": {
+      "status": "PASS",
+      "findings": "GET /api/brain/metrics?include_coverage=true returns metrics with threshold_config and threshold_state for each metric. Respects visible_metric_limit."
+    },
+    "backend_brain_priorities_brain_policy": {
+      "status": "PASS",
+      "findings": "GET /api/brain/priorities includes brain_policy metadata with plan_tier, plan_label, visible_metric_limit."
+    },
+    "frontend_kpi_tab_component": {
+      "status": "CODE_VERIFIED",
+      "findings": "KpiThresholdTab.js component exists with correct structure: data-testid attributes for tab, title, plan cards, save button, search, metric list. Component imports and exports are correct."
+    },
+    "frontend_business_dna_kpi_tab": {
+      "status": "BLOCKED",
+      "findings": "Business DNA page on preview environment shows persistent skeleton loaders. Tutorial overlay (data-testid=tutorial-overlay) blocks tab clicks. Page takes >30s to load content. API calls return 200 OK but frontend state doesn't update."
+    }
+  },
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "BusinessProfile/TutorialOverlay",
+        "issue": "Tutorial overlay blocks tab interaction on Business DNA page. Clicking 'Learn later' or X button did not consistently dismiss it.",
+        "selector": "[data-testid='tutorial-overlay']",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "BusinessProfile",
+        "issue": "Page shows skeleton loaders for extended time (>30 seconds) before content loads. May be related to multiple API calls and state management.",
+        "selector": "Business DNA page skeleton loaders",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Business DNA page load",
+        "issue": "Console error 'Failed to fetch scores: AxiosError' during page load. This may contribute to delayed content rendering.",
+        "affected_selectors": ["[role='tab']", "Business DNA content area"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration140_kpi_thresholds.py",
+    "/app/test_reports/pytest/pytest_results_iteration140.xml"
+  ],
+  "action_items": [
+    "Tutorial overlay on Business DNA page may block first-time users from navigating to KPIs tab - verify 'Learn later' button dismisses modal",
+    "Investigate 'Failed to fetch scores' error on Business DNA page load"
+  ],
+  "critical_code_review_comments": [
+    "tier_resolver.py: BRAIN_METRIC_LIMITS correctly maps tiers to KPI counts (10/25/50/75/100)",
+    "business_brain_engine.py: get_kpi_configuration() and save_kpi_thresholds() properly implemented with tier-aware visible_catalog",
+    "routes/business_brain.py: GET/PUT /brain/kpis endpoints correctly integrated",
+    "KpiThresholdTab.js: All data-testid attributes present for testing",
+    "BusinessProfile.js: KPIs tab trigger correctly wired to KpiThresholdTab component",
+    "pricingTiers.js: Plan features updated with KPI counts per tier"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration140_kpi_thresholds.py"
+  ],
+  "success_rate": {
+    "backend": "100% (13/13 tests passed)",
+    "frontend": "Partially verified - code inspection passed, UI testing blocked by overlay"
+  },
+  "test_credentials": {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "MasterMind2025*"
+  },
+  "seed_data_creation": "None required",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend KPI threshold APIs all working. Frontend KPI tab component exists and is correct. Business DNA page on preview has tutorial overlay blocking interaction and extended skeleton loading. Main agent confirmed manual verification of /api/brain/kpis roundtrip worked. For next testing: dismiss tutorial overlay first before testing KPI tab.",
+  "rca_of_the_issue": {
+    "backend": "No issues - all endpoints working correctly",
+    "frontend_ui_blocking": {
+      "root_cause": "Tutorial overlay component with z-index 9999 intercepts all clicks on Business DNA page",
+      "component": "TutorialOverlay.js",
+      "mitigation": "Dismiss tutorial via 'Learn later' button or complete tutorial steps before testing KPIs tab"
+    },
+    "frontend_loading": {
+      "root_cause": "Business DNA page makes multiple API calls (business-profile/context, integrations/merge/connected, business-profile/scores) which may cause extended loading on slow connections or when some calls fail",
+      "observed_error": "Failed to fetch scores: AxiosError",
+      "mitigation": "Page eventually loads after ~30 seconds if user waits"
+    }
+  }
+}

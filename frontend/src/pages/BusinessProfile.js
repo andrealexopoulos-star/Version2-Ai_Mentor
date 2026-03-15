@@ -16,6 +16,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
+import { KpiThresholdTab } from '../components/business-dna/KpiThresholdTab';
 
 const businessTypes = [
   'Sole Trader', 'Partnership', 'Company (Pty Ltd)', 'Company (Ltd)',
@@ -190,7 +191,7 @@ const BusinessProfile = () => {
 
           {/* Tabs — Live Baselines only (admin fields moved to Settings) */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full mb-8">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full mb-8">
               <TabsTrigger value="market" className="flex items-center gap-2">
                 <Target className="w-4 h-4" />
                 <span className="hidden sm:inline">Market</span>
@@ -206,6 +207,10 @@ const BusinessProfile = () => {
               <TabsTrigger value="strategy" className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4" />
                 <span className="hidden sm:inline">Strategy</span>
+              </TabsTrigger>
+              <TabsTrigger value="kpis" className="flex items-center gap-2" data-testid="business-dna-kpi-tab-trigger">
+                <TrendingUp className="w-4 h-4" />
+                <span className="hidden sm:inline">KPIs</span>
               </TabsTrigger>
             </TabsList>
 
@@ -556,15 +561,21 @@ const BusinessProfile = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            <TabsContent value="kpis">
+              <KpiThresholdTab />
+            </TabsContent>
           </Tabs>
 
           {/* Save Button at Bottom */}
-          <div className="mt-8 flex justify-end">
-            <Button onClick={handleSave} className="btn-primary" disabled={saving}>
-              {saving ? null : <Save className="w-4 h-4 mr-2" />}
-              Save Profile
-            </Button>
-          </div>
+          {activeTab !== 'kpis' && (
+            <div className="mt-8 flex justify-end" data-testid="business-dna-save-profile-wrapper">
+              <Button onClick={handleSave} className="btn-primary" disabled={saving} data-testid="business-dna-save-profile-button">
+                {saving ? null : <Save className="w-4 h-4 mr-2" />}
+                Save Profile
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

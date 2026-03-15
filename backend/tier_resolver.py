@@ -22,6 +22,22 @@ SUPER_ADMIN_EMAIL = "andre@thestrategysquad.com.au"
 # ═══ TIER DEFINITIONS ═══
 TIERS = ['free', 'starter', 'professional', 'enterprise', 'super_admin']
 
+BRAIN_METRIC_LIMITS = {
+    'free': 10,
+    'starter': 25,
+    'professional': 50,
+    'enterprise': 75,
+    'super_admin': 100,
+}
+
+BRAIN_PLAN_LABELS = {
+    'free': 'Free',
+    'starter': 'Foundation',
+    'professional': 'Performance',
+    'enterprise': 'Growth',
+    'super_admin': 'Custom',
+}
+
 # ═══ ROUTE ACCESS MAP ═══
 # Route pattern → minimum tier required
 # 'free' = available to all, 'starter' = paid, 'super_admin' = admin only
@@ -254,3 +270,21 @@ def get_usage_limits(tier: str) -> dict:
     if tier == 'starter':
         return {'snapshots': 20, 'audits': 10}
     return {'snapshots': 999, 'audits': 999}
+
+
+def get_brain_metric_limit(user_or_tier) -> int:
+    """Return the maximum visible KPI count for Brain surfaces."""
+    if isinstance(user_or_tier, dict):
+        tier = resolve_tier(user_or_tier)
+    else:
+        tier = str(user_or_tier or 'free').lower().strip()
+    return BRAIN_METRIC_LIMITS.get(tier, BRAIN_METRIC_LIMITS['free'])
+
+
+def get_brain_plan_label(user_or_tier) -> str:
+    """Human-readable plan label for Brain surfaces."""
+    if isinstance(user_or_tier, dict):
+        tier = resolve_tier(user_or_tier)
+    else:
+        tier = str(user_or_tier or 'free').lower().strip()
+    return BRAIN_PLAN_LABELS.get(tier, 'Free')
