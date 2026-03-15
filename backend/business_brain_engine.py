@@ -117,6 +117,10 @@ def _threshold_state(value: Any, config: Dict[str, Any]) -> str:
     return "normal"
 
 
+def _format_aud(value: float) -> str:
+    return f"${value:,.0f}"
+
+
 def _brain_plan_tier(user: Dict[str, Any]) -> str:
     raw_tier = str(user.get("subscription_tier") or "").lower().strip()
     if raw_tier == "custom":
@@ -374,6 +378,197 @@ class BusinessBrainEngine:
                 "threshold_config": threshold_config,
             })
         return hits
+
+    def _format_metric_value(self, metric_key: str, value: Any) -> str:
+        numeric = _safe_float(value, 0.0)
+        key = str(metric_key or "").lower()
+        if any(token in key for token in ["revenue", "amount", "pipeline", "burn", "cash", "mrr", "arr"]):
+            return _format_aud(numeric)
+        if "runway" in key:
+            return f"{numeric:.1f} months"
+        if any(token in key for token in ["rate", "ratio", "margin", "retention", "churn", "win_"]):
+            pct = numeric * 100 if numeric <= 1.0 else numeric
+            return f"{pct:.0f}%"
+        if any(token in key for token in ["cycle", "aging"]):
+            return f"{numeric:.0f} days"
+        if "response_time" in key:
+            return f"{numeric:.1f} hours"
+        return f"{numeric:,.0f}"
+
+    def _latest_seen_timestamp(self, metrics: Dict[str, Dict[str, Any]], signal_names: List[str]) -> Optional[str]:
+        latest_ts: Optional[datetime] = None
+        latest_raw: Optional[str] = None
+        for signal_name in signal_names:
+            row = metrics.get(signal_name) or {}
+            raw = row.get("calculated_at")
+            parsed = _parse_dt(raw)
+            if parsed and (latest_ts is None or parsed > latest_ts):
+                latest_ts = parsed
+                latest_raw = raw
+        return latest_raw
+
+    def _source_summary(self, signal_names: List[str]) -> str:
+        catalog_by_key = {metric.name: metric for metric in self.catalog}
+        sources: List[str] = []
+        for signal_name in signal_names:
+            metric_def = catalog_by_key.get(signal_name)
+            source = str(metric_def.source or "") if metric_def else ""
+            if source and source not in sources:
+                sources.append(source)
+        if not sources:
+            return "BIQc synthesized evidence from the current intelligence layer."
+        if len(sources) == 1:
+            return f"Source signals came from {sources[0]}."
+        return f"Source signals came from {', '.join(sources[:2])}."
+
+    def _fact_points(self, concern_id: str, metrics: Dict[str, Dict[str, Any]], threshold_hits: List[Dict[str, Any]]) -> List[str]:
+        points: List[str] = []
+
+        def mv(key: str) -> float:
+            return _safe_float((metrics.get(key) or {}).get("value"), 0.0)
+
+        if concern_id == "cashflow_risk":
+            overdue_count = mv("overdue_ar_count")
+            overdue_amount = mv("overdue_ar_amount")
+            runway = mv("cash_runway_months")
+            if overdue_count:
+                points.append(f"{int(round(overdue_count))} overdue client invoices")
+            if overdue_amount:
+                points.append(f"{_format_aud(overdue_amount)} overdue receivables")
+            if runway:
+                points.append(f"Runway {runway:.1f} months")
+        elif concern_id in {"pipeline_stagnation", "revenue_leakage"}:
+            opp = mv("number_of_opportunities")
+            pipeline = mv("pipeline_value")
+            cycle = mv("average_sales_cycle_length")
+            if opp:
+                points.append(f"{int(round(opp))} open opportunities")
+            if pipeline:
+                points.append(f"{_format_aud(pipeline)} pipeline value")
+            if cycle:
+                points.append(f"Average cycle {cycle:.0f} days")
+        elif concern_id == "client_response_risk":
+            resp = mv("lead_response_time")
+            churn = mv("churn_rate")
+            if resp:
+                points.append(f"Lead response time {resp:.1f}h")
+            if churn:
+                points.append(f"Churn {churn * 100:.0f}%")
+        elif concern_id == "concentration_risk":
+            arpc = mv("average_revenue_per_customer")
+            revenue = mv("total_revenue")
+            if arpc:
+                points.append(f"Average revenue per customer {_format_aud(arpc)}")
+            if revenue:
+                points.append(f"Total revenue {_format_aud(revenue)}")
+        elif concern_id == "margin_compression":
+            op_exp_ratio = mv("operating_expense_ratio")
+            growth = mv("revenue_growth_rate")
+            points.append(f"Operating expense ratio {self._format_metric_value('operating_expense_ratio', op_exp_ratio)}")
+            points.append(f"Revenue growth {self._format_metric_value('revenue_growth_rate', growth)}")
+        else:
+            overdue_tasks = mv("task_overdue_rate")
+            if overdue_tasks:
+                points.append(f"Task overdue rate {(overdue_tasks * 100):.0f}%")
+
+        for hit in threshold_hits[:2]:
+            points.append(f"Threshold hit: {hit['metric_label']} ({hit['threshold_state']})")
+        return points[:4]
+
+    def _structured_brief(
+        self,
+        concern_id: str,
+        metrics: Dict[str, Dict[str, Any]],
+        threshold_hits: List[Dict[str, Any]],
+        availability: float,
+        impact: float,
+        urgency: float,
+        confidence: float,
+        recommendation: str,
+        explanation: str,
+        evidence: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+
+        def mv(key: str, default: float = 0.0) -> float:
+            return _safe_float((metrics.get(key) or {}).get("value"), default)
+
+        fact_points = self._fact_points(concern_id, metrics, threshold_hits)
+        source_summary = self._source_summary([entry.get("metric_name") for entry in evidence])
+        repeat_count = max(1, len([entry for entry in evidence if entry.get("metric_value") not in (None, 0, 0.0)]) + len(threshold_hits))
+        last_seen = self._latest_seen_timestamp(metrics, [entry.get("metric_name") for entry in evidence])
+        escalation_state = "critical" if threshold_hits and any(hit["threshold_state"] == "critical" for hit in threshold_hits) else "elevated" if impact >= 8 or urgency >= 8 else "monitoring"
+
+        if concern_id == "cashflow_risk":
+            issue_brief = f"{int(round(mv('overdue_ar_count')))} client invoices totalling {self._format_metric_value('overdue_ar_amount', mv('overdue_ar_amount'))} are overdue, while cash runway is {mv('cash_runway_months', 999.0):.1f} months."
+            why_now_brief = "Receivables pressure is already constraining near-term cash timing and owner decision room."
+            action_brief = "Escalate overdue collections today and review the next 30-day cash plan with a named owner."
+            if_ignored_brief = "Cash pressure is likely to spill into payroll timing, supplier flexibility, and delayed growth decisions."
+            decision_label = "Cash timing needs owner action in the next 48 hours"
+        elif concern_id in {"pipeline_stagnation", "revenue_leakage"}:
+            issue_brief = f"{int(round(mv('number_of_opportunities')))} open opportunities worth {self._format_metric_value('pipeline_value', mv('pipeline_value'))} are moving slower than target, with an average cycle of {mv('average_sales_cycle_length'):.0f} days."
+            why_now_brief = "Pipeline velocity is below the level needed for a confident close this cycle."
+            action_brief = "Re-engage the highest-value stalled deals, reassign blocked owners, and tighten the follow-up cadence today."
+            if_ignored_brief = "Expected revenue timing is likely to slip into the next cycle and reduce forecast confidence."
+            decision_label = "Revenue conversion is drifting off target"
+        elif concern_id == "client_response_risk":
+            issue_brief = f"Lead response time has stretched to {self._format_metric_value('lead_response_time', mv('lead_response_time'))}, while churn signals are tracking at {self._format_metric_value('churn_rate', mv('churn_rate'))}."
+            why_now_brief = "Commercial responsiveness is weakening enough to affect retention and new conversion at the same time."
+            action_brief = "Triage priority conversations immediately and enforce a same-day first-response standard."
+            if_ignored_brief = "Customer confidence and renewal probability are likely to deteriorate further."
+            decision_label = "Customer response pressure needs triage this week"
+        elif concern_id == "concentration_risk":
+            issue_brief = f"Customer revenue concentration remains elevated relative to total revenue, with average customer value at {self._format_metric_value('average_revenue_per_customer', mv('average_revenue_per_customer'))}."
+            why_now_brief = "A single account shift could materially change the current revenue outlook."
+            action_brief = "Build fallback coverage in pipeline and reduce dependency on the highest-concentration account."
+            if_ignored_brief = "One delayed or lost account could create an outsized revenue shock."
+            decision_label = "Commercial concentration needs active hedging"
+        elif concern_id == "margin_compression":
+            issue_brief = f"Operating expense pressure is running at {self._format_metric_value('operating_expense_ratio', mv('operating_expense_ratio'))} while revenue growth is {self._format_metric_value('revenue_growth_rate', mv('revenue_growth_rate'))}."
+            why_now_brief = "Cost discipline and growth quality are moving out of balance."
+            action_brief = "Review cost drivers and protect margin on the next active revenue decisions."
+            if_ignored_brief = "Margin erosion will reduce flexibility across hiring, delivery, and cash decisions."
+            decision_label = "Margin discipline is slipping"
+        else:
+            issue_brief = f"Operational queue pressure is showing through a task overdue rate of {self._format_metric_value('task_overdue_rate', mv('task_overdue_rate'))}."
+            why_now_brief = "Execution delay is now repeating often enough to become a system issue, not a one-off miss."
+            action_brief = "Reset queue ownership, clear overdue work, and tighten the operating cadence this week."
+            if_ignored_brief = "Repeated delays are likely to spread into service quality, response times, and revenue timing."
+            decision_label = "Execution friction needs a system fix"
+
+        if threshold_hits:
+            threshold_summary = ", ".join(f"{hit['metric_label']} ({hit['threshold_state']})" for hit in threshold_hits[:2])
+            why_now_brief = f"{why_now_brief} Threshold policy is also triggered on {threshold_summary}."
+
+        if availability < 0.5:
+            why_now_brief = f"{why_now_brief} Some required signals are still inferred because only {availability * 100:.0f}% of the ideal evidence set is currently live."
+
+        confidence_note = f"Confidence {confidence * 100:.0f}% from {max(1, int(round(availability * 100)))}% signal availability and current evidence quality."
+
+        ignored_30 = min(99, max(18, int(round((impact * 4.2) + (urgency * 3.1) + (confidence * 10) + repeat_count))))
+        ignored_60 = min(99, ignored_30 + 11)
+        ignored_90 = min(99, ignored_60 + 9)
+        actioned_30 = max(6, ignored_30 - 14)
+        actioned_60 = max(8, ignored_60 - 18)
+        actioned_90 = max(10, ignored_90 - 22)
+
+        return {
+            "issue_brief": issue_brief,
+            "why_now_brief": why_now_brief,
+            "action_brief": action_brief,
+            "if_ignored_brief": if_ignored_brief,
+            "fact_points": fact_points,
+            "source_summary": source_summary,
+            "confidence_note": confidence_note,
+            "outlook_30_60_90": {
+                "ignored": [ignored_30, ignored_60, ignored_90],
+                "actioned": [actioned_30, actioned_60, actioned_90],
+                "meaning": "Projected risk path over 30, 60, and 90 days if ignored versus actioned now.",
+            },
+            "repeat_count": repeat_count,
+            "last_seen": last_seen,
+            "escalation_state": escalation_state,
+            "decision_label": decision_label,
+        }
 
     def brain_policy(self) -> Dict[str, Any]:
         return {
@@ -1135,6 +1330,19 @@ class BusinessBrainEngine:
                 recommendation = f"{recommendation} Threshold policy triggered on {threshold_summary}."
                 explanation = f"{explanation} Threshold policy triggered on {threshold_summary}."
 
+            structured_brief = self._structured_brief(
+                concern_id=concern_id,
+                metrics=metrics,
+                threshold_hits=threshold_hits,
+                availability=availability,
+                impact=impact,
+                urgency=urgency,
+                confidence=confidence,
+                recommendation=recommendation,
+                explanation=explanation,
+                evidence=evidence,
+            )
+
             row = {
                 "tenant_id": self.tenant_id,
                 "concern_id": concern_id,
@@ -1147,6 +1355,7 @@ class BusinessBrainEngine:
                 "explanation": explanation,
                 "evidence": evidence,
                 "threshold_hits": threshold_hits,
+                **structured_brief,
                 "evaluated_at": datetime.now(timezone.utc).isoformat(),
             }
             self._t("concern_evaluations").insert(row).execute()
@@ -1199,6 +1408,7 @@ class BusinessBrainEngine:
                 "evidence": evidence,
                 "threshold_hits": threshold_hits,
                 "explanation": explanation,
+                **structured_brief,
                 "source": {"event_id": event_id},
                 "time_window": {
                     "period": "rolling_30d",
@@ -1250,6 +1460,18 @@ class BusinessBrainEngine:
                     "effort": item["effort"],
                     "tier": "free",
                     "explanation": item["explanation"],
+                    "issue_brief": item.get("issue_brief"),
+                    "why_now_brief": item.get("why_now_brief"),
+                    "action_brief": item.get("action_brief"),
+                    "if_ignored_brief": item.get("if_ignored_brief"),
+                    "fact_points": item.get("fact_points") or [],
+                    "source_summary": item.get("source_summary"),
+                    "confidence_note": item.get("confidence_note"),
+                    "outlook_30_60_90": item.get("outlook_30_60_90") or {},
+                    "repeat_count": item.get("repeat_count", 1),
+                    "last_seen": item.get("last_seen"),
+                    "escalation_state": item.get("escalation_state"),
+                    "decision_label": item.get("decision_label"),
                     "source": item["source"],
                     "time_window": item["time_window"],
                 })

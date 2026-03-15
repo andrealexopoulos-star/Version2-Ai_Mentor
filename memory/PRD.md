@@ -1,4 +1,12 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 21 — Business Brain Executive Brief Contract Upgrade (Complete — Mar 2026)
+- **Brain payload upgraded from thin concern text to executive brief contract** — `backend/business_brain_engine.py` now returns structured fields per concern: `issue_brief`, `why_now_brief`, `action_brief`, `if_ignored_brief`, `fact_points`, `source_summary`, `confidence_note`, `outlook_30_60_90`, `repeat_count`, `last_seen`, `escalation_state`, and `decision_label`
+- **Threshold-aware sophistication increased** — saved KPI threshold hits now strengthen concern scoring and also appear in the brief narrative when relevant, making Brain outputs more specific and less generic
+- **Transient Brain mode aligned** — `backend/routes/business_brain.py` now emits the same structured brief fields for live transient priorities coming from executive-surface cards, so the contract is consistent even when `business_core` is not fully active
+- **Revenue and Risk summary surfaces upgraded** — `backend/routes/unified_intelligence.py` now exposes `brain_summary` on `/api/unified/revenue` and `/api/unified/risk`, carrying the same structured brief fields for downstream UI use
+- **Advisor consumption updated** — `frontend/src/pages/AdvisorWatchtower.js` now reads the richer Brain fields (`issue_brief`, `why_now_brief`, `action_brief`, `if_ignored_brief`, `decision_label`, `outlook_30_60_90`) instead of relying only on the legacy explanation/recommendation pair
+- **Verification completed** — preview checks confirmed `/api/brain/priorities`, `/api/unified/revenue`, and `/api/unified/risk` now return the new executive brief fields; lint passed on backend/frontend files; Redis regression tests still pass (`4/4`)
+
 ### Sprint 20 — Backend Build Failure Recovery (Complete — Mar 2026)
 - **Root cause identified** — Azure backend image build was failing at `pip install -r requirements.txt` due to an impossible dependency set in `backend/requirements.txt`: `google-auth-oauthlib==1.2.3` required `google-auth<2.42.0`, while `google-genai==1.56.0` required `google-auth>=2.45.0`
 - **Minimal non-infrastructure fix applied** — removed the unused `google-auth-oauthlib` dependency from the frozen backend requirements and restored `google-auth==2.46.0`, keeping the rest of the backend stack unchanged

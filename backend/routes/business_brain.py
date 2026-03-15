@@ -31,6 +31,30 @@ def _parse_confidence_mid(confidence_interval: str | None) -> float:
     return 0.65
 
 
+def _transient_outlook(risk_score: float) -> Dict[str, Any]:
+    ignored_30 = min(99, max(18, int(round(risk_score))))
+    ignored_60 = min(99, ignored_30 + 10)
+    ignored_90 = min(99, ignored_60 + 9)
+    return {
+        "ignored": [ignored_30, ignored_60, ignored_90],
+        "actioned": [max(6, ignored_30 - 14), max(8, ignored_60 - 18), max(10, ignored_90 - 22)],
+        "meaning": "Projected risk path over 30, 60, and 90 days if ignored versus actioned now.",
+    }
+
+
+def _transient_fact_points(card: Dict[str, Any]) -> List[str]:
+    facts: List[str] = []
+    for evidence in (card.get("evidence_refs") or [])[:3]:
+        if isinstance(evidence, dict):
+            if evidence.get("value") is not None and evidence.get("name"):
+                facts.append(f"{evidence['name']} · {evidence['value']}")
+            elif evidence.get("subject"):
+                facts.append(f"Thread: {evidence['subject']}")
+            elif evidence.get("reason"):
+                facts.append(str(evidence.get("reason")))
+    return facts
+
+
 async def _build_transient_priorities_from_live_integrations(current_user: Dict[str, Any]) -> Dict[str, Any]:
     """Non-fallback, live Brain priorities when business_core schema is not active.
 
@@ -81,6 +105,18 @@ async def _build_transient_priorities_from_live_integrations(current_user: Dict[
             "deterministic_rule": "executive_surface_live_priority",
             "probabilistic_model": "business_brain_live_surface_v1",
             "priority_formula": {"formula": "impact*urgency*confidence/max(1,effort)"},
+            "issue_brief": card.get("decision_summary") or card.get("signal_summary") or "Live concern detected by BIQc Brain.",
+            "why_now_brief": card.get("evidence_summary") or card.get("signal_summary") or "Live evidence indicates attention is needed in this cycle.",
+            "action_brief": card.get("action_summary") or "Execute owner action from BIQc recommendation.",
+            "if_ignored_brief": card.get("consequence") or card.get("decision_summary") or "The issue is likely to compound if left unresolved.",
+            "fact_points": _transient_fact_points(card),
+            "source_summary": f"Source signals came from {card.get('source') or 'the live intelligence layer' }.",
+            "confidence_note": f"Confidence derived from live signal interval {card.get('confidence_interval') or 'not available'}.",
+            "outlook_30_60_90": _transient_outlook(risk_score),
+            "repeat_count": max(1, len(card.get("evidence_refs") or [])),
+            "last_seen": card.get("timestamp") or datetime.now(timezone.utc).isoformat(),
+            "escalation_state": "critical" if risk_score >= 90 else "elevated" if risk_score >= 70 else "monitoring",
+            "decision_label": card.get("signal_summary") or card.get("decision_summary") or bucket.replace("_", " ").title(),
         })
 
     concerns.sort(key=lambda x: x.get("priority_score", 0), reverse=True)
