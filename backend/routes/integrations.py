@@ -1111,7 +1111,14 @@ async def get_accounting_summary(current_user: dict = Depends(get_current_user))
             amount = float(inv.get("total_amount") or inv.get("amount") or 0)
             status = (inv.get("status") or "").upper()
             bucket = _invoice_bucket(inv)
-            if status in ("SUBMITTED", "AUTHORIZED", "OPEN"):
+
+            closed_statuses = {"PAID", "VOID", "DELETED", "CANCELLED", "CANCELED", "CREDITED"}
+            open_statuses = {"OPEN", "AUTHORIZED", "SUBMITTED", "PARTIALLY_PAID", "SENT", "APPROVED", "OVERDUE"}
+
+            is_closed = status in closed_statuses
+            is_open = status in open_statuses
+
+            if is_open and not is_closed:
                 total_outstanding += amount
                 if bucket == "client":
                     total_outstanding_client += amount
@@ -1119,7 +1126,10 @@ async def get_accounting_summary(current_user: dict = Depends(get_current_user))
                     total_outstanding_supplier += amount
 
             due_date = _parse_due_date(inv.get("due_date"))
-            is_overdue = status == "OVERDUE" or (due_date is not None and due_date < today_date)
+            is_overdue = (not is_closed) and (
+                status == "OVERDUE"
+                or (is_open and due_date is not None and due_date < today_date)
+            )
             if is_overdue:
                 total_overdue += amount
                 overdue_count += 1
