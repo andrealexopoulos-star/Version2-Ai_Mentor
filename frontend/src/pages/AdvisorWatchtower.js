@@ -3,11 +3,8 @@ import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowRight,
-  BriefcaseBusiness,
-  Building2,
   CheckCircle2,
   Clock3,
-  Compass,
   Download,
   Radar,
   RefreshCw,
@@ -1524,25 +1521,6 @@ export default function AdvisorWatchtower() {
     return `/soundboard?origin=advisor&prompt=${encodeURIComponent(prompt)}`;
   }, []);
 
-  const sourceHealthValues = Object.values(integrationContext.sourceHealth || {});
-  const awaitingSources = sourceHealthValues.filter((entry) => entry?.connected && entry?.status !== 'live');
-  const liveSources = sourceHealthValues.filter((entry) => entry?.live);
-  const hasConnectedSources = sourceHealthValues.some((entry) => entry?.connected);
-
-  const syncExpectationMessage = useMemo(() => {
-    if (awaitingSources.length > 0) {
-      const labels = awaitingSources.map((entry) => entry.provider || 'integration').join(', ');
-      return `Connected: ${labels}. First intelligence sync usually takes 2–5 minutes. BIQc is processing in background.`;
-    }
-
-    if (hasConnectedSources && liveSources.length > 0) {
-      const labels = liveSources.map((entry) => entry.provider || 'integration').join(', ');
-      return `Live data active from: ${labels}. BIQc auto-refreshes this page in background every 5 minutes.`;
-    }
-
-    return '';
-  }, [awaitingSources, hasConnectedSources, liveSources]);
-
   useEffect(() => {
     if (authState === AUTH_STATE.LOADING) return undefined;
 
@@ -1588,7 +1566,7 @@ export default function AdvisorWatchtower() {
                 Today · Executive Cognition
               </p>
               <div className="flex flex-wrap items-end gap-3" data-testid="advisor-header-title-row">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-header-title">
+                <h1 className="text-xl sm:text-2xl lg:text-[2rem]" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-header-title">
                   Good {displayTimeOfDay}, {displayName}.
                 </h1>
                 <p
@@ -1622,21 +1600,6 @@ export default function AdvisorWatchtower() {
             </button>
           </div>
 
-          {syncExpectationMessage && (
-            <div
-              className="mb-6 rounded-xl border px-3 py-2 text-xs"
-              style={{
-                borderColor: awaitingSources.length > 0 ? '#F59E0B60' : '#10B98140',
-                background: awaitingSources.length > 0 ? '#F59E0B14' : '#10B98114',
-                color: awaitingSources.length > 0 ? '#FDE68A' : '#A7F3D0',
-                fontFamily: fontFamily.mono,
-              }}
-              data-testid="advisor-sync-expectation-message"
-            >
-              {syncExpectationMessage}
-            </div>
-          )}
-
           <div className="mb-8 space-y-3" data-testid="advisor-ia-consistency-strip">
             <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-breadcrumbs">
               <Link to="/advisor" className="hover:text-white" data-testid="advisor-breadcrumb-today">Today</Link>
@@ -1644,19 +1607,7 @@ export default function AdvisorWatchtower() {
               <span data-testid="advisor-breadcrumb-current">Advisor</span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2" data-testid="advisor-context-nav-links">
-                <Link to="/market" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-context-nav-market">
-                  <Compass className="h-3.5 w-3.5" /> Market
-                </Link>
-                <Link to="/revenue" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-context-nav-revenue">
-                  <Building2 className="h-3.5 w-3.5" /> Revenue
-                </Link>
-                <Link to="/operations" className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-context-nav-operations">
-                  <BriefcaseBusiness className="h-3.5 w-3.5" /> Operations
-                </Link>
-              </div>
-
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <div className="flex items-center gap-2" data-testid="advisor-role-personalization-control">
                 <label className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} htmlFor="advisor-role-select">View as</label>
                 <select
@@ -1708,7 +1659,7 @@ export default function AdvisorWatchtower() {
               <section id="advisor-priority-detail-section" className="mb-10" data-testid="advisor-decision-surface">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-decision-title">
-                    BIQc Priority Snapshot · Full Decision Context
+                    BIQc Priority Snapshot
                   </h2>
                   <Link
                     to="/alerts"
@@ -1721,7 +1672,7 @@ export default function AdvisorWatchtower() {
                 </div>
 
                 <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_280px]" data-testid="advisor-priority-layout-grid">
-                  <aside className="order-2 grid gap-3 sm:grid-cols-2 2xl:order-2 2xl:grid-cols-1 self-start" data-testid="advisor-priority-left-rail">
+                  <aside className="order-2 grid gap-3 2xl:order-2 2xl:grid-cols-1 self-start" data-testid="advisor-priority-left-rail">
                     <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-state-card">
                       <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
                       <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{executiveState}</p>
@@ -1730,64 +1681,6 @@ export default function AdvisorWatchtower() {
                         className="mt-3 inline-flex min-h-[38px] items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] hover:bg-white/5"
                         style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
                         data-testid="advisor-state-discuss-soundboard"
-                      >
-                        Discuss with BIQc SoundBoard <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    </article>
-
-                    <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-signals-card">
-                      <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-signals-label">Live Signals</p>
-                      <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-signals-value">{liveSignalCount} active</p>
-                      {confidence !== null && (
-                        <p className="mt-1 text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-confidence-value">Confidence {confidence}%</p>
-                      )}
-                      <Link
-                        to={soundboardDiscussHref(`We have ${liveSignalCount} active signals with ${confidence || 0}% confidence. Prioritize for me.`)}
-                        className="mt-3 inline-flex min-h-[38px] items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] hover:bg-white/5"
-                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                        data-testid="advisor-signals-discuss-soundboard"
-                      >
-                        Discuss with BIQc SoundBoard <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    </article>
-
-                    <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-coverage-card">
-                      <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-coverage-label">Connected Sources (Live)</p>
-                      <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-coverage-value">
-                        {connectedSources.length > 0 ? connectedSources.join(' · ') : 'No live provider feed'}
-                      </p>
-                      <div className="mt-3 space-y-2" data-testid="advisor-source-health-list">
-                        {['brain', 'crm', 'accounting', 'email'].map((key) => {
-                          const source = integrationContext.sourceHealth?.[key] || {};
-                          const statusColor = source.status === 'live' ? '#10B981' : source.status === 'unavailable' ? '#EF4444' : '#F59E0B';
-                          const statusLabel = source.status === 'live' ? 'LIVE' : source.status === 'unavailable' ? 'UNAVAILABLE' : 'PENDING';
-                          return (
-                            <div key={key} className="rounded-lg border px-2.5 py-2" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid={`advisor-source-health-${key}`}>
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid={`advisor-source-health-name-${key}`}>
-                                  {source.provider || key}
-                                </p>
-                                <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: statusColor, fontFamily: fontFamily.mono }} data-testid={`advisor-source-health-status-${key}`}>
-                                  {statusLabel}
-                                </span>
-                              </div>
-                              <p className="mt-1 text-[10px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-source-health-endpoint-${key}`}>
-                                API: {source.endpoint || 'n/a'}
-                              </p>
-                              {source.error ? (
-                                <p className="mt-1 text-[10px]" style={{ color: '#FCA5A5', fontFamily: fontFamily.mono }} data-testid={`advisor-source-health-error-${key}`}>
-                                  {String(source.error).slice(0, 140)}
-                                </p>
-                              ) : null}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <Link
-                        to={soundboardDiscussHref('Review source health and explain which API is failing and why.')}
-                        className="mt-3 inline-flex min-h-[38px] items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] hover:bg-white/5"
-                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                        data-testid="advisor-source-health-discuss-soundboard"
                       >
                         Discuss with BIQc SoundBoard <ArrowRight className="h-3 w-3" />
                       </Link>

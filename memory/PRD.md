@@ -1,4 +1,9 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 16 — Advisor Cognitive Load Reduction Pass (Complete — Mar 2026)
+- **Advisor visual load reduced** — `frontend/src/pages/AdvisorWatchtower.js` now removes the Market / Revenue / Operations pills from the Advisor surface, removes the live-data sync banner, shortens the main section title from `BIQc Priority Snapshot · Full Decision Context` to `BIQc Priority Snapshot`, and removes the `Live Signals` + `Connected Sources (Live)` cards
+- **Greeting hierarchy softened** — `Good morning/afternoon/evening, Andre.` was reduced materially in visual size to make the page feel less dominant and more mentor-like
+- **Verification completed by screenshot** — local authenticated screenshot check confirmed the requested elements are gone: nav pills count `0`, sync banner count `0`, Live Signals card count `0`, Connected Sources card count `0`, and the decision title now reads `BIQc Priority Snapshot`
+
 ### Sprint 15 — Module UX Rebuild Pass + SMB Protect Naming (Complete — Mar 2026)
 - **Plan naming updated** — Enterprise/Growth-tier user-facing naming now uses **SMB Protect** in `backend/tier_resolver.py`, in-app pricing, and public pricing surfaces
 - **Shared rebuild primitives added** — `frontend/src/components/intelligence/SurfacePrimitives.js` now provides reusable cards, signal surfaces, and calmer section framing for intelligence modules
