@@ -34,7 +34,7 @@ BRAIN_PLAN_LABELS = {
     'free': 'Free',
     'starter': 'Foundation',
     'professional': 'Performance',
-    'enterprise': 'Growth',
+    'enterprise': 'SMB Protect',
     'super_admin': 'Custom',
 }
 

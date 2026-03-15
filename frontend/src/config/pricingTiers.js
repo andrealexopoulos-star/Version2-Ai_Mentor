@@ -60,7 +60,7 @@ export const PRICING_TIERS = [
   },
   {
     id: 'enterprise',
-    name: 'Growth',
+    name: 'SMB Protect',
     subtitle: 'Strategic Expansion Control',
     price: '$3,900',
     priceNum: 3900,
@@ -87,7 +87,7 @@ export const PRICING_TIERS = [
     cta: 'Speak to Sales',
     features: [
       '100 KPI monitors with custom thresholds',
-      'Everything in Growth',
+      'Everything in SMB Protect',
       'Multi-division reporting',
       'Custom KPI frameworks',
       'Governance controls',
