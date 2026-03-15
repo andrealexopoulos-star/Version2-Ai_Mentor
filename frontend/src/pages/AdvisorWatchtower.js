@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -637,6 +637,7 @@ export default function AdvisorWatchtower() {
   });
   const [integrationContextLoading, setIntegrationContextLoading] = useState(false);
   const [integrationContextError, setIntegrationContextError] = useState('');
+  const integrationFetchInFlightRef = useRef(false);
   const [actionState, setActionState] = useState({ byKey: {}, byAlertId: {} });
   const [actionsHydrated, setActionsHydrated] = useState(false);
   const [actionLoadingKey, setActionLoadingKey] = useState('');
@@ -706,12 +707,22 @@ export default function AdvisorWatchtower() {
   }, []);
 
   const fetchIntegrationContext = useCallback(async (recomputeBrain = false) => {
+    if (integrationFetchInFlightRef.current) return;
+    integrationFetchInFlightRef.current = true;
+
     setIntegrationContextLoading(true);
     setIntegrationContextError('');
 
     try {
+      let brainRes;
+      try {
+        const brainValue = await apiClient.get('/brain/priorities', { params: { recompute: recomputeBrain }, timeout: 45000 });
+        brainRes = { status: 'fulfilled', value: brainValue };
+      } catch (brainErr) {
+        brainRes = { status: 'rejected', reason: brainErr };
+      }
+
       const requests = await Promise.allSettled([
-        apiClient.get('/brain/priorities', { params: { recompute: recomputeBrain }, timeout: 35000 }),
         apiClient.get('/integrations/merge/connected', { timeout: 12000 }),
         apiClient.get('/integrations/crm/deals', { params: { page_size: 50 }, timeout: 15000 }),
         apiClient.get('/integrations/accounting/summary', { timeout: 15000 }),
@@ -720,7 +731,7 @@ export default function AdvisorWatchtower() {
         apiClient.get('/calibration/status', { timeout: 10000 }),
       ]);
 
-      const [brainRes, mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
+      const [mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
 
       const executiveSurface = null;
       const brainPayload = brainRes.status === 'fulfilled' ? (brainRes.value?.data || null) : null;
@@ -845,6 +856,7 @@ export default function AdvisorWatchtower() {
       setIntegrationContextError(error?.response?.data?.detail || 'Unable to load integration context.');
     } finally {
       setIntegrationContextLoading(false);
+      integrationFetchInFlightRef.current = false;
     }
   }, []);
 
@@ -1534,7 +1546,9 @@ export default function AdvisorWatchtower() {
               </div>
               <p className="text-xs sm:text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
                 {connectedSources.length > 0
-                  ? `Three decisions from BIQc Business Brain with ${connectedSources.join(', ')} evidence.`
+                  ? (brainUnavailable
+                      ? 'Business Brain is currently unavailable. Priority decisions are paused until data feed recovers.'
+                      : `Three decisions from BIQc Business Brain with ${connectedSources.join(', ')} evidence.`)
                   : 'Business Brain is active. Connect integrations to unlock live concern ranking.'}
               </p>
             </div>
@@ -1689,7 +1703,7 @@ export default function AdvisorWatchtower() {
                         {['brain', 'crm', 'accounting', 'email'].map((key) => {
                           const source = integrationContext.sourceHealth?.[key] || {};
                           const statusColor = source.status === 'live' ? '#10B981' : source.status === 'unavailable' ? '#EF4444' : '#F59E0B';
-                          const statusLabel = source.status === 'live' ? 'LIVE' : source.status === 'unavailable' ? 'ERROR' : 'PENDING';
+                          const statusLabel = source.status === 'live' ? 'LIVE' : source.status === 'unavailable' ? 'UNAVAILABLE' : 'PENDING';
                           return (
                             <div key={key} className="rounded-lg border px-2.5 py-2" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid={`advisor-source-health-${key}`}>
                               <div className="flex items-center justify-between gap-2">
