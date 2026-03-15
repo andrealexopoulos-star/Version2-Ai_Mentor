@@ -1,4 +1,9 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 20 — Backend Build Failure Recovery (Complete — Mar 2026)
+- **Root cause identified** — Azure backend image build was failing at `pip install -r requirements.txt` due to an impossible dependency set in `backend/requirements.txt`: `google-auth-oauthlib==1.2.3` required `google-auth<2.42.0`, while `google-genai==1.56.0` required `google-auth>=2.45.0`
+- **Minimal non-infrastructure fix applied** — removed the unused `google-auth-oauthlib` dependency from the frozen backend requirements and restored `google-auth==2.46.0`, keeping the rest of the backend stack unchanged
+- **Verification completed** — reproduced the failure in a clean virtualenv, applied the fix, then re-ran a clean `pip install --no-cache-dir -r /app/backend/requirements.txt` successfully
+
 ### Sprint 19 — Azure Redis Queue Integration (Complete — Mar 2026)
 - **Additive Redis runtime shipped** — Added `backend/biqc_jobs.py` to detect `REDIS_URL`, establish Azure Redis connection when available, expose queue namespace `biqc-jobs`, support deterministic job IDs, duplicate suppression, delayed retries, and non-blocking async worker processing
 - **Graceful startup behavior implemented** — Backend startup now initializes Redis independently of existing service init; when available it logs `Redis connection established`, and when unavailable it logs `Redis unavailable – continuing without queue.` without impacting Cognitive Core, Watchtower, Snapshot Agent, Supabase, or voice/chat startup
