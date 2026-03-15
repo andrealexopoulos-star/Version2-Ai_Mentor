@@ -79,6 +79,24 @@ const formatTime = (value) => {
 
 const prettySignal = (value = '') => value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
+const isPlaceholderText = (value = '') => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return true;
+  const exactPlaceholders = new Set([
+    'direct',
+    'n/a',
+    'na',
+    'none',
+    'unknown',
+    'recent',
+    'signal',
+    'generic',
+    '-',
+  ]);
+  if (exactPlaceholders.has(normalized)) return true;
+  return /^(direct\s*)+$/.test(normalized);
+};
+
 const settledErrorMessage = (result) => {
   if (!result || result.status !== 'rejected') return '';
   const reason = result.reason;
@@ -99,9 +117,17 @@ const inferSource = (rawSource = '', domain = '', signal = '') => {
 };
 
 const toSignal = (item = {}, fallbackSource = 'snapshot') => {
-  const title = item.title || prettySignal(item.signal || item.event || item.type || item.domain || 'Signal detected');
-  const detail = item.detail || item.description || item.impact || item.executive_summary || 'Review this signal in context with your owner team.';
-  const action = item.action || item.recommendation || item.suggested_action || 'Assign an owner and execute this cycle.';
+  const rawTitle = item.title || prettySignal(item.signal || item.event || item.type || item.domain || 'Signal detected');
+  const rawDetail = item.detail || item.description || item.impact || item.executive_summary || '';
+  const rawAction = item.action || item.recommendation || item.suggested_action || '';
+
+  const title = isPlaceholderText(rawTitle) ? 'Signal requires owner review' : rawTitle;
+  const detail = isPlaceholderText(rawDetail)
+    ? 'BIQc detected a priority signal, but source detail is low fidelity. Open full context and verify source records.'
+    : rawDetail;
+  const action = isPlaceholderText(rawAction)
+    ? 'Assign an owner and execute this cycle.'
+    : rawAction;
   const signalType = String(item.signal || item.event || item.type || item.signal_name || title || 'business_signal').replace(/\s+/g, '_').toLowerCase();
   const domain = String(item.domain || 'general').toLowerCase();
   const source = inferSource(item.source || item.data_source || fallbackSource, item.domain, signalType);
@@ -425,6 +451,10 @@ const bucketHeadline = (slotId, signal) => {
     if (slotId === 'decide-now') return 'No imminent owner-critical signal from verified feeds.';
     if (slotId === 'monitor-this-week') return 'No weekly pressure trend currently above threshold.';
     return 'No repeated pattern currently requiring systems build action.';
+  }
+
+  if (!isPlaceholderText(signal.title)) {
+    return signal.title;
   }
 
   if (slotId === 'decide-now') {
@@ -890,7 +920,7 @@ export default function AdvisorWatchtower() {
     const integrationSignals = buildIntegrationSignals(integrationContext);
 
     if (surfaceSignals.length > 0) {
-      return dedupeSignals([...surfaceSignals, ...coreSignals]);
+      return dedupeSignals([...surfaceSignals, ...integrationSignals]);
     }
 
     return dedupeSignals([...coreSignals, ...integrationSignals]);
