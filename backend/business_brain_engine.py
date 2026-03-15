@@ -354,6 +354,27 @@ class BusinessBrainEngine:
                 count += 1
         return count
 
+    def _threshold_hits_for_signals(self, metrics: Dict[str, Dict[str, Any]], signal_names: List[str]) -> List[Dict[str, Any]]:
+        catalog_by_key = {metric.name: metric for metric in self.catalog}
+        hits: List[Dict[str, Any]] = []
+        for signal_name in signal_names:
+            metric_row = metrics.get(signal_name)
+            metric_def = catalog_by_key.get(signal_name)
+            if not metric_row or not metric_def:
+                continue
+            threshold_config = self._threshold_config_for_metric(metric_def)
+            threshold_state = _threshold_state(metric_row.get("value"), threshold_config)
+            if threshold_state not in {"warning", "critical"}:
+                continue
+            hits.append({
+                "metric_key": signal_name,
+                "metric_label": metric_def.label,
+                "metric_value": metric_row.get("value"),
+                "threshold_state": threshold_state,
+                "threshold_config": threshold_config,
+            })
+        return hits
+
     def brain_policy(self) -> Dict[str, Any]:
         return {
             "plan_tier": self.plan_tier,
@@ -1083,6 +1104,14 @@ class BusinessBrainEngine:
                 availability = sum(1 for s in required if s in metrics) / max(1, len(required))
                 confidence = max(0.35, min(0.99, confidence * (0.6 + 0.4 * availability)))
 
+            threshold_hits = self._threshold_hits_for_signals(metrics, required)
+            if threshold_hits:
+                critical_hits = [hit for hit in threshold_hits if hit["threshold_state"] == "critical"]
+                warning_hits = [hit for hit in threshold_hits if hit["threshold_state"] == "warning"]
+                impact = min(10.0, impact + (1.2 * len(critical_hits)) + (0.5 * len(warning_hits)))
+                urgency = min(10.0, urgency + (1.0 * len(critical_hits)) + (0.35 * len(warning_hits)))
+                confidence = min(0.99, confidence + (0.05 if critical_hits else 0.03))
+
             formula = concern.get("effective_priority_formula") or {}
             priority_score = self._score(impact, urgency, confidence, effort, formula)
 
@@ -1095,7 +1124,16 @@ class BusinessBrainEngine:
                         "metric_value": m.get("value"),
                         "metric_confidence": m.get("confidence_score"),
                         "evidence_ids": m.get("evidence_ids") or [],
+                        "threshold_state": next((hit["threshold_state"] for hit in threshold_hits if hit["metric_key"] == signal_name), "not_configured"),
                     })
+
+            if threshold_hits:
+                threshold_summary = ", ".join(
+                    f"{hit['metric_label']} ({hit['threshold_state']})"
+                    for hit in threshold_hits[:3]
+                )
+                recommendation = f"{recommendation} Threshold policy triggered on {threshold_summary}."
+                explanation = f"{explanation} Threshold policy triggered on {threshold_summary}."
 
             row = {
                 "tenant_id": self.tenant_id,
@@ -1108,6 +1146,7 @@ class BusinessBrainEngine:
                 "recommendation": recommendation,
                 "explanation": explanation,
                 "evidence": evidence,
+                "threshold_hits": threshold_hits,
                 "evaluated_at": datetime.now(timezone.utc).isoformat(),
             }
             self._t("concern_evaluations").insert(row).execute()
@@ -1158,6 +1197,7 @@ class BusinessBrainEngine:
                 "recommendation": recommendation,
                 "tier": concern.get("tier", "free"),
                 "evidence": evidence,
+                "threshold_hits": threshold_hits,
                 "explanation": explanation,
                 "source": {"event_id": event_id},
                 "time_window": {

@@ -20,13 +20,14 @@ logger = logging.getLogger(__name__)
 SUPER_ADMIN_EMAIL = "andre@thestrategysquad.com.au"
 
 # ═══ TIER DEFINITIONS ═══
-TIERS = ['free', 'starter', 'professional', 'enterprise', 'super_admin']
+TIERS = ['free', 'starter', 'professional', 'enterprise', 'custom', 'super_admin']
 
 BRAIN_METRIC_LIMITS = {
     'free': 10,
     'starter': 25,
     'professional': 50,
     'enterprise': 75,
+    'custom': 100,
     'super_admin': 100,
 }
 
@@ -35,6 +36,7 @@ BRAIN_PLAN_LABELS = {
     'starter': 'Foundation',
     'professional': 'Performance',
     'enterprise': 'SMB Protect',
+    'custom': 'Custom',
     'super_admin': 'Custom',
 }
 
@@ -174,7 +176,7 @@ def resolve_tier(user: dict) -> str:
 
 def tier_rank(tier: str) -> int:
     """Numeric rank for tier comparison."""
-    ranks = {'free': 0, 'starter': 1, 'professional': 2, 'enterprise': 3, 'super_admin': 99}
+    ranks = {'free': 0, 'starter': 1, 'professional': 2, 'enterprise': 3, 'custom': 4, 'super_admin': 99}
     return ranks.get(tier, 0)
 
 

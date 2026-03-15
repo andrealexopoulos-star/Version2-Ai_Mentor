@@ -161,9 +161,9 @@ const PricingPage = () => (
             link="/register-supabase"
           />
 
-          {/* ENTERPRISE */}
+          {/* CUSTOM */}
           <PlanCard
-            name="Enterprise"
+            name="Custom"
             tagline="Executive Command Layer"
             price="Contact Sales"
             period=""

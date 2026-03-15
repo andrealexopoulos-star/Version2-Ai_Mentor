@@ -85,7 +85,7 @@ const PLANS = [
   },
   {
     id: 'enterprise',
-    name: 'Enterprise',
+    name: 'Custom',
     tagline: 'Strategic Command',
     monthlyPrice: null, annualPrice: null, priceLabel: 'Custom',
     period: '',

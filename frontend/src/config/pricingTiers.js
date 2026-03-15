@@ -77,8 +77,8 @@ export const PRICING_TIERS = [
     ],
   },
   {
-    id: 'super_admin',
-    name: 'Enterprise',
+    id: 'custom',
+    name: 'Custom',
     subtitle: 'Executive Command Layer',
     price: null,
     priceNum: null,
@@ -98,6 +98,9 @@ export const PRICING_TIERS = [
   },
 ];
 
-export const getTierByPlanId = (id) => PRICING_TIERS.find(t => t.id === id) || PRICING_TIERS[0];
+export const getTierByPlanId = (id) => {
+  if (id === 'super_admin') return PRICING_TIERS.find((tier) => tier.id === 'custom') || PRICING_TIERS[0];
+  return PRICING_TIERS.find((tier) => tier.id === id) || PRICING_TIERS[0];
+};
 export const getTierColor = (id) => getTierByPlanId(id).color;
 export const getTierName = (id) => getTierByPlanId(id).name;
