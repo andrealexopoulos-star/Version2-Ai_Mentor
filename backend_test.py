@@ -1,435 +1,496 @@
 #!/usr/bin/env python3
 """
-Final Backend Sanity Check for BIQc Business Brain 100-Metric Fix
-Testing against: https://advisor-engine.preview.emergentagent.com
-Credentials: andre@thestrategysquad.com.au / MasterMind2025*
+Backend Testing for Tier-Aware Brain KPI Policy and Threshold Configuration
 
-Review Requirements:
-1. Auth/login works for the provided user
-2. GET /api/brain/runtime-check returns 200 and reports catalog_metric_count=100
-3. GET /api/brain/metrics?include_coverage=true returns 200 and total_metrics=100
-4. GET /api/brain/priorities returns 200 and a valid JSON structure
-5. Flag any backend regressions or mismatches
+Review Request Requirements:
+1. Auth/login works
+2. GET /api/brain/kpis returns 200 with plan_tier, plan_label, visible_metric_limit, and KPI threshold rows
+3. PUT /api/brain/kpis can save a harmless threshold/note update and GET reflects it
+4. GET /api/brain/metrics?include_coverage=true includes threshold_config / threshold_state metadata and respects visible metric limit
+5. GET /api/brain/priorities includes brain_policy metadata
+6. Flag any backend regressions
+
+Target: https://advisor-engine.preview.emergentagent.com
+Credentials: andre@thestrategysquad.com.au / MasterMind2025*
 """
 
-import os
-import json
 import requests
+import json
 import time
-import sys
 from datetime import datetime
-from typing import Dict, Any, Optional
 
-# Test configuration
+# Configuration
 BASE_URL = "https://advisor-engine.preview.emergentagent.com"
-TEST_EMAIL = "andre@thestrategysquad.com.au"
-TEST_PASSWORD = "MasterMind2025*"
-REQUEST_TIMEOUT = 30
+CREDENTIALS = {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "MasterMind2025*"
+}
 
-class BrainBackendTester:
-    def __init__(self):
-        self.token: Optional[str] = None
-        self.user_id: Optional[str] = None
-        self.results: Dict[str, Any] = {}
-        self.start_time = time.time()
+def log(message):
+    """Log with timestamp"""
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    print(f"[{timestamp}] {message}")
 
-    def log(self, message: str, level: str = "INFO"):
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        print(f"[{timestamp}] [{level}] {message}")
-
-    def test_auth_login(self) -> bool:
-        """Requirement 1: Auth/login works for the provided user."""
-        self.log("Testing authentication login...")
+def test_auth_login():
+    """Test 1: Verify auth/login works"""
+    log("Testing authentication...")
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/api/auth/supabase/login",
+            json=CREDENTIALS,
+            timeout=15
+        )
         
-        try:
-            response = requests.post(
-                f"{BASE_URL}/api/auth/supabase/login",
-                json={
-                    "email": TEST_EMAIL,
-                    "password": TEST_PASSWORD
-                },
-                timeout=REQUEST_TIMEOUT
-            )
-            
-            if response.status_code != 200:
-                self.log(f"❌ Login failed with status {response.status_code}: {response.text}", "ERROR")
-                self.results["auth_login"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-                return False
-                
-            data = response.json()
-            session = data.get("session", {})
-            self.token = session.get("access_token")
-            user = data.get("user", {})  # User is at top level, not inside session
-            self.user_id = user.get("id")
-            
-            if not self.token:
-                self.log("❌ No access token received", "ERROR")
-                self.results["auth_login"] = {"status": "FAIL", "error": "No access token"}
-                return False
-                
-            if not self.user_id:
-                self.log("❌ No user ID received", "ERROR")
-                self.results["auth_login"] = {"status": "FAIL", "error": "No user ID"}
-                return False
-                
-            self.log(f"✅ Authentication successful - User ID: {self.user_id}")
-            self.log(f"✅ Token length: {len(self.token)} chars")
-            self.results["auth_login"] = {
-                "status": "PASS", 
-                "user_id": self.user_id,
-                "token_length": len(self.token)
-            }
-            return True
-            
-        except Exception as e:
-            self.log(f"❌ Login exception: {str(e)}", "ERROR")
-            self.results["auth_login"] = {"status": "FAIL", "error": str(e)}
-            return False
-
-    def test_runtime_check(self) -> bool:
-        """Requirement 2: GET /api/brain/runtime-check returns 200 and reports catalog_metric_count=100."""
-        self.log("Testing /api/brain/runtime-check endpoint...")
+        if response.status_code != 200:
+            return False, f"Login failed: {response.status_code} - {response.text}"
         
-        if not self.token:
-            self.log("❌ No auth token for runtime-check test", "ERROR")
-            self.results["runtime_check"] = {"status": "FAIL", "error": "No auth token"}
-            return False
-            
-        try:
-            response = requests.get(
-                f"{BASE_URL}/api/brain/runtime-check",
-                headers={"Authorization": f"Bearer {self.token}"},
-                timeout=REQUEST_TIMEOUT
-            )
-            
-            if response.status_code != 200:
-                self.log(f"❌ runtime-check failed with status {response.status_code}: {response.text}", "ERROR")
-                self.results["runtime_check"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-                return False
-                
-            data = response.json()
-            catalog_metric_count = data.get("catalog_metric_count")
-            
-            if catalog_metric_count != 100:
-                self.log(f"❌ Expected catalog_metric_count=100, got {catalog_metric_count}", "ERROR")
-                self.results["runtime_check"] = {
-                    "status": "FAIL", 
-                    "error": f"catalog_metric_count={catalog_metric_count}, expected 100",
-                    "response_data": data
-                }
-                return False
-                
-            # Additional verification
-            catalog_source = data.get("catalog_source_resolved", "")
-            business_core_ready = data.get("business_core_ready")
-            
-            self.log(f"✅ runtime-check returns 200 OK")
-            self.log(f"✅ catalog_metric_count = {catalog_metric_count}")
-            self.log(f"✅ catalog_source = {catalog_source}")
-            self.log(f"✅ business_core_ready = {business_core_ready}")
-            
-            self.results["runtime_check"] = {
-                "status": "PASS",
-                "catalog_metric_count": catalog_metric_count,
-                "catalog_source_resolved": catalog_source,
-                "business_core_ready": business_core_ready
-            }
-            return True
-            
-        except Exception as e:
-            self.log(f"❌ runtime-check exception: {str(e)}", "ERROR")
-            self.results["runtime_check"] = {"status": "FAIL", "error": str(e)}
-            return False
-
-    def test_metrics_coverage(self) -> bool:
-        """Requirement 3: GET /api/brain/metrics?include_coverage=true returns 200 and total_metrics=100."""
-        self.log("Testing /api/brain/metrics?include_coverage=true endpoint...")
+        data = response.json()
+        session = data.get("session", {})
+        access_token = session.get("access_token")
         
-        if not self.token:
-            self.log("❌ No auth token for metrics coverage test", "ERROR")
-            self.results["metrics_coverage"] = {"status": "FAIL", "error": "No auth token"}
-            return False
-            
-        try:
-            response = requests.get(
-                f"{BASE_URL}/api/brain/metrics?include_coverage=true",
-                headers={"Authorization": f"Bearer {self.token}"},
-                timeout=REQUEST_TIMEOUT
-            )
-            
-            if response.status_code != 200:
-                self.log(f"❌ metrics endpoint failed with status {response.status_code}: {response.text}", "ERROR")
-                self.results["metrics_coverage"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-                return False
-                
-            data = response.json()
-            total_metrics = data.get("total_metrics")
-            
-            if total_metrics != 100:
-                self.log(f"❌ Expected total_metrics=100, got {total_metrics}", "ERROR")
-                self.results["metrics_coverage"] = {
-                    "status": "FAIL", 
-                    "error": f"total_metrics={total_metrics}, expected 100",
-                    "response_data": data
-                }
-                return False
-                
-            # Additional verification
-            runtime_catalog_metric_count = data.get("runtime_catalog_metric_count")
-            computed_metrics = data.get("computed_metrics")
-            metrics_array = data.get("metrics", [])
-            catalog_source = data.get("catalog_source")
-            
-            self.log(f"✅ metrics endpoint returns 200 OK")
-            self.log(f"✅ total_metrics = {total_metrics}")
-            self.log(f"✅ runtime_catalog_metric_count = {runtime_catalog_metric_count}")
-            self.log(f"✅ computed_metrics = {computed_metrics}")
-            self.log(f"✅ metrics array length = {len(metrics_array)}")
-            self.log(f"✅ catalog_source = {catalog_source}")
-            
-            self.results["metrics_coverage"] = {
-                "status": "PASS",
-                "total_metrics": total_metrics,
-                "runtime_catalog_metric_count": runtime_catalog_metric_count,
-                "computed_metrics": computed_metrics,
-                "metrics_array_length": len(metrics_array),
-                "catalog_source": catalog_source
-            }
-            return True
-            
-        except Exception as e:
-            self.log(f"❌ metrics coverage exception: {str(e)}", "ERROR")
-            self.results["metrics_coverage"] = {"status": "FAIL", "error": str(e)}
-            return False
-
-    def test_priorities_endpoint(self) -> bool:
-        """Requirement 4: GET /api/brain/priorities returns 200 and a valid JSON structure."""
-        self.log("Testing /api/brain/priorities endpoint...")
+        if not access_token:
+            return False, "No access token returned in login response"
         
-        if not self.token:
-            self.log("❌ No auth token for priorities test", "ERROR")
-            self.results["priorities_endpoint"] = {"status": "FAIL", "error": "No auth token"}
-            return False
-            
-        try:
-            response = requests.get(
-                f"{BASE_URL}/api/brain/priorities?recompute=true",
-                headers={"Authorization": f"Bearer {self.token}"},
-                timeout=45  # Longer timeout for potentially slow endpoint
-            )
-            
-            if response.status_code != 200:
-                self.log(f"❌ priorities endpoint failed with status {response.status_code}: {response.text}", "ERROR")
-                self.results["priorities_endpoint"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-                return False
-                
-            data = response.json()
-            
-            # Validate JSON structure
-            required_fields = ["tenant_id", "concerns"]
-            for field in required_fields:
-                if field not in data:
-                    self.log(f"❌ Missing required field '{field}' in priorities response", "ERROR")
-                    self.results["priorities_endpoint"] = {
-                        "status": "FAIL", 
-                        "error": f"Missing field: {field}",
-                        "response_data": data
-                    }
-                    return False
-                    
-            concerns = data.get("concerns", [])
-            if not isinstance(concerns, list):
-                self.log(f"❌ 'concerns' should be a list, got {type(concerns)}", "ERROR")
-                self.results["priorities_endpoint"] = {"status": "FAIL", "error": "concerns not a list"}
-                return False
-                
-            tenant_id = data.get("tenant_id")
-            tier_mode = data.get("tier_mode")
-            business_core_ready = data.get("business_core_ready")
-            concerns_count = len(concerns)
-            
-            self.log(f"✅ priorities endpoint returns 200 OK")
-            self.log(f"✅ Valid JSON structure with required fields")
-            self.log(f"✅ tenant_id = {tenant_id}")
-            self.log(f"✅ concerns count = {concerns_count}")
-            self.log(f"✅ tier_mode = {tier_mode}")
-            self.log(f"✅ business_core_ready = {business_core_ready}")
-            
-            # Log concern details if available
-            for i, concern in enumerate(concerns[:3]):  # Show first 3
-                concern_id = concern.get("concern_id")
-                priority_score = concern.get("priority_score")
-                self.log(f"✅ Concern {i+1}: {concern_id} (priority: {priority_score})")
-            
-            self.results["priorities_endpoint"] = {
-                "status": "PASS",
-                "tenant_id": tenant_id,
-                "concerns_count": concerns_count,
-                "tier_mode": tier_mode,
-                "business_core_ready": business_core_ready,
-                "sample_concerns": [c.get("concern_id") for c in concerns[:3]]
-            }
-            return True
-            
-        except Exception as e:
-            self.log(f"❌ priorities endpoint exception: {str(e)}", "ERROR")
-            self.results["priorities_endpoint"] = {"status": "FAIL", "error": str(e)}
-            return False
-
-    def check_for_regressions(self) -> bool:
-        """Requirement 5: Flag any backend regressions or mismatches."""
-        self.log("Checking for backend regressions...")
+        user_id = data.get("user", {}).get("id")
+        if not user_id:
+            return False, "No user ID returned in login response"
         
-        regressions = []
-        warnings = []
+        log(f"✅ Login successful - User ID: {user_id}")
+        log(f"✅ Token length: {len(access_token)} chars")
         
-        # Check if all core tests passed
-        core_tests = ["auth_login", "runtime_check", "metrics_coverage", "priorities_endpoint"]
-        failed_tests = [test for test in core_tests if self.results.get(test, {}).get("status") != "PASS"]
-        
-        if failed_tests:
-            regressions.extend([f"Core test failed: {test}" for test in failed_tests])
-        
-        # Check catalog source consistency
-        runtime_source = self.results.get("runtime_check", {}).get("catalog_source_resolved", "")
-        metrics_source = self.results.get("metrics_coverage", {}).get("catalog_source", "")
-        
-        if runtime_source and metrics_source and runtime_source != metrics_source:
-            warnings.append(f"Catalog source mismatch: runtime='{runtime_source}' vs metrics='{metrics_source}'")
-        
-        # Check metric count consistency  
-        runtime_count = self.results.get("runtime_check", {}).get("catalog_metric_count")
-        metrics_count = self.results.get("metrics_coverage", {}).get("total_metrics")
-        
-        if runtime_count and metrics_count and runtime_count != metrics_count:
-            regressions.append(f"Metric count mismatch: runtime={runtime_count} vs metrics={metrics_count}")
-        
-        # Check if using fallback catalog
-        if "fallback" in runtime_source.lower():
-            warnings.append(f"Using fallback catalog instead of JSON file: {runtime_source}")
-        
-        # Check business_core_ready consistency
-        runtime_core = self.results.get("runtime_check", {}).get("business_core_ready")
-        priorities_core = self.results.get("priorities_endpoint", {}).get("business_core_ready")
-        
-        if runtime_core is not None and priorities_core is not None and runtime_core != priorities_core:
-            warnings.append(f"business_core_ready mismatch: runtime={runtime_core} vs priorities={priorities_core}")
-        
-        if regressions:
-            self.log("❌ REGRESSIONS DETECTED:")
-            for regression in regressions:
-                self.log(f"  • {regression}", "ERROR")
-            self.results["regressions"] = {"status": "FAIL", "issues": regressions}
-            return False
-        
-        if warnings:
-            self.log("⚠️  WARNINGS DETECTED:")
-            for warning in warnings:
-                self.log(f"  • {warning}", "WARN")
-        
-        self.log("✅ No critical backend regressions detected")
-        self.results["regressions"] = {
-            "status": "PASS", 
-            "warnings": warnings,
-            "issues": []
+        return True, {
+            "token": access_token,
+            "user_id": user_id,
+            "session": session
         }
-        return True
+    
+    except Exception as e:
+        return False, f"Auth test failed: {str(e)}"
 
-    def generate_summary(self):
-        """Generate final test summary."""
-        elapsed_time = time.time() - self.start_time
+def test_brain_kpis_get(token):
+    """Test 2: GET /api/brain/kpis returns required fields"""
+    log("Testing GET /api/brain/kpis...")
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/api/brain/kpis",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=30
+        )
         
-        self.log(f"\n{'='*80}")
-        self.log("FINAL BACKEND SANITY CHECK SUMMARY")
-        self.log(f"{'='*80}")
+        if response.status_code != 200:
+            return False, f"GET /api/brain/kpis failed: {response.status_code} - {response.text}"
         
-        self.log(f"Target Backend: {BASE_URL}")
-        self.log(f"Test User: {TEST_EMAIL}")
-        self.log(f"Execution Time: {elapsed_time:.1f}s")
-        self.log("")
+        data = response.json()
         
-        # Test results
-        test_results = [
-            ("1. Auth/Login", "auth_login"),
-            ("2. Runtime Check (100 metrics)", "runtime_check"),
-            ("3. Metrics Coverage (100 metrics)", "metrics_coverage"),
-            ("4. Priorities Endpoint", "priorities_endpoint"),
-            ("5. Regression Check", "regressions")
-        ]
+        # Check required fields
+        required_fields = ["plan_tier", "plan_label", "visible_metric_limit", "metrics"]
+        missing_fields = [field for field in required_fields if field not in data]
         
-        all_passed = True
-        for name, key in test_results:
-            status = self.results.get(key, {}).get("status", "NOT_RUN")
-            if status == "PASS":
-                self.log(f"✅ {name}: PASS")
-            else:
-                self.log(f"❌ {name}: {status}", "ERROR")
-                error = self.results.get(key, {}).get("error", "Unknown error")
-                self.log(f"   Error: {error}", "ERROR")
-                all_passed = False
+        if missing_fields:
+            return False, f"Missing required fields: {missing_fields}"
         
-        self.log("")
+        # Validate metrics array and threshold configuration
+        metrics = data.get("metrics", [])
+        if not metrics:
+            return False, "No metrics returned"
         
-        if all_passed:
-            self.log("🎉 ALL TESTS PASSED - BACKEND IS READY FOR DEPLOYMENT")
-            self.log("✅ Business Brain 100-metric fix verification COMPLETE")
-        else:
-            self.log("❌ SOME TESTS FAILED - BACKEND NEEDS ATTENTION")
-            self.log("❌ Business Brain 100-metric fix verification INCOMPLETE")
+        # Check threshold structure on first metric
+        first_metric = metrics[0]
+        required_metric_fields = ["metric_id", "metric_name", "metric_key", "category", "threshold_config"]
+        missing_metric_fields = [field for field in required_metric_fields if field not in first_metric]
         
-        self.log(f"{'='*80}")
+        if missing_metric_fields:
+            return False, f"Missing metric fields: {missing_metric_fields}"
         
-        return all_passed
+        threshold_config = first_metric.get("threshold_config", {})
+        required_threshold_fields = ["enabled", "comparator", "warning_value", "critical_value"]
+        missing_threshold_fields = [field for field in required_threshold_fields if field not in threshold_config]
+        
+        if missing_threshold_fields:
+            return False, f"Missing threshold config fields: {missing_threshold_fields}"
+        
+        # Log success details
+        log(f"✅ Plan: {data.get('plan_label')} ({data.get('plan_tier')})")
+        log(f"✅ Visible metric limit: {data.get('visible_metric_limit')}")
+        log(f"✅ Metrics count: {len(metrics)}")
+        log(f"✅ Sample metric: {first_metric.get('metric_name')} [{first_metric.get('metric_key')}]")
+        
+        return True, data
+    
+    except Exception as e:
+        return False, f"GET /api/brain/kpis test failed: {str(e)}"
 
-    def run_all_tests(self) -> bool:
-        """Execute all backend sanity checks."""
-        self.log("Starting BIQc Business Brain 100-Metric Backend Sanity Check")
-        self.log(f"Target: {BASE_URL}")
-        self.log("")
+def test_brain_kpis_save_and_verify(token, original_data):
+    """Test 3: PUT /api/brain/kpis can save threshold and GET reflects it"""
+    log("Testing PUT /api/brain/kpis save and verify...")
+    
+    try:
+        metrics = original_data.get("metrics", [])
+        if not metrics:
+            return False, "No metrics available for testing"
         
-        # Execute tests in order
-        tests = [
-            ("Auth Login", self.test_auth_login),
-            ("Runtime Check", self.test_runtime_check),
-            ("Metrics Coverage", self.test_metrics_coverage),
-            ("Priorities Endpoint", self.test_priorities_endpoint),
-            ("Regression Check", self.check_for_regressions)
-        ]
+        # Find total_revenue metric or use first metric
+        test_metric_key = "total_revenue"
+        test_metric = None
         
-        for test_name, test_func in tests:
-            self.log(f"\n{'-'*60}")
-            self.log(f"Running: {test_name}")
-            self.log(f"{'-'*60}")
+        for metric in metrics:
+            if metric.get("metric_key") == test_metric_key:
+                test_metric = metric
+                break
+        
+        if not test_metric:
+            test_metric = metrics[0]
+            test_metric_key = test_metric.get("metric_key")
+        
+        log(f"Testing threshold save for: {test_metric.get('metric_name')} [{test_metric_key}]")
+        
+        # Prepare harmless test threshold
+        test_note = f"Test threshold update - {datetime.now().strftime('%H:%M:%S')}"
+        test_payload = {
+            "thresholds": [
+                {
+                    "metric_key": test_metric_key,
+                    "enabled": True,
+                    "comparator": "below",
+                    "warning_value": 75000.0,
+                    "critical_value": 50000.0,
+                    "note": test_note
+                }
+            ]
+        }
+        
+        # Save threshold
+        put_response = requests.put(
+            f"{BASE_URL}/api/brain/kpis",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            },
+            json=test_payload,
+            timeout=30
+        )
+        
+        if put_response.status_code != 200:
+            return False, f"PUT /api/brain/kpis failed: {put_response.status_code} - {put_response.text}"
+        
+        put_data = put_response.json()
+        if "message" not in put_data:
+            return False, "PUT response missing success message"
+        
+        log(f"✅ PUT successful: {put_data.get('message')}")
+        
+        # Wait for persistence
+        time.sleep(1)
+        
+        # Verify by GET
+        verify_response = requests.get(
+            f"{BASE_URL}/api/brain/kpis",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=30
+        )
+        
+        if verify_response.status_code != 200:
+            return False, f"Verification GET failed: {verify_response.status_code}"
+        
+        verify_data = verify_response.json()
+        verify_metrics = verify_data.get("metrics", [])
+        
+        # Find our saved metric
+        saved_metric = None
+        for metric in verify_metrics:
+            if metric.get("metric_key") == test_metric_key:
+                saved_metric = metric
+                break
+        
+        if not saved_metric:
+            return False, f"Could not find saved metric {test_metric_key} in verification"
+        
+        saved_threshold = saved_metric.get("threshold_config", {})
+        
+        # Verify saved values
+        if saved_threshold.get("enabled") != True:
+            return False, f"Expected enabled=True, got {saved_threshold.get('enabled')}"
+        
+        if saved_threshold.get("comparator") != "below":
+            return False, f"Expected comparator=below, got {saved_threshold.get('comparator')}"
+        
+        if saved_threshold.get("warning_value") != 75000.0:
+            return False, f"Expected warning_value=75000, got {saved_threshold.get('warning_value')}"
+        
+        if saved_threshold.get("critical_value") != 50000.0:
+            return False, f"Expected critical_value=50000, got {saved_threshold.get('critical_value')}"
+        
+        if saved_threshold.get("note") != test_note:
+            return False, f"Expected note='{test_note}', got '{saved_threshold.get('note')}'"
+        
+        log(f"✅ Threshold save verified: enabled={saved_threshold.get('enabled')}, warning={saved_threshold.get('warning_value')}, critical={saved_threshold.get('critical_value')}")
+        log(f"✅ Note saved: {saved_threshold.get('note')}")
+        
+        return True, {
+            "metric_key": test_metric_key,
+            "saved_threshold": saved_threshold,
+            "put_response": put_data,
+            "verify_response": verify_data
+        }
+    
+    except Exception as e:
+        return False, f"PUT/GET verification test failed: {str(e)}"
+
+def test_brain_metrics_coverage(token):
+    """Test 4: GET /api/brain/metrics?include_coverage=true includes threshold metadata and respects visible limit"""
+    log("Testing GET /api/brain/metrics?include_coverage=true...")
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/api/brain/metrics",
+            params={"include_coverage": "true"},
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=45
+        )
+        
+        if response.status_code != 200:
+            return False, f"GET /api/brain/metrics?include_coverage=true failed: {response.status_code} - {response.text}"
+        
+        data = response.json()
+        
+        # Check required fields
+        required_fields = ["visible_metric_limit", "total_metrics", "metrics"]
+        missing_fields = [field for field in required_fields if field not in data]
+        
+        if missing_fields:
+            return False, f"Missing required fields: {missing_fields}"
+        
+        visible_limit = data.get("visible_metric_limit")
+        total_metrics = data.get("total_metrics")
+        metrics = data.get("metrics", [])
+        metrics_count = len(metrics)
+        
+        log(f"✅ Visible metric limit: {visible_limit}")
+        log(f"✅ Total metrics: {total_metrics}")
+        log(f"✅ Metrics array length: {metrics_count}")
+        
+        # For super_admin/custom user, expect 100 visible metrics
+        if visible_limit != 100:
+            return False, f"Expected visible_metric_limit=100 for this user, got {visible_limit}"
+        
+        # Metrics array should respect visible limit
+        if metrics_count != visible_limit:
+            return False, f"Expected {visible_limit} metrics in array, got {metrics_count}"
+        
+        # Check threshold_config and threshold_state are present
+        if not metrics:
+            return False, "No metrics in response"
+        
+        sample_metrics = metrics[:3]  # Check first 3 metrics
+        for i, metric in enumerate(sample_metrics):
+            metric_key = metric.get("metric_key", f"metric_{i}")
             
-            try:
-                success = test_func()
-                if not success and test_name == "Auth Login":
-                    self.log("❌ Authentication failed - cannot continue with remaining tests", "ERROR")
-                    break
-            except Exception as e:
-                self.log(f"❌ Unexpected error in {test_name}: {str(e)}", "ERROR")
-                self.results[test_name.lower().replace(" ", "_")] = {"status": "ERROR", "error": str(e)}
+            if "threshold_config" not in metric:
+                return False, f"Missing threshold_config in metric {metric_key}"
+            
+            if "threshold_state" not in metric:
+                return False, f"Missing threshold_state in metric {metric_key}"
+            
+            threshold_config = metric.get("threshold_config", {})
+            required_threshold_fields = ["enabled", "comparator", "warning_value", "critical_value"]
+            missing_threshold_fields = [field for field in required_threshold_fields if field not in threshold_config]
+            
+            if missing_threshold_fields:
+                return False, f"Missing threshold config fields in {metric_key}: {missing_threshold_fields}"
         
-        return self.generate_summary()
+        log(f"✅ Threshold metadata verified in {len(sample_metrics)} sample metrics")
+        log(f"✅ Visible metric limit respected: {metrics_count} metrics returned")
+        
+        return True, data
+    
+    except Exception as e:
+        return False, f"GET /api/brain/metrics coverage test failed: {str(e)}"
 
+def test_brain_priorities_policy(token):
+    """Test 5: GET /api/brain/priorities includes brain_policy metadata"""
+    log("Testing GET /api/brain/priorities brain_policy...")
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/api/brain/priorities",
+            params={"recompute": "false"},
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=45
+        )
+        
+        if response.status_code != 200:
+            return False, f"GET /api/brain/priorities failed: {response.status_code} - {response.text}"
+        
+        data = response.json()
+        
+        # Check brain_policy is present
+        if "brain_policy" not in data:
+            return False, "Missing brain_policy in priorities response"
+        
+        brain_policy = data.get("brain_policy", {})
+        
+        # Check required brain_policy fields
+        required_policy_fields = ["plan_tier", "plan_label", "visible_metric_limit"]
+        missing_policy_fields = [field for field in required_policy_fields if field not in brain_policy]
+        
+        if missing_policy_fields:
+            return False, f"Missing brain_policy fields: {missing_policy_fields}"
+        
+        # Log brain policy details
+        log(f"✅ Brain policy plan: {brain_policy.get('plan_label')} ({brain_policy.get('plan_tier')})")
+        log(f"✅ Brain policy visible metric limit: {brain_policy.get('visible_metric_limit')}")
+        
+        # For super_admin/custom user, expect 100 visible metrics
+        if brain_policy.get("visible_metric_limit") != 100:
+            return False, f"Expected brain_policy visible_metric_limit=100, got {brain_policy.get('visible_metric_limit')}"
+        
+        # Check concerns array is present
+        concerns = data.get("concerns", [])
+        log(f"✅ Brain priorities concerns: {len(concerns)} returned")
+        
+        # Check other expected fields
+        expected_top_level_fields = ["tenant_id", "business_core_ready", "tier_mode", "generated_at"]
+        for field in expected_top_level_fields:
+            if field not in data:
+                log(f"⚠️  Optional field missing: {field}")
+        
+        return True, data
+    
+    except Exception as e:
+        return False, f"GET /api/brain/priorities test failed: {str(e)}"
+
+def check_for_regressions(all_results):
+    """Test 6: Flag any backend regressions"""
+    log("Checking for backend regressions...")
+    
+    regressions = []
+    
+    # Check if all tests passed
+    failed_tests = [name for name, (success, _) in all_results.items() if not success]
+    if failed_tests:
+        regressions.extend([f"Failed tests: {', '.join(failed_tests)}"])
+    
+    # Check for specific regression indicators
+    auth_result = all_results.get("auth")
+    if auth_result and auth_result[0]:
+        auth_data = auth_result[1]
+        if isinstance(auth_data, dict) and auth_data.get("token"):
+            if len(auth_data.get("token")) < 100:
+                regressions.append("Auth token unexpectedly short")
+    
+    kpi_get_result = all_results.get("brain_kpis_get")
+    if kpi_get_result and kpi_get_result[0]:
+        kpi_data = kpi_get_result[1]
+        if isinstance(kpi_data, dict):
+            visible_limit = kpi_data.get("visible_metric_limit", 0)
+            if visible_limit < 100:
+                regressions.append(f"Super admin visible metric limit lower than expected: {visible_limit}")
+            
+            metrics_count = len(kpi_data.get("metrics", []))
+            if metrics_count == 0:
+                regressions.append("No metrics returned in KPI configuration")
+    
+    metrics_result = all_results.get("brain_metrics_coverage")
+    if metrics_result and metrics_result[0]:
+        metrics_data = metrics_result[1]
+        if isinstance(metrics_data, dict):
+            catalog_source = metrics_data.get("catalog_source", "")
+            if "fallback" in catalog_source.lower():
+                regressions.append(f"Metrics using fallback catalog: {catalog_source}")
+    
+    if regressions:
+        log(f"❌ Backend regressions detected: {len(regressions)}")
+        for regression in regressions:
+            log(f"❌ Regression: {regression}")
+        return False, regressions
+    else:
+        log("✅ No backend regressions detected")
+        return True, []
 
 def main():
-    """Main entry point for backend testing."""
-    tester = BrainBackendTester()
-    success = tester.run_all_tests()
+    """Main test execution"""
+    print("="*80)
+    print("Backend Testing: Tier-Aware Brain KPI Policy and Threshold Configuration")
+    print("="*80)
     
-    # Save results to file for review
-    with open("/app/brain_backend_test_results.json", "w") as f:
-        json.dump({
-            "timestamp": datetime.now().isoformat(),
-            "target_url": BASE_URL,
-            "test_user": TEST_EMAIL,
-            "overall_success": success,
-            "results": tester.results
-        }, f, indent=2)
+    results = {}
     
-    sys.exit(0 if success else 1)
-
+    # Test 1: Authentication
+    auth_success, auth_data = test_auth_login()
+    results["auth"] = (auth_success, auth_data)
+    
+    if not auth_success:
+        print(f"❌ Authentication failed: {auth_data}")
+        return False
+    
+    token = auth_data["token"] if isinstance(auth_data, dict) else None
+    if not token:
+        print("❌ No token available for further testing")
+        return False
+    
+    # Test 2: GET /api/brain/kpis
+    kpi_get_success, kpi_get_data = test_brain_kpis_get(token)
+    results["brain_kpis_get"] = (kpi_get_success, kpi_get_data)
+    
+    if not kpi_get_success:
+        print(f"❌ GET /api/brain/kpis failed: {kpi_get_data}")
+        return False
+    
+    # Test 3: PUT /api/brain/kpis save and verify
+    save_success, save_data = test_brain_kpis_save_and_verify(token, kpi_get_data)
+    results["brain_kpis_save"] = (save_success, save_data)
+    
+    if not save_success:
+        print(f"❌ PUT /api/brain/kpis save/verify failed: {save_data}")
+        return False
+    
+    # Test 4: GET /api/brain/metrics?include_coverage=true
+    coverage_success, coverage_data = test_brain_metrics_coverage(token)
+    results["brain_metrics_coverage"] = (coverage_success, coverage_data)
+    
+    if not coverage_success:
+        print(f"❌ GET /api/brain/metrics coverage failed: {coverage_data}")
+        return False
+    
+    # Test 5: GET /api/brain/priorities brain_policy
+    priorities_success, priorities_data = test_brain_priorities_policy(token)
+    results["brain_priorities_policy"] = (priorities_success, priorities_data)
+    
+    if not priorities_success:
+        print(f"❌ GET /api/brain/priorities policy failed: {priorities_data}")
+        return False
+    
+    # Test 6: Check for regressions
+    regression_success, regression_data = check_for_regressions(results)
+    results["regressions"] = (regression_success, regression_data)
+    
+    print("\n" + "="*80)
+    print("TEST SUMMARY")
+    print("="*80)
+    
+    for test_name, (success, data) in results.items():
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{status} {test_name}")
+        if not success:
+            print(f"    Error: {data}")
+    
+    all_passed = all(success for success, _ in results.values())
+    
+    if all_passed:
+        print("\n🎉 ALL TESTS PASSED - Backend tier-aware Brain KPI policy is working correctly!")
+        print("✅ Authentication working")
+        print("✅ GET /api/brain/kpis returns correct plan/policy fields")
+        print("✅ PUT /api/brain/kpis saves and persists thresholds")
+        print("✅ GET /api/brain/metrics includes threshold metadata and respects visible limit")
+        print("✅ GET /api/brain/priorities includes brain_policy metadata")
+        print("✅ No backend regressions detected")
+    else:
+        print("\n❌ SOME TESTS FAILED - Review failures above")
+    
+    return all_passed
 
 if __name__ == "__main__":
-    main()
+    success = main()
+    exit(0 if success else 1)
