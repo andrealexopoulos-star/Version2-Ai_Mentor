@@ -1,4 +1,10 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 17 — Sidebar Navigation Restructure + Universal Back Button (Complete — Mar 2026)
+- **Navigation hierarchy aligned to requested structure** — `frontend/src/components/DashboardLayout.js` now uses the main collapsible groups: **Intelligence**, **Execution**, **Settings & Growth**, **Admin**, and **BIQc Legal**; the **Intelligence** group now presents the requested primary entries: `BIQc Overview`, `Market & Positioning`, `Operations`, `Revenue`, and `Risk`
+- **Keep-open behaviour improved** — navigation groups now default open and auto-stay open for the active section so users maintain orientation while moving through pages and sub-pages
+- **Universal back navigation added** — every DashboardLayout-powered page now gets a visible `Back` button + current page label row for easier return-path navigation
+- **Verification completed by screenshot** — screenshot validation confirmed the `Intelligence`, `Execution`, `Settings & Growth`, and `Admin` groups render, and the back button is present in the authenticated layout
+
 ### Sprint 16 — Advisor Cognitive Load Reduction Pass (Complete — Mar 2026)
 - **Advisor visual load reduced** — `frontend/src/pages/AdvisorWatchtower.js` now removes the Market / Revenue / Operations pills from the Advisor surface, removes the live-data sync banner, shortens the main section title from `BIQc Priority Snapshot · Full Decision Context` to `BIQc Priority Snapshot`, and removes the `Live Signals` + `Connected Sources (Live)` cards
 - **Greeting hierarchy softened** — `Good morning/afternoon/evening, Andre.` was reduced materially in visual size to make the page feel less dominant and more mentor-like

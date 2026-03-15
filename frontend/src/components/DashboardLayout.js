@@ -18,6 +18,7 @@ import {
   ClipboardList, Inbox, MessageSquare, Lock, Eye, Megaphone, FlaskConical,
   BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar
 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
 import { canAccess, requiredTier, TIERS } from '../config/tiers';
 import { fontFamily } from '../design-system/tokens';
@@ -179,8 +180,8 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     } catch {}
   };
 
-  // Multi-expand sections — all relevant sections stay open simultaneously
-  const [expandedSections, setExpandedSections] = useState(() => new Set()); // all closed on login
+  // Multi-expand sections — keep key navigation groups open by default
+  const [expandedSections, setExpandedSections] = useState(() => new Set(['intelligence', 'execution', 'governance', 'legal']));
 
   const toggleSection = (sectionId) => {
     setExpandedSections(prev => {
@@ -284,7 +285,32 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     }));
   }, [isCalibrated]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const currentPageLabel = useMemo(() => {
+    for (const section of visibleSections) {
+      for (const item of section.items) {
+        if (isActive(item.path)) return item.label;
+        if (item.children) {
+          const child = item.children.find((entry) => isActive(entry.path));
+          if (child) return child.label;
+        }
+      }
+    }
+    return 'Current page';
+  }, [visibleSections, location.pathname]);
+
+  useEffect(() => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      visibleSections.forEach((section) => {
+        const sectionHasActiveItem = section.items.some((item) => isActive(item.path) || item.children?.some((child) => isActive(child.path)));
+        if (sectionHasActiveItem) next.add(section.id);
+      });
+      if (isSA) next.add('admin');
+      next.add('legal');
+      return next;
+    });
+  }, [visibleSections, location.pathname, isSA]);
   const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';
 const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
@@ -454,7 +480,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
           className="p-3 space-y-1 overflow-y-auto flex flex-col" style={{ height: '100%' }} aria-label="Platform navigation">
           {visibleSections.map((section) => {
             const isExpanded = expandedSections.has(section.id);
-            const hasActiveChild = section.items.some(i => isActive(i.path));
+            const hasActiveChild = section.items.some(i => isActive(i.path) || i.children?.some((child) => isActive(child.path)));
 
             return (
               <div key={section.id} className="mb-1">
@@ -611,7 +637,22 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
       {/* ═══ MAIN CONTENT + DESKTOP SOUNDBOARD PANEL ═══ */}
       <div className={`${sidebarMargin} pt-14 pb-[76px] lg:pb-0 transition-all duration-300 flex`} style={{ minHeight: '100dvh' }}>
         <main className="flex-1" style={{ background: 'var(--biqc-bg, #0F1720)', overflowY: 'visible' }}>
-          <div className="px-4 py-4 md:px-6 md:py-6">{children}</div>
+          <div className="px-4 py-4 md:px-6 md:py-6">
+            <div className="mb-4 flex items-center justify-between gap-3" data-testid="page-navigation-row">
+              <button
+                onClick={() => navigate(-1)}
+                className="inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-colors hover:bg-white/5"
+                style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}
+                data-testid="page-back-button"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> Back
+              </button>
+              <p className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="page-current-label">
+                {currentPageLabel}
+              </p>
+            </div>
+            {children}
+          </div>
         </main>
 
         {/* Desktop Soundboard Panel — always visible on lg+ */}
