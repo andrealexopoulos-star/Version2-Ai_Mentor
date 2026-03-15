@@ -9,7 +9,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://cognition-overhaul.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://advisor-engine.preview.emergentagent.com').rstrip('/')
 
 # Production URL for certain tests
 PROD_URL = "https://biqc.thestrategysquad.com"

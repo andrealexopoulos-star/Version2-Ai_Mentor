@@ -1,5 +1,5 @@
 {
-  "summary": "Iteration 46: P0 SCROLL BUG FORENSIC INVESTIGATION - All scroll tests PASSED on production URL (https://cognition-overhaul.preview.emergentagent.com). Tested Desktop (1920x1080), Mobile (390x844), and Tablet (768x1024) viewports. window.scrollTo(), wheel events, and keyboard scroll all work correctly. CSS computed styles show overflow-y: scroll on html/body, no JavaScript scroll locks detected, no blocking inline styles. Page has sufficient scrollable content (Desktop: 5721px scrollHeight vs 1080px viewport, Mobile: 10086px vs 844px).",
+  "summary": "Iteration 46: P0 SCROLL BUG FORENSIC INVESTIGATION - All scroll tests PASSED on production URL (https://advisor-engine.preview.emergentagent.com). Tested Desktop (1920x1080), Mobile (390x844), and Tablet (768x1024) viewports. window.scrollTo(), wheel events, and keyboard scroll all work correctly. CSS computed styles show overflow-y: scroll on html/body, no JavaScript scroll locks detected, no blocking inline styles. Page has sufficient scrollable content (Desktop: 5721px scrollHeight vs 1080px viewport, Mobile: 10086px vs 844px).",
   "backend_issues": {
     "critical": [],
     "minor": []
