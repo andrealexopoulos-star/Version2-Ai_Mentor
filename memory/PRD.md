@@ -1,4 +1,10 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 18 — Advisor Status Strip Layout Refinement (Complete — Mar 2026)
+- **Design-agent-guided Advisor refinement** — `frontend/src/pages/AdvisorWatchtower.js` was updated so `Business State` and `Decision Queue Status` now sit as compact cards above the main decision area, while the previous right-side `Executive Snapshot (Live Integration Truth)` block was removed entirely
+- **Three-card main row wired** — the main decision surface now uses a fixed `md:grid-cols-3` layout with equal-height cards so the three primary Brain decision cards sit next to each other once live decisions are present
+- **Alignment tightened** — the BIQc Insights header area and decision cluster were brought upward with a calmer stacked structure reviewed through the design-agent pass
+- **Verification completed by screenshot** — screenshot validation confirmed: `Business State` card present, `Decision Queue Status` card present, `Executive Snapshot` count `0`; current capture showed the Brain syncing state instead of live decision cards, but the 3-column decision grid is now wired in code for the active-decision state
+
 ### Sprint 17 — Sidebar Navigation Restructure + Universal Back Button (Complete — Mar 2026)
 - **Navigation hierarchy aligned to requested structure** — `frontend/src/components/DashboardLayout.js` now uses the main collapsible groups: **Intelligence**, **Execution**, **Settings & Growth**, **Admin**, and **BIQc Legal**; the **Intelligence** group now presents the requested primary entries: `BIQc Overview`, `Market & Positioning`, `Operations`, `Revenue`, and `Risk`
 - **Keep-open behaviour improved** — navigation groups now default open and auto-stay open for the active section so users maintain orientation while moving through pages and sub-pages
