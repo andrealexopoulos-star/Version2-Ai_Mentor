@@ -1,4 +1,11 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 13 — Business Brain 100-Metric Recovery + Advisor Pending-State Guard (Complete — Mar 2026)
+- **Root cause confirmed** — Production Brain metric count was collapsing to 20 because Azure’s backend image copies `backend/` contents into `/app`, while the catalog loader was hardcoded to `/app/backend/business_brain_top100_catalog.json`
+- **Portable catalog lookup fix** — `backend/business_brain_engine.py` now resolves `business_brain_top100_catalog.json` relative to `Path(__file__).resolve().parent`, plus `/app/business_brain_top100_catalog.json` and existing fallback candidates, so both preview and Azure container layouts can find the authoritative 100-KPI catalog
+- **Advisor false-state fix** — `frontend/src/pages/AdvisorWatchtower.js` no longer starts with Brain status = unavailable and no longer renders a false red failure or false all-clear card while Brain source health is still pending; it now shows a dedicated syncing state
+- **Verification completed in preview** — `/api/brain/runtime-check` now reports `catalog_metric_count: 100`; `/api/brain/metrics?include_coverage=true` returns `total_metrics: 100`; login + advisor smoke test + testing agent iteration_139 all passed
+- **Production status note** — External production `https://biqc.thestrategysquad.com` still showed `fallback_core_metrics` with 20 metrics at the time of verification, so the code fix now needs the next Azure deploy to make production match preview
+
 ### Sprint 12 — Production Forensic Recovery + Panel UX Move (Complete — Mar 2026)
 - **Production recovery verified** — Post-deploy production retest (`iteration_133`) confirms previously broken modules are now working live on `https://biqc.thestrategysquad.com`: War Room Q&A, Ops Advisory, Documents, and Priority Inbox
 - **War Room resilience** — `backend/routes/boardroom.py` now normalizes analysis-only upstream payloads into readable `answer` / `response` text; `frontend/src/components/WarRoomConsole.js` renders the normalized output and uses a longer request timeout for live production latency
