@@ -127,6 +127,54 @@ def load_metric_catalog() -> List[MetricDefinition]:
     return CORE_METRICS_FALLBACK
 
 
+def metric_catalog_diagnostics() -> Dict[str, Any]:
+    diagnostics: Dict[str, Any] = {
+        "candidates": [],
+        "resolved_source": "fallback_core_metrics",
+        "resolved_count": len(CORE_METRICS_FALLBACK),
+    }
+
+    for path in METRIC_CATALOG_CANDIDATES:
+        entry: Dict[str, Any] = {
+            "path": path,
+            "exists": os.path.exists(path),
+            "parsed_count": 0,
+            "format": "json" if path.endswith(".json") else "markdown",
+            "error": None,
+        }
+        if not entry["exists"]:
+            diagnostics["candidates"].append(entry)
+            continue
+
+        try:
+            if path.endswith(".json"):
+                raw = json.loads(open(path, "r", encoding="utf-8").read())
+                entry["parsed_count"] = len(raw) if isinstance(raw, list) else 0
+            else:
+                parsed_count = 0
+                with open(path, "r", encoding="utf-8") as f:
+                    for raw_line in f:
+                        line = raw_line.strip()
+                        if not line or not re.match(r"^\d+\s", line):
+                            continue
+                        parts = re.split(r"\t+", line)
+                        if len(parts) < 6:
+                            parts = re.split(r"\s{2,}", line)
+                        if len(parts) >= 6 and parts[0].isdigit():
+                            parsed_count += 1
+                entry["parsed_count"] = parsed_count
+
+            if entry["parsed_count"] > 0 and diagnostics["resolved_source"] == "fallback_core_metrics":
+                diagnostics["resolved_source"] = path
+                diagnostics["resolved_count"] = entry["parsed_count"]
+        except Exception as e:
+            entry["error"] = str(e)
+
+        diagnostics["candidates"].append(entry)
+
+    return diagnostics
+
+
 def _safe_float(value: Any, default: float = 0.0) -> float:
     try:
         if value is None:
@@ -169,6 +217,8 @@ class BusinessBrainEngine:
         self.tenant_id = tenant_id
         self.user = user
         self.tier_mode = normalize_tier_mode(user)
+        self.catalog_diagnostics = metric_catalog_diagnostics()
+        self.catalog_source = self.catalog_diagnostics.get("resolved_source", "fallback_core_metrics")
         self.catalog = load_metric_catalog()
         self.business_core_ready = self._detect_business_core_schema()
         self._sync_metric_catalog()
