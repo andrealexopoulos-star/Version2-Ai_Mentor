@@ -54,14 +54,8 @@ const BusinessProfile = () => {
 
   const fetchProfile = async () => {
     try {
-      // Pull from all sources: business_profiles + resolved facts + integration data
-      const [profileRes, intRes] = await Promise.allSettled([
-        apiClient.get('/business-profile/context'),
-        apiClient.get('/integrations/merge/connected'),
-      ]);
-
-      const ctx = profileRes.status === 'fulfilled' ? (profileRes.value.data || {}) : {};
-      const intData = intRes.status === 'fulfilled' ? (intRes.value.data || {}) : {};
+      const profileRes = await apiClient.get('/business-profile/context', { timeout: 12000 });
+      const ctx = profileRes.data || {};
 
       const rawProfile = ctx.profile || {};
       const resolvedFields = ctx.resolved_fields || {};
@@ -74,19 +68,31 @@ const BusinessProfile = () => {
         }
       }
 
-      // Enrich from CRM integration data (HubSpot company info)
-      const integrations = intData?.integrations || {};
-      if (integrations.hubspot || integrations.salesforce) {
-        try {
-          const crmRes = await apiClient.get('/integrations/crm/company');
-          if (crmRes.data?.name && !merged.business_name) merged.business_name = crmRes.data.name;
-          if (crmRes.data?.industry && !merged.industry) merged.industry = crmRes.data.industry;
-          if (crmRes.data?.website && !merged.website) merged.website = crmRes.data.website;
-          if (crmRes.data?.city && !merged.location) merged.location = crmRes.data.city;
-        } catch { /* non-fatal */ }
-      }
-
       setProfile(merged);
+      setLoading(false);
+
+      // Enrich from CRM integration data in the background so the page renders fast.
+      const enrichFromIntegrations = async () => {
+        try {
+          const intRes = await apiClient.get('/integrations/merge/connected', { timeout: 8000 });
+          const integrations = intRes?.data?.integrations || {};
+          if (!(integrations.hubspot || integrations.salesforce)) return;
+
+          const crmRes = await apiClient.get('/integrations/crm/company', { timeout: 8000 });
+          const company = crmRes?.data || {};
+          setProfile((prev) => ({
+            ...prev,
+            business_name: prev.business_name || company.name || prev.business_name,
+            industry: prev.industry || company.industry || prev.industry,
+            website: prev.website || company.website || prev.website,
+            location: prev.location || company.city || prev.location,
+          }));
+        } catch {
+          // Background enrichment is non-blocking.
+        }
+      };
+
+      enrichFromIntegrations();
     } catch (error) {
       console.error('Failed to load profile:', error);
       toast.error('Failed to load profile');
@@ -97,11 +103,10 @@ const BusinessProfile = () => {
 
   const fetchScores = async () => {
     try {
-      const response = await apiClient.get('/business-profile/scores');
+      const response = await apiClient.get('/business-profile/scores', { timeout: 8000 });
       setScores(response.data || { completeness: 0, strength: 0 });
-    } catch (error) {
-      // DEFENSIVE: Silent fail on scores
-      console.error('Failed to fetch scores:', error);
+    } catch {
+      setScores({ completeness: 0, strength: 0 });
     }
   };
 
