@@ -113,13 +113,6 @@ const TUTORIALS = {
       { title: 'Privacy First', body: 'BIQc only reads metadata and key topics — it never stores full email content. All data is processed within Australian sovereignty.' },
     ],
   },
-  '/business-profile': {
-    title: 'Business DNA',
-    steps: [
-      { title: 'Your Business Identity', body: 'Business DNA captures the core details of your business. This is what BIQc uses to personalise every insight and recommendation.' },
-      { title: 'Keep It Updated', body: 'Update your profile whenever your business changes significantly — new products, new markets, team growth.' },
-    ],
-  },
   '/settings': {
     title: 'Settings',
     steps: [

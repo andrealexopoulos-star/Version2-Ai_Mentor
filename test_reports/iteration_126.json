@@ -1,7 +1,7 @@
 {
   "summary": "Soundboard stress test on preview environment. Login works. Gemini->OpenAI fallback code is implemented correctly. Preview environment shows 503 errors due to missing API keys (OPENAI_API_KEY / GOOGLE_API_KEY not configured). Early turns passed (6 consecutive), then rate limit or key exhaustion triggered. The 'API key rejected' error from iteration_125 is NO LONGER present - replaced by 'keys not configured' which is an environment config issue.",
   "test_date": "2026-01-13",
-  "target_url": "https://cognition-overhaul.preview.emergentagent.com",
+  "target_url": "https://advisor-engine.preview.emergentagent.com",
   "test_type": "Post-fix forensic Soundboard reliability stress test",
   "authentication_result": {
     "method": "email/password",

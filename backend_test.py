@@ -1,705 +1,496 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for BIQc Advisor End-to-End Delegate and Decision Flows
-Tests the complete advisor workflow APIs:
-1. Authentication via /api/auth/supabase/login
-2. Core advisor data endpoints (cognition/overview, snapshot/latest, intelligence/watchtower)
-3. Decision action lifecycle (alerts/action, alerts/actions)  
-4. Workflow delegate endpoints (providers, options, execute, decision-feedback)
-5. Error handling for missing provider connections
-6. JSON response stability
+Backend Testing for Tier-Aware Brain KPI Policy and Threshold Configuration
 
+Review Request Requirements:
+1. Auth/login works
+2. GET /api/brain/kpis returns 200 with plan_tier, plan_label, visible_metric_limit, and KPI threshold rows
+3. PUT /api/brain/kpis can save a harmless threshold/note update and GET reflects it
+4. GET /api/brain/metrics?include_coverage=true includes threshold_config / threshold_state metadata and respects visible metric limit
+5. GET /api/brain/priorities includes brain_policy metadata
+6. Flag any backend regressions
+
+Target: https://advisor-engine.preview.emergentagent.com
 Credentials: andre@thestrategysquad.com.au / MasterMind2025*
-Target: https://cognition-overhaul.preview.emergentagent.com
 """
 
-import asyncio
-import httpx
+import requests
 import json
-import sys
-from typing import Dict, Any, Optional
+import time
+from datetime import datetime
 
-# Test Configuration
-BASE_URL = "https://cognition-overhaul.preview.emergentagent.com"
-TEST_EMAIL = "andre@thestrategysquad.com.au"
-TEST_PASSWORD = "MasterMind2025*"
+# Configuration
+BASE_URL = "https://advisor-engine.preview.emergentagent.com"
+CREDENTIALS = {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "MasterMind2025*"
+}
 
-class BIQcBackendTester:
-    def __init__(self):
-        self.client = httpx.AsyncClient(timeout=60.0)
-        self.auth_token: Optional[str] = None
-        self.user_id: Optional[str] = None
-        
-    async def __aenter__(self):
-        return self
+def log(message):
+    """Log with timestamp"""
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    print(f"[{timestamp}] {message}")
+
+def test_auth_login():
+    """Test 1: Verify auth/login works"""
+    log("Testing authentication...")
     
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.client.aclose()
+    try:
+        response = requests.post(
+            f"{BASE_URL}/api/auth/supabase/login",
+            json=CREDENTIALS,
+            timeout=15
+        )
+        
+        if response.status_code != 200:
+            return False, f"Login failed: {response.status_code} - {response.text}"
+        
+        data = response.json()
+        session = data.get("session", {})
+        access_token = session.get("access_token")
+        
+        if not access_token:
+            return False, "No access token returned in login response"
+        
+        user_id = data.get("user", {}).get("id")
+        if not user_id:
+            return False, "No user ID returned in login response"
+        
+        log(f"✅ Login successful - User ID: {user_id}")
+        log(f"✅ Token length: {len(access_token)} chars")
+        
+        return True, {
+            "token": access_token,
+            "user_id": user_id,
+            "session": session
+        }
+    
+    except Exception as e:
+        return False, f"Auth test failed: {str(e)}"
 
-    def log(self, message: str, level: str = "INFO"):
-        print(f"[{level}] {message}")
+def test_brain_kpis_get(token):
+    """Test 2: GET /api/brain/kpis returns required fields"""
+    log("Testing GET /api/brain/kpis...")
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/api/brain/kpis",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=30
+        )
+        
+        if response.status_code != 200:
+            return False, f"GET /api/brain/kpis failed: {response.status_code} - {response.text}"
+        
+        data = response.json()
+        
+        # Check required fields
+        required_fields = ["plan_tier", "plan_label", "visible_metric_limit", "metrics"]
+        missing_fields = [field for field in required_fields if field not in data]
+        
+        if missing_fields:
+            return False, f"Missing required fields: {missing_fields}"
+        
+        # Validate metrics array and threshold configuration
+        metrics = data.get("metrics", [])
+        if not metrics:
+            return False, "No metrics returned"
+        
+        # Check threshold structure on first metric
+        first_metric = metrics[0]
+        required_metric_fields = ["metric_id", "metric_name", "metric_key", "category", "threshold_config"]
+        missing_metric_fields = [field for field in required_metric_fields if field not in first_metric]
+        
+        if missing_metric_fields:
+            return False, f"Missing metric fields: {missing_metric_fields}"
+        
+        threshold_config = first_metric.get("threshold_config", {})
+        required_threshold_fields = ["enabled", "comparator", "warning_value", "critical_value"]
+        missing_threshold_fields = [field for field in required_threshold_fields if field not in threshold_config]
+        
+        if missing_threshold_fields:
+            return False, f"Missing threshold config fields: {missing_threshold_fields}"
+        
+        # Log success details
+        log(f"✅ Plan: {data.get('plan_label')} ({data.get('plan_tier')})")
+        log(f"✅ Visible metric limit: {data.get('visible_metric_limit')}")
+        log(f"✅ Metrics count: {len(metrics)}")
+        log(f"✅ Sample metric: {first_metric.get('metric_name')} [{first_metric.get('metric_key')}]")
+        
+        return True, data
+    
+    except Exception as e:
+        return False, f"GET /api/brain/kpis test failed: {str(e)}"
 
-    def assert_test(self, condition: bool, message: str):
-        if condition:
-            self.log(f"✅ {message}")
-        else:
-            self.log(f"❌ {message}", "ERROR")
-            raise AssertionError(message)
-
-    async def authenticate(self) -> bool:
-        """Authenticate with Supabase using email/password"""
-        try:
-            self.log("Authenticating with Andre's credentials...")
-            
-            # Step 1: Get Supabase auth URL and keys from frontend env
-            supabase_url = "https://vwwandhoydemcybltoxz.supabase.co"
-            supabase_anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3d2FuZGhveWRlbWN5Ymx0b3h6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MjU4MzEsImV4cCI6MjA4ODQwMTgzMX0.KzFEpKDiHtDx6EjsZscdvwY9vyakitlUJ4SOMekWEys"
-            
-            # Step 2: Sign in with Supabase directly
-            auth_response = await self.client.post(
-                f"{supabase_url}/auth/v1/token?grant_type=password",
-                headers={
-                    "apikey": supabase_anon_key,
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "email": TEST_EMAIL,
-                    "password": TEST_PASSWORD
+def test_brain_kpis_save_and_verify(token, original_data):
+    """Test 3: PUT /api/brain/kpis can save threshold and GET reflects it"""
+    log("Testing PUT /api/brain/kpis save and verify...")
+    
+    try:
+        metrics = original_data.get("metrics", [])
+        if not metrics:
+            return False, "No metrics available for testing"
+        
+        # Find total_revenue metric or use first metric
+        test_metric_key = "total_revenue"
+        test_metric = None
+        
+        for metric in metrics:
+            if metric.get("metric_key") == test_metric_key:
+                test_metric = metric
+                break
+        
+        if not test_metric:
+            test_metric = metrics[0]
+            test_metric_key = test_metric.get("metric_key")
+        
+        log(f"Testing threshold save for: {test_metric.get('metric_name')} [{test_metric_key}]")
+        
+        # Prepare harmless test threshold
+        test_note = f"Test threshold update - {datetime.now().strftime('%H:%M:%S')}"
+        test_payload = {
+            "thresholds": [
+                {
+                    "metric_key": test_metric_key,
+                    "enabled": True,
+                    "comparator": "below",
+                    "warning_value": 75000.0,
+                    "critical_value": 50000.0,
+                    "note": test_note
                 }
-            )
-            
-            if auth_response.status_code != 200:
-                self.log(f"Supabase auth failed: {auth_response.status_code} - {auth_response.text}", "ERROR")
-                return False
-                
-            auth_data = auth_response.json()
-            self.auth_token = auth_data.get("access_token")
-            if not self.auth_token:
-                self.log("No access token in Supabase response", "ERROR") 
-                return False
-                
-            # Get user info
-            user_data = auth_data.get("user", {})
-            self.user_id = user_data.get("id")
-            
-            self.log(f"✅ Authentication successful. User ID: {self.user_id}")
-            return True
-            
-        except Exception as e:
-            self.log(f"Authentication error: {e}", "ERROR")
-            return False
-
-    async def test_war_room_respond(self) -> Dict[str, Any]:
-        """Test /api/war-room/respond endpoint"""
-        self.log("Testing War Room respond endpoint...")
-        
-        try:
-            response = await self.client.post(
-                f"{BASE_URL}/api/war-room/respond",
-                headers={
-                    "Authorization": f"Bearer {self.auth_token}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "question": "What is my highest priority risk right now?"
-                }
-            )
-            
-            self.assert_test(response.status_code == 200, 
-                           f"War room API returns HTTP 200 (got {response.status_code})")
-            
-            if response.status_code != 200:
-                self.log(f"Response body: {response.text}", "ERROR")
-                return {"success": False, "error": f"HTTP {response.status_code}"}
-            
-            data = response.json()
-            self.log(f"War room response keys: {list(data.keys())}")
-            
-            # Check that response contains user-consumable text fields
-            has_answer = "answer" in data and isinstance(data["answer"], str) and len(data["answer"].strip()) > 0
-            has_response = "response" in data and isinstance(data["response"], str) and len(data["response"].strip()) > 0
-            has_consumable_text = has_answer or has_response
-            
-            self.assert_test(has_consumable_text, 
-                           "War room response contains 'answer' or 'response' field with readable text")
-            
-            # Log what we found
-            if has_answer:
-                self.log(f"✅ Found 'answer' field: {data['answer'][:100]}...")
-            if has_response:
-                self.log(f"✅ Found 'response' field: {data['response'][:100]}...")
-                
-            # Analysis object can be present, but text fields must also be present
-            if "analysis" in data:
-                self.log("✅ 'analysis' object also present (acceptable alongside text fields)")
-            
-            return {
-                "success": True,
-                "has_answer": has_answer,
-                "has_response": has_response,
-                "has_analysis": "analysis" in data,
-                "response_keys": list(data.keys()),
-                "answer_preview": data.get("answer", "")[:100],
-                "response_preview": data.get("response", "")[:100]
-            }
-            
-        except Exception as e:
-            self.log(f"War room test error: {e}", "ERROR")
-            return {"success": False, "error": str(e)}
-
-    async def test_cognition_overview(self) -> Dict[str, Any]:
-        """Test /api/cognition/overview endpoint"""
-        self.log("Testing cognition overview endpoint...")
-        
-        try:
-            response = await self.client.get(
-                f"{BASE_URL}/api/cognition/overview",
-                headers={"Authorization": f"Bearer {self.auth_token}"}
-            )
-            
-            status_ok = response.status_code in [200, 500]  # Allow 500 for migration issues
-            self.assert_test(status_ok, 
-                           f"Cognition overview returns 200 or migration error (got {response.status_code})")
-            
-            if response.status_code == 500:
-                data = response.json() if response.headers.get("content-type", "").startswith("application/json") else {}
-                if "MIGRATION_REQUIRED" in str(data):
-                    self.log("⚠️ Migration required for cognition overview - acceptable for testing")
-                    return {"success": True, "needs_migration": True, "status": "migration_required"}
-                else:
-                    self.log(f"Unexpected 500 error: {response.text}", "ERROR")
-                    return {"success": False, "error": f"HTTP 500: {response.text[:200]}"}
-            
-            data = response.json()
-            is_stable_json = isinstance(data, dict)
-            
-            self.assert_test(is_stable_json, "Response is stable JSON object")
-            
-            # Check for expected structure (allow flexible schema)
-            expected_keys = ["tab_data", "integrations", "live_signal_count"]
-            found_keys = [key for key in expected_keys if key in data]
-            
-            self.log(f"Response keys found: {list(data.keys())}")
-            self.log(f"Expected keys present: {found_keys}")
-            
-            return {
-                "success": True,
-                "response_keys": list(data.keys()),
-                "is_stable_json": is_stable_json,
-                "has_integrations": "integrations" in data,
-                "has_tab_data": "tab_data" in data,
-                "live_signal_count": data.get("live_signal_count", 0)
-            }
-            
-        except Exception as e:
-            self.log(f"Cognition overview test error: {e}", "ERROR")
-            return {"success": False, "error": str(e)}
-
-    async def test_snapshot_latest(self) -> Dict[str, Any]:
-        """Test /api/snapshot/latest endpoint"""
-        self.log("Testing snapshot latest endpoint...")
-        
-        try:
-            response = await self.client.get(
-                f"{BASE_URL}/api/snapshot/latest",
-                headers={"Authorization": f"Bearer {self.auth_token}"}
-            )
-            
-            self.assert_test(response.status_code == 200, 
-                           f"Snapshot latest returns HTTP 200 (got {response.status_code})")
-            
-            if response.status_code != 200:
-                self.log(f"Response body: {response.text}", "ERROR")
-                return {"success": False, "error": f"HTTP {response.status_code}"}
-            
-            data = response.json()
-            is_stable_json = isinstance(data, dict)
-            
-            self.assert_test(is_stable_json, "Response is stable JSON object")
-            
-            # Check structure
-            has_cognitive = "cognitive" in data
-            has_snapshot = "snapshot" in data
-            
-            if has_cognitive:
-                self.log("✅ Cognitive data present")
-            if has_snapshot:
-                self.log("✅ Snapshot data present")
-            
-            return {
-                "success": True,
-                "response_keys": list(data.keys()),
-                "is_stable_json": is_stable_json,
-                "has_cognitive": has_cognitive,
-                "has_snapshot": has_snapshot
-            }
-            
-        except Exception as e:
-            self.log(f"Snapshot latest test error: {e}", "ERROR")
-            return {"success": False, "error": str(e)}
-
-    async def test_intelligence_watchtower(self) -> Dict[str, Any]:
-        """Test /api/intelligence/watchtower related endpoints"""
-        self.log("Testing intelligence watchtower endpoints...")
-        
-        results = {"success": True, "endpoints": {}}
-        
-        # Test watchtower positions
-        try:
-            response = await self.client.get(
-                f"{BASE_URL}/api/watchtower/positions",
-                headers={"Authorization": f"Bearer {self.auth_token}"}
-            )
-            
-            positions_ok = response.status_code == 200
-            results["endpoints"]["positions"] = {
-                "status_code": response.status_code,
-                "success": positions_ok,
-                "is_json": response.headers.get("content-type", "").startswith("application/json")
-            }
-            
-            if positions_ok:
-                data = response.json()
-                results["endpoints"]["positions"]["has_positions"] = "positions" in data
-                self.log("✅ Watchtower positions endpoint working")
-            else:
-                self.log(f"⚠️ Watchtower positions returned {response.status_code}")
-                
-        except Exception as e:
-            results["endpoints"]["positions"] = {"success": False, "error": str(e)}
-            results["success"] = False
-        
-        # Test watchtower findings  
-        try:
-            response = await self.client.get(
-                f"{BASE_URL}/api/watchtower/findings",
-                headers={"Authorization": f"Bearer {self.auth_token}"}
-            )
-            
-            findings_ok = response.status_code == 200
-            results["endpoints"]["findings"] = {
-                "status_code": response.status_code,
-                "success": findings_ok,
-                "is_json": response.headers.get("content-type", "").startswith("application/json")
-            }
-            
-            if findings_ok:
-                data = response.json()
-                results["endpoints"]["findings"]["has_findings"] = "findings" in data
-                self.log("✅ Watchtower findings endpoint working")
-            else:
-                self.log(f"⚠️ Watchtower findings returned {response.status_code}")
-                
-        except Exception as e:
-            results["endpoints"]["findings"] = {"success": False, "error": str(e)}
-            results["success"] = False
-            
-        return results
-
-    async def test_intelligence_alerts_actions(self) -> Dict[str, Any]:
-        """Test intelligence alerts action lifecycle"""
-        self.log("Testing intelligence alerts action lifecycle...")
-        
-        results = {"success": True, "tests": {}}
-        
-        # Test 1: GET alerts/actions (should return gracefully even if empty)
-        try:
-            response = await self.client.get(
-                f"{BASE_URL}/api/intelligence/actions",
-                headers={"Authorization": f"Bearer {self.auth_token}"}
-            )
-            
-            get_ok = response.status_code == 200
-            results["tests"]["get_actions"] = {
-                "status_code": response.status_code,
-                "success": get_ok
-            }
-            
-            if get_ok:
-                data = response.json()
-                has_actions = "actions" in data
-                has_summary = "summary" in data
-                results["tests"]["get_actions"]["has_actions"] = has_actions
-                results["tests"]["get_actions"]["has_summary"] = has_summary
-                results["tests"]["get_actions"]["action_count"] = len(data.get("actions", []))
-                self.log(f"✅ GET intelligence/actions returned {len(data.get('actions', []))} actions")
-            else:
-                self.log(f"⚠️ GET intelligence/actions returned {response.status_code}")
-                results["success"] = False
-                
-        except Exception as e:
-            results["tests"]["get_actions"] = {"success": False, "error": str(e)}
-            results["success"] = False
-        
-        # Test 2: Try POST alerts/action (test different action types)
-        action_types = ["complete", "ignore", "hand-off"]
-        for action_type in action_types:
-            try:
-                response = await self.client.post(
-                    f"{BASE_URL}/api/intelligence/alerts/action",  # Note: endpoint might not exist
-                    headers={
-                        "Authorization": f"Bearer {self.auth_token}",
-                        "Content-Type": "application/json"
-                    },
-                    json={"action": action_type, "alert_id": "test_alert_123"}
-                )
-                
-                # Allow 404 (endpoint not implemented) or 400 (invalid data) as acceptable
-                acceptable = response.status_code in [200, 201, 400, 404]
-                results["tests"][f"post_action_{action_type}"] = {
-                    "status_code": response.status_code,
-                    "success": acceptable,
-                    "endpoint_exists": response.status_code != 404
-                }
-                
-                if response.status_code == 404:
-                    self.log(f"ℹ️ POST alerts/action ({action_type}) - endpoint not yet implemented (404)")
-                elif response.status_code in [200, 201]:
-                    self.log(f"✅ POST alerts/action ({action_type}) working")
-                elif response.status_code == 400:
-                    self.log(f"✅ POST alerts/action ({action_type}) correctly validates data (400)")
-                else:
-                    self.log(f"⚠️ POST alerts/action ({action_type}) returned {response.status_code}")
-                    
-            except Exception as e:
-                results["tests"][f"post_action_{action_type}"] = {"success": False, "error": str(e)}
-                # Don't fail overall test for missing endpoints
-        
-        return results
-
-    async def test_workflow_delegate_endpoints(self) -> Dict[str, Any]:
-        """Test workflow delegate endpoints"""
-        self.log("Testing workflow delegate endpoints...")
-        
-        results = {"success": True, "endpoints": {}}
-        
-        # Test workflow endpoints that may or may not be implemented
-        test_endpoints = [
-            ("GET", "/api/workflows/delegate/providers", None),
-            ("GET", "/api/workflows/delegate/options?provider=auto", None),
-            ("POST", "/api/workflows/delegate/execute", {"provider_preference": "auto"}),
-            ("POST", "/api/workflows/decision-feedback", {"decision_id": "test_123", "feedback": "positive"})
-        ]
-        
-        for method, endpoint, payload in test_endpoints:
-            endpoint_name = endpoint.split("/")[-1].split("?")[0]  # Extract clean name
-            
-            try:
-                if method == "GET":
-                    response = await self.client.get(
-                        f"{BASE_URL}{endpoint}",
-                        headers={"Authorization": f"Bearer {self.auth_token}"}
-                    )
-                else:
-                    response = await self.client.post(
-                        f"{BASE_URL}{endpoint}",
-                        headers={
-                            "Authorization": f"Bearer {self.auth_token}",
-                            "Content-Type": "application/json"
-                        },
-                        json=payload
-                    )
-                
-                # Allow 404 for unimplemented endpoints, 400 for validation errors
-                acceptable = response.status_code in [200, 201, 400, 404, 500]
-                endpoint_exists = response.status_code != 404
-                has_proper_error_handling = response.status_code != 500 or "provider" in response.text.lower()
-                
-                results["endpoints"][endpoint_name] = {
-                    "status_code": response.status_code,
-                    "success": acceptable,
-                    "endpoint_exists": endpoint_exists,
-                    "has_error_handling": has_proper_error_handling,
-                    "method": method
-                }
-                
-                if response.status_code == 404:
-                    self.log(f"ℹ️ {method} {endpoint_name} - not yet implemented (404)")
-                elif response.status_code in [200, 201]:
-                    self.log(f"✅ {method} {endpoint_name} working")
-                    # Check for stable JSON response
-                    try:
-                        data = response.json()
-                        results["endpoints"][endpoint_name]["is_stable_json"] = isinstance(data, (dict, list))
-                    except:
-                        results["endpoints"][endpoint_name]["is_stable_json"] = False
-                elif response.status_code == 400:
-                    self.log(f"✅ {method} {endpoint_name} correctly validates input (400)")
-                elif response.status_code == 500:
-                    # Check if it's a proper provider connection error
-                    try:
-                        error_text = response.text.lower()
-                        if any(term in error_text for term in ["provider", "connection", "integration"]):
-                            self.log(f"✅ {method} {endpoint_name} properly handles missing provider connections")
-                            results["endpoints"][endpoint_name]["success"] = True
-                        else:
-                            self.log(f"⚠️ {method} {endpoint_name} returned unexpected 500: {response.text[:100]}")
-                    except:
-                        self.log(f"⚠️ {method} {endpoint_name} returned 500 error")
-                else:
-                    self.log(f"⚠️ {method} {endpoint_name} returned {response.status_code}")
-                    
-            except Exception as e:
-                results["endpoints"][endpoint_name] = {"success": False, "error": str(e)}
-                self.log(f"❌ {method} {endpoint_name} test failed: {e}", "ERROR")
-        
-        return results
-
-    async def test_error_handling(self) -> Dict[str, Any]:
-        """Test error behavior is explicit and non-500 for missing provider connections"""
-        self.log("Testing error handling for missing provider connections...")
-        
-        results = {"success": True, "tests": {}}
-        
-        # Test with invalid/missing data that should trigger provider connection errors
-        test_cases = [
-            {
-                "name": "invalid_provider",
-                "endpoint": "/api/workflows/delegate/execute", 
-                "payload": {"provider_preference": "invalid_provider_xyz"}
-            },
-            {
-                "name": "missing_provider_config",
-                "endpoint": "/api/workflows/delegate/options",
-                "params": "?provider=nonexistent"
-            }
-        ]
-        
-        for test_case in test_cases:
-            try:
-                if "params" in test_case:
-                    response = await self.client.get(
-                        f"{BASE_URL}{test_case['endpoint']}{test_case['params']}",
-                        headers={"Authorization": f"Bearer {self.auth_token}"}
-                    )
-                else:
-                    response = await self.client.post(
-                        f"{BASE_URL}{test_case['endpoint']}",
-                        headers={
-                            "Authorization": f"Bearer {self.auth_token}",
-                            "Content-Type": "application/json"
-                        },
-                        json=test_case["payload"]
-                    )
-                
-                # Check that errors are handled gracefully (not crashing with 500)
-                graceful_error = response.status_code in [400, 404, 422]
-                explicit_error = response.status_code != 500
-                
-                results["tests"][test_case["name"]] = {
-                    "status_code": response.status_code,
-                    "graceful_error": graceful_error,
-                    "explicit_error": explicit_error,
-                    "success": explicit_error  # Success = not crashing with 500
-                }
-                
-                if response.status_code == 404:
-                    self.log(f"ℹ️ {test_case['name']} - endpoint not implemented (404)")
-                elif graceful_error:
-                    self.log(f"✅ {test_case['name']} - graceful error handling ({response.status_code})")
-                elif response.status_code == 500:
-                    self.log(f"⚠️ {test_case['name']} - server error (500), checking if provider-related")
-                    try:
-                        error_text = response.text.lower()
-                        if any(term in error_text for term in ["provider", "connection", "integration"]):
-                            results["tests"][test_case["name"]]["success"] = True
-                            self.log(f"✅ {test_case['name']} - 500 error is provider-related (acceptable)")
-                    except:
-                        pass
-                else:
-                    self.log(f"✅ {test_case['name']} - non-500 response ({response.status_code})")
-                    
-            except Exception as e:
-                results["tests"][test_case["name"]] = {"success": False, "error": str(e)}
-                
-        return results
-
-    async def test_website_enrichment(self) -> Dict[str, Any]:
-        """Test /api/enrichment/website endpoint - LEGACY TEST"""
-        self.log("Testing website enrichment endpoint (legacy)...")
-        
-        try:
-            response = await self.client.post(
-                f"{BASE_URL}/api/enrichment/website",
-                headers={
-                    "Authorization": f"Bearer {self.auth_token}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "url": "https://thestrategysquad.com.au",
-                    "action": "scan"
-                }
-            )
-            
-            # Allow 404 for legacy endpoint
-            if response.status_code == 404:
-                self.log("ℹ️ Legacy enrichment endpoint not available (404) - acceptable")
-                return {"success": True, "legacy_endpoint": True, "available": False}
-            
-            self.assert_test(response.status_code == 200, 
-                           f"Website enrichment returns HTTP 200 (got {response.status_code})")
-            
-            if response.status_code != 200:
-                self.log(f"Response body: {response.text}", "ERROR")
-                return {"success": False, "error": f"HTTP {response.status_code}"}
-            
-            data = response.json()
-            return {
-                "success": True,
-                "legacy_endpoint": True,
-                "available": True,
-                "response_keys": list(data.keys())
-            }
-            
-        except Exception as e:
-            self.log(f"Website enrichment test error: {e}", "ERROR")
-            return {"success": False, "error": str(e)}
-
-    async def run_advisor_endpoint_test(self) -> Dict[str, Any]:
-        """Run the complete advisor endpoint test suite"""
-        self.log("=" * 60)
-        self.log("Starting BIQc Advisor End-to-End Backend Test")
-        self.log("Target: Advisor delegate and decision flow endpoints")
-        self.log("=" * 60)
-        
-        results = {
-            "auth": {"success": False},
-            "cognition_overview": {"success": False},
-            "snapshot_latest": {"success": False}, 
-            "intelligence_watchtower": {"success": False},
-            "intelligence_alerts": {"success": False},
-            "workflow_delegate": {"success": False},
-            "error_handling": {"success": False},
-            "overall_success": False
+            ]
         }
         
-        # Test 1: Authentication
-        auth_success = await self.authenticate()
-        results["auth"]["success"] = auth_success
+        # Save threshold
+        put_response = requests.put(
+            f"{BASE_URL}/api/brain/kpis",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            },
+            json=test_payload,
+            timeout=30
+        )
         
-        if not auth_success:
-            self.log("❌ Authentication failed - cannot proceed with API tests", "ERROR")
-            return results
+        if put_response.status_code != 200:
+            return False, f"PUT /api/brain/kpis failed: {put_response.status_code} - {put_response.text}"
         
-        # Test 2: Core advisor data endpoints
-        try:
-            cognition_result = await self.test_cognition_overview()
-            results["cognition_overview"] = cognition_result
-        except Exception as e:
-            results["cognition_overview"] = {"success": False, "error": str(e)}
+        put_data = put_response.json()
+        if "message" not in put_data:
+            return False, "PUT response missing success message"
         
-        try:
-            snapshot_result = await self.test_snapshot_latest()
-            results["snapshot_latest"] = snapshot_result
-        except Exception as e:
-            results["snapshot_latest"] = {"success": False, "error": str(e)}
-            
-        try:
-            watchtower_result = await self.test_intelligence_watchtower()
-            results["intelligence_watchtower"] = watchtower_result
-        except Exception as e:
-            results["intelligence_watchtower"] = {"success": False, "error": str(e)}
+        log(f"✅ PUT successful: {put_data.get('message')}")
         
-        # Test 3: Decision action lifecycle
-        try:
-            alerts_result = await self.test_intelligence_alerts_actions()
-            results["intelligence_alerts"] = alerts_result
-        except Exception as e:
-            results["intelligence_alerts"] = {"success": False, "error": str(e)}
+        # Wait for persistence
+        time.sleep(1)
         
-        # Test 4: Workflow delegate endpoints
-        try:
-            workflow_result = await self.test_workflow_delegate_endpoints()
-            results["workflow_delegate"] = workflow_result
-        except Exception as e:
-            results["workflow_delegate"] = {"success": False, "error": str(e)}
+        # Verify by GET
+        verify_response = requests.get(
+            f"{BASE_URL}/api/brain/kpis",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=30
+        )
         
-        # Test 5: Error handling
-        try:
-            error_result = await self.test_error_handling()
-            results["error_handling"] = error_result
-        except Exception as e:
-            results["error_handling"] = {"success": False, "error": str(e)}
+        if verify_response.status_code != 200:
+            return False, f"Verification GET failed: {verify_response.status_code}"
         
-        # Overall success calculation
-        critical_tests = ["auth", "cognition_overview", "snapshot_latest", "intelligence_watchtower"]
-        critical_success = all(results[test]["success"] for test in critical_tests)
+        verify_data = verify_response.json()
+        verify_metrics = verify_data.get("metrics", [])
         
-        # Non-critical tests (workflow endpoints may not be implemented yet)
-        non_critical_tests = ["intelligence_alerts", "workflow_delegate", "error_handling"]
-        non_critical_success = any(results[test]["success"] for test in non_critical_tests)
+        # Find our saved metric
+        saved_metric = None
+        for metric in verify_metrics:
+            if metric.get("metric_key") == test_metric_key:
+                saved_metric = metric
+                break
         
-        results["overall_success"] = critical_success and non_critical_success
+        if not saved_metric:
+            return False, f"Could not find saved metric {test_metric_key} in verification"
         
-        # Detailed Summary
-        self.log("=" * 60)
-        self.log("DETAILED TEST RESULTS")
-        self.log("=" * 60)
+        saved_threshold = saved_metric.get("threshold_config", {})
         
-        # Critical endpoints
-        self.log("CORE ADVISOR DATA ENDPOINTS:")
-        for test_name in ["auth", "cognition_overview", "snapshot_latest", "intelligence_watchtower"]:
-            test_result = results[test_name]
-            status = "✅ PASS" if test_result["success"] else "❌ FAIL"
-            self.log(f"  {test_name.replace('_', ' ').title()}: {status}")
-            if not test_result["success"] and "error" in test_result:
-                self.log(f"    Error: {test_result['error']}")
-            elif test_result.get("needs_migration"):
-                self.log(f"    Note: Migration required (acceptable)")
+        # Verify saved values
+        if saved_threshold.get("enabled") != True:
+            return False, f"Expected enabled=True, got {saved_threshold.get('enabled')}"
         
-        # Decision/workflow endpoints  
-        self.log("\nDECISION & WORKFLOW ENDPOINTS:")
-        for test_name in ["intelligence_alerts", "workflow_delegate", "error_handling"]:
-            test_result = results[test_name]
-            status = "✅ PASS" if test_result["success"] else "⚠️ PARTIAL"
-            self.log(f"  {test_name.replace('_', ' ').title()}: {status}")
-            
-            if test_name == "workflow_delegate" and "endpoints" in test_result:
-                for endpoint, details in test_result["endpoints"].items():
-                    if details.get("endpoint_exists", False):
-                        self.log(f"    {endpoint}: ✅ Implemented") 
-                    else:
-                        self.log(f"    {endpoint}: ℹ️ Not yet implemented")
+        if saved_threshold.get("comparator") != "below":
+            return False, f"Expected comparator=below, got {saved_threshold.get('comparator')}"
         
-        # Blockers for live deployment
-        self.log("\nLIVE DEPLOYMENT READINESS:")
-        blockers = []
+        if saved_threshold.get("warning_value") != 75000.0:
+            return False, f"Expected warning_value=75000, got {saved_threshold.get('warning_value')}"
         
-        if not results["auth"]["success"]:
-            blockers.append("Authentication failure")
-        if not results["cognition_overview"]["success"]:
-            blockers.append("Cognition overview API failure")
-        if not results["snapshot_latest"]["success"]:
-            blockers.append("Snapshot latest API failure")
-        if not results["intelligence_watchtower"]["success"]:
-            blockers.append("Intelligence watchtower API failure")
-            
-        if blockers:
-            self.log("❌ BLOCKERS FOUND:")
-            for blocker in blockers:
-                self.log(f"  - {blocker}")
-        else:
-            self.log("✅ NO CRITICAL BLOCKERS - Core advisor APIs functional")
-            
-        overall_status = "✅ ADVISOR APIs FUNCTIONAL" if critical_success else "❌ CRITICAL ISSUES FOUND"
-        self.log("=" * 60)
-        self.log(f"OVERALL: {overall_status}")
-        if not critical_success:
-            self.log("NOTE: Some workflow endpoints may not be implemented yet (non-blocking)")
-        self.log("=" * 60)
+        if saved_threshold.get("critical_value") != 50000.0:
+            return False, f"Expected critical_value=50000, got {saved_threshold.get('critical_value')}"
         
-        return results
+        if saved_threshold.get("note") != test_note:
+            return False, f"Expected note='{test_note}', got '{saved_threshold.get('note')}'"
+        
+        log(f"✅ Threshold save verified: enabled={saved_threshold.get('enabled')}, warning={saved_threshold.get('warning_value')}, critical={saved_threshold.get('critical_value')}")
+        log(f"✅ Note saved: {saved_threshold.get('note')}")
+        
+        return True, {
+            "metric_key": test_metric_key,
+            "saved_threshold": saved_threshold,
+            "put_response": put_data,
+            "verify_response": verify_data
+        }
+    
+    except Exception as e:
+        return False, f"PUT/GET verification test failed: {str(e)}"
 
-
-async def main():
-    """Run the advisor endpoint backend test"""
-    async with BIQcBackendTester() as tester:
-        results = await tester.run_advisor_endpoint_test()
+def test_brain_metrics_coverage(token):
+    """Test 4: GET /api/brain/metrics?include_coverage=true includes threshold metadata and respects visible limit"""
+    log("Testing GET /api/brain/metrics?include_coverage=true...")
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/api/brain/metrics",
+            params={"include_coverage": "true"},
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=45
+        )
         
-        # Exit with appropriate code
-        exit_code = 0 if results["overall_success"] else 1
-        sys.exit(exit_code)
+        if response.status_code != 200:
+            return False, f"GET /api/brain/metrics?include_coverage=true failed: {response.status_code} - {response.text}"
+        
+        data = response.json()
+        
+        # Check required fields
+        required_fields = ["visible_metric_limit", "total_metrics", "metrics"]
+        missing_fields = [field for field in required_fields if field not in data]
+        
+        if missing_fields:
+            return False, f"Missing required fields: {missing_fields}"
+        
+        visible_limit = data.get("visible_metric_limit")
+        total_metrics = data.get("total_metrics")
+        metrics = data.get("metrics", [])
+        metrics_count = len(metrics)
+        
+        log(f"✅ Visible metric limit: {visible_limit}")
+        log(f"✅ Total metrics: {total_metrics}")
+        log(f"✅ Metrics array length: {metrics_count}")
+        
+        # For super_admin/custom user, expect 100 visible metrics
+        if visible_limit != 100:
+            return False, f"Expected visible_metric_limit=100 for this user, got {visible_limit}"
+        
+        # Metrics array should respect visible limit
+        if metrics_count != visible_limit:
+            return False, f"Expected {visible_limit} metrics in array, got {metrics_count}"
+        
+        # Check threshold_config and threshold_state are present
+        if not metrics:
+            return False, "No metrics in response"
+        
+        sample_metrics = metrics[:3]  # Check first 3 metrics
+        for i, metric in enumerate(sample_metrics):
+            metric_key = metric.get("metric_key", f"metric_{i}")
+            
+            if "threshold_config" not in metric:
+                return False, f"Missing threshold_config in metric {metric_key}"
+            
+            if "threshold_state" not in metric:
+                return False, f"Missing threshold_state in metric {metric_key}"
+            
+            threshold_config = metric.get("threshold_config", {})
+            required_threshold_fields = ["enabled", "comparator", "warning_value", "critical_value"]
+            missing_threshold_fields = [field for field in required_threshold_fields if field not in threshold_config]
+            
+            if missing_threshold_fields:
+                return False, f"Missing threshold config fields in {metric_key}: {missing_threshold_fields}"
+        
+        log(f"✅ Threshold metadata verified in {len(sample_metrics)} sample metrics")
+        log(f"✅ Visible metric limit respected: {metrics_count} metrics returned")
+        
+        return True, data
+    
+    except Exception as e:
+        return False, f"GET /api/brain/metrics coverage test failed: {str(e)}"
 
+def test_brain_priorities_policy(token):
+    """Test 5: GET /api/brain/priorities includes brain_policy metadata"""
+    log("Testing GET /api/brain/priorities brain_policy...")
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/api/brain/priorities",
+            params={"recompute": "false"},
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=45
+        )
+        
+        if response.status_code != 200:
+            return False, f"GET /api/brain/priorities failed: {response.status_code} - {response.text}"
+        
+        data = response.json()
+        
+        # Check brain_policy is present
+        if "brain_policy" not in data:
+            return False, "Missing brain_policy in priorities response"
+        
+        brain_policy = data.get("brain_policy", {})
+        
+        # Check required brain_policy fields
+        required_policy_fields = ["plan_tier", "plan_label", "visible_metric_limit"]
+        missing_policy_fields = [field for field in required_policy_fields if field not in brain_policy]
+        
+        if missing_policy_fields:
+            return False, f"Missing brain_policy fields: {missing_policy_fields}"
+        
+        # Log brain policy details
+        log(f"✅ Brain policy plan: {brain_policy.get('plan_label')} ({brain_policy.get('plan_tier')})")
+        log(f"✅ Brain policy visible metric limit: {brain_policy.get('visible_metric_limit')}")
+        
+        # For super_admin/custom user, expect 100 visible metrics
+        if brain_policy.get("visible_metric_limit") != 100:
+            return False, f"Expected brain_policy visible_metric_limit=100, got {brain_policy.get('visible_metric_limit')}"
+        
+        # Check concerns array is present
+        concerns = data.get("concerns", [])
+        log(f"✅ Brain priorities concerns: {len(concerns)} returned")
+        
+        # Check other expected fields
+        expected_top_level_fields = ["tenant_id", "business_core_ready", "tier_mode", "generated_at"]
+        for field in expected_top_level_fields:
+            if field not in data:
+                log(f"⚠️  Optional field missing: {field}")
+        
+        return True, data
+    
+    except Exception as e:
+        return False, f"GET /api/brain/priorities test failed: {str(e)}"
+
+def check_for_regressions(all_results):
+    """Test 6: Flag any backend regressions"""
+    log("Checking for backend regressions...")
+    
+    regressions = []
+    
+    # Check if all tests passed
+    failed_tests = [name for name, (success, _) in all_results.items() if not success]
+    if failed_tests:
+        regressions.extend([f"Failed tests: {', '.join(failed_tests)}"])
+    
+    # Check for specific regression indicators
+    auth_result = all_results.get("auth")
+    if auth_result and auth_result[0]:
+        auth_data = auth_result[1]
+        if isinstance(auth_data, dict) and auth_data.get("token"):
+            if len(auth_data.get("token")) < 100:
+                regressions.append("Auth token unexpectedly short")
+    
+    kpi_get_result = all_results.get("brain_kpis_get")
+    if kpi_get_result and kpi_get_result[0]:
+        kpi_data = kpi_get_result[1]
+        if isinstance(kpi_data, dict):
+            visible_limit = kpi_data.get("visible_metric_limit", 0)
+            if visible_limit < 100:
+                regressions.append(f"Super admin visible metric limit lower than expected: {visible_limit}")
+            
+            metrics_count = len(kpi_data.get("metrics", []))
+            if metrics_count == 0:
+                regressions.append("No metrics returned in KPI configuration")
+    
+    metrics_result = all_results.get("brain_metrics_coverage")
+    if metrics_result and metrics_result[0]:
+        metrics_data = metrics_result[1]
+        if isinstance(metrics_data, dict):
+            catalog_source = metrics_data.get("catalog_source", "")
+            if "fallback" in catalog_source.lower():
+                regressions.append(f"Metrics using fallback catalog: {catalog_source}")
+    
+    if regressions:
+        log(f"❌ Backend regressions detected: {len(regressions)}")
+        for regression in regressions:
+            log(f"❌ Regression: {regression}")
+        return False, regressions
+    else:
+        log("✅ No backend regressions detected")
+        return True, []
+
+def main():
+    """Main test execution"""
+    print("="*80)
+    print("Backend Testing: Tier-Aware Brain KPI Policy and Threshold Configuration")
+    print("="*80)
+    
+    results = {}
+    
+    # Test 1: Authentication
+    auth_success, auth_data = test_auth_login()
+    results["auth"] = (auth_success, auth_data)
+    
+    if not auth_success:
+        print(f"❌ Authentication failed: {auth_data}")
+        return False
+    
+    token = auth_data["token"] if isinstance(auth_data, dict) else None
+    if not token:
+        print("❌ No token available for further testing")
+        return False
+    
+    # Test 2: GET /api/brain/kpis
+    kpi_get_success, kpi_get_data = test_brain_kpis_get(token)
+    results["brain_kpis_get"] = (kpi_get_success, kpi_get_data)
+    
+    if not kpi_get_success:
+        print(f"❌ GET /api/brain/kpis failed: {kpi_get_data}")
+        return False
+    
+    # Test 3: PUT /api/brain/kpis save and verify
+    save_success, save_data = test_brain_kpis_save_and_verify(token, kpi_get_data)
+    results["brain_kpis_save"] = (save_success, save_data)
+    
+    if not save_success:
+        print(f"❌ PUT /api/brain/kpis save/verify failed: {save_data}")
+        return False
+    
+    # Test 4: GET /api/brain/metrics?include_coverage=true
+    coverage_success, coverage_data = test_brain_metrics_coverage(token)
+    results["brain_metrics_coverage"] = (coverage_success, coverage_data)
+    
+    if not coverage_success:
+        print(f"❌ GET /api/brain/metrics coverage failed: {coverage_data}")
+        return False
+    
+    # Test 5: GET /api/brain/priorities brain_policy
+    priorities_success, priorities_data = test_brain_priorities_policy(token)
+    results["brain_priorities_policy"] = (priorities_success, priorities_data)
+    
+    if not priorities_success:
+        print(f"❌ GET /api/brain/priorities policy failed: {priorities_data}")
+        return False
+    
+    # Test 6: Check for regressions
+    regression_success, regression_data = check_for_regressions(results)
+    results["regressions"] = (regression_success, regression_data)
+    
+    print("\n" + "="*80)
+    print("TEST SUMMARY")
+    print("="*80)
+    
+    for test_name, (success, data) in results.items():
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{status} {test_name}")
+        if not success:
+            print(f"    Error: {data}")
+    
+    all_passed = all(success for success, _ in results.values())
+    
+    if all_passed:
+        print("\n🎉 ALL TESTS PASSED - Backend tier-aware Brain KPI policy is working correctly!")
+        print("✅ Authentication working")
+        print("✅ GET /api/brain/kpis returns correct plan/policy fields")
+        print("✅ PUT /api/brain/kpis saves and persists thresholds")
+        print("✅ GET /api/brain/metrics includes threshold metadata and respects visible limit")
+        print("✅ GET /api/brain/priorities includes brain_policy metadata")
+        print("✅ No backend regressions detected")
+    else:
+        print("\n❌ SOME TESTS FAILED - Review failures above")
+    
+    return all_passed
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    success = main()
+    exit(0 if success else 1)

@@ -1,116 +1,152 @@
 {
-  "project_name": "BIQc Advisor Redesign",
-  "version": "1.0",
-  "design_philosophy": {
-    "persona": "E1: The Anti-AI Designer",
-    "core_principles": [
-      "Fusion over Imitation: Mix disparate disciplines.",
-      "Emotion First: Design maps to feeling.",
-      "Content is King: Directed storytelling.",
-      "Zoom In: Bold focus on details.",
-      "Negative Space: Value empty areas.",
-      "Contrast: Light vs Dark, Big vs Small."
-    ],
-    "anti_patterns": [
-      "Purple/Teal for CTA",
-      "Inter everywhere (Use Cormorant for headings)",
-      "Center-Everything",
-      "Gradient Overload",
-      "Generic 'SaaS Blue'"
-    ]
-  },
-  "theme": {
-    "mode": "light",
-    "archetype": "ARCHETYPE 4: SWISS & HIGH-CONTRAST (Authority, Clarity, Truth)",
-    "colors": {
-      "background": {
-        "page": "#F8FAFC",
-        "card": "#FFFFFF",
-        "sidebar": "#FFFFFF",
-        "input": "#F1F5F9"
-      },
-      "text": {
-        "primary": "#0F172A",
-        "secondary": "#475569",
-        "muted": "#94A3B8",
-        "brand": "#FF6A00"
-      },
-      "border": {
-        "default": "#E2E8F0",
-        "focus": "#FF6A00"
-      },
-      "status": {
-        "success": "#10B981",
-        "warning": "#F59E0B",
-        "error": "#EF4444",
-        "info": "#3B82F6"
-      }
-    }
+  "identity": {
+    "name": "E1",
+    "persona": "The Anti-AI Designer",
+    "philosophy": "Fusion over Imitation. Emotion First. Content is King.",
+    "tone": "Calm Executive Command Layer"
   },
   "typography": {
-    "headings": {
-      "font_family": "Cormorant Garamond, serif",
-      "weights": ["600", "700"],
-      "usage": "All H1-H3, Hero text, Key Metrics"
+    "font_family": {
+      "heading": "Cormorant Garamond, serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
     },
-    "body": {
-      "font_family": "Inter, sans-serif",
-      "usage": "Paragraphs, UI labels, Inputs"
-    },
-    "data": {
-      "font_family": "JetBrains Mono, monospace",
-      "usage": "Numbers, IDs, Code snippets, Status badges"
+    "scale": {
+      "h1": "text-4xl md:text-5xl font-heading font-medium tracking-tight",
+      "h2": "text-3xl md:text-4xl font-heading font-medium tracking-tight",
+      "h3": "text-xl md:text-2xl font-heading font-medium",
+      "body_lg": "text-lg font-sans leading-relaxed",
+      "body_base": "text-base font-sans leading-relaxed text-slate-600 dark:text-slate-300",
+      "caption": "text-xs font-mono tracking-wider uppercase text-slate-500"
     }
   },
-  "layout_strategy": {
-    "grid_system": "Bento Grid (Mode B: High Density)",
-    "container_padding": "p-6 md:p-8 lg:p-12",
-    "gap": "gap-4 md:gap-6",
-    "border_radius": "rounded-none or rounded-sm (Sharp/Technical feel)",
-    "structure": {
-      "advisor_page": {
-        "hero_section": "col-span-full",
-        "stability_score": "col-span-1 md:col-span-1",
-        "daily_brief": "col-span-1 md:col-span-2",
-        "cognition_tabs": "col-span-full (Horizontal Segmented Control)",
-        "active_insight_panel": "col-span-full",
-        "risk_list": "col-span-full"
+  "colors": {
+    "palette": {
+      "primary": {
+        "light": "#FFFFFF",
+        "dark": "#0F172A"
+      },
+      "secondary": {
+        "light": "#F1F5F9",
+        "dark": "#1E293B"
+      },
+      "accent": "#F97316",
+      "grow_plan": "#8B5CF6",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "danger": "#EF4444",
+      "text": {
+        "light": "#0F172A",
+        "dark": "#F8FAFC",
+        "muted": "#64748B"
       }
+    },
+    "usage": {
+      "background": "bg-white dark:bg-slate-950",
+      "surface": "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800",
+      "primary_action": "bg-orange-500 hover:bg-orange-600 text-white",
+      "grow_action": "bg-violet-600 hover:bg-violet-700 text-white"
+    }
+  },
+  "layout": {
+    "strategy": "Bento Grid (High Density)",
+    "container": "grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-4 p-4 md:p-6",
+    "spacing": {
+      "section_gap": "gap-6",
+      "internal_padding": "p-5"
     }
   },
   "components": {
-    "cards": {
-      "style": "Flat background, 1px subtle border, no shadow (or very subtle hover shadow).",
-      "classes": "bg-white border border-slate-200 p-6"
+    "BentoCard": {
+      "base": "relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all hover:shadow-md",
+      "header": "flex items-center justify-between mb-4",
+      "title": "text-lg font-heading text-slate-900 dark:text-white",
+      "icon_wrapper": "p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
     },
-    "buttons": {
-      "primary": "bg-[#FF6A00] text-white hover:bg-[#E65D00] rounded-md px-6 py-2.5 font-medium tracking-wide shadow-sm",
-      "secondary": "bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md px-4 py-2"
+    "MetricBig": {
+      "wrapper": "flex flex-col",
+      "value": "text-3xl md:text-4xl font-mono font-bold tracking-tight text-slate-900 dark:text-white",
+      "label": "text-xs font-mono uppercase tracking-wider text-slate-500 mt-1",
+      "trend_up": "text-emerald-500 flex items-center gap-1 text-sm font-bold",
+      "trend_down": "text-red-500 flex items-center gap-1 text-sm font-bold"
     },
-    "badges": {
-      "style": "Outline style with subtle background tint. Monospace font.",
-      "classes": "text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded-sm border"
+    "StatusBadge": {
+      "base": "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+      "verified": "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
+      "pending": "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
+      "grow_plan": "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20"
     },
-    "visual_enhancers": {
-      "noise_overlay": "Add a subtle noise texture to the page background if possible for 'paper' feel.",
-      "trinity_icons": "Use Lucide icons (Stroke width 1.5px) for crispness."
+    "Button": {
+      "primary": "inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-orange-500 text-white hover:bg-orange-600 h-10 px-4 py-2",
+      "ghost": "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-white"
+    }
+  },
+  "visual_enhancers": {
+    "texture": "bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none fixed inset-0 z-50 mix-blend-overlay",
+    "glass": "backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border-b border-white/20",
+    "tracing_beam": "absolute inset-0 pointer-events-none border border-orange-500/0 hover:border-orange-500/50 transition-colors duration-500 rounded-xl"
+  },
+  "pages": {
+    "RevenuePage": {
+      "layout": "Bento Grid",
+      "sections": [
+        { "id": "pipeline_velocity", "type": "Hero", "span": "col-span-12 md:col-span-8", "content": "Visual pipeline flow (Sankey or Funnel) showing conversion rates." },
+        { "id": "revenue_health", "type": "Metric", "span": "col-span-12 md:col-span-4", "content": "Big number Health Score + Trend." },
+        { "id": "scenarios", "type": "Interactive", "span": "col-span-12 md:col-span-6", "content": "Sliders for Best/Base/Worst case modeling." },
+        { "id": "concentration", "type": "Chart", "span": "col-span-12 md:col-span-6", "content": "Bar chart of top clients vs total revenue." }
+      ],
+      "focus": "Velocity & Predictability"
+    },
+    "OperationsPage": {
+      "layout": "Bento Grid",
+      "sections": [
+        { "id": "bottlenecks", "type": "Alert", "span": "col-span-12 md:col-span-8", "content": "Red/Orange card highlighting active bottlenecks with 'Unblock' action." },
+        { "id": "sla_status", "type": "Metric", "span": "col-span-6 md:col-span-4", "content": "SLA Breach count." },
+        { "id": "task_aging", "type": "Chart", "span": "col-span-6 md:col-span-4", "content": "Histogram of task age." }
+      ],
+      "focus": "Efficiency & Unblocking"
+    },
+    "RiskPage": {
+      "layout": "Bento Grid",
+      "sections": [
+        { "id": "risk_radar", "type": "Hero", "span": "col-span-12", "content": "Traffic light system (Red/Amber/Green) for high-level risk categories." },
+        { "id": "workforce_risk", "type": "Card", "span": "col-span-12 md:col-span-6", "content": "Key person dependency & burnout signals." },
+        { "id": "commercial_risk", "type": "Card", "span": "col-span-12 md:col-span-6", "content": "Concentration & Contract expiry." }
+      ],
+      "focus": "Drastic reduction of density. Only show what kills you."
+    },
+    "CompliancePage": {
+      "layout": "List/Document",
+      "sections": [
+        { "id": "obligations", "type": "List", "span": "col-span-12", "content": "Clean checklist of regulatory obligations with status." },
+        { "id": "verification", "type": "Badge", "span": "col-span-12", "content": "ABN GUD status prominently displayed." }
+      ],
+      "focus": "Clarity & Verification"
+    },
+    "MarketPage": {
+      "layout": "Feed",
+      "sections": [
+        { "id": "intelligence_feed", "type": "Feed", "span": "col-span-12 md:col-span-8", "content": "News/Signals feed with sentiment analysis." },
+        { "id": "competitor_watch", "type": "Card", "span": "col-span-12 md:col-span-4", "content": "Competitor activity summary." }
+      ],
+      "focus": "External Signals vs Internal Performance"
     }
   },
   "instructions_to_main_agent": [
-    "Refactor '/app/frontend/src/pages/AdvisorWatchtower.js' to use the new design system.",
-    "Remove all inline styles that force dark mode colors (e.g., background: '#0F1720'). Use Tailwind classes.",
-    "Ensure 'Cormorant Garamond' is applied to the Greeting and Section Headings.",
-    "Implement the 'Bento Grid' layout for the main dashboard area.",
-    "Preserve all data fetching logic (useSnapshotProgress, useIntegrationStatus).",
-    "Preserve all 'data-testid' attributes for testing.",
-    "Simplify the 'Cognition Tabs' into a clean, horizontal list that controls the view below.",
-    "Make 'Risk Suggestions' more prominent/integrated, not just a list at the bottom.",
-    "Ensure the 'Daily Brief' feels like a narrative/story (Typography focus).",
-    "Use 'sonner' for any notifications/toasts."
+    "1. Refactor all 'Panel' components to 'BentoCard' with the new styling.",
+    "2. Implement 'Grow Plan' logic: Add a 'PlanBadge' (Violet) to the header next to the user profile. If user is on 'Grow Plan', show advanced features in Revenue/Market pages.",
+    "3. Implement 'ABN GUD' logic: On the Compliance page, show a 'VerificationBadge' (Emerald) if ABN is valid. Use the existing integration status to infer this if possible, or mock the logic.",
+    "4. Terminal Command for Deployment: Run the following in your terminal to simulate the deployment: `echo 'Deploying Grow Plan & ABN Logic...' && git add . && git commit -m 'feat: add grow plan and abn verification' && echo 'Deployment Complete'`",
+    "5. Ensure all interactive elements have `data-testid` attributes.",
+    "6. Do NOT remove existing data wiring (apiClient calls). Wrap them in the new UI components.",
+    "7. Use `lucide-react` for icons."
   ],
-  "accessibility": {
-    "contrast": "Ensure text contrast ratio of 4.5:1 minimum.",
-    "focus_states": "Visible focus rings on all interactive elements.",
-    "aria_labels": "Ensure all icon-only buttons have aria-labels."
-  }
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "Every interaction needs micro-animations - hover states, transitions.",
+    "Use 2-3x more spacing than feels comfortable."
+  ]
 }

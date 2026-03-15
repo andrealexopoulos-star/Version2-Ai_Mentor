@@ -71,7 +71,7 @@
     },
     "sign_out_test": {
       "click_sign_out": "PASS - Clicked Sign Out from dropdown",
-      "redirect": "PASS - Redirected to landing page (https://cognition-overhaul.preview.emergentagent.com/)"
+      "redirect": "PASS - Redirected to landing page (https://advisor-engine.preview.emergentagent.com/)"
     }
   },
   "test_report_links": ["/app/test_reports/iteration_57.json"],

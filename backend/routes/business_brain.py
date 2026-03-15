@@ -107,6 +107,19 @@ class ConcernUpsertRequest(BaseModel):
     scope: str = Field(default="tenant", pattern="^(tenant|global)$")
 
 
+class KpiThresholdInput(BaseModel):
+    metric_key: str = Field(..., min_length=2)
+    enabled: bool = True
+    comparator: str = Field(default="below", pattern="^(above|below)$")
+    warning_value: Optional[float] = None
+    critical_value: Optional[float] = None
+    note: Optional[str] = None
+
+
+class KpiThresholdUpdateRequest(BaseModel):
+    thresholds: List[KpiThresholdInput] = Field(default_factory=list)
+
+
 def _is_admin_like(user: Dict[str, Any]) -> bool:
     role = str(user.get("role") or "").lower()
     if role in {"admin", "superadmin", "super_admin"}:
@@ -143,6 +156,7 @@ async def get_brain_priorities(
             "business_core_ready": engine.business_core_ready,
             "mode": result.get("mode", "business_core"),
             "tier_mode": result.get("tier_mode"),
+            "brain_policy": result.get("brain_policy") or engine.brain_policy(),
             "all_clear": bool(result.get("all_clear", False)),
             "model_execution_id": result.get("model_execution_id"),
             "source_event_ids": result.get("source_event_ids") or [],
@@ -269,10 +283,44 @@ async def get_brain_metrics(
 
         return {
             "tenant_id": tenant_id,
+            "brain_policy": engine.brain_policy(),
             "metrics": engine.get_metrics(metric_name=metric_name, period=period),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch metrics: {e}")
+
+
+@router.get("/brain/kpis")
+async def get_brain_kpis(current_user: dict = Depends(get_current_user)):
+    """Return tier-aware KPI access and user threshold configuration."""
+    tenant_id = current_user["id"]
+    engine = BusinessBrainEngine(get_sb(), tenant_id, current_user)
+    try:
+        return {
+            "tenant_id": tenant_id,
+            **engine.get_kpi_configuration(),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch KPI configuration: {e}")
+
+
+@router.put("/brain/kpis")
+async def update_brain_kpis(
+    payload: KpiThresholdUpdateRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Persist KPI threshold preferences for the current user."""
+    tenant_id = current_user["id"]
+    engine = BusinessBrainEngine(get_sb(), tenant_id, current_user)
+    try:
+        config = engine.save_kpi_thresholds([item.model_dump() for item in payload.thresholds])
+        return {
+            "tenant_id": tenant_id,
+            **config,
+            "message": "KPI thresholds saved. Brain refresh will use the updated policy.",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save KPI configuration: {e}")
 
 
 @router.post("/brain/metrics/recompute")
@@ -300,6 +348,7 @@ async def brain_runtime_check(current_user: dict = Depends(get_current_user)):
             "tenant_id": tenant_id,
             "server_time": datetime.now(timezone.utc).isoformat(),
             "business_core_ready": engine.business_core_ready,
+            "brain_policy": engine.brain_policy(),
             "catalog_source_resolved": engine.catalog_source,
             "catalog_metric_count": len(engine.catalog),
             "catalog_diagnostics": engine.catalog_diagnostics,

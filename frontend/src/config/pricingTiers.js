@@ -13,6 +13,7 @@ export const PRICING_TIERS = [
     period: '/month',
     color: '#64748B',
     features: [
+      '10 KPI monitors with custom thresholds',
       'Market Intelligence (basic)',
       'Business DNA',
       '1 Forensic Audit/month',
@@ -29,6 +30,7 @@ export const PRICING_TIERS = [
     period: '/month',
     color: '#10B981',
     features: [
+      '25 KPI monitors with custom thresholds',
       'Live market metrics (with integrations)',
       'Revenue intelligence',
       'Workforce baseline monitoring',
@@ -46,6 +48,7 @@ export const PRICING_TIERS = [
     color: '#3B82F6',
     popular: true,
     features: [
+      '50 KPI monitors with custom thresholds',
       'Everything in Foundation',
       'Service-line profitability insight',
       'Hiring trigger detection',
@@ -57,13 +60,14 @@ export const PRICING_TIERS = [
   },
   {
     id: 'enterprise',
-    name: 'Growth',
+    name: 'SMB Protect',
     subtitle: 'Strategic Expansion Control',
     price: '$3,900',
     priceNum: 3900,
     period: '/month',
     color: '#7C3AED',
     features: [
+      '75 KPI monitors with custom thresholds',
       'Everything in Performance',
       'Hiring vs outsource modelling',
       'Revenue expansion simulation',
@@ -73,8 +77,8 @@ export const PRICING_TIERS = [
     ],
   },
   {
-    id: 'super_admin',
-    name: 'Enterprise',
+    id: 'custom',
+    name: 'Custom',
     subtitle: 'Executive Command Layer',
     price: null,
     priceNum: null,
@@ -82,7 +86,8 @@ export const PRICING_TIERS = [
     color: '#EF4444',
     cta: 'Speak to Sales',
     features: [
-      'Everything in Growth',
+      '100 KPI monitors with custom thresholds',
+      'Everything in SMB Protect',
       'Multi-division reporting',
       'Custom KPI frameworks',
       'Governance controls',
@@ -93,6 +98,9 @@ export const PRICING_TIERS = [
   },
 ];
 
-export const getTierByPlanId = (id) => PRICING_TIERS.find(t => t.id === id) || PRICING_TIERS[0];
+export const getTierByPlanId = (id) => {
+  if (id === 'super_admin') return PRICING_TIERS.find((tier) => tier.id === 'custom') || PRICING_TIERS[0];
+  return PRICING_TIERS.find((tier) => tier.id === id) || PRICING_TIERS[0];
+};
 export const getTierColor = (id) => getTierByPlanId(id).color;
 export const getTierName = (id) => getTierByPlanId(id).name;

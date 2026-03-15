@@ -624,7 +624,7 @@ export default function AdvisorWatchtower() {
       crm: { provider: 'CRM', connected: false, live: false, status: 'pending', endpoint: '/integrations/crm/deals', error: '' },
       accounting: { provider: 'Xero', connected: false, live: false, status: 'pending', endpoint: '/integrations/accounting/summary', error: '' },
       email: { provider: 'Outlook', connected: false, live: false, status: 'pending', endpoint: '/email/priority-inbox', error: '' },
-      brain: { provider: 'BIQc Business Brain', connected: true, live: false, status: 'unavailable', endpoint: '/brain/priorities', error: 'Awaiting first successful Brain response.' },
+      brain: { provider: 'BIQc Business Brain', connected: true, live: false, status: 'pending', endpoint: '/brain/priorities', error: '' },
     },
   });
   const [brainContext, setBrainContext] = useState({
@@ -639,6 +639,7 @@ export default function AdvisorWatchtower() {
   const [integrationContextLoading, setIntegrationContextLoading] = useState(false);
   const [integrationContextError, setIntegrationContextError] = useState('');
   const integrationFetchInFlightRef = useRef(false);
+  const initialDataLoadTriggeredRef = useRef(false);
   const [brainRetryCount, setBrainRetryCount] = useState(0);
   const [actionState, setActionState] = useState({ byKey: {}, byAlertId: {} });
   const [actionsHydrated, setActionsHydrated] = useState(false);
@@ -714,6 +715,22 @@ export default function AdvisorWatchtower() {
 
     setIntegrationContextLoading(true);
     setIntegrationContextError('');
+    setIntegrationContext((prev) => ({
+      ...prev,
+      sourceHealth: {
+        ...prev.sourceHealth,
+        brain: {
+          ...prev.sourceHealth.brain,
+          status: 'pending',
+          live: false,
+          error: '',
+        },
+      },
+    }));
+    setBrainContext((prev) => ({
+      ...prev,
+      error: '',
+    }));
 
     try {
       let brainRes;
@@ -926,11 +943,13 @@ export default function AdvisorWatchtower() {
   }, []);
 
   useEffect(() => {
+    if (authState === AUTH_STATE.LOADING || initialDataLoadTriggeredRef.current) return;
+    initialDataLoadTriggeredRef.current = true;
     fetchOverview(false);
     fetchWatchtower();
     fetchIntegrationContext(false);
     hydrateActionHistory();
-  }, [fetchOverview, fetchWatchtower, fetchIntegrationContext, hydrateActionHistory]);
+  }, [authState, fetchOverview, fetchWatchtower, fetchIntegrationContext, hydrateActionHistory]);
 
   const handleRefresh = async () => {
     await Promise.allSettled([
@@ -1398,10 +1417,15 @@ export default function AdvisorWatchtower() {
   const noActiveDecisions = decisions.every((decision) => !decision.signal);
   const brainLive = Boolean(integrationContext.sourceHealth?.brain?.live);
   const brainSourceUnavailable = integrationContext.sourceHealth?.brain?.status === 'unavailable';
-  const brainUnavailable = Boolean(brainContext.error)
+  const brainLoading = authState === AUTH_STATE.LOADING
+    || integrationContextLoading
+    || integrationContext.sourceHealth?.brain?.status === 'pending';
+  const brainUnavailable = !brainLoading && (
+    Boolean(brainContext.error)
     || Boolean(integrationContextError)
     || brainSourceUnavailable
-    || (!integrationContextLoading && !brainLive && !brainContext.allClear);
+    || (!brainLive && !brainContext.allClear)
+  );
   const fallbackState = getStateLabel(overview, cognitive);
   const executiveState = getExecutiveStateLabel({
     executiveSnapshot,
@@ -1576,8 +1600,10 @@ export default function AdvisorWatchtower() {
                 </p>
               </div>
               <p className="text-xs sm:text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
-                {!brainLive
-                  ? 'Business Brain is currently unavailable. Priority decisions are paused until data feed recovers.'
+                {brainLoading
+                  ? 'Business Brain is syncing live sources. Priority decisions will appear when this cycle completes.'
+                  : !brainLive
+                    ? 'Business Brain is currently unavailable. Priority decisions are paused until data feed recovers.'
                   : (brainContext.allClear
                       ? 'Business Brain is live. No high-priority concerns are currently triggered.'
                       : `Three decisions from BIQc Business Brain with ${connectedSources.join(', ')} evidence.`)}
@@ -1850,6 +1876,26 @@ export default function AdvisorWatchtower() {
                           className="mt-4 inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
                           style={{ borderColor: '#FCA5A5', color: '#FECACA', fontFamily: fontFamily.mono }}
                           data-testid="advisor-brain-unavailable-discuss-soundboard"
+                        >
+                          Discuss with BIQc SoundBoard <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    ) : brainLoading ? (
+                      <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-brain-loading-state">
+                        <h3 className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-brain-loading-title">
+                          BIQc Business Brain is syncing live signals.
+                        </h3>
+                        <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-brain-loading-summary">
+                          Connected feeds are active. Priority decisions will render as soon as this analysis cycle finishes.
+                        </p>
+                        <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-brain-loading-next-step">
+                          Use Refresh intelligence if this state persists longer than a few minutes.
+                        </p>
+                        <Link
+                          to={soundboardDiscussHref('Business Brain is syncing live signals. Explain what sources are still pending and what I should monitor while it completes.')}
+                          className="mt-4 inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                          data-testid="advisor-brain-loading-discuss-soundboard"
                         >
                           Discuss with BIQc SoundBoard <ArrowRight className="h-3.5 w-3.5" />
                         </Link>

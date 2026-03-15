@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 import ActionOwnershipCard from '../components/ActionOwnershipCard';
+import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -111,6 +112,45 @@ const OperationsPage = () => {
     successMetric: `SLA breaches ${exec.sla_breaches ?? '—'} · task aging ${exec.task_aging != null ? `${exec.task_aging}%` : '—'}`,
   };
 
+  const opsSignals = [
+    exec.bottleneck ? {
+      id: 'operations-active-bottleneck',
+      title: 'A live bottleneck is slowing execution',
+      detail: String(exec.bottleneck),
+      action: 'Assign one owner, one unblock action, and a 48-hour checkpoint.',
+      source: 'Observation Events',
+      signalType: 'operations_bottleneck',
+      timestamp: snapshot?.generated_at || null,
+      severity: 'high',
+    } : null,
+    exec.sla_breaches > 0 ? {
+      id: 'operations-sla-breach',
+      title: `${exec.sla_breaches} SLA breach${exec.sla_breaches === 1 ? '' : 'es'} need intervention`,
+      detail: 'Service commitments are being missed and should be triaged before they affect customer confidence.',
+      action: 'Review breached queues and reset delivery ownership for the next service window.',
+      source: 'CRM',
+      signalType: 'sla_breaches',
+      timestamp: crmIntegration?.connected_at || null,
+      severity: exec.sla_breaches >= 3 ? 'high' : 'warning',
+    } : null,
+    exec.task_aging > 30 ? {
+      id: 'operations-task-aging',
+      title: `${exec.task_aging}% of tasks are ageing beyond threshold`,
+      detail: 'Open work is staying stale long enough to create downstream delivery drag.',
+      action: 'Clear old tasks or re-sequence the queue so owners can finish what matters first.',
+      source: 'CRM',
+      signalType: 'task_aging',
+      timestamp: crmIntegration?.connected_at || null,
+      severity: 'warning',
+    } : null,
+  ].filter(Boolean);
+
+  const opsSourceRows = [
+    { id: 'crm', label: crmIntegration?.provider || 'CRM workflow state', status: hasCRM ? 'Live' : 'Needs connection', detail: hasCRM ? `${exec.active_tasks ?? 0} active tasks and queue states are available.` : 'Connect CRM to activate queue, SLA, and bottleneck tracking.' },
+    { id: 'accounting', label: acctIntegration?.provider || 'Accounting pressure spillover', status: hasAccounting ? 'Live' : 'Optional', detail: hasAccounting ? 'Accounting pressure can now be surfaced when it spills into delivery.' : 'Accounting adds cost and profitability context to operational decisions.' },
+    { id: 'events', label: 'Observation events', status: opsSignals.length > 0 ? 'Live' : 'Quiet', detail: opsSignals.length > 0 ? `${opsSignals.length} live execution signal${opsSignals.length === 1 ? '' : 's'} are currently shaping priorities.` : 'No operational watchtower event is active in this cycle.' },
+  ];
+
   return (
     <DashboardLayout>
       <EnterpriseContactGate featureName="Delivery & Operations">
@@ -182,6 +222,40 @@ const OperationsPage = () => {
           successMetric={actionOwnership.successMetric}
           testIdPrefix="operations-action-ownership"
         />
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" data-testid="operations-ux-main-grid">
+          <div className="space-y-4" data-testid="operations-priority-column">
+            <SectionLabel title="What needs unblocking now" detail="This view stays focused on concrete delivery friction, not abstract operations theory." testId="operations-priority-label" />
+            <div className="grid gap-4 md:grid-cols-2" data-testid="operations-hero-metrics-grid">
+              <MetricCard label="SLA breaches" value={exec.sla_breaches != null ? String(exec.sla_breaches) : '—'} caption="Commitments missed in the current service cycle" tone={exec.sla_breaches > 0 ? '#EF4444' : '#10B981'} testId="operations-sla-metric" />
+              <MetricCard label="Task aging" value={exec.task_aging != null ? `${exec.task_aging}%` : '—'} caption="Open work sitting stale beyond threshold" tone={exec.task_aging > 30 ? '#F59E0B' : '#10B981'} testId="operations-aging-metric" />
+              <MetricCard label="Tasks in motion" value={exec.active_tasks != null ? String(exec.active_tasks) : '—'} caption="Current in-flight operational workload" tone="#3B82F6" testId="operations-active-tasks-metric" />
+              <MetricCard label="SOP compliance" value={exec.sop_compliance != null ? `${exec.sop_compliance}%` : '—'} caption="Procedures followed in the latest cycle" tone={exec.sop_compliance > 85 ? '#10B981' : '#F59E0B'} testId="operations-sop-metric" />
+            </div>
+            {opsSignals.length > 0 ? opsSignals.map((signal) => (
+              <SignalCard key={signal.id} {...signal} testId={signal.id} />
+            )) : (
+              <EmptyStateCard title="No urgent operational blockage is active." detail="Delivery is currently calm. BIQc will only surface an operations card when workflow pressure becomes real." testId="operations-priority-empty" />
+            )}
+          </div>
+
+          <div className="space-y-4" data-testid="operations-source-column">
+            <SurfaceCard testId="operations-source-health-card">
+              <SectionLabel title="Actionability by source" detail="Operations keeps workflow, accounting spillover, and watchtower signals separate so the fix path is obvious." testId="operations-source-health-label" />
+              <div className="mt-4 space-y-3" data-testid="operations-source-health-list">
+                {opsSourceRows.map((row) => (
+                  <div key={row.id} className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid={`operations-source-health-${row.id}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>{row.label}</p>
+                      <span className="text-[10px] uppercase tracking-[0.14em] text-[#CBD5E1]" style={{ fontFamily: fontFamily.mono }}>{row.status}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-[#CBD5E1]">{row.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </SurfaceCard>
+          </div>
+        </div>
 
         {/* Sync progress bar */}
         {(loading || (hasAnyConnectedSystem && syncProgress < 100)) && (

@@ -16,6 +16,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
+import { KpiThresholdTab } from '../components/business-dna/KpiThresholdTab';
 
 const businessTypes = [
   'Sole Trader', 'Partnership', 'Company (Pty Ltd)', 'Company (Ltd)',
@@ -53,14 +54,8 @@ const BusinessProfile = () => {
 
   const fetchProfile = async () => {
     try {
-      // Pull from all sources: business_profiles + resolved facts + integration data
-      const [profileRes, intRes] = await Promise.allSettled([
-        apiClient.get('/business-profile/context'),
-        apiClient.get('/integrations/merge/connected'),
-      ]);
-
-      const ctx = profileRes.status === 'fulfilled' ? (profileRes.value.data || {}) : {};
-      const intData = intRes.status === 'fulfilled' ? (intRes.value.data || {}) : {};
+      const profileRes = await apiClient.get('/business-profile/context', { timeout: 12000 });
+      const ctx = profileRes.data || {};
 
       const rawProfile = ctx.profile || {};
       const resolvedFields = ctx.resolved_fields || {};
@@ -73,19 +68,31 @@ const BusinessProfile = () => {
         }
       }
 
-      // Enrich from CRM integration data (HubSpot company info)
-      const integrations = intData?.integrations || {};
-      if (integrations.hubspot || integrations.salesforce) {
-        try {
-          const crmRes = await apiClient.get('/integrations/crm/company');
-          if (crmRes.data?.name && !merged.business_name) merged.business_name = crmRes.data.name;
-          if (crmRes.data?.industry && !merged.industry) merged.industry = crmRes.data.industry;
-          if (crmRes.data?.website && !merged.website) merged.website = crmRes.data.website;
-          if (crmRes.data?.city && !merged.location) merged.location = crmRes.data.city;
-        } catch { /* non-fatal */ }
-      }
-
       setProfile(merged);
+      setLoading(false);
+
+      // Enrich from CRM integration data in the background so the page renders fast.
+      const enrichFromIntegrations = async () => {
+        try {
+          const intRes = await apiClient.get('/integrations/merge/connected', { timeout: 8000 });
+          const integrations = intRes?.data?.integrations || {};
+          if (!(integrations.hubspot || integrations.salesforce)) return;
+
+          const crmRes = await apiClient.get('/integrations/crm/company', { timeout: 8000 });
+          const company = crmRes?.data || {};
+          setProfile((prev) => ({
+            ...prev,
+            business_name: prev.business_name || company.name || prev.business_name,
+            industry: prev.industry || company.industry || prev.industry,
+            website: prev.website || company.website || prev.website,
+            location: prev.location || company.city || prev.location,
+          }));
+        } catch {
+          // Background enrichment is non-blocking.
+        }
+      };
+
+      enrichFromIntegrations();
     } catch (error) {
       console.error('Failed to load profile:', error);
       toast.error('Failed to load profile');
@@ -96,11 +103,10 @@ const BusinessProfile = () => {
 
   const fetchScores = async () => {
     try {
-      const response = await apiClient.get('/business-profile/scores');
+      const response = await apiClient.get('/business-profile/scores', { timeout: 8000 });
       setScores(response.data || { completeness: 0, strength: 0 });
-    } catch (error) {
-      // DEFENSIVE: Silent fail on scores
-      console.error('Failed to fetch scores:', error);
+    } catch {
+      setScores({ completeness: 0, strength: 0 });
     }
   };
 
@@ -190,7 +196,7 @@ const BusinessProfile = () => {
 
           {/* Tabs — Live Baselines only (admin fields moved to Settings) */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full mb-8">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full mb-8">
               <TabsTrigger value="market" className="flex items-center gap-2">
                 <Target className="w-4 h-4" />
                 <span className="hidden sm:inline">Market</span>
@@ -206,6 +212,10 @@ const BusinessProfile = () => {
               <TabsTrigger value="strategy" className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4" />
                 <span className="hidden sm:inline">Strategy</span>
+              </TabsTrigger>
+              <TabsTrigger value="kpis" className="flex items-center gap-2" data-testid="business-dna-kpi-tab-trigger">
+                <TrendingUp className="w-4 h-4" />
+                <span className="hidden sm:inline">KPIs</span>
               </TabsTrigger>
             </TabsList>
 
@@ -556,15 +566,21 @@ const BusinessProfile = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            <TabsContent value="kpis">
+              <KpiThresholdTab />
+            </TabsContent>
           </Tabs>
 
           {/* Save Button at Bottom */}
-          <div className="mt-8 flex justify-end">
-            <Button onClick={handleSave} className="btn-primary" disabled={saving}>
-              {saving ? null : <Save className="w-4 h-4 mr-2" />}
-              Save Profile
-            </Button>
-          </div>
+          {activeTab !== 'kpis' && (
+            <div className="mt-8 flex justify-end" data-testid="business-dna-save-profile-wrapper">
+              <Button onClick={handleSave} className="btn-primary" disabled={saving} data-testid="business-dna-save-profile-button">
+                {saving ? null : <Save className="w-4 h-4 mr-2" />}
+                Save Profile
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

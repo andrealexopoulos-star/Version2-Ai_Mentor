@@ -2,8 +2,12 @@ import json
 from pathlib import Path
 
 
+def _catalog_path() -> Path:
+    return Path(__file__).resolve().parents[1] / "business_brain_top100_catalog.json"
+
+
 def test_top100_catalog_exists_and_has_100_metrics():
-    path = Path("/app/backend/business_brain_top100_catalog.json")
+    path = _catalog_path()
     assert path.exists(), "Top100 catalog file missing"
 
     data = json.loads(path.read_text())
@@ -17,7 +21,7 @@ def test_top100_catalog_exists_and_has_100_metrics():
 
 
 def test_top100_catalog_required_fields_present():
-    path = Path("/app/backend/business_brain_top100_catalog.json")
+    path = _catalog_path()
     data = json.loads(path.read_text())
 
     required = {"id", "metric", "category", "description", "formula", "source"}

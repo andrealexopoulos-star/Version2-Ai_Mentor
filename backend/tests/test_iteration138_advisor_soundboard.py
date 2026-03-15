@@ -16,7 +16,7 @@ import pytest
 import requests
 from datetime import datetime, timezone
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://cognition-overhaul.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://advisor-engine.preview.emergentagent.com").rstrip("/")
 
 # Test credentials
 TEST_EMAIL = "andre@thestrategysquad.com.au"

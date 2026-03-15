@@ -17,6 +17,7 @@ import { Link } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 import ActionOwnershipCard from '../components/ActionOwnershipCard';
+import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -280,6 +281,39 @@ const RiskPage = () => {
     successMetric: `Composite risk ${compositeDisplay} · monitored categories ${monitoredCount}/${RISK_CATEGORIES.length}`,
   };
 
+  const riskPrioritySignals = [
+    runway != null ? {
+      id: 'risk-financial-runway',
+      title: `Cash runway is ${runway} month${runway === 1 ? '' : 's'}`,
+      detail: 'Liquidity pressure is real enough to watch before it compounds into people or delivery trade-offs.',
+      action: 'Review overdue cash timing, committed spend, and the next decision deadline together.',
+      source: 'Accounting',
+      signalType: 'cash_runway',
+      timestamp: c?.computed_at || null,
+      severity: runway <= 3 ? 'high' : 'warning',
+    } : null,
+    hasPeopleData ? {
+      id: 'risk-workforce-pressure',
+      title: 'People pressure is visible in live communication signals',
+      detail: fv.recommendation || fv.calendar || 'Workforce strain is starting to surface through calendar or email patterns.',
+      action: 'Check key-person dependency and capacity before execution quality drops further.',
+      source: 'Email/Calendar',
+      signalType: 'workforce_pressure',
+      timestamp: c?.computed_at || null,
+      severity: 'warning',
+    } : null,
+    topClientPct != null ? {
+      id: 'risk-concentration-top-clients',
+      title: `${topClientPct}% of revenue sits in the top three clients`,
+      detail: 'Commercial concentration means one delayed account can move the whole risk picture.',
+      action: 'Review concentration and diversify near-term revenue coverage before the next review.',
+      source: 'CRM',
+      signalType: 'concentration_risk',
+      timestamp: c?.computed_at || null,
+      severity: topClientPct >= 60 ? 'high' : 'warning',
+    } : null,
+  ].filter(Boolean);
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="risk-page">
@@ -311,6 +345,34 @@ const RiskPage = () => {
           successMetric={actionOwnership.successMetric}
           testIdPrefix="risk-action-ownership"
         />
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]" data-testid="risk-ux-main-grid">
+          <div className="space-y-4" data-testid="risk-priority-column">
+            <SectionLabel title="What could hurt the business first" detail="Risk is intentionally reduced to the few real exposures that can cascade across domains." testId="risk-priority-label" />
+            <div className="grid gap-4 md:grid-cols-2" data-testid="risk-summary-metric-grid">
+              <MetricCard label="Composite risk" value={compositeDisplay} caption="Cross-domain pressure from live signals" tone={compositeColor} testId="risk-composite-metric" />
+              <MetricCard label="Monitored categories" value={`${monitoredCount}/${RISK_CATEGORIES.length}`} caption="Only categories with live evidence are counted" tone="#3B82F6" testId="risk-monitored-metric" />
+              <MetricCard label="Cash runway" value={runway != null ? `${runway}m` : '—'} caption="Accounting-backed liquidity window" tone={runway != null && runway <= 3 ? '#EF4444' : '#10B981'} testId="risk-runway-metric" />
+              <MetricCard label="Top 3 client share" value={topClientPct != null ? `${topClientPct}%` : '—'} caption="Commercial concentration in major accounts" tone={topClientPct != null && topClientPct >= 60 ? '#EF4444' : '#F59E0B'} testId="risk-concentration-metric" />
+            </div>
+            {riskPrioritySignals.length > 0 ? riskPrioritySignals.map((signal) => (
+              <SignalCard key={signal.id} {...signal} testId={signal.id} />
+            )) : (
+              <EmptyStateCard title="Risk is quiet right now." detail="BIQc is not surfacing a material cross-domain risk in this cycle. That quiet state is intentional, not filler." testId="risk-priority-empty" />
+            )}
+          </div>
+
+          <div className="space-y-4" data-testid="risk-guidance-column">
+            <SurfaceCard testId="risk-reading-guidance-card">
+              <SectionLabel title="How to use this page" detail="Start with the top card here, then use the deeper sections below only if you need the supporting chain or evidence." testId="risk-reading-guidance-label" />
+              <div className="mt-4 space-y-3 text-sm text-[#CBD5E1]">
+                <p data-testid="risk-reading-guidance-1">Finance remains tied to runway and concentration.</p>
+                <p data-testid="risk-reading-guidance-2">People risk stays tied to live email and calendar strain signals.</p>
+                <p data-testid="risk-reading-guidance-3">Propagation chains below are for investigation, not first-glance overload.</p>
+              </div>
+            </SurfaceCard>
+          </div>
+        </div>
 
         {/* Tab Navigation */}
         <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="risk-tabs">

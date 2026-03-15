@@ -1,4 +1,31 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 15 — Module UX Rebuild Pass + SMB Protect Naming (Complete — Mar 2026)
+- **Plan naming updated** — Enterprise/Growth-tier user-facing naming now uses **SMB Protect** in `backend/tier_resolver.py`, in-app pricing, and public pricing surfaces
+- **Shared rebuild primitives added** — `frontend/src/components/intelligence/SurfacePrimitives.js` now provides reusable cards, signal surfaces, and calmer section framing for intelligence modules
+- **Revenue UX tightened** — `frontend/src/pages/RevenuePage.js` now adds a clearer intervention-first flow with top revenue signal cards, explicit CRM/accounting/email-derived provenance, weighted pipeline, concentration, and source-clarity panels
+- **Operations UX tightened** — `frontend/src/pages/OperationsPage.js` now foregrounds bottlenecks, SLA/task aging actionability, and separates workflow/accounting/watchtower source context more clearly
+- **Risk density reduced** — `frontend/src/pages/RiskPage.js` now surfaces a smaller top risk frame (composite risk, monitored categories, runway, concentration), a concise “what could hurt the business first” section, and guidance for using deeper tabs only when needed
+- **Compliance rebuilt around real outputs** — `frontend/src/pages/CompliancePage.js` now shows live-only obligation feed, SPOFs, alignment contradictions, and ABN-on-file status from the business profile without fake compliance scoring
+- **Market separation clarified** — `frontend/src/pages/MarketPage.js` now explicitly separates external market signals from internal channel performance and adds evidence-health messaging for pressure/freshness data
+- **Business DNA flow preserved** — KPI tab remains live and tutorial auto-blocking on `/business-profile` stays removed
+- **Verification completed** — Testing agent iteration_141 passed all redesigned page checks; frontend specialist confirmed Revenue/Operations/Risk/Compliance/Market UX sections and KPI tab behavior; final smoke check confirmed `/pricing` now shows SMB Protect
+
+### Sprint 14 — Tier-Aware KPI Access + Business DNA KPI Policy Tab (Complete — Mar 2026)
+- **Tier-aware Brain KPI policy implemented** — Existing plans now map to KPI visibility limits: Free 10, Foundation 25, Performance 50, Growth 75, Custom/Super Admin 100
+- **Brain API policy layer added** — `backend/business_brain_engine.py` and `backend/routes/business_brain.py` now expose `brain_policy` metadata, enforce visible KPI limits in `/api/brain/metrics`, and provide new `GET/PUT /api/brain/kpis` endpoints for per-user KPI threshold configuration
+- **Threshold persistence without schema migration** — KPI threshold settings are stored in `business_profiles.intelligence_configuration.brain_kpis`, allowing live Brain policy updates on refresh without adding a new table
+- **Business DNA KPI tab shipped** — `frontend/src/components/business-dna/KpiThresholdTab.js` added under `frontend/src/pages/BusinessProfile.js`, with plan summary, KPI search, threshold controls, and save flow
+- **Business DNA UX hardening** — Removed the auto tutorial overlay for `/business-profile` and changed profile enrichment / score loading to be non-blocking so the KPI tab is reachable faster
+- **Pricing copy aligned** — `frontend/src/config/pricingTiers.js` now reflects the KPI counts per existing plan
+- **Verification completed** — Backend testing agent iteration_140 passed 13/13 backend tests; frontend specialist verified KPI tab load, 100 KPI rows for custom/super admin, and successful save flow via `/api/brain/kpis`
+
+### Sprint 13 — Business Brain 100-Metric Recovery + Advisor Pending-State Guard (Complete — Mar 2026)
+- **Root cause confirmed** — Production Brain metric count was collapsing to 20 because Azure’s backend image copies `backend/` contents into `/app`, while the catalog loader was hardcoded to `/app/backend/business_brain_top100_catalog.json`
+- **Portable catalog lookup fix** — `backend/business_brain_engine.py` now resolves `business_brain_top100_catalog.json` relative to `Path(__file__).resolve().parent`, plus `/app/business_brain_top100_catalog.json` and existing fallback candidates, so both preview and Azure container layouts can find the authoritative 100-KPI catalog
+- **Advisor false-state fix** — `frontend/src/pages/AdvisorWatchtower.js` no longer starts with Brain status = unavailable and no longer renders a false red failure or false all-clear card while Brain source health is still pending; it now shows a dedicated syncing state
+- **Verification completed in preview** — `/api/brain/runtime-check` now reports `catalog_metric_count: 100`; `/api/brain/metrics?include_coverage=true` returns `total_metrics: 100`; login + advisor smoke test + testing agent iteration_139 all passed
+- **Production status note** — External production `https://biqc.thestrategysquad.com` still showed `fallback_core_metrics` with 20 metrics at the time of verification, so the code fix now needs the next Azure deploy to make production match preview
+
 ### Sprint 12 — Production Forensic Recovery + Panel UX Move (Complete — Mar 2026)
 - **Production recovery verified** — Post-deploy production retest (`iteration_133`) confirms previously broken modules are now working live on `https://biqc.thestrategysquad.com`: War Room Q&A, Ops Advisory, Documents, and Priority Inbox
 - **War Room resilience** — `backend/routes/boardroom.py` now normalizes analysis-only upstream payloads into readable `answer` / `response` text; `frontend/src/components/WarRoomConsole.js` renders the normalized output and uses a longer request timeout for live production latency

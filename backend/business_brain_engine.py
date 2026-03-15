@@ -14,18 +14,33 @@ import re
 import uuid
 import math
 import json
+from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta, date
 from typing import Any, Dict, List, Optional, Tuple
 
 from intelligence_spine import emit_spine_event, log_model_execution
+from tier_resolver import get_brain_metric_limit, get_brain_plan_label, resolve_tier
 
 
-METRIC_CATALOG_CANDIDATES = [
-    "/app/backend/business_brain_top100_catalog.json",
-    "/home/oai/share/biqc_top100_metrics.md",
-    "/app/memory/biqc_top100_metrics.md",
-]
+def _metric_catalog_candidates() -> List[str]:
+    module_dir = Path(__file__).resolve().parent
+    env_override = os.environ.get("BUSINESS_BRAIN_CATALOG_PATH")
+    candidates = [
+        env_override,
+        str(module_dir / "business_brain_top100_catalog.json"),
+        str(module_dir / "backend" / "business_brain_top100_catalog.json"),
+        "/app/business_brain_top100_catalog.json",
+        "/app/backend/business_brain_top100_catalog.json",
+        "/home/oai/share/biqc_top100_metrics.md",
+        "/app/memory/biqc_top100_metrics.md",
+    ]
+
+    deduped: List[str] = []
+    for candidate in candidates:
+        if candidate and candidate not in deduped:
+            deduped.append(candidate)
+    return deduped
 
 
 @dataclass
@@ -44,6 +59,81 @@ def _metric_slug(value: str) -> str:
     base = re.sub(r"\([^)]*\)", "", value or "")
     base = re.sub(r"[^a-zA-Z0-9]+", "_", base).strip("_").lower()
     return base
+
+
+def _normalize_threshold_number(value: Any) -> Optional[float]:
+    try:
+        if value in (None, ""):
+            return None
+        return float(value)
+    except Exception:
+        return None
+
+
+def _default_threshold_comparator(metric_key: str, metric_label: str = "") -> str:
+    text = f"{metric_key} {metric_label}".lower()
+    above_keywords = [
+        "burn", "aging", "churn", "drop", "drop_off", "response_time", "resolution_time",
+        "cycle", "slippage", "cost", "expense", "bounce", "turnover", "absenteeism",
+        "debt", "variance", "credit_utilization", "error", "ratio", "days in inventory",
+    ]
+    below_keywords = [
+        "revenue", "profit", "cash_runway", "pipeline", "win_rate", "retention", "nrr",
+        "csat", "nps", "roa", "roe", "coverage", "traffic", "conversion", "engagement",
+        "capacity_utilization", "on_time_delivery", "inventory_accuracy", "activation",
+        "feature_adoption", "mrr", "arr", "expansion",
+    ]
+    if any(keyword in text for keyword in above_keywords):
+        return "above"
+    if any(keyword in text for keyword in below_keywords):
+        return "below"
+    return "below"
+
+
+def _threshold_state(value: Any, config: Dict[str, Any]) -> str:
+    numeric_value = _normalize_threshold_number(value)
+    if numeric_value is None:
+        return "no_data"
+
+    enabled = bool(config.get("enabled"))
+    warning_value = _normalize_threshold_number(config.get("warning_value"))
+    critical_value = _normalize_threshold_number(config.get("critical_value"))
+    comparator = str(config.get("comparator") or "below").lower()
+
+    if not enabled or (warning_value is None and critical_value is None):
+        return "not_configured"
+
+    if comparator == "above":
+        if critical_value is not None and numeric_value >= critical_value:
+            return "critical"
+        if warning_value is not None and numeric_value >= warning_value:
+            return "warning"
+        return "normal"
+
+    if critical_value is not None and numeric_value <= critical_value:
+        return "critical"
+    if warning_value is not None and numeric_value <= warning_value:
+        return "warning"
+    return "normal"
+
+
+def _brain_plan_tier(user: Dict[str, Any]) -> str:
+    raw_tier = str(user.get("subscription_tier") or "").lower().strip()
+    if raw_tier == "custom":
+        return "custom"
+    return resolve_tier(user)
+
+
+def _brain_metric_limit_for_plan(plan_tier: str) -> int:
+    if plan_tier == "custom":
+        return 100
+    return get_brain_metric_limit(plan_tier)
+
+
+def _brain_plan_label_for_tier(plan_tier: str) -> str:
+    if plan_tier == "custom":
+        return "Custom"
+    return get_brain_plan_label(plan_tier)
 
 
 CORE_METRICS_FALLBACK: List[MetricDefinition] = [
@@ -72,7 +162,7 @@ CORE_METRICS_FALLBACK: List[MetricDefinition] = [
 
 def load_metric_catalog() -> List[MetricDefinition]:
     """Loads top100 metric catalog from markdown path; falls back to core definitions."""
-    for path in METRIC_CATALOG_CANDIDATES:
+    for path in _metric_catalog_candidates():
         if not os.path.exists(path):
             continue
         try:
@@ -134,7 +224,7 @@ def metric_catalog_diagnostics() -> Dict[str, Any]:
         "resolved_count": len(CORE_METRICS_FALLBACK),
     }
 
-    for path in METRIC_CATALOG_CANDIDATES:
+    for path in _metric_catalog_candidates():
         entry: Dict[str, Any] = {
             "path": path,
             "exists": os.path.exists(path),
@@ -200,13 +290,10 @@ def _days_between(a: Optional[datetime], b: Optional[datetime]) -> Optional[int]
 
 
 def normalize_tier_mode(user: Dict[str, Any]) -> str:
-    tier = str(user.get("subscription_tier") or "free").lower().strip()
-    role = str(user.get("role") or "").lower().strip()
-    if role in {"superadmin", "super_admin"}:
+    plan_tier = _brain_plan_tier(user)
+    if plan_tier in {"super_admin", "custom"}:
         return "custom"
-    if tier in {"custom", "enterprise", "super_admin"}:
-        return "custom"
-    if tier in {"starter", "professional", "growth", "foundation"}:
+    if plan_tier in {"starter", "professional", "enterprise"}:
         return "paid"
     return "free"
 
@@ -216,12 +303,150 @@ class BusinessBrainEngine:
         self.sb = sb
         self.tenant_id = tenant_id
         self.user = user
+        self.plan_tier = _brain_plan_tier(user)
+        self.plan_label = _brain_plan_label_for_tier(self.plan_tier)
+        self.visible_metric_limit = _brain_metric_limit_for_plan(self.plan_tier)
         self.tier_mode = normalize_tier_mode(user)
         self.catalog_diagnostics = metric_catalog_diagnostics()
         self.catalog_source = self.catalog_diagnostics.get("resolved_source", "fallback_core_metrics")
         self.catalog = load_metric_catalog()
+        self.kpi_preferences = self._load_kpi_preferences()
+        self.kpi_thresholds = self._load_kpi_thresholds()
         self.business_core_ready = self._detect_business_core_schema()
         self._sync_metric_catalog()
+
+    def _load_kpi_preferences(self) -> Dict[str, Any]:
+        try:
+            result = self.sb.table("business_profiles").select("intelligence_configuration").eq("user_id", self.tenant_id).limit(1).execute()
+            row = (result.data or [None])[0] or {}
+            config = row.get("intelligence_configuration") or {}
+            return config if isinstance(config, dict) else {}
+        except Exception:
+            return {}
+
+    def _load_kpi_thresholds(self) -> Dict[str, Dict[str, Any]]:
+        section = self.kpi_preferences.get("brain_kpis") or {}
+        thresholds = section.get("thresholds") or {}
+        return thresholds if isinstance(thresholds, dict) else {}
+
+    def _visible_catalog(self) -> List[MetricDefinition]:
+        return sorted(self.catalog, key=lambda x: x.index)[: self.visible_metric_limit]
+
+    def _threshold_config_for_metric(self, metric: MetricDefinition) -> Dict[str, Any]:
+        saved = self.kpi_thresholds.get(metric.name) or {}
+        warning_value = _normalize_threshold_number(saved.get("warning_value"))
+        critical_value = _normalize_threshold_number(saved.get("critical_value"))
+        enabled = bool(saved.get("enabled")) and (warning_value is not None or critical_value is not None)
+        return {
+            "enabled": enabled,
+            "comparator": str(saved.get("comparator") or _default_threshold_comparator(metric.name, metric.label)).lower(),
+            "warning_value": warning_value,
+            "critical_value": critical_value,
+            "note": str(saved.get("note") or "").strip(),
+            "updated_at": saved.get("updated_at"),
+        }
+
+    def _active_thresholds_count(self) -> int:
+        count = 0
+        for metric in self._visible_catalog():
+            config = self._threshold_config_for_metric(metric)
+            if config.get("enabled"):
+                count += 1
+        return count
+
+    def _threshold_hits_for_signals(self, metrics: Dict[str, Dict[str, Any]], signal_names: List[str]) -> List[Dict[str, Any]]:
+        catalog_by_key = {metric.name: metric for metric in self.catalog}
+        hits: List[Dict[str, Any]] = []
+        for signal_name in signal_names:
+            metric_row = metrics.get(signal_name)
+            metric_def = catalog_by_key.get(signal_name)
+            if not metric_row or not metric_def:
+                continue
+            threshold_config = self._threshold_config_for_metric(metric_def)
+            threshold_state = _threshold_state(metric_row.get("value"), threshold_config)
+            if threshold_state not in {"warning", "critical"}:
+                continue
+            hits.append({
+                "metric_key": signal_name,
+                "metric_label": metric_def.label,
+                "metric_value": metric_row.get("value"),
+                "threshold_state": threshold_state,
+                "threshold_config": threshold_config,
+            })
+        return hits
+
+    def brain_policy(self) -> Dict[str, Any]:
+        return {
+            "plan_tier": self.plan_tier,
+            "plan_label": self.plan_label,
+            "visible_metric_limit": self.visible_metric_limit,
+            "catalog_total_metrics": len(self.catalog),
+            "custom_thresholds_active": self._active_thresholds_count(),
+        }
+
+    def get_kpi_configuration(self) -> Dict[str, Any]:
+        metrics: List[Dict[str, Any]] = []
+        for metric in self._visible_catalog():
+            threshold_config = self._threshold_config_for_metric(metric)
+            metrics.append({
+                "metric_id": metric.index,
+                "metric_name": metric.label,
+                "metric_key": metric.name,
+                "category": metric.domain,
+                "description": metric.definition,
+                "formula": metric.formula,
+                "primary_source": metric.source,
+                "threshold_config": threshold_config,
+            })
+        return {
+            **self.brain_policy(),
+            "metrics": metrics,
+        }
+
+    def save_kpi_thresholds(self, thresholds: List[Dict[str, Any]]) -> Dict[str, Any]:
+        allowed_metric_keys = {metric.name for metric in self._visible_catalog()}
+        existing_config = dict(self.kpi_preferences or {})
+        brain_kpis = dict(existing_config.get("brain_kpis") or {})
+        stored_thresholds = dict(brain_kpis.get("thresholds") or {})
+        now = datetime.now(timezone.utc).isoformat()
+
+        for threshold in thresholds:
+            metric_key = str(threshold.get("metric_key") or "").strip().lower()
+            if not metric_key or metric_key not in allowed_metric_keys:
+                continue
+
+            warning_value = _normalize_threshold_number(threshold.get("warning_value"))
+            critical_value = _normalize_threshold_number(threshold.get("critical_value"))
+            comparator = str(threshold.get("comparator") or "below").lower()
+            enabled = bool(threshold.get("enabled")) and (warning_value is not None or critical_value is not None)
+            note = str(threshold.get("note") or "").strip()
+
+            if not enabled and warning_value is None and critical_value is None and not note:
+                stored_thresholds.pop(metric_key, None)
+                continue
+
+            stored_thresholds[metric_key] = {
+                "enabled": enabled,
+                "comparator": comparator if comparator in {"above", "below"} else "below",
+                "warning_value": warning_value,
+                "critical_value": critical_value,
+                "note": note,
+                "updated_at": now,
+            }
+
+        brain_kpis["thresholds"] = stored_thresholds
+        brain_kpis["updated_at"] = now
+        existing_config["brain_kpis"] = brain_kpis
+
+        self.sb.table("business_profiles").upsert({
+            "user_id": self.tenant_id,
+            "intelligence_configuration": existing_config,
+            "updated_at": now,
+        }, on_conflict="user_id").execute()
+
+        self.kpi_preferences = existing_config
+        self.kpi_thresholds = stored_thresholds
+        return self.get_kpi_configuration()
 
     def _detect_business_core_schema(self) -> bool:
         try:
@@ -879,6 +1104,14 @@ class BusinessBrainEngine:
                 availability = sum(1 for s in required if s in metrics) / max(1, len(required))
                 confidence = max(0.35, min(0.99, confidence * (0.6 + 0.4 * availability)))
 
+            threshold_hits = self._threshold_hits_for_signals(metrics, required)
+            if threshold_hits:
+                critical_hits = [hit for hit in threshold_hits if hit["threshold_state"] == "critical"]
+                warning_hits = [hit for hit in threshold_hits if hit["threshold_state"] == "warning"]
+                impact = min(10.0, impact + (1.2 * len(critical_hits)) + (0.5 * len(warning_hits)))
+                urgency = min(10.0, urgency + (1.0 * len(critical_hits)) + (0.35 * len(warning_hits)))
+                confidence = min(0.99, confidence + (0.05 if critical_hits else 0.03))
+
             formula = concern.get("effective_priority_formula") or {}
             priority_score = self._score(impact, urgency, confidence, effort, formula)
 
@@ -891,7 +1124,16 @@ class BusinessBrainEngine:
                         "metric_value": m.get("value"),
                         "metric_confidence": m.get("confidence_score"),
                         "evidence_ids": m.get("evidence_ids") or [],
+                        "threshold_state": next((hit["threshold_state"] for hit in threshold_hits if hit["metric_key"] == signal_name), "not_configured"),
                     })
+
+            if threshold_hits:
+                threshold_summary = ", ".join(
+                    f"{hit['metric_label']} ({hit['threshold_state']})"
+                    for hit in threshold_hits[:3]
+                )
+                recommendation = f"{recommendation} Threshold policy triggered on {threshold_summary}."
+                explanation = f"{explanation} Threshold policy triggered on {threshold_summary}."
 
             row = {
                 "tenant_id": self.tenant_id,
@@ -904,6 +1146,7 @@ class BusinessBrainEngine:
                 "recommendation": recommendation,
                 "explanation": explanation,
                 "evidence": evidence,
+                "threshold_hits": threshold_hits,
                 "evaluated_at": datetime.now(timezone.utc).isoformat(),
             }
             self._t("concern_evaluations").insert(row).execute()
@@ -954,6 +1197,7 @@ class BusinessBrainEngine:
                 "recommendation": recommendation,
                 "tier": concern.get("tier", "free"),
                 "evidence": evidence,
+                "threshold_hits": threshold_hits,
                 "explanation": explanation,
                 "source": {"event_id": event_id},
                 "time_window": {
@@ -1017,6 +1261,7 @@ class BusinessBrainEngine:
             # Custom/enterprise includes policy details.
             output["concerns"] = concerns
 
+        output["brain_policy"] = self.brain_policy()
         return output
 
     def get_metrics(self, metric_name: Optional[str] = None, period: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -1027,16 +1272,20 @@ class BusinessBrainEngine:
             q = q.eq("metric_name", metric_name)
         if period:
             q = q.eq("period", period)
-        return q.execute().data or []
+        rows = q.execute().data or []
+        allowed_metric_keys = {metric.name for metric in self._visible_catalog()}
+        return [row for row in rows if str(row.get("metric_name") or "") in allowed_metric_keys]
 
     def get_metric_coverage(self, period: Optional[str] = None) -> Dict[str, Any]:
+        visible_catalog = self._visible_catalog()
         if not self.business_core_ready:
             return {
-                "total_metrics": len(self.catalog),
+                **self.brain_policy(),
+                "total_metrics": len(visible_catalog),
                 "computed_metrics": 0,
                 "pending_source_metrics": 0,
                 "pending_implementation_metrics": 0,
-                "pending_schema_metrics": len(self.catalog),
+                "pending_schema_metrics": len(visible_catalog),
                 "source_availability": {},
                 "business_core_ready": False,
                 "message": "business_core schema not yet exposed; run migrations and expose schema in Supabase PostgREST.",
@@ -1053,8 +1302,10 @@ class BusinessBrainEngine:
                         "value": None,
                         "calculated_at": None,
                         "confidence_score": None,
+                        "threshold_config": self._threshold_config_for_metric(m),
+                        "threshold_state": "no_data",
                     }
-                    for m in sorted(self.catalog, key=lambda x: x.index)
+                    for m in visible_catalog
                 ],
             }
 
@@ -1077,10 +1328,11 @@ class BusinessBrainEngine:
         pending_source = 0
         pending_implementation = 0
 
-        for m in sorted(self.catalog, key=lambda x: x.index):
+        for m in visible_catalog:
             metric_key = m.name
             computed_row = latest_by_name.get(metric_key) or latest_by_name.get(alias_map.get(metric_key, ""))
             source_ready = self._catalog_source_ready(m.source, availability)
+            threshold_config = self._threshold_config_for_metric(m)
 
             if computed_row:
                 status = "computed"
@@ -1104,10 +1356,13 @@ class BusinessBrainEngine:
                 "value": computed_row.get("value") if computed_row else None,
                 "calculated_at": computed_row.get("calculated_at") if computed_row else None,
                 "confidence_score": computed_row.get("confidence_score") if computed_row else None,
+                "threshold_config": threshold_config,
+                "threshold_state": _threshold_state(computed_row.get("value") if computed_row else None, threshold_config),
             })
 
         return {
-            "total_metrics": len(self.catalog),
+            **self.brain_policy(),
+            "total_metrics": len(visible_catalog),
             "computed_metrics": computed_count,
             "pending_source_metrics": pending_source,
             "pending_implementation_metrics": pending_implementation,
