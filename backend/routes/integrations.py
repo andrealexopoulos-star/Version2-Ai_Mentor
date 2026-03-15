@@ -1073,6 +1073,12 @@ async def get_accounting_summary(current_user: dict = Depends(get_current_user))
         total_outstanding = 0
         total_overdue = 0
         overdue_count = 0
+        total_outstanding_client = 0
+        total_outstanding_supplier = 0
+        total_overdue_client = 0
+        total_overdue_supplier = 0
+        overdue_count_client = 0
+        overdue_count_supplier = 0
         today_date = datetime.now(timezone.utc).date()
 
         def _parse_due_date(raw_value):
@@ -1086,25 +1092,71 @@ async def get_accounting_summary(current_user: dict = Depends(get_current_user))
                     return datetime.strptime(raw[:10], "%Y-%m-%d").date()
                 except Exception:
                     return None
+
+        def _invoice_bucket(inv: Dict[str, Any]) -> str:
+            raw_type = str(
+                inv.get("type")
+                or inv.get("invoice_type")
+                or inv.get("document_type")
+                or inv.get("transaction_type")
+                or ""
+            ).upper()
+            if any(token in raw_type for token in ("RECEIVABLE", "CUSTOMER", "AR", "SALES")):
+                return "client"
+            if any(token in raw_type for token in ("PAYABLE", "VENDOR", "SUPPLIER", "BILL", "AP")):
+                return "supplier"
+            return "unknown"
         
         for inv in invoice_list:
             amount = float(inv.get("total_amount") or inv.get("amount") or 0)
             status = (inv.get("status") or "").upper()
-            if status in ("SUBMITTED", "AUTHORIZED", "OPEN"):
+            bucket = _invoice_bucket(inv)
+
+            closed_statuses = {"PAID", "VOID", "DELETED", "CANCELLED", "CANCELED", "CREDITED"}
+            open_statuses = {"OPEN", "AUTHORIZED", "SUBMITTED", "PARTIALLY_PAID", "SENT", "APPROVED", "OVERDUE"}
+
+            is_closed = status in closed_statuses
+            is_open = status in open_statuses
+
+            if is_open and not is_closed:
                 total_outstanding += amount
+                if bucket == "client":
+                    total_outstanding_client += amount
+                elif bucket == "supplier":
+                    total_outstanding_supplier += amount
 
             due_date = _parse_due_date(inv.get("due_date"))
-            is_overdue = status == "OVERDUE" or (due_date is not None and due_date < today_date)
+            is_overdue = (not is_closed) and (
+                status == "OVERDUE"
+                or (is_open and due_date is not None and due_date < today_date)
+            )
             if is_overdue:
                 total_overdue += amount
                 overdue_count += 1
+                if bucket == "client":
+                    total_overdue_client += amount
+                    overdue_count_client += 1
+                elif bucket == "supplier":
+                    total_overdue_supplier += amount
+                    overdue_count_supplier += 1
         
         summary["metrics"] = {
             "total_invoices": len(invoice_list),
+            "total_client_invoices": sum(1 for inv in invoice_list if _invoice_bucket(inv) == "client"),
+            "total_supplier_invoices": sum(1 for inv in invoice_list if _invoice_bucket(inv) == "supplier"),
             "invoice_pages_fetched": pages_fetched,
-            "total_outstanding": round(total_outstanding, 2),
-            "total_overdue": round(total_overdue, 2),
-            "overdue_count": overdue_count,
+            "total_outstanding": round(total_outstanding_client, 2),
+            "total_overdue": round(total_overdue_client, 2),
+            "overdue_count": overdue_count_client,
+            "total_outstanding_all": round(total_outstanding, 2),
+            "total_overdue_all": round(total_overdue, 2),
+            "overdue_count_all": overdue_count,
+            "total_outstanding_client": round(total_outstanding_client, 2),
+            "total_overdue_client": round(total_overdue_client, 2),
+            "overdue_count_client": overdue_count_client,
+            "total_outstanding_supplier": round(total_outstanding_supplier, 2),
+            "total_overdue_supplier": round(total_overdue_supplier, 2),
+            "overdue_count_supplier": overdue_count_supplier,
         }
         
         try:
@@ -1957,6 +2009,8 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     overdue_count = int(metrics.get("overdue_count") or 0)
     total_overdue = float(metrics.get("total_overdue") or 0)
     total_outstanding = float(metrics.get("total_outstanding") or 0)
+    overdue_count_supplier = int(metrics.get("overdue_count_supplier") or 0)
+    total_overdue_supplier = float(metrics.get("total_overdue_supplier") or 0)
     accounting_error = accounting_summary.get("error") if isinstance(accounting_summary, dict) else None
 
     high_priority_threads = priority_analysis.get("high_priority") or []
@@ -2014,7 +2068,8 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "signal_summary": f"{overdue_count} invoices are overdue with {total_overdue:,.0f} outstanding.",
             "evidence_summary": (
                 f"Source: {accounting_provider} via Merge accounting sync. "
-                f"Computed from paginated invoice scan (up to 1,000 records) where status is OVERDUE or due date is past today. "
+                f"Computed from client receivable invoices only (AR), excluding supplier bills (AP), "
+                f"from paginated invoice scan (up to 1,000 records) where status is OVERDUE or due date is past today. "
                 f"Outstanding ledger snapshot: {total_outstanding:,.0f}."
             ),
             "decision_summary": "Cashflow pressure is rising and collections actions should be triggered now.",
@@ -2024,10 +2079,12 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
                 "provider": accounting_provider,
                 "source_endpoint": "/integrations/accounting/summary",
                 "window": "paginated scan up to 1,000 invoices",
-                "rule": "status == OVERDUE OR due_date < today",
+                "rule": "CLIENT invoices only: status == OVERDUE OR due_date < today",
                 "overdue_count": overdue_count,
                 "total_overdue": total_overdue,
                 "total_outstanding": total_outstanding,
+                "overdue_count_supplier": overdue_count_supplier,
+                "total_overdue_supplier": total_overdue_supplier,
             }],
         })
 
@@ -2159,11 +2216,15 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
         "window": "paginated scan up to 1,000 invoices",
         "rule": "overdue_count increments when status == OVERDUE OR due_date < today",
         "summary": (
-            f"From {accounting_provider} via Merge: {overdue_count} overdue invoices totaling "
+            f"From {accounting_provider} via Merge (CLIENT invoices only): {overdue_count} overdue invoices totaling "
             f"{total_overdue:,.0f}, with {total_outstanding:,.0f} total outstanding."
         ),
         "generated_at": generated_at,
         "status": "ok",
+        "client_invoices_only": True,
+        "supplier_excluded": True,
+        "supplier_overdue_count": overdue_count_supplier,
+        "supplier_overdue_total": total_overdue_supplier,
     }
 
     if accounting_error:
@@ -2186,6 +2247,8 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
             "overdue_invoices": overdue_count,
             "total_overdue": total_overdue,
             "total_outstanding": total_outstanding,
+            "overdue_supplier_invoices": overdue_count_supplier,
+            "total_overdue_supplier": total_overdue_supplier,
             "response_delay_events": len(response_delay_events),
             "high_priority_threads": len(high_priority_threads),
             "priority_analysis_available": priority_analysis_available,

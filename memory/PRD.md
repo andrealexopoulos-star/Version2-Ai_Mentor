@@ -209,3 +209,6 @@ Run `/app/supabase_migrations/create_integration_status.sql` in Supabase SQL edi
 14. Push notification backend triggers (instability breach, checkpoint due, daily brief)
 15. Sprint 3: Snapshot Failure State UI (error/retry when intelligence snapshot fails)
 16. SoundBoard AI context injection — use calibration data (business name, industry, CMO summary) even when no external integrations connected
+
+## Post-UX Audit (Non-Todo Note)
+- If you want, next I’ll implement the token-health monitor + pre-expiry warning surfaces as the next P0 hardening step.

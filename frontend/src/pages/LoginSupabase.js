@@ -135,6 +135,15 @@ const LoginSupabase = () => {
             </button>
           </div>
 
+          <div
+            className="mb-6 rounded-xl border px-3 py-2 text-xs"
+            style={{ borderColor: '#334155', background: '#0F172A', color: '#94A3B8', fontFamily: fontFamily.mono }}
+            data-testid="login-oauth-tester-note"
+          >
+            Google OAuth may be restricted to approved test users while verification is pending.
+            If access is blocked, use Microsoft or email/password sign-in.
+          </div>
+
           {/* Divider */}
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px" style={{ background: '#243140' }} />
