@@ -19,6 +19,45 @@ router = APIRouter()
 from routes.auth import get_current_user
 
 
+async def _brain_page_summary(sb, current_user: dict, page_name: str) -> List[Dict[str, Any]]:
+    try:
+        from business_brain_engine import BusinessBrainEngine
+        from routes.business_brain import _build_transient_priorities_from_live_integrations
+
+        engine = BusinessBrainEngine(sb, current_user['id'], current_user)
+        if engine.business_core_ready:
+            result = engine.get_priorities(recompute_metrics=False)
+        else:
+            result = await _build_transient_priorities_from_live_integrations(current_user)
+
+        concerns = result.get('concerns') or []
+        if page_name == 'revenue':
+            allowed = {'cashflow_risk', 'revenue_leakage', 'pipeline_stagnation', 'client_response_risk', 'concentration_risk', 'margin_compression'}
+        else:
+            allowed = {'cashflow_risk', 'client_response_risk', 'concentration_risk', 'operations_bottlenecks', 'margin_compression'}
+
+        filtered = [item for item in concerns if item.get('concern_id') in allowed][:3]
+        return [{
+            'concern_id': item.get('concern_id'),
+            'priority_score': item.get('priority_score'),
+            'issue_brief': item.get('issue_brief') or item.get('explanation'),
+            'why_now_brief': item.get('why_now_brief') or item.get('explanation'),
+            'action_brief': item.get('action_brief') or item.get('recommendation'),
+            'if_ignored_brief': item.get('if_ignored_brief') or item.get('explanation'),
+            'fact_points': item.get('fact_points') or [],
+            'source_summary': item.get('source_summary') or '',
+            'confidence_note': item.get('confidence_note') or '',
+            'outlook_30_60_90': item.get('outlook_30_60_90') or {},
+            'repeat_count': item.get('repeat_count', 1),
+            'last_seen': item.get('last_seen'),
+            'escalation_state': item.get('escalation_state') or 'monitoring',
+            'decision_label': item.get('decision_label') or item.get('name') or item.get('concern_id'),
+        } for item in filtered]
+    except Exception as e:
+        logger.debug(f"Brain page summary unavailable for {page_name}: {e}")
+        return []
+
+
 async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
     """Fetch ALL data from ALL connected integrations in parallel."""
     data = {
@@ -402,7 +441,8 @@ async def revenue_intelligence(current_user: dict = Depends(get_current_user)):
     sb = init_supabase()
     data = await _fetch_all_integration_data(sb, current_user['id'])
     signals = _compute_revenue_signals(data)
-    return {'connected': data['crm']['connected'] or data['accounting']['connected'], 'signals': signals}
+    brain_summary = await _brain_page_summary(sb, current_user, 'revenue')
+    return {'connected': data['crm']['connected'] or data['accounting']['connected'], 'signals': signals, 'brain_summary': brain_summary}
 
 
 @router.get("/unified/operations")
@@ -420,7 +460,8 @@ async def risk_intelligence(current_user: dict = Depends(get_current_user)):
     sb = init_supabase()
     data = await _fetch_all_integration_data(sb, current_user['id'])
     signals = _compute_risk_signals(data)
-    return {'connected': any([data['crm']['connected'], data['accounting']['connected'], data['email']['connected']]), 'signals': signals}
+    brain_summary = await _brain_page_summary(sb, current_user, 'risk')
+    return {'connected': any([data['crm']['connected'], data['accounting']['connected'], data['email']['connected']]), 'signals': signals, 'brain_summary': brain_summary}
 
 
 @router.get("/unified/people")

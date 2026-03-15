@@ -145,6 +145,17 @@ const toSignal = (item = {}, fallbackSource = 'snapshot') => {
     actionIds: [actionId],
     dedupeKey: `${signalType}|${domain}|${source}`,
     evidenceRefs: item.evidence_refs || item.evidence || [],
+    issueBrief: item.issue_brief || title,
+    whyNowBrief: item.why_now_brief || detail,
+    actionBrief: item.action_brief || action,
+    confidenceNote: item.confidence_note || '',
+    factPoints: item.fact_points || [],
+    sourceSummary: item.source_summary || '',
+    outlook: item.outlook_30_60_90 || null,
+    repeatCount: Number(item.repeat_count || 1),
+    lastSeen: item.last_seen || item.created_at || item.observed_at || item.timestamp || null,
+    escalationState: item.escalation_state || '',
+    summaryLabel: item.decision_label || item.summary_label || '',
   };
 };
 
@@ -446,13 +457,24 @@ const buildSignalsFromBrainConcerns = (brainPayload) => {
       signal: concern.concern_id || `brain_concern_${index + 1}`,
       domain: domainForConcern(concern.concern_id),
       severity: toSeverity(concern.priority_score, concern.impact, concern.urgency),
-      title: concern.explanation || concern.concern_id || `Priority concern ${index + 1}`,
-      detail: `Impact ${concern.impact ?? 0} · Urgency ${concern.urgency ?? 0} · Confidence ${Math.round(Number(concern.confidence || 0) * 100)}%.`,
-      recommendation: concern.recommendation || 'Review concern and assign owner action now.',
-      if_ignored: concern.explanation || 'Priority concern remains unresolved and may compound over time.',
+      title: concern.issue_brief || concern.explanation || concern.concern_id || `Priority concern ${index + 1}`,
+      detail: concern.why_now_brief || concern.confidence_note || `Impact ${concern.impact ?? 0} · Urgency ${concern.urgency ?? 0} · Confidence ${Math.round(Number(concern.confidence || 0) * 100)}%.`,
+      recommendation: concern.action_brief || concern.recommendation || 'Review concern and assign owner action now.',
+      if_ignored: concern.if_ignored_brief || concern.explanation || 'Priority concern remains unresolved and may compound over time.',
       source: 'BIQc Business Brain',
       created_at: concern?.time_window?.evaluated_at || null,
       evidence_refs: concern.evidence || [],
+      issue_brief: concern.issue_brief,
+      why_now_brief: concern.why_now_brief,
+      action_brief: concern.action_brief,
+      confidence_note: concern.confidence_note,
+      fact_points: concern.fact_points,
+      source_summary: concern.source_summary,
+      outlook_30_60_90: concern.outlook_30_60_90,
+      repeat_count: concern.repeat_count,
+      last_seen: concern.last_seen,
+      escalation_state: concern.escalation_state,
+      decision_label: concern.decision_label,
     }, 'business_brain')),
   );
 };
@@ -485,6 +507,10 @@ const bucketHeadline = (slotId, signal) => {
     if (slotId === 'decide-now') return 'No imminent owner-critical signal from verified feeds.';
     if (slotId === 'monitor-this-week') return 'No weekly pressure trend currently above threshold.';
     return 'No repeated pattern currently requiring systems build action.';
+  }
+
+  if (signal.summaryLabel && !isPlaceholderText(signal.summaryLabel)) {
+    return signal.summaryLabel;
   }
 
   if (!isPlaceholderText(signal.title)) {
@@ -562,9 +588,9 @@ const buildDecisionSurface = (signals) => {
       riskScore,
       confidenceInterval,
       headline,
-      whyNow: signal.occurrences > 1
+      whyNow: signal.whyNowBrief || (signal.occurrences > 1
         ? `${signal.occurrences} matching signals were grouped into one decision.`
-        : signal.detail,
+        : signal.detail),
     };
   });
 };
