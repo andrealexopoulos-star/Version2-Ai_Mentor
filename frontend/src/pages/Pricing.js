@@ -66,7 +66,7 @@ const PLANS = [
   },
   {
     id: 'growth',
-    name: 'Growth',
+    name: 'SMB Protect',
     tagline: 'Scale Intelligence',
     monthlyPrice: 199, annualPrice: 159,
     period: '/mo',
@@ -79,7 +79,7 @@ const PLANS = [
       'Demand intensity modelling',
       'Scenario planning engine',
     ],
-    cta: 'Start Growth',
+    cta: 'Start SMB Protect',
     ctaPath: '/register-supabase',
     color: '#10B981',
   },
