@@ -1986,8 +1986,12 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
         watchtower_events = []
 
     try:
-        from supabase_email_helpers import get_priority_analysis_supabase
-        priority_analysis = await get_priority_analysis_supabase(user_id) or {}
+        from supabase_intelligence_helpers import get_priority_analysis_supabase
+        priority_row = await get_priority_analysis_supabase(get_sb(), user_id) or {}
+        if isinstance(priority_row.get("analysis"), dict):
+            priority_analysis = priority_row.get("analysis") or {}
+        else:
+            priority_analysis = priority_row or {}
     except Exception:
         priority_analysis = {}
 
