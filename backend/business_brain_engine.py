@@ -14,6 +14,7 @@ import re
 import uuid
 import math
 import json
+from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta, date
 from typing import Any, Dict, List, Optional, Tuple
@@ -21,11 +22,24 @@ from typing import Any, Dict, List, Optional, Tuple
 from intelligence_spine import emit_spine_event, log_model_execution
 
 
-METRIC_CATALOG_CANDIDATES = [
-    "/app/backend/business_brain_top100_catalog.json",
-    "/home/oai/share/biqc_top100_metrics.md",
-    "/app/memory/biqc_top100_metrics.md",
-]
+def _metric_catalog_candidates() -> List[str]:
+    module_dir = Path(__file__).resolve().parent
+    env_override = os.environ.get("BUSINESS_BRAIN_CATALOG_PATH")
+    candidates = [
+        env_override,
+        str(module_dir / "business_brain_top100_catalog.json"),
+        str(module_dir / "backend" / "business_brain_top100_catalog.json"),
+        "/app/business_brain_top100_catalog.json",
+        "/app/backend/business_brain_top100_catalog.json",
+        "/home/oai/share/biqc_top100_metrics.md",
+        "/app/memory/biqc_top100_metrics.md",
+    ]
+
+    deduped: List[str] = []
+    for candidate in candidates:
+        if candidate and candidate not in deduped:
+            deduped.append(candidate)
+    return deduped
 
 
 @dataclass
@@ -72,7 +86,7 @@ CORE_METRICS_FALLBACK: List[MetricDefinition] = [
 
 def load_metric_catalog() -> List[MetricDefinition]:
     """Loads top100 metric catalog from markdown path; falls back to core definitions."""
-    for path in METRIC_CATALOG_CANDIDATES:
+    for path in _metric_catalog_candidates():
         if not os.path.exists(path):
             continue
         try:
@@ -134,7 +148,7 @@ def metric_catalog_diagnostics() -> Dict[str, Any]:
         "resolved_count": len(CORE_METRICS_FALLBACK),
     }
 
-    for path in METRIC_CATALOG_CANDIDATES:
+    for path in _metric_catalog_candidates():
         entry: Dict[str, Any] = {
             "path": path,
             "exists": os.path.exists(path),
