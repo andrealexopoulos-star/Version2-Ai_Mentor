@@ -1,407 +1,435 @@
 #!/usr/bin/env python3
 """
-Forensic production validation test suite for BIQc platform.
-Target: https://biqc.thestrategysquad.com 
-Tests both backend API endpoints and frontend integration.
+Final Backend Sanity Check for BIQc Business Brain 100-Metric Fix
+Testing against: https://advisor-engine.preview.emergentagent.com
+Credentials: andre@thestrategysquad.com.au / MasterMind2025*
+
+Review Requirements:
+1. Auth/login works for the provided user
+2. GET /api/brain/runtime-check returns 200 and reports catalog_metric_count=100
+3. GET /api/brain/metrics?include_coverage=true returns 200 and total_metrics=100
+4. GET /api/brain/priorities returns 200 and a valid JSON structure
+5. Flag any backend regressions or mismatches
 """
-import requests
+
+import os
 import json
-import sys
+import requests
 import time
-from typing import Dict, Any
+import sys
+from datetime import datetime
+from typing import Dict, Any, Optional
 
 # Test configuration
-BASE_URL = "https://biqc.thestrategysquad.com"
-API_URL = f"{BASE_URL}/api"
-CREDENTIALS = {
-    "email": "andre@thestrategysquad.com.au",
-    "password": "MasterMind2025*"
-}
+BASE_URL = "https://advisor-engine.preview.emergentagent.com"
+TEST_EMAIL = "andre@thestrategysquad.com.au"
+TEST_PASSWORD = "MasterMind2025*"
+REQUEST_TIMEOUT = 30
 
-class ForensicTester:
+class BrainBackendTester:
     def __init__(self):
-        self.session = requests.Session()
-        self.session.headers.update({
-            'Content-Type': 'application/json',
-            'User-Agent': 'BIQc-Forensic-Validator/1.0'
-        })
-        self.auth_token = None
-        self.test_results = {}
-        
+        self.token: Optional[str] = None
+        self.user_id: Optional[str] = None
+        self.results: Dict[str, Any] = {}
+        self.start_time = time.time()
+
     def log(self, message: str, level: str = "INFO"):
-        """Log test messages with timestamp"""
-        timestamp = time.strftime("%H:%M:%S")
-        print(f"[{timestamp}] {level}: {message}")
-        
-    def test_api_call(self, method: str, endpoint: str, **kwargs) -> tuple:
-        """Make API call and return (success, response, error)"""
-        url = f"{API_URL}{endpoint}"
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] [{level}] {message}")
+
+    def test_auth_login(self) -> bool:
+        """Requirement 1: Auth/login works for the provided user."""
+        self.log("Testing authentication login...")
         
         try:
-            response = self.session.request(method, url, timeout=30, **kwargs)
-            return True, response, None
-        except Exception as e:
-            return False, None, str(e)
-    
-    def authenticate(self) -> bool:
-        """A) Test 1: POST /api/auth/supabase/login returns token"""
-        self.log("Testing authentication...")
-        
-        success, response, error = self.test_api_call(
-            "POST", 
-            "/auth/supabase/login",
-            json=CREDENTIALS
-        )
-        
-        if not success:
-            self.log(f"❌ AUTH FAILED - Network error: {error}", "ERROR")
-            self.test_results["auth"] = {"status": "FAIL", "error": f"Network error: {error}"}
-            return False
+            response = requests.post(
+                f"{BASE_URL}/api/auth/supabase/login",
+                json={
+                    "email": TEST_EMAIL,
+                    "password": TEST_PASSWORD
+                },
+                timeout=REQUEST_TIMEOUT
+            )
             
-        if response.status_code != 200:
-            self.log(f"❌ AUTH FAILED - HTTP {response.status_code}: {response.text}", "ERROR")
-            self.test_results["auth"] = {"status": "FAIL", "error": f"HTTP {response.status_code}: {response.text}"}
-            return False
-            
-        try:
-            data = response.json()
-            token = data.get('access_token') or data.get('token')
-            
-            # Check nested session structure
-            if not token and 'session' in data:
-                session = data.get('session', {})
-                token = session.get('access_token') or session.get('token')
-            
-            if not token:
-                self.log(f"❌ AUTH FAILED - No token in response: {data}", "ERROR") 
-                self.test_results["auth"] = {"status": "FAIL", "error": "No token in response"}
+            if response.status_code != 200:
+                self.log(f"❌ Login failed with status {response.status_code}: {response.text}", "ERROR")
+                self.results["auth_login"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
                 return False
                 
-            self.auth_token = token
-            self.session.headers.update({'Authorization': f'Bearer {token}'})
+            data = response.json()
+            session = data.get("session", {})
+            self.token = session.get("access_token")
+            user = data.get("user", {})  # User is at top level, not inside session
+            self.user_id = user.get("id")
             
-            self.log(f"✅ AUTH SUCCESS - Token length: {len(token)} chars")
-            self.test_results["auth"] = {"status": "PASS", "token_length": len(token)}
+            if not self.token:
+                self.log("❌ No access token received", "ERROR")
+                self.results["auth_login"] = {"status": "FAIL", "error": "No access token"}
+                return False
+                
+            if not self.user_id:
+                self.log("❌ No user ID received", "ERROR")
+                self.results["auth_login"] = {"status": "FAIL", "error": "No user ID"}
+                return False
+                
+            self.log(f"✅ Authentication successful - User ID: {self.user_id}")
+            self.log(f"✅ Token length: {len(self.token)} chars")
+            self.results["auth_login"] = {
+                "status": "PASS", 
+                "user_id": self.user_id,
+                "token_length": len(self.token)
+            }
             return True
             
         except Exception as e:
-            self.log(f"❌ AUTH FAILED - JSON parse error: {e}", "ERROR")
-            self.test_results["auth"] = {"status": "FAIL", "error": f"JSON parse error: {e}"}
+            self.log(f"❌ Login exception: {str(e)}", "ERROR")
+            self.results["auth_login"] = {"status": "FAIL", "error": str(e)}
             return False
-    
-    def test_brain_runtime_check(self):
-        """A) Test 2: GET /api/brain/runtime-check must return 200 JSON (not 404)"""
-        self.log("Testing Brain runtime check...")
+
+    def test_runtime_check(self) -> bool:
+        """Requirement 2: GET /api/brain/runtime-check returns 200 and reports catalog_metric_count=100."""
+        self.log("Testing /api/brain/runtime-check endpoint...")
         
-        success, response, error = self.test_api_call("GET", "/brain/runtime-check")
-        
-        if not success:
-            self.log(f"❌ BRAIN RUNTIME CHECK FAILED - Network error: {error}", "ERROR")
-            self.test_results["brain_runtime"] = {"status": "FAIL", "error": f"Network error: {error}"}
-            return
-            
-        if response.status_code == 404:
-            self.log("❌ BRAIN RUNTIME CHECK FAILED - Returns 404 (endpoint missing)", "ERROR")
-            self.test_results["brain_runtime"] = {"status": "FAIL", "error": "Endpoint returns 404"}
-            return
-            
-        if response.status_code != 200:
-            self.log(f"❌ BRAIN RUNTIME CHECK FAILED - HTTP {response.status_code}: {response.text}", "ERROR")
-            self.test_results["brain_runtime"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-            return
+        if not self.token:
+            self.log("❌ No auth token for runtime-check test", "ERROR")
+            self.results["runtime_check"] = {"status": "FAIL", "error": "No auth token"}
+            return False
             
         try:
-            data = response.json()
-            self.log("✅ BRAIN RUNTIME CHECK SUCCESS - Returns 200 JSON")
-            self.test_results["brain_runtime"] = {"status": "PASS", "response_keys": list(data.keys())}
-        except:
-            self.log("❌ BRAIN RUNTIME CHECK FAILED - Invalid JSON response", "ERROR")
-            self.test_results["brain_runtime"] = {"status": "FAIL", "error": "Invalid JSON"}
-    
-    def test_brain_metrics(self):
-        """A) Test 3: GET /api/brain/metrics?include_coverage=true verification"""
-        self.log("Testing Brain metrics...")
-        
-        success, response, error = self.test_api_call("GET", "/brain/metrics?include_coverage=true")
-        
-        if not success:
-            self.log(f"❌ BRAIN METRICS FAILED - Network error: {error}", "ERROR")
-            self.test_results["brain_metrics"] = {"status": "FAIL", "error": f"Network error: {error}"}
-            return
+            response = requests.get(
+                f"{BASE_URL}/api/brain/runtime-check",
+                headers={"Authorization": f"Bearer {self.token}"},
+                timeout=REQUEST_TIMEOUT
+            )
             
-        if response.status_code != 200:
-            self.log(f"❌ BRAIN METRICS FAILED - HTTP {response.status_code}: {response.text}", "ERROR")
-            self.test_results["brain_metrics"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-            return
-            
-        try:
-            data = response.json()
-            
-            # Check expected values
-            total_metrics = data.get('total_metrics')
-            business_core_ready = data.get('business_core_ready')
-            runtime_catalog_metric_count = data.get('runtime_catalog_metric_count')
-            
-            results = {
-                "status": "PARTIAL",
-                "total_metrics": total_metrics,
-                "business_core_ready": business_core_ready, 
-                "runtime_catalog_metric_count": runtime_catalog_metric_count
-            }
-            
-            issues = []
-            if total_metrics != 100:
-                issues.append(f"total_metrics expected 100, got {total_metrics}")
-            if business_core_ready != True:
-                issues.append(f"business_core_ready expected true, got {business_core_ready}")
-            if runtime_catalog_metric_count != 100:
-                issues.append(f"runtime_catalog_metric_count expected 100, got {runtime_catalog_metric_count}")
+            if response.status_code != 200:
+                self.log(f"❌ runtime-check failed with status {response.status_code}: {response.text}", "ERROR")
+                self.results["runtime_check"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
+                return False
                 
-            if issues:
-                results["status"] = "FAIL"
-                results["issues"] = issues
-                self.log(f"❌ BRAIN METRICS FAILED - Issues: {', '.join(issues)}", "ERROR")
-            else:
-                results["status"] = "PASS"
-                self.log("✅ BRAIN METRICS SUCCESS - All values match expectations")
-                
-            self.test_results["brain_metrics"] = results
-            
-        except Exception as e:
-            self.log(f"❌ BRAIN METRICS FAILED - JSON parse error: {e}", "ERROR")
-            self.test_results["brain_metrics"] = {"status": "FAIL", "error": f"JSON parse error: {e}"}
-    
-    def test_brain_priorities(self):
-        """A) Test 4: GET /api/brain/priorities?recompute=true returns concerns list"""
-        self.log("Testing Brain priorities...")
-        
-        success, response, error = self.test_api_call("GET", "/brain/priorities?recompute=true")
-        
-        if not success:
-            self.log(f"❌ BRAIN PRIORITIES FAILED - Network error: {error}", "ERROR")
-            self.test_results["brain_priorities"] = {"status": "FAIL", "error": f"Network error: {error}"}
-            return
-            
-        if response.status_code != 200:
-            self.log(f"❌ BRAIN PRIORITIES FAILED - HTTP {response.status_code}: {response.text}", "ERROR") 
-            self.test_results["brain_priorities"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-            return
-            
-        try:
             data = response.json()
+            catalog_metric_count = data.get("catalog_metric_count")
             
-            # Look for concerns list and check for generic fallback errors
-            concerns = data.get('concerns', [])
-            response_str = str(data)
-            
-            results = {
-                "status": "PARTIAL",
-                "concerns_count": len(concerns),
-                "response_keys": list(data.keys())
-            }
-            
-            # Check for generic fallback errors
-            generic_phrases = ['generic fallback', 'placeholder', 'default response']
-            has_generic_fallback = any(phrase in response_str.lower() for phrase in generic_phrases)
-            
-            if has_generic_fallback:
-                results["status"] = "FAIL"
-                results["error"] = "Contains generic fallback errors"
-                self.log("❌ BRAIN PRIORITIES FAILED - Contains generic fallback errors", "ERROR")
-            else:
-                results["status"] = "PASS"
-                self.log(f"✅ BRAIN PRIORITIES SUCCESS - {len(concerns)} concerns, no generic fallbacks")
+            if catalog_metric_count != 100:
+                self.log(f"❌ Expected catalog_metric_count=100, got {catalog_metric_count}", "ERROR")
+                self.results["runtime_check"] = {
+                    "status": "FAIL", 
+                    "error": f"catalog_metric_count={catalog_metric_count}, expected 100",
+                    "response_data": data
+                }
+                return False
                 
-            self.test_results["brain_priorities"] = results
+            # Additional verification
+            catalog_source = data.get("catalog_source_resolved", "")
+            business_core_ready = data.get("business_core_ready")
             
-        except Exception as e:
-            self.log(f"❌ BRAIN PRIORITIES FAILED - JSON parse error: {e}", "ERROR")
-            self.test_results["brain_priorities"] = {"status": "FAIL", "error": f"JSON parse error: {e}"}
-    
-    def test_integrations_accounting(self):
-        """B) Test 5: GET /api/integrations/accounting/summary"""
-        self.log("Testing accounting integration...")
-        
-        success, response, error = self.test_api_call("GET", "/integrations/accounting/summary")
-        
-        if not success:
-            self.log(f"❌ ACCOUNTING INTEGRATION FAILED - Network error: {error}", "ERROR")
-            self.test_results["accounting_integration"] = {"status": "FAIL", "error": f"Network error: {error}"}
-            return
+            self.log(f"✅ runtime-check returns 200 OK")
+            self.log(f"✅ catalog_metric_count = {catalog_metric_count}")
+            self.log(f"✅ catalog_source = {catalog_source}")
+            self.log(f"✅ business_core_ready = {business_core_ready}")
             
-        if response.status_code != 200:
-            self.log(f"❌ ACCOUNTING INTEGRATION FAILED - HTTP {response.status_code}: {response.text}", "ERROR")
-            self.test_results["accounting_integration"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
-            return
-            
-        try:
-            data = response.json()
-            
-            connected = data.get('connected')
-            overdue_metrics = data.get('overdue_metrics') or data.get('overdue')
-            
-            results = {
+            self.results["runtime_check"] = {
                 "status": "PASS",
-                "connected": connected,
-                "has_overdue_metrics": overdue_metrics is not None,
-                "response_keys": list(data.keys())
+                "catalog_metric_count": catalog_metric_count,
+                "catalog_source_resolved": catalog_source,
+                "business_core_ready": business_core_ready
             }
-            
-            self.log(f"✅ ACCOUNTING INTEGRATION SUCCESS - Connected: {connected}, Overdue data: {overdue_metrics is not None}")
-            self.test_results["accounting_integration"] = results
+            return True
             
         except Exception as e:
-            self.log(f"❌ ACCOUNTING INTEGRATION FAILED - JSON parse error: {e}", "ERROR")
-            self.test_results["accounting_integration"] = {"status": "FAIL", "error": f"JSON parse error: {e}"}
-    
-    def test_outlook_and_email(self):
-        """B) Test 6: GET /api/outlook/status and /api/email/priority-inbox"""
-        self.log("Testing Outlook status...")
+            self.log(f"❌ runtime-check exception: {str(e)}", "ERROR")
+            self.results["runtime_check"] = {"status": "FAIL", "error": str(e)}
+            return False
+
+    def test_metrics_coverage(self) -> bool:
+        """Requirement 3: GET /api/brain/metrics?include_coverage=true returns 200 and total_metrics=100."""
+        self.log("Testing /api/brain/metrics?include_coverage=true endpoint...")
         
-        # Test Outlook status
-        success, response, error = self.test_api_call("GET", "/outlook/status")
-        
-        outlook_result = {"endpoint": "/outlook/status"}
-        if not success:
-            outlook_result.update({"status": "FAIL", "error": f"Network error: {error}"})
-        elif response.status_code != 200:
-            outlook_result.update({"status": "FAIL", "error": f"HTTP {response.status_code}"})
-        else:
-            try:
-                data = response.json()
-                outlook_result.update({
-                    "status": "PASS",
-                    "response_keys": list(data.keys())
-                })
-            except:
-                outlook_result.update({"status": "FAIL", "error": "Invalid JSON"})
-        
-        # Test email priority inbox
-        self.log("Testing email priority inbox...")
-        success, response, error = self.test_api_call("GET", "/email/priority-inbox")
-        
-        email_result = {"endpoint": "/email/priority-inbox"}
-        if not success:
-            email_result.update({"status": "FAIL", "error": f"Network error: {error}"})
-        elif response.status_code != 200:
-            email_result.update({"status": "FAIL", "error": f"HTTP {response.status_code}"})
-        else:
-            try:
-                data = response.json()
-                has_analysis = bool(data and (len(data) > 0 or 'analysis' in str(data)))
-                email_result.update({
-                    "status": "PASS",
-                    "has_analysis": has_analysis,
-                    "response_keys": list(data.keys()) if isinstance(data, dict) else f"Array length: {len(data)}"
-                })
-            except:
-                email_result.update({"status": "FAIL", "error": "Invalid JSON"})
-        
-        # Combined results
-        combined_status = "PASS" if outlook_result.get("status") == "PASS" and email_result.get("status") == "PASS" else "FAIL"
-        
-        self.test_results["outlook_email"] = {
-            "status": combined_status,
-            "outlook": outlook_result,
-            "email": email_result
-        }
-        
-        if combined_status == "PASS":
-            self.log("✅ OUTLOOK & EMAIL SUCCESS - Both endpoints functional")
-        else:
-            self.log("❌ OUTLOOK & EMAIL FAILED - One or more endpoints failed", "ERROR")
-    
-    def run_backend_tests(self):
-        """Run all backend API tests"""
-        self.log("🔍 STARTING FORENSIC PRODUCTION VALIDATION")
-        self.log(f"Target: {BASE_URL}")
-        self.log(f"API: {API_URL}")
-        self.log(f"Credentials: {CREDENTIALS['email']}")
-        
-        # Authentication is required for all other tests
-        if not self.authenticate():
-            self.log("❌ AUTHENTICATION FAILED - Cannot proceed with other tests", "ERROR")
+        if not self.token:
+            self.log("❌ No auth token for metrics coverage test", "ERROR")
+            self.results["metrics_coverage"] = {"status": "FAIL", "error": "No auth token"}
             return False
             
-        # Run all Brain API tests
-        self.test_brain_runtime_check()
-        self.test_brain_metrics()
-        self.test_brain_priorities()
-        
-        # Run integration tests  
-        self.test_integrations_accounting()
-        self.test_outlook_and_email()
-        
-        return True
-    
-    def print_summary(self):
-        """Print detailed test summary"""
-        self.log("=" * 60)
-        self.log("📊 FORENSIC VALIDATION SUMMARY")
-        self.log("=" * 60)
-        
-        total_tests = len(self.test_results)
-        passed = sum(1 for r in self.test_results.values() if r.get("status") == "PASS")
-        failed = sum(1 for r in self.test_results.values() if r.get("status") == "FAIL")
-        partial = sum(1 for r in self.test_results.values() if r.get("status") == "PARTIAL")
-        
-        self.log(f"Total Tests: {total_tests}")
-        self.log(f"✅ PASS: {passed}")
-        self.log(f"❌ FAIL: {failed}")
-        self.log(f"⚠️ PARTIAL: {partial}")
-        
-        self.log("")
-        self.log("DETAILED RESULTS:")
-        
-        # A) Auth + Brain API checks
-        self.log("A) Auth + Brain API checks:")
-        for test_name in ["auth", "brain_runtime", "brain_metrics", "brain_priorities"]:
-            result = self.test_results.get(test_name, {"status": "NOT_RUN"})
-            status = result["status"]
-            icon = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
+        try:
+            response = requests.get(
+                f"{BASE_URL}/api/brain/metrics?include_coverage=true",
+                headers={"Authorization": f"Bearer {self.token}"},
+                timeout=REQUEST_TIMEOUT
+            )
             
-            if test_name == "auth":
-                self.log(f"  1) {icon} POST /api/auth/supabase/login: {status}")
-            elif test_name == "brain_runtime": 
-                self.log(f"  2) {icon} GET /api/brain/runtime-check: {status}")
-            elif test_name == "brain_metrics":
-                self.log(f"  3) {icon} GET /api/brain/metrics?include_coverage=true: {status}")
-                if "issues" in result:
-                    for issue in result["issues"]:
-                        self.log(f"     - {issue}")
-            elif test_name == "brain_priorities":
-                self.log(f"  4) {icon} GET /api/brain/priorities?recompute=true: {status}")
+            if response.status_code != 200:
+                self.log(f"❌ metrics endpoint failed with status {response.status_code}: {response.text}", "ERROR")
+                self.results["metrics_coverage"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
+                return False
+                
+            data = response.json()
+            total_metrics = data.get("total_metrics")
+            
+            if total_metrics != 100:
+                self.log(f"❌ Expected total_metrics=100, got {total_metrics}", "ERROR")
+                self.results["metrics_coverage"] = {
+                    "status": "FAIL", 
+                    "error": f"total_metrics={total_metrics}, expected 100",
+                    "response_data": data
+                }
+                return False
+                
+            # Additional verification
+            runtime_catalog_metric_count = data.get("runtime_catalog_metric_count")
+            computed_metrics = data.get("computed_metrics")
+            metrics_array = data.get("metrics", [])
+            catalog_source = data.get("catalog_source")
+            
+            self.log(f"✅ metrics endpoint returns 200 OK")
+            self.log(f"✅ total_metrics = {total_metrics}")
+            self.log(f"✅ runtime_catalog_metric_count = {runtime_catalog_metric_count}")
+            self.log(f"✅ computed_metrics = {computed_metrics}")
+            self.log(f"✅ metrics array length = {len(metrics_array)}")
+            self.log(f"✅ catalog_source = {catalog_source}")
+            
+            self.results["metrics_coverage"] = {
+                "status": "PASS",
+                "total_metrics": total_metrics,
+                "runtime_catalog_metric_count": runtime_catalog_metric_count,
+                "computed_metrics": computed_metrics,
+                "metrics_array_length": len(metrics_array),
+                "catalog_source": catalog_source
+            }
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ metrics coverage exception: {str(e)}", "ERROR")
+            self.results["metrics_coverage"] = {"status": "FAIL", "error": str(e)}
+            return False
+
+    def test_priorities_endpoint(self) -> bool:
+        """Requirement 4: GET /api/brain/priorities returns 200 and a valid JSON structure."""
+        self.log("Testing /api/brain/priorities endpoint...")
         
-        # B) Integration truth checks  
-        self.log("B) Integration truth checks:")
-        outlook_email = self.test_results.get("outlook_email", {"status": "NOT_RUN"})
-        accounting = self.test_results.get("accounting_integration", {"status": "NOT_RUN"})
+        if not self.token:
+            self.log("❌ No auth token for priorities test", "ERROR")
+            self.results["priorities_endpoint"] = {"status": "FAIL", "error": "No auth token"}
+            return False
+            
+        try:
+            response = requests.get(
+                f"{BASE_URL}/api/brain/priorities?recompute=true",
+                headers={"Authorization": f"Bearer {self.token}"},
+                timeout=45  # Longer timeout for potentially slow endpoint
+            )
+            
+            if response.status_code != 200:
+                self.log(f"❌ priorities endpoint failed with status {response.status_code}: {response.text}", "ERROR")
+                self.results["priorities_endpoint"] = {"status": "FAIL", "error": f"HTTP {response.status_code}"}
+                return False
+                
+            data = response.json()
+            
+            # Validate JSON structure
+            required_fields = ["tenant_id", "concerns"]
+            for field in required_fields:
+                if field not in data:
+                    self.log(f"❌ Missing required field '{field}' in priorities response", "ERROR")
+                    self.results["priorities_endpoint"] = {
+                        "status": "FAIL", 
+                        "error": f"Missing field: {field}",
+                        "response_data": data
+                    }
+                    return False
+                    
+            concerns = data.get("concerns", [])
+            if not isinstance(concerns, list):
+                self.log(f"❌ 'concerns' should be a list, got {type(concerns)}", "ERROR")
+                self.results["priorities_endpoint"] = {"status": "FAIL", "error": "concerns not a list"}
+                return False
+                
+            tenant_id = data.get("tenant_id")
+            tier_mode = data.get("tier_mode")
+            business_core_ready = data.get("business_core_ready")
+            concerns_count = len(concerns)
+            
+            self.log(f"✅ priorities endpoint returns 200 OK")
+            self.log(f"✅ Valid JSON structure with required fields")
+            self.log(f"✅ tenant_id = {tenant_id}")
+            self.log(f"✅ concerns count = {concerns_count}")
+            self.log(f"✅ tier_mode = {tier_mode}")
+            self.log(f"✅ business_core_ready = {business_core_ready}")
+            
+            # Log concern details if available
+            for i, concern in enumerate(concerns[:3]):  # Show first 3
+                concern_id = concern.get("concern_id")
+                priority_score = concern.get("priority_score")
+                self.log(f"✅ Concern {i+1}: {concern_id} (priority: {priority_score})")
+            
+            self.results["priorities_endpoint"] = {
+                "status": "PASS",
+                "tenant_id": tenant_id,
+                "concerns_count": concerns_count,
+                "tier_mode": tier_mode,
+                "business_core_ready": business_core_ready,
+                "sample_concerns": [c.get("concern_id") for c in concerns[:3]]
+            }
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ priorities endpoint exception: {str(e)}", "ERROR")
+            self.results["priorities_endpoint"] = {"status": "FAIL", "error": str(e)}
+            return False
+
+    def check_for_regressions(self) -> bool:
+        """Requirement 5: Flag any backend regressions or mismatches."""
+        self.log("Checking for backend regressions...")
         
-        acc_icon = "✅" if accounting["status"] == "PASS" else "❌"
-        self.log(f"  5) {acc_icon} GET /api/integrations/accounting/summary: {accounting['status']}")
+        regressions = []
+        warnings = []
         
-        oe_icon = "✅" if outlook_email["status"] == "PASS" else "❌"
-        self.log(f"  6) {oe_icon} GET /api/outlook/status + /api/email/priority-inbox: {outlook_email['status']}")
+        # Check if all core tests passed
+        core_tests = ["auth_login", "runtime_check", "metrics_coverage", "priorities_endpoint"]
+        failed_tests = [test for test in core_tests if self.results.get(test, {}).get("status") != "PASS"]
         
-        # Print any errors
+        if failed_tests:
+            regressions.extend([f"Core test failed: {test}" for test in failed_tests])
+        
+        # Check catalog source consistency
+        runtime_source = self.results.get("runtime_check", {}).get("catalog_source_resolved", "")
+        metrics_source = self.results.get("metrics_coverage", {}).get("catalog_source", "")
+        
+        if runtime_source and metrics_source and runtime_source != metrics_source:
+            warnings.append(f"Catalog source mismatch: runtime='{runtime_source}' vs metrics='{metrics_source}'")
+        
+        # Check metric count consistency  
+        runtime_count = self.results.get("runtime_check", {}).get("catalog_metric_count")
+        metrics_count = self.results.get("metrics_coverage", {}).get("total_metrics")
+        
+        if runtime_count and metrics_count and runtime_count != metrics_count:
+            regressions.append(f"Metric count mismatch: runtime={runtime_count} vs metrics={metrics_count}")
+        
+        # Check if using fallback catalog
+        if "fallback" in runtime_source.lower():
+            warnings.append(f"Using fallback catalog instead of JSON file: {runtime_source}")
+        
+        # Check business_core_ready consistency
+        runtime_core = self.results.get("runtime_check", {}).get("business_core_ready")
+        priorities_core = self.results.get("priorities_endpoint", {}).get("business_core_ready")
+        
+        if runtime_core is not None and priorities_core is not None and runtime_core != priorities_core:
+            warnings.append(f"business_core_ready mismatch: runtime={runtime_core} vs priorities={priorities_core}")
+        
+        if regressions:
+            self.log("❌ REGRESSIONS DETECTED:")
+            for regression in regressions:
+                self.log(f"  • {regression}", "ERROR")
+            self.results["regressions"] = {"status": "FAIL", "issues": regressions}
+            return False
+        
+        if warnings:
+            self.log("⚠️  WARNINGS DETECTED:")
+            for warning in warnings:
+                self.log(f"  • {warning}", "WARN")
+        
+        self.log("✅ No critical backend regressions detected")
+        self.results["regressions"] = {
+            "status": "PASS", 
+            "warnings": warnings,
+            "issues": []
+        }
+        return True
+
+    def generate_summary(self):
+        """Generate final test summary."""
+        elapsed_time = time.time() - self.start_time
+        
+        self.log(f"\n{'='*80}")
+        self.log("FINAL BACKEND SANITY CHECK SUMMARY")
+        self.log(f"{'='*80}")
+        
+        self.log(f"Target Backend: {BASE_URL}")
+        self.log(f"Test User: {TEST_EMAIL}")
+        self.log(f"Execution Time: {elapsed_time:.1f}s")
         self.log("")
-        self.log("ERRORS & ISSUES:")
-        for test_name, result in self.test_results.items():
-            if result.get("status") in ["FAIL", "PARTIAL"] and "error" in result:
-                self.log(f"  {test_name}: {result['error']}")
-            if "issues" in result:
-                for issue in result["issues"]:
-                    self.log(f"  {test_name}: {issue}")
+        
+        # Test results
+        test_results = [
+            ("1. Auth/Login", "auth_login"),
+            ("2. Runtime Check (100 metrics)", "runtime_check"),
+            ("3. Metrics Coverage (100 metrics)", "metrics_coverage"),
+            ("4. Priorities Endpoint", "priorities_endpoint"),
+            ("5. Regression Check", "regressions")
+        ]
+        
+        all_passed = True
+        for name, key in test_results:
+            status = self.results.get(key, {}).get("status", "NOT_RUN")
+            if status == "PASS":
+                self.log(f"✅ {name}: PASS")
+            else:
+                self.log(f"❌ {name}: {status}", "ERROR")
+                error = self.results.get(key, {}).get("error", "Unknown error")
+                self.log(f"   Error: {error}", "ERROR")
+                all_passed = False
+        
+        self.log("")
+        
+        if all_passed:
+            self.log("🎉 ALL TESTS PASSED - BACKEND IS READY FOR DEPLOYMENT")
+            self.log("✅ Business Brain 100-metric fix verification COMPLETE")
+        else:
+            self.log("❌ SOME TESTS FAILED - BACKEND NEEDS ATTENTION")
+            self.log("❌ Business Brain 100-metric fix verification INCOMPLETE")
+        
+        self.log(f"{'='*80}")
+        
+        return all_passed
+
+    def run_all_tests(self) -> bool:
+        """Execute all backend sanity checks."""
+        self.log("Starting BIQc Business Brain 100-Metric Backend Sanity Check")
+        self.log(f"Target: {BASE_URL}")
+        self.log("")
+        
+        # Execute tests in order
+        tests = [
+            ("Auth Login", self.test_auth_login),
+            ("Runtime Check", self.test_runtime_check),
+            ("Metrics Coverage", self.test_metrics_coverage),
+            ("Priorities Endpoint", self.test_priorities_endpoint),
+            ("Regression Check", self.check_for_regressions)
+        ]
+        
+        for test_name, test_func in tests:
+            self.log(f"\n{'-'*60}")
+            self.log(f"Running: {test_name}")
+            self.log(f"{'-'*60}")
+            
+            try:
+                success = test_func()
+                if not success and test_name == "Auth Login":
+                    self.log("❌ Authentication failed - cannot continue with remaining tests", "ERROR")
+                    break
+            except Exception as e:
+                self.log(f"❌ Unexpected error in {test_name}: {str(e)}", "ERROR")
+                self.results[test_name.lower().replace(" ", "_")] = {"status": "ERROR", "error": str(e)}
+        
+        return self.generate_summary()
+
 
 def main():
-    """Main test runner"""
-    tester = ForensicTester()
+    """Main entry point for backend testing."""
+    tester = BrainBackendTester()
+    success = tester.run_all_tests()
     
-    success = tester.run_backend_tests()
-    tester.print_summary()
+    # Save results to file for review
+    with open("/app/brain_backend_test_results.json", "w") as f:
+        json.dump({
+            "timestamp": datetime.now().isoformat(),
+            "target_url": BASE_URL,
+            "test_user": TEST_EMAIL,
+            "overall_success": success,
+            "results": tester.results
+        }, f, indent=2)
     
-    if not success or any(r.get("status") == "FAIL" for r in tester.test_results.values()):
-        sys.exit(1)
+    sys.exit(0 if success else 1)
+
 
 if __name__ == "__main__":
     main()

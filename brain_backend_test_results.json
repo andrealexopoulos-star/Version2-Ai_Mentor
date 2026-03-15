@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-03-15T08:06:29.929150",
+  "target_url": "https://advisor-engine.preview.emergentagent.com",
+  "test_user": "andre@thestrategysquad.com.au",
+  "overall_success": true,
+  "results": {
+    "auth_login": {
+      "status": "PASS",
+      "user_id": "52a60959-b8f7-4032-a744-e164d8749ce6",
+      "token_length": 1294
+    },
+    "runtime_check": {
+      "status": "PASS",
+      "catalog_metric_count": 100,
+      "catalog_source_resolved": "/app/backend/business_brain_top100_catalog.json",
+      "business_core_ready": false
+    },
+    "metrics_coverage": {
+      "status": "PASS",
+      "total_metrics": 100,
+      "runtime_catalog_metric_count": 100,
+      "computed_metrics": 0,
+      "metrics_array_length": 100,
+      "catalog_source": "biqc_top100_metrics_authoritative"
+    },
+    "priorities_endpoint": {
+      "status": "PASS",
+      "tenant_id": "52a60959-b8f7-4032-a744-e164d8749ce6",
+      "concerns_count": 2,
+      "tier_mode": "custom",
+      "business_core_ready": false,
+      "sample_concerns": [
+        "cashflow_risk",
+        "pipeline_stagnation"
+      ]
+    },
+    "regressions": {
+      "status": "PASS",
+      "warnings": [
+        "Catalog source mismatch: runtime='/app/backend/business_brain_top100_catalog.json' vs metrics='biqc_top100_metrics_authoritative'"
+      ],
+      "issues": []
+    }
+  }
+}
