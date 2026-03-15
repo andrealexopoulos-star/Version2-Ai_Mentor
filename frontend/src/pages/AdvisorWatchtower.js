@@ -1430,92 +1430,6 @@ export default function AdvisorWatchtower() {
     fallbackState,
   });
 
-  const snapshotLabels = useMemo(() => {
-    const accountingSyncError = integrationContext.accountingSummary?.error
-      || integrationContext.executiveSurface?.snapshot?.accounting_error
-      || integrationContext.sourceHealth?.accounting?.error
-      || '';
-    const emailSyncError = integrationContext.sourceHealth?.email?.error || '';
-    const currentEmail = String(user?.email || '').toLowerCase();
-    const isFounderOpsAccount = currentEmail === 'andre@thestrategysquad.com.au';
-    const hasAccounting = Boolean(integrationContext.sourceHealth?.accounting?.live)
-      || ((Boolean(integrationContext.accountingSummary?.connected) || executiveSnapshot.overdueCount > 0 || executiveSnapshot.overdueValue > 0) && !accountingSyncError);
-    const hasCRM = Boolean(integrationContext.sourceHealth?.crm?.live)
-      || connectedSources.some((source) => /hubspot|salesforce|crm/i.test(source))
-      || executiveSnapshot.openDeals > 0;
-    const hasOutlook = Boolean(integrationContext.sourceHealth?.email?.live) || Boolean(integrationContext.outlookStatus?.connected);
-
-    const crmLabel = hasCRM
-      ? `${executiveSnapshot.openDeals} open · ${executiveSnapshot.stalledDeals} stalled >72h`
-      : 'CRM sync pending';
-
-    const cashLabel = accountingSyncError
-      ? (isFounderOpsAccount
-          ? 'ERROR · non-live accounting API'
-          : 'Reconnect integration or contact support')
-      : hasAccounting
-        ? (executiveSnapshot.overdueCount > 0
-            ? `${executiveSnapshot.overdueCount} overdue · ${formatCurrency(executiveSnapshot.overdueValue)}`
-            : 'No overdue invoices detected')
-        : 'Xero sync pending';
-
-    const inboxLabel = emailSyncError
-      ? (isFounderOpsAccount
-          ? 'ERROR · non-live email API'
-          : 'Reconnect integration or contact support')
-      : hasOutlook
-        ? (executiveSnapshot.highPriorityEmails > 0
-            ? `${executiveSnapshot.highPriorityEmails} high-priority threads`
-            : 'No urgent inbox threads')
-        : 'Outlook sync pending';
-
-    const calibrationLabel = executiveSnapshot.calibrationStatus || 'Pending';
-
-    return { crmLabel, cashLabel, inboxLabel, calibrationLabel };
-  }, [integrationContext, executiveSnapshot, connectedSources, user?.email]);
-
-  const cashExposureProvenance = integrationContext.executiveSurface?.provenance?.cash_exposure || null;
-  const accountingSyncError = integrationContext.accountingSummary?.error
-    || integrationContext.executiveSurface?.snapshot?.accounting_error
-    || integrationContext.sourceHealth?.accounting?.error
-    || '';
-  const emailSyncError = integrationContext.sourceHealth?.email?.error || '';
-
-  const cashExposureSourceNote = useMemo(() => {
-    const currentEmail = String(user?.email || '').toLowerCase();
-    const isFounderOpsAccount = currentEmail === 'andre@thestrategysquad.com.au';
-
-    if (accountingSyncError) {
-      if (isFounderOpsAccount) {
-        return `ERROR: non-live accounting API state detected. Root detail: ${String(accountingSyncError).slice(0, 140)}`;
-      }
-      return 'Accounting feed unavailable. Reconnect integration or contact support.';
-    }
-    if (cashExposureProvenance?.summary) return cashExposureProvenance.summary;
-    if (executiveSnapshot.overdueCount > 0) {
-      return 'From accounting sync via Merge: CLIENT invoices only (AR), excluding supplier bills (AP). Overdue means status is OVERDUE or due date is past today.';
-    }
-    return 'Cash exposure source appears after accounting sync completes.';
-  }, [cashExposureProvenance, executiveSnapshot.overdueCount, accountingSyncError, user?.email]);
-
-  const priorityInboxSourceNote = useMemo(() => {
-    const currentEmail = String(user?.email || '').toLowerCase();
-    const isFounderOpsAccount = currentEmail === 'andre@thestrategysquad.com.au';
-
-    if (emailSyncError) {
-      if (isFounderOpsAccount) {
-        return `ERROR: non-live email API state detected. Root detail: ${String(emailSyncError).slice(0, 140)}`;
-      }
-      return 'Email feed unavailable. Reconnect integration or contact support.';
-    }
-
-    if (executiveSnapshot.highPriorityEmails > 0) {
-      return 'Source: /email/priority-inbox, generated from Outlook synced email corpus.';
-    }
-
-    return 'No high-priority inbox threads detected in latest analysis window.';
-  }, [emailSyncError, executiveSnapshot.highPriorityEmails, user?.email]);
-
   const soundboardDiscussHref = useCallback((topic) => {
     const prompt = topic ? `Discuss this with context: ${topic}` : 'Discuss advisor context and next best owner action.';
     return `/soundboard?origin=advisor&prompt=${encodeURIComponent(prompt)}`;
@@ -1671,88 +1585,50 @@ export default function AdvisorWatchtower() {
                   </Link>
                 </div>
 
-                <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_280px]" data-testid="advisor-priority-layout-grid">
-                  <aside className="order-2 grid gap-3 2xl:order-2 2xl:grid-cols-1 self-start" data-testid="advisor-priority-left-rail">
-                    <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-state-card">
-                      <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
-                      <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{executiveState}</p>
-                      <Link
-                        to={soundboardDiscussHref(`Business state is ${executiveState}. Explain immediate owner priorities.`)}
-                        className="mt-3 inline-flex min-h-[38px] items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] hover:bg-white/5"
-                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                        data-testid="advisor-state-discuss-soundboard"
-                      >
-                        Discuss with BIQc SoundBoard <ArrowRight className="h-3 w-3" />
-                      </Link>
+                <div className="space-y-4" data-testid="advisor-priority-layout-grid">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="advisor-priority-status-row">
+                    <article className="rounded-2xl border p-5 flex flex-col justify-between min-h-[108px]" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-state-card">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
+                          <p className="mt-2 text-xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{executiveState}</p>
+                        </div>
+                        <Link
+                          to={soundboardDiscussHref(`Business state is ${executiveState}. Explain immediate owner priorities.`)}
+                          className="inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-white/5"
+                          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                          data-testid="advisor-state-discuss-soundboard"
+                        >
+                          Discuss <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      </div>
                     </article>
 
-                    <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-executive-snapshot-section">
-                      <div className="mb-3 flex items-center gap-2">
-                        <ShieldAlert className="h-4 w-4 text-[#FF6A00]" />
-                        <h3 className="text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-executive-snapshot-title">
-                          Executive Snapshot (Live Integration Truth)
-                        </h3>
-                      </div>
-
-                      <div className="space-y-2" data-testid="advisor-executive-snapshot-grid">
-                        <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-crm">
-                          <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>CRM Pipeline</p>
-                          <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-crm-value">{snapshotLabels.crmLabel}</p>
-                          <Link to={soundboardDiscussHref(snapshotLabels.crmLabel)} className="mt-2 inline-flex min-h-[34px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px] hover:bg-white/5" style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-crm-discuss">Discuss</Link>
-                        </div>
-
-                        <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-cash">
-                          <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Cash Exposure</p>
-                          <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-cash-value">{snapshotLabels.cashLabel}</p>
-                          <p className="mt-2 text-[10px] leading-relaxed" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-cash-source-note">{cashExposureSourceNote}</p>
-                          <Link to={soundboardDiscussHref(cashExposureSourceNote)} className="mt-2 inline-flex min-h-[34px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px] hover:bg-white/5" style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-cash-discuss">Discuss</Link>
-                        </div>
-
-                        <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-email">
-                          <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Priority Inbox</p>
-                          <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-email-value">{snapshotLabels.inboxLabel}</p>
-                          <p className="mt-2 text-[10px] leading-relaxed" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-email-source-note">{priorityInboxSourceNote}</p>
-                          <Link to={soundboardDiscussHref(priorityInboxSourceNote)} className="mt-2 inline-flex min-h-[34px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px] hover:bg-white/5" style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-email-discuss">Discuss</Link>
-                        </div>
-
-                        <div className="rounded-xl border p-3" style={{ borderColor: 'var(--biqc-border)', background: '#0F172A' }} data-testid="advisor-executive-snapshot-calibration">
-                          <p className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Calibration</p>
-                          <p className="mt-1 text-sm" style={{ color: 'var(--biqc-text)' }} data-testid="advisor-executive-snapshot-calibration-value">{snapshotLabels.calibrationLabel}</p>
-                          <Link to={soundboardDiscussHref(`Calibration status: ${snapshotLabels.calibrationLabel}`)} className="mt-2 inline-flex min-h-[34px] items-center gap-1 rounded-lg border px-2 py-1 text-[10px] hover:bg-white/5" style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }} data-testid="advisor-executive-snapshot-calibration-discuss">Discuss</Link>
-                        </div>
-                      </div>
-
-                      {connectedSources.length === 0 && (
-                        <div className="mt-3 rounded-xl border p-3 text-sm" style={{ borderColor: '#F59E0B60', background: '#F59E0B12', color: '#FDE68A' }} data-testid="advisor-integration-onboarding-prompt">
-                          No integrations detected yet. Connect HubSpot, Xero, and Outlook to activate personalized executive signals.
-                          <Link to="/integrations" className="ml-2 underline" data-testid="advisor-integration-onboarding-link">Open Integrations</Link>
-                        </div>
-                      )}
-                    </article>
-
-                    <article className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-queue-status-section">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
+                    <article className="rounded-2xl border p-5 flex flex-col justify-between min-h-[108px]" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-queue-status-section">
+                      <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-status-label">Decision Queue Status</p>
-                          <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-queue-status-value">{openSignals.length} open signal{openSignals.length === 1 ? '' : 's'} · showing top 3 executive decisions now.</p>
+                          <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-queue-status-value">{openSignals.length} open signal{openSignals.length === 1 ? '' : 's'} · showing top 3 executive decisions now.</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-queue-backlog-count">{queuedBeyondThree}</p>
                           <p className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-backlog-label">Queued after top 3</p>
                         </div>
                       </div>
-                      <Link
-                        to={soundboardDiscussHref(`Decision queue has ${openSignals.length} open signals with ${queuedBeyondThree} queued after top 3.`)}
-                        className="mt-3 inline-flex min-h-[38px] items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] hover:bg-white/5"
-                        style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                        data-testid="advisor-queue-discuss-soundboard"
-                      >
-                        Discuss with BIQc SoundBoard <ArrowRight className="h-3 w-3" />
-                      </Link>
+                      <div className="mt-3">
+                        <Link
+                          to={soundboardDiscussHref(`Decision queue has ${openSignals.length} open signals with ${queuedBeyondThree} queued after top 3.`)}
+                          className="inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-white/5"
+                          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                          data-testid="advisor-queue-discuss-soundboard"
+                        >
+                          Discuss queue <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      </div>
                     </article>
-                  </aside>
+                  </div>
 
-                  <div className="order-1" data-testid="advisor-priority-main-rail">
+                  <div data-testid="advisor-priority-main-rail">
                     {brainUnavailable ? (
                       <div className="rounded-2xl border p-5" style={{ borderColor: '#EF444460', background: '#450A0A' }} data-testid="advisor-brain-unavailable-state">
                         <h3 className="text-lg" style={{ color: '#FCA5A5', fontFamily: fontFamily.display }} data-testid="advisor-brain-unavailable-title">
@@ -1815,8 +1691,7 @@ export default function AdvisorWatchtower() {
                       </div>
                     ) : (
                       <div
-                        className="grid gap-4"
-                        style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}
+                        className="grid grid-cols-1 gap-4 md:grid-cols-3"
                         data-testid="advisor-decision-grid"
                       >
                         {decisions.map((decision, index) => {
@@ -1829,7 +1704,7 @@ export default function AdvisorWatchtower() {
                           return (
                             <article
                               key={decision.id}
-                              className="min-w-0 rounded-2xl border p-5"
+                              className="min-w-0 rounded-2xl border p-5 flex flex-col h-full"
                               style={{ borderColor: style.border, background: 'var(--biqc-bg-card)' }}
                               data-testid={`advisor-decision-card-${decision.id}`}
                             >
@@ -1850,44 +1725,46 @@ export default function AdvisorWatchtower() {
                                 </div>
                               </div>
 
-                              <p className="mb-1 text-sm" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-intent-${decision.id}`}>{decision.intent}</p>
-                              <p className="mb-1 text-sm" style={{ color: style.text }} data-testid={`advisor-decision-headline-${decision.id}`}>{decision.headline}</p>
-                              {signal && (
-                                <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
-                                  Confidence interval: {decision.confidenceInterval}
-                                </p>
-                              )}
-                              <h3 className="mb-3 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>
-                                {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}
-                              </h3>
+                              <div className="flex-1">
+                                <p className="mb-1 text-sm" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-intent-${decision.id}`}>{decision.intent}</p>
+                                <p className="mb-1 text-sm" style={{ color: style.text }} data-testid={`advisor-decision-headline-${decision.id}`}>{decision.headline}</p>
+                                {signal && (
+                                  <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
+                                    Confidence interval: {decision.confidenceInterval}
+                                  </p>
+                                )}
+                                <h3 className="mb-3 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>
+                                  {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}
+                                </h3>
 
-                              {signal ? (
-                                <SourceProvenanceBadge source={signal.source} signalType={signal.signalType} timestamp={signal.createdAt} testId={`advisor-provenance-${decision.id}`} />
-                              ) : (
-                                <p className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-provenance-${decision.id}`}>
-                                  Waiting for verified events from connected tools.
-                                </p>
-                              )}
+                                {signal ? (
+                                  <SourceProvenanceBadge source={signal.source} signalType={signal.signalType} timestamp={signal.createdAt} testId={`advisor-provenance-${decision.id}`} />
+                                ) : (
+                                  <p className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-provenance-${decision.id}`}>
+                                    Waiting for verified events from connected tools.
+                                  </p>
+                                )}
 
-                              <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
-                                <p data-testid={`advisor-decision-why-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Why now:</strong> {decision.whyNow}</p>
-                                <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal ? signal.ifIgnored : 'No immediate execution risk detected in this bucket.'}</p>
-                                <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal ? signal.action : 'Trigger sync or wait for next watchtower signal.'}</p>
-                              </div>
-
-                              <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-loop-${decision.id}`}>
-                                <p data-testid={`advisor-decision-loop-signal-${decision.id}`}><strong>Signal:</strong> {signal ? signal.detail : 'No signal above threshold.'}</p>
-                                <p data-testid={`advisor-decision-loop-decision-${decision.id}`}><strong>Decision:</strong> {decision.headline}</p>
-                                <p data-testid={`advisor-decision-loop-action-${decision.id}`}><strong>Action:</strong> {signal ? signal.action : 'No action required.'}</p>
-                              </div>
-
-                              {signal && projections && (
-                                <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-projection-${decision.id}`}>
-                                  <p data-testid={`advisor-decision-projection-title-${decision.id}`}><strong>30/60/90 outlook</strong></p>
-                                  <p data-testid={`advisor-decision-projection-ignored-${decision.id}`}>If ignored → risk {projections.ignored[0]}% / {projections.ignored[1]}% / {projections.ignored[2]}%</p>
-                                  <p data-testid={`advisor-decision-projection-actioned-${decision.id}`}>If actioned → risk {projections.actioned[0]}% / {projections.actioned[1]}% / {projections.actioned[2]}%</p>
+                                <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
+                                  <p data-testid={`advisor-decision-why-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Why now:</strong> {decision.whyNow}</p>
+                                  <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal ? signal.ifIgnored : 'No immediate execution risk detected in this bucket.'}</p>
+                                  <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal ? signal.action : 'Trigger sync or wait for next watchtower signal.'}</p>
                                 </div>
-                              )}
+
+                                <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-loop-${decision.id}`}>
+                                  <p data-testid={`advisor-decision-loop-signal-${decision.id}`}><strong>Signal:</strong> {signal ? signal.detail : 'No signal above threshold.'}</p>
+                                  <p data-testid={`advisor-decision-loop-decision-${decision.id}`}><strong>Decision:</strong> {decision.headline}</p>
+                                  <p data-testid={`advisor-decision-loop-action-${decision.id}`}><strong>Action:</strong> {signal ? signal.action : 'No action required.'}</p>
+                                </div>
+
+                                {signal && projections && (
+                                  <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-projection-${decision.id}`}>
+                                    <p data-testid={`advisor-decision-projection-title-${decision.id}`}><strong>30/60/90 outlook</strong></p>
+                                    <p data-testid={`advisor-decision-projection-ignored-${decision.id}`}>If ignored → risk {projections.ignored[0]}% / {projections.ignored[1]}% / {projections.ignored[2]}%</p>
+                                    <p data-testid={`advisor-decision-projection-actioned-${decision.id}`}>If actioned → risk {projections.actioned[0]}% / {projections.actioned[1]}% / {projections.actioned[2]}%</p>
+                                  </div>
+                                )}
+                              </div>
 
                               <div className="mt-4 flex flex-wrap gap-2" data-testid={`advisor-decision-actions-${decision.id}`}>
                                 {Object.entries(DECISION_ACTIONS).map(([actionType, config]) => {

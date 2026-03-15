@@ -1,152 +1,93 @@
 {
-  "identity": {
-    "name": "E1",
-    "persona": "The Anti-AI Designer",
-    "philosophy": "Fusion over Imitation. Emotion First. Content is King.",
-    "tone": "Calm Executive Command Layer"
-  },
-  "typography": {
-    "font_family": {
-      "heading": "Cormorant Garamond, serif",
-      "body": "Inter, sans-serif",
-      "mono": "JetBrains Mono, monospace"
+  "design_guidelines": {
+    "project_name": "BIQc Advisor Layout Refinement",
+    "version": "1.0",
+    "description": "Refining the AdvisorWatchtower layout to align with executive focus: horizontal card layout, removal of right sidebar, and cleaner stacking of status cards.",
+    "files_to_modify": [
+      "/app/frontend/src/pages/AdvisorWatchtower.js"
+    ],
+    "universal_guidelines": {
+      "theme": "dark",
+      "font_family_base": "Inter, sans-serif",
+      "font_family_display": "Barlow Condensed, sans-serif",
+      "font_family_mono": "JetBrains Mono, monospace",
+      "spacing_scale": "relaxed"
     },
-    "scale": {
-      "h1": "text-4xl md:text-5xl font-heading font-medium tracking-tight",
-      "h2": "text-3xl md:text-4xl font-heading font-medium tracking-tight",
-      "h3": "text-xl md:text-2xl font-heading font-medium",
-      "body_lg": "text-lg font-sans leading-relaxed",
-      "body_base": "text-base font-sans leading-relaxed text-slate-600 dark:text-slate-300",
-      "caption": "text-xs font-mono tracking-wider uppercase text-slate-500"
-    }
-  },
-  "colors": {
-    "palette": {
-      "primary": {
-        "light": "#FFFFFF",
-        "dark": "#0F172A"
+    "layout_changes": {
+      "target_section": "advisor-priority-detail-section",
+      "instruction": "Replace the existing 2-column grid layout (Sidebar + Main) with a single-column vertical stack. The status cards should sit above the main decision cards.",
+      "steps": [
+        {
+          "action": "remove_element",
+          "selector": "aside[data-testid='advisor-priority-left-rail']",
+          "note": "Remove the entire sidebar container but KEEP the content of 'Business State' and 'Decision Queue Status' cards for relocation. DELETE 'Executive Snapshot' section entirely."
+        },
+        {
+          "action": "update_structure",
+          "description": "Create a new flex/grid layout inside 'advisor-priority-detail-section'.",
+          "structure": [
+            {
+              "row": 1,
+              "content": "Header (Title + View full signal inbox link) - Keep existing header code."
+            },
+            {
+              "row": 2,
+              "layout": "grid grid-cols-1 md:grid-cols-2 gap-4 mb-6",
+              "content": [
+                "Business State Card (Extracted from sidebar)",
+                "Decision Queue Status Card (Extracted from sidebar)"
+              ]
+            },
+            {
+              "row": 3,
+              "layout": "grid grid-cols-1 md:grid-cols-3 gap-6",
+              "content": "The 3 Main Priority Cards (decisions.map loop). Force 3 columns on medium+ screens."
+            }
+          ]
+        },
+        {
+          "action": "refine_styles",
+          "target": "Business State Card",
+          "styles": "h-full min-h-[100px] flex flex-row items-center justify-between p-5 rounded-2xl border bg-[var(--biqc-bg-card)] border-[var(--biqc-border)]"
+        },
+        {
+          "action": "refine_styles",
+          "target": "Decision Queue Status Card",
+          "styles": "h-full min-h-[100px] flex flex-row items-center justify-between p-5 rounded-2xl border bg-[var(--biqc-bg-card)] border-[var(--biqc-border)]"
+        }
+      ]
+    },
+    "component_specifications": {
+      "business_state_card": {
+        "elements": [
+          "Label: 'Business State' (uppercase, tracking-wide, text-muted)",
+          "Value: executiveState (Display font, large text)",
+          "Action: Soundboard link (Discuss...)"
+        ],
+        "layout_direction": "horizontal_compact"
       },
-      "secondary": {
-        "light": "#F1F5F9",
-        "dark": "#1E293B"
+      "decision_queue_card": {
+        "elements": [
+          "Label: 'Decision Queue Status'",
+          "Value: Open signal count + 'showing top 3...'",
+          "Metric: Backlog count (queuedBeyondThree)",
+          "Action: Soundboard link"
+        ],
+        "layout_direction": "horizontal_compact"
       },
-      "accent": "#F97316",
-      "grow_plan": "#8B5CF6",
-      "success": "#10B981",
-      "warning": "#F59E0B",
-      "danger": "#EF4444",
-      "text": {
-        "light": "#0F172A",
-        "dark": "#F8FAFC",
-        "muted": "#64748B"
+      "main_decision_grid": {
+        "grid_class": "grid grid-cols-1 md:grid-cols-3 gap-6",
+        "card_style": "min-w-0 rounded-2xl border p-6 bg-[var(--biqc-bg-card)] border-[var(--biqc-border)] flex flex-col justify-between"
       }
     },
-    "usage": {
-      "background": "bg-white dark:bg-slate-950",
-      "surface": "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800",
-      "primary_action": "bg-orange-500 hover:bg-orange-600 text-white",
-      "grow_action": "bg-violet-600 hover:bg-violet-700 text-white"
-    }
-  },
-  "layout": {
-    "strategy": "Bento Grid (High Density)",
-    "container": "grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-4 p-4 md:p-6",
-    "spacing": {
-      "section_gap": "gap-6",
-      "internal_padding": "p-5"
-    }
-  },
-  "components": {
-    "BentoCard": {
-      "base": "relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all hover:shadow-md",
-      "header": "flex items-center justify-between mb-4",
-      "title": "text-lg font-heading text-slate-900 dark:text-white",
-      "icon_wrapper": "p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+    "code_snippets": {
+      "new_layout_jsx": "<section id=\"advisor-priority-detail-section\" className=\"mb-10\" data-testid=\"advisor-decision-surface\">\n  {/* ROW 1: HEADER */}\n  <div className=\"mb-6 flex items-center justify-between gap-3\">\n    <h2 className=\"text-base md:text-lg\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid=\"advisor-decision-title\">\n      BIQc Priority Snapshot\n    </h2>\n    <Link\n      to=\"/alerts\"\n      className=\"inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5\"\n      style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }}\n      data-testid=\"advisor-view-alerts-link\"\n    >\n      View full signal inbox <ArrowRight className=\"h-3.5 w-3.5\" />\n    </Link>\n  </div>\n\n  {/* ROW 2: STATUS CARDS (Formerly Sidebar) */}\n  <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4 mb-6\">\n    {/* Business State */}\n    <article className=\"rounded-2xl border p-5 flex flex-col justify-between\" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid=\"advisor-state-card\">\n      <div className=\"flex items-start justify-between\">\n        <div>\n          <p className=\"text-xs uppercase tracking-[0.14em] text-[#94A3B8]\" style={{ fontFamily: fontFamily.mono }} data-testid=\"advisor-state-label\">Business State</p>\n          <p className=\"mt-2 text-2xl\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid=\"advisor-state-value\">{executiveState}</p>\n        </div>\n        <Link\n          to={soundboardDiscussHref(`Business state is ${executiveState}. Explain immediate owner priorities.`)}\n          className=\"inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-white/5\"\n          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}\n          data-testid=\"advisor-state-discuss-soundboard\"\n        >\n          Discuss <ArrowRight className=\"h-3 w-3\" />\n        </Link>\n      </div>\n    </article>\n\n    {/* Decision Queue */}\n    <article className=\"rounded-2xl border p-5 flex flex-col justify-between\" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid=\"advisor-queue-status-section\">\n      <div className=\"flex items-start justify-between w-full\">\n        <div>\n          <p className=\"text-xs uppercase tracking-[0.14em] text-[#94A3B8]\" style={{ fontFamily: fontFamily.mono }} data-testid=\"advisor-queue-status-label\">Decision Queue</p>\n          <p className=\"mt-2 text-sm\" style={{ color: 'var(--biqc-text-2)' }} data-testid=\"advisor-queue-status-value\">\n            {openSignals.length} open signal{openSignals.length === 1 ? '' : 's'} · Showing top 3\n          </p>\n        </div>\n        <div className=\"text-right\">\n           <div className=\"flex items-center gap-2 justify-end\">\n              <p className=\"text-2xl\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid=\"advisor-queue-backlog-count\">{queuedBeyondThree}</p>\n              <p className=\"text-xs text-[#94A3B8] max-w-[60px] leading-tight text-right\" style={{ fontFamily: fontFamily.mono }} data-testid=\"advisor-queue-backlog-label\">Queued after top 3</p>\n           </div>\n        </div>\n      </div>\n      <div className=\"mt-3\">\n         <Link\n          to={soundboardDiscussHref(`Decision queue has ${openSignals.length} open signals with ${queuedBeyondThree} queued after top 3.`)}\n          className=\"inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-white/5\"\n          style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}\n          data-testid=\"advisor-queue-discuss-soundboard\"\n        >\n          Discuss queue strategy <ArrowRight className=\"h-3 w-3\" />\n        </Link>\n      </div>\n    </article>\n  </div>\n\n  {/* ROW 3: MAIN CARDS */}\n  <div data-testid=\"advisor-priority-main-rail\">\n    {brainUnavailable ? (\n       /* Keep existing brainUnavailable block */\n       <div className=\"rounded-2xl border p-5\" style={{ borderColor: '#EF444460', background: '#450A0A' }} data-testid=\"advisor-brain-unavailable-state\">\n          {/* ... existing content ... */}\n          <h3 className=\"text-lg\" style={{ color: '#FCA5A5', fontFamily: fontFamily.display }} data-testid=\"advisor-brain-unavailable-title\">\n            BIQc Business Brain data is currently unavailable.\n          </h3>\n           {/* ... copy existing children ... */}\n       </div>\n    ) : brainLoading ? (\n       /* Keep existing brainLoading block */\n       <div className=\"rounded-2xl border p-5\" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid=\"advisor-brain-loading-state\">\n           {/* ... existing content ... */}\n           <h3 className=\"text-lg\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid=\"advisor-brain-loading-title\">\n              BIQc Business Brain is syncing live signals.\n           </h3>\n           {/* ... copy existing children ... */}\n       </div>\n    ) : noActiveDecisions ? (\n       /* Keep existing noActiveDecisions block */\n       <div className=\"rounded-2xl border p-5\" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid=\"advisor-all-clear-state\">\n            {/* ... existing content ... */}\n            <h3 className=\"text-lg\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid=\"advisor-all-clear-title\">\n              All clear right now — no high-priority decision signal detected.\n            </h3>\n            {/* ... copy existing children ... */}\n       </div>\n    ) : (\n      <div\n        className=\"grid gap-6 grid-cols-1 md:grid-cols-3\"\n        data-testid=\"advisor-decision-grid\"\n      >\n        {decisions.map((decision, index) => {\n          /* Keep existing decision map logic exactly as is, just ensure grid columns above handles layout */\n          const Icon = decision.icon;\n          const style = SEVERITY_STYLE[decision.severity] || SEVERITY_STYLE.medium;\n          const signal = decision.signal;\n          const actionRecord = signal ? actionState.byKey?.[signal.dedupeKey] : null;\n          const projections = signal ? buildProjections(signal) : null;\n\n          return (\n            <article\n              key={decision.id}\n              className=\"min-w-0 rounded-2xl border p-6 flex flex-col h-full\"\n              style={{ borderColor: style.border, background: 'var(--biqc-bg-card)' }}\n              data-testid={`advisor-decision-card-${decision.id}`}\n            >\n               {/* ... Keep existing card content ... */}\n               <div className=\"mb-4 flex items-center justify-between gap-2\">\n                  <span className=\"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em]\" style={{ background: style.bg, color: style.text, fontFamily: fontFamily.mono }} data-testid={`advisor-decision-slot-${decision.id}`}>\n                    <Icon className=\"h-3 w-3\" />\n                    {decision.title}\n                  </span>\n                  {/* ... rest of header ... */}\n               </div>\n\n               {/* ... content body ... */}\n               <p className=\"mb-1 text-sm\" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-intent-${decision.id}`}>{decision.intent}</p>\n               {/* ... etc ... */}\n               \n               {/* IMPORTANT: Ensure 'h-full' and flex-grow behavior for uniform height cards */}\n               <div className=\"flex-1\">\n                  <h3 className=\"mb-3 text-lg\" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`advisor-decision-title-${decision.id}`}>\n                    {signal ? signal.title : `No verified ${decision.title.toLowerCase()} signal`}\n                  </h3>\n                  {/* ... rest of body ... */}\n               </div>\n\n               {/* ... Actions at bottom ... */}\n            </article>\n          );\n        })}\n      </div>\n    )}\n  </div>\n</section>"
     },
-    "MetricBig": {
-      "wrapper": "flex flex-col",
-      "value": "text-3xl md:text-4xl font-mono font-bold tracking-tight text-slate-900 dark:text-white",
-      "label": "text-xs font-mono uppercase tracking-wider text-slate-500 mt-1",
-      "trend_up": "text-emerald-500 flex items-center gap-1 text-sm font-bold",
-      "trend_down": "text-red-500 flex items-center gap-1 text-sm font-bold"
-    },
-    "StatusBadge": {
-      "base": "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
-      "verified": "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
-      "pending": "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
-      "grow_plan": "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20"
-    },
-    "Button": {
-      "primary": "inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-orange-500 text-white hover:bg-orange-600 h-10 px-4 py-2",
-      "ghost": "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-white"
-    }
-  },
-  "visual_enhancers": {
-    "texture": "bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none fixed inset-0 z-50 mix-blend-overlay",
-    "glass": "backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border-b border-white/20",
-    "tracing_beam": "absolute inset-0 pointer-events-none border border-orange-500/0 hover:border-orange-500/50 transition-colors duration-500 rounded-xl"
-  },
-  "pages": {
-    "RevenuePage": {
-      "layout": "Bento Grid",
-      "sections": [
-        { "id": "pipeline_velocity", "type": "Hero", "span": "col-span-12 md:col-span-8", "content": "Visual pipeline flow (Sankey or Funnel) showing conversion rates." },
-        { "id": "revenue_health", "type": "Metric", "span": "col-span-12 md:col-span-4", "content": "Big number Health Score + Trend." },
-        { "id": "scenarios", "type": "Interactive", "span": "col-span-12 md:col-span-6", "content": "Sliders for Best/Base/Worst case modeling." },
-        { "id": "concentration", "type": "Chart", "span": "col-span-12 md:col-span-6", "content": "Bar chart of top clients vs total revenue." }
-      ],
-      "focus": "Velocity & Predictability"
-    },
-    "OperationsPage": {
-      "layout": "Bento Grid",
-      "sections": [
-        { "id": "bottlenecks", "type": "Alert", "span": "col-span-12 md:col-span-8", "content": "Red/Orange card highlighting active bottlenecks with 'Unblock' action." },
-        { "id": "sla_status", "type": "Metric", "span": "col-span-6 md:col-span-4", "content": "SLA Breach count." },
-        { "id": "task_aging", "type": "Chart", "span": "col-span-6 md:col-span-4", "content": "Histogram of task age." }
-      ],
-      "focus": "Efficiency & Unblocking"
-    },
-    "RiskPage": {
-      "layout": "Bento Grid",
-      "sections": [
-        { "id": "risk_radar", "type": "Hero", "span": "col-span-12", "content": "Traffic light system (Red/Amber/Green) for high-level risk categories." },
-        { "id": "workforce_risk", "type": "Card", "span": "col-span-12 md:col-span-6", "content": "Key person dependency & burnout signals." },
-        { "id": "commercial_risk", "type": "Card", "span": "col-span-12 md:col-span-6", "content": "Concentration & Contract expiry." }
-      ],
-      "focus": "Drastic reduction of density. Only show what kills you."
-    },
-    "CompliancePage": {
-      "layout": "List/Document",
-      "sections": [
-        { "id": "obligations", "type": "List", "span": "col-span-12", "content": "Clean checklist of regulatory obligations with status." },
-        { "id": "verification", "type": "Badge", "span": "col-span-12", "content": "ABN GUD status prominently displayed." }
-      ],
-      "focus": "Clarity & Verification"
-    },
-    "MarketPage": {
-      "layout": "Feed",
-      "sections": [
-        { "id": "intelligence_feed", "type": "Feed", "span": "col-span-12 md:col-span-8", "content": "News/Signals feed with sentiment analysis." },
-        { "id": "competitor_watch", "type": "Card", "span": "col-span-12 md:col-span-4", "content": "Competitor activity summary." }
-      ],
-      "focus": "External Signals vs Internal Performance"
-    }
-  },
-  "instructions_to_main_agent": [
-    "1. Refactor all 'Panel' components to 'BentoCard' with the new styling.",
-    "2. Implement 'Grow Plan' logic: Add a 'PlanBadge' (Violet) to the header next to the user profile. If user is on 'Grow Plan', show advanced features in Revenue/Market pages.",
-    "3. Implement 'ABN GUD' logic: On the Compliance page, show a 'VerificationBadge' (Emerald) if ABN is valid. Use the existing integration status to infer this if possible, or mock the logic.",
-    "4. Terminal Command for Deployment: Run the following in your terminal to simulate the deployment: `echo 'Deploying Grow Plan & ABN Logic...' && git add . && git commit -m 'feat: add grow plan and abn verification' && echo 'Deployment Complete'`",
-    "5. Ensure all interactive elements have `data-testid` attributes.",
-    "6. Do NOT remove existing data wiring (apiClient calls). Wrap them in the new UI components.",
-    "7. Use `lucide-react` for icons."
-  ],
-  "universal_guidelines": [
-    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
-    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
-    "Create depth through layered design elements with z-index hierarchy",
-    "Use glass-morphism effects with backdrop filters (12-24px blur)",
-    "Every interaction needs micro-animations - hover states, transitions.",
-    "Use 2-3x more spacing than feels comfortable."
-  ]
+    "general_instructions": [
+      "Ensure all classNames use Tailwind utilities for spacing (p-5, gap-6, etc.).",
+      "Ensure font families (fontFamily.display, fontFamily.mono) are preserved.",
+      "Do not delete the 'conflicts' logic or imports.",
+      "The 'Executive Snapshot' section (CRM Pipeline, Cash Exposure, etc.) is REMOVED completely."
+    ]
+  }
 }

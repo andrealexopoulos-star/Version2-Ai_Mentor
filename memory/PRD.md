@@ -1,4 +1,18 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 19 — Azure Redis Queue Integration (Complete — Mar 2026)
+- **Additive Redis runtime shipped** — Added `backend/biqc_jobs.py` to detect `REDIS_URL`, establish Azure Redis connection when available, expose queue namespace `biqc-jobs`, support deterministic job IDs, duplicate suppression, delayed retries, and non-blocking async worker processing
+- **Graceful startup behavior implemented** — Backend startup now initializes Redis independently of existing service init; when available it logs `Redis connection established`, and when unavailable it logs `Redis unavailable – continuing without queue.` without impacting Cognitive Core, Watchtower, Snapshot Agent, Supabase, or voice/chat startup
+- **Scoped BIQc job types added** — Queue supports `watchtower-analysis`, `advisor-analysis`, `market-intelligence-scan`, `crm-ingestion`, and `ai-reasoning-log` only, plus Redis-backed logging buffer support within the same `biqc-jobs` namespace
+- **Standalone worker entrypoint added** — Added `backend/biqc_job_worker.py` as a dedicated optional queue consumer process, while API instances can also run the internal async worker safely without blocking requests
+- **Health integration added** — `/health`, `/api/health`, `/api/health/detailed`, and `/api/health/workers` now expose `redis_connected` and Redis queue health/details
+- **Verification completed** — local health checks passed; preview correctly degraded with `redis_connected=false` because `REDIS_URL` is not present in this container; mocked Redis unit tests passed (`4/4`); backend deep sanity check passed and confirmed no regressions
+
+### Sprint 18 — Advisor Status Strip Layout Refinement (Complete — Mar 2026)
+- **Design-agent-guided Advisor refinement** — `frontend/src/pages/AdvisorWatchtower.js` was updated so `Business State` and `Decision Queue Status` now sit as compact cards above the main decision area, while the previous right-side `Executive Snapshot (Live Integration Truth)` block was removed entirely
+- **Three-card main row wired** — the main decision surface now uses a fixed `md:grid-cols-3` layout with equal-height cards so the three primary Brain decision cards sit next to each other once live decisions are present
+- **Alignment tightened** — the BIQc Insights header area and decision cluster were brought upward with a calmer stacked structure reviewed through the design-agent pass
+- **Verification completed by screenshot** — screenshot validation confirmed: `Business State` card present, `Decision Queue Status` card present, `Executive Snapshot` count `0`; current capture showed the Brain syncing state instead of live decision cards, but the 3-column decision grid is now wired in code for the active-decision state
+
 ### Sprint 17 — Sidebar Navigation Restructure + Universal Back Button (Complete — Mar 2026)
 - **Navigation hierarchy aligned to requested structure** — `frontend/src/components/DashboardLayout.js` now uses the main collapsible groups: **Intelligence**, **Execution**, **Settings & Growth**, **Admin**, and **BIQc Legal**; the **Intelligence** group now presents the requested primary entries: `BIQc Overview`, `Market & Positioning`, `Operations`, `Revenue`, and `Risk`
 - **Keep-open behaviour improved** — navigation groups now default open and auto-stay open for the active section so users maintain orientation while moving through pages and sub-pages

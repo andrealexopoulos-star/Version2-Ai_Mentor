@@ -1,0 +1,43 @@
+{
+  "basic_health": {
+    "status": "FAIL",
+    "error": "Expecting value: line 1 column 1 (char 0)"
+  },
+  "detailed_health": {
+    "status": "PASS",
+    "redis_info": {
+      "redis_connected": false,
+      "queue_namespace": "biqc-jobs",
+      "worker_running": false,
+      "last_error": "REDIS_URL not configured",
+      "queue_depth": 0,
+      "delayed_depth": 0,
+      "logging_buffer_depth": 0
+    },
+    "details": "Queue namespace: biqc-jobs, Connected: False"
+  },
+  "workers_health": {
+    "status": "PASS",
+    "redis_queue_info": {
+      "redis_connected": false,
+      "queue_namespace": "biqc-jobs",
+      "worker_running": false,
+      "last_error": "REDIS_URL not configured",
+      "queue_depth": 0,
+      "delayed_depth": 0,
+      "logging_buffer_depth": 0
+    },
+    "details": "Queue namespace: biqc-jobs, Connected: False"
+  },
+  "graceful_degradation": {
+    "status": "FAIL",
+    "error": "Expecting value: line 1 column 1 (char 0)"
+  },
+  "no_regressions": {
+    "status": "PASS",
+    "api_root_working": true,
+    "health_sections_present": true,
+    "missing_sections": [],
+    "details": "API root working: True, Health sections complete: True"
+  }
+}

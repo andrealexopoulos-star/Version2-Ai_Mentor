@@ -6,6 +6,7 @@ from fastapi import FastAPI, APIRouter, Depends, Request
 from fastapi.security import HTTPBearer
 import os
 import logging
+from contextlib import suppress
 
 from supabase_client import init_supabase
 from core.config import configure_middleware, configure_oauth, init_services, OPENAI_KEY
@@ -60,6 +61,7 @@ security = HTTPBearer()
 
 # ═══ AUTH HELPERS (kept on server for backward-compat lazy imports from routes) ═══
 from routes.deps import get_current_user
+from biqc_jobs import biqc_jobs
 
 async def get_admin_user(current_user: dict = Depends(get_current_user)):
     from fastapi import HTTPException
@@ -91,7 +93,7 @@ from routes.deps import get_current_user as _deps_get_current_user
 
 @app.get("/health")
 async def root_health():
-    return {"status": "healthy"}
+    return {"status": "healthy", "redis_connected": biqc_jobs.redis_connected}
 
 @api_router.get("/")
 async def api_root():
@@ -99,7 +101,21 @@ async def api_root():
 
 @api_router.get("/health")
 async def api_health():
-    return {"status": "healthy"}
+    return {"status": "healthy", "redis_connected": biqc_jobs.redis_connected}
+
+
+@app.on_event("startup")
+async def startup_redis_runtime():
+    await biqc_jobs.initialize()
+    if biqc_jobs.redis_connected:
+        await biqc_jobs.start_worker()
+    app.state.biqc_jobs = biqc_jobs
+
+
+@app.on_event("shutdown")
+async def shutdown_redis_runtime():
+    with suppress(Exception):
+        await biqc_jobs.shutdown()
 
 
 # ═══ VOICE CHAT (REALTIME) — Direct OpenAI routing ═══
