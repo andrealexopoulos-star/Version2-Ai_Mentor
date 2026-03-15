@@ -86,6 +86,7 @@ async def _build_transient_priorities_from_live_integrations(current_user: Dict[
     concerns.sort(key=lambda x: x.get("priority_score", 0), reverse=True)
     return {
         "tier_mode": normalize_tier_mode(current_user),
+        "all_clear": bool(surface.get("all_clear")),
         "concerns": concerns,
         "model_execution_id": None,
         "source_event_ids": [],
@@ -142,6 +143,7 @@ async def get_brain_priorities(
             "business_core_ready": engine.business_core_ready,
             "mode": result.get("mode", "business_core"),
             "tier_mode": result.get("tier_mode"),
+            "all_clear": bool(result.get("all_clear", False)),
             "model_execution_id": result.get("model_execution_id"),
             "source_event_ids": result.get("source_event_ids") or [],
             "concerns": result.get("concerns") or [],

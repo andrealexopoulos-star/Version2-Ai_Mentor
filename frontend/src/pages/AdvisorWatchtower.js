@@ -631,6 +631,7 @@ export default function AdvisorWatchtower() {
     businessCoreReady: false,
     mode: 'unknown',
     tierMode: 'free',
+    allClear: false,
     concerns: [],
     generatedAt: null,
     error: '',
@@ -742,6 +743,7 @@ export default function AdvisorWatchtower() {
         businessCoreReady: Boolean(brainPayload?.business_core_ready),
         mode: brainPayload?.mode || 'unknown',
         tierMode: brainPayload?.tier_mode || 'free',
+        allClear: Boolean(brainPayload?.all_clear),
         concerns: brainPayload?.concerns || [],
         generatedAt: brainPayload?.generated_at || null,
         error: brainRequestError,
@@ -835,8 +837,8 @@ export default function AdvisorWatchtower() {
         brain: {
           provider: 'BIQc Business Brain',
           connected: true,
-          live: Boolean(brainPayload?.concerns?.length) && !brainRequestFailed && !brainError,
-          status: brainRequestFailed || brainError ? 'unavailable' : (brainPayload?.concerns?.length ? 'live' : 'pending'),
+          live: Boolean(brainPayload) && !brainRequestFailed && !brainError,
+          status: brainRequestFailed || brainError ? 'unavailable' : 'live',
           endpoint: '/brain/priorities',
           error: brainError || '',
         },
@@ -853,7 +855,12 @@ export default function AdvisorWatchtower() {
         sourceHealth,
       });
     } catch (error) {
-      setIntegrationContextError(error?.response?.data?.detail || 'Unable to load integration context.');
+      const message = error?.response?.data?.detail || 'Unable to load integration context.';
+      setIntegrationContextError(message);
+      setBrainContext((prev) => ({
+        ...prev,
+        error: prev.error || message,
+      }));
     } finally {
       setIntegrationContextLoading(false);
       integrationFetchInFlightRef.current = false;
@@ -1384,7 +1391,9 @@ export default function AdvisorWatchtower() {
   const migrationRequired = overview?.status === 'MIGRATION_REQUIRED';
   const queuedBeyondThree = Math.max(openSignals.length - 3, 0);
   const noActiveDecisions = decisions.every((decision) => !decision.signal);
-  const brainUnavailable = Boolean(brainContext.error) || (!integrationContextLoading && !brainContext.concerns?.length && !brainContext.generatedAt);
+  const brainUnavailable = Boolean(brainContext.error)
+    || Boolean(integrationContextError)
+    || (!integrationContextLoading && !brainContext.allClear && !brainContext.concerns?.length && !brainContext.generatedAt);
   const fallbackState = getStateLabel(overview, cognitive);
   const executiveState = getExecutiveStateLabel({
     executiveSnapshot,
@@ -1548,6 +1557,8 @@ export default function AdvisorWatchtower() {
                 {connectedSources.length > 0
                   ? (brainUnavailable
                       ? 'Business Brain is currently unavailable. Priority decisions are paused until data feed recovers.'
+                      : brainContext.allClear
+                        ? 'Business Brain is live. No high-priority concerns are currently triggered.'
                       : `Three decisions from BIQc Business Brain with ${connectedSources.join(', ')} evidence.`)
                   : 'Business Brain is active. Connect integrations to unlock live concern ranking.'}
               </p>
@@ -1624,7 +1635,7 @@ export default function AdvisorWatchtower() {
               style={{ borderColor: '#F59E0B60', background: '#F59E0B15', color: '#FDE68A' }}
               data-testid="advisor-critical-error"
             >
-              Live cognition feed is delayed right now. Showing fallback executive decisions while BIQc reconnects.
+              Live cognition feed is delayed right now. BIQc Business Brain decisions are temporarily unavailable.
             </div>
           )}
 
@@ -1634,7 +1645,7 @@ export default function AdvisorWatchtower() {
               style={{ borderColor: '#F59E0B60', background: '#F59E0B15', color: '#FDE68A' }}
               data-testid="advisor-migration-warning"
             >
-              Cognition migration is required for full contract output. Snapshot-backed decisions are still active.
+              Cognition migration is required for full contract output. Business Brain remains the only priority decision source.
             </div>
           )}
 
