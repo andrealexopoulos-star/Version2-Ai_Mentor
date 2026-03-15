@@ -10,8 +10,87 @@ from pydantic import BaseModel, Field
 
 from routes.deps import get_current_user, get_sb
 from business_brain_engine import BusinessBrainEngine, normalize_tier_mode
+from routes.integrations import get_advisor_executive_surface
 
 router = APIRouter()
+
+
+def _parse_confidence_mid(confidence_interval: str | None) -> float:
+    if not confidence_interval:
+        return 0.65
+    text = str(confidence_interval)
+    try:
+        parts = text.replace('%', '').replace('–', '-').split('-')
+        nums = [float(p.strip()) for p in parts if p.strip()]
+        if len(nums) == 2:
+            return max(0.0, min(1.0, ((nums[0] + nums[1]) / 2.0) / 100.0))
+        if len(nums) == 1:
+            return max(0.0, min(1.0, nums[0] / 100.0))
+    except Exception:
+        pass
+    return 0.65
+
+
+async def _build_transient_priorities_from_live_integrations(current_user: Dict[str, Any]) -> Dict[str, Any]:
+    """Non-fallback, live Brain priorities when business_core schema is not active.
+
+    Uses live executive-surface contract as canonical concern input.
+    """
+    surface = await get_advisor_executive_surface(current_user=current_user)
+    cards = surface.get("cards") or {}
+    concern_by_bucket = {
+        "decide_now": "cashflow_risk",
+        "monitor_this_week": "pipeline_stagnation",
+        "build_next": "operations_bottlenecks",
+    }
+
+    concerns: List[Dict[str, Any]] = []
+    for bucket in ["decide_now", "monitor_this_week", "build_next"]:
+        card = cards.get(bucket)
+        if not card:
+            continue
+
+        risk_score = float(card.get("risk_score") or 0.0)
+        impact = max(0.0, min(10.0, round(risk_score / 10.0, 4)))
+        urgency = max(0.0, min(10.0, round((risk_score * 0.9) / 10.0, 4)))
+        confidence = _parse_confidence_mid(card.get("confidence_interval"))
+        effort = 3.0 if bucket == "decide_now" else 4.0 if bucket == "monitor_this_week" else 5.0
+        priority_score = round((impact * urgency * confidence) / max(1.0, effort), 4)
+
+        concerns.append({
+            "concern_id": concern_by_bucket.get(bucket, "operations_bottlenecks"),
+            "priority_score": priority_score,
+            "impact": impact,
+            "urgency": urgency,
+            "confidence": round(confidence, 4),
+            "effort": effort,
+            "recommendation": card.get("action_summary") or "Execute owner action from BIQc recommendation.",
+            "tier": "free",
+            "evidence": card.get("evidence_refs") or [],
+            "explanation": card.get("decision_summary") or card.get("signal_summary") or "Live concern detected by BIQc Brain.",
+            "source": {
+                "event_id": None,
+                "provider": card.get("source"),
+                "signal_key": card.get("signal_key"),
+                "bucket": bucket,
+            },
+            "time_window": {
+                "period": "live",
+                "evaluated_at": card.get("timestamp") or datetime.now(timezone.utc).isoformat(),
+            },
+            "deterministic_rule": "executive_surface_live_priority",
+            "probabilistic_model": "business_brain_live_surface_v1",
+            "priority_formula": {"formula": "impact*urgency*confidence/max(1,effort)"},
+        })
+
+    concerns.sort(key=lambda x: x.get("priority_score", 0), reverse=True)
+    return {
+        "tier_mode": normalize_tier_mode(current_user),
+        "concerns": concerns,
+        "model_execution_id": None,
+        "source_event_ids": [],
+        "mode": "live_transient",
+    }
 
 
 class ConcernUpsertRequest(BaseModel):
@@ -49,10 +128,19 @@ async def get_brain_priorities(
     tenant_id = current_user["id"]
     engine = BusinessBrainEngine(get_sb(), tenant_id, current_user)
     try:
-        result = engine.get_priorities(recompute_metrics=recompute)
+        if engine.business_core_ready:
+            result = engine.get_priorities(recompute_metrics=recompute)
+        else:
+            result = await _build_transient_priorities_from_live_integrations(current_user=current_user)
+
+            # Enforce tier gating in transient mode too.
+            if result.get("tier_mode") == "free":
+                result["concerns"] = (result.get("concerns") or [])[:3]
+
         return {
             "tenant_id": tenant_id,
             "business_core_ready": engine.business_core_ready,
+            "mode": result.get("mode", "business_core"),
             "tier_mode": result.get("tier_mode"),
             "model_execution_id": result.get("model_execution_id"),
             "source_event_ids": result.get("source_event_ids") or [],

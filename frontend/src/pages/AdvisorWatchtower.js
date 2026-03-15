@@ -423,6 +423,43 @@ const buildSignalsFromExecutiveSurface = (executiveSurface) => {
   );
 };
 
+const buildSignalsFromBrainConcerns = (brainPayload) => {
+  const concerns = brainPayload?.concerns || [];
+  if (!Array.isArray(concerns) || concerns.length === 0) return [];
+
+  const toSeverity = (priorityScore = 0, impact = 0, urgency = 0) => {
+    const blended = Number(priorityScore || 0) + Number(impact || 0) + Number(urgency || 0);
+    if (blended >= 26) return 'critical';
+    if (blended >= 20) return 'high';
+    if (blended >= 12) return 'medium';
+    return 'low';
+  };
+
+  const domainForConcern = (concernId = '') => {
+    const id = String(concernId).toLowerCase();
+    if (id.includes('cash') || id.includes('margin') || id.includes('revenue')) return 'finance';
+    if (id.includes('pipeline') || id.includes('response')) return 'sales';
+    if (id.includes('operations')) return 'operations';
+    return 'general';
+  };
+
+  return dedupeSignals(
+    concerns.map((concern, index) => toSignal({
+      id: `brain-${concern.concern_id || index}`,
+      signal: concern.concern_id || `brain_concern_${index + 1}`,
+      domain: domainForConcern(concern.concern_id),
+      severity: toSeverity(concern.priority_score, concern.impact, concern.urgency),
+      title: concern.explanation || concern.concern_id || `Priority concern ${index + 1}`,
+      detail: `Impact ${concern.impact ?? 0} · Urgency ${concern.urgency ?? 0} · Confidence ${Math.round(Number(concern.confidence || 0) * 100)}%.`,
+      recommendation: concern.recommendation || 'Review concern and assign owner action now.',
+      if_ignored: concern.explanation || 'Priority concern remains unresolved and may compound over time.',
+      source: 'BIQc Business Brain',
+      created_at: concern?.time_window?.evaluated_at || null,
+      evidence_refs: concern.evidence || [],
+    }, 'business_brain')),
+  );
+};
+
 const scoreRiskForBucket = (signal, bucketId) => {
   if (!signal) return 0;
   const base = { critical: 92, high: 78, medium: 58, low: 38, info: 25 }[signal.severity] || 30;
@@ -587,7 +624,16 @@ export default function AdvisorWatchtower() {
       crm: { provider: 'CRM', connected: false, live: false, status: 'pending', endpoint: '/integrations/crm/deals', error: '' },
       accounting: { provider: 'Xero', connected: false, live: false, status: 'pending', endpoint: '/integrations/accounting/summary', error: '' },
       email: { provider: 'Outlook', connected: false, live: false, status: 'pending', endpoint: '/email/priority-inbox', error: '' },
+      brain: { provider: 'BIQc Business Brain', connected: false, live: false, status: 'pending', endpoint: '/brain/priorities', error: '' },
     },
+  });
+  const [brainContext, setBrainContext] = useState({
+    businessCoreReady: false,
+    mode: 'unknown',
+    tierMode: 'free',
+    concerns: [],
+    generatedAt: null,
+    error: '',
   });
   const [integrationContextLoading, setIntegrationContextLoading] = useState(false);
   const [integrationContextError, setIntegrationContextError] = useState('');
@@ -659,13 +705,14 @@ export default function AdvisorWatchtower() {
     }
   }, []);
 
-  const fetchIntegrationContext = useCallback(async () => {
+  const fetchIntegrationContext = useCallback(async (recomputeBrain = false) => {
     setIntegrationContextLoading(true);
     setIntegrationContextError('');
 
     try {
       const requests = await Promise.allSettled([
         apiClient.get('/advisor/executive-surface', { timeout: 15000 }),
+        apiClient.get('/brain/priorities', { params: { recompute: recomputeBrain }, timeout: 20000 }),
         apiClient.get('/integrations/merge/connected', { timeout: 12000 }),
         apiClient.get('/integrations/crm/deals', { params: { page_size: 50 }, timeout: 15000 }),
         apiClient.get('/integrations/accounting/summary', { timeout: 15000 }),
@@ -674,9 +721,19 @@ export default function AdvisorWatchtower() {
         apiClient.get('/calibration/status', { timeout: 10000 }),
       ]);
 
-      const [surfaceRes, mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
+      const [surfaceRes, brainRes, mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
 
       const executiveSurface = surfaceRes.status === 'fulfilled' ? (surfaceRes.value?.data || null) : null;
+      const brainPayload = brainRes.status === 'fulfilled' ? (brainRes.value?.data || null) : null;
+
+      setBrainContext({
+        businessCoreReady: Boolean(brainPayload?.business_core_ready),
+        mode: brainPayload?.mode || 'unknown',
+        tierMode: brainPayload?.tier_mode || 'free',
+        concerns: brainPayload?.concerns || [],
+        generatedAt: brainPayload?.generated_at || null,
+        error: settledErrorMessage(brainRes),
+      });
 
       const mergeConnected = mergeRes.status === 'fulfilled' ? (mergeRes.value?.data?.integrations || {}) : {};
       const crmDeals = crmRes.status === 'fulfilled' ? (crmRes.value?.data?.results || []) : [];
@@ -731,6 +788,8 @@ export default function AdvisorWatchtower() {
         || ((priorityInbox?.message && String(priorityInbox.message).toLowerCase().includes('no priority analysis available'))
           ? 'Priority inbox analysis not generated yet'
           : '');
+      const brainError = settledErrorMessage(brainRes)
+        || (brainPayload && Array.isArray(brainPayload.concerns) && brainPayload.concerns.length === 0 ? 'No brain concerns generated from current data window' : '');
 
       const crmConnected = Object.values(mergeConnected).some((entry) => String(entry?.category || '').toLowerCase() === 'crm' && Boolean(entry?.connected));
       const accountingConnected = Object.values(mergeConnected).some((entry) => String(entry?.category || '').toLowerCase() === 'accounting' && Boolean(entry?.connected));
@@ -760,6 +819,14 @@ export default function AdvisorWatchtower() {
           status: !emailConnected ? 'pending' : ((outlookError || priorityError) ? 'unavailable' : 'live'),
           endpoint: '/email/priority-inbox',
           error: outlookError || priorityError || '',
+        },
+        brain: {
+          provider: 'BIQc Business Brain',
+          connected: true,
+          live: Boolean(brainPayload?.concerns?.length) && !brainError,
+          status: brainError ? 'unavailable' : (brainPayload?.concerns?.length ? 'live' : 'pending'),
+          endpoint: '/brain/priorities',
+          error: brainError || '',
         },
       };
 
@@ -836,7 +903,7 @@ export default function AdvisorWatchtower() {
   useEffect(() => {
     fetchOverview(false);
     fetchWatchtower();
-    fetchIntegrationContext();
+    fetchIntegrationContext(false);
     hydrateActionHistory();
   }, [fetchOverview, fetchWatchtower, fetchIntegrationContext, hydrateActionHistory]);
 
@@ -845,7 +912,7 @@ export default function AdvisorWatchtower() {
       refreshSnapshot(),
       fetchOverview(true),
       fetchWatchtower(),
-      fetchIntegrationContext(),
+      fetchIntegrationContext(true),
       fetchDelegateProviders(),
     ]);
   };
@@ -874,7 +941,7 @@ export default function AdvisorWatchtower() {
     if (hasData || overviewLoading || watchtowerLoading) return;
     fetchOverview(true);
     fetchWatchtower();
-    fetchIntegrationContext();
+    fetchIntegrationContext(false);
     hydrateActionHistory();
   }, [
     authState,
@@ -915,16 +982,10 @@ export default function AdvisorWatchtower() {
   }, []);
 
   const signals = useMemo(() => {
-    const surfaceSignals = buildSignalsFromExecutiveSurface(integrationContext.executiveSurface);
-    const coreSignals = buildSignals(overview, cognitive, watchtowerEvents);
-    const integrationSignals = buildIntegrationSignals(integrationContext);
-
-    if (surfaceSignals.length > 0) {
-      return dedupeSignals([...surfaceSignals, ...integrationSignals]);
-    }
-
-    return dedupeSignals([...coreSignals, ...integrationSignals]);
-  }, [overview, cognitive, watchtowerEvents, integrationContext]);
+    const brainSignals = buildSignalsFromBrainConcerns(brainContext);
+    if (brainSignals.length > 0) return brainSignals;
+    return [];
+  }, [brainContext]);
 
   const isSignalActioned = useCallback((signal) => {
     if (actionState.byKey?.[signal.dedupeKey]) return true;
@@ -1434,7 +1495,7 @@ export default function AdvisorWatchtower() {
       Promise.allSettled([
         fetchOverview(true),
         fetchWatchtower(),
-        fetchIntegrationContext(),
+        fetchIntegrationContext(true),
       ]);
     }, 5 * 60 * 1000);
 
@@ -1471,8 +1532,8 @@ export default function AdvisorWatchtower() {
               </div>
               <p className="text-xs sm:text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
                 {connectedSources.length > 0
-                  ? `Three decisions from ${connectedSources.join(', ')} evidence. Clear owner-ready actions.`
-                  : 'Three decision buckets are active. Connect integrations to unlock verified signals.'}
+                  ? `Three decisions from BIQc Business Brain with ${connectedSources.join(', ')} evidence.`
+                  : 'Business Brain is active. Connect integrations to unlock live concern ranking.'}
               </p>
             </div>
 
@@ -1623,7 +1684,7 @@ export default function AdvisorWatchtower() {
                         {connectedSources.length > 0 ? connectedSources.join(' · ') : 'No live provider feed'}
                       </p>
                       <div className="mt-3 space-y-2" data-testid="advisor-source-health-list">
-                        {['crm', 'accounting', 'email'].map((key) => {
+                        {['brain', 'crm', 'accounting', 'email'].map((key) => {
                           const source = integrationContext.sourceHealth?.[key] || {};
                           const statusColor = source.status === 'live' ? '#10B981' : source.status === 'unavailable' ? '#EF4444' : '#F59E0B';
                           const statusLabel = source.status === 'live' ? 'LIVE' : source.status === 'unavailable' ? 'ERROR' : 'PENDING';
