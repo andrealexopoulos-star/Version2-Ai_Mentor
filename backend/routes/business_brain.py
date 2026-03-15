@@ -262,6 +262,8 @@ async def get_brain_metrics(
                 "tenant_id": tenant_id,
                 "catalog_source": "biqc_top100_metrics_authoritative",
                 "business_core_ready": engine.business_core_ready,
+                "runtime_catalog_source": engine.catalog_source,
+                "runtime_catalog_metric_count": len(engine.catalog),
                 **coverage,
             }
 
@@ -283,3 +285,29 @@ async def recompute_brain_metrics(current_user: dict = Depends(get_current_user)
         return {"tenant_id": tenant_id, **result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to recompute metrics: {e}")
+
+
+@router.get("/brain/runtime-check")
+async def brain_runtime_check(current_user: dict = Depends(get_current_user)):
+    """Forensic runtime diagnostics for deployment verification.
+
+    Use this endpoint to verify the backend container is running the expected Brain build.
+    """
+    tenant_id = current_user["id"]
+    engine = BusinessBrainEngine(get_sb(), tenant_id, current_user)
+    try:
+        return {
+            "tenant_id": tenant_id,
+            "server_time": datetime.now(timezone.utc).isoformat(),
+            "business_core_ready": engine.business_core_ready,
+            "catalog_source_resolved": engine.catalog_source,
+            "catalog_metric_count": len(engine.catalog),
+            "catalog_diagnostics": engine.catalog_diagnostics,
+            "tier_mode": engine.tier_mode,
+            "runtime_expectation": {
+                "target_metric_count": 100,
+                "target_business_core_ready": True,
+            },
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get runtime diagnostics: {e}")
