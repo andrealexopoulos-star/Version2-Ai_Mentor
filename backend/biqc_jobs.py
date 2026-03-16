@@ -14,6 +14,7 @@ import os
 import time
 from contextlib import suppress
 from typing import Any, Awaitable, Callable, Dict, Optional
+from urllib.parse import urlparse
 
 from redis.asyncio import Redis
 from redis.backoff import ExponentialBackoff
@@ -74,17 +75,7 @@ class BIQcRedisJobs:
             return False
 
         try:
-            retry = Retry(ExponentialBackoff(base=1, cap=8), 3)
-            self.redis = Redis.from_url(
-                self.redis_url,
-                decode_responses=True,
-                max_connections=12,
-                socket_timeout=5,
-                socket_connect_timeout=5,
-                retry=retry,
-                retry_on_timeout=True,
-                health_check_interval=30,
-            )
+            self.redis = self._build_redis_client(self.redis_url)
             await self.redis.ping()
             self.redis_connected = True
             self.last_error = None
@@ -97,6 +88,73 @@ class BIQcRedisJobs:
             logger.warning("Redis unavailable – continuing without queue.")
             logger.debug("Redis initialization failure detail: %s", exc)
             return False
+
+    def _common_redis_kwargs(self) -> Dict[str, Any]:
+        retry = Retry(ExponentialBackoff(base=1, cap=8), 3)
+        return {
+            "decode_responses": True,
+            "max_connections": 12,
+            "socket_timeout": 5,
+            "socket_connect_timeout": 5,
+            "retry": retry,
+            "retry_on_timeout": True,
+            "health_check_interval": 30,
+        }
+
+    def _build_redis_client(self, redis_value: str) -> Redis:
+        value = str(redis_value or '').strip().strip('"').strip("'")
+        common_kwargs = self._common_redis_kwargs()
+
+        if value.startswith('redis://') or value.startswith('rediss://'):
+            parsed = urlparse(value)
+            if parsed.scheme in {'redis', 'rediss'}:
+                return Redis.from_url(value, **common_kwargs)
+
+        # Azure classic connection string support:
+        # host:6380,password=KEY,ssl=True,abortConnect=False
+        parts = [part.strip() for part in value.split(',') if part.strip()]
+        host = None
+        port = 6380
+        password = None
+        ssl_enabled = True
+        db = 0
+
+        for index, part in enumerate(parts):
+            if index == 0 and '=' not in part and ':' in part:
+                host_part, port_part = part.rsplit(':', 1)
+                host = host_part.strip()
+                try:
+                    port = int(port_part.strip())
+                except ValueError:
+                    port = 6380
+                continue
+
+            if '=' not in part:
+                continue
+            key, raw_val = part.split('=', 1)
+            key = key.strip().lower()
+            raw_val = raw_val.strip()
+            if key in {'password', 'accesskey'}:
+                password = raw_val
+            elif key == 'ssl':
+                ssl_enabled = raw_val.lower() == 'true'
+            elif key in {'host', 'hostname'}:
+                host = raw_val
+            elif key in {'port'}:
+                try:
+                    port = int(raw_val)
+                except ValueError:
+                    pass
+            elif key in {'db', 'database'}:
+                try:
+                    db = int(raw_val)
+                except ValueError:
+                    pass
+
+        if host and password:
+            return Redis(host=host, port=port, password=password, ssl=ssl_enabled, db=db, **common_kwargs)
+
+        raise ValueError('Unsupported REDIS_URL / Redis connection string format')
 
     async def shutdown(self) -> None:
         if self.worker_task:

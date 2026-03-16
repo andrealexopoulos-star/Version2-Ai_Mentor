@@ -43,6 +43,12 @@ class FakeRedis:
         return 0
 
 
+class FakeRedisCtor(FakeRedis):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.kwargs = kwargs
+
+
 def test_redis_initialize_success(monkeypatch, caplog):
     fake_redis = FakeRedis()
     monkeypatch.setenv("REDIS_URL", "rediss://:secret@example.redis.cache.windows.net:6380")
@@ -128,6 +134,40 @@ def test_deterministic_job_id_and_duplicate_protection(monkeypatch):
         )
         assert duplicate["duplicate"] is True
         assert duplicate["queued"] is False
+        await runtime.shutdown()
+
+    asyncio.run(runner())
+
+
+def test_azure_connection_string_supported(monkeypatch, caplog):
+    fake_instance = FakeRedisCtor()
+
+    class FakeRedisFactory:
+        @staticmethod
+        def from_url(*args, **kwargs):
+            raise AssertionError('from_url should not be used for Azure classic connection string')
+
+        def __call__(self, *args, **kwargs):
+            fake_instance.kwargs = kwargs
+            return fake_instance
+
+    monkeypatch.setenv(
+        'REDIS_URL',
+        'biqc-redis.redis.cache.windows.net:6380,password=secret-key,ssl=True,abortConnect=False'
+    )
+    monkeypatch.setattr('biqc_jobs.Redis', FakeRedisFactory())
+
+    runtime = BIQcRedisJobs()
+
+    async def runner():
+        with caplog.at_level(logging.INFO):
+            ok = await runtime.initialize()
+        assert ok is True
+        assert runtime.redis_connected is True
+        assert fake_instance.kwargs['host'] == 'biqc-redis.redis.cache.windows.net'
+        assert fake_instance.kwargs['port'] == 6380
+        assert fake_instance.kwargs['password'] == 'secret-key'
+        assert fake_instance.kwargs['ssl'] is True
         await runtime.shutdown()
 
     asyncio.run(runner())
