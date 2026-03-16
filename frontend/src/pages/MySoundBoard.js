@@ -9,6 +9,7 @@ import VoiceChat from '../components/VoiceChat';
 import { fontFamily } from "../design-system/tokens";
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import { useLocation } from 'react-router-dom';
 import {
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
   Loader2, ChevronLeft, ChevronRight, MoreVertical, Video, Phone,
@@ -23,8 +24,41 @@ const getSoundboardErrorMessage = (error) => {
   return 'Failed to send message';
 };
 
+const buildAdvisorSuggestedOptions = (context) => {
+  if (!context) return [];
+  const action = context.actionBrief || context.actionNow || 'decide the next action';
+  const risk = context.ifIgnoredBrief || context.ifIgnored || 'risk will compound';
+  const issue = context.issueBrief || context.title || 'this priority';
+  return [
+    {
+      label: 'Help me prioritise the immediate next move',
+      prompt: `Use this BIQc brief to prioritise the immediate next move: ${issue}. Why now: ${context.whyNowBrief || context.whyNow}. Action now: ${action}.`,
+    },
+    {
+      label: 'Turn this into an owner action plan',
+      prompt: `Turn this BIQc brief into a concrete owner action plan with owners, sequencing, and today/this-week timing: ${issue}. Action now: ${action}.`,
+    },
+    {
+      label: 'What happens if we wait?',
+      prompt: `Using this BIQc brief, explain the likely 30/60/90 consequence path if we wait: ${issue}. If ignored: ${risk}.`,
+    },
+  ];
+};
+
+const buildAdvisorAssistantMessage = (context) => {
+  if (!context) return null;
+  return {
+    role: 'assistant',
+    content: `I have the BIQc brief for this priority:\n\n${context.issueBrief || context.title}\n\nWhy now: ${context.whyNowBrief || context.whyNow}\nAction now: ${context.actionBrief || context.actionNow}\nIf ignored: ${context.ifIgnoredBrief || context.ifIgnored}\n\nChoose one of the guided next moves below or ask your own question.`,
+    suggested_actions: buildAdvisorSuggestedOptions(context),
+    intent: { domain: context.domain || 'general' },
+    model_used: 'BIQc handoff',
+  };
+};
+
 
 const MySoundBoard = () => {
+  const location = useLocation();
   const { user } = useSupabaseAuth();
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
   const { isChatOpen, openChat, closeAll, activeDrawer } = useMobileDrawer();
@@ -35,6 +69,11 @@ const MySoundBoard = () => {
     // Check if user arrived from a proactive insight bubble
     const prefill = sessionStorage.getItem('biqc_soundboard_prefill');
     if (prefill) { sessionStorage.removeItem('biqc_soundboard_prefill'); return prefill; }
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const prompt = params.get('prompt');
+      if (prompt) return prompt;
+    } catch {}
     return '';
   });
   const [loading, setLoading] = useState(false);
@@ -46,6 +85,16 @@ const MySoundBoard = () => {
   const [recordingScans, setRecordingScans] = useState({});
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [selectedMode, setSelectedMode] = useState('auto');
+  const [advisorHandoff, setAdvisorHandoff] = useState(() => {
+    try {
+      const fromState = location.state?.advisorSoundboardContext;
+      if (fromState) return fromState;
+      const stored = sessionStorage.getItem('biqc_soundboard_handoff');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
 
   const BIQC_MODES = [
     { id: 'auto', label: 'BIQc Auto', desc: 'Adaptive routing across BIQc cognition pathways', icon: '⚡', backend_mode: 'auto', minTier: 'free' },
@@ -120,6 +169,18 @@ const MySoundBoard = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    const incoming = location.state?.advisorSoundboardContext;
+    if (!incoming) return;
+    setAdvisorHandoff(incoming);
+    sessionStorage.setItem('biqc_soundboard_handoff', JSON.stringify(incoming));
+  }, [location.state]);
+
+  useEffect(() => {
+    if (!advisorHandoff || messages.length > 0) return;
+    setMessages([buildAdvisorAssistantMessage(advisorHandoff)]);
+  }, [advisorHandoff, messages.length]);
+
+  useEffect(() => {
     // Only scroll if there are messages (not on initial load)
     if (messages.length > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -163,16 +224,17 @@ const MySoundBoard = () => {
     inputRef.current?.focus();
   };
 
-  const sendMessage = async () => {
-    if ((!input.trim() && !attachedFile) || loading) return;
+  const sendMessage = async (messageOverride = null, contextOverride = null) => {
+    if ((!input.trim() && !attachedFile) && !messageOverride) return;
+    if (loading) return;
 
-    const userMessage = input.trim();
-    setInput('');
+    const userMessage = (messageOverride ?? input).trim();
+    if (!messageOverride) setInput('');
 
     // Build full message including file content
     let fullMessage = userMessage;
     let displayContent = userMessage;
-    if (attachedFile) {
+    if (!messageOverride && attachedFile) {
       if (attachedFile.type === 'text' && attachedFile.content) {
         const preview = attachedFile.content.slice(0, 3000);
         const truncated = attachedFile.content.length > 3000;
@@ -191,13 +253,28 @@ const MySoundBoard = () => {
 
     try {
       const currentMode = BIQC_MODES.find(m => m.id === selectedMode) || BIQC_MODES[0];
+      const advisorContext = contextOverride || advisorHandoff || null;
+      const intelligenceContext = advisorContext ? {
+        advisor_handoff: {
+          title: advisorContext.title,
+          issue_brief: advisorContext.issueBrief,
+          why_now_brief: advisorContext.whyNowBrief,
+          action_brief: advisorContext.actionBrief,
+          if_ignored_brief: advisorContext.ifIgnoredBrief,
+          domain: advisorContext.domain,
+          source_summary: advisorContext.sourceSummary,
+          fact_points: advisorContext.factPoints || [],
+        },
+        integrations: advisorContext.integrations || {},
+        thresholds: advisorContext.thresholds || {},
+      } : {};
 
       let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used;
 
       const response = await apiClient.post('/soundboard/chat', {
         message: fullMessage,
         conversation_id: activeConversation,
-        intelligence_context: {},
+        intelligence_context: intelligenceContext,
         mode: currentMode.backend_mode,
       });
       ({ reply, conversation_id, conversation_title, file: generatedFile, suggested_actions, intent, model_used } = response.data);
@@ -219,6 +296,9 @@ const MySoundBoard = () => {
             ? { ...c, updated_at: new Date().toISOString() }
             : c
         ));
+      }
+      if (advisorContext) {
+        setAdvisorHandoff(advisorContext);
       }
     } catch (error) {
       toast.error(getSoundboardErrorMessage(error));
@@ -554,14 +634,14 @@ const MySoundBoard = () => {
                     Ask anything about your business
                   </p>
                   <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-                    or click a prompt to get started
+                    {advisorHandoff ? 'or choose a BIQc next move below' : 'or click a prompt to get started'}
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center max-w-sm mx-auto">
-                    {['What should I focus on?', 'Summarise my risks', 'Show me my pipeline', 'How can I grow revenue?'].map(q => (
-                      <button key={q} onClick={() => setInput(q)}
+                    {(advisorHandoff ? buildAdvisorSuggestedOptions(advisorHandoff) : ['What should I focus on?', 'Summarise my risks', 'Show me my pipeline', 'How can I grow revenue?'].map((q) => ({ label: q, prompt: q }))).map((q) => (
+                      <button key={q.label} onClick={() => sendMessage(q.prompt, advisorHandoff)}
                         className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: '1px solid var(--border-light)' }}>
-                        {q}
+                        {q.label}
                       </button>
                     ))}
                   </div>
@@ -597,7 +677,7 @@ const MySoundBoard = () => {
                           <div className="mt-3 flex flex-wrap gap-2">
                             {message.suggested_actions.map((action, i) => (
                               <button key={i}
-                                onClick={() => setInput(action.label)}
+                                onClick={() => sendMessage(action.prompt || action.label, advisorHandoff)}
                                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 flex items-center gap-1.5"
                                 style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.25)', color: '#FF6A00', fontFamily: fontFamily.mono }}>
                                 <span>→</span> {action.label}
