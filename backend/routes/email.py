@@ -43,6 +43,7 @@ from supabase_intelligence_helpers import (
     update_calendar_intelligence_supabase,
 )
 from config.urls import get_backend_url, get_frontend_url
+from biqc_jobs import enqueue_job
 
 JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'fallback-secret')
 
@@ -1005,14 +1006,27 @@ async def comprehensive_outlook_sync(current_user: dict = Depends(get_current_us
     }
     await create_sync_job_supabase(get_sb(), job_doc)
     
-    # Start background sync
-    import asyncio
-    asyncio.create_task(run_comprehensive_email_analysis(user_id, job_id))
-    
+    queued = await enqueue_job(
+        "email-analysis",
+        {"user_id": user_id, "job_id": job_id, "workspace_id": user_id},
+        company_id=user_id,
+        window_seconds=120,
+    )
+
+    if queued.get("queued"):
+        return {
+            "status": "queued",
+            "job_type": "email-analysis",
+            "job_id": queued.get("job_id") or job_id,
+            "message": "Comprehensive email analysis queued. This will take 5-10 minutes.",
+            "expected_duration": "5-10 minutes"
+        }
+
+    await run_comprehensive_email_analysis(user_id, job_id)
     return {
         "status": "started",
         "job_id": job_id,
-        "message": "Comprehensive email analysis started. This will take 5-10 minutes. I'll notify you when complete.",
+        "message": "Comprehensive email analysis started inline because Redis is unavailable.",
         "expected_duration": "5-10 minutes"
     }
 
@@ -1681,8 +1695,24 @@ async def create_calendar_event(
         raise HTTPException(status_code=400, detail="Outlook not connected")
 
     access_token = tokens.get("access_token")
+    refresh_token = tokens.get("refresh_token")
     if not access_token:
         raise HTTPException(status_code=400, detail="Outlook token unavailable")
+
+    expires_at = tokens.get("expires_at") or tokens.get("token_expiry")
+    if expires_at:
+        try:
+            expiry_dt = datetime.fromisoformat(str(expires_at).replace("Z", "+00:00"))
+            if expiry_dt <= datetime.now(timezone.utc) + timedelta(minutes=1):
+                if refresh_token:
+                    refreshed = await refresh_outlook_token_supabase(current_user["id"], refresh_token)
+                    access_token = refreshed.get("access_token") or access_token
+                else:
+                    raise HTTPException(status_code=401, detail="Outlook token expired. Please reconnect Outlook.")
+        except HTTPException:
+            raise
+        except Exception:
+            pass
 
     try:
         start_dt = datetime.fromisoformat(payload.start_at.replace("Z", "+00:00"))
@@ -1719,6 +1749,11 @@ async def create_calendar_event(
 
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post("https://graph.microsoft.com/v1.0/me/events", headers=headers, json=event_payload)
+        if response.status_code == 401 and refresh_token:
+            refreshed = await refresh_outlook_token_supabase(current_user["id"], refresh_token)
+            access_token = refreshed.get("access_token") or access_token
+            headers["Authorization"] = f"Bearer {access_token}"
+            response = await client.post("https://graph.microsoft.com/v1.0/me/events", headers=headers, json=event_payload)
         if response.status_code not in {200, 201}:
             raise HTTPException(status_code=400, detail=f"Failed to create Outlook event: {response.text}")
         data = response.json()

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar as CalendarIcon, RefreshCw, Users, Clock, 
   MapPin, Loader2, Video, TrendingUp, AlertCircle
@@ -12,6 +12,7 @@ import DashboardLayout from '../components/DashboardLayout';
 
 const CalendarView = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [calendarIntel, setCalendarIntel] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -115,6 +116,7 @@ const CalendarView = () => {
       toast.success(`Follow-up created${response?.data?.subject ? `: ${response.data.subject}` : ''}`);
       try { sessionStorage.removeItem('biqc_calendar_draft'); } catch {}
       setAdvisorDraft(null);
+      navigate(location.pathname, { replace: true, state: {} });
       await fetchCalendarData();
     } catch (error) {
       toast.error(error?.response?.data?.detail || 'Failed to create follow-up event.');
@@ -174,7 +176,7 @@ const CalendarView = () => {
                 <Button onClick={createDraftEvent} disabled={draftSaving} className="btn-primary" data-testid="calendar-advisor-draft-create">
                   {draftSaving ? 'Creating…' : 'Create follow-up event'}
                 </Button>
-                <Button variant="outline" onClick={() => { try { sessionStorage.removeItem('biqc_calendar_draft'); } catch {} setAdvisorDraft(null); }} data-testid="calendar-advisor-draft-dismiss">
+                <Button variant="outline" onClick={() => { try { sessionStorage.removeItem('biqc_calendar_draft'); } catch {} setAdvisorDraft(null); navigate(location.pathname, { replace: true, state: {} }); }} data-testid="calendar-advisor-draft-dismiss">
                   Dismiss draft
                 </Button>
               </div>

@@ -34,6 +34,7 @@ from supabase_drive_helpers import (
     store_drive_file, store_drive_files_batch,
     get_user_drive_files, count_user_drive_files,
 )
+from biqc_jobs import enqueue_job
 
 router = APIRouter()
 
@@ -418,9 +419,14 @@ async def exchange_merge_account_token(
         except Exception as gov_err:
             logger.warning(f"⚠️ Governance event emission failed (non-blocking): {gov_err}")
 
-        # Trigger background record count sync (non-blocking)
+        # Trigger background record count sync via Redis queue
         try:
-            asyncio.create_task(_sync_category_counts(get_sb(), user_id, category))
+            await enqueue_job(
+                "integration-count-sync",
+                {"user_id": user_id, "category": category, "workspace_id": user_id},
+                company_id=user_id,
+                window_seconds=120,
+            )
         except Exception:
             pass
 
@@ -2405,10 +2411,29 @@ async def google_drive_callback(
             
             logger.info(f"✅ Google Drive connected for workspace {account_id}")
             
-            # Trigger initial sync
-            import asyncio
-            asyncio.create_task(sync_google_drive_files(user_id, account_id, account_token))
-            
+            queued = await enqueue_job(
+                "drive-sync",
+                {
+                    "user_id": user_id,
+                    "account_id": account_id,
+                    "account_token": account_token,
+                    "workspace_id": user_id,
+                },
+                company_id=user_id,
+                window_seconds=120,
+            )
+
+            if queued.get("queued"):
+                return {
+                    "status": "queued",
+                    "job_type": "drive-sync",
+                    "job_id": queued.get("job_id"),
+                    "success": True,
+                    "message": "Google Drive connected successfully. Initial sync queued.",
+                    "provider": "Google Drive"
+                }
+
+            await sync_google_drive_files(user_id, account_id, account_token)
             return {
                 "success": True,
                 "message": "Google Drive connected successfully",
@@ -2539,10 +2564,28 @@ async def trigger_google_drive_sync(current_user: dict = Depends(get_current_use
     
     account_token = drive_integration["account_token"]
     
-    # Trigger background sync
-    import asyncio
-    asyncio.create_task(sync_google_drive_files(user_id, account_id, account_token))
-    
+    queued = await enqueue_job(
+        "drive-sync",
+        {
+            "user_id": user_id,
+            "account_id": account_id,
+            "account_token": account_token,
+            "workspace_id": user_id,
+        },
+        company_id=user_id,
+        window_seconds=120,
+    )
+
+    if queued.get("queued"):
+        return {
+            "status": "queued",
+            "job_type": "drive-sync",
+            "job_id": queued.get("job_id"),
+            "success": True,
+            "message": "Sync queued. Files will be available shortly."
+        }
+
+    await sync_google_drive_files(user_id, account_id, account_token)
     return {
         "success": True,
         "message": "Sync started. Files will be available shortly."
