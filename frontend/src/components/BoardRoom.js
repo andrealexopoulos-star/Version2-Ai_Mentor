@@ -25,7 +25,7 @@ const DIAGNOSIS_AREAS = [
   { id: 'market_position', label: 'Market Position', icon: '\u2691', color: '#0D9488', desc: 'Competitive landscape, positioning, opportunity decay.' },
 ];
 
-const BoardRoom = () => {
+const BoardRoom = ({ embeddedShell = false }) => {
   const [activeDiagnosis, setActiveDiagnosis] = useState(null);
   const [diagnosisResult, setDiagnosisResult] = useState(null);
   const [diagnosing, setDiagnosing] = useState(false);
@@ -87,7 +87,7 @@ const BoardRoom = () => {
   const activeArea = DIAGNOSIS_AREAS.find(a => a.id === activeDiagnosis);
 
   return (
-    <div className="flex flex-col h-full min-h-screen" style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
+    <div className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
 
       {/* ═══ HEADER — Dark themed ═══ */}
       <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0"
