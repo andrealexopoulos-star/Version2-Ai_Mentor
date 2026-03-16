@@ -1,4 +1,11 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 26 — Redis Queue Migration for Route-Level Background Work (Complete — Mar 2026)
+- **Unsafe route-level `asyncio.create_task()` removed from target routes** — converted route-local background spawning in `backend/routes/email.py` and `backend/routes/integrations.py` to Redis queue submissions through the existing `biqc_jobs.py` runtime
+- **Heavy API routes queue-enabled** — `backend/routes/ingestion_engine.py`, `backend/routes/hybrid_ingestion.py`, `backend/routes/research.py`, `backend/routes/marketing_intel.py`, and `backend/routes/file_service.py` now enqueue Redis jobs and return immediately with queued responses when Redis is available; inline fallback remains only when Redis is unavailable
+- **Redis runtime expanded** — `backend/biqc_jobs.py` now provides a module-level `enqueue_job()` helper and new job handlers/types: `email-analysis`, `drive-sync`, `website-ingestion`, `market-research`, `file-generation`, and `integration-count-sync`
+- **Conversational AI routes preserved synchronous** — `routes/soundboard.py`, `routes/boardroom.py`, and `routes/calibration.py` were intentionally left untouched for real-time behavior
+- **Verification completed** — route scan confirmed no `asyncio.create_task()` remains in the 7 target route files, compile checks passed, migration regression test `test_iteration145_redis_route_migration.py` passed `4/4`, and backend testing agent iteration_145 passed with 100% backend success
+
 ### Sprint 25 — Live Production Proof Pass with Andre Account (Complete with One Minor Follow-up — Mar 2026)
 - **Production UI proof completed on `https://biqc.thestrategysquad.com` using `andre@thestrategysquad.com.au`** — live screenshots confirmed: standalone sidebar structure, BIQc Overview child links, Board Room/War Room shared shell, Advisor cards rendering after refresh, SoundBoard handoff with BIQc brief + 3 guided next options, Calendar follow-up draft card, Actions-page advisor handoff, and War Room scope-correct response for HubSpot contact-note question
 - **Calendar event creation proved end-to-end in production** — after Azure Outlook access was corrected, both the production API (`POST /api/outlook/calendar/create`) and visual UI flow created a real Outlook calendar follow-up event (`BIQc Follow-up Event Final Production Proof`)
