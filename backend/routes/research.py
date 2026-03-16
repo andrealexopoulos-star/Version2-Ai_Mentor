@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from routes.deps import get_current_user, OPENAI_KEY, logger
 from core.llm_router import llm_chat
+from biqc_jobs import enqueue_job
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import httpx
@@ -353,21 +354,22 @@ BODY CONTENT:
 
 # ─── Main Endpoint ───
 
-@router.post("/research/analyze-website", response_model=WebsiteIntelligence)
-async def analyze_website(req: AnalyzeWebsiteRequest, current_user: dict = Depends(get_current_user)):
+async def execute_website_research_job(payload: dict) -> dict:
     """
     Deep Research + Inference Engine.
     Path 1: Scrape → LLM synthesis → structured intelligence.
     Path 2 (fallback): Domain inference → deterministic keyword mapping.
     """
     start = time.time()
+    req = AnalyzeWebsiteRequest(url=str(payload.get("url") or ""))
+    current_user = payload.get("current_user") or {"id": payload.get("user_id")}
 
     # Normalize URL
     try:
         url = normalize_url(req.url)
     except ValueError as e:
         logger.info(f"[research] Invalid URL: {req.url} — {e}")
-        return WebsiteIntelligence(
+        result = WebsiteIntelligence(
             success=False,
             inference_level="failed",
             industry="Unknown",
@@ -381,6 +383,7 @@ async def analyze_website(req: AnalyzeWebsiteRequest, current_user: dict = Depen
             confidence="low",
             debug={"error": str(e)},
         )
+        return result.model_dump() if hasattr(result, 'model_dump') else result.dict()
 
     log_entry = {
         "url": url,
@@ -408,7 +411,7 @@ async def analyze_website(req: AnalyzeWebsiteRequest, current_user: dict = Depen
             log_entry["confidence_level"] = "high"
             logger.info(f"[research] SUCCESS scraped+synthesized {url} in {elapsed}ms | {json.dumps(log_entry)}")
 
-            return WebsiteIntelligence(
+            result = WebsiteIntelligence(
                 success=True,
                 inference_level="scraped",
                 industry=llm_result.get("industry", "Inferred"),
@@ -427,6 +430,7 @@ async def analyze_website(req: AnalyzeWebsiteRequest, current_user: dict = Depen
                     "response_time_ms": elapsed,
                 },
             )
+            return result.model_dump() if hasattr(result, 'model_dump') else result.dict()
 
     # STEP 3: Fallback — Domain Inference
     log_entry["fallback_triggered"] = True
@@ -440,4 +444,34 @@ async def analyze_website(req: AnalyzeWebsiteRequest, current_user: dict = Depen
     logger.info(f"[research] FALLBACK domain-inferred {url} in {elapsed}ms | {json.dumps(log_entry)}")
 
     result.debug["response_time_ms"] = elapsed
-    return result
+    return result.model_dump() if hasattr(result, 'model_dump') else result.dict()
+
+
+@router.post("/research/analyze-website")
+async def analyze_website(req: AnalyzeWebsiteRequest, current_user: dict = Depends(get_current_user)):
+    queued = await enqueue_job(
+        "market-research",
+        {
+            "task": "research-analyze-website",
+            "url": req.url,
+            "user_id": current_user.get("id"),
+            "workspace_id": current_user.get("id"),
+            "current_user": {"id": current_user.get("id")},
+        },
+        company_id=current_user.get("id"),
+        window_seconds=300,
+    )
+
+    if queued.get("queued"):
+        return {
+            "status": "queued",
+            "job_type": "market-research",
+            "job_id": queued.get("job_id"),
+            "task": "research-analyze-website",
+        }
+
+    return WebsiteIntelligence(**(await execute_website_research_job({
+        "url": req.url,
+        "user_id": current_user.get("id"),
+        "current_user": {"id": current_user.get("id")},
+    })))

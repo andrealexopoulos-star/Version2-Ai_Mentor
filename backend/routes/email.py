@@ -43,6 +43,7 @@ from supabase_intelligence_helpers import (
     update_calendar_intelligence_supabase,
 )
 from config.urls import get_backend_url, get_frontend_url
+from biqc_jobs import enqueue_job
 
 JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'fallback-secret')
 
@@ -1005,14 +1006,27 @@ async def comprehensive_outlook_sync(current_user: dict = Depends(get_current_us
     }
     await create_sync_job_supabase(get_sb(), job_doc)
     
-    # Start background sync
-    import asyncio
-    asyncio.create_task(run_comprehensive_email_analysis(user_id, job_id))
-    
+    queued = await enqueue_job(
+        "email-analysis",
+        {"user_id": user_id, "job_id": job_id, "workspace_id": user_id},
+        company_id=user_id,
+        window_seconds=120,
+    )
+
+    if queued.get("queued"):
+        return {
+            "status": "queued",
+            "job_type": "email-analysis",
+            "job_id": queued.get("job_id") or job_id,
+            "message": "Comprehensive email analysis queued. This will take 5-10 minutes.",
+            "expected_duration": "5-10 minutes"
+        }
+
+    await run_comprehensive_email_analysis(user_id, job_id)
     return {
         "status": "started",
         "job_id": job_id,
-        "message": "Comprehensive email analysis started. This will take 5-10 minutes. I'll notify you when complete.",
+        "message": "Comprehensive email analysis started inline because Redis is unavailable.",
         "expected_duration": "5-10 minutes"
     }
 

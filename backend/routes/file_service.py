@@ -21,6 +21,7 @@ router = APIRouter()
 
 from routes.auth import get_current_user
 from guardrails import sanitise_output, log_llm_call_to_db
+from biqc_jobs import enqueue_job
 
 OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "")
 
@@ -99,9 +100,15 @@ def _upload_to_storage(sb, tenant_id: str, bucket: str, file_name: str, content:
     return path
 
 
-@router.post("/files/generate")
-async def generate_file(req: GenerateFileRequest, current_user: dict = Depends(get_current_user)):
+async def execute_file_generation_job(payload: dict) -> dict:
     """Generate a file (logo, document, report) and store in Supabase Storage."""
+    req = GenerateFileRequest(
+        file_type=str(payload.get('file_type') or ''),
+        prompt=str(payload.get('prompt') or ''),
+        format=str(payload.get('format') or 'png'),
+        conversation_id=str(payload.get('conversation_id') or ''),
+    )
+    current_user = payload.get('current_user') or {'id': payload.get('user_id')}
     tenant_id = current_user['id']
     sb = _get_storage()
     timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
@@ -201,6 +208,40 @@ async def generate_file(req: GenerateFileRequest, current_user: dict = Depends(g
         'download_url': download_url,
         'storage_path': storage_path,
     }
+
+
+@router.post("/files/generate")
+async def generate_file(req: GenerateFileRequest, current_user: dict = Depends(get_current_user)):
+    queued = await enqueue_job(
+        "file-generation",
+        {
+            'file_type': req.file_type,
+            'prompt': req.prompt,
+            'format': req.format,
+            'conversation_id': req.conversation_id,
+            'user_id': current_user.get('id'),
+            'workspace_id': current_user.get('id'),
+            'current_user': {'id': current_user.get('id')},
+        },
+        company_id=current_user.get('id'),
+        window_seconds=180,
+    )
+
+    if queued.get('queued'):
+        return {
+            'status': 'queued',
+            'job_type': 'file-generation',
+            'job_id': queued.get('job_id'),
+        }
+
+    return await execute_file_generation_job({
+        'file_type': req.file_type,
+        'prompt': req.prompt,
+        'format': req.format,
+        'conversation_id': req.conversation_id,
+        'user_id': current_user.get('id'),
+        'current_user': {'id': current_user.get('id')},
+    })
 
 
 @router.get("/files/list")

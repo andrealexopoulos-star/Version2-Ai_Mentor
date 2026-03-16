@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 from routes.auth import get_current_user
+from biqc_jobs import enqueue_job
 
 # ═══ Constants ═══
 MAX_PAGES = 7
@@ -535,14 +536,15 @@ def compute_quality_score(
 # API ENDPOINT
 # ═══════════════════════════════════════════════════════════════
 
-@router.post("/ingestion/run")
-async def run_ingestion(req: IngestionRequest, current_user: dict = Depends(get_current_user)):
-    """Run complete forensic ingestion pipeline on a URL."""
-    url = req.url.strip()
+async def execute_ingestion_job(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Execute the full forensic ingestion pipeline."""
+    url = str(payload.get('url') or '').strip()
     if not url:
-        raise HTTPException(status_code=400, detail="URL required")
+        raise ValueError("URL required")
 
-    user_id = current_user['id']
+    user_id = str(payload.get('user_id') or payload.get('workspace_id') or '')
+    if not user_id:
+        raise ValueError("user_id required")
 
     # === LAYER A: Extraction ===
     extraction = await run_extraction(url)
@@ -663,6 +665,40 @@ async def run_ingestion(req: IngestionRequest, current_user: dict = Depends(get_
         'canonical_url': extraction['canonical_url'],
         'redirect_chain': extraction.get('redirect_chain', []),
     }
+
+
+@router.post("/ingestion/run")
+async def run_ingestion(req: IngestionRequest, current_user: dict = Depends(get_current_user)):
+    """Run complete forensic ingestion pipeline on a URL."""
+    url = req.url.strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="URL required")
+
+    queued = await enqueue_job(
+        "website-ingestion",
+        {
+            "mode": "standard",
+            "url": url,
+            "user_id": current_user['id'],
+            "workspace_id": current_user['id'],
+        },
+        company_id=current_user['id'],
+        window_seconds=180,
+    )
+
+    if queued.get('queued'):
+        return {
+            'status': 'queued',
+            'job_type': 'website-ingestion',
+            'job_id': queued.get('job_id'),
+            'mode': 'standard',
+        }
+
+    return await execute_ingestion_job({
+        'url': url,
+        'user_id': current_user['id'],
+        'workspace_id': current_user['id'],
+    })
 
 
 @router.get("/ingestion/history")

@@ -34,6 +34,12 @@ JOB_TYPES = {
     "market-intelligence-scan",
     "crm-ingestion",
     "ai-reasoning-log",
+    "email-analysis",
+    "drive-sync",
+    "website-ingestion",
+    "market-research",
+    "file-generation",
+    "integration-count-sync",
 }
 
 JobHandler = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
@@ -52,6 +58,12 @@ class BIQcRedisJobs:
             "market-intelligence-scan": self._handle_market_intelligence_scan,
             "crm-ingestion": self._handle_crm_ingestion,
             "ai-reasoning-log": self._handle_ai_reasoning_log,
+            "email-analysis": self._handle_email_analysis,
+            "drive-sync": self._handle_drive_sync,
+            "website-ingestion": self._handle_website_ingestion,
+            "market-research": self._handle_market_research,
+            "file-generation": self._handle_file_generation,
+            "integration-count-sync": self._handle_integration_count_sync,
         }
 
     async def initialize(self) -> bool:
@@ -304,5 +316,95 @@ class BIQcRedisJobs:
         await self.redis.ltrim(LOG_BUFFER_KEY, 0, 1999)
         return {"status": "buffered"}
 
+    async def _handle_email_analysis(self, job: Dict[str, Any]) -> Dict[str, Any]:
+        payload = job.get("payload", {})
+        user_id = payload.get("user_id")
+        job_id = payload.get("job_id")
+        if not user_id or not job_id:
+            return {"status": "skipped", "reason": "missing_user_or_job"}
+
+        from routes.email import run_comprehensive_email_analysis
+
+        await run_comprehensive_email_analysis(user_id, job_id)
+        return {"status": "processed", "job_id": job_id}
+
+    async def _handle_drive_sync(self, job: Dict[str, Any]) -> Dict[str, Any]:
+        payload = job.get("payload", {})
+        user_id = payload.get("user_id")
+        account_id = payload.get("account_id")
+        account_token = payload.get("account_token")
+        if not user_id or not account_id or not account_token:
+            return {"status": "skipped", "reason": "missing_drive_payload"}
+
+        from routes.integrations import sync_google_drive_files
+
+        await sync_google_drive_files(user_id, account_id, account_token)
+        return {"status": "processed", "account_id": account_id}
+
+    async def _handle_website_ingestion(self, job: Dict[str, Any]) -> Dict[str, Any]:
+        payload = job.get("payload", {})
+        mode = payload.get("mode", "standard")
+
+        if mode == "hybrid":
+            from routes.hybrid_ingestion import execute_hybrid_ingestion_job
+
+            result = await execute_hybrid_ingestion_job(payload)
+        else:
+            from routes.ingestion_engine import execute_ingestion_job
+
+            result = await execute_ingestion_job(payload)
+        return {"status": "processed", "result": result}
+
+    async def _handle_market_research(self, job: Dict[str, Any]) -> Dict[str, Any]:
+        payload = job.get("payload", {})
+        task = payload.get("task", "research-analyze-website")
+
+        if task == "marketing-benchmark":
+            from routes.marketing_intel import execute_marketing_benchmark_job
+
+            result = await execute_marketing_benchmark_job(payload)
+        else:
+            from routes.research import execute_website_research_job
+
+            result = await execute_website_research_job(payload)
+        return {"status": "processed", "task": task, "result": result}
+
+    async def _handle_file_generation(self, job: Dict[str, Any]) -> Dict[str, Any]:
+        from routes.file_service import execute_file_generation_job
+
+        result = await execute_file_generation_job(job.get("payload", {}))
+        return {"status": "processed", "result": result}
+
+    async def _handle_integration_count_sync(self, job: Dict[str, Any]) -> Dict[str, Any]:
+        payload = job.get("payload", {})
+        user_id = payload.get("user_id")
+        category = payload.get("category")
+        if not user_id or not category:
+            return {"status": "skipped", "reason": "missing_count_sync_payload"}
+
+        from supabase_client import get_supabase_client
+        from routes.integrations import _sync_category_counts
+
+        await _sync_category_counts(get_supabase_client(), user_id, category)
+        return {"status": "processed", "category": category}
+
 
 biqc_jobs = BIQcRedisJobs()
+
+
+async def enqueue_job(job_type: str, payload: Dict[str, Any], *, company_id: Optional[str] = None, window_seconds: int = 300) -> Dict[str, Any]:
+    resolved_company_id = (
+        company_id
+        or payload.get("company_id")
+        or payload.get("workspace_id")
+        or payload.get("user_id")
+        or payload.get("tenant_id")
+        or payload.get("account_id")
+        or "global"
+    )
+    return await biqc_jobs.enqueue_job(
+        company_id=str(resolved_company_id),
+        job_type=job_type,
+        payload=payload,
+        window_seconds=window_seconds,
+    )

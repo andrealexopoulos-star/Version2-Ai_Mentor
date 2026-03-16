@@ -14,6 +14,7 @@ router = APIRouter()
 
 from routes.auth import get_current_user
 from intelligence_spine import _get_cached_flag
+from biqc_jobs import enqueue_job
 
 
 class BenchmarkRequest(BaseModel):
@@ -23,8 +24,9 @@ class BenchmarkRequest(BaseModel):
 PILLARS = ['brand_visibility', 'digital_presence', 'content_maturity', 'social_engagement', 'ai_citation_share']
 
 
-@router.post("/marketing/benchmark")
-async def run_benchmark(req: BenchmarkRequest, current_user: dict = Depends(get_current_user)):
+async def execute_marketing_benchmark_job(payload: dict) -> dict:
+    req = BenchmarkRequest(competitors=list(payload.get("competitors") or []))
+    current_user = payload.get("current_user") or {"id": payload.get("user_id")}
     """Run marketing benchmark against competitors."""
     if not _get_cached_flag('marketing_benchmarks_enabled'):
         return {'status': 'feature_disabled', 'message': 'Marketing benchmarks not yet enabled'}
@@ -137,6 +139,36 @@ async def run_benchmark(req: BenchmarkRequest, current_user: dict = Depends(get_
         'competitors': comp_scores,
         'competitor_count': len(comp_scores),
     }
+
+
+@router.post("/marketing/benchmark")
+async def run_benchmark(req: BenchmarkRequest, current_user: dict = Depends(get_current_user)):
+    queued = await enqueue_job(
+        "market-research",
+        {
+            "task": "marketing-benchmark",
+            "competitors": req.competitors,
+            "user_id": current_user.get("id"),
+            "workspace_id": current_user.get("id"),
+            "current_user": {"id": current_user.get("id")},
+        },
+        company_id=current_user.get("id"),
+        window_seconds=300,
+    )
+
+    if queued.get("queued"):
+        return {
+            'status': 'queued',
+            'job_type': 'market-research',
+            'job_id': queued.get('job_id'),
+            'task': 'marketing-benchmark',
+        }
+
+    return await execute_marketing_benchmark_job({
+        'competitors': req.competitors,
+        'user_id': current_user.get('id'),
+        'current_user': {'id': current_user.get('id')},
+    })
 
 
 @router.get("/marketing/benchmark/latest")
