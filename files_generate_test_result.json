@@ -1,0 +1,17 @@
+{
+  "status_code": 400,
+  "response_text": "{\"detail\":\"Unknown file type: pdf\"}",
+  "headers": {
+    "content-length": "35",
+    "content-type": "application/json",
+    "date": "Mon, 16 Mar 2026 08:04:31 GMT",
+    "server": "nginx/1.29.6",
+    "cache-control": "no-store, must-revalidate, no-cache, max-age=0",
+    "expires": "0",
+    "pragma": "no-cache",
+    "x-ms-middleware-request-id": "00000000-0000-0000-0000-000000000000",
+    "x-api-server": "biqc-backend",
+    "x-content-type-options": "nosniff"
+  },
+  "timestamp": "2026-03-16T08:04:31.269500"
+}

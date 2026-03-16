@@ -52,10 +52,19 @@ async def _generate_image(prompt: str, size: str = "1024x1024") -> bytes:
             prompt=prompt,
             n=1,
             size=size,
-            response_format="b64_json",
         )
         import base64
-        return base64.b64decode(response.data[0].b64_json)
+        first = response.data[0]
+        if getattr(first, 'b64_json', None):
+            return base64.b64decode(first.b64_json)
+        image_url = getattr(first, 'url', None)
+        if image_url:
+            import httpx
+            async with httpx.AsyncClient(timeout=60) as http_client:
+                image_response = await http_client.get(image_url)
+                image_response.raise_for_status()
+                return image_response.content
+        raise RuntimeError('OpenAI image response did not contain image data')
     except Exception as e:
         logger.error(f"Image generation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)[:100]}")

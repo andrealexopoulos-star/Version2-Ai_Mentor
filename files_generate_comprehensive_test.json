@@ -1,0 +1,32 @@
+{
+  "test_1_logo": {
+    "status_code": 500,
+    "response_text": "{\"detail\":\"Image generation failed: Error code: 400 - {'error': {'message': \\\"Unknown parameter: 'response_format'.\\\", 'type': 'invalid_re\"}",
+    "payload": {
+      "file_type": "logo",
+      "prompt": "Simple business logo for consulting firm",
+      "format": "png"
+    },
+    "timestamp": "2026-03-16T08:05:06.460049"
+  },
+  "test_2_document": {
+    "status_code": 500,
+    "response_text": "Internal Server Error",
+    "payload": {
+      "file_type": "document",
+      "prompt": "Business report summary",
+      "format": "txt"
+    },
+    "timestamp": "2026-03-16T08:05:10.583097"
+  },
+  "test_3_report": {
+    "status_code": 500,
+    "response_text": "Internal Server Error",
+    "payload": {
+      "file_type": "report",
+      "prompt": "Quarterly business analysis",
+      "format": "pdf"
+    },
+    "timestamp": "2026-03-16T08:05:16.055249"
+  }
+}
