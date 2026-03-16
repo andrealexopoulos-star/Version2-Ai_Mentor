@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowRight,
@@ -645,6 +645,7 @@ const getExecutiveStateLabel = ({ executiveSnapshot, decisions, fallbackState })
 
 export default function AdvisorWatchtower() {
   const { user, authState } = useSupabaseAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const {
     cognitive,
@@ -1003,6 +1004,17 @@ export default function AdvisorWatchtower() {
     fetchIntegrationContext(false);
     hydrateActionHistory();
   }, [authState, fetchOverview, fetchWatchtower, fetchIntegrationContext, hydrateActionHistory]);
+
+  useEffect(() => {
+    if (!location.state?.focusBrief) return;
+    const timer = setTimeout(() => {
+      const target = document.querySelector('[data-testid="advisor-executive-memo-section"]')
+        || document.querySelector('[data-testid="advisor-decision-surface"]');
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      navigate(location.pathname, { replace: true, state: {} });
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [location, navigate]);
 
   const handleRefresh = async () => {
     await Promise.allSettled([
