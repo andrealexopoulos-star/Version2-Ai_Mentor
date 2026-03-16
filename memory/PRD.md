@@ -1,4 +1,11 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 24 — SoundBoard Handoff + Calendar Draft Flow + War Room Scope Guard (Complete — Mar 2026)
+- **Advisor → SoundBoard handoff fixed** — `frontend/src/pages/AdvisorWatchtower.js` now sends a structured BIQc brief into SoundBoard instead of only a weak URL prompt. `frontend/src/pages/MySoundBoard.js` now consumes `advisorSoundboardContext` / `biqc_soundboard_handoff`, renders the BIQc brief, and presents 3 context-derived next moves before the user types
+- **Advisor → Calendar flow implemented** — `frontend/src/pages/AdvisorWatchtower.js` now sends a real follow-up draft into Calendar; `frontend/src/pages/CalendarView.js` now renders an `Advisor follow-up draft` composer with title, summary, start/end, and `Create follow-up event`; `backend/routes/email.py` now includes additive `POST /outlook/calendar/create` to create Outlook follow-up events
+- **War Room scope correction added** — `backend/routes/boardroom.py` now intercepts unsupported CRM note-history questions (e.g. "last HubSpot contact note") and returns a scope-correct answer instead of irrelevant generic strategic analysis; it also passes richer strategic context into the War Room edge call
+- **War Room brief copy tightened** — `frontend/src/components/WarRoomConsole.js` now uses the strongest available alert/action pair to render a less generic executive brief when a full memo is not yet present
+- **Verification completed** — iteration_144 passed all requested checks: SoundBoard handoff brief + 3 options, Calendar draft composer, War Room scope guard, Board Room/War Room shared shell, and no Advisor regressions
+
 ### Sprint 23 — Corrected Standalone Sidebar Shell + Board/War Room Shell Unification (Complete — Mar 2026)
 - **Previous nav interpretation corrected** — Removed the parent `Intelligence` heading entirely. The sidebar now shows standalone top-level groups exactly as requested: `BIQc Overview`, `Market & Positioning`, `Operations`, `Revenue`, `Risk`, `Execution`, `Settings & Growth`, `Admin`, and `BIQc Legal`
 - **Child links preserved under standalone groups** — `BIQc Overview` again retains its child links (`Boardroom`, `Intel Centre`, `Soundboard`, `War Room`) and the relevant standalone group stays open automatically when the user is on one of its child pages
