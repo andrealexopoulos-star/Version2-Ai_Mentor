@@ -131,6 +131,11 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
     nextAction: topAlerts[0]?.action || 'Ask one high-stakes question and commit to a decision owner + deadline.',
     ifIgnored: 'Unchallenged strategic drift can compress decision windows and increase execution cost over time.',
   };
+  const warRoomBrief = topAlerts[0]?.detail
+    ? `${topAlerts[0].detail}${topAlerts[0]?.action ? ` Next move: ${topAlerts[0].action}` : ''}`
+    : connectedSystems.length
+      ? `BIQc can see ${connectedSystems.join(', ')} signals, but the live strategic synthesis is still being prepared. Use this console to interrogate the highest-priority issue now.`
+      : 'Connect core systems to generate a live strategic brief.';
 
   return (
     <div className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
@@ -189,9 +194,7 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
                 <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
                   <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
                   <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
-                    {connectedSystems.length
-                      ? `BIQc can see ${connectedSystems.join(', ')} signals, but the live strategic synthesis is still being prepared. Use this console to interrogate the highest-priority issue now.`
-                      : 'Connect core systems to generate a live strategic brief.'}
+                    {warRoomBrief}
                   </p>
                 </div>
               )}

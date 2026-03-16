@@ -4,6 +4,7 @@ Extracted from server.py. Includes token helpers and all email-related routes.
 """
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
+from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone, timedelta
 import os
@@ -71,6 +72,15 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 # Prompt fallbacks
 _EMAIL_PRIORITY_FALLBACK = "You are a strategic business email analyst. Always respond with valid JSON only."
 _EMAIL_REPLY_FALLBACK = "You are BIQC, a decisive business intelligence advisor. Generate concise, action-oriented email replies."
+
+
+class CalendarEventCreateRequest(BaseModel):
+    title: str
+    summary: Optional[str] = None
+    start_at: str
+    end_at: str
+    location: Optional[str] = None
+    attendee_emails: Optional[List[str]] = None
 
 
 def _heuristic_priority(email: Dict[str, Any]) -> Dict[str, Any]:
@@ -1657,6 +1667,69 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
         "status": "synced",
         "events_synced": len(events),
         "message": f"Calendar synced: {len(events)} events"
+    }
+
+
+@router.post("/outlook/calendar/create")
+async def create_calendar_event(
+    payload: CalendarEventCreateRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a follow-up event in Outlook Calendar."""
+    tokens = await get_outlook_tokens(current_user["id"])
+    if not tokens:
+        raise HTTPException(status_code=400, detail="Outlook not connected")
+
+    access_token = tokens.get("access_token")
+    if not access_token:
+        raise HTTPException(status_code=400, detail="Outlook token unavailable")
+
+    try:
+        start_dt = datetime.fromisoformat(payload.start_at.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(payload.end_at.replace("Z", "+00:00"))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid calendar date payload")
+
+    if end_dt <= start_dt:
+        raise HTTPException(status_code=400, detail="Calendar event end must be after start")
+
+    attendees = []
+    for email in payload.attendee_emails or []:
+        if not email:
+            continue
+        attendees.append({
+            "emailAddress": {"address": email},
+            "type": "required",
+        })
+
+    body_content = payload.summary or "BIQc follow-up event"
+    event_payload = {
+        "subject": payload.title,
+        "body": {"contentType": "HTML", "content": body_content.replace("\n", "<br/>")},
+        "start": {"dateTime": start_dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"), "timeZone": "UTC"},
+        "end": {"dateTime": end_dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"), "timeZone": "UTC"},
+        "location": {"displayName": payload.location or "BIQc follow-up"},
+        "attendees": attendees,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post("https://graph.microsoft.com/v1.0/me/events", headers=headers, json=event_payload)
+        if response.status_code not in {200, 201}:
+            raise HTTPException(status_code=400, detail=f"Failed to create Outlook event: {response.text}")
+        data = response.json()
+
+    return {
+        "status": "created",
+        "event_id": data.get("id"),
+        "web_link": data.get("webLink"),
+        "subject": data.get("subject"),
+        "start": data.get("start", {}).get("dateTime"),
+        "end": data.get("end", {}).get("dateTime"),
     }
 
 

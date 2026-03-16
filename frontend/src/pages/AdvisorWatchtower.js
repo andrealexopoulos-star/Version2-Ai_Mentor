@@ -1371,13 +1371,25 @@ export default function AdvisorWatchtower() {
     }
 
     if (actionType === 'add-to-calendar') {
+      const now = new Date();
+      const followUpStart = new Date(now.getTime() + (24 * 60 * 60 * 1000));
+      followUpStart.setHours(9, 0, 0, 0);
+      const followUpEnd = new Date(followUpStart.getTime() + (30 * 60 * 1000));
+      const draft = {
+        title: decision.signal.issueBrief || decision.signal.title,
+        summary: decision.signal.actionBrief || decision.signal.action,
+        whyNow: decision.signal.whyNowBrief || decision.whyNow,
+        ifIgnored: decision.signal.ifIgnored,
+        startAt: followUpStart.toISOString(),
+        endAt: followUpEnd.toISOString(),
+        sourceSummary: decision.signal.sourceSummary || '',
+      };
+      try {
+        sessionStorage.setItem('biqc_calendar_draft', JSON.stringify(draft));
+      } catch {}
       navigate('/calendar', {
         state: {
-          advisorFollowUp: {
-            title: decision.signal.issueBrief || decision.signal.title,
-            summary: decision.signal.actionBrief || decision.signal.action,
-            dueHint: 'Review today',
-          },
+          advisorFollowUp: draft,
         },
       });
       return;
@@ -1529,10 +1541,43 @@ export default function AdvisorWatchtower() {
     fallbackState,
   });
 
+  const openSoundboardWithBrief = useCallback((payload) => {
+    try {
+      sessionStorage.setItem('biqc_soundboard_handoff', JSON.stringify(payload));
+    } catch {}
+    navigate('/soundboard', { state: { advisorSoundboardContext: payload } });
+  }, [navigate]);
+
   const soundboardDiscussHref = useCallback((topic) => {
     const prompt = topic ? `Discuss this with context: ${topic}` : 'Discuss advisor context and next best owner action.';
     return `/soundboard?origin=advisor&prompt=${encodeURIComponent(prompt)}`;
   }, []);
+
+  const buildSoundboardHandoff = useCallback((decision, overrides = {}) => {
+    const signal = decision?.signal || {};
+    return {
+      title: overrides.title || signal.summaryLabel || signal.title || decision?.headline || 'BIQc priority',
+      issueBrief: overrides.issueBrief || signal.issueBrief || signal.title || decision?.headline || 'BIQc priority requires discussion.',
+      whyNowBrief: overrides.whyNowBrief || signal.whyNowBrief || decision?.whyNow || signal.detail || 'This issue needs operator attention now.',
+      actionBrief: overrides.actionBrief || signal.actionBrief || signal.action || 'Recommend immediate owner action.',
+      ifIgnoredBrief: overrides.ifIgnoredBrief || signal.ifIgnored || 'The issue is likely to compound if ignored.',
+      domain: overrides.domain || signal.domain || 'general',
+      severity: overrides.severity || signal.severity || 'medium',
+      sourceSummary: overrides.sourceSummary || signal.sourceSummary || `Source: ${signal.source || 'BIQc Business Brain'}`,
+      factPoints: overrides.factPoints || signal.factPoints || [],
+      integrations: {
+        crm: Boolean(integrationContext.sourceHealth?.crm?.live),
+        accounting: Boolean(integrationContext.sourceHealth?.accounting?.live),
+        email: Boolean(integrationContext.sourceHealth?.email?.live),
+        brain: Boolean(integrationContext.sourceHealth?.brain?.live),
+      },
+      thresholds: {
+        timeConsistency: Boolean(signal.repeatCount && signal.repeatCount > 1),
+        crossSourceReinforcement: Boolean(signal.sourceSummary),
+        behaviouralReinforcement: Boolean(signal.escalationState && signal.escalationState !== 'monitoring'),
+      },
+    };
+  }, [integrationContext.sourceHealth]);
 
   useEffect(() => {
     if (authState === AUTH_STATE.LOADING) return undefined;
@@ -1692,14 +1737,24 @@ export default function AdvisorWatchtower() {
                           <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
                           <p className="mt-2 text-xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{executiveState}</p>
                         </div>
-                        <Link
-                          to={soundboardDiscussHref(`Business state is ${executiveState}. Explain immediate owner priorities.`)}
+                        <button
+                          onClick={() => openSoundboardWithBrief({
+                            title: `Business state: ${executiveState}`,
+                            issueBrief: `Current business state is ${executiveState}.`,
+                            whyNowBrief: `The advisor is classifying the current operating state as ${executiveState.toLowerCase()}.`,
+                            actionBrief: 'Explain the immediate owner priorities for this state and sequence the next move.',
+                            ifIgnoredBrief: 'The team may act without a clear state-based priority order.',
+                            domain: 'general',
+                            severity: executiveState === 'Under Pressure' ? 'high' : 'medium',
+                            sourceSummary: 'Source: BIQc Advisor state classification.',
+                            factPoints: [],
+                          })}
                           className="inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-white/5"
                           style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
                           data-testid="advisor-state-discuss-soundboard"
                         >
                           Discuss <ArrowRight className="h-3 w-3" />
-                        </Link>
+                        </button>
                       </div>
                     </article>
 
@@ -1715,14 +1770,24 @@ export default function AdvisorWatchtower() {
                         </div>
                       </div>
                       <div className="mt-3">
-                        <Link
-                          to={soundboardDiscussHref(`Decision queue has ${openSignals.length} open signals with ${queuedBeyondThree} queued after top 3.`)}
+                        <button
+                          onClick={() => openSoundboardWithBrief({
+                            title: 'Decision queue status',
+                            issueBrief: `${openSignals.length} open executive signals are active, with ${queuedBeyondThree} queued behind the current top 3.`,
+                            whyNowBrief: 'The queue order determines which BIQc priorities get operator attention first.',
+                            actionBrief: 'Review whether the current top queue order is right and decide if any card should be actioned, delegated, or ignored.',
+                            ifIgnoredBrief: 'Important priorities may sit in queue too long and lose their decision window.',
+                            domain: 'general',
+                            severity: openSignals.length > 2 ? 'high' : 'medium',
+                            sourceSummary: 'Source: BIQc Advisor queue state.',
+                            factPoints: [`${openSignals.length} open signals`, `${queuedBeyondThree} queued after top 3`],
+                          })}
                           className="inline-flex h-[32px] items-center gap-1 rounded-lg border px-2.5 text-[10px] hover:bg-white/5"
                           style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
                           data-testid="advisor-queue-discuss-soundboard"
                         >
                           Discuss queue <ArrowRight className="h-3 w-3" />
-                        </Link>
+                        </button>
                       </div>
                     </article>
                   </div>
@@ -1877,14 +1942,15 @@ export default function AdvisorWatchtower() {
                                 </div>
 
                                 <div className="mt-4 flex flex-wrap gap-2" data-testid={`advisor-decision-primary-controls-${decision.id}`}>
-                                  <Link
-                                    to={soundboardDiscussHref(signal ? `${signal.issueBrief || signal.title}. ${signal.whyNowBrief || signal.detail}. Recommended action: ${signal.actionBrief || signal.action}` : `No verified signal in ${decision.title}`)}
+                                  <button
+                                    onClick={() => signal ? openSoundboardWithBrief(buildSoundboardHandoff(decision)) : null}
                                     className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
                                     style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
                                     data-testid={`advisor-decision-open-soundboard-${decision.id}`}
+                                    disabled={!signal}
                                   >
                                     SoundBoard chat <ArrowRight className="h-3.5 w-3.5" />
-                                  </Link>
+                                  </button>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <button

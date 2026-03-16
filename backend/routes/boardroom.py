@@ -31,6 +31,14 @@ class WarRoomAskRequest(BaseModel):
     product_or_service: Optional[str] = None
 
 
+def _is_crm_note_audit_query(question: str) -> bool:
+    text = (question or '').lower()
+    has_note = 'note' in text or 'notes' in text
+    has_last = 'last' in text or 'latest' in text or 'most recent' in text
+    has_crm_object = 'hubspot' in text or 'contact' in text or 'crm' in text
+    return has_note and has_last and has_crm_object
+
+
 DIAGNOSIS_FOCUS_AREAS = {
     "cash_flow_financial_risk",
     "revenue_momentum",
@@ -504,6 +512,23 @@ async def war_room_respond_proxy(request: Request, payload: WarRoomAskRequest):
     sb = get_sb()
     await check_rate_limit(user_id, "war_room_ask", sb)
 
+    if _is_crm_note_audit_query(sanitised.get("text") or payload.question):
+        explainability = _derive_explainability(
+            sb,
+            user_id,
+            primary_domain="crm",
+            primary_detail="Current War Room context does not include contact note-history timelines from HubSpot.",
+        )
+        return {
+            "answer": "I can’t verify the last note added to a HubSpot contact from the current War Room dataset. This console is grounded in strategic CRM telemetry like deals, pipeline, and response pressure — not contact-level note timelines yet.",
+            "why_visible": explainability["why_visible"],
+            "why_now": "You are asking for object-level CRM audit detail, but the active War Room scope is strategic rather than contact-timeline level.",
+            "next_action": "Open the contact timeline in HubSpot for note history, or extend BIQc CRM ingestion to bring contact-note activities into the platform.",
+            "if_ignored": "You may make decisions using incomplete customer activity history.",
+            "evidence_chain": explainability["evidence_chain"],
+            "degraded": False,
+        }
+
     auth_header = request.headers.get("authorization")
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_anon_key = os.environ.get("SUPABASE_ANON_KEY")
@@ -518,13 +543,33 @@ async def war_room_respond_proxy(request: Request, payload: WarRoomAskRequest):
     }
 
     product_or_service = payload.product_or_service or "General business advisory"
+    strategic_context = {}
     try:
         profile_row = sb.table("business_profiles").select("product_or_service, industry, value_proposition").eq("user_id", user_id).maybe_single().execute().data or {}
         candidate = profile_row.get("product_or_service") or profile_row.get("value_proposition") or profile_row.get("industry")
         if candidate:
             product_or_service = str(candidate)[:200]
+        strategic_context["profile"] = {
+            "industry": profile_row.get("industry"),
+            "value_proposition": profile_row.get("value_proposition"),
+        }
     except Exception:
         pass
+
+    try:
+        snapshot = sb.rpc('ic_generate_cognition_contract', {'p_tenant_id': user_id, 'p_tab': 'overview'}).execute().data or {}
+        top_alerts = (snapshot.get('top_alerts') or [])[:2]
+        strategic_context["snapshot"] = {
+            "system_state": snapshot.get('system_state'),
+            "executive_memo": snapshot.get('executive_memo'),
+            "top_alerts": [{
+                "domain": item.get('domain'),
+                "detail": item.get('detail'),
+                "action": item.get('action'),
+            } for item in top_alerts if isinstance(item, dict)],
+        }
+    except Exception:
+        strategic_context["snapshot"] = {}
 
     try:
         response = await _post_with_retries(
@@ -534,6 +579,7 @@ async def war_room_respond_proxy(request: Request, payload: WarRoomAskRequest):
                 "question": sanitised.get("text") or payload.question,
                 "mode": "ask",
                 "product_or_service": product_or_service,
+                "strategic_context": strategic_context,
             },
             timeout_seconds=60,
             retries=2,
