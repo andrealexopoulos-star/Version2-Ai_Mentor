@@ -181,7 +181,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   };
 
   // Multi-expand sections — keep key navigation groups open by default
-  const [expandedSections, setExpandedSections] = useState(() => new Set(['intelligence', 'execution', 'governance', 'legal']));
+  const [expandedSections, setExpandedSections] = useState(() => new Set(['execution', 'governance', 'legal']));
 
   const toggleSection = (sectionId) => {
     setExpandedSections(prev => {
@@ -192,44 +192,31 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   };
 
   const navSections = [
-    { id: 'intelligence', label: 'Intelligence', items: [
-      {
-        icon: LayoutDashboard, label: 'BIQc Overview', path: '/advisor', showBadge: true,
-        children: [
-          { icon: MessageSquare, label: 'Boardroom', path: '/board-room' },
-          { icon: BookOpen, label: 'Intel Centre', path: '/intel-centre' },
-          { icon: Zap, label: 'Soundboard', path: '/soundboard' },
-          { icon: Target, label: 'War Room', path: '/war-room' },
-        ],
-      },
-      {
-        icon: Radar, label: 'Market & Positioning', path: '/market',
-        children: [
-          { icon: Workflow, label: 'Automations', path: '/automations' },
-          { icon: Target, label: 'Competitive Benchmark', path: '/competitive-benchmark' },
-          { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
-          { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
-          { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
-        ],
-      },
-      { icon: Settings, label: 'Operations', path: '/operations',
-        children: [
-          { icon: Activity, label: 'Ops Advisory', path: '/ops-advisory' },
-          { icon: FileText, label: 'SOP Generator', path: '/sop-generator' },
-        ],
-      },
-      { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
-      {
-        icon: AlertTriangle, label: 'Risk', path: '/risk',
-        children: [
-          { icon: BarChart3, label: 'Analysis', path: '/analysis' },
-          { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
-          { icon: Shield, label: 'Compliance', path: '/compliance' },
-          { icon: Target, label: 'Decisions', path: '/decisions' },
-          { icon: Eye, label: 'Diagnosis', path: '/diagnosis' },
-          { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
-        ],
-      },
+    { id: 'overview', label: 'BIQc Overview', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [
+      { icon: MessageSquare, label: 'Boardroom', path: '/board-room' },
+      { icon: BookOpen, label: 'Intel Centre', path: '/intel-centre' },
+      { icon: Zap, label: 'Soundboard', path: '/soundboard' },
+      { icon: Target, label: 'War Room', path: '/war-room' },
+    ]},
+    { id: 'market', label: 'Market & Positioning', path: '/market', icon: Radar, items: [
+      { icon: Workflow, label: 'Automations', path: '/automations' },
+      { icon: Target, label: 'Competitive Benchmark', path: '/competitive-benchmark' },
+      { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
+      { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
+      { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
+    ]},
+    { id: 'operations', label: 'Operations', path: '/operations', icon: Settings, items: [
+      { icon: Activity, label: 'Ops Advisory', path: '/ops-advisory' },
+      { icon: FileText, label: 'SOP Generator', path: '/sop-generator' },
+    ]},
+    { id: 'revenue', label: 'Revenue', path: '/revenue', icon: TrendingUp, items: [] },
+    { id: 'risk', label: 'Risk', path: '/risk', icon: AlertTriangle, items: [
+      { icon: BarChart3, label: 'Analysis', path: '/analysis' },
+      { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
+      { icon: Shield, label: 'Compliance', path: '/compliance' },
+      { icon: Target, label: 'Decisions', path: '/decisions' },
+      { icon: Eye, label: 'Diagnosis', path: '/diagnosis' },
+      { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
     ]},
     { id: 'execution', label: 'Execution', items: [
       { icon: Zap, label: 'Actions', path: '/actions' },
@@ -264,20 +251,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     });
   }
 
-  // Track which parent items with children are expanded (e.g. Market & Positioning)
-  const [expandedParents, setExpandedParents] = useState(() => new Set());
-
-  // Auto-expand parent item if its child route is active (only expand the parent, not the section)
-  useEffect(() => {
-    navSections.forEach(section => {
-      section.items.forEach(item => {
-        if (item.children?.some(c => isActive(c.path))) {
-          setExpandedParents(prev => new Set([...prev, item.path]));
-        }
-      });
-    });
-  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const visibleSections = useMemo(() => {
     return navSections.map(section => ({
       ...section,
@@ -288,12 +261,9 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
   const currentPageLabel = useMemo(() => {
     for (const section of visibleSections) {
+      if (section.path && isActive(section.path)) return section.label;
       for (const item of section.items) {
         if (isActive(item.path)) return item.label;
-        if (item.children) {
-          const child = item.children.find((entry) => isActive(entry.path));
-          if (child) return child.label;
-        }
       }
     }
     return 'Current page';
@@ -303,7 +273,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     setExpandedSections((prev) => {
       const next = new Set(prev);
       visibleSections.forEach((section) => {
-        const sectionHasActiveItem = section.items.some((item) => isActive(item.path) || item.children?.some((child) => isActive(child.path)));
+        const sectionHasActiveItem = (section.path && isActive(section.path)) || section.items.some((item) => isActive(item.path));
         if (sectionHasActiveItem) next.add(section.id);
       });
       if (isSA) next.add('admin');
@@ -480,107 +450,95 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
           className="p-3 space-y-1 overflow-y-auto flex flex-col" style={{ height: '100%' }} aria-label="Platform navigation">
           {visibleSections.map((section) => {
             const isExpanded = expandedSections.has(section.id);
-            const hasActiveChild = section.items.some(i => isActive(i.path) || i.children?.some((child) => isActive(child.path)));
+            const sectionActive = (section.path && isActive(section.path)) || section.items.some((item) => isActive(item.path));
+            const sectionLocked = section.path ? !canAccess(user?.subscription_tier || 'free', section.path, user?.email || '') : false;
+            const SectionIcon = section.icon;
 
             return (
               <div key={section.id} className="mb-1">
-                <button onClick={() => toggleSection(section.id)}
-                  className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3 justify-between'} w-full ${sidebarCollapsed ? 'px-2' : 'px-3'} py-2.5 rounded-lg text-xs font-semibold uppercase tracking-[0.1em] transition-all`}
-                  style={{ color: hasActiveChild ? '#FF6A00' : 'var(--biqc-text-muted, #8B9DB5)', fontFamily: fontFamily.mono, minHeight: '40px' }}
-                  title={sidebarCollapsed ? section.label : undefined}
-                  aria-expanded={isExpanded}
-                  aria-controls={`nav-section-items-${section.id}`}
-                  data-testid={`nav-section-${section.id}`}>
-                  {!sidebarCollapsed && <span>{section.label}</span>}
-                  {!sidebarCollapsed && <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} style={{ color: 'var(--biqc-text-muted)' }} />}
-                </button>
+                {section.path ? (
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      onClick={() => {
+                        if (sectionLocked) { navigate('/upgrade'); return; }
+                        navigate(section.path);
+                      }}
+                      className="flex items-center gap-2.5 flex-1 px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all"
+                      aria-current={sectionActive ? 'page' : undefined}
+                      style={{
+                        fontFamily: fontFamily.body,
+                        color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
+                        background: sectionActive ? '#FF6A0015' : 'transparent',
+                        borderLeft: sectionActive ? '2px solid #FF6A00' : '2px solid transparent',
+                      }}
+                      data-testid={`nav-section-${section.id}`}
+                      title={sectionLocked ? `Requires ${TIERS[requiredTier(section.path)]?.label} plan` : section.label}
+                    >
+                      {SectionIcon ? <SectionIcon className="w-4 h-4 shrink-0" style={{ color: sectionLocked ? '#4A5568' : sectionActive ? '#FF6A00' : '#64748B' }} /> : null}
+                      <span className="flex-1 text-left">{section.label}</span>
+                      {section.showBadge && notifications.total > 0 && !sectionLocked && <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-[#EF4444]">{notifications.total > 9 ? '9+' : notifications.total}</span>}
+                      {sectionLocked && <Lock className="w-3 h-3 shrink-0" style={{ color: '#4A5568' }} />}
+                    </button>
+                    {section.items.length > 0 && !sidebarCollapsed && !sectionLocked && (
+                      <button
+                        onClick={() => toggleSection(section.id)}
+                        className="p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0"
+                        style={{ color: sectionActive ? '#FF6A00' : '#64748B' }}
+                        aria-expanded={isExpanded}
+                        aria-controls={`nav-section-items-${section.id}`}
+                        data-testid={`nav-section-toggle-${section.id}`}
+                      >
+                        <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <button onClick={() => toggleSection(section.id)}
+                    className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3 justify-between'} w-full ${sidebarCollapsed ? 'px-2' : 'px-3'} py-2.5 rounded-lg text-xs font-semibold uppercase tracking-[0.1em] transition-all`}
+                    style={{ color: sectionActive ? '#FF6A00' : 'var(--biqc-text-muted, #8B9DB5)', fontFamily: fontFamily.mono, minHeight: '40px' }}
+                    title={sidebarCollapsed ? section.label : undefined}
+                    aria-expanded={isExpanded}
+                    aria-controls={`nav-section-items-${section.id}`}
+                    data-testid={`nav-section-${section.id}`}>
+                    {!sidebarCollapsed && <span>{section.label}</span>}
+                    {!sidebarCollapsed && <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} style={{ color: 'var(--biqc-text-muted)' }} />}
+                  </button>
+                )}
 
                 {isExpanded && !sidebarCollapsed && (
                   <div id={`nav-section-items-${section.id}`} className="space-y-0.5 mb-2">
                     {section.items.map((item) => {
                       const active = isActive(item.path);
                       const showBadge = item.showBadge && notifications.total > 0;
-                      const hasChildren = item.children?.length > 0;
-                      const childActive = hasChildren && item.children.some(c => isActive(c.path));
-                      const parentExpanded = expandedParents.has(item.path);
                       const userTier = user?.subscription_tier || 'free';
                       const locked = !canAccess(userTier, item.path, user?.email || '');
 
                       const handleNavClick = () => {
                         if (locked) { navigate('/upgrade'); return; }
                         navigate(item.path);
-                        if (!hasChildren) closeAll();
+                        closeAll();
                       };
 
                       return (
-                        <div key={item.path}>
-                          <div className="flex items-center gap-0.5">
-                            <button
-                              onClick={handleNavClick}
-                              className="flex items-center gap-2.5 flex-1 px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all"
-                              aria-current={active ? 'page' : undefined}
-                              style={{
-                                fontFamily: fontFamily.body,
-                                color: locked ? '#4A5568' : active || childActive ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
-                                background: active ? '#FF6A00' + '15' : childActive ? '#FF6A0008' : 'transparent',
-                                borderLeft: active ? '2px solid #FF6A00' : childActive ? '2px solid rgba(255,106,0,0.3)' : '2px solid transparent',
-                                cursor: locked ? 'pointer' : 'pointer',
-                              }}
-                              data-testid={`nav-item-${item.path.replace('/', '')}`}
-                              title={locked ? `Requires ${TIERS[requiredTier(item.path)]?.label} plan` : item.label}>
-                              <item.icon className="w-4 h-4 shrink-0" style={{ color: locked ? '#4A5568' : active || childActive ? '#FF6A00' : '#64748B' }} />
-                              <span className="flex-1 text-left">{item.label}</span>
-                              {locked && <Lock className="w-3 h-3 shrink-0" style={{ color: '#4A5568' }} />}
-                              {showBadge && !locked && <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-[#EF4444]">{notifications.total > 9 ? '9+' : notifications.total}</span>}
-                            </button>
-                            {hasChildren && !locked && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedParents(prev => {
-                                    const next = new Set(prev);
-                                    if (next.has(item.path)) next.delete(item.path);
-                                    else next.add(item.path);
-                                    return next;
-                                  });
-                                }}
-                                className="p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0"
-                                style={{ color: childActive ? '#FF6A00' : '#64748B' }}>
-                                <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${parentExpanded ? 'rotate-90' : ''}`} />
-                              </button>
-                            )}
-                          </div>
-
-                          {hasChildren && parentExpanded && !locked && (
-                            <div className="ml-3 mt-0.5 mb-1 pl-3 space-y-0.5"
-                              style={{ borderLeft: '1px solid rgba(255,106,0,0.2)' }}>
-                              {item.children.map((child) => {
-                                const childIsActive = isActive(child.path);
-                                const childLocked = !canAccess(userTier, child.path, user?.email || '');
-                                return (
-                                  <button key={child.path}
-                                    onClick={() => {
-                                      if (childLocked) { navigate('/upgrade'); return; }
-                                      navigate(child.path); closeAll();
-                                    }}
-                                    className="flex items-center gap-2 w-full px-2.5 py-2 min-h-[36px] rounded-lg text-sm transition-all"
-                                    style={{
-                                      fontFamily: fontFamily.body,
-                                      fontSize: '0.8125rem',
-                                      color: childLocked ? '#4A5568' : childIsActive ? '#F4F7FA' : '#9FB0C3',
-                                      background: childIsActive ? '#FF6A0015' : 'transparent',
-                                      borderLeft: childIsActive ? '2px solid #FF6A00' : '2px solid transparent',
-                                    }}
-                                    title={childLocked ? `Requires ${TIERS[requiredTier(child.path)]?.label} plan` : child.label}>
-                                    <child.icon className="w-3.5 h-3.5 shrink-0" style={{ color: childLocked ? '#4A5568' : childIsActive ? '#FF6A00' : '#4A5568' }} />
-                                    <span className="flex-1 text-left">{child.label}</span>
-                                    {childLocked && <Lock className="w-3 h-3 shrink-0" style={{ color: '#4A5568' }} />}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
+                        <button
+                          key={item.path}
+                          onClick={handleNavClick}
+                          className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[40px] rounded-lg text-sm transition-all"
+                          aria-current={active ? 'page' : undefined}
+                          style={{
+                            fontFamily: fontFamily.body,
+                            color: locked ? '#4A5568' : active ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
+                            background: active ? '#FF6A0015' : 'transparent',
+                            borderLeft: active ? '2px solid #FF6A00' : '2px solid transparent',
+                            cursor: 'pointer',
+                          }}
+                          data-testid={`nav-item-${item.path.replace('/', '')}`}
+                          title={locked ? `Requires ${TIERS[requiredTier(item.path)]?.label} plan` : item.label}>
+                          <item.icon className="w-4 h-4 shrink-0" style={{ color: locked ? '#4A5568' : active ? '#FF6A00' : '#64748B' }} />
+                          <span className="flex-1 text-left">{item.label}</span>
+                          {locked && <Lock className="w-3 h-3 shrink-0" style={{ color: '#4A5568' }} />}
+                          {showBadge && !locked && <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-[#EF4444]">{notifications.total > 9 ? '9+' : notifications.total}</span>}
+                        </button>
                       );
                     })}
                   </div>

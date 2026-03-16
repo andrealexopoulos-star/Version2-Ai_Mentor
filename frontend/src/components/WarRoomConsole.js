@@ -48,7 +48,7 @@ const getWarRoomReplyText = (data) => {
   return data.answer || data.response || data.error || summariseWarRoomAnalysis(data.analysis) || 'Unable to process.';
 };
 
-const WarRoomConsole = () => {
+const WarRoomConsole = ({ embeddedShell = false }) => {
   const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
   const { status: integrationStatus } = useIntegrationStatus();
   const { user } = useSupabaseAuth();
@@ -133,7 +133,7 @@ const WarRoomConsole = () => {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-screen" style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
+    <div className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
       <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0"
         style={{ background: 'rgba(10,16,24,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--biqc-border, #1E2D3D)' }}>
         <div className="flex items-center gap-5">
