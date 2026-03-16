@@ -38,7 +38,7 @@ for line in frontend_env.split('\n'):
         break
 
 if not BACKEND_URL:
-    BACKEND_URL = "https://advisor-engine.preview.emergentagent.com"
+    BACKEND_URL = "https://business-brain-redis.preview.emergentagent.com"
 
 logger.info(f"Testing against backend: {BACKEND_URL}")
 

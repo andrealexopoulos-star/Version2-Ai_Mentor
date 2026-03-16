@@ -1,7 +1,7 @@
 {
   "summary": "Iteration 127: Trinity routing (OpenAI+Gemini+Anthropic), onboarding deep scan enhancements, and proprietary mode menu restoration verified. All 18 backend tests pass. Frontend mode selector uses proprietary BIQc labels (no ChatGPT/Gemini/Claude wording). Soundboard message sending works. Login + dashboard flows operational.",
   "test_date": "2026-03-13",
-  "target_url": "https://advisor-engine.preview.emergentagent.com",
+  "target_url": "https://business-brain-redis.preview.emergentagent.com",
   "test_type": "Trinity routing + deep scan + proprietary mode labels verification",
   "authentication_result": {
     "method": "email/password",
@@ -13,7 +13,7 @@
     {
       "feature": "Backend /api/health responds",
       "status": "PASS",
-      "evidence": "curl https://advisor-engine.preview.emergentagent.com/api/health returns {status: healthy}"
+      "evidence": "curl https://business-brain-redis.preview.emergentagent.com/api/health returns {status: healthy}"
     },
     {
       "feature": "Soundboard mode selector with proprietary BIQc labels",

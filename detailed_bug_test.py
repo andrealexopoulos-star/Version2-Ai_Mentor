@@ -7,7 +7,7 @@ import httpx
 import json
 from datetime import datetime, timezone
 
-BASE_URL = "https://advisor-engine.preview.emergentagent.com/api"
+BASE_URL = "https://business-brain-redis.preview.emergentagent.com/api"
 
 async def detailed_bug_fix_tests():
     """Test specific bug fixes mentioned in review request"""
