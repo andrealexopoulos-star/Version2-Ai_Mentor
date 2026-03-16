@@ -587,7 +587,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
       </aside>
 
       {/* Daily Brief Banner — shows once per day on login */}
-      <DailyBriefBanner onOpen={() => navigate('/soundboard')} />
+      <DailyBriefBanner onOpen={() => navigate('/advisor', { state: { focusBrief: true } })} />
 
       {/* Mobile Overlay */}
       {isNavOpen && <div className="fixed inset-0 bg-black/50 lg:hidden" onClick={closeAll} aria-hidden="true" style={{ zIndex: 998 }} />}
