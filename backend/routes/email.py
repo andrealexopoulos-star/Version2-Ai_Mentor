@@ -304,7 +304,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     logger.info(f"📧 Outlook OAuth redirect_uri: {redirect_uri}")
     
     # URL encode parameters to prevent malformed URLs
-    scope = "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
+    scope = "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
     encoded_redirect = quote(redirect_uri, safe='')
     encoded_scope = quote(scope, safe='')
     
@@ -734,7 +734,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         "code": code,
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code",
-        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
+        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
     }
     
     logger.info(f"Outlook callback: exchanging code for tokens")
@@ -1318,7 +1318,7 @@ async def refresh_outlook_token_supabase(user_id: str, refresh_token: str) -> Di
         "client_secret": AZURE_CLIENT_SECRET,
         "refresh_token": refresh_token,
         "grant_type": "refresh_token",
-        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
+        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
     }
     
     logger.info(f"🔄 Refreshing Outlook token for user {user_id}")
