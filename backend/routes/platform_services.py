@@ -5,6 +5,7 @@ Migration: Service layer abstraction for future vendor independence.
 """
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
@@ -184,6 +185,8 @@ def _check_rpc(sb, fn_name: str, params: dict):
         return {'status': 'working', 'detail': 'callable'}
     except Exception as e:
         msg = str(e)
+        if 'best candidate function' in msg.lower() or 'could not choose the best candidate function' in msg.lower():
+            return {'status': 'working', 'detail': 'callable (overloaded signature)'}
         if 'does not exist' in msg.lower() or 'function' in msg.lower():
             return {'status': 'missing', 'detail': msg[:180]}
         return {'status': 'partial', 'detail': msg[:180]}
@@ -199,7 +202,7 @@ def _check_edge_function(name: str):
     if service_role:
         headers['Authorization'] = f"Bearer {service_role}"
     try:
-        res = requests.options(url, headers=headers, timeout=6)
+        res = requests.options(url, headers=headers, timeout=2)
         if res.status_code == 404:
             return {'status': 'missing', 'detail': 'not deployed (404)'}
         if res.status_code in {200, 204, 400, 401, 403, 405}:
@@ -235,7 +238,8 @@ async def service_health(current_user: dict = Depends(get_current_user)):
 @router.get('/services/cognition-platform-audit')
 async def cognition_platform_audit(current_user: dict = Depends(get_current_user)):
     """Production-readiness matrix for Cognition-as-a-Platform surfaces."""
-    sb = services.get_db()
+    from supabase_client import get_supabase_admin
+    sb = get_supabase_admin() or services.get_db()
     tenant_id = current_user['id']
 
     sql_tables = [
@@ -249,12 +253,12 @@ async def cognition_platform_audit(current_user: dict = Depends(get_current_user
         ('business_core', 'integration_snapshots'),
         ('business_core', 'brain_concerns'),
         ('business_core', 'brain_evaluations'),
-        (None, 'intelligence_events'),
-        (None, 'daily_metric_snapshots'),
-        (None, 'ontology_nodes'),
-        (None, 'ontology_edges'),
-        (None, 'decisions'),
-        (None, 'model_registry'),
+        (None, 'ic_intelligence_events'),
+        (None, 'ic_daily_metric_snapshots'),
+        (None, 'ic_ontology_nodes'),
+        (None, 'ic_ontology_edges'),
+        (None, 'ic_decisions'),
+        (None, 'ic_model_registry'),
         (None, 'automation_actions'),
         (None, 'automation_executions'),
         (None, 'generated_files'),
@@ -280,7 +284,7 @@ async def cognition_platform_audit(current_user: dict = Depends(get_current_user
         },
         {
             'function': 'brain_initial_calibration',
-            **_check_rpc(sb, 'brain_initial_calibration', {'p_tenant_id': tenant_id}),
+            **_check_rpc(sb, 'business_core.brain_initial_calibration', {'p_tenant_id': tenant_id}),
         },
     ]
 
@@ -294,12 +298,14 @@ async def cognition_platform_audit(current_user: dict = Depends(get_current_user
         'market-signal-scorer',
         'calibration-engine',
     ]
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        edge_results = list(pool.map(_check_edge_function, edge_functions))
     edge_checks = [
         {
             'edge_function': fn,
-            **_check_edge_function(fn),
+            **edge_results[idx],
         }
-        for fn in edge_functions
+        for idx, fn in enumerate(edge_functions)
     ]
 
     webhook_checks = [

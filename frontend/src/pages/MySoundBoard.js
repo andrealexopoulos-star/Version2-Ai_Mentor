@@ -228,7 +228,7 @@ const MySoundBoard = () => {
     if ((!input.trim() && !attachedFile) && !messageOverride) return;
     if (loading) return;
 
-    const userMessage = (messageOverride ?? input).trim();
+    const userMessage = String(messageOverride ?? input ?? '').trim();
     if (!messageOverride) setInput('');
 
     // Build full message including file content
