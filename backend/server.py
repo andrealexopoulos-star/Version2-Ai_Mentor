@@ -36,20 +36,52 @@ from core.models import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ═══ SUPABASE INIT ═══
-supabase_admin = init_supabase()
+# ═══ RUNTIME STATE (LAZY INIT FOR AZURE STARTUP STABILITY) ═══
+supabase_admin = None
+services = {}
+cognitive_core = None
 
-# ═══ SERVICE INITIALIZATION ═══
-services = init_services(supabase_admin)
-cognitive_core = services["cognitive_core"]
 
-# ═══ ROUTE DEPS INJECTION ═══
-from routes.deps import init_route_deps
-init_route_deps(supabase_admin, OPENAI_KEY, cognitive_core)
+def _initialize_core_runtime() -> None:
+    """Initialize optional runtime services without blocking app boot."""
+    global supabase_admin, services, cognitive_core
 
-# ═══ PROMPT REGISTRY ═══
-from prompt_registry import init_prompt_registry
-init_prompt_registry(supabase_admin)
+    try:
+        supabase_admin = init_supabase()
+    except Exception as exc:
+        supabase_admin = None
+        logger.warning("Supabase initialization skipped during startup: %s", exc)
+
+    try:
+        from routes.deps import init_route_deps
+        init_route_deps(supabase_admin, OPENAI_KEY, None)
+    except Exception as exc:
+        logger.warning("Route dependency initialization skipped: %s", exc)
+
+    if not supabase_admin:
+        services = {}
+        cognitive_core = None
+        return
+
+    try:
+        services = init_services(supabase_admin) or {}
+        cognitive_core = services.get("cognitive_core")
+    except Exception as exc:
+        services = {}
+        cognitive_core = None
+        logger.warning("Optional service initialization skipped during startup: %s", exc)
+
+    try:
+        from routes.deps import init_route_deps
+        init_route_deps(supabase_admin, OPENAI_KEY, cognitive_core)
+    except Exception as exc:
+        logger.warning("Route dependency refresh skipped: %s", exc)
+
+    try:
+        from prompt_registry import init_prompt_registry
+        init_prompt_registry(supabase_admin)
+    except Exception as exc:
+        logger.warning("Prompt registry initialization skipped: %s", exc)
 
 # ═══ APP CREATION ═══
 app = FastAPI(title="Strategic Advisor API")
@@ -93,7 +125,7 @@ from routes.deps import get_current_user as _deps_get_current_user
 
 @app.get("/health")
 async def root_health():
-    return {"status": "healthy", "redis_connected": biqc_jobs.redis_connected}
+    return {"status": "ok"}
 
 @api_router.get("/")
 async def api_root():
@@ -101,14 +133,25 @@ async def api_root():
 
 @api_router.get("/health")
 async def api_health():
-    return {"status": "healthy", "redis_connected": biqc_jobs.redis_connected}
+    return {"status": "ok"}
+
+
+@app.on_event("startup")
+async def startup_core_runtime():
+    _initialize_core_runtime()
+    app.state.supabase_admin = supabase_admin
+    app.state.services = services
+    app.state.cognitive_core = cognitive_core
 
 
 @app.on_event("startup")
 async def startup_redis_runtime():
-    await biqc_jobs.initialize()
-    if biqc_jobs.redis_connected:
-        await biqc_jobs.start_worker()
+    try:
+        await biqc_jobs.initialize()
+        if biqc_jobs.redis_connected:
+            await biqc_jobs.start_worker()
+    except Exception as exc:
+        logger.warning("Redis runtime skipped during startup: %s", exc)
     app.state.biqc_jobs = biqc_jobs
 
 
@@ -309,3 +352,10 @@ api_router.include_router(business_brain_router)
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("server:app", host="0.0.0.0", port=port)
