@@ -1,6 +1,6 @@
 """
 Iteration 103: Production Forensic Backend Tests
-Tests backend API at https://business-brain-redis.preview.emergentagent.com
+Tests backend API at https://kpi-intelligence-1.preview.emergentagent.com
 """
 import pytest
 import requests

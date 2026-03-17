@@ -14,7 +14,7 @@ import os
 import time
 import json
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://business-brain-redis.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://kpi-intelligence-1.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 TEST_EMAIL = "andre@thestrategysquad.com.au"

@@ -7,7 +7,7 @@ import requests
 import os
 
 # Use REACT_APP_BACKEND_URL from frontend env as the test base URL
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://business-brain-redis.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://kpi-intelligence-1.preview.emergentagent.com').rstrip('/')
 
 
 class TestHealthAndBasicEndpoints:
