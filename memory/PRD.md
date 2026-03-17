@@ -1,4 +1,18 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 28 — Cognition Platform Hardening + Non-Generic Contract Pass (In Progress — Mar 2026)
+- **Confidence/lineage contract expanded across intelligence APIs** — `/api/unified/*` now returns `confidence_score`, `data_sources_count`, `data_freshness`, and `lineage`; unified engine now reads/writes short-lived integration snapshots (`business_core.integration_snapshots`) to reduce repeated live connector pulls.
+- **Business Brain contract upgraded for actionability + persistence semantics** — priorities now carry concern-level `recommended_action_id`, confidence/data-freshness/lineage fields; added `/api/brain/initial-calibration` (RPC-first + fallback), and migration `058_cognition_platform_hardening.sql` introducing `brain_concerns` / `brain_evaluations` compatibility views + calibration function.
+- **SoundBoard anti-generic safety net added** — enforced deterministic specificity fallback when model output is generic or providers are unavailable, with metadata returned (`confidence_score`, `data_sources_count`, `data_freshness`, `lineage`) instead of hard failing.
+- **Platform-wide cognition audit matrix shipped** — new `/api/services/cognition-platform-audit` endpoint validates SQL tables/functions, edge functions, webhooks, and serving-map routes; `/observability` now renders this matrix with test IDs.
+- **Fixes after testing iteration 146** — patched `MySoundBoard` intermittent `.trim()` crash via defensive string coercion and reduced cognition-audit cold-start timeout risk by parallel edge-function checks and tighter request timeouts.
+
+### Sprint 27 — Production Redis Recovery + File Generation Queue Unblock (Complete — Mar 2026)
+- **Production Redis blocker resolved** — Live Azure health now confirms `redis_connected=true`, `worker_running=true`, `queue_depth=0`, and `REDIS_URL configured=true` on `biqc-api.azurewebsites.net`
+- **Root cause for queued-but-never-saved files fixed** — `backend/routes/file_service.py` storage client switched from anon client to service-role client for backend worker writes, preventing Supabase Storage/Table RLS unauthorized failures in async worker context
+- **`/api/files/generate` production behavior restored** — endpoint returns `status=queued` and jobs now complete with real records in `generated_files` (verified with live output showing generated logo file row)
+- **Verification completed live** — tested against production with authenticated user flow, observed queued job IDs and downstream saved artifact row (`file_type=logo`) returned from `/api/files/list`
+- **Follow-up note** — `/api/health/detailed` may still show `overall=degraded` in some containers due to `supervisorctl` binary absence in worker checks; this is health-check noise and separate from Redis queue correctness
+
 ### Sprint 26 — Redis Queue Migration for Route-Level Background Work (Complete — Mar 2026)
 - **Unsafe route-level `asyncio.create_task()` removed from target routes** — converted route-local background spawning in `backend/routes/email.py` and `backend/routes/integrations.py` to Redis queue submissions through the existing `biqc_jobs.py` runtime
 - **Heavy API routes queue-enabled** — `backend/routes/ingestion_engine.py`, `backend/routes/hybrid_ingestion.py`, `backend/routes/research.py`, `backend/routes/marketing_intel.py`, and `backend/routes/file_service.py` now enqueue Redis jobs and return immediately with queued responses when Redis is available; inline fallback remains only when Redis is unavailable

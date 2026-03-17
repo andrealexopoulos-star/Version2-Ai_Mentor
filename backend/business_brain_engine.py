@@ -421,6 +421,27 @@ class BusinessBrainEngine:
             return f"Source signals came from {sources[0]}."
         return f"Source signals came from {', '.join(sources[:2])}."
 
+    def _recommended_action_for_concern(self, concern_id: str) -> str:
+        action_map = {
+            "cashflow_risk": "action.collections.escalate",
+            "revenue_leakage": "action.revenue.recover-leakage",
+            "pipeline_stagnation": "action.pipeline.unblock-stalled",
+            "client_response_risk": "action.client-response.sla-reset",
+            "concentration_risk": "action.revenue.diversify-concentration",
+            "margin_compression": "action.finance.margin-protection",
+            "operations_bottlenecks": "action.ops.queue-reset",
+        }
+        return action_map.get(concern_id, f"action.brain.{concern_id}")
+
+    def _freshness_from_last_seen(self, last_seen: Optional[str]) -> str:
+        parsed = _parse_dt(last_seen)
+        if not parsed:
+            return "unknown"
+        mins = int(max(0, (datetime.now(timezone.utc) - parsed).total_seconds() // 60))
+        if mins < 60:
+            return f"{mins}m"
+        return f"{mins // 60}h"
+
     def _fact_points(self, concern_id: str, metrics: Dict[str, Dict[str, Any]], threshold_hits: List[Dict[str, Any]]) -> List[str]:
         points: List[str] = []
 
@@ -1349,16 +1370,43 @@ class BusinessBrainEngine:
                 "impact": round(impact, 4),
                 "urgency": round(urgency, 4),
                 "confidence": round(confidence, 4),
+                "confidence_score": round(confidence, 4),
                 "effort": round(effort, 4),
                 "priority_score": priority_score,
                 "recommendation": recommendation,
                 "explanation": explanation,
                 "evidence": evidence,
+                "data_sources_count": max(1, len([entry for entry in evidence if entry.get("metric_value") not in (None, "", 0, 0.0)])),
+                "data_freshness": self._freshness_from_last_seen(structured_brief.get("last_seen")),
+                "evidence_lineage": {
+                    "metrics_used": [entry.get("metric_name") for entry in evidence if entry.get("metric_name")],
+                    "threshold_hits": [hit.get("metric_key") for hit in threshold_hits if hit.get("metric_key")],
+                    "model_used": concern.get("probabilistic_model") or "business_brain_priority_engine",
+                    "deterministic_rule": concern.get("deterministic_rule"),
+                },
+                "recommended_action_id": self._recommended_action_for_concern(concern_id),
                 "threshold_hits": threshold_hits,
                 **structured_brief,
                 "evaluated_at": datetime.now(timezone.utc).isoformat(),
             }
-            self._t("concern_evaluations").insert(row).execute()
+            try:
+                self._t("concern_evaluations").insert(row).execute()
+            except Exception:
+                # Backward compatibility for environments without hardening migration.
+                base_row = {
+                    "tenant_id": row["tenant_id"],
+                    "concern_id": row["concern_id"],
+                    "impact": row["impact"],
+                    "urgency": row["urgency"],
+                    "confidence": row["confidence"],
+                    "effort": row["effort"],
+                    "priority_score": row["priority_score"],
+                    "recommendation": row["recommendation"],
+                    "explanation": row["explanation"],
+                    "evidence": row["evidence"],
+                    "evaluated_at": row["evaluated_at"],
+                }
+                self._t("concern_evaluations").insert(base_row).execute()
 
             event_id = self._insert_spine_event(
                 event_type="MODEL_EXECUTED",
@@ -1406,6 +1454,15 @@ class BusinessBrainEngine:
                 "recommendation": recommendation,
                 "tier": concern.get("tier", "free"),
                 "evidence": evidence,
+                "data_sources_count": max(1, len([entry for entry in evidence if entry.get("metric_value") not in (None, "", 0, 0.0)])),
+                "data_freshness": self._freshness_from_last_seen(structured_brief.get("last_seen")),
+                "confidence_score": round(confidence, 4),
+                "evidence_lineage": {
+                    "metrics_used": [entry.get("metric_name") for entry in evidence if entry.get("metric_name")],
+                    "threshold_hits": [hit.get("metric_key") for hit in threshold_hits if hit.get("metric_key")],
+                    "model_used": concern.get("probabilistic_model") or "business_brain_priority_engine",
+                },
+                "recommended_action_id": self._recommended_action_for_concern(concern_id),
                 "threshold_hits": threshold_hits,
                 "explanation": explanation,
                 **structured_brief,
@@ -1457,9 +1514,14 @@ class BusinessBrainEngine:
                     "impact": item["impact"],
                     "urgency": item["urgency"],
                     "confidence": item["confidence"],
+                    "confidence_score": item.get("confidence_score", item["confidence"]),
                     "effort": item["effort"],
                     "tier": "free",
                     "explanation": item["explanation"],
+                    "data_sources_count": item.get("data_sources_count", 0),
+                    "data_freshness": item.get("data_freshness"),
+                    "evidence_lineage": item.get("evidence_lineage") or {},
+                    "recommended_action_id": item.get("recommended_action_id"),
                     "issue_brief": item.get("issue_brief"),
                     "why_now_brief": item.get("why_now_brief"),
                     "action_brief": item.get("action_brief"),
