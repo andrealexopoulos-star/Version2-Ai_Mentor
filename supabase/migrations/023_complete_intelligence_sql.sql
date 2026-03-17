@@ -190,6 +190,8 @@ DECLARE
     v_hours_old NUMERIC;
     v_decay_factor NUMERIC;
     v_status TEXT;
+    v_domain_map JSONB := '{"crm":"sales","accounting":"finance","marketing":"market","email":"team","scrape":"market"}'::jsonb;
+    v_evidence_domain TEXT;
 BEGIN
     FOR v_domain IN SELECT UNNEST(ARRAY['crm', 'accounting', 'marketing', 'email', 'scrape'])
     LOOP
@@ -222,6 +224,36 @@ BEGIN
             WHEN v_hours_old < 168 THEN 'aging'
             ELSE 'stale'
         END;
+
+        v_evidence_domain := COALESCE(v_domain_map ->> v_domain, v_domain);
+
+        INSERT INTO evidence_freshness (
+            id,
+            user_id,
+            domain,
+            current_confidence,
+            last_evidence_at,
+            decay_rate,
+            confidence_state,
+            active
+        )
+        VALUES (
+            gen_random_uuid(),
+            p_workspace_id,
+            v_evidence_domain,
+            GREATEST(0.05, LEAST(1.0, v_decay_factor)),
+            v_latest,
+            0.014,
+            UPPER(v_status),
+            true
+        )
+        ON CONFLICT (user_id, domain, active)
+        DO UPDATE SET
+            current_confidence = EXCLUDED.current_confidence,
+            last_evidence_at = EXCLUDED.last_evidence_at,
+            decay_rate = EXCLUDED.decay_rate,
+            confidence_state = EXCLUDED.confidence_state,
+            updated_at = NOW();
 
         v_freshness := v_freshness || jsonb_build_object(
             v_domain, jsonb_build_object(

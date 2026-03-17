@@ -232,14 +232,12 @@ async def get_brain_priorities(
     tenant_id = current_user["id"]
     engine = BusinessBrainEngine(get_sb(), tenant_id, current_user)
     try:
-        if engine.business_core_ready:
-            result = engine.get_priorities(recompute_metrics=recompute)
-        else:
-            result = await _build_transient_priorities_from_live_integrations(current_user=current_user)
-
-            # Enforce tier gating in transient mode too.
-            if result.get("tier_mode") == "free":
-                result["concerns"] = (result.get("concerns") or [])[:3]
+        if not engine.business_core_ready:
+            raise HTTPException(
+                status_code=503,
+                detail="Canonical Business Brain is not active. Apply business_core migrations and deploy ingestion/metrics before calling /api/brain/priorities.",
+            )
+        result = engine.get_priorities(recompute_metrics=recompute)
 
         concerns = [_enrich_concern_contract(item, result.get("mode", "business_core")) for item in (result.get("concerns") or [])]
         source_count = max(1, max((int(c.get("data_sources_count") or 0) for c in concerns), default=1))
@@ -287,21 +285,16 @@ async def get_brain_initial_calibration(current_user: dict = Depends(get_current
                 "tenant_id": tenant_id,
                 **rpc_result.data,
             }
-    except Exception:
-        pass
+    except Exception as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Canonical initial calibration is not active: {e}",
+        )
 
-    # Fallback to live priorities contract when SQL function is not deployed yet.
-    priorities = await get_brain_priorities(recompute=False, current_user=current_user)
-    concerns = priorities.get("concerns") or []
-    return {
-        "status": "fallback",
-        "tenant_id": tenant_id,
-        "top_5_concerns": concerns[:5],
-        "confidence_score": priorities.get("confidence_score", 0),
-        "data_coverage": min(1.0, (priorities.get("data_sources_count", 0) / 6.0)),
-        "data_sources_count": priorities.get("data_sources_count", 0),
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-    }
+    raise HTTPException(
+        status_code=503,
+        detail="Canonical initial calibration is not active. Deploy the SQL RPC and retry.",
+    )
 
 
 @router.get("/brain/concerns")

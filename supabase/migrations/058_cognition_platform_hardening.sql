@@ -128,8 +128,7 @@ BEGIN
     SELECT COUNT(*)
     INTO v_sources
     FROM integration_accounts
-    WHERE user_id = p_tenant_id
-      AND status = 'connected';
+    WHERE user_id = p_tenant_id;
 
     SELECT CASE
         WHEN total_metrics = 0 THEN 0
