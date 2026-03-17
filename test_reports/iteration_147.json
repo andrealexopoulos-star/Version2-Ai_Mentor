@@ -1,0 +1,95 @@
+{
+  "summary": "Iteration 147: P0 Blocker Code Review - business-brain-merge-ingest edge function patch VERIFIED. Local code correctly implements category-specific DATASET_PLANs. Live evidence confirms bug (Merge 404 errors, empty canonical tables). DEPLOYMENT BLOCKED: Supabase CLI unavailable.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "business-brain-merge-ingest (Supabase Edge Function)",
+        "issue": "LOCAL CODE IS CORRECT but NOT DEPLOYED - Supabase CLI unavailable in this container",
+        "priority": "CRITICAL",
+        "evidence": "Live source_runs show ALL failures with 'Merge request failed (404) /crm/v1/companies:' - old code still running in production"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "code_review_verification": {
+    "DATASET_PLAN_category_specific": {
+      "status": "PASS",
+      "details": "crm, accounting, marketing categories have ONLY their respective endpoints"
+    },
+    "fetchDatasetsForCategory_uses_plan": {
+      "status": "PASS",
+      "details": "Function correctly uses DATASET_PLAN[category] to fetch only relevant endpoints"
+    },
+    "optional_endpoints_can_be_skipped": {
+      "status": "PASS",
+      "details": "optional: true flag exists; 404/400 errors on optional endpoints are marked 'skipped' not 'failed'"
+    },
+    "partial_status_implemented": {
+      "status": "PASS",
+      "details": "runStatus = 'partial' when required failures > 0 but some succeeded"
+    },
+    "no_cross_category_fetch": {
+      "status": "PASS",
+      "details": "accountCategory from integration_accounts is passed to fetchDatasetsForCategory"
+    },
+    "both_files_synchronized": {
+      "status": "PASS",
+      "details": "supabase/functions and supabase_edge_functions copies are identical"
+    }
+  },
+  "live_database_evidence": {
+    "integration_accounts": [
+      {"provider": "Xero", "category": "accounting", "user_id": "52a60959..."},
+      {"provider": "HubSpot", "category": "crm", "user_id": "52a60959..."}
+    ],
+    "source_runs_pattern": "ALL recent runs FAILED with error: 'Merge request failed (404) /crm/v1/companies:'",
+    "canonical_tables": {
+      "customers": "0 rows",
+      "deals": "0 rows",
+      "invoices": "0 rows",
+      "payments": "0 rows",
+      "companies": "0 rows",
+      "owners": "0 rows"
+    },
+    "root_cause_confirmed": "Old code was fetching /crm/v1/companies for Xero (accounting) connector → 404"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_business_brain_merge_ingest_code_review.py"
+  ],
+  "action_items": [
+    "CRITICAL: Deploy the patched edge function to Supabase. Options: 1) Supabase Dashboard UI (paste code), 2) Machine with Supabase CLI: `supabase functions deploy business-brain-merge-ingest`",
+    "After deployment: Manually trigger ingest for tenant 52a60959... to verify fix works",
+    "Monitor source_runs for 'completed' or 'partial' status instead of 'failed'"
+  ],
+  "critical_code_review_comments": [
+    "LOCAL CODE IS CORRECT: DATASET_PLAN properly segments endpoints by category (crm/accounting/marketing)",
+    "LOCAL CODE IS CORRECT: fetchDatasetsForCategory uses DATASET_PLAN[category] - no cross-category fetches",
+    "LOCAL CODE IS CORRECT: Optional endpoints (companies, owners, payments, etc.) marked with optional: true",
+    "LOCAL CODE IS CORRECT: 404/400 errors on optional endpoints are gracefully skipped",
+    "DEPLOYMENT GAP: Supabase CLI is NOT available in this container - cannot deploy automatically"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_business_brain_merge_ingest_code_review.py"
+  ],
+  "success_rate": {
+    "code_review": "100% (6/6 verification tests passed)",
+    "live_evidence": "Confirmed bug pattern in production database",
+    "deployment": "0% (Supabase CLI unavailable)"
+  },
+  "test_credentials": "N/A - Supabase service role key used for read-only verification",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "business-brain-merge-ingest patch verified correct in local code. After deployment, verify: 1) source_runs show 'completed' or 'partial' status, 2) canonical tables (customers, deals, invoices) have data. The fix uses DATASET_PLAN to scope Merge API calls by category.",
+  "rca_of_the_issue": {
+    "root_cause": "Old edge function code fetched ALL Merge API endpoints (/crm/v1/*, /accounting/v1/*) for EVERY connector regardless of category. Xero (accounting) connector tried to fetch /crm/v1/companies → Merge API returned 404 → Hard failure → No data ingested.",
+    "evidence": "Live source_runs table shows ALL recent runs failed with 'Merge request failed (404) /crm/v1/companies:' for both accounting:xero and crm:hubspot connectors.",
+    "fix": "Local code now uses DATASET_PLAN object that maps each category (crm/accounting/marketing) to only its relevant endpoints. fetchDatasetsForCategory() uses DATASET_PLAN[category] to fetch only applicable endpoints.",
+    "deployment_status": "LOCAL CODE PATCHED - NOT DEPLOYED (Supabase CLI unavailable in container)"
+  }
+}

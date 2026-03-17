@@ -7,7 +7,7 @@ import httpx
 import json
 from datetime import datetime, timezone
 
-BASE_URL = "https://kpi-intelligence-1.preview.emergentagent.com/api"
+BASE_URL = "https://data-pipeline-test-7.preview.emergentagent.com/api"
 
 async def analyze_soundboard_responses():
     """Analyze detailed soundboard response content"""

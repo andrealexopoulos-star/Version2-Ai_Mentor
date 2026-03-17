@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Test configuration
-BASE_URL = "https://kpi-intelligence-1.preview.emergentagent.com"
+BASE_URL = "https://data-pipeline-test-7.preview.emergentagent.com"
 TEST_EMAIL = "andre@thestrategysquad.com.au"
 TEST_PASSWORD = "MasterMind2025*"
 

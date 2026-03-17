@@ -1,7 +1,7 @@
 {
   "summary": "Iteration 91: Tested SoundBoard file attachment features, onboarding bug fix, and SQL migration files. Fixed critical bug in MySoundBoard.js (missing imports/state). Confirmed onboarding fix working. All 18 backend tests pass.",
   "test_scope": {
-    "environment": "preview: https://kpi-intelligence-1.preview.emergentagent.com",
+    "environment": "preview: https://data-pipeline-test-7.preview.emergentagent.com",
     "credentials": "test1234@outlook.com / test1234! (account is NOW calibrated - has persona_calibration_status=complete)",
     "testing_type": "both backend and frontend",
     "iteration": 91

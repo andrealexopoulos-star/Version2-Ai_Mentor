@@ -4,7 +4,7 @@
 # Requires: Valid user authentication
 
 # Configuration
-API_URL="https://kpi-intelligence-1.preview.emergentagent.com/api"
+API_URL="https://data-pipeline-test-7.preview.emergentagent.com/api"
 
 # Color codes for output
 GREEN='\033[0;32m'
