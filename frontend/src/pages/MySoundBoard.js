@@ -269,7 +269,7 @@ const MySoundBoard = () => {
         thresholds: advisorContext.thresholds || {},
       } : {};
 
-      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used;
+      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage;
 
       const response = await apiClient.post('/soundboard/chat', {
         message: fullMessage,
@@ -277,9 +277,31 @@ const MySoundBoard = () => {
         intelligence_context: intelligenceContext,
         mode: currentMode.backend_mode,
       });
-      ({ reply, conversation_id, conversation_title, file: generatedFile, suggested_actions, intent, model_used } = response.data);
+      ({
+        reply,
+        conversation_id,
+        conversation_title,
+        file: generatedFile,
+        suggested_actions,
+        intent,
+        model_used,
+        confidence_score,
+        data_sources_count,
+        data_freshness,
+        lineage,
+      } = response.data);
 
-      const assistantMsg = { role: 'assistant', content: reply, suggested_actions: suggested_actions || [], intent, model_used };
+      const assistantMsg = {
+        role: 'assistant',
+        content: reply,
+        suggested_actions: suggested_actions || [],
+        intent,
+        model_used,
+        confidence_score,
+        data_sources_count,
+        data_freshness,
+        lineage,
+      };
       if (generatedFile) assistantMsg.file = generatedFile;
       setMessages(prev => [...prev, assistantMsg]);
       
@@ -692,6 +714,37 @@ const MySoundBoard = () => {
                               style={{ background: 'rgba(255,255,255,0.05)', color: '#4A5568', fontFamily: fontFamily.mono }}>
                               {message.intent.domain.toUpperCase()} · {message.model_used || 'AI'}
                             </span>
+                          </div>
+                        )}
+                        {message.role === 'assistant' && (
+                          <div className="mt-2 flex flex-wrap gap-1.5" data-testid="soundboard-response-metadata-row">
+                            {typeof message.confidence_score === 'number' && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.5 rounded"
+                                style={{ background: 'rgba(16,185,129,0.12)', color: '#10B981', fontFamily: fontFamily.mono }}
+                                data-testid="soundboard-response-confidence-chip"
+                              >
+                                confidence {(message.confidence_score * 100).toFixed(0)}%
+                              </span>
+                            )}
+                            {typeof message.data_sources_count === 'number' && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.5 rounded"
+                                style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA', fontFamily: fontFamily.mono }}
+                                data-testid="soundboard-response-sources-chip"
+                              >
+                                {message.data_sources_count} sources
+                              </span>
+                            )}
+                            {message.data_freshness && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.5 rounded"
+                                style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B', fontFamily: fontFamily.mono }}
+                                data-testid="soundboard-response-freshness-chip"
+                              >
+                                freshness {message.data_freshness}
+                              </span>
+                            )}
                           </div>
                         )}
                         {/* File download card when backend generates a file */}

@@ -12,6 +12,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends
 from intelligence_live_truth import get_live_integration_truth, get_latest_snapshot_context, get_recent_observation_events
 from supabase_client import init_supabase
+from integration_snapshot_cache import get_snapshot, set_snapshot
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -58,8 +59,76 @@ async def _brain_page_summary(sb, current_user: dict, page_name: str) -> List[Di
         return []
 
 
+def _safe_parse_iso(value: Any) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+    except Exception:
+        return None
+
+
+def _build_data_contract(data: Dict[str, Any], page_name: str, *, lineage_extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    connected_sources = [
+        key for key in ('crm', 'accounting', 'email', 'marketing')
+        if data.get(key, {}).get('connected')
+    ]
+    has_snapshot = bool(data.get('snapshot'))
+    live_signals = data.get('live_signals') or []
+    has_live_signals = bool(live_signals)
+
+    snapshot_generated_at = (data.get('snapshot') or {}).get('generated_at')
+    latest_obs = None
+    if has_live_signals:
+        latest_obs = max(
+            (_safe_parse_iso(evt.get('observed_at') or evt.get('created_at')) for evt in live_signals),
+            default=None,
+        )
+
+    best_ts = latest_obs or _safe_parse_iso(snapshot_generated_at)
+    freshness = 'unknown'
+    if best_ts:
+        minutes = int(max(0, (datetime.now(timezone.utc) - best_ts).total_seconds() // 60))
+        freshness = f"{minutes}m" if minutes < 60 else f"{minutes // 60}h"
+
+    source_count = len(connected_sources) + (1 if has_snapshot else 0) + (1 if has_live_signals else 0)
+    confidence = 0.35 + (0.12 * len(connected_sources)) + (0.08 if has_snapshot else 0) + (0.08 if has_live_signals else 0)
+    confidence = max(0.2, min(0.97, confidence))
+
+    lineage = {
+        'engine': 'unified_intelligence_v2',
+        'page': page_name,
+        'connected_sources': connected_sources,
+        'snapshot_available': has_snapshot,
+        'live_signals_count': len(live_signals),
+        'cache_hit': bool((data.get('_cache') or {}).get('cache_hit')),
+        'snapshot_generated_at': snapshot_generated_at,
+        'last_observed_at': latest_obs.isoformat() if latest_obs else None,
+    }
+    if lineage_extra:
+        lineage.update(lineage_extra)
+
+    return {
+        'confidence_score': round(confidence, 4),
+        'data_sources_count': source_count,
+        'data_freshness': freshness,
+        'lineage': lineage,
+    }
+
+
 async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
     """Fetch ALL data from ALL connected integrations in parallel."""
+    cache_key = 'unified_integration_bundle_v1'
+    cached = get_snapshot(sb, user_id, cache_key, max_age_minutes=10)
+    if cached and isinstance(cached.get('payload'), dict):
+        payload = cached.get('payload') or {}
+        payload['_cache'] = {
+            'cache_hit': True,
+            'source_key': cache_key,
+            'generated_at': cached.get('generated_at'),
+        }
+        return payload
+
     data = {
         'crm': {'connected': False, 'deals': [], 'contacts': [], 'companies': []},
         'accounting': {'connected': False, 'invoices': [], 'payments': [], 'balances': []},
@@ -68,6 +137,7 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
         'profile': None,
         'snapshot': None,
         'live_signals': [],
+        '_cache': {'cache_hit': False, 'source_key': cache_key},
     }
 
     live_truth = get_live_integration_truth(sb, user_id)
@@ -138,6 +208,22 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
     except Exception:
         pass
 
+    data_sources_count = sum(1 for k in ('crm', 'accounting', 'email', 'marketing') if data.get(k, {}).get('connected'))
+    if data.get('snapshot'):
+        data_sources_count += 1
+    if data.get('live_signals'):
+        data_sources_count += 1
+    confidence = min(0.97, 0.35 + (0.1 * data_sources_count))
+    set_snapshot(
+        sb,
+        user_id,
+        cache_key,
+        data,
+        data_sources_count=data_sources_count,
+        confidence_score=confidence,
+        lineage={'engine': 'unified_intelligence_v2', 'source': 'live_fetch'},
+        ttl_minutes=10,
+    )
     return data
 
 
@@ -415,7 +501,7 @@ async def advisor_intelligence(current_user: dict = Depends(get_current_user)):
 
     all_alerts.sort(key=lambda x: {'high': 0, 'medium': 1, 'low': 2}.get(x.get('severity', 'low'), 3))
 
-    return {
+    response = {
         'integrations': {
             'crm': data['crm']['connected'],
             'accounting': data['accounting']['connected'],
@@ -433,6 +519,8 @@ async def advisor_intelligence(current_user: dict = Depends(get_current_user)):
         'people': {'capacity': people['capacity'], 'fatigue': people['fatigue']},
         'market': {'positioning': market['positioning']},
     }
+    response.update(_build_data_contract(data, 'advisor'))
+    return response
 
 
 @router.get("/unified/revenue")
@@ -442,7 +530,9 @@ async def revenue_intelligence(current_user: dict = Depends(get_current_user)):
     data = await _fetch_all_integration_data(sb, current_user['id'])
     signals = _compute_revenue_signals(data)
     brain_summary = await _brain_page_summary(sb, current_user, 'revenue')
-    return {'connected': data['crm']['connected'] or data['accounting']['connected'], 'signals': signals, 'brain_summary': brain_summary}
+    response = {'connected': data['crm']['connected'] or data['accounting']['connected'], 'signals': signals, 'brain_summary': brain_summary}
+    response.update(_build_data_contract(data, 'revenue', lineage_extra={'brain_summary_items': len(brain_summary)}))
+    return response
 
 
 @router.get("/unified/operations")
@@ -451,7 +541,9 @@ async def operations_intelligence(current_user: dict = Depends(get_current_user)
     sb = init_supabase()
     data = await _fetch_all_integration_data(sb, current_user['id'])
     signals = _compute_operations_signals(data)
-    return {'connected': data['crm']['connected'], 'signals': signals}
+    response = {'connected': data['crm']['connected'], 'signals': signals}
+    response.update(_build_data_contract(data, 'operations'))
+    return response
 
 
 @router.get("/unified/risk")
@@ -461,7 +553,9 @@ async def risk_intelligence(current_user: dict = Depends(get_current_user)):
     data = await _fetch_all_integration_data(sb, current_user['id'])
     signals = _compute_risk_signals(data)
     brain_summary = await _brain_page_summary(sb, current_user, 'risk')
-    return {'connected': any([data['crm']['connected'], data['accounting']['connected'], data['email']['connected']]), 'signals': signals, 'brain_summary': brain_summary}
+    response = {'connected': any([data['crm']['connected'], data['accounting']['connected'], data['email']['connected']]), 'signals': signals, 'brain_summary': brain_summary}
+    response.update(_build_data_contract(data, 'risk', lineage_extra={'brain_summary_items': len(brain_summary)}))
+    return response
 
 
 @router.get("/unified/people")
@@ -470,7 +564,9 @@ async def people_intelligence(current_user: dict = Depends(get_current_user)):
     sb = init_supabase()
     data = await _fetch_all_integration_data(sb, current_user['id'])
     signals = _compute_people_signals(data)
-    return {'connected': data['email']['connected'], 'signals': signals}
+    response = {'connected': data['email']['connected'], 'signals': signals}
+    response.update(_build_data_contract(data, 'people'))
+    return response
 
 
 @router.get("/unified/market")
@@ -479,4 +575,6 @@ async def market_intelligence_unified(current_user: dict = Depends(get_current_u
     sb = init_supabase()
     data = await _fetch_all_integration_data(sb, current_user['id'])
     signals = _compute_market_signals(data)
-    return {'connected': True, 'signals': signals}
+    response = {'connected': True, 'signals': signals}
+    response.update(_build_data_contract(data, 'market'))
+    return response

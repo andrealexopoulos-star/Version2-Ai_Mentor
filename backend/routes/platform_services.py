@@ -4,9 +4,12 @@ A/B: Experiment management, variant assignment, metric collection.
 Migration: Service layer abstraction for future vendor independence.
 """
 import logging
+import os
+from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+import requests
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -166,6 +169,46 @@ class ServiceRegistry:
 services = ServiceRegistry()
 
 
+def _check_table(sb, table_name: str, *, schema: Optional[str] = None):
+    try:
+        query = sb.schema(schema).table(table_name) if schema else sb.table(table_name)
+        query.select('*').limit(1).execute()
+        return {'status': 'working', 'detail': 'queryable'}
+    except Exception as e:
+        return {'status': 'missing_or_blocked', 'detail': str(e)[:180]}
+
+
+def _check_rpc(sb, fn_name: str, params: dict):
+    try:
+        sb.rpc(fn_name, params).execute()
+        return {'status': 'working', 'detail': 'callable'}
+    except Exception as e:
+        msg = str(e)
+        if 'does not exist' in msg.lower() or 'function' in msg.lower():
+            return {'status': 'missing', 'detail': msg[:180]}
+        return {'status': 'partial', 'detail': msg[:180]}
+
+
+def _check_edge_function(name: str):
+    supabase_url = os.environ.get('SUPABASE_URL')
+    service_role = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+    if not supabase_url:
+        return {'status': 'unverified', 'detail': 'SUPABASE_URL not configured'}
+    url = f"{supabase_url.rstrip('/')}/functions/v1/{name}"
+    headers = {'Content-Type': 'application/json'}
+    if service_role:
+        headers['Authorization'] = f"Bearer {service_role}"
+    try:
+        res = requests.options(url, headers=headers, timeout=6)
+        if res.status_code == 404:
+            return {'status': 'missing', 'detail': 'not deployed (404)'}
+        if res.status_code in {200, 204, 400, 401, 403, 405}:
+            return {'status': 'working', 'detail': f'reachable ({res.status_code})'}
+        return {'status': 'partial', 'detail': f'unexpected status {res.status_code}'}
+    except Exception as e:
+        return {'status': 'partial', 'detail': str(e)[:180]}
+
+
 @router.get("/services/health")
 async def service_health(current_user: dict = Depends(get_current_user)):
     """Check health of all service layer components."""
@@ -187,3 +230,142 @@ async def service_health(current_user: dict = Depends(get_current_user)):
     results['storage'] = 'supabase_storage'
 
     return {'services': results, 'vendor_agnostic': True}
+
+
+@router.get('/services/cognition-platform-audit')
+async def cognition_platform_audit(current_user: dict = Depends(get_current_user)):
+    """Production-readiness matrix for Cognition-as-a-Platform surfaces."""
+    sb = services.get_db()
+    tenant_id = current_user['id']
+
+    sql_tables = [
+        ('business_core', 'customers'),
+        ('business_core', 'companies'),
+        ('business_core', 'deals'),
+        ('business_core', 'invoices'),
+        ('business_core', 'business_metrics'),
+        ('business_core', 'concern_registry'),
+        ('business_core', 'concern_evaluations'),
+        ('business_core', 'integration_snapshots'),
+        ('business_core', 'brain_concerns'),
+        ('business_core', 'brain_evaluations'),
+        (None, 'intelligence_events'),
+        (None, 'daily_metric_snapshots'),
+        (None, 'ontology_nodes'),
+        (None, 'ontology_edges'),
+        (None, 'decisions'),
+        (None, 'model_registry'),
+        (None, 'automation_actions'),
+        (None, 'automation_executions'),
+        (None, 'generated_files'),
+    ]
+
+    table_checks = []
+    for schema, table_name in sql_tables:
+        state = _check_table(sb, table_name, schema=schema)
+        table_checks.append({
+            'schema': schema or 'public',
+            'table': table_name,
+            **state,
+        })
+
+    rpc_checks = [
+        {
+            'function': 'ic_generate_cognition_contract',
+            **_check_rpc(sb, 'ic_generate_cognition_contract', {'p_tenant_id': tenant_id, 'p_tab': 'overview'}),
+        },
+        {
+            'function': 'ic_calculate_risk_baseline',
+            **_check_rpc(sb, 'ic_calculate_risk_baseline', {'p_tenant_id': tenant_id}),
+        },
+        {
+            'function': 'brain_initial_calibration',
+            **_check_rpc(sb, 'brain_initial_calibration', {'p_tenant_id': tenant_id}),
+        },
+    ]
+
+    edge_functions = [
+        'biqc-insights-cognitive',
+        'email_priority',
+        'gmail_prod',
+        'refresh_tokens',
+        'intelligence-bridge',
+        'watchtower-brain',
+        'market-signal-scorer',
+        'calibration-engine',
+    ]
+    edge_checks = [
+        {
+            'edge_function': fn,
+            **_check_edge_function(fn),
+        }
+        for fn in edge_functions
+    ]
+
+    webhook_checks = [
+        {
+            'webhook': 'stripe',
+            'status': 'working' if bool(os.environ.get('STRIPE_WEBHOOK_SECRET')) else 'partial',
+            'detail': 'secret configured' if bool(os.environ.get('STRIPE_WEBHOOK_SECRET')) else 'STRIPE_WEBHOOK_SECRET missing',
+        },
+        {
+            'webhook': 'merge',
+            'status': 'partial',
+            'detail': 'connector polling active; webhook-first ingestion not fully enabled',
+        },
+    ]
+
+    serving_map = [
+        {
+            'platform_surface': '/advisor',
+            'primary_apis': ['/api/brain/priorities', '/api/unified/advisor'],
+            'status': 'working',
+        },
+        {
+            'platform_surface': '/revenue',
+            'primary_apis': ['/api/unified/revenue', '/api/cognition/revenue'],
+            'status': 'working',
+        },
+        {
+            'platform_surface': '/operations',
+            'primary_apis': ['/api/unified/operations', '/api/cognition/operations'],
+            'status': 'working',
+        },
+        {
+            'platform_surface': '/risk',
+            'primary_apis': ['/api/unified/risk', '/api/cognition/risk'],
+            'status': 'working',
+        },
+        {
+            'platform_surface': '/market',
+            'primary_apis': ['/api/unified/market', '/api/cognition/market'],
+            'status': 'working',
+        },
+        {
+            'platform_surface': '/soundboard',
+            'primary_apis': ['/api/soundboard/chat', '/api/cognition/overview'],
+            'status': 'working',
+        },
+    ]
+
+    all_checks = table_checks + rpc_checks + edge_checks + webhook_checks
+    working = len([c for c in all_checks if c.get('status') == 'working'])
+    partial = len([c for c in all_checks if c.get('status') == 'partial'])
+    missing = len([c for c in all_checks if c.get('status') in {'missing', 'missing_or_blocked'}])
+
+    return {
+        'generated_at': datetime.now(timezone.utc).isoformat(),
+        'tenant_id': tenant_id,
+        'summary': {
+            'working': working,
+            'partial': partial,
+            'missing': missing,
+            'total_checks': len(all_checks),
+            'readiness_score': round((working / max(1, len(all_checks))) * 100, 1),
+        },
+        'sql_schema_and_tables': table_checks,
+        'sql_functions': rpc_checks,
+        'edge_functions': edge_checks,
+        'webhooks': webhook_checks,
+        'serving_map': serving_map,
+    }

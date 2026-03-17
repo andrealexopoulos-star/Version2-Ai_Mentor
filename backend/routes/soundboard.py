@@ -145,6 +145,79 @@ def _build_grounded_exec_fallback(*, has_crm: bool, has_accounting: bool, has_em
     return "\n\n".join(lines)
 
 
+def _generic_response_detected(text: str) -> bool:
+    cleaned = (text or "").strip().lower()
+    if not cleaned:
+        return True
+    generic_markers = [
+        "it depends",
+        "in general",
+        "generally speaking",
+        "every business",
+        "for most businesses",
+        "without more context",
+        "you may want to",
+        "consider improving",
+    ]
+    marker_hit = any(marker in cleaned for marker in generic_markers)
+    digit_count = sum(ch.isdigit() for ch in cleaned)
+    return marker_hit or digit_count < 2
+
+
+def _build_specificity_fallback(*, profile: Dict[str, Any], top_concerns: List[Dict[str, Any]], coverage_pct: float, live_signal_count: int) -> str:
+    business_name = (profile or {}).get("business_name") or "your business"
+    industry = (profile or {}).get("industry") or "your industry"
+    top = top_concerns[0] if top_concerns else {}
+    issue = top.get("issue_brief") or top.get("decision_label") or "an unresolved priority in your operating system"
+    action = top.get("action_brief") or top.get("recommendation") or "assign an owner and execute one containment action this week"
+    risk = top.get("if_ignored_brief") or "the issue will compound into revenue timing and delivery pressure"
+    freshness = top.get("data_freshness") or "unknown"
+    source_count = top.get("data_sources_count") or 1
+
+    return (
+        f"Situation: For {business_name} in {industry}, BIQc has enough evidence to isolate one immediate decision area: {issue}. "
+        f"Coverage is {coverage_pct}% with {live_signal_count} live signals in this cycle.\n\n"
+        f"Decision: Execute this now — {action}.\n\n"
+        f"This week: Assign one owner, lock a deadline, and review measurable movement within 48 hours. "
+        f"Current evidence footprint: {source_count} source stream(s), freshness {freshness}.\n\n"
+        f"Risk if delayed: {risk}."
+    )
+
+
+def _soundboard_contract_meta(*, has_crm: bool, has_accounting: bool, has_email: bool, live_signal_count: int, live_signal_age_hours: Optional[float], coverage_pct: float, top_concerns: List[Dict[str, Any]]) -> Dict[str, Any]:
+    data_sources_count = int(has_crm) + int(has_accounting) + int(has_email)
+    if live_signal_count > 0:
+        data_sources_count += 1
+    if top_concerns:
+        data_sources_count += 1
+
+    freshness = "unknown"
+    if live_signal_age_hours is not None:
+        freshness = f"{int(round(live_signal_age_hours * 60))}m" if live_signal_age_hours < 1 else f"{int(round(live_signal_age_hours))}h"
+
+    confidence = 0.28 + (0.12 * int(has_crm)) + (0.12 * int(has_accounting)) + (0.1 * int(has_email))
+    confidence += 0.12 if live_signal_count > 0 else 0
+    confidence += 0.16 * min(1.0, float(coverage_pct or 0) / 100.0)
+    confidence = max(0.2, min(0.98, confidence))
+
+    return {
+        "confidence_score": round(confidence, 4),
+        "data_sources_count": max(1, data_sources_count),
+        "data_freshness": freshness,
+        "lineage": {
+            "engine": "soundboard_v2",
+            "coverage_pct": coverage_pct,
+            "live_signals_count": live_signal_count,
+            "connected_sources": {
+                "crm": has_crm,
+                "accounting": has_accounting,
+                "email": has_email,
+            },
+            "top_concern_ids": [c.get("concern_id") for c in (top_concerns or []) if isinstance(c, dict)],
+        },
+    }
+
+
 # ─── Strategic Advisor System Prompt (Sprint 4 Enhanced) ───
 _SOUNDBOARD_FALLBACK = """\
 You are {user_first_name}'s BIQc Unified Intelligence Assistant — the world's most capable AI advisor for small and medium-sized businesses. You combine live integration data, strategic intelligence snapshots, and deep user calibration to deliver insights that are precise, actionable, and grounded in real business data.
@@ -735,6 +808,31 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     logger.info(f"[GUARDRAIL] user={user_id[:8]} coverage={coverage_pct}% status={guardrail_status} critical_missing={len(missing_critical)}")
 
+    top_brain_concerns: List[Dict[str, Any]] = []
+    try:
+        concern_res = (
+            sb.schema("business_core")
+            .table("brain_evaluations")
+            .select("concern_id,priority_score,recommendation,issue_brief,why_now_brief,action_brief,if_ignored_brief,data_sources_count,data_freshness")
+            .eq("tenant_id", user_id)
+            .order("evaluated_at", desc=True)
+            .limit(3)
+            .execute()
+        )
+        top_brain_concerns = concern_res.data or []
+    except Exception:
+        top_brain_concerns = []
+
+    contract_meta = _soundboard_contract_meta(
+        has_crm=has_crm,
+        has_accounting=has_accounting,
+        has_email=has_email,
+        live_signal_count=live_signal_count,
+        live_signal_age_hours=live_signal_age_hours,
+        coverage_pct=coverage_pct,
+        top_concerns=top_brain_concerns,
+    )
+
     # ═══ FULL BUSINESS DNA ═══
     biz_context = ""
     if profile:
@@ -1031,6 +1129,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "context_fields": context_fields,
             "live_signals": live_signal_count,
             "conversation_id": req.conversation_id,
+            **contract_meta,
         }
 
     # P1: Signal freshness injection
@@ -1087,6 +1186,18 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 calibration_context += f"\nAdvisor Tone Preference: {preferences}"
         if calibration_context:
             guardrail_injection += f"\n[CALIBRATION CONTEXT (no integrations connected — use this data for personalised guidance):{calibration_context}]\n"
+
+    if top_brain_concerns:
+        concern_lines = ["\n═══ TOP BRAIN CONCERNS (REFERENCE THESE SPECIFICALLY) ═══"]
+        for idx, concern in enumerate(top_brain_concerns[:3], start=1):
+            concern_lines.append(
+                f"{idx}) {concern.get('concern_id', 'concern')} | priority={concern.get('priority_score', 0)} | "
+                f"issue={concern.get('issue_brief') or concern.get('why_now_brief') or concern.get('recommendation') or 'n/a'} | "
+                f"action={concern.get('action_brief') or concern.get('recommendation') or 'n/a'}"
+            )
+        guardrail_injection += "\n" + "\n".join(concern_lines) + "\n"
+    else:
+        guardrail_injection += "\n[NO PERSISTED BRAIN CONCERNS AVAILABLE THIS TURN — USE LIVE SIGNALS + BUSINESS DNA ONLY, DO NOT GENERATE GENERIC THEORY.]\n"
 
     system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + signal_injection + guardrail_injection + contract_injection + f"\n\nCONTEXT:\n{user_context}"
 
@@ -1308,6 +1419,15 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             )
             response = sanitise_output(response)
 
+        if _generic_response_detected(response):
+            response = _build_specificity_fallback(
+                profile=profile or {},
+                top_concerns=top_brain_concerns,
+                coverage_pct=coverage_pct,
+                live_signal_count=live_signal_count,
+            )
+            response = sanitise_output(response)
+
         _actual_tokens = len(system_message.split()) + len(clean_message.split()) + len(response.split())
         log_llm_call_to_db(
             tenant_id=user_id, model_name=response_model, endpoint='soundboard/chat',
@@ -1448,14 +1568,41 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:6]] if guardrail_status == "DEGRADED" else [],
+            **contract_meta,
         }
 
     except RuntimeError as e:
         logger.error(f"Soundboard provider error: {e}")
-        raise HTTPException(status_code=503, detail=str(e))
+        fallback = _build_specificity_fallback(
+            profile=profile or {},
+            top_concerns=top_brain_concerns,
+            coverage_pct=coverage_pct,
+            live_signal_count=live_signal_count,
+        )
+        return {
+            "reply": fallback,
+            "conversation_id": req.conversation_id,
+            "guardrail": guardrail_status,
+            "coverage_pct": coverage_pct,
+            "provider_error": str(e),
+            **contract_meta,
+        }
     except Exception as e:
         logger.error(f"Soundboard chat error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        fallback = _build_specificity_fallback(
+            profile=profile or {},
+            top_concerns=top_brain_concerns,
+            coverage_pct=coverage_pct,
+            live_signal_count=live_signal_count,
+        )
+        return {
+            "reply": fallback,
+            "conversation_id": req.conversation_id,
+            "guardrail": guardrail_status,
+            "coverage_pct": coverage_pct,
+            "runtime_error": str(e),
+            **contract_meta,
+        }
 
 
 @router.patch("/soundboard/conversations/{conversation_id}")

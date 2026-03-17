@@ -55,6 +55,51 @@ def _transient_fact_points(card: Dict[str, Any]) -> List[str]:
     return facts
 
 
+def _data_freshness_from_iso(value: Any) -> str:
+    if not value:
+        return "unknown"
+    try:
+        dt = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+        mins = int(max(0, (datetime.now(timezone.utc) - dt).total_seconds() // 60))
+        if mins < 60:
+            return f"{mins}m"
+        return f"{mins // 60}h"
+    except Exception:
+        return "unknown"
+
+
+def _normalize_lineage(concern: Dict[str, Any], mode: str) -> Dict[str, Any]:
+    if isinstance(concern.get("evidence_lineage"), dict):
+        return concern.get("evidence_lineage") or {}
+    evidence = concern.get("evidence") or []
+    metric_names = []
+    for item in evidence:
+        if isinstance(item, dict) and item.get("metric_name"):
+            metric_names.append(item.get("metric_name"))
+    return {
+        "engine_mode": mode,
+        "metrics_used": metric_names,
+        "model_used": concern.get("probabilistic_model") or "business_brain_priority_engine",
+        "deterministic_rule": concern.get("deterministic_rule"),
+    }
+
+
+def _enrich_concern_contract(concern: Dict[str, Any], mode: str) -> Dict[str, Any]:
+    enriched = dict(concern)
+    evidence = concern.get("evidence") or []
+    if "confidence_score" not in enriched:
+        enriched["confidence_score"] = concern.get("confidence")
+    if "data_sources_count" not in enriched:
+        enriched["data_sources_count"] = max(1, len([e for e in evidence if isinstance(e, dict)])) if evidence else 1
+    if not enriched.get("data_freshness"):
+        enriched["data_freshness"] = _data_freshness_from_iso(concern.get("last_seen") or concern.get("time_window", {}).get("evaluated_at"))
+    if not enriched.get("recommended_action_id"):
+        concern_id = concern.get("concern_id") or "unknown"
+        enriched["recommended_action_id"] = f"action.brain.{concern_id}"
+    enriched["lineage"] = _normalize_lineage(concern, mode)
+    return enriched
+
+
 async def _build_transient_priorities_from_live_integrations(current_user: Dict[str, Any]) -> Dict[str, Any]:
     """Non-fallback, live Brain priorities when business_core schema is not active.
 
@@ -117,6 +162,15 @@ async def _build_transient_priorities_from_live_integrations(current_user: Dict[
             "last_seen": card.get("timestamp") or datetime.now(timezone.utc).isoformat(),
             "escalation_state": "critical" if risk_score >= 90 else "elevated" if risk_score >= 70 else "monitoring",
             "decision_label": card.get("signal_summary") or card.get("decision_summary") or bucket.replace("_", " ").title(),
+            "confidence_score": round(confidence, 4),
+            "data_sources_count": max(1, len(card.get("evidence_refs") or [])),
+            "data_freshness": _data_freshness_from_iso(card.get("timestamp")),
+            "recommended_action_id": f"action.brain.{concern_by_bucket.get(bucket, 'operations_bottlenecks')}",
+            "evidence_lineage": {
+                "engine_mode": "live_transient",
+                "source": card.get("source"),
+                "signal_key": card.get("signal_key"),
+            },
         })
 
     concerns.sort(key=lambda x: x.get("priority_score", 0), reverse=True)
@@ -187,6 +241,14 @@ async def get_brain_priorities(
             if result.get("tier_mode") == "free":
                 result["concerns"] = (result.get("concerns") or [])[:3]
 
+        concerns = [_enrich_concern_contract(item, result.get("mode", "business_core")) for item in (result.get("concerns") or [])]
+        source_count = max(1, max((int(c.get("data_sources_count") or 0) for c in concerns), default=1))
+        avg_conf = round(sum(float(c.get("confidence_score") or 0) for c in concerns) / max(1, len(concerns)), 4)
+        freshest = "unknown"
+        freshness_candidates = [c.get("data_freshness") for c in concerns if c.get("data_freshness")]
+        if freshness_candidates:
+            freshest = freshness_candidates[0]
+
         return {
             "tenant_id": tenant_id,
             "business_core_ready": engine.business_core_ready,
@@ -196,11 +258,50 @@ async def get_brain_priorities(
             "all_clear": bool(result.get("all_clear", False)),
             "model_execution_id": result.get("model_execution_id"),
             "source_event_ids": result.get("source_event_ids") or [],
-            "concerns": result.get("concerns") or [],
+            "concerns": concerns,
+            "confidence_score": avg_conf,
+            "data_sources_count": source_count,
+            "data_freshness": freshest,
+            "lineage": {
+                "engine": "business_brain",
+                "mode": result.get("mode", "business_core"),
+                "source_event_ids": result.get("source_event_ids") or [],
+                "model_execution_id": result.get("model_execution_id"),
+            },
             "generated_at": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to compute business priorities: {e}")
+
+
+@router.get("/brain/initial-calibration")
+async def get_brain_initial_calibration(current_user: dict = Depends(get_current_user)):
+    """First-pass cognitive calibration payload for onboarding + executive summary."""
+    tenant_id = current_user["id"]
+    sb = get_sb()
+    try:
+        rpc_result = sb.rpc("brain_initial_calibration", {"p_tenant_id": tenant_id}).execute()
+        if rpc_result.data:
+            return {
+                "status": "ok",
+                "tenant_id": tenant_id,
+                **rpc_result.data,
+            }
+    except Exception:
+        pass
+
+    # Fallback to live priorities contract when SQL function is not deployed yet.
+    priorities = await get_brain_priorities(recompute=False, current_user=current_user)
+    concerns = priorities.get("concerns") or []
+    return {
+        "status": "fallback",
+        "tenant_id": tenant_id,
+        "top_5_concerns": concerns[:5],
+        "confidence_score": priorities.get("confidence_score", 0),
+        "data_coverage": min(1.0, (priorities.get("data_sources_count", 0) / 6.0)),
+        "data_sources_count": priorities.get("data_sources_count", 0),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 @router.get("/brain/concerns")
