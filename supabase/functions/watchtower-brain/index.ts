@@ -52,14 +52,27 @@ serve(async (req) => {
   // Handle CORS preflight check
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
+  if (req.method === 'GET') {
+    return new Response(JSON.stringify({ ok: true, function: 'watchtower-brain', prompt_mode: 'inline', generated_at: new Date().toISOString() }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
   try {
     const { message, history } = await req.json()
+    const apiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: 'OPENAI_API_KEY missing' }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     // Call OpenAI with low temperature for strict adherence to instructions
     const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -75,6 +88,12 @@ serve(async (req) => {
     })
 
     const data = await openAiResponse.json()
+    if (!openAiResponse.ok) {
+      return new Response(JSON.stringify({ error: data?.error?.message || 'watchtower-brain upstream failure' }), {
+        status: openAiResponse.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
     return new Response(data.choices[0].message.content, {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

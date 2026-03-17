@@ -11,6 +11,31 @@
 -- FRESH: confidence restored to watchtower level
 -- ═══════════════════════════════════════════════════════════════
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS evidence_freshness (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  domain TEXT NOT NULL CHECK (domain IN ('finance', 'sales', 'operations', 'team', 'market')),
+  current_confidence NUMERIC NOT NULL DEFAULT 0.5 CHECK (current_confidence >= 0 AND current_confidence <= 1),
+  last_evidence_at TIMESTAMPTZ,
+  decay_rate NUMERIC NOT NULL DEFAULT 0.002,
+  confidence_state TEXT NOT NULL DEFAULT 'FRESH' CHECK (confidence_state IN ('FRESH', 'AGING', 'STALE')),
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (user_id, domain, active)
+);
+
+CREATE INDEX IF NOT EXISTS idx_evidence_freshness_user_domain_active
+  ON evidence_freshness(user_id, domain, active);
+
+CREATE INDEX IF NOT EXISTS idx_evidence_freshness_last_evidence
+  ON evidence_freshness(last_evidence_at DESC);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON evidence_freshness TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON evidence_freshness TO service_role;
+
 ALTER TABLE evidence_freshness ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
@@ -24,6 +49,20 @@ DO $$ BEGIN
       USING (auth.uid() = user_id);
   END IF;
 END $$;
+
+CREATE OR REPLACE FUNCTION touch_evidence_freshness_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_evidence_freshness_touch ON evidence_freshness;
+CREATE TRIGGER trg_evidence_freshness_touch
+BEFORE UPDATE ON evidence_freshness
+FOR EACH ROW
+EXECUTE FUNCTION touch_evidence_freshness_updated_at();
 
 CREATE OR REPLACE FUNCTION decay_evidence(p_user_id UUID)
 RETURNS JSON AS $$

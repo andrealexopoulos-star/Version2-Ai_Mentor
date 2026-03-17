@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS governance_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL,
     event_type TEXT NOT NULL,
-    source_system TEXT NOT NULL CHECK (source_system IN ('crm', 'accounting', 'marketing', 'scrape', 'manual')),
+    source_system TEXT NOT NULL CHECK (source_system IN ('crm', 'accounting', 'marketing', 'email', 'scrape', 'manual')),
     signal_reference TEXT,
     signal_timestamp TIMESTAMP NOT NULL,
     confidence_score NUMERIC CHECK (confidence_score BETWEEN 0 AND 1),

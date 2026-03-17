@@ -74,17 +74,17 @@ DECLARE
     v_overall_score NUMERIC := 0;
     v_connected_count INT := 0;
 BEGIN
-    -- Call all sub-functions with error handling
-    BEGIN v_workforce := compute_workforce_health(p_workspace_id); EXCEPTION WHEN OTHERS THEN v_workforce := '{"status":"error"}'::JSONB; END;
-    BEGIN v_scenarios := compute_revenue_scenarios(p_workspace_id); EXCEPTION WHEN OTHERS THEN v_scenarios := '{"status":"error"}'::JSONB; END;
-    BEGIN v_scores := compute_insight_scores(p_workspace_id); EXCEPTION WHEN OTHERS THEN v_scores := '{"status":"error"}'::JSONB; END;
-    BEGIN v_pressure := compute_pressure_levels(p_workspace_id); EXCEPTION WHEN OTHERS THEN v_pressure := '{"status":"error"}'::JSONB; END;
-    BEGIN v_freshness := compute_evidence_freshness(p_workspace_id); EXCEPTION WHEN OTHERS THEN v_freshness := '{"status":"error"}'::JSONB; END;
-    BEGIN v_contradictions := detect_contradictions(p_workspace_id); EXCEPTION WHEN OTHERS THEN v_contradictions := '{"count":0}'::JSONB; END;
-    BEGIN v_silence := detect_silence(p_workspace_id); EXCEPTION WHEN OTHERS THEN v_silence := '{"silence_level":"unknown"}'::JSONB; END;
-    BEGIN v_escalations := get_escalation_summary(p_workspace_id); EXCEPTION WHEN OTHERS THEN v_escalations := '{"active_escalations":0}'::JSONB; END;
-    BEGIN v_completeness := compute_profile_completeness(p_workspace_id); EXCEPTION WHEN OTHERS THEN v_completeness := '{"completeness_pct":0}'::JSONB; END;
-    BEGIN v_readiness := compute_data_readiness(p_workspace_id); EXCEPTION WHEN OTHERS THEN v_readiness := '{"readiness_pct":0}'::JSONB; END;
+    -- Call all sub-functions directly. No silent fallback behavior.
+    v_workforce := compute_workforce_health(p_workspace_id);
+    v_scenarios := compute_revenue_scenarios(p_workspace_id);
+    v_scores := compute_insight_scores(p_workspace_id);
+    v_pressure := compute_pressure_levels(p_workspace_id);
+    v_freshness := compute_evidence_freshness(p_workspace_id);
+    v_contradictions := detect_contradictions(p_workspace_id);
+    v_silence := detect_silence(p_workspace_id);
+    v_escalations := get_escalation_summary(p_workspace_id);
+    v_completeness := compute_profile_completeness(p_workspace_id);
+    v_readiness := compute_data_readiness(p_workspace_id);
 
     -- Compute overall health
     SELECT COUNT(*) INTO v_connected_count

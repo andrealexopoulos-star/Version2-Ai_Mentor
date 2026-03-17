@@ -23,13 +23,11 @@ from routes.auth import get_current_user
 async def _brain_page_summary(sb, current_user: dict, page_name: str) -> List[Dict[str, Any]]:
     try:
         from business_brain_engine import BusinessBrainEngine
-        from routes.business_brain import _build_transient_priorities_from_live_integrations
 
         engine = BusinessBrainEngine(sb, current_user['id'], current_user)
-        if engine.business_core_ready:
-            result = engine.get_priorities(recompute_metrics=False)
-        else:
-            result = await _build_transient_priorities_from_live_integrations(current_user)
+        if not engine.business_core_ready:
+            return []
+        result = engine.get_priorities(recompute_metrics=False)
 
         concerns = result.get('concerns') or []
         if page_name == 'revenue':

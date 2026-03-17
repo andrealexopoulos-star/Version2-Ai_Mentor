@@ -72,9 +72,25 @@ const MarketPage = () => {
       }
       setReports(snaps);
     }).catch(() => {});
-    apiClient.get('/intelligence/watchtower').then(res => { if (res.data?.positions) setWatchtower(res.data); }).catch(() => {});
-    apiClient.get('/intelligence/pressure').then(res => { if (res.data?.pressures) setPressure(res.data); }).catch(() => {});
-    apiClient.get('/intelligence/freshness').then(res => { if (res.data?.freshness) setFreshness(res.data); }).catch(() => {});
+    apiClient.get('/intelligence/watchtower')
+      .then(res => { if (res.data) setWatchtower(res.data); })
+      .catch((error) => setWatchtower({
+        error: error?.response?.data?.detail || 'Canonical watchtower positions are unavailable.',
+        events: [],
+        positions: {},
+      }));
+    apiClient.get('/intelligence/pressure')
+      .then(res => { if (res.data?.pressures) setPressure(res.data); })
+      .catch((error) => setPressure({
+        has_data: false,
+        message: error?.response?.data?.detail || 'Canonical pressure calibration is unavailable.',
+      }));
+    apiClient.get('/intelligence/freshness')
+      .then(res => { if (res.data?.freshness) setFreshness(res.data); })
+      .catch((error) => setFreshness({
+        has_data: false,
+        message: error?.response?.data?.detail || 'Canonical evidence freshness is unavailable.',
+      }));
     apiClient.get('/cognition/market').then(res => {
       if (res.data && res.data.status !== 'MIGRATION_REQUIRED') {
         setCognitionMarket(res.data);
@@ -143,6 +159,7 @@ const MarketPage = () => {
     const text = `${event?.domain || ''} ${event?.signal || ''} ${event?.title || ''}`.toLowerCase();
     return /(market|competitor|demand|saturation|pricing|trend)/.test(text);
   }) : [];
+  const watchtowerMessage = watchtower?.error || '';
   const pressureMessage = pressure?.message || '';
   const freshnessMessage = freshness?.message || '';
 
@@ -205,7 +222,11 @@ const MarketPage = () => {
                 testId={`market-external-signal-${index}`}
               />
             )) : (
-              <EmptyStateCard title="No external market alert is active." detail="The market feed is calm right now. BIQc will keep external signals separate from your internal channel performance so the next move stays clear." testId="market-external-empty" />
+              <EmptyStateCard
+                title={watchtowerMessage ? 'Canonical watchtower feed is unavailable.' : 'No external market alert is active.'}
+                detail={watchtowerMessage || 'The market feed is calm right now. BIQc will keep external signals separate from your internal channel performance so the next move stays clear.'}
+                testId="market-external-empty"
+              />
             )}
           </div>
 

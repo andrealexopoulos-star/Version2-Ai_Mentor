@@ -243,7 +243,7 @@ serve(async (req: Request) => {
         const accountToken = account.account_token as string;
 
         const [companies, contacts, owners, deals, invoices, payments, activities, leads, campaigns] = await Promise.all([
-          fetchPaged(mergeApiKey, accountToken, "/crm/v1/companies", modifiedAfter),
+          fetchPaged(mergeApiKey, accountToken, "/crm/v1/accounts", modifiedAfter),
           fetchPaged(mergeApiKey, accountToken, "/crm/v1/contacts", modifiedAfter),
           fetchPaged(mergeApiKey, accountToken, "/crm/v1/users", modifiedAfter),
           fetchPaged(mergeApiKey, accountToken, "/crm/v1/opportunities", modifiedAfter),

@@ -1438,35 +1438,32 @@ async def get_watchtower_events(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Get Watchtower events for current workspace
-    
-    These are authoritative intelligence statements
+    Canonical Watchtower endpoint.
+    Returns SQL-computed positions when available plus the latest grounded events.
     """
-    from workspace_helpers import get_user_account
-    from watchtower_store import get_watchtower_store
-    
     user_id = current_user["id"]
-    
+
     try:
-        account = await get_user_account(get_sb(), user_id)
-        events = []
+        sb = get_sb()
+        positions = None
+        try:
+            rpc_result = sb.rpc('compute_watchtower_positions', {'p_workspace_id': user_id}).execute()
+            positions = rpc_result.data if rpc_result and rpc_result.data else None
+        except Exception as rpc_error:
+            raise HTTPException(status_code=503, detail=f"Canonical watchtower SQL unavailable: {rpc_error}")
 
-        if account:
-            account_id = account["id"]
-            watchtower = get_watchtower_store()
-            events = await watchtower.get_events(account_id, status=status)
-        else:
-            logger.warning(f"No workspace found for user {user_id}; falling back to observation_events")
+        observation_state = get_recent_observation_events(sb, user_id, limit=20)
+        events = build_watchtower_events(observation_state.get("events") or [], limit=10)
 
-        if not events:
-            observation_state = get_recent_observation_events(get_sb(), user_id, limit=20)
-            events = build_watchtower_events(observation_state.get("events") or [], limit=10)
-        
-        logger.info(f"✅ Watchtower events fetched for user {user_id}: {len(events)} events")
-        
+        logger.info(f"✅ Watchtower state fetched for user {user_id}: {len(events)} events")
+
         return {
+            "status": "computed",
+            "has_data": bool((positions or {}).get("positions") or events),
+            "positions": (positions or {}).get("positions", {}),
             "events": events,
-            "count": len(events)
+            "count": len(events),
+            "computed_at": (positions or {}).get("computed_at"),
         }
     except HTTPException:
         raise

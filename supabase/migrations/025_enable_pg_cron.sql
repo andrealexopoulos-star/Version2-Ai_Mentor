@@ -12,9 +12,26 @@
 
 -- Enable the extension (if not already done via Dashboard)
 CREATE EXTENSION IF NOT EXISTS pg_cron;
+CREATE EXTENSION IF NOT EXISTS pg_net;
 
 -- Grant usage to postgres (required for Supabase)
 GRANT USAGE ON SCHEMA cron TO postgres;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'biqc-evidence-freshness') THEN
+    PERFORM cron.unschedule((SELECT jobid FROM cron.job WHERE jobname = 'biqc-evidence-freshness' LIMIT 1));
+  END IF;
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'biqc-silence-detection') THEN
+    PERFORM cron.unschedule((SELECT jobid FROM cron.job WHERE jobname = 'biqc-silence-detection' LIMIT 1));
+  END IF;
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'biqc-contradiction-check') THEN
+    PERFORM cron.unschedule((SELECT jobid FROM cron.job WHERE jobname = 'biqc-contradiction-check' LIMIT 1));
+  END IF;
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'biqc-daily-summary') THEN
+    PERFORM cron.unschedule((SELECT jobid FROM cron.job WHERE jobname = 'biqc-daily-summary' LIMIT 1));
+  END IF;
+END $$;
 
 
 -- ═══════════════════════════════════════════════════════════════
