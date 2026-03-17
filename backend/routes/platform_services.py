@@ -202,7 +202,7 @@ def _check_edge_function(name: str):
     if service_role:
         headers['Authorization'] = f"Bearer {service_role}"
     try:
-        res = requests.options(url, headers=headers, timeout=2)
+        res = requests.get(url, headers=headers, timeout=2)
         if res.status_code == 404:
             return {'status': 'missing', 'detail': 'not deployed (404)'}
         if res.status_code in {200, 204, 400, 401, 403, 405}:
