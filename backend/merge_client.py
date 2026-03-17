@@ -192,7 +192,7 @@ class MergeClient:
         
         return await self._make_request(
             "GET",
-            "/crm/v1/companies",
+            "/crm/v1/accounts",
             account_token,
             params=params
         )
