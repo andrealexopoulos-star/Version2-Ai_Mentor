@@ -1,4 +1,10 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 30 — Business Brain Ingest Root Cause + Category-Scoped Patch (In Progress — Mar 2026)
+- **Live root cause confirmed from `business_core.source_runs`** — recent runs for both `accounting:xero` and `crm:hubspot` are failing with `Merge request failed (404) /crm/v1/companies:` and the canonical `business_core` tables (`customers`, `deals`, `invoices`, `payments`, `companies`, `owners`) remain empty.
+- **Canonical ingest function patched locally** — `supabase/functions/business-brain-merge-ingest/index.ts` now uses category-scoped `DATASET_PLAN`s so CRM connectors only fetch CRM endpoints, accounting connectors only fetch accounting endpoints, and marketing connectors only fetch marketing endpoints. Optional datasets now skip 400/404 endpoint gaps instead of failing the whole run; required dataset failures surface as `partial`/`failed` in `business_core.source_runs`.
+- **Deployment-ready mirror kept in sync** — the same ingest patch was mirrored into `supabase_edge_functions/business-brain-merge-ingest/index.ts` to avoid the previous split-path confusion.
+- **Verification completed** — testing agent iteration `147` verified the code change is correct and independently confirmed the live failure pattern, but the patched edge function is **NOT DEPLOYED YET** because Supabase CLI is unavailable in this container. Immediate next step: deploy the patched edge function via Supabase Dashboard or external CLI, then trigger ingest and verify `source_runs` transitions to `completed`/`partial` and canonical tables populate.
+
 ### Sprint 29 — Cognition Truth Audit + Business-Core Activation Bridge (In Progress — Mar 2026)
 - **Live cognition truth audit tightened** — `backend/routes/platform_services.py` now probes edge functions with realistic request shapes, so `intelligence-bridge` is no longer falsely marked broken on a GET-only health check. `watchtower-brain` now reports as reachable-but-partial when its required system prompt is missing.
 - **Canonical pipeline gaps are now visible in audit output** — `/api/services/cognition-platform-audit` now includes `business-brain-merge-ingest` and `business-brain-metrics-cron`, exposing the real missing ingestion/metric-computation pipeline instead of hiding it from the readiness score.
@@ -308,13 +314,15 @@ Run `/app/supabase_migrations/create_integration_status.sql` in Supabase SQL edi
 ## Remaining Backlog
 
 ### P0
-1. **Run SQL migration** `create_integration_status.sql` in Supabase (vwwandhoydemcybltoxz) to enable `records_count` caching for integration status
-2. **Run SQL migration** `supabase/migrations/055_ai_rate_limiting.sql` in Supabase SQL editor to activate AI usage/rate limiting
-3. **Fix Outlook/Gmail OAuth in production** — Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_REDIRECT_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in Azure App Service
-4. **Provide real AI provider keys in environment** — preview currently has `OPENAI_API_KEY=CONFIGURED_IN_AZURE` placeholder and no `GOOGLE_API_KEY`, so graceful errors are expected until real keys are present
-5. **Let latest frontend deploy finish and re-verify production pages after image-pin workflow change merges**
-6. Configure analytics provider keys (Mixpanel/Amplitude/PostHog)
-7. Create `push_devices` table in Supabase for device token storage
+1. **Deploy patched `business-brain-merge-ingest` edge function to Supabase** and immediately trigger a fresh run; verify `business_core.source_runs` changes from `failed` to `completed`/`partial`
+2. **Confirm canonical data population** in `business_core.customers`, `deals`, `invoices`, `payments`, `companies`, and `owners` after the patched ingest runs
+3. **Run SQL migration** `create_integration_status.sql` in Supabase (vwwandhoydemcybltoxz) to enable `records_count` caching for integration status
+4. **Run SQL migration** `supabase/migrations/055_ai_rate_limiting.sql` in Supabase SQL editor to activate AI usage/rate limiting
+5. **Fix Outlook/Gmail OAuth in production** — Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_REDIRECT_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in Azure App Service
+6. **Provide real AI provider keys in environment** — preview currently has `OPENAI_API_KEY=CONFIGURED_IN_AZURE` placeholder and no `GOOGLE_API_KEY`, so graceful errors are expected until real keys are present
+7. **Let latest frontend deploy finish and re-verify production pages after image-pin workflow change merges**
+8. Configure analytics provider keys (Mixpanel/Amplitude/PostHog)
+9. Create `push_devices` table in Supabase for device token storage
 
 ### P1
 8. Tighten Data Confidence scoring so connected live-signal routes do not still under-score healthy pages
