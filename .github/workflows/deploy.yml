@@ -77,8 +77,8 @@ jobs:
           RUN pip install --no-cache-dir -r requirements.txt
           COPY backend/ .
           EXPOSE 8001
-          HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD curl -f http://localhost:8001/api/health || exit 1
-          CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "1"]
+          HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD sh -c 'curl -f http://localhost:${WEBSITES_PORT:-${PORT:-8001}}/api/health || exit 1'
+          CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port ${PORT:-${WEBSITES_PORT:-8001}} --workers 1"]
           EOF
 
       - name: Build & push backend image
@@ -116,6 +116,11 @@ jobs:
             --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
             --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
 
+          az webapp config appsettings set \
+            --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --settings WEBSITES_PORT=80
+
       - name: Deploy backend to Azure App Service
         run: |
           az webapp config container set \
@@ -125,6 +130,11 @@ jobs:
             --docker-registry-server-url https://${{ env.REGISTRY }} \
             --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
             --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
+
+          az webapp config appsettings set \
+            --name ${{ env.AZURE_WEBAPP_BACKEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --settings WEBSITES_PORT=8001 PORT=8001
 
       - name: Restart frontend
         run: |

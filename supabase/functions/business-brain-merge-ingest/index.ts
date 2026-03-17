@@ -2,6 +2,25 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
 type JsonMap = Record<string, unknown>;
+type DatasetKey =
+  | "companies"
+  | "contacts"
+  | "owners"
+  | "deals"
+  | "invoices"
+  | "payments"
+  | "activities"
+  | "leads"
+  | "campaigns";
+
+type DatasetCollection = Record<DatasetKey, JsonMap[]>;
+type DatasetStatus = {
+  endpoint: string;
+  optional: boolean;
+  status: "completed" | "skipped" | "failed";
+  count?: number;
+  error?: string;
+};
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -65,6 +84,142 @@ const FIELD_MAP: Record<string, Record<string, string[]>> = {
     activity_date: ["occurred_at", "activity_date", "created_at"],
   },
 };
+
+const DATASET_PLAN: Record<string, Array<{ key: DatasetKey; endpoint: string; optional?: boolean }>> = {
+  crm: [
+    { key: "companies", endpoint: "/crm/v1/accounts", optional: true },
+    { key: "contacts", endpoint: "/crm/v1/contacts" },
+    { key: "owners", endpoint: "/crm/v1/users", optional: true },
+    { key: "deals", endpoint: "/crm/v1/opportunities" },
+    { key: "activities", endpoint: "/crm/v1/engagements", optional: true },
+    { key: "leads", endpoint: "/crm/v1/leads", optional: true },
+  ],
+  accounting: [
+    { key: "invoices", endpoint: "/accounting/v1/invoices" },
+    { key: "payments", endpoint: "/accounting/v1/payments", optional: true },
+  ],
+  marketing: [
+    { key: "campaigns", endpoint: "/marketing/v1/campaigns", optional: true },
+  ],
+};
+
+function emptyDatasets(): DatasetCollection {
+  return {
+    companies: [],
+    contacts: [],
+    owners: [],
+    deals: [],
+    invoices: [],
+    payments: [],
+    activities: [],
+    leads: [],
+    campaigns: [],
+  };
+}
+
+function isIgnorableMergeDatasetError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return [
+    "merge request failed (400)",
+    "merge request failed (404)",
+    "unsupported",
+    "not supported",
+    "not enabled",
+    "not available",
+    "unknown path",
+    "disabled",
+  ].some((token) => normalized.includes(token));
+}
+
+function countDatasets(datasets: DatasetCollection): Record<DatasetKey, number> {
+  return {
+    companies: datasets.companies.length,
+    contacts: datasets.contacts.length,
+    owners: datasets.owners.length,
+    deals: datasets.deals.length,
+    invoices: datasets.invoices.length,
+    payments: datasets.payments.length,
+    activities: datasets.activities.length,
+    leads: datasets.leads.length,
+    campaigns: datasets.campaigns.length,
+  };
+}
+
+async function fetchDatasetsForCategory(
+  mergeApiKey: string,
+  accountToken: string,
+  category: string,
+  modifiedAfter?: string,
+): Promise<{
+  datasets: DatasetCollection;
+  datasetStatus: Record<string, DatasetStatus>;
+  runStatus: "completed" | "partial";
+}> {
+  const datasets = emptyDatasets();
+  const datasetStatus: Record<string, DatasetStatus> = {};
+  const plan = DATASET_PLAN[category] || [];
+
+  if (!plan.length) {
+    return { datasets, datasetStatus, runStatus: "completed" };
+  }
+
+  const results = await Promise.all(
+    plan.map(async (spec) => {
+      try {
+        const rows = await fetchPaged(mergeApiKey, accountToken, spec.endpoint, modifiedAfter);
+        return { spec, rows };
+      } catch (err) {
+        return {
+          spec,
+          error: err instanceof Error ? err.message : "Unknown dataset error",
+        };
+      }
+    }),
+  );
+
+  let requiredFailures = 0;
+  let successfulFetches = 0;
+
+  for (const result of results) {
+    if ("rows" in result) {
+      datasets[result.spec.key] = result.rows;
+      datasetStatus[result.spec.key] = {
+        endpoint: result.spec.endpoint,
+        optional: Boolean(result.spec.optional),
+        status: "completed",
+        count: result.rows.length,
+      };
+      successfulFetches += 1;
+      continue;
+    }
+
+    const ignored = Boolean(result.spec.optional && isIgnorableMergeDatasetError(result.error));
+    datasetStatus[result.spec.key] = {
+      endpoint: result.spec.endpoint,
+      optional: Boolean(result.spec.optional),
+      status: ignored ? "skipped" : "failed",
+      error: result.error,
+    };
+
+    if (!ignored) {
+      requiredFailures += 1;
+    }
+  }
+
+  if (requiredFailures > 0 && successfulFetches === 0) {
+    const failureSummary = Object.entries(datasetStatus)
+      .filter(([, info]) => info.status === "failed")
+      .map(([key, info]) => `${key}: ${info.error}`)
+      .join(" | ");
+    throw new Error(`${category} ingestion failed: ${failureSummary}`);
+  }
+
+  return {
+    datasets,
+    datasetStatus,
+    runStatus: requiredFailures > 0 ? "partial" : "completed",
+  };
+}
 
 function firstValue(obj: JsonMap, paths: string[], fallback: unknown = null): unknown {
   for (const path of paths) {
@@ -207,12 +362,17 @@ serve(async (req: Request) => {
     const accountsResp = await accountsQuery;
     if (accountsResp.error) throw new Error(accountsResp.error.message);
 
-    const accounts = (accountsResp.data || []).filter((r) => ["crm", "accounting", "marketing"].includes((r.category || "").toLowerCase()));
+    const accounts = (accountsResp.data || []).filter((r) => {
+      const category = `${r.category || ""}`.toLowerCase();
+      const accountToken = `${r.account_token || ""}`.trim();
+      return ["crm", "accounting", "marketing"].includes(category) && accountToken.length > 0;
+    });
 
     const summaries: JsonMap[] = [];
     for (const account of accounts) {
       const tenant = account.user_id as string;
-      const connectorType = `${account.category}:${(account.provider || "merge").toString().toLowerCase()}`;
+      const accountCategory = `${account.category || ""}`.toLowerCase();
+      const connectorType = `${accountCategory}:${(account.provider || "merge").toString().toLowerCase()}`;
 
       const latestRunResp = await sb
         .schema("business_core")
@@ -241,18 +401,14 @@ serve(async (req: Request) => {
 
       try {
         const accountToken = account.account_token as string;
-
-        const [companies, contacts, owners, deals, invoices, payments, activities, leads, campaigns] = await Promise.all([
-          fetchPaged(mergeApiKey, accountToken, "/crm/v1/accounts", modifiedAfter),
-          fetchPaged(mergeApiKey, accountToken, "/crm/v1/contacts", modifiedAfter),
-          fetchPaged(mergeApiKey, accountToken, "/crm/v1/users", modifiedAfter),
-          fetchPaged(mergeApiKey, accountToken, "/crm/v1/opportunities", modifiedAfter),
-          fetchPaged(mergeApiKey, accountToken, "/accounting/v1/invoices", modifiedAfter),
-          fetchPaged(mergeApiKey, accountToken, "/accounting/v1/payments", modifiedAfter),
-          fetchPaged(mergeApiKey, accountToken, "/crm/v1/engagements", modifiedAfter),
-          fetchPaged(mergeApiKey, accountToken, "/crm/v1/leads", modifiedAfter).catch(() => []),
-          fetchPaged(mergeApiKey, accountToken, "/marketing/v1/campaigns", modifiedAfter).catch(() => []),
-        ]);
+        const { datasets, datasetStatus, runStatus } = await fetchDatasetsForCategory(
+          mergeApiKey,
+          accountToken,
+          accountCategory,
+          modifiedAfter,
+        );
+        const counts = countDatasets(datasets);
+        const { companies, contacts, owners, deals, invoices, payments, activities } = datasets;
 
         const companyRows = companies.map((c) => {
           const externalId = `${connectorType}:company:${firstValue(c, FIELD_MAP.companies.external_id, crypto.randomUUID())}`;
@@ -378,41 +534,23 @@ serve(async (req: Request) => {
             json_payload: {
               connector_type: connectorType,
               source_id: sourceId,
-              counts: {
-                companies: companyRows.length,
-                contacts: customerRows.length,
-                owners: ownerRows.length,
-                deals: dealRows.length,
-                invoices: invoiceRows.length,
-                payments: paymentRows.length,
-                activities: activityRows.length,
-                leads: leads.length,
-                campaigns: campaigns.length,
-              },
+              category: accountCategory,
+              counts,
             },
             confidence_score: 0.92,
           });
         }
 
         await sb.schema("business_core").from("source_runs").update({
-          status: "completed",
+          status: runStatus,
           ingested_at: new Date().toISOString(),
           run_meta: {
             provider: account.provider,
-            category: account.category,
+            category: accountCategory,
             modified_after: modifiedAfter || null,
             dry_run: dryRun,
-            counts: {
-              companies: companyRows.length,
-              contacts: customerRows.length,
-              owners: ownerRows.length,
-              deals: dealRows.length,
-              invoices: invoiceRows.length,
-              payments: paymentRows.length,
-              activities: activityRows.length,
-              leads: leads.length,
-              campaigns: campaigns.length,
-            },
+            fetch_status: datasetStatus,
+            counts,
           },
         }).eq("source_id", sourceId);
 
@@ -420,18 +558,9 @@ serve(async (req: Request) => {
           tenant_id: tenant,
           connector_type: connectorType,
           source_id: sourceId,
-          status: "completed",
-          counts: {
-            companies: companyRows.length,
-            contacts: customerRows.length,
-            owners: ownerRows.length,
-            deals: dealRows.length,
-            invoices: invoiceRows.length,
-            payments: paymentRows.length,
-            activities: activityRows.length,
-            leads: leads.length,
-            campaigns: campaigns.length,
-          },
+          status: runStatus,
+          counts,
+          fetch_status: datasetStatus,
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown ingestion error";

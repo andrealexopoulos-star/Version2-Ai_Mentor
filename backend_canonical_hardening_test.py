@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 # Test configuration
-BASE_URL = "https://kpi-intelligence-1.preview.emergentagent.com/api"
+BASE_URL = "https://data-pipeline-test-7.preview.emergentagent.com/api"
 CREDENTIALS = {
     "email": "andre@thestrategysquad.com.au", 
     "password": "MasterMind2025*"
