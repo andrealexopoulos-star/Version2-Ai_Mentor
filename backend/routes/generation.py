@@ -85,6 +85,11 @@ def _format_advisor_brain_prompt():
     return format_advisor_brain_prompt
 
 
+def _parse_advisor_brain_response(text: str):
+    from routes.profile import parse_advisor_brain_response
+    return parse_advisor_brain_response(text)
+
+
 # ==================== CHAT ROUTES ====================
 
 @router.post("/chat", response_model=ChatResponse)
@@ -228,7 +233,7 @@ Be specific to their situation. Reference actual business details."""
     prompt = await format_advisor_brain_prompt(task_prompt, context, "analysis", communication_style)
     
     session_id = f"analysis_{uuid.uuid4()}"
-    ai_response = await get_ai_response(
+    ai_response = await _get_ai_response()(
         prompt,
         "business_analysis",
         session_id,
@@ -238,7 +243,7 @@ Be specific to their situation. Reference actual business details."""
     )
     
     # Parse response with Advisor Brain pattern
-    insights = parse_advisor_brain_response(ai_response)
+    insights = _parse_advisor_brain_response(ai_response)
     
     # Store analysis
     analysis_id = str(uuid.uuid4())
@@ -305,7 +310,7 @@ async def create_document(document: DocumentCreate, current_user: dict = Depends
 async def get_documents(document_type: Optional[str] = None, current_user: dict = Depends(get_current_user)):
     """Get user's documents - SUPABASE VERSION"""
     docs = await get_user_documents_supabase(
-        supabase_admin,
+        get_sb(),
         current_user["id"],
         document_type=document_type,
         limit=100
@@ -524,7 +529,7 @@ Each insight must include Why explanation, Confidence level, Actions, and Citati
     prompt = await format_advisor_brain_prompt(task_prompt, context, "diagnosis", communication_style)
     
     session_id = f"diagnosis_{uuid.uuid4()}"
-    response_text = await get_ai_response(
+    response_text = await _get_ai_response()(
         prompt,
         "business_analysis",
         session_id,
@@ -534,7 +539,7 @@ Each insight must include Why explanation, Confidence level, Actions, and Citati
     )
     
     # Parse with Advisor Brain pattern
-    insights = parse_advisor_brain_response(response_text)
+    insights = _parse_advisor_brain_response(response_text)
     
     # Save diagnosis
     diagnosis_doc = {

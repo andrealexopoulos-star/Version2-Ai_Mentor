@@ -2,21 +2,63 @@ import { CognitiveMesh } from '../components/LoadingSystems';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
-import { supabase } from '../context/SupabaseAuthContext';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
 import VoiceChat from '../components/VoiceChat';
 import { fontFamily } from "../design-system/tokens";
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import { useLocation } from 'react-router-dom';
 import {
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
   Loader2, ChevronLeft, ChevronRight, MoreVertical, Video, Phone,
   Paperclip, FileText, Download, Zap, Eye, Clock
 } from 'lucide-react';
 
+const getSoundboardErrorMessage = (error) => {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  const reply = error?.response?.data?.reply;
+  if (typeof reply === 'string' && reply.trim()) return reply;
+  return 'Failed to send message';
+};
+
+const buildAdvisorSuggestedOptions = (context) => {
+  if (!context) return [];
+  const action = context.actionBrief || context.actionNow || 'decide the next action';
+  const risk = context.ifIgnoredBrief || context.ifIgnored || 'risk will compound';
+  const issue = context.issueBrief || context.title || 'this priority';
+  return [
+    {
+      label: 'Help me prioritise the immediate next move',
+      prompt: `Use this BIQc brief to prioritise the immediate next move: ${issue}. Why now: ${context.whyNowBrief || context.whyNow}. Action now: ${action}.`,
+    },
+    {
+      label: 'Turn this into an owner action plan',
+      prompt: `Turn this BIQc brief into a concrete owner action plan with owners, sequencing, and today/this-week timing: ${issue}. Action now: ${action}.`,
+    },
+    {
+      label: 'What happens if we wait?',
+      prompt: `Using this BIQc brief, explain the likely 30/60/90 consequence path if we wait: ${issue}. If ignored: ${risk}.`,
+    },
+  ];
+};
+
+const buildAdvisorAssistantMessage = (context) => {
+  if (!context) return null;
+  return {
+    role: 'assistant',
+    content: `I have the BIQc brief for this priority:\n\n${context.issueBrief || context.title}\n\nWhy now: ${context.whyNowBrief || context.whyNow}\nAction now: ${context.actionBrief || context.actionNow}\nIf ignored: ${context.ifIgnoredBrief || context.ifIgnored}\n\nChoose one of the guided next moves below or ask your own question.`,
+    suggested_actions: buildAdvisorSuggestedOptions(context),
+    intent: { domain: context.domain || 'general' },
+    model_used: 'BIQc handoff',
+  };
+};
+
 
 const MySoundBoard = () => {
+  const location = useLocation();
   const { user } = useSupabaseAuth();
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
   const { isChatOpen, openChat, closeAll, activeDrawer } = useMobileDrawer();
@@ -27,6 +69,11 @@ const MySoundBoard = () => {
     // Check if user arrived from a proactive insight bubble
     const prefill = sessionStorage.getItem('biqc_soundboard_prefill');
     if (prefill) { sessionStorage.removeItem('biqc_soundboard_prefill'); return prefill; }
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const prompt = params.get('prompt');
+      if (prompt) return prompt;
+    } catch {}
     return '';
   });
   const [loading, setLoading] = useState(false);
@@ -38,30 +85,64 @@ const MySoundBoard = () => {
   const [recordingScans, setRecordingScans] = useState({});
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [selectedMode, setSelectedMode] = useState('auto');
+  const [advisorHandoff, setAdvisorHandoff] = useState(() => {
+    try {
+      const fromState = location.state?.advisorSoundboardContext;
+      if (fromState) return fromState;
+      const stored = sessionStorage.getItem('biqc_soundboard_handoff');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
 
-  // BIQc AI Modes — branded like Gemini's Fast/Thinking/Pro
   const BIQC_MODES = [
-    { id: 'auto',     label: 'BIQc Auto',     desc: 'Automatically selects the best AI for your query', icon: '⚡', backend_mode: 'auto',     minTier: 'free' },
-    { id: 'fast',     label: 'Fast',           desc: 'Quick answers using Gemini 3 Flash',               icon: '🚀', backend_mode: 'fast',     minTier: 'free' },
-    { id: 'thinking', label: 'Pro Thinking',   desc: 'Deep reasoning with gpt-5.4 — solves complex problems', icon: '🧠', backend_mode: 'thinking', minTier: 'foundation' },
-    { id: 'pro',      label: 'Pro',            desc: 'Advanced analysis with Gemini 3.1 Pro (1M context)', icon: '✦', backend_mode: 'pro',      minTier: 'foundation' },
-    { id: 'trinity',  label: 'Trinity',        desc: 'ChatGPT 5.4 + Claude + Gemini in parallel — most powerful', icon: '◈', backend_mode: 'trinity',  minTier: 'foundation' },
+    { id: 'auto', label: 'BIQc Auto', desc: 'Adaptive routing across BIQc cognition pathways', icon: '⚡', backend_mode: 'auto', minTier: 'free' },
+    { id: 'normal', label: 'Normal', desc: 'Default paid conversation mode', icon: '◉', backend_mode: 'normal', minTier: 'foundation' },
+    { id: 'thinking', label: 'Deep Thinking', desc: 'High-depth strategic reasoning mode', icon: '🧠', backend_mode: 'thinking', minTier: 'foundation' },
+    { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'foundation' },
+    { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'pro' },
   ];
 
-  // Filter modes by user's subscription tier
   const userTier = (user?.subscription_tier || 'free');
-  const tierOrder = ['free', 'foundation', 'growth', 'custom'];
-  const userTierIdx = tierOrder.indexOf(userTier);
   const isAndre = user?.email === 'andre@thestrategysquad.com.au';
-  const availableModes = BIQC_MODES.filter(m => {
-    if (isAndre) return true; // Andre has all modes
-    const minIdx = tierOrder.indexOf(m.minTier);
-    return userTierIdx >= minIdx;
+  const tierRank = { free: 0, starter: 0, foundation: 1, growth: 2, custom: 3, pro: 2, enterprise: 3 };
+  const normalizedTier = String(userTier).toLowerCase();
+  const isPaidUser = (tierRank[normalizedTier] ?? 0) >= 1;
+  const canUseTrinity = isAndre || ['pro', 'enterprise', 'growth', 'custom'].includes(normalizedTier);
+
+  const availableModes = BIQC_MODES.filter((mode) => {
+    if (isAndre) return true;
+    if (mode.id === 'trinity') return canUseTrinity;
+    return (tierRank[normalizedTier] ?? 0) >= (tierRank[mode.minTier] ?? 0);
   });
+
+  useEffect(() => {
+    if (isPaidUser && selectedMode === 'auto') {
+      setSelectedMode('normal');
+      return;
+    }
+    if (!availableModes.some((mode) => mode.id === selectedMode)) {
+      setSelectedMode(isPaidUser ? 'normal' : 'auto');
+    }
+  }, [isPaidUser, selectedMode, availableModes]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
+
+  const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
+  const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode) || BIQC_MODES[0];
+  const soundboardExplainability = {
+    whyVisible: `Soundboard is in ${activeMode?.label || 'BIQc Auto'} mode and is grounded in your live BIQc context for this workspace.`,
+    whyNow: latestAssistantMessage?.intent?.domain
+      ? `Current thread focus: ${latestAssistantMessage.intent.domain}. BIQc has detected this as the dominant decision context.`
+      : 'Use this workspace to interrogate the highest-priority issue before it compounds.',
+    nextAction: latestAssistantMessage?.suggested_actions?.[0]?.label
+      ? `Start with: ${latestAssistantMessage.suggested_actions[0].label}`
+      : 'Ask one concrete question with a time horizon (today / this week / this month) for sharper decisions.',
+    ifIgnored: 'Unresolved uncertainty can delay execution and widen the gap between signal detection and action.',
+  };
 
   const fetchScanUsage = useCallback(async (forceRefresh = false) => {
     try {
@@ -86,6 +167,18 @@ const MySoundBoard = () => {
     fetchConversations();
     fetchScanUsage();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const incoming = location.state?.advisorSoundboardContext;
+    if (!incoming) return;
+    setAdvisorHandoff(incoming);
+    sessionStorage.setItem('biqc_soundboard_handoff', JSON.stringify(incoming));
+  }, [location.state]);
+
+  useEffect(() => {
+    if (!advisorHandoff || messages.length > 0) return;
+    setMessages([buildAdvisorAssistantMessage(advisorHandoff)]);
+  }, [advisorHandoff, messages.length]);
 
   useEffect(() => {
     // Only scroll if there are messages (not on initial load)
@@ -131,16 +224,17 @@ const MySoundBoard = () => {
     inputRef.current?.focus();
   };
 
-  const sendMessage = async () => {
-    if ((!input.trim() && !attachedFile) || loading) return;
+  const sendMessage = async (messageOverride = null, contextOverride = null) => {
+    if ((!input.trim() && !attachedFile) && !messageOverride) return;
+    if (loading) return;
 
-    const userMessage = input.trim();
-    setInput('');
+    const userMessage = String(messageOverride ?? input ?? '').trim();
+    if (!messageOverride) setInput('');
 
     // Build full message including file content
     let fullMessage = userMessage;
     let displayContent = userMessage;
-    if (attachedFile) {
+    if (!messageOverride && attachedFile) {
       if (attachedFile.type === 'text' && attachedFile.content) {
         const preview = attachedFile.content.slice(0, 3000);
         const truncated = attachedFile.content.length > 3000;
@@ -158,38 +252,56 @@ const MySoundBoard = () => {
     setLoading(true);
 
     try {
-      const currentMode = BIQC_MODES.find(m => m.id === selectedMode);
+      const currentMode = BIQC_MODES.find(m => m.id === selectedMode) || BIQC_MODES[0];
+      const advisorContext = contextOverride || advisorHandoff || null;
+      const intelligenceContext = advisorContext ? {
+        advisor_handoff: {
+          title: advisorContext.title,
+          issue_brief: advisorContext.issueBrief,
+          why_now_brief: advisorContext.whyNowBrief,
+          action_brief: advisorContext.actionBrief,
+          if_ignored_brief: advisorContext.ifIgnoredBrief,
+          domain: advisorContext.domain,
+          source_summary: advisorContext.sourceSummary,
+          fact_points: advisorContext.factPoints || [],
+        },
+        integrations: advisorContext.integrations || {},
+        thresholds: advisorContext.thresholds || {},
+      } : {};
 
-      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used;
+      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage;
 
-      if (selectedMode === 'trinity') {
-        // Trinity mode: call Supabase edge function (GPT + Claude + Gemini parallel)
-        const { data: { session } } = await supabase.auth.getSession();
-        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-        const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-        const triRes = await fetch(`${supabaseUrl}/functions/v1/biqc-trinity`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${session?.access_token}`, 'apikey': anonKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: fullMessage }),
-        });
-        const triData = await triRes.json();
-        reply = triData.reply || triData.error || 'Trinity mode unavailable';
-        model_used = 'trinity';
-        suggested_actions = [];
-        conversation_id = activeConversation;
-        conversation_title = null;
-      } else {
-        // Standard mode — pass mode to backend for routing
-        const response = await apiClient.post('/soundboard/chat', {
-          message: fullMessage,
-          conversation_id: activeConversation,
-          intelligence_context: {},
-          mode: currentMode?.backend_mode || 'auto',
-        });
-        ({ reply, conversation_id, conversation_title, file: generatedFile, suggested_actions, intent, model_used } = response.data);
-      }
+      const response = await apiClient.post('/soundboard/chat', {
+        message: fullMessage,
+        conversation_id: activeConversation,
+        intelligence_context: intelligenceContext,
+        mode: currentMode.backend_mode,
+      });
+      ({
+        reply,
+        conversation_id,
+        conversation_title,
+        file: generatedFile,
+        suggested_actions,
+        intent,
+        model_used,
+        confidence_score,
+        data_sources_count,
+        data_freshness,
+        lineage,
+      } = response.data);
 
-      const assistantMsg = { role: 'assistant', content: reply, suggested_actions: suggested_actions || [], intent, model_used };
+      const assistantMsg = {
+        role: 'assistant',
+        content: reply,
+        suggested_actions: suggested_actions || [],
+        intent,
+        model_used,
+        confidence_score,
+        data_sources_count,
+        data_freshness,
+        lineage,
+      };
       if (generatedFile) assistantMsg.file = generatedFile;
       setMessages(prev => [...prev, assistantMsg]);
       
@@ -207,8 +319,11 @@ const MySoundBoard = () => {
             : c
         ));
       }
+      if (advisorContext) {
+        setAdvisorHandoff(advisorContext);
+      }
     } catch (error) {
-      toast.error('Failed to send message');
+      toast.error(getSoundboardErrorMessage(error));
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setLoading(false);
@@ -520,6 +635,15 @@ const MySoundBoard = () => {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
             <div className="max-w-3xl mx-auto px-6 py-6">
+              <InsightExplainabilityStrip
+                whyVisible={soundboardExplainability.whyVisible}
+                whyNow={soundboardExplainability.whyNow}
+                nextAction={soundboardExplainability.nextAction}
+                ifIgnored={soundboardExplainability.ifIgnored}
+                testIdPrefix="soundboard-explainability"
+                className="mb-5"
+              />
+
               {messages.length === 0 ? (
                 <div className="text-center py-12 px-4">
                   <div 
@@ -532,14 +656,14 @@ const MySoundBoard = () => {
                     Ask anything about your business
                   </p>
                   <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-                    or click a prompt to get started
+                    {advisorHandoff ? 'or choose a BIQc next move below' : 'or click a prompt to get started'}
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center max-w-sm mx-auto">
-                    {['What should I focus on?', 'Summarise my risks', 'Show me my pipeline', 'How can I grow revenue?'].map(q => (
-                      <button key={q} onClick={() => setInput(q)}
+                    {(advisorHandoff ? buildAdvisorSuggestedOptions(advisorHandoff) : ['What should I focus on?', 'Summarise my risks', 'Show me my pipeline', 'How can I grow revenue?'].map((q) => ({ label: q, prompt: q }))).map((q) => (
+                      <button key={q.label} onClick={() => sendMessage(q.prompt, advisorHandoff)}
                         className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: '1px solid var(--border-light)' }}>
-                        {q}
+                        {q.label}
                       </button>
                     ))}
                   </div>
@@ -575,7 +699,7 @@ const MySoundBoard = () => {
                           <div className="mt-3 flex flex-wrap gap-2">
                             {message.suggested_actions.map((action, i) => (
                               <button key={i}
-                                onClick={() => setInput(action.label)}
+                                onClick={() => sendMessage(action.prompt || action.label, advisorHandoff)}
                                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 flex items-center gap-1.5"
                                 style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.25)', color: '#FF6A00', fontFamily: fontFamily.mono }}>
                                 <span>→</span> {action.label}
@@ -590,6 +714,37 @@ const MySoundBoard = () => {
                               style={{ background: 'rgba(255,255,255,0.05)', color: '#4A5568', fontFamily: fontFamily.mono }}>
                               {message.intent.domain.toUpperCase()} · {message.model_used || 'AI'}
                             </span>
+                          </div>
+                        )}
+                        {message.role === 'assistant' && (
+                          <div className="mt-2 flex flex-wrap gap-1.5" data-testid="soundboard-response-metadata-row">
+                            {typeof message.confidence_score === 'number' && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.5 rounded"
+                                style={{ background: 'rgba(16,185,129,0.12)', color: '#10B981', fontFamily: fontFamily.mono }}
+                                data-testid="soundboard-response-confidence-chip"
+                              >
+                                confidence {(message.confidence_score * 100).toFixed(0)}%
+                              </span>
+                            )}
+                            {typeof message.data_sources_count === 'number' && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.5 rounded"
+                                style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA', fontFamily: fontFamily.mono }}
+                                data-testid="soundboard-response-sources-chip"
+                              >
+                                {message.data_sources_count} sources
+                              </span>
+                            )}
+                            {message.data_freshness && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.5 rounded"
+                                style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B', fontFamily: fontFamily.mono }}
+                                data-testid="soundboard-response-freshness-chip"
+                              >
+                                freshness {message.data_freshness}
+                              </span>
+                            )}
                           </div>
                         )}
                         {/* File download card when backend generates a file */}
@@ -652,47 +807,52 @@ const MySoundBoard = () => {
                   </button>
                 </div>
               )}
-              {/* BIQc Mode Selector — like Gemini's Fast/Thinking/Pro */}
-              <div className="flex items-center gap-2 px-1 mb-2 relative">
-                <button onClick={() => setShowModeMenu(v => !v)}
+              {/* Model selector (restored dropdown style, proprietary BIQc labels) */}
+              <div className="flex items-center gap-2 px-1 mb-2 relative" data-testid="soundboard-mode-toggle-wrapper">
+                <button
+                  onClick={() => setShowModeMenu((v) => !v)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110"
                   style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
-                  data-testid="soundboard-mode-selector">
-                  <span>{BIQC_MODES.find(m => m.id === selectedMode)?.icon}</span>
-                  <span>{BIQC_MODES.find(m => m.id === selectedMode)?.label}</span>
+                  data-testid="soundboard-mode-selector"
+                >
+                  <span>{activeMode?.icon}</span>
+                  <span>{activeMode?.label}</span>
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                 </button>
+
                 {showModeMenu && (
-                  <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-xl z-50"
+                  <div className="absolute bottom-full left-0 mb-2 w-80 rounded-xl overflow-hidden shadow-xl z-50"
                     style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
-                {availableModes.map(mode => (
-                      <button key={mode.id}
+                    {availableModes.map((mode, idx) => (
+                      <button
+                        key={mode.id}
                         onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
                         className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5"
-                        style={{ borderBottom: mode.id !== 'trinity' ? '1px solid #1E2D3D' : 'none' }}>
+                        style={{ borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none' }}
+                        data-testid={`soundboard-mode-option-${mode.id}`}
+                      >
                         <span className="text-lg shrink-0">{mode.icon}</span>
                         <div>
                           <p className="text-sm font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>
                             {mode.label}
-                            {selectedMode === mode.id && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.15)', color: '#FF6A00' }}>Active</span>}
-                            {mode.minTier !== 'free' && !isAndre && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(59,130,246,0.15)', color: '#3B82F6' }}>{mode.minTier}</span>}
+                            {selectedMode === mode.id && (
+                              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.15)', color: '#FF6A00' }}>
+                                Active
+                              </span>
+                            )}
                           </p>
                           <p className="text-[11px] mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
                         </div>
                       </button>
                     ))}
-                    {/* Show locked Trinity for free users */}
-                    {!isAndre && userTierIdx < 1 && (
-                      <a href="/upgrade"
-                        className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 no-underline"
-                        style={{ textDecoration: 'none' }}>
+
+                    {!canUseTrinity && (
+                      <a href="/upgrade" className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 no-underline"
+                        style={{ textDecoration: 'none' }} data-testid="soundboard-trinity-upgrade-link">
                         <span className="text-lg shrink-0 opacity-40">◈</span>
                         <div>
-                          <p className="text-sm font-semibold flex items-center gap-2" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>
-                            Trinity
-                            <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00' }}>Foundation+</span>
-                          </p>
-                          <p className="text-[11px] mt-0.5" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>Upgrade to unlock ChatGPT 5.4 + Claude + Gemini</p>
+                          <p className="text-sm font-semibold" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>BIQc Trinity</p>
+                          <p className="text-[11px] mt-0.5" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>Available on Pro and Enterprise plans</p>
                         </div>
                       </a>
                     )}
@@ -713,6 +873,7 @@ const MySoundBoard = () => {
                   className="flex-1 resize-none bg-transparent outline-none text-sm"
                   style={{ color: 'var(--text-primary)', minHeight: '24px', maxHeight: '120px' }}
                   rows={1}
+                  data-testid="soundboard-input"
                 />
                 {/* File attachment button */}
                 <input ref={fileRef} type="file" className="hidden" onChange={handleFileSelect}
@@ -727,6 +888,7 @@ const MySoundBoard = () => {
                   onClick={sendMessage}
                   disabled={(!input.trim() && !attachedFile) || loading}
                   className="btn-primary p-2"
+                  data-testid="send-message-btn"
                 >
                   <Send className="w-4 h-4" />
                 </Button>

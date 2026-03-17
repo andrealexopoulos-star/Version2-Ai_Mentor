@@ -1,0 +1,62 @@
+{
+  "timestamp": "2026-03-14T14:35:05.196867",
+  "auth": {
+    "success": true,
+    "user_id": "52a60959-b8f7-4032-a744-e164d8749ce6"
+  },
+  "soundboard": {
+    "total": 5,
+    "success": 0,
+    "errors": [
+      "Run 1: HTTP 422",
+      "Run 2: HTTP 422",
+      "Run 3: HTTP 422",
+      "Run 4: HTTP 422",
+      "Run 5: HTTP 422"
+    ]
+  },
+  "conversations": {
+    "success": true
+  },
+  "advisor_endpoints": {
+    "total": 8,
+    "successful": 7,
+    "details": {
+      "/api/cognition/overview": {
+        "success": true,
+        "status_code": 200
+      },
+      "/api/snapshot/latest": {
+        "success": true,
+        "status_code": 200
+      },
+      "/api/intelligence/watchtower": {
+        "success": true,
+        "status_code": 200
+      },
+      "/api/integrations/merge/connected": {
+        "success": true,
+        "status_code": 200
+      },
+      "/api/integrations/crm/deals?page_size=50": {
+        "success": false,
+        "error": "HTTPSConnectionPool(host='biqc.thestrategysquad.com', port=443): Read timed out. (read timeout=8)"
+      },
+      "/api/integrations/accounting/summary": {
+        "success": true,
+        "status_code": 200
+      },
+      "/api/outlook/status": {
+        "success": true,
+        "status_code": 200
+      },
+      "/api/calibration/status": {
+        "success": true,
+        "status_code": 200
+      }
+    }
+  },
+  "defects": [
+    "HIGH: Soundboard low success rate (0.0%)"
+  ]
+}

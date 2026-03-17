@@ -1,0 +1,139 @@
+{
+  "summary": "Frontend testing on preview URL (biqc-hardened.preview.emergentagent.com) validating Soundboard UX, calibration/onboarding flow, signup flow, and session persistence. All major issues from previous iteration (121) appear to be RESOLVED in this environment.",
+  "test_date": "2026-03-13",
+  "preview_url": "https://kpi-intelligence-1.preview.emergentagent.com",
+  "features_tested": [
+    "Soundboard UX and functionality",
+    "Mode toggle (Normal/Trinity)",
+    "Trinity lock for non-Pro users",
+    "New user signup flow",
+    "Calibration/onboarding progression",
+    "Session persistence across navigation"
+  ],
+  "test_results": {
+    "soundboard_ux": {
+      "status": "PASS",
+      "findings": [
+        "Mode toggle present with 'Normal (GPT-5.3)' and 'BIQc Trinity' buttons",
+        "Normal mode button shows as active (orange background)",
+        "Trinity mode shows as locked/grayed (cursor: not-allowed, color: gray)",
+        "'Pro/Enterprise only' upgrade link badge visible next to Trinity",
+        "Input field present with placeholder 'Share what's on your mind...'",
+        "Send button present and clickable",
+        "No API key prompt visible",
+        "Quick prompts available: 'What should I focus on?', 'Summarise my risks', etc.",
+        "AI responds with 'Thinking...' indicator when message sent"
+      ]
+    },
+    "trinity_mode_lock": {
+      "status": "PASS",
+      "findings": [
+        "Trinity button styled with cursor: not-allowed and gray color for non-Pro users",
+        "Clicking Trinity does NOT activate it for non-Pro users",
+        "Upgrade link shows 'Pro/Enterprise only' text"
+      ]
+    },
+    "signup_flow": {
+      "status": "PASS",
+      "test_account_created": "signup-test-8lh23yzg@biqctest.io",
+      "findings": [
+        "Registration form works with all required fields",
+        "No cognitive_profiles RLS error detected in console",
+        "Signup redirects properly to /calibration",
+        "User name personalization works (shows 'Welcome to BIQc, Test.')"
+      ]
+    },
+    "calibration_flow": {
+      "status": "PASS",
+      "findings": [
+        "Ignition animation plays and auto-advances",
+        "Welcome screen shows 4 intelligence categories",
+        "'Begin Business Intelligence Scan' button works",
+        "Website URL input field present and accepts input",
+        "'Begin Strategic Audit' button triggers scan",
+        "'I Don't Have a Website' fallback option available",
+        "Tutorial overlay appears (Step 1 of 2) - teaches users about calibration",
+        "Flow progresses properly - NOT stuck indefinitely"
+      ]
+    },
+    "session_persistence": {
+      "status": "PASS",
+      "findings": [
+        "Session maintained on /soundboard navigation",
+        "Session maintained on /market navigation",
+        "Session maintained on /advisor navigation", 
+        "Session maintained on /profile navigation",
+        "No session drops during page navigation (FIXED from iteration 121)"
+      ]
+    }
+  },
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/calibration/status",
+        "issue": "Console warning: '[CALIBRATION ROUTING] Fetch failed: Failed to fetch → fail-open to READY'",
+        "impact": "Non-blocking - fail-open behavior works correctly"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "comparison_to_iteration_121": {
+    "session_persistence": "FIXED - Previously reported as CRITICAL, now working",
+    "cognitive_profiles_rls": "NOT REPRODUCED - No RLS errors detected during signup",
+    "calibration_stuck": "NOT REPRODUCED - Flow progresses properly with tutorial guidance"
+  },
+  "test_credentials_used": {
+    "existing_qa_user": {
+      "email": "cal-loop-416d7f85@biqctest.io",
+      "password": "BIQcTest!2026Z",
+      "status": "Login successful, all flows working"
+    },
+    "new_test_user_created": {
+      "email": "signup-test-8lh23yzg@biqctest.io",
+      "password": "TestPassword!2026Secure",
+      "status": "Signup successful, calibration flow accessible"
+    }
+  },
+  "test_report_links": [],
+  "action_items": [
+    "NONE - All reported issues from iteration 121 appear resolved in preview environment"
+  ],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A - frontend-only testing",
+    "frontend": "100% - all tested features working as expected"
+  },
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Preview environment (biqc-hardened.preview.emergentagent.com) is stable. Session persistence fixed. Soundboard mode toggle works correctly with Trinity locked for non-Pro users. Signup and calibration flows work without RLS errors. Tutorial overlay may require 'Learn later' click during automated testing.",
+  "potential_fixes_bypassed_in_last_retest": {
+    "p0_critical": [
+      "Run fresh Andre magic-link forensic test on production (biqc.thestrategysquad.com) after latest deploy to confirm parity with preview",
+      "Enforce Trinity entitlement at backend (reject mode=trinity for non-Pro/Enterprise even if frontend is bypassed)",
+      "Add Soundboard stuck-state guard (timeout -> degraded fallback response) to avoid prolonged 'Thinking...'",
+      "Define and enforce Trinity quality contract (specificity, evidence grounding, actionability) before marking responses premium-grade",
+      "Harden calibration state-machine against indefinite loading/analyzing in production edge-function latency scenarios"
+    ],
+    "p1_high": [
+      "Add deterministic fallback path for each calibration phase with explicit user action ('Continue manually')",
+      "Expand timeout wrappers to all calibration edge-function calls for consistency",
+      "Eliminate calibration fail-open warning noise on /api/calibration/status and expose intentional degraded telemetry",
+      "Add full data-testid coverage for all calibration/onboarding interactive controls and transitions",
+      "Validate session persistence under stress cases (refresh, idle timeout, rapid route changes, token refresh)"
+    ],
+    "p2_quality_to_10_10": [
+      "Add streaming response UX and latency telemetry for Soundboard (Normal vs Trinity) with percentile tracking",
+      "Implement response-quality evaluator comparing Normal vs Trinity outputs against rubric",
+      "Capture action-outcome loop (user executed recommendation or not) to improve next-response relevance",
+      "Create deterministic production forensic suite (Andre auth -> Soundboard deep prompts -> calibration/onboarding pass -> route integrity)",
+      "Finalize UI copy polish across calibration transitions to reduce cognitive dead-time"
+    ],
+    "note": "These items are potential gaps not fully proven by iteration_122 preview-only retest and should be validated in production."
+  }
+}

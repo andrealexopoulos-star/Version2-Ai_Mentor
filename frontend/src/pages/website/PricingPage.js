@@ -141,9 +141,9 @@ const PricingPage = () => (
             link="/register-supabase"
           />
 
-          {/* GROWTH */}
+          {/* SMB PROTECT */}
           <PlanCard
-            name="Growth"
+            name="SMB Protect"
             tagline="Strategic Expansion Control"
             price="$3,900"
             period="/month"
@@ -157,19 +157,19 @@ const PricingPage = () => (
               'Market saturation scoring',
               'Scenario planning capability',
             ]}
-            cta="Upgrade to Growth"
+            cta="Upgrade to SMB Protect"
             link="/register-supabase"
           />
 
-          {/* ENTERPRISE */}
+          {/* CUSTOM */}
           <PlanCard
-            name="Enterprise"
+            name="Custom"
             tagline="Executive Command Layer"
             price="Contact Sales"
             period=""
             color="#EF4444"
             description="For multi-division organisations requiring sovereign intelligence infrastructure."
-            includesFrom="Growth"
+            includesFrom="SMB Protect"
             features={[
               'Multi-division reporting',
               'Custom KPI frameworks',

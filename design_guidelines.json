@@ -1,107 +1,77 @@
 {
-  "project_name": "BIQc Integrations",
-  "design_philosophy": {
-    "archetype": "The Performance Pro",
-    "vibe": "Command Center, Technical, High-Precision",
-    "core_principle": "Density without clutter. Information is beautiful."
-  },
-  "theme": {
-    "mode": "dark",
-    "colors": {
-      "background": "#070E18",
-      "card_bg": "#0B121C",
-      "card_hover": "#111925",
-      "border": "rgba(255, 255, 255, 0.08)",
-      "border_active": "#FF6A00",
-      "primary": "#FF6A00",
-      "success": "#10B981",
-      "text_primary": "#F4F7FA",
-      "text_secondary": "#9FB0C3",
-      "text_muted": "#5A6B80"
+  "design_guidelines": {
+    "project_name": "BIQc Advisor Watchtower Card Redesign",
+    "theme": "Dark Mode (Preserve existing BIQc visual language)",
+    "font_family": "Existing font tokens (fontFamily.body, fontFamily.display, fontFamily.mono)",
+    "layout_changes": {
+      "card_structure": [
+        "Header (Icon, Title, Severity, Risk Score)",
+        "Core Context (Intent, Headline, Confidence, Main Title, Provenance)",
+        "Primary Action Button (View full context) - MOVED: To be placed ABOVE 'Why Now' section",
+        "Why Now Section",
+        "Action Now Section - MOVED: To be placed UNDER 'Why Now' section",
+        "Action Controls Row - NEW: Contains 'Soundboard chat' button and 'Actions' dropdown",
+        "If Ignored Section - MOVED: To be placed UNDER the Action Controls Row",
+        "Data Logic Box (Signal/Decision/Action) - UPDATE: Add Info Icon with Tooltip",
+        "Projections Box (30/60/90) - UPDATE: Add Info Icon with Tooltip",
+        "Footer (Dedupe note, Next up indicator)"
+      ]
     },
-    "typography": {
-      "heading": "Cormorant Garamond",
-      "body": "Inter",
-      "mono": "JetBrains Mono"
-    }
-  },
-  "layout_strategy": {
-    "type": "Bento Grid / High Density",
-    "grid_columns": "grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4",
-    "gap": "gap-5",
-    "padding": "p-8"
-  },
-  "components": {
-    "page_container": {
-      "classes": "min-h-screen bg-[#070E18] text-[#F4F7FA] w-full"
+    "component_specs": {
+      "ActionsDropdown": {
+        "description": "Shadcn DropdownMenu for secondary actions",
+        "trigger": "Button with 'Actions' label and ChevronDown icon",
+        "items": [
+          {"label": "Add to calendar", "icon": "Calendar", "action": "open_delegate_modal_calendar"},
+          {"label": "Assign Owner", "icon": "UserPlus", "action": "open_delegate_modal"},
+          {"label": "Mark as actioned", "icon": "CheckCircle", "action": "mark_resolved_flow"},
+          {"label": "Ignore", "icon": "XCircle", "action": "ignore_signal"}
+        ],
+        "styling": "Dark theme, consistent with BIQc cards"
+      },
+      "InfoTooltip": {
+        "description": "Shadcn Tooltip for context explanation",
+        "trigger": "Info icon (lucide-react) size-3 text-slate-400 hover:text-white",
+        "content_signal_box": "Explanation of how this signal was detected and grouped.",
+        "content_projection_box": "Risk probability progression over 30/60/90 days if ignored vs actioned."
+      }
     },
-    "header": {
-      "style": "Clean, minimal, editorial",
-      "title_classes": "text-4xl font-display font-medium tracking-tight text-[#F4F7FA]",
-      "subtitle_classes": "text-[#9FB0C3] mt-2 font-body text-lg font-light max-w-2xl"
+    "interaction_flows": {
+      "mark_as_actioned": {
+        "step_1": "User clicks 'Mark as actioned' in dropdown",
+        "step_2": "Card content is replaced by a temporary success state (Green check icon + 'Action recorded' text) for 1.5 seconds",
+        "step_3": "Card is removed/refreshed from the list"
+      },
+      "assign_owner": {
+        "step_1": "User clicks 'Assign Owner' in dropdown",
+        "step_2": "Open existing DelegateActionModal",
+        "step_3": "User completes delegation flow (Email + Due Date + Calendar)"
+      },
+      "add_to_calendar": {
+        "step_1": "User clicks 'Add to calendar'",
+        "step_2": "Open DelegateActionModal (Reuse existing component)",
+        "step_3": "Pre-check 'Also create calendar event' if possible, or guide user to set due date"
+      },
+      "soundboard_chat": {
+        "step_1": "User clicks 'Soundboard chat' button",
+        "step_2": "Navigate to Soundboard with context prompt (Reuse existing logic)"
+      }
     },
-    "hero_cta": {
-      "style": "The 'Merge Link' Trigger",
-      "description": "A prominent but sleek banner/button area to trigger the global connection flow",
-      "classes": "w-full border border-[#FF6A00]/20 bg-[#FF6A00]/5 rounded-xl p-6 flex items-center justify-between hover:bg-[#FF6A00]/10 transition-all duration-300 group cursor-pointer"
+    "copy_refinements": {
+      "why_now_label": "Why Now",
+      "action_now_label": "Recommended Action",
+      "if_ignored_label": "If Ignored",
+      "view_context_button": "View full context"
     },
-    "category_tabs": {
-      "style": "Sticky, Glassmorphism",
-      "wrapper_classes": "sticky top-0 z-40 bg-[#070E18]/80 backdrop-blur-xl border-b border-white/5 py-4 mb-8",
-      "list_classes": "flex gap-2 overflow-x-auto no-scrollbar pb-1",
-      "item_active": "bg-white/10 text-white border-white/20",
-      "item_inactive": "text-[#9FB0C3] hover:text-white hover:bg-white/5 border-transparent"
-    },
-    "integration_card": {
-      "style": "Technical Grid Border",
-      "base_classes": "group relative flex flex-col p-5 rounded-lg border border-white/5 bg-[#0B121C] transition-all duration-200 hover:-translate-y-1 hover:border-[#FF6A00]/30 hover:shadow-[0_4px_20px_-10px_rgba(255,106,0,0.2)]",
-      "connected_classes": "border-[#10B981]/30 bg-[#10B981]/5 hover:border-[#10B981]/50",
-      "logo_size": "h-10 w-10 rounded-md object-contain bg-white p-1"
-    },
-    "status_badge": {
-      "font": "JetBrains Mono",
-      "classes": "text-[10px] uppercase tracking-wider font-medium px-2 py-1 rounded-sm",
-      "connected": "bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20",
-      "disconnected": "hidden",
-      "coming_soon": "bg-white/5 text-[#9FB0C3] border border-white/10"
-    }
-  },
-  "data_structure": {
-    "categories": [
-      "All", "Email", "CRM", "Financial", "HR & Payroll", "ATS", "Ticketing", "File Storage", "Knowledge Base", "Marketing"
+    "implementation_files": [
+      "/app/frontend/src/pages/AdvisorWatchtower.js"
     ],
-    "integrations_sample": [
-      { "id": "gmail", "name": "Gmail", "domain": "google.com", "category": "Email", "desc": "Sync emails and calendar events." },
-      { "id": "outlook", "name": "Outlook", "domain": "microsoft.com", "category": "Email", "desc": "Enterprise email and scheduling." },
-      { "id": "salesforce", "name": "Salesforce", "domain": "salesforce.com", "category": "CRM", "desc": "The world's #1 CRM platform." },
-      { "id": "hubspot", "name": "HubSpot", "domain": "hubspot.com", "category": "CRM", "desc": "Inbound marketing, sales, and service." },
-      { "id": "xero", "name": "Xero", "domain": "xero.com", "category": "Financial", "desc": "Beautiful business and accounting software." },
-      { "id": "quickbooks", "name": "QuickBooks", "domain": "quickbooks.intuit.com", "category": "Financial", "desc": "Smart accounting software for small business." },
-      { "id": "slack", "name": "Slack", "domain": "slack.com", "category": "Communication", "desc": "Team communication and collaboration." },
-      { "id": "jira", "name": "Jira", "domain": "atlassian.com", "category": "Ticketing", "desc": "Issue and project tracking software." },
-      { "id": "notion", "name": "Notion", "domain": "notion.so", "category": "Knowledge Base", "desc": "All-in-one workspace for notes and docs." },
-      { "id": "linear", "name": "Linear", "domain": "linear.app", "category": "Ticketing", "desc": "Issue tracking built for speed." },
-      { "id": "google-ads", "name": "Google Ads", "domain": "ads.google.com", "category": "Marketing", "desc": "Reach customers across Google's network." },
-      { "id": "meta-ads", "name": "Meta Ads", "domain": "facebook.com", "category": "Marketing", "desc": "Advertise on Facebook and Instagram." },
-      { "id": "linkedin-ads", "name": "LinkedIn Ads", "domain": "linkedin.com", "category": "Marketing", "desc": "Target professionals on LinkedIn." }
+    "universal_guidelines": [
+      "Use Lucide icons for all visual indicators.",
+      "Ensure all interactive elements have data-testid attributes.",
+      "Maintain the existing dark mode color palette (slate-900/slate-800 for backgrounds, slate-400 for secondary text).",
+      "Do not use generic 'Inter' for headings; stick to fontFamily.display.",
+      "Use 'sonner' for toasts."
     ]
-  },
-  "image_strategy": {
-    "source": "Clearbit Logo API",
-    "pattern": "https://logo.clearbit.com/{domain}",
-    "fallback": "UI Avatar with initials"
-  },
-  "implementation_steps": [
-    "1. Create /app/frontend/src/pages/IntegrationsPage.js",
-    "2. Implement the 'Email & Calendar' sovereign section at the top (Gmail/Outlook special handling).",
-    "3. Implement the Category Tabs with horizontal scroll.",
-    "4. Implement the Grid of Cards using the sample data.",
-    "5. Add the 'Coming Soon' Marketing section with reduced opacity.",
-    "6. Ensure all interactions (hover, click) have the 'Technical' feel (sharp transitions, mono fonts)."
-  ],
-  "universal_guidelines": {
-    "font_rendering": "antialiased subpixel-antialiased",
-    "border_radius": "rounded-lg",
-    "animation": "transition-all duration-200 ease-out"
   }
 }

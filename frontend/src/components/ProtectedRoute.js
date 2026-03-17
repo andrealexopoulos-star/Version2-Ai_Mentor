@@ -1,9 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSupabaseAuth, AUTH_STATE } from "../context/SupabaseAuthContext";
 import { apiClient } from "../lib/api";
 
 const ADMIN_ROLES = ['admin', 'superadmin'];
+
+/**
+ * Synchronously check sessionStorage for cached auth state.
+ * This prevents the calibration loop for completed users on page refresh.
+ */
+const getCachedAuthState = (userId) => {
+  if (!userId) return null;
+  try {
+    const cached = sessionStorage.getItem(`biqc_auth_bootstrap_${userId}`);
+    if (cached) {
+      const { state, ts } = JSON.parse(cached);
+      const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+      if (Date.now() - ts < CACHE_TTL) {
+        return state;
+      }
+    }
+  } catch {}
+  return null;
+};
 
 const LoadingScreen = () => {
   const hour = new Date().getHours();
@@ -85,6 +104,17 @@ export default function ProtectedRoute({ children, adminOnly }) {
   const location = useLocation();
   const [adminChecked, setAdminChecked] = useState(!adminOnly);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [authGraceStart] = useState(() => Date.now());
+  const isCalibrationRoute = location.pathname === '/calibration';
+
+  const hasStoredAuth = useMemo(() => {
+    try {
+      if (localStorage.getItem('biqc-auth')) return true;
+      return Object.keys(localStorage).some((key) => key.startsWith('sb-') && Boolean(localStorage.getItem(key)));
+    } catch {
+      return false;
+    }
+  }, []);
 
   // Check admin role from backend when adminOnly is true
   useEffect(() => {
@@ -111,6 +141,23 @@ export default function ProtectedRoute({ children, adminOnly }) {
   // Still loading — but if we have a user/session, show content (don't block navigation)
   if (authState === AUTH_STATE.LOADING) {
     if (user || session) {
+      // CALIBRATION LOOP FIX: Check sessionStorage cache synchronously to determine
+      // if user is READY before bootstrap completes. This prevents completed users
+      // from getting stuck on /calibration loading screen.
+      const userId = user?.id || session?.user?.id;
+      const cachedState = getCachedAuthState(userId);
+      
+      if (isCalibrationRoute) {
+        // If cached state shows READY, redirect immediately
+        // If cached state shows NEEDS_CALIBRATION, allow calibration page
+        // If no cache (new user or expired), redirect to /advisor as safe default
+        // (NEEDS_CALIBRATION users will be redirected back after bootstrap)
+        if (cachedState === AUTH_STATE.NEEDS_CALIBRATION) {
+          return children; // Allow calibration page
+        }
+        // For READY or no cache, redirect to /advisor
+        return <Navigate to="/advisor" replace />;
+      }
       // We have a session — render children while bootstrap completes in background
       // This prevents the loading screen from flashing on every page navigation
     } else {
@@ -120,6 +167,10 @@ export default function ProtectedRoute({ children, adminOnly }) {
 
   // No session → login
   if (!user && !session) {
+    // Grace window to avoid sign-in redirect loops during transient auth hydration.
+    if (hasStoredAuth && Date.now() - authGraceStart < 8000) {
+      return <LoadingScreen />;
+    }
     return <Navigate to="/login-supabase" replace />;
   }
 
@@ -139,6 +190,10 @@ export default function ProtectedRoute({ children, adminOnly }) {
 
   // READY or has session → enforce gates
   if (authState === AUTH_STATE.READY || user || session) {
+    if (isCalibrationRoute) {
+      return <Navigate to="/advisor" replace />;
+    }
+
     // Admin pages bypass onboarding/calibration checks entirely
     const ADMIN_PATHS = ['/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
     const isAdminPath = ADMIN_PATHS.some(p => location.pathname.startsWith(p));

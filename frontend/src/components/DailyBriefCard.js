@@ -157,11 +157,11 @@ export const DailyBriefBanner = ({ onOpen }) => {
 
   return (
     <div
-      className="fixed top-14 left-0 right-0 z-40 flex items-center justify-center px-4 py-3"
+      className="pointer-events-none fixed top-14 left-0 right-0 z-40 flex items-center justify-center px-4 py-3"
       style={{ background: '#FF6A0010', borderBottom: '1px solid #FF6A0030', backdropFilter: 'blur(8px)' }}
       data-testid="daily-brief-banner"
     >
-      <div className="flex items-center gap-3 max-w-xl">
+      <div className="pointer-events-auto flex items-center gap-3 max-w-xl">
         <Zap className="w-4 h-4 shrink-0" style={{ color: '#FF6A00' }} />
         <p className="text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body }}>
           Your Business Brief is ready.

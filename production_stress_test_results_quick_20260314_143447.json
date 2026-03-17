@@ -1,0 +1,231 @@
+{
+  "authentication": {
+    "status_code": 200,
+    "response_time": 1.192225694656372,
+    "success": true,
+    "error": null
+  },
+  "soundboard_stress_test": {
+    "total_runs": 25,
+    "successful_runs": 0,
+    "failed_runs": 25,
+    "rate_limited_runs": 0,
+    "retry_attempts": 1,
+    "response_times": [
+      0.6208834648132324,
+      0.6439452171325684,
+      0.42301225662231445,
+      0.7066993713378906,
+      0.3981304168701172,
+      0.46861863136291504,
+      0.37747931480407715,
+      0.4014749526977539,
+      0.39113879203796387,
+      0.5524520874023438,
+      0.4244968891143799,
+      0.4145185947418213,
+      0.3900492191314697,
+      0.4468555450439453,
+      0.51381516456604,
+      0.4891793727874756,
+      0.39728713035583496,
+      0.43616247177124023,
+      0.445451021194458,
+      0.3961915969848633,
+      0.4115004539489746,
+      0.4173729419708252,
+      0.4244070053100586,
+      0.3809394836425781,
+      278.5183346271515
+    ],
+    "suggested_actions_count": 0,
+    "status_codes": {
+      "422": 25
+    },
+    "errors": [
+      {
+        "run_id": 1,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 2,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Sh"
+      },
+      {
+        "run_id": 3,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 4,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 5,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 6,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Ho"
+      },
+      {
+        "run_id": 7,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 8,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Sh"
+      },
+      {
+        "run_id": 9,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 10,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 11,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 12,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Ho"
+      },
+      {
+        "run_id": 13,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 14,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Sh"
+      },
+      {
+        "run_id": 15,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 16,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 17,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 18,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Ho"
+      },
+      {
+        "run_id": 19,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 20,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Sh"
+      },
+      {
+        "run_id": 21,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 22,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Sh"
+      },
+      {
+        "run_id": 23,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 24,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      },
+      {
+        "run_id": 25,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Wh"
+      }
+    ],
+    "runs_with_suggested_actions": 0
+  },
+  "conversation_persistence": {
+    "conversations_created": 0,
+    "conversations_retrievable": 0,
+    "conversation_ids": [],
+    "persistence_errors": []
+  },
+  "advisor_feed_dependencies": {
+    "tested_endpoints": {
+      "/api/cognition/overview": {
+        "status_code": 200,
+        "response_time": 0.6419405937194824,
+        "success": true,
+        "error": null
+      },
+      "/api/snapshot/latest": {
+        "status_code": 200,
+        "response_time": 0.7111139297485352,
+        "success": true,
+        "error": null
+      },
+      "/api/intelligence/watchtower": {
+        "status_code": 200,
+        "response_time": 0.6377325057983398,
+        "success": true,
+        "error": null
+      },
+      "/api/integrations/merge/connected": {
+        "status_code": 200,
+        "response_time": 0.5469319820404053,
+        "success": true,
+        "error": null
+      },
+      "/api/integrations/crm/deals?page_size=50": {
+        "status_code": 200,
+        "response_time": 1.1436128616333008,
+        "success": true,
+        "error": null
+      },
+      "/api/integrations/accounting/summary": {
+        "status_code": 200,
+        "response_time": 5.890568733215332,
+        "success": true,
+        "error": null
+      },
+      "/api/outlook/status": {
+        "status_code": 200,
+        "response_time": 0.5741503238677979,
+        "success": true,
+        "error": null
+      },
+      "/api/calibration/status": {
+        "status_code": 200,
+        "response_time": 0.5161824226379395,
+        "success": true,
+        "error": null
+      }
+    },
+    "critical_failures": [],
+    "overall_health": true
+  },
+  "defects": [
+    {
+      "severity": "HIGH",
+      "component": "Soundboard Chat API",
+      "issue": "Low success rate: 0.0% (0/25)",
+      "impact": "Unreliable advisor chat experience"
+    },
+    {
+      "severity": "HIGH",
+      "component": "Soundboard Intelligence",
+      "issue": "Low suggested actions rate: 0.0%",
+      "impact": "Advisor provides limited actionable intelligence"
+    },
+    {
+      "severity": "MEDIUM",
+      "component": "Performance",
+      "issue": "High average response time: 11.58s",
+      "impact": "Poor user experience, advisor feels slow"
+    }
+  ],
+  "test_start_time": "2026-03-14T14:29:33.151929",
+  "test_duration": 314.3014507293701
+}

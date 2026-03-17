@@ -1,0 +1,569 @@
+{
+  "authentication": {
+    "status_code": 200,
+    "response_time": 1.4523420333862305,
+    "success": true,
+    "error": null
+  },
+  "soundboard_stress_test": {
+    "total_runs": 100,
+    "successful_runs": 0,
+    "failed_runs": 100,
+    "rate_limited_runs": 11,
+    "retry_attempts": 87,
+    "response_times": [
+      1.0452189445495605,
+      2.954871892929077,
+      2.1846776008605957,
+      3.013965129852295,
+      2.606999397277832,
+      3.026923418045044,
+      3.495107412338257,
+      2.183835983276367,
+      3.5247743129730225,
+      3.6244893074035645,
+      3.0106329917907715,
+      2.183103561401367,
+      3.337743043899536,
+      0.6237828731536865,
+      3.435633420944214,
+      2.886524200439453,
+      2.8860232830047607,
+      4.43628716468811,
+      4.4235498905181885,
+      4.4376747608184814,
+      3.844078540802002,
+      3.903701066970825,
+      1.3387916088104248,
+      1.348670482635498,
+      287.1738770008087,
+      286.8070864677429,
+      0.65260910987854,
+      288.6764283180237,
+      1.150881052017212,
+      288.61539101600647,
+      289.246454000473,
+      0.7965528964996338,
+      0.6040489673614502,
+      2.550321340560913,
+      4.00923490524292,
+      2.108309268951416,
+      3.447352886199951,
+      2.0720372200012207,
+      0.7270374298095703,
+      3.470006227493286,
+      0.7565357685089111,
+      3.0849480628967285,
+      2.0196168422698975,
+      2.231818675994873,
+      0.39366888999938965,
+      0.4538722038269043,
+      0.4817361831665039,
+      3.2835240364074707,
+      3.302055835723877,
+      0.5238747596740723,
+      0.8605115413665771,
+      3.2975971698760986,
+      0.8146140575408936,
+      4.297343730926514,
+      4.283597469329834,
+      288.53752517700195,
+      288.4060242176056,
+      289.46511006355286,
+      290.06149220466614,
+      289.6637637615204,
+      1.9914703369140625,
+      1.990161418914795,
+      1.568223476409912,
+      1.5794806480407715,
+      1.5594277381896973,
+      2.748948574066162,
+      2.7997634410858154,
+      3.2432191371917725,
+      3.246898651123047,
+      3.2783455848693848,
+      0.7813107967376709,
+      1.4146296977996826,
+      1.040137529373169,
+      0.7850041389465332,
+      0.5793154239654541,
+      3.8077242374420166,
+      3.833015203475952,
+      4.5993735790252686,
+      0.5108585357666016,
+      1.8957602977752686,
+      3.34824538230896,
+      2.92972731590271,
+      290.02595615386963,
+      287.5755569934845,
+      1.028710126876831,
+      1.0286617279052734,
+      288.7797224521637,
+      289.6306531429291,
+      289.91520285606384,
+      0.9030940532684326,
+      1.8332936763763428,
+      0.7517557144165039,
+      2.7564754486083984,
+      3.6338603496551514,
+      3.8521506786346436,
+      3.851602554321289,
+      2.91984224319458,
+      1.4512825012207031,
+      3.4362056255340576,
+      2.267256498336792
+    ],
+    "suggested_actions_count": 0,
+    "status_codes": {
+      "422": 89,
+      "429": 11
+    },
+    "errors": [
+      {
+        "run_id": 6,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I improve my sales pipeline conversion rate?\",\"conversation_id\":\"8d08bcae-4536-4f15-813b-2a7f8"
+      },
+      {
+        "run_id": 12,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I optimize my cash flow management?\",\"conversation_id\":\"f817b653-a8aa-4678-92f8-2e3048d811aa\","
+      },
+      {
+        "run_id": 8,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me the most profitable products in my portfolio\",\"conversation_id\":\"ccc45c2d-eef9-460d-b254-0b028"
+      },
+      {
+        "run_id": 13,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What new market segments should I consider entering?\",\"conversation_id\":\"7feefb3d-3ede-4f9e-8e74-231f3"
+      },
+      {
+        "run_id": 7,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are my competitors doing that I should be aware of?\",\"conversation_id\":\"fd52870e-726b-43e2-bb0e-8"
+      },
+      {
+        "run_id": 14,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me patterns in my customer acquisition costs\",\"conversation_id\":\"96c9cf5f-b342-4f7f-a645-e5600160"
+      },
+      {
+        "run_id": 4,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which clients are at risk of churning and why?\",\"conversation_id\":\"57bcc706-d7b0-4621-9e75-99007664c11"
+      },
+      {
+        "run_id": 10,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which team members are underperforming and need attention?\",\"conversation_id\":\"75dddb94-3af0-4186-b073"
+      },
+      {
+        "run_id": 3,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What market opportunities am I missing based on my current data?\",\"conversation_id\":\"52b496e5-4514-415"
+      },
+      {
+        "run_id": 2,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me my biggest operational bottlenecks this quarter\",\"conversation_id\":\"5f892c09-1240-420d-9f73-da"
+      },
+      {
+        "run_id": 15,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the early warning signs of market shifts affecting my business?\",\"conversation_id\":\"93a3b6f1-"
+      },
+      {
+        "run_id": 9,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What operational inefficiencies are costing me the most money?\",\"conversation_id\":\"780a68e9-555c-48a5-"
+      },
+      {
+        "run_id": 5,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the key performance indicators I should focus on this month?\",\"conversation_id\":\"674f0697-04b"
+      },
+      {
+        "run_id": 1,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the top 3 revenue risks I should be monitoring right now?\",\"conversation_id\":\"9ed80f9c-aa7c-4"
+      },
+      {
+        "run_id": 11,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the biggest threats to my business continuity?\",\"conversation_id\":\"02f8910c-70e6-4a21-9dd3-e2"
+      },
+      {
+        "run_id": 16,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which processes should I automate to improve efficiency?\",\"conversation_id\":\"02f40cb7-e4c6-4554-945c-d"
+      },
+      {
+        "run_id": 17,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are my best opportunities for cost reduction?\",\"conversation_id\":\"6aacbfa2-4bf2-4ec6-a2c6-6dee13e"
+      },
+      {
+        "run_id": 18,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I improve customer satisfaction and retention?\",\"conversation_id\":\"80b3dd33-e707-4cac-8cc7-0d0"
+      },
+      {
+        "run_id": 20,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me actionable insights from my recent business data\",\"conversation_id\":\"a3bcffc8-0e34-4637-a77f-d"
+      },
+      {
+        "run_id": 19,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the key metrics indicating business health decline?\",\"conversation_id\":\"9e63a2dd-c35c-41d4-af"
+      },
+      {
+        "run_id": 22,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me my biggest operational bottlenecks this quarter\",\"conversation_id\":\"fbca8096-99e4-4f6f-9a09-bc"
+      },
+      {
+        "run_id": 21,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the top 3 revenue risks I should be monitoring right now?\",\"conversation_id\":\"f35409d1-e33c-4"
+      },
+      {
+        "run_id": 23,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What market opportunities am I missing based on my current data?\",\"conversation_id\":\"12fdbb7d-2a30-4d8"
+      },
+      {
+        "run_id": 24,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which clients are at risk of churning and why?\",\"conversation_id\":\"c0caea95-ef3e-48ac-afff-8979cecc26b"
+      },
+      {
+        "run_id": 27,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are my competitors doing that I should be aware of?\",\"conversation_id\":\"f35792c9-da27-4c0c-8e8f-3"
+      },
+      {
+        "run_id": 28,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me the most profitable products in my portfolio\",\"conversation_id\":\"74695aa3-8e2c-48ab-8552-75e4b"
+      },
+      {
+        "run_id": 31,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the biggest threats to my business continuity?\",\"conversation_id\":\"d4d5960e-acb3-44ee-829b-fd"
+      },
+      {
+        "run_id": 26,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I improve my sales pipeline conversion rate?\",\"conversation_id\":\"a2f2823e-a22d-4649-b866-3c921"
+      },
+      {
+        "run_id": 32,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I optimize my cash flow management?\",\"conversation_id\":\"64225ce6-5c45-462f-8f25-6c53173a2a79\","
+      },
+      {
+        "run_id": 29,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What operational inefficiencies are costing me the most money?\",\"conversation_id\":\"834abe33-2e36-4486-"
+      },
+      {
+        "run_id": 34,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me patterns in my customer acquisition costs\",\"conversation_id\":\"f2797d66-b7ea-44ac-82e2-e572ac2e"
+      },
+      {
+        "run_id": 37,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are my best opportunities for cost reduction?\",\"conversation_id\":\"35e1ca67-d9df-476c-8d7c-0036ae5"
+      },
+      {
+        "run_id": 33,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What new market segments should I consider entering?\",\"conversation_id\":\"2dd4a997-57a7-4e41-9a86-13d38"
+      },
+      {
+        "run_id": 30,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which team members are underperforming and need attention?\",\"conversation_id\":\"7fdac61e-f2ef-487b-a77a"
+      },
+      {
+        "run_id": 38,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I improve customer satisfaction and retention?\",\"conversation_id\":\"704c3492-1bd6-4aa7-afda-fab"
+      },
+      {
+        "run_id": 36,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which processes should I automate to improve efficiency?\",\"conversation_id\":\"0f91b5f6-f40e-419f-beaf-3"
+      },
+      {
+        "run_id": 40,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me actionable insights from my recent business data\",\"conversation_id\":\"d52a78ba-0273-4ef8-a2c0-b"
+      },
+      {
+        "run_id": 41,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the top 3 revenue risks I should be monitoring right now?\",\"conversation_id\":\"cf66bec9-3703-4"
+      },
+      {
+        "run_id": 42,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me my biggest operational bottlenecks this quarter\",\"conversation_id\":\"b284a195-fcb8-4924-a20a-41"
+      },
+      {
+        "run_id": 43,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What market opportunities am I missing based on my current data?\",\"conversation_id\":\"12b0e1ff-a370-4c2"
+      },
+      {
+        "run_id": 44,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which clients are at risk of churning and why?\",\"conversation_id\":\"cc6c1199-ef77-4e4f-967c-2c519835422"
+      },
+      {
+        "run_id": 49,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What operational inefficiencies are costing me the most money?\",\"conversation_id\":\"175274e5-e930-4802-"
+      },
+      {
+        "run_id": 50,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which team members are underperforming and need attention?\",\"conversation_id\":\"23d151df-6444-4701-ac18"
+      },
+      {
+        "run_id": 51,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the biggest threats to my business continuity?\",\"conversation_id\":\"aa654a47-bd44-4864-81d3-86"
+      },
+      {
+        "run_id": 53,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What new market segments should I consider entering?\",\"conversation_id\":\"165f4b4a-6af6-41f8-a9a8-3a1a3"
+      },
+      {
+        "run_id": 54,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me patterns in my customer acquisition costs\",\"conversation_id\":\"dd495ddf-9ebd-4d52-affd-953c2dc2"
+      },
+      {
+        "run_id": 52,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I optimize my cash flow management?\",\"conversation_id\":\"b53c79e6-c9de-46b5-b98c-ef0838b191b1\","
+      },
+      {
+        "run_id": 55,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the early warning signs of market shifts affecting my business?\",\"conversation_id\":\"a1ece9b5-"
+      },
+      {
+        "run_id": 57,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are my best opportunities for cost reduction?\",\"conversation_id\":\"dee1e3bb-4395-4194-b372-1ae7733"
+      },
+      {
+        "run_id": 59,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the key metrics indicating business health decline?\",\"conversation_id\":\"ced910d6-c003-48f6-ad"
+      },
+      {
+        "run_id": 60,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me actionable insights from my recent business data\",\"conversation_id\":\"ffee6b58-0e72-4523-8c9e-2"
+      },
+      {
+        "run_id": 56,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which processes should I automate to improve efficiency?\",\"conversation_id\":\"ca6bcfc1-7aac-49e7-8f4f-3"
+      },
+      {
+        "run_id": 58,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I improve customer satisfaction and retention?\",\"conversation_id\":\"b61aaa1a-de40-4432-afa2-6bb"
+      },
+      {
+        "run_id": 61,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the top 3 revenue risks I should be monitoring right now?\",\"conversation_id\":\"fda54833-27c8-4"
+      },
+      {
+        "run_id": 62,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me my biggest operational bottlenecks this quarter\",\"conversation_id\":\"f7408e80-b2f1-456c-9d0e-42"
+      },
+      {
+        "run_id": 64,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which clients are at risk of churning and why?\",\"conversation_id\":\"41d95d11-8af4-412f-8ba6-e522c9ffc9a"
+      },
+      {
+        "run_id": 63,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What market opportunities am I missing based on my current data?\",\"conversation_id\":\"4790c746-a25c-4b5"
+      },
+      {
+        "run_id": 65,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the key performance indicators I should focus on this month?\",\"conversation_id\":\"9c6c9e54-eae"
+      },
+      {
+        "run_id": 67,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are my competitors doing that I should be aware of?\",\"conversation_id\":\"578789b6-214a-48ae-af13-0"
+      },
+      {
+        "run_id": 66,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I improve my sales pipeline conversion rate?\",\"conversation_id\":\"7af6466a-10b1-4677-aa15-fef57"
+      },
+      {
+        "run_id": 68,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me the most profitable products in my portfolio\",\"conversation_id\":\"28940341-e4c9-4a17-8595-35621"
+      },
+      {
+        "run_id": 70,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which team members are underperforming and need attention?\",\"conversation_id\":\"9b32a0d3-c2d3-4b16-b7f0"
+      },
+      {
+        "run_id": 69,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What operational inefficiencies are costing me the most money?\",\"conversation_id\":\"56917c33-f132-42c5-"
+      },
+      {
+        "run_id": 73,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What new market segments should I consider entering?\",\"conversation_id\":\"d52d9cb8-7a18-4002-bc13-9dab9"
+      },
+      {
+        "run_id": 74,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me patterns in my customer acquisition costs\",\"conversation_id\":\"36a366e7-ea08-431d-b0b8-d3a3971e"
+      },
+      {
+        "run_id": 76,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which processes should I automate to improve efficiency?\",\"conversation_id\":\"ecd0d93d-7208-429d-94d9-0"
+      },
+      {
+        "run_id": 77,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are my best opportunities for cost reduction?\",\"conversation_id\":\"8ced2a8f-a99f-4187-a3c1-eae8fa2"
+      },
+      {
+        "run_id": 78,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I improve customer satisfaction and retention?\",\"conversation_id\":\"d51d0f5d-9b4d-43c6-9e5e-794"
+      },
+      {
+        "run_id": 75,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the early warning signs of market shifts affecting my business?\",\"conversation_id\":\"ad0ea614-"
+      },
+      {
+        "run_id": 83,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What market opportunities am I missing based on my current data?\",\"conversation_id\":\"31e48197-f8de-4f0"
+      },
+      {
+        "run_id": 81,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the top 3 revenue risks I should be monitoring right now?\",\"conversation_id\":\"a5071b56-6ea1-4"
+      },
+      {
+        "run_id": 80,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me actionable insights from my recent business data\",\"conversation_id\":\"3f59b196-227e-496f-a72a-7"
+      },
+      {
+        "run_id": 82,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me my biggest operational bottlenecks this quarter\",\"conversation_id\":\"bf826486-2f69-49ee-9dfe-b7"
+      },
+      {
+        "run_id": 87,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are my competitors doing that I should be aware of?\",\"conversation_id\":\"e0f3dd4d-509f-4940-b4ff-5"
+      },
+      {
+        "run_id": 88,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me the most profitable products in my portfolio\",\"conversation_id\":\"3fc686e4-30cc-4606-a54c-0aa75"
+      },
+      {
+        "run_id": 89,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What operational inefficiencies are costing me the most money?\",\"conversation_id\":\"25e42f25-3470-4c55-"
+      },
+      {
+        "run_id": 85,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the key performance indicators I should focus on this month?\",\"conversation_id\":\"827167e8-797"
+      },
+      {
+        "run_id": 86,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I improve my sales pipeline conversion rate?\",\"conversation_id\":\"bebc9d42-f7b1-4760-816c-f5b3a"
+      },
+      {
+        "run_id": 91,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the biggest threats to my business continuity?\",\"conversation_id\":\"af6625ea-619d-46f8-b4d2-3e"
+      },
+      {
+        "run_id": 90,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which team members are underperforming and need attention?\",\"conversation_id\":\"1bd9b94a-14e0-45ba-b677"
+      },
+      {
+        "run_id": 96,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Which processes should I automate to improve efficiency?\",\"conversation_id\":\"0b0c3755-8ff5-4c3f-a063-1"
+      },
+      {
+        "run_id": 92,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I optimize my cash flow management?\",\"conversation_id\":\"6bf1e63b-9d37-4ddf-9705-5b9f59ce8167\","
+      },
+      {
+        "run_id": 93,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What new market segments should I consider entering?\",\"conversation_id\":\"3c38164f-8344-46bc-abcf-ac7bf"
+      },
+      {
+        "run_id": 94,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me patterns in my customer acquisition costs\",\"conversation_id\":\"93f2c237-e695-45a9-b120-0dbaa14e"
+      },
+      {
+        "run_id": 95,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the early warning signs of market shifts affecting my business?\",\"conversation_id\":\"3f31f7b5-"
+      },
+      {
+        "run_id": 97,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are my best opportunities for cost reduction?\",\"conversation_id\":\"3cda7397-5b16-4c86-9c33-8543c82"
+      },
+      {
+        "run_id": 99,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"What are the key metrics indicating business health decline?\",\"conversation_id\":\"0cf2bf6f-5ed7-49fa-a6"
+      },
+      {
+        "run_id": 98,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"How can I improve customer satisfaction and retention?\",\"conversation_id\":\"0311f57d-41fb-408a-a996-f71"
+      },
+      {
+        "run_id": 100,
+        "error": "HTTP 422: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"message\"],\"msg\":\"Field required\",\"input\":{\"question\":\"Show me actionable insights from my recent business data\",\"conversation_id\":\"e64670f6-eec1-4f96-85a5-5"
+      }
+    ],
+    "runs_with_suggested_actions": 0
+  },
+  "conversation_persistence": {
+    "conversations_created": 0,
+    "conversations_retrievable": 0,
+    "conversation_ids": [],
+    "persistence_errors": []
+  },
+  "advisor_feed_dependencies": {
+    "tested_endpoints": {
+      "/api/cognition/overview": {
+        "status_code": 200,
+        "response_time": 0.8312933444976807,
+        "success": true,
+        "error": null
+      },
+      "/api/snapshot/latest": {
+        "status_code": 200,
+        "response_time": 1.0642549991607666,
+        "success": true,
+        "error": null
+      },
+      "/api/intelligence/watchtower": {
+        "status_code": 200,
+        "response_time": 0.5350689888000488,
+        "success": true,
+        "error": null
+      },
+      "/api/integrations/merge/connected": {
+        "status_code": 200,
+        "response_time": 0.5534365177154541,
+        "success": true,
+        "error": null
+      },
+      "/api/integrations/crm/deals?page_size=50": {
+        "status_code": 200,
+        "response_time": 1.235905647277832,
+        "success": true,
+        "error": null
+      },
+      "/api/integrations/accounting/summary": {
+        "status_code": 200,
+        "response_time": 5.663492441177368,
+        "success": true,
+        "error": null
+      },
+      "/api/outlook/status": {
+        "status_code": 200,
+        "response_time": 0.4782130718231201,
+        "success": true,
+        "error": null
+      },
+      "/api/calibration/status": {
+        "status_code": 200,
+        "response_time": 0.4665658473968506,
+        "success": true,
+        "error": null
+      }
+    },
+    "critical_failures": [],
+    "overall_health": true
+  },
+  "defects": [
+    {
+      "severity": "HIGH",
+      "component": "Soundboard Chat API",
+      "issue": "Low success rate: 0.0% (0/100)",
+      "impact": "Unreliable advisor chat experience"
+    },
+    {
+      "severity": "MEDIUM",
+      "component": "Soundboard Rate Limiting",
+      "issue": "High rate limiting: 11 requests throttled",
+      "impact": "Degraded user experience during high usage"
+    },
+    {
+      "severity": "HIGH",
+      "component": "Soundboard Intelligence",
+      "issue": "Low suggested actions rate: 0.0%",
+      "impact": "Advisor provides limited actionable intelligence"
+    },
+    {
+      "severity": "MEDIUM",
+      "component": "Performance",
+      "issue": "High average response time: 45.33s",
+      "impact": "Poor user experience, advisor feels slow"
+    }
+  ],
+  "test_start_time": "2026-03-14T14:17:53.995822",
+  "test_duration": 923.5158994197845
+}

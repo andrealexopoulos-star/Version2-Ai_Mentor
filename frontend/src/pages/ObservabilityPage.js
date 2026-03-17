@@ -8,6 +8,7 @@ import { fontFamily } from '../design-system/tokens';
 
 const ObservabilityPage = () => {
   const [data, setData] = useState(null);
+  const [audit, setAudit] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +40,12 @@ const ObservabilityPage = () => {
         });
 
         setData({ calls: calls.length, totalTokens, avgLatency, failCount, estCost: estCost.toFixed(4), byModel, byEndpoint, byHour, recent: calls.slice(0, 15) });
+        try {
+          const auditRes = await apiClient.get('/services/cognition-platform-audit');
+          setAudit(auditRes.data || null);
+        } catch {
+          setAudit(null);
+        }
       } catch {} finally { setLoading(false); }
     };
     load();
@@ -112,6 +119,79 @@ const ObservabilityPage = () => {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="cognition-platform-audit-card">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Cognition Platform Audit</h3>
+            {audit?.summary && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#10B981', background: 'rgba(16,185,129,0.12)', fontFamily: fontFamily.mono }} data-testid="cognition-platform-audit-score-chip">
+                readiness {audit.summary.readiness_score}%
+              </span>
+            )}
+          </div>
+
+          {!audit ? (
+            <p className="text-xs text-[#64748B]" data-testid="cognition-platform-audit-empty">Audit data unavailable.</p>
+          ) : (
+            <div className="space-y-4" data-testid="cognition-platform-audit-content">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-testid="cognition-platform-audit-summary-grid">
+                <div className="rounded-lg p-2" style={{ border: '1px solid var(--biqc-border)' }}><p className="text-[10px] text-[#64748B]">Working</p><p className="text-sm text-[#10B981] font-semibold" style={{ fontFamily: fontFamily.mono }}>{audit.summary?.working ?? 0}</p></div>
+                <div className="rounded-lg p-2" style={{ border: '1px solid var(--biqc-border)' }}><p className="text-[10px] text-[#64748B]">Partial</p><p className="text-sm text-[#F59E0B] font-semibold" style={{ fontFamily: fontFamily.mono }}>{audit.summary?.partial ?? 0}</p></div>
+                <div className="rounded-lg p-2" style={{ border: '1px solid var(--biqc-border)' }}><p className="text-[10px] text-[#64748B]">Missing</p><p className="text-sm text-[#EF4444] font-semibold" style={{ fontFamily: fontFamily.mono }}>{audit.summary?.missing ?? 0}</p></div>
+                <div className="rounded-lg p-2" style={{ border: '1px solid var(--biqc-border)' }}><p className="text-[10px] text-[#64748B]">Total checks</p><p className="text-sm text-[#CBD5E1] font-semibold" style={{ fontFamily: fontFamily.mono }}>{audit.summary?.total_checks ?? 0}</p></div>
+              </div>
+
+              <div data-testid="cognition-platform-audit-table-wrap" className="overflow-x-auto">
+                <table className="w-full text-xs" data-testid="cognition-platform-audit-table">
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--biqc-border)' }}>
+                      <th className="text-left py-2 text-[#94A3B8]">Layer</th>
+                      <th className="text-left py-2 text-[#94A3B8]">Component</th>
+                      <th className="text-left py-2 text-[#94A3B8]">Status</th>
+                      <th className="text-left py-2 text-[#94A3B8]">Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...(audit.sql_schema_and_tables || []).slice(0, 30).map((item) => ({
+                      layer: 'SQL/Table',
+                      component: `${item.schema}.${item.table}`,
+                      status: item.status,
+                      detail: item.detail,
+                    })), ...(audit.sql_functions || []).map((item) => ({
+                      layer: 'SQL/RPC',
+                      component: item.function,
+                      status: item.status,
+                      detail: item.detail,
+                    })), ...(audit.edge_functions || []).map((item) => ({
+                      layer: 'Edge Fn',
+                      component: item.edge_function,
+                      status: item.status,
+                      detail: item.detail,
+                    })), ...(audit.webhooks || []).map((item) => ({
+                      layer: 'Webhook',
+                      component: item.webhook,
+                      status: item.status,
+                      detail: item.detail,
+                    }))].map((row, idx) => (
+                      <tr key={`${row.layer}-${row.component}-${idx}`} style={{ borderBottom: '1px solid var(--biqc-border)' }} data-testid={`cognition-platform-audit-row-${idx}`}>
+                        <td className="py-2 text-[#94A3B8]">{row.layer}</td>
+                        <td className="py-2 text-[#CBD5E1]" style={{ fontFamily: fontFamily.mono }}>{row.component}</td>
+                        <td className="py-2">
+                          <span className="px-1.5 py-0.5 rounded" style={{
+                            background: row.status === 'working' ? 'rgba(16,185,129,0.12)' : row.status === 'partial' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
+                            color: row.status === 'working' ? '#10B981' : row.status === 'partial' ? '#F59E0B' : '#EF4444',
+                            fontFamily: fontFamily.mono,
+                          }}>{row.status}</span>
+                        </td>
+                        <td className="py-2 text-[#94A3B8]">{String(row.detail || '').slice(0, 120)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

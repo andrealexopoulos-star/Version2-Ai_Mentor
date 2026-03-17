@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from datetime import datetime, timezone
 import os
 import logging
+from biqc_jobs import biqc_jobs
 
 router = APIRouter(prefix="/health", tags=["health"])
 logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ async def detailed_health():
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "api": {"status": "healthy"},
         "supabase": _check_supabase(),
+        "redis": await biqc_jobs.health_async(),
         "workers": {
             "email_sync": _check_worker("email_sync_worker"),
             "intelligence": _check_worker("intelligence_worker"),
@@ -60,6 +62,7 @@ async def detailed_health():
             "openai": _check_openai(),
             "supabase_url": {"configured": bool(os.environ.get("SUPABASE_URL"))},
             "serper": {"configured": bool(os.environ.get("SERPER_API_KEY"))},
+            "redis_url": {"configured": bool(os.environ.get("REDIS_URL"))},
         },
     }
 
@@ -79,6 +82,7 @@ async def workers_health():
     return {
         "email_sync": _check_worker("email_sync_worker"),
         "intelligence": _check_worker("intelligence_worker"),
+        "redis_queue": await biqc_jobs.health_async(),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 

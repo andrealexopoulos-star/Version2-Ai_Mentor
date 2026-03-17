@@ -21,6 +21,52 @@ const AuthCallbackSupabase = () => {
   useEffect(() => {
     let mounted = true;
 
+    const routeAfterAuth = async (session) => {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      if (!backendUrl || !session?.access_token) {
+        navigate('/advisor', { replace: true });
+        return;
+      }
+
+      const headers = {
+        Authorization: `Bearer ${session.access_token}`,
+      };
+
+      try {
+        const [mergeRes, outlookRes, gmailRes] = await Promise.allSettled([
+          fetch(`${backendUrl}/api/integrations/merge/connected`, { headers }),
+          fetch(`${backendUrl}/api/outlook/status`, { headers }),
+          fetch(`${backendUrl}/api/gmail/status`, { headers }),
+        ]);
+
+        let hasConnectedTools = false;
+
+        if (mergeRes.status === 'fulfilled' && mergeRes.value.ok) {
+          const mergeData = await mergeRes.value.json();
+          const integrations = mergeData?.integrations || {};
+          hasConnectedTools = hasConnectedTools || Object.values(integrations).some((entry) => entry?.connected);
+        }
+
+        if (outlookRes.status === 'fulfilled' && outlookRes.value.ok) {
+          const outlookData = await outlookRes.value.json();
+          hasConnectedTools = hasConnectedTools || (Boolean(outlookData?.connected) && !Boolean(outlookData?.token_expired));
+        }
+
+        if (gmailRes.status === 'fulfilled' && gmailRes.value.ok) {
+          const gmailData = await gmailRes.value.json();
+          hasConnectedTools = hasConnectedTools || (Boolean(gmailData?.connected) && !Boolean(gmailData?.needs_reconnect));
+        }
+
+        if (hasConnectedTools) {
+          navigate('/advisor', { replace: true });
+        } else {
+          navigate('/integrations?onboarding=1&source=auth-callback', { replace: true });
+        }
+      } catch {
+        navigate('/advisor', { replace: true });
+      }
+    };
+
     const handleCallback = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
@@ -54,7 +100,7 @@ const AuthCallbackSupabase = () => {
         if (!mounted) return;
 
         if (data?.session) {
-          navigate('/advisor', { replace: true });
+          await routeAfterAuth(data.session);
           return;
         }
 
@@ -63,7 +109,7 @@ const AuthCallbackSupabase = () => {
           if (!mounted) { subscription.unsubscribe(); return; }
           if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
             subscription.unsubscribe();
-            navigate('/advisor', { replace: true });
+            routeAfterAuth(session);
           }
         });
 

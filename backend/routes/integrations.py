@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import os
 import uuid
 import json
@@ -21,12 +21,20 @@ from routes.deps import (
 from supabase_client import safe_query_single
 from auth_supabase import get_user_by_id
 from supabase_intelligence_helpers import get_business_profile_supabase
+from intelligence_live_truth import (
+    email_row_is_connected,
+    get_live_integration_truth,
+    get_recent_observation_events,
+    build_watchtower_events,
+    normalize_category,
+)
 from supabase_drive_helpers import (
     store_merge_integration, get_user_merge_integrations,
     get_merge_integration_by_token, update_merge_integration_sync,
     store_drive_file, store_drive_files_batch,
     get_user_drive_files, count_user_drive_files,
 )
+from biqc_jobs import enqueue_job
 
 router = APIRouter()
 
@@ -36,6 +44,157 @@ router = APIRouter()
 class MergeLinkTokenRequest(BaseModel):
     categories: Optional[List[str]] = None
     integration: Optional[str] = None  # Pre-select specific integration (e.g. "Stripe", "HubSpot")
+
+
+class DelegateWorkflowRequest(BaseModel):
+    decision_id: Optional[str] = None
+    decision_title: str
+    decision_summary: Optional[str] = None
+    domain: Optional[str] = None
+    severity: Optional[str] = None
+    provider_preference: Optional[str] = "auto"
+    assignee_name: Optional[str] = None
+    assignee_email: Optional[str] = None
+    assignee_remote_id: Optional[str] = None
+    due_at: Optional[str] = None
+    collection_remote_id: Optional[str] = None
+    create_calendar_event: Optional[bool] = False
+
+
+class DecisionFeedbackRequest(BaseModel):
+    decision_key: str
+    helpful: bool
+    reason: Optional[str] = None
+
+
+def _normalize_provider(provider: Optional[str]) -> str:
+    return str(provider or "").strip().lower()
+
+
+def _severity_to_priority(severity: Optional[str]) -> str:
+    sev = _normalize_provider(severity)
+    if sev in ("critical", "high"):
+        return "HIGH"
+    if sev in ("low", "info"):
+        return "LOW"
+    return "NORMAL"
+
+
+def _provider_matches_ticketing(provider_preference: str, ticketing_provider: str) -> bool:
+    pref = _normalize_provider(provider_preference)
+    ticket = _normalize_provider(ticketing_provider)
+    if pref in ("", "auto", "merge-ticketing"):
+        return True
+    if pref in ("jira", "asana"):
+        return pref in ticket
+    return False
+
+
+async def _get_ticketing_integration(user_id: str) -> Optional[Dict[str, Any]]:
+    try:
+        result = get_sb().table("integration_accounts").select(
+            "provider, category, account_token, connected_at"
+        ).eq("user_id", user_id).eq("category", "ticketing").order("connected_at", desc=True).limit(1).execute()
+        if result.data:
+            return result.data[0]
+    except Exception:
+        pass
+    return None
+
+
+async def _get_outlook_access_token(user_id: str) -> Optional[str]:
+    from routes.email import get_outlook_tokens, refresh_outlook_token_supabase
+
+    try:
+        tokens = await get_outlook_tokens(user_id)
+        if not tokens:
+            return None
+
+        access_token = tokens.get("access_token")
+        refresh_token = tokens.get("refresh_token")
+        expires_at_value = tokens.get("expires_at")
+
+        if not access_token:
+            return None
+
+        # If no expiry is present, use token as-is.
+        if not expires_at_value:
+            return access_token
+
+        try:
+            expiry = datetime.fromisoformat(str(expires_at_value).replace("Z", "+00:00"))
+            if expiry > datetime.now(timezone.utc):
+                return access_token
+        except Exception:
+            # On parse errors, fail open with current token.
+            return access_token
+
+        # Token is expired. Attempt refresh if refresh token exists.
+        if refresh_token:
+            try:
+                refreshed = await refresh_outlook_token_supabase(user_id, refresh_token)
+                return refreshed.get("access_token")
+            except Exception as refresh_error:
+                logger.warning(f"[delegate/outlook] token refresh failed for {user_id}: {refresh_error}")
+
+    except Exception as e:
+        logger.warning(f"[delegate/outlook] token lookup failed for {user_id}: {e}")
+
+    return None
+
+
+async def _has_gmail_connection(user_id: str) -> bool:
+    try:
+        row = get_sb().table("gmail_connections").select("id").eq("user_id", user_id).limit(1).execute()
+        return bool(row.data)
+    except Exception:
+        return False
+
+
+def _auto_delegate_provider(
+    provider_preference: str,
+    ticketing_provider: Optional[str],
+    has_outlook: bool,
+    has_google_workspace: bool,
+    task_preference: Optional[str] = None,
+    calendar_preference: Optional[str] = None,
+) -> str:
+    pref = _normalize_provider(provider_preference)
+    ticketing = _normalize_provider(ticketing_provider)
+    task_pref = _normalize_provider(task_preference)
+    cal_pref = _normalize_provider(calendar_preference)
+
+    if pref in ("jira", "asana") and _provider_matches_ticketing(pref, ticketing):
+        return pref
+    if pref == "manual":
+        return "manual"
+    if pref in ("merge-ticketing", "ticketing") and ticketing:
+        return ticketing
+    if pref in ("outlook", "exchange", "outlook-exchange", "microsoft") and has_outlook:
+        return "outlook-exchange"
+    if pref in ("google", "google-calendar") and has_google_workspace:
+        return "google-calendar"
+
+    if task_pref in ("jira", "asana") and _provider_matches_ticketing(task_pref, ticketing):
+        return task_pref
+    if ticketing:
+        if "jira" in ticketing:
+            return "jira"
+        if "asana" in ticketing:
+            return "asana"
+        return "merge-ticketing"
+
+    if cal_pref in ("outlook", "exchange", "outlook-exchange") and has_outlook:
+        return "outlook-exchange"
+    if cal_pref in ("google", "google-calendar") and has_google_workspace:
+        return "google-calendar"
+
+    if has_outlook:
+        return "outlook-exchange"
+    if has_google_workspace:
+        return "google-calendar"
+
+    return "manual"
 
 
 # ==================== MERGE.DEV INTEGRATION ====================
@@ -260,9 +419,14 @@ async def exchange_merge_account_token(
         except Exception as gov_err:
             logger.warning(f"⚠️ Governance event emission failed (non-blocking): {gov_err}")
 
-        # Trigger background record count sync (non-blocking)
+        # Trigger background record count sync via Redis queue
         try:
-            asyncio.create_task(_sync_category_counts(get_sb(), user_id, category))
+            await enqueue_job(
+                "integration-count-sync",
+                {"user_id": user_id, "category": category, "workspace_id": user_id},
+                company_id=user_id,
+                window_seconds=120,
+            )
         except Exception:
             pass
 
@@ -311,6 +475,8 @@ async def _sync_category_counts(sb, user_id: str, category: str):
 class MergeDisconnectRequest(BaseModel):
     provider: str
     category: str
+    provider_hint: Optional[str] = None
+    integration_slug: Optional[str] = None
 
 
 @router.post("/merge/disconnect")
@@ -322,10 +488,87 @@ async def disconnect_merge_integration(request: Request, payload: MergeDisconnec
     except Exception:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
-        result = get_sb().table("integration_accounts").delete().eq(
-            "user_id", user_id
-        ).eq("provider", payload.provider).execute()
-        logger.info(f"[merge/disconnect] Disconnected {payload.provider} for {user_id}")
+        sb = get_sb()
+
+        requested_category = normalize_category(payload.category, payload.provider, payload.integration_slug)
+        candidate_tokens = {
+            str(payload.provider or "").strip().lower(),
+            str(payload.provider_hint or "").strip().lower(),
+            str(payload.integration_slug or "").strip().lower(),
+        }
+
+        expanded_tokens = set()
+        for token in candidate_tokens:
+            if not token:
+                continue
+            expanded_tokens.add(token)
+            if ":" in token:
+                expanded_tokens.add(token.split(":", 1)[1])
+            expanded_tokens.add(token.replace("-", " "))
+            expanded_tokens.add(token.replace("_", " "))
+
+        rows_result = sb.table("integration_accounts").select("*").eq("user_id", user_id).execute()
+
+        rows = rows_result.data or []
+        rows_to_delete = []
+
+        for row in rows:
+            row_category = normalize_category(row.get("category"), row.get("provider"), row.get("integration_slug"))
+            if requested_category and row_category != requested_category:
+                continue
+
+            provider_norm = str(row.get("provider") or "").strip().lower()
+            slug_norm = str(row.get("integration_slug") or "").strip().lower()
+            provider_spaced = provider_norm.replace("-", " ").replace("_", " ")
+            slug_spaced = slug_norm.replace("-", " ").replace("_", " ")
+
+            matched = (
+                provider_norm in expanded_tokens
+                or slug_norm in expanded_tokens
+                or provider_spaced in expanded_tokens
+                or slug_spaced in expanded_tokens
+                or any(token and token in {provider_norm, slug_norm, provider_spaced, slug_spaced} for token in expanded_tokens)
+            )
+
+            if matched:
+                rows_to_delete.append(row)
+
+        if not rows_to_delete:
+            raise HTTPException(status_code=404, detail="Integration record not found for disconnect")
+
+        row_ids = [row["id"] for row in rows_to_delete if row.get("id")]
+        if row_ids:
+            sb.table("integration_accounts").delete().in_("id", row_ids).execute()
+        else:
+            for row in rows_to_delete:
+                provider_value = row.get("provider")
+                category_value = row.get("category")
+                if provider_value:
+                    delete_query = sb.table("integration_accounts").delete().eq("user_id", user_id).eq("provider", provider_value)
+                    if category_value:
+                        delete_query = delete_query.eq("category", category_value)
+                    delete_query.execute()
+
+        # Also mark integration_status disconnected so downstream UI updates immediately.
+        for row in rows_to_delete:
+            provider_label = row.get("provider") or row.get("integration_slug") or payload.provider
+            category_label = normalize_category(row.get("category"), row.get("provider"), row.get("integration_slug"))
+            try:
+                await _upsert_integration_status(
+                    sb,
+                    user_id,
+                    provider_label,
+                    category_label,
+                    connected=False,
+                    provider=provider_label,
+                    records_count=0,
+                    record_type="records",
+                    error_message="Disconnected by user",
+                )
+            except Exception:
+                pass
+
+        logger.info(f"[merge/disconnect] Disconnected {len(rows_to_delete)} integration record(s) for {user_id}")
         
         # GOVERNANCE: Record disconnection
         try:
@@ -345,7 +588,9 @@ async def disconnect_merge_integration(request: Request, payload: MergeDisconnec
         except Exception as gov_err:
             logger.warning(f"⚠️ Governance disconnect event failed: {gov_err}")
         
-        return {"ok": True, "provider": payload.provider}
+        return {"ok": True, "provider": payload.provider, "deleted_count": len(rows_to_delete)}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"[merge/disconnect] Error: {e}")
         raise HTTPException(status_code=500, detail="Disconnect failed")
@@ -383,81 +628,35 @@ async def refresh_merge_token(request: Request, payload: dict = None):
 
 @router.get("/integrations/merge/connected")
 async def get_connected_merge_integrations(current_user: dict = Depends(get_current_user)):
-    """Get all connected Merge.dev integrations — checks BOTH workspace and direct user_id."""
+    """Get connected integrations from canonical live-truth resolver."""
     try:
         user_id = current_user["id"]
+        live_truth = get_live_integration_truth(get_sb(), user_id)
         integrations = {}
-        
-        # PATH 1: Check integration_accounts directly by user_id (most reliable)
-        direct_result = get_sb().table("integration_accounts").select("*").eq("user_id", user_id).execute()
-        for record in (direct_result.data or []):
-            provider = record.get("provider", "unknown")
-            category = record.get("category", "unknown")
-            if category == "email":
-                continue
-            integrations[provider] = {
+
+        for item in (live_truth.get("integrations") or []):
+            provider = item.get("provider") or item.get("integration_name") or "unknown"
+            category = normalize_category(item.get("category"), provider)
+            key = f"{category}:{str(provider).lower()}"
+            integrations[key] = {
                 "provider": provider,
                 "category": category,
-                "connected": True,
-                "connected_at": record.get("connected_at") or record.get("created_at"),
-                "merge_account_id": record.get("merge_account_id"),
-                "account_token": record.get("account_token"),
+                "connected": bool(item.get("connected")),
+                "connected_at": item.get("connected_at"),
+                "merge_account_id": item.get("merge_account_id"),
+                "account_token": item.get("account_token"),
+                "connected_email": item.get("connected_email"),
             }
-        
-        # PATH 2: Also check via workspace if available
-        if not integrations:
-            from workspace_helpers import get_user_account, get_account_integrations
-            account = await get_user_account(get_sb(), user_id)
-            if account:
-                account_id = account["id"]
-                integration_records = await get_account_integrations(get_sb(), account_id)
-                for record in integration_records:
-                    provider = record.get("provider", "unknown")
-                    category = record.get("category", "unknown")
-                    if category == "email" or not record.get("merge_account_id"):
-                        continue
-                    integrations[provider] = {
-                        "provider": provider,
-                        "category": category,
-                        "connected": True,
-                        "connected_at": record.get("connected_at") or record.get("created_at"),
-                        "merge_account_id": record.get("merge_account_id"),
-                    }
-        
-        # PATH 3: Check email connections using 'connected' boolean column
-        try:
-            email_result = get_sb().table("email_connections").select("provider, connected, connected_email").eq("user_id", user_id).execute()
-            for record in (email_result.data or []):
-                if record.get("connected") is not False:  # connected=True or connected=None (legacy rows)
-                    provider = record.get("provider", "email")
-                    integrations[f"email_{provider}"] = {
-                        "provider": provider,
-                        "category": "email",
-                        "connected": True,
-                        "connected_email": record.get("connected_email"),
-                    }
-        except Exception:
-            pass
-        
-        # P3: Add live signal freshness
-        signal_count = 0
-        last_signal = None
-        try:
-            obs = get_sb().table('observation_events').select('observed_at', count='exact').eq('user_id', user_id).order('observed_at', desc=True).limit(1).execute()
-            signal_count = obs.count or 0
-            if obs.data:
-                last_signal = obs.data[0].get('observed_at')
-        except Exception:
-            pass
+
+        observation_state = get_recent_observation_events(get_sb(), user_id, limit=1)
+        signal_count = observation_state.get("count", 0)
+        last_signal = observation_state.get("last_signal_at")
 
         logger.info(f"Found {len(integrations)} integrations for user {user_id}")
         return {
             "integrations": integrations,
             "canonical_truth": {
-                "crm_connected": any(v.get("category") == "crm" for v in integrations.values()),
-                "accounting_connected": any(v.get("category") == "accounting" for v in integrations.values()),
-                "email_connected": any(v.get("category") == "email" for v in integrations.values()),
-                "total_connected": len(integrations),
+                **(live_truth.get("canonical_truth") or {}),
                 "live_signal_count": signal_count,
                 "last_signal_at": last_signal,
             }
@@ -861,28 +1060,109 @@ async def get_accounting_summary(current_user: dict = Depends(get_current_user))
     summary = {"connected": True, "invoices": [], "payments": [], "metrics": {}}
     
     try:
-        invoices = await merge_client.get_invoices(account_token=account_token, page_size=50)
-        invoice_list = invoices.get("results", [])
+        invoice_list = []
+        cursor = None
+        pages_fetched = 0
+        max_pages = 10
+
+        for _ in range(max_pages):
+            invoice_page = await merge_client.get_invoices(account_token=account_token, cursor=cursor, page_size=100)
+            batch = invoice_page.get("results", []) or []
+            invoice_list.extend(batch)
+            pages_fetched += 1
+            cursor = invoice_page.get("next")
+            if not cursor or not batch:
+                break
+
         summary["invoices"] = invoice_list
         
         total_outstanding = 0
         total_overdue = 0
         overdue_count = 0
+        total_outstanding_client = 0
+        total_outstanding_supplier = 0
+        total_overdue_client = 0
+        total_overdue_supplier = 0
+        overdue_count_client = 0
+        overdue_count_supplier = 0
+        today_date = datetime.now(timezone.utc).date()
+
+        def _parse_due_date(raw_value):
+            if not raw_value:
+                return None
+            raw = str(raw_value)
+            try:
+                return datetime.fromisoformat(raw.replace("Z", "+00:00")).date()
+            except Exception:
+                try:
+                    return datetime.strptime(raw[:10], "%Y-%m-%d").date()
+                except Exception:
+                    return None
+
+        def _invoice_bucket(inv: Dict[str, Any]) -> str:
+            raw_type = str(
+                inv.get("type")
+                or inv.get("invoice_type")
+                or inv.get("document_type")
+                or inv.get("transaction_type")
+                or ""
+            ).upper()
+            if any(token in raw_type for token in ("RECEIVABLE", "CUSTOMER", "AR", "SALES")):
+                return "client"
+            if any(token in raw_type for token in ("PAYABLE", "VENDOR", "SUPPLIER", "BILL", "AP")):
+                return "supplier"
+            return "unknown"
         
         for inv in invoice_list:
             amount = float(inv.get("total_amount") or inv.get("amount") or 0)
             status = (inv.get("status") or "").upper()
-            if status in ("SUBMITTED", "AUTHORIZED", "OPEN"):
+            bucket = _invoice_bucket(inv)
+
+            closed_statuses = {"PAID", "VOID", "DELETED", "CANCELLED", "CANCELED", "CREDITED"}
+            open_statuses = {"OPEN", "AUTHORIZED", "SUBMITTED", "PARTIALLY_PAID", "SENT", "APPROVED", "OVERDUE"}
+
+            is_closed = status in closed_statuses
+            is_open = status in open_statuses
+
+            if is_open and not is_closed:
                 total_outstanding += amount
-            if status == "OVERDUE" or (inv.get("due_date") and inv.get("due_date") < str(__import__('datetime').date.today())):
+                if bucket == "client":
+                    total_outstanding_client += amount
+                elif bucket == "supplier":
+                    total_outstanding_supplier += amount
+
+            due_date = _parse_due_date(inv.get("due_date"))
+            is_overdue = (not is_closed) and (
+                status == "OVERDUE"
+                or (is_open and due_date is not None and due_date < today_date)
+            )
+            if is_overdue:
                 total_overdue += amount
                 overdue_count += 1
+                if bucket == "client":
+                    total_overdue_client += amount
+                    overdue_count_client += 1
+                elif bucket == "supplier":
+                    total_overdue_supplier += amount
+                    overdue_count_supplier += 1
         
         summary["metrics"] = {
             "total_invoices": len(invoice_list),
-            "total_outstanding": round(total_outstanding, 2),
-            "total_overdue": round(total_overdue, 2),
-            "overdue_count": overdue_count,
+            "total_client_invoices": sum(1 for inv in invoice_list if _invoice_bucket(inv) == "client"),
+            "total_supplier_invoices": sum(1 for inv in invoice_list if _invoice_bucket(inv) == "supplier"),
+            "invoice_pages_fetched": pages_fetched,
+            "total_outstanding": round(total_outstanding_client, 2),
+            "total_overdue": round(total_overdue_client, 2),
+            "overdue_count": overdue_count_client,
+            "total_outstanding_all": round(total_outstanding, 2),
+            "total_overdue_all": round(total_overdue, 2),
+            "overdue_count_all": overdue_count,
+            "total_outstanding_client": round(total_outstanding_client, 2),
+            "total_overdue_client": round(total_overdue_client, 2),
+            "overdue_count_client": overdue_count_client,
+            "total_outstanding_supplier": round(total_outstanding_supplier, 2),
+            "total_overdue_supplier": round(total_overdue_supplier, 2),
+            "overdue_count_supplier": overdue_count_supplier,
         }
         
         try:
@@ -1158,32 +1438,32 @@ async def get_watchtower_events(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Get Watchtower events for current workspace
-    
-    These are authoritative intelligence statements
+    Canonical Watchtower endpoint.
+    Returns SQL-computed positions when available plus the latest grounded events.
     """
-    from workspace_helpers import get_user_account
-    from watchtower_store import get_watchtower_store
-    
     user_id = current_user["id"]
-    
+
     try:
-        account = await get_user_account(get_sb(), user_id)
-        if not account:
-            logger.error(f"No workspace found for user {user_id}")
-            raise HTTPException(status_code=400, detail="Workspace not initialized. Contact support.")
-        
-        account_id = account["id"]
-        
-        # Fetch watchtower events
-        watchtower = get_watchtower_store()
-        events = await watchtower.get_events(account_id, status=status)
-        
-        logger.info(f"✅ Watchtower events fetched for workspace {account_id}: {len(events)} events")
-        
+        sb = get_sb()
+        positions = None
+        try:
+            rpc_result = sb.rpc('compute_watchtower_positions', {'p_workspace_id': user_id}).execute()
+            positions = rpc_result.data if rpc_result and rpc_result.data else None
+        except Exception as rpc_error:
+            raise HTTPException(status_code=503, detail=f"Canonical watchtower SQL unavailable: {rpc_error}")
+
+        observation_state = get_recent_observation_events(sb, user_id, limit=20)
+        events = build_watchtower_events(observation_state.get("events") or [], limit=10)
+
+        logger.info(f"✅ Watchtower state fetched for user {user_id}: {len(events)} events")
+
         return {
+            "status": "computed",
+            "has_data": bool((positions or {}).get("positions") or events),
+            "positions": (positions or {}).get("positions", {}),
             "events": events,
-            "count": len(events)
+            "count": len(events),
+            "computed_at": (positions or {}).get("computed_at"),
         }
     except HTTPException:
         raise
@@ -1228,6 +1508,766 @@ async def alert_action(request: Request, current_user: dict = Depends(get_curren
         logger.warning(f"[alert-action] Log failed (table may not exist): {e}")
     
     return {"success": True, "action": action, "alert_id": alert_id}
+
+
+@router.get("/intelligence/alerts/actions")
+async def list_alert_actions(limit: int = 100, current_user: dict = Depends(get_current_user)):
+    """List recorded alert actions for current user (latest first)."""
+    user_id = current_user["id"]
+    safe_limit = max(1, min(limit, 500))
+
+    try:
+        result = get_sb().table("alert_actions").select(
+            "alert_id, action, created_at"
+        ).eq("user_id", user_id).order("created_at", desc=True).limit(safe_limit).execute()
+
+        return {
+            "actions": result.data or [],
+            "count": len(result.data or []),
+        }
+    except Exception as e:
+        logger.warning(f"[alert-actions/list] Failed (table may not exist): {e}")
+        return {
+            "actions": [],
+            "count": 0,
+        }
+
+
+@router.get("/workflows/delegate/providers")
+async def get_delegate_providers(current_user: dict = Depends(get_current_user)):
+    """Return available delegate providers and recommended auto-routing for this user."""
+    user_id = current_user["id"]
+
+    ticketing_row = await _get_ticketing_integration(user_id)
+    ticketing_provider = _normalize_provider((ticketing_row or {}).get("provider"))
+    has_outlook = bool(await _get_outlook_access_token(user_id))
+
+    outlook_connected = False
+    outlook_expired = False
+    outlook_expires_at = None
+    try:
+        outlook_row = get_sb().table("outlook_oauth_tokens").select("expires_at").eq("user_id", user_id).limit(1).execute()
+        if outlook_row.data:
+            outlook_connected = True
+            outlook_expires_at = outlook_row.data[0].get("expires_at")
+            if outlook_expires_at:
+                expiry = datetime.fromisoformat(str(outlook_expires_at).replace("Z", "+00:00"))
+                outlook_expired = expiry <= datetime.now(timezone.utc)
+    except Exception:
+        pass
+
+    gmail_connected = False
+    gmail_needs_reconnect = False
+    try:
+        gmail_row = get_sb().table("gmail_connections").select("token_expiry").eq("user_id", user_id).limit(1).execute()
+        if gmail_row.data:
+            gmail_connected = True
+            token_expiry = gmail_row.data[0].get("token_expiry")
+            if token_expiry:
+                expiry = datetime.fromisoformat(str(token_expiry).replace("Z", "+00:00"))
+                gmail_needs_reconnect = expiry <= datetime.now(timezone.utc)
+    except Exception:
+        pass
+
+    has_google_workspace = gmail_connected and not gmail_needs_reconnect
+
+    task_pref = None
+    cal_pref = None
+    try:
+        pref_row = get_sb().table("user_provider_preferences").select(
+            "primary_task_provider, primary_calendar_provider"
+        ).eq("user_id", user_id).maybe_single().execute()
+        if pref_row and pref_row.data:
+            task_pref = pref_row.data.get("primary_task_provider")
+            cal_pref = pref_row.data.get("primary_calendar_provider")
+    except Exception:
+        pass
+
+    recommended = _auto_delegate_provider(
+        provider_preference="auto",
+        ticketing_provider=ticketing_provider,
+        has_outlook=has_outlook,
+        has_google_workspace=has_google_workspace,
+        task_preference=task_pref,
+        calendar_preference=cal_pref,
+    )
+
+    providers = [
+        {
+            "id": "auto",
+            "label": "Auto (based on connected business tools)",
+            "available": recommended != "manual",
+        },
+        {
+            "id": "manual",
+            "label": "Manual follow-up",
+            "available": True,
+        },
+        {
+            "id": "jira",
+            "label": "Jira (via Merge)",
+            "available": "jira" in ticketing_provider,
+        },
+        {
+            "id": "asana",
+            "label": "Asana (via Merge)",
+            "available": "asana" in ticketing_provider,
+        },
+        {
+            "id": "merge-ticketing",
+            "label": "Connected Ticketing Tool (via Merge)",
+            "available": bool(ticketing_provider),
+        },
+        {
+            "id": "outlook-exchange",
+            "label": "Outlook / Exchange",
+            "available": has_outlook,
+        },
+        {
+            "id": "google-calendar",
+            "label": "Google Calendar",
+            "available": has_google_workspace,
+        },
+    ]
+
+    return {
+        "providers": providers,
+        "recommended_provider": recommended,
+        "connected_business_tools": {
+            "ticketing_provider": ticketing_provider or None,
+            "outlook_exchange": has_outlook,
+            "outlook_connected": outlook_connected,
+            "outlook_expired": outlook_expired,
+            "outlook_expires_at": outlook_expires_at,
+            "google_workspace": has_google_workspace,
+            "gmail_connected": gmail_connected,
+            "gmail_needs_reconnect": gmail_needs_reconnect,
+        },
+    }
+
+
+@router.get("/workflows/delegate/options")
+async def get_delegate_options(
+    provider: str = "auto",
+    current_user: dict = Depends(get_current_user),
+):
+    """Return provider-specific delegate options (assignees/projects/collaborators)."""
+    from merge_client import get_merge_client
+
+    user_id = current_user["id"]
+    ticketing_row = await _get_ticketing_integration(user_id)
+    ticketing_provider = _normalize_provider((ticketing_row or {}).get("provider"))
+    has_outlook = bool(await _get_outlook_access_token(user_id))
+    has_google_workspace = await _has_gmail_connection(user_id)
+
+    selected_provider = _auto_delegate_provider(
+        provider_preference=provider,
+        ticketing_provider=ticketing_provider,
+        has_outlook=has_outlook,
+        has_google_workspace=has_google_workspace,
+    )
+
+    if selected_provider in ("jira", "asana", "merge-ticketing"):
+        token = (ticketing_row or {}).get("account_token")
+        if not token:
+            return {"provider": selected_provider, "assignees": [], "collections": []}
+
+        merge_client = get_merge_client()
+        users_data, collections_data = await asyncio.gather(
+            merge_client.get_ticketing_users(account_token=token, page_size=100),
+            merge_client.get_ticketing_collections(account_token=token, page_size=100),
+            return_exceptions=True,
+        )
+
+        users_results = users_data.get("results", []) if isinstance(users_data, dict) else []
+        collections_results = collections_data.get("results", []) if isinstance(collections_data, dict) else []
+
+        assignees = []
+        for user in users_results[:100]:
+            name = user.get("display_name") or " ".join(filter(None, [user.get("first_name"), user.get("last_name")])).strip()
+            assignees.append({
+                "id": user.get("id"),
+                "name": name or user.get("email") or "Unlabelled user",
+                "email": user.get("email"),
+            })
+
+        collections = [
+            {
+                "id": collection.get("id"),
+                "name": collection.get("name") or collection.get("remote_data", {}).get("name") or "Untitled project",
+            }
+            for collection in collections_results[:100]
+        ]
+
+        return {
+            "provider": selected_provider,
+            "connected_provider": ticketing_provider,
+            "assignees": assignees,
+            "collections": collections,
+        }
+
+    if selected_provider == "outlook-exchange":
+        collaborators = []
+        try:
+            intel = get_sb().table("calendar_intelligence").select("top_collaborators").eq("user_id", user_id).order("synced_at", desc=True).limit(1).execute()
+            row = (intel.data or [{}])[0]
+            top = row.get("top_collaborators") or []
+            collaborators = [
+                {
+                    "id": person.get("name"),
+                    "name": person.get("name"),
+                    "email": person.get("email"),
+                }
+                for person in top if person.get("name")
+            ]
+        except Exception:
+            collaborators = []
+
+        return {
+            "provider": selected_provider,
+            "assignees": collaborators,
+            "collections": [],
+        }
+
+    return {
+        "provider": selected_provider,
+        "assignees": [],
+        "collections": [],
+    }
+
+
+@router.post("/workflows/delegate/execute")
+async def execute_delegate_workflow(
+    payload: DelegateWorkflowRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Execute delegate action through Merge (Jira/Asana) or Outlook/Exchange."""
+    from merge_client import get_merge_client
+
+    user_id = current_user["id"]
+    ticketing_row = await _get_ticketing_integration(user_id)
+    ticketing_provider = _normalize_provider((ticketing_row or {}).get("provider"))
+    has_outlook = bool(await _get_outlook_access_token(user_id))
+    has_google_workspace = await _has_gmail_connection(user_id)
+
+    task_pref = None
+    cal_pref = None
+    try:
+        pref_row = get_sb().table("user_provider_preferences").select(
+            "primary_task_provider, primary_calendar_provider"
+        ).eq("user_id", user_id).maybe_single().execute()
+        if pref_row and pref_row.data:
+            task_pref = pref_row.data.get("primary_task_provider")
+            cal_pref = pref_row.data.get("primary_calendar_provider")
+    except Exception:
+        pass
+
+    provider_used = _auto_delegate_provider(
+        provider_preference=payload.provider_preference or "auto",
+        ticketing_provider=ticketing_provider,
+        has_outlook=has_outlook,
+        has_google_workspace=has_google_workspace,
+        task_preference=task_pref,
+        calendar_preference=cal_pref,
+    )
+
+    if provider_used == "manual":
+        raise HTTPException(status_code=409, detail="No connected delegate provider found. Connect Jira/Asana via Merge or Outlook/Exchange.")
+
+    external_reference = None
+    execution_detail: Dict[str, Any] = {"provider": provider_used}
+
+    if provider_used in ("jira", "asana", "merge-ticketing"):
+        if not ticketing_row or not ticketing_row.get("account_token"):
+            raise HTTPException(status_code=409, detail="Ticketing integration is not connected. Connect Jira/Asana via Merge first.")
+
+        if provider_used in ("jira", "asana") and not _provider_matches_ticketing(provider_used, ticketing_provider):
+            raise HTTPException(status_code=409, detail=f"{provider_used.title()} is not the connected ticketing provider for this workspace.")
+
+        merge_client = get_merge_client()
+        model: Dict[str, Any] = {
+            "name": payload.decision_title[:180],
+            "description": "\n".join([
+                f"Decision: {payload.decision_title}",
+                f"Summary: {payload.decision_summary or 'No summary provided.'}",
+                f"Domain: {payload.domain or 'general'}",
+                f"Severity: {payload.severity or 'medium'}",
+                f"Assignee: {payload.assignee_name or payload.assignee_email or 'Unassigned'}",
+                f"Due: {payload.due_at or 'Not set'}",
+            ]),
+            "priority": _severity_to_priority(payload.severity),
+        }
+        if payload.assignee_remote_id:
+            model["assignees"] = [payload.assignee_remote_id]
+        if payload.collection_remote_id:
+            model["collections"] = [payload.collection_remote_id]
+        if payload.due_at:
+            model["due_date"] = payload.due_at
+
+        created = await merge_client.create_ticket(
+            account_token=ticketing_row["account_token"],
+            model=model,
+        )
+        external_reference = created.get("id") or created.get("remote_id")
+        execution_detail["result"] = created
+
+    elif provider_used == "outlook-exchange":
+        access_token = await _get_outlook_access_token(user_id)
+        if not access_token:
+            raise HTTPException(status_code=409, detail="Outlook/Exchange is not connected for this workspace.")
+
+        start_dt = None
+        if payload.due_at:
+            try:
+                start_dt = datetime.fromisoformat(payload.due_at.replace("Z", "+00:00")) - timedelta(minutes=30)
+            except Exception:
+                start_dt = None
+        if not start_dt:
+            start_dt = datetime.now(timezone.utc) + timedelta(hours=24)
+        end_dt = start_dt + timedelta(minutes=30)
+
+        event_body = {
+            "subject": f"Delegate: {payload.decision_title}",
+            "body": {
+                "contentType": "Text",
+                "content": payload.decision_summary or "Delegated from BIQc Advisor workflow.",
+            },
+            "start": {
+                "dateTime": start_dt.astimezone(timezone.utc).isoformat(),
+                "timeZone": "UTC",
+            },
+            "end": {
+                "dateTime": end_dt.astimezone(timezone.utc).isoformat(),
+                "timeZone": "UTC",
+            },
+        }
+        if payload.assignee_email:
+            event_body["attendees"] = [{
+                "emailAddress": {
+                    "address": payload.assignee_email,
+                    "name": payload.assignee_name or payload.assignee_email,
+                },
+                "type": "required",
+            }]
+
+        async with httpx.AsyncClient(timeout=25) as client:
+            response = await client.post(
+                "https://graph.microsoft.com/v1.0/me/events",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                },
+                json=event_body,
+            )
+        if response.status_code not in (200, 201):
+            error_text = response.text or ""
+            if "InvalidAuthenticationToken" in error_text or "token is expired" in error_text.lower():
+                raise HTTPException(status_code=409, detail="Outlook/Exchange token expired. Please reconnect Outlook and retry delegation.")
+            raise HTTPException(status_code=502, detail=f"Outlook delegation failed: {response.text}")
+
+        created_event = response.json()
+        external_reference = created_event.get("id")
+        execution_detail["result"] = {
+            "id": created_event.get("id"),
+            "webLink": created_event.get("webLink"),
+        }
+
+    elif provider_used == "google-calendar":
+        raise HTTPException(status_code=409, detail="Google Calendar delegation requires a dedicated Calendar OAuth token. Connect Google Calendar first.")
+
+    try:
+        get_sb().table("alert_actions").insert({
+            "user_id": user_id,
+            "alert_id": str(payload.decision_id or payload.decision_title),
+            "action": "hand-off",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+    except Exception:
+        pass
+
+    try:
+        get_sb().table("workflow_actions").insert({
+            "user_id": user_id,
+            "provider": provider_used,
+            "action_type": "delegate",
+            "payload": {
+                "decision_id": payload.decision_id,
+                "decision_title": payload.decision_title,
+                "assignee_name": payload.assignee_name,
+                "assignee_email": payload.assignee_email,
+                "due_at": payload.due_at,
+                "domain": payload.domain,
+                "severity": payload.severity,
+            },
+            "status": "completed",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+    except Exception:
+        # Non-blocking if workflow_actions table is not present in environment.
+        pass
+
+    return {
+        "success": True,
+        "provider_used": provider_used,
+        "external_reference": external_reference,
+        "detail": execution_detail,
+    }
+
+
+@router.post("/workflows/decision-feedback")
+async def record_decision_feedback(
+    payload: DecisionFeedbackRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Store decision helpfulness feedback for cognition tuning loops."""
+    user_id = current_user["id"]
+
+    try:
+        get_sb().table("decision_feedback").insert({
+            "user_id": user_id,
+            "decision_key": payload.decision_key,
+            "helpful": payload.helpful,
+            "reason": payload.reason,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+        return {"success": True, "stored": True}
+    except Exception:
+        return {"success": True, "stored": False}
+
+
+@router.get("/advisor/executive-surface")
+async def get_advisor_executive_surface(current_user: dict = Depends(get_current_user)):
+    """
+    Build a concrete, plain-language executive decision surface from connected integrations.
+    This endpoint is designed for high-trust card summaries on /advisor.
+    """
+    user_id = current_user["id"]
+    user_email = str(current_user.get("email") or "").strip().lower()
+    is_founder_ops_account = user_email == "andre@thestrategysquad.com.au"
+
+    def _parse_dt(value: Optional[str]) -> Optional[datetime]:
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except Exception:
+            return None
+
+    def _days_since(value: Optional[str]) -> int:
+        parsed = _parse_dt(value)
+        if not parsed:
+            return 0
+        return max(0, (datetime.now(timezone.utc) - parsed).days)
+
+    connected_tools: Dict[str, Any] = {}
+    crm_deals: List[Dict[str, Any]] = []
+    accounting_summary: Dict[str, Any] = {}
+    watchtower_events: List[Dict[str, Any]] = []
+    priority_analysis: Dict[str, Any] = {}
+
+    try:
+        merge_connected = await get_connected_merge_integrations(current_user=current_user)
+        connected_tools = merge_connected.get("integrations", {})
+    except Exception:
+        connected_tools = {}
+
+    try:
+        crm_data = await get_crm_deals(page_size=100, current_user=current_user)
+        crm_deals = crm_data.get("results", []) or []
+    except Exception:
+        crm_deals = []
+
+    try:
+        accounting_summary = await get_accounting_summary(current_user=current_user)
+    except Exception:
+        accounting_summary = {"connected": False, "metrics": {}}
+
+    try:
+        watchtower_data = await get_watchtower_events(limit=30, current_user=current_user)
+        watchtower_events = watchtower_data.get("events", []) or []
+    except Exception:
+        watchtower_events = []
+
+    try:
+        from supabase_intelligence_helpers import get_priority_analysis_supabase
+        priority_row = await get_priority_analysis_supabase(get_sb(), user_id) or {}
+        if isinstance(priority_row.get("analysis"), dict):
+            priority_analysis = priority_row.get("analysis") or {}
+        else:
+            priority_analysis = priority_row or {}
+    except Exception:
+        priority_analysis = {}
+
+    generated_at = datetime.now(timezone.utc).isoformat()
+
+    open_deals = [deal for deal in crm_deals if str(deal.get("status") or "").upper() == "OPEN"]
+    stalled_deals = []
+    for deal in open_deals:
+        days_idle = _days_since(deal.get("last_activity_at") or deal.get("last_modified_at") or deal.get("created_at"))
+        if days_idle >= 3:
+            stalled_deals.append({
+                "name": deal.get("name") or "Unnamed opportunity",
+                "days_idle": days_idle,
+                "value": deal.get("value") or deal.get("amount"),
+            })
+    stalled_deals.sort(key=lambda item: item["days_idle"], reverse=True)
+
+    metrics = accounting_summary.get("metrics") or {}
+    overdue_count = int(metrics.get("overdue_count") or 0)
+    total_overdue = float(metrics.get("total_overdue") or 0)
+    total_outstanding = float(metrics.get("total_outstanding") or 0)
+    overdue_count_supplier = int(metrics.get("overdue_count_supplier") or 0)
+    total_overdue_supplier = float(metrics.get("total_overdue_supplier") or 0)
+    accounting_error = accounting_summary.get("error") if isinstance(accounting_summary, dict) else None
+
+    high_priority_threads = priority_analysis.get("high_priority") or []
+    medium_priority_threads = priority_analysis.get("medium_priority") or []
+    low_priority_threads = priority_analysis.get("low_priority") or []
+    priority_analysis_available = bool(high_priority_threads or medium_priority_threads or low_priority_threads)
+
+    accounting_provider = "Accounting System"
+    email_provider = "Outlook"
+    for entry in connected_tools.values():
+        if str(entry.get("category") or "").lower() == "accounting" and entry.get("provider"):
+            accounting_provider = str(entry.get("provider"))
+            break
+
+    email_connected = False
+    for entry in connected_tools.values():
+        if str(entry.get("category") or "").lower() == "email" and bool(entry.get("connected")):
+            email_connected = True
+            if entry.get("provider"):
+                email_provider = str(entry.get("provider"))
+
+    response_delay_events = []
+    for event in watchtower_events:
+        title_blob = f"{event.get('title', '')} {event.get('event', '')} {event.get('summary', '')}".lower()
+        if "response" in title_blob or "delay" in title_blob or "silence" in title_blob:
+            response_delay_events.append(event)
+
+    candidate_signals = []
+
+    if stalled_deals:
+        top_examples = ", ".join([f"{item['name']} ({item['days_idle']}d)" for item in stalled_deals[:3]])
+        candidate_signals.append({
+            "signal_key": "crm-stalled-opportunities",
+            "bucket_hint": "decide_now",
+            "risk_score": min(95, 55 + len(stalled_deals)),
+            "confidence_interval": "68–84%",
+            "source": "HubSpot CRM",
+            "timestamp": generated_at,
+            "signal_summary": f"{len(stalled_deals)} opportunities have had no activity for more than 72 hours.",
+            "evidence_summary": f"Examples: {top_examples}",
+            "decision_summary": "Revenue conversion is at risk unless owners re-engage these opportunities immediately.",
+            "consequence": "Expected conversion probability can drop 12–18% this week if these remain idle.",
+            "action_summary": "Assign top stalled opportunities to named owners and send follow-up today.",
+            "evidence_refs": stalled_deals[:5],
+        })
+
+    if overdue_count > 0:
+        candidate_signals.append({
+            "signal_key": "xero-overdue-invoices",
+            "bucket_hint": "decide_now",
+            "risk_score": min(97, 58 + overdue_count),
+            "confidence_interval": "72–88%",
+            "source": "Xero Accounting",
+            "timestamp": generated_at,
+            "signal_summary": f"{overdue_count} invoices are overdue with {total_overdue:,.0f} outstanding.",
+            "evidence_summary": (
+                f"Source: {accounting_provider} via Merge accounting sync. "
+                f"Computed from client receivable invoices only (AR), excluding supplier bills (AP), "
+                f"from paginated invoice scan (up to 1,000 records) where status is OVERDUE or due date is past today. "
+                f"Outstanding ledger snapshot: {total_outstanding:,.0f}."
+            ),
+            "decision_summary": "Cashflow pressure is rising and collections actions should be triggered now.",
+            "consequence": "Ignoring this may create near-term cash shortfall and delayed payroll/vendor payments.",
+            "action_summary": "Trigger reminder sequence and call top overdue clients today.",
+            "evidence_refs": [{
+                "provider": accounting_provider,
+                "source_endpoint": "/integrations/accounting/summary",
+                "window": "paginated scan up to 1,000 invoices",
+                "rule": "CLIENT invoices only: status == OVERDUE OR due_date < today",
+                "overdue_count": overdue_count,
+                "total_overdue": total_overdue,
+                "total_outstanding": total_outstanding,
+                "overdue_count_supplier": overdue_count_supplier,
+                "total_overdue_supplier": total_overdue_supplier,
+            }],
+        })
+
+    if accounting_error:
+        if is_founder_ops_account:
+            error_signal_summary = "ERROR: Xero live data feed is unavailable."
+            error_decision_summary = "A non-live or failed accounting API state was detected and requires immediate remediation before client-facing use."
+            error_action_summary = "ERROR — investigate Merge/Xero token health and API state immediately, then run Refresh intelligence."
+        else:
+            error_signal_summary = "Xero data could not be refreshed."
+            error_decision_summary = "Cash exposure cannot be verified until accounting authentication is restored."
+            error_action_summary = "Reconnect integration. If this persists, contact support."
+
+        candidate_signals.append({
+            "signal_key": "accounting-sync-unavailable",
+            "bucket_hint": "decide_now",
+            "risk_score": 86,
+            "confidence_interval": "91–97%",
+            "source": f"{accounting_provider} Accounting",
+            "timestamp": generated_at,
+            "signal_summary": error_signal_summary,
+            "evidence_summary": str(accounting_error),
+            "decision_summary": error_decision_summary,
+            "consequence": "You may be making cash decisions blind while receivables risk is hidden.",
+            "action_summary": error_action_summary,
+            "evidence_refs": [{"provider": accounting_provider, "error": str(accounting_error)}],
+        })
+
+    if response_delay_events:
+        candidate_signals.append({
+            "signal_key": "communications-response-delay",
+            "bucket_hint": "monitor_this_week",
+            "risk_score": min(90, 50 + len(response_delay_events) * 4),
+            "confidence_interval": "61–79%",
+            "source": "Outlook / Communications",
+            "timestamp": response_delay_events[0].get("timestamp") or datetime.now(timezone.utc).isoformat(),
+            "signal_summary": f"{len(response_delay_events)} communication threads indicate delayed response patterns.",
+            "evidence_summary": response_delay_events[0].get("summary") or response_delay_events[0].get("detail") or "Watchtower detected response latency.",
+            "decision_summary": "Service responsiveness is trending down and requires active owner monitoring.",
+            "consequence": "Delayed responses increase churn risk and reduce trust for high-value clients.",
+            "action_summary": "Prioritise overdue client threads and enforce a same-day response SLA.",
+            "evidence_refs": response_delay_events[:5],
+        })
+
+    if high_priority_threads:
+        candidate_signals.append({
+            "signal_key": "priority-inbox-threads",
+            "bucket_hint": "monitor_this_week",
+            "risk_score": min(88, 48 + len(high_priority_threads) * 5),
+            "confidence_interval": "64–82%",
+            "source": "Priority Inbox",
+            "timestamp": generated_at,
+            "signal_summary": f"{len(high_priority_threads)} high-priority threads need owner attention.",
+            "evidence_summary": high_priority_threads[0].get("reason") or high_priority_threads[0].get("subject") or "High-priority thread detected.",
+            "decision_summary": "Customer and commercial communications need focused triage this week.",
+            "consequence": "Unresolved high-priority threads can escalate into churn and delayed revenue collection.",
+            "action_summary": "Review and clear top-priority inbox items before end of day.",
+            "evidence_refs": high_priority_threads[:5],
+        })
+
+    if email_connected and not priority_analysis_available and not response_delay_events:
+        if is_founder_ops_account:
+            email_signal_summary = f"ERROR: {email_provider} priority inbox analysis is unavailable."
+            email_decision_summary = "Email API output is non-live or not generated yet, so communication risk cannot be trusted for client-facing decisions."
+            email_action_summary = "ERROR — run email priority analysis now and verify Outlook pipeline health."
+        else:
+            email_signal_summary = f"{email_provider} priority inbox analysis is unavailable."
+            email_decision_summary = "Communication risk cannot be verified until inbox analysis is generated."
+            email_action_summary = "Reconnect integration or contact support, then re-run intelligence refresh."
+
+        candidate_signals.append({
+            "signal_key": "priority-inbox-unavailable",
+            "bucket_hint": "monitor_this_week",
+            "risk_score": 74,
+            "confidence_interval": "83–92%",
+            "source": f"{email_provider} / Priority Inbox",
+            "timestamp": generated_at,
+            "signal_summary": email_signal_summary,
+            "evidence_summary": "No persisted priority inbox analysis found for this user session.",
+            "decision_summary": email_decision_summary,
+            "consequence": "Client follow-up and escalation risks may go unnoticed without an owner-prioritized inbox.",
+            "action_summary": email_action_summary,
+            "evidence_refs": [{
+                "provider": email_provider,
+                "source_endpoint": "/email/priority-inbox",
+                "analysis_present": priority_analysis_available,
+            }],
+        })
+
+    if stalled_deals or overdue_count > 0 or response_delay_events:
+        candidate_signals.append({
+            "signal_key": "systemic-followup-gap",
+            "bucket_hint": "build_next",
+            "risk_score": 62,
+            "confidence_interval": "58–74%",
+            "source": "Cross-Integration Pattern",
+            "timestamp": generated_at,
+            "signal_summary": "Recurring follow-up gaps are appearing across CRM, accounting, and communications.",
+            "evidence_summary": "Signals show repeated delay patterns rather than a one-off anomaly.",
+            "decision_summary": "A system-level process fix is needed to stop repeated follow-up failures.",
+            "consequence": "Without process change, the same revenue/cash/service risks will recur every cycle.",
+            "action_summary": "Build an owner cadence: daily overdue review, deal aging alerts, and response SLA dashboard.",
+            "evidence_refs": [],
+        })
+
+    candidate_signals.sort(key=lambda item: item.get("risk_score", 0), reverse=True)
+
+    def pull(bucket_hint: str):
+        for idx, signal in enumerate(candidate_signals):
+            if signal.get("bucket_hint") == bucket_hint:
+                return candidate_signals.pop(idx)
+        return candidate_signals.pop(0) if candidate_signals else None
+
+    decide_now = pull("decide_now")
+    monitor_this_week = pull("monitor_this_week")
+    build_next = pull("build_next")
+
+    cards = {
+        "decide_now": decide_now,
+        "monitor_this_week": monitor_this_week,
+        "build_next": build_next,
+    }
+
+    all_clear = all(card is None for card in cards.values())
+
+    cash_provenance = {
+        "source": f"{accounting_provider} via Merge Accounting API",
+        "query": "GET /integrations/accounting/summary",
+        "window": "paginated scan up to 1,000 invoices",
+        "rule": "overdue_count increments when status == OVERDUE OR due_date < today",
+        "summary": (
+            f"From {accounting_provider} via Merge (CLIENT invoices only): {overdue_count} overdue invoices totaling "
+            f"{total_overdue:,.0f}, with {total_outstanding:,.0f} total outstanding."
+        ),
+        "generated_at": generated_at,
+        "status": "ok",
+        "client_invoices_only": True,
+        "supplier_excluded": True,
+        "supplier_overdue_count": overdue_count_supplier,
+        "supplier_overdue_total": total_overdue_supplier,
+    }
+
+    if accounting_error:
+        if is_founder_ops_account:
+            cash_error_summary = f"ERROR: non-live accounting API detected — {str(accounting_error)}"
+        else:
+            cash_error_summary = "Accounting feed unavailable. Reconnect integration or contact support."
+
+        cash_provenance.update({
+            "status": "unavailable",
+            "summary": cash_error_summary,
+        })
+
+    return {
+        "all_clear": all_clear,
+        "connected_tools": connected_tools,
+        "snapshot": {
+            "open_deals": len(open_deals),
+            "stalled_deals_72h": len(stalled_deals),
+            "overdue_invoices": overdue_count,
+            "total_overdue": total_overdue,
+            "total_outstanding": total_outstanding,
+            "overdue_supplier_invoices": overdue_count_supplier,
+            "total_overdue_supplier": total_overdue_supplier,
+            "response_delay_events": len(response_delay_events),
+            "high_priority_threads": len(high_priority_threads),
+            "priority_analysis_available": priority_analysis_available,
+            "email_connected": email_connected,
+            "accounting_error": accounting_error,
+            "accounting_live_status": "unavailable" if accounting_error else "live",
+        },
+        "provenance": {
+            "cash_exposure": cash_provenance
+        },
+        "cards": cards,
+    }
 
 
 
@@ -1368,10 +2408,29 @@ async def google_drive_callback(
             
             logger.info(f"✅ Google Drive connected for workspace {account_id}")
             
-            # Trigger initial sync
-            import asyncio
-            asyncio.create_task(sync_google_drive_files(user_id, account_id, account_token))
-            
+            queued = await enqueue_job(
+                "drive-sync",
+                {
+                    "user_id": user_id,
+                    "account_id": account_id,
+                    "account_token": account_token,
+                    "workspace_id": user_id,
+                },
+                company_id=user_id,
+                window_seconds=120,
+            )
+
+            if queued.get("queued"):
+                return {
+                    "status": "queued",
+                    "job_type": "drive-sync",
+                    "job_id": queued.get("job_id"),
+                    "success": True,
+                    "message": "Google Drive connected successfully. Initial sync queued.",
+                    "provider": "Google Drive"
+                }
+
+            await sync_google_drive_files(user_id, account_id, account_token)
             return {
                 "success": True,
                 "message": "Google Drive connected successfully",
@@ -1502,10 +2561,28 @@ async def trigger_google_drive_sync(current_user: dict = Depends(get_current_use
     
     account_token = drive_integration["account_token"]
     
-    # Trigger background sync
-    import asyncio
-    asyncio.create_task(sync_google_drive_files(user_id, account_id, account_token))
-    
+    queued = await enqueue_job(
+        "drive-sync",
+        {
+            "user_id": user_id,
+            "account_id": account_id,
+            "account_token": account_token,
+            "workspace_id": user_id,
+        },
+        company_id=user_id,
+        window_seconds=120,
+    )
+
+    if queued.get("queued"):
+        return {
+            "status": "queued",
+            "job_type": "drive-sync",
+            "job_id": queued.get("job_id"),
+            "success": True,
+            "message": "Sync queued. Files will be available shortly."
+        }
+
+    await sync_google_drive_files(user_id, account_id, account_token)
     return {
         "success": True,
         "message": "Sync started. Files will be available shortly."
@@ -1724,115 +2801,75 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
     Returns connected status, record counts, last sync time, and error messages.
     """
     user_id = current_user["id"]
+    sb = get_sb()
+    live_truth = get_live_integration_truth(sb, user_id)
     integrations = []
 
-    # ── 1. Merge.dev integrations (CRM, Accounting, HRIS, ATS) ──
-    try:
-        merge_result = get_sb().table("integration_accounts").select(
-            "provider, category, connected_at, merge_account_id"
-        ).eq("user_id", user_id).execute()
-
-        record_type_map = {
-            "crm": "deals", "accounting": "invoices",
-            "hris": "employees", "ats": "candidates", "file_storage": "files",
-        }
-
-        # Also fetch workspace_integrations for last_sync_at
-        workspace_sync_map = {}
-        try:
-            ws_result = get_sb().table("workspace_integrations").select(
-                "integration_type, last_sync_at, status"
-            ).eq("workspace_id", user_id).execute()
-            for ws_row in (ws_result.data or []):
-                workspace_sync_map[ws_row.get("integration_type", "")] = ws_row.get("last_sync_at")
-        except Exception:
-            pass
-
-        for row in (merge_result.data or []):
-            provider = row.get("provider", "Unknown")
-            category = row.get("category", "unknown")
-            if category == "email":
-                continue
-
-            cached = None
-            try:
-                cached_res = get_sb().table("integration_status").select(
-                    "records_count, record_type, last_sync_at, error_message"
-                ).eq("user_id", user_id).eq("integration_name", provider).maybe_single().execute()
-                cached = cached_res.data if cached_res else None
-            except Exception:
-                pass
-
-            # Use workspace_sync_map for last_sync_at when cached not available
-            last_sync = (
-                (cached.get("last_sync_at") if cached else None) or
-                workspace_sync_map.get(category) or
-                row.get("connected_at")
-            )
-
-            integrations.append({
-                "integration_name": provider,
-                "category": category,
-                "connected": True,
-                "provider": provider,
-                "records_count": cached.get("records_count", 0) if cached else 0,
-                "record_type": record_type_map.get(category, "records"),
-                "last_sync_at": last_sync,
-                "error_message": cached.get("error_message") if cached else None,
-            })
-    except Exception as e:
-        logger.warning(f"[integration-status] merge lookup failed: {e}")
-
-    # ── 2. Email connections ──
-    try:
-        email_result = get_sb().table("email_connections").select(
-            "provider, connected_at, emails_synced"
-        ).eq("user_id", user_id).execute()
-
-        for row in (email_result.data or []):
-            if row.get("status") in ("connected", "active", "COMPLETE"):
-                provider_raw = row.get("provider", "email")
-                display = {"outlook": "Microsoft Outlook", "gmail": "Gmail"}.get(
-                    provider_raw.lower(), provider_raw.title()
-                )
-                integrations.append({
-                    "integration_name": provider_raw,
-                    "category": "email",
-                    "connected": True,
-                    "provider": display,
-                    "records_count": row.get("emails_synced") or 0,
-                    "record_type": "emails",
-                    "last_sync_at": row.get("connected_at"),
-                    "error_message": None,
-                })
-    except Exception as e:
-        logger.warning(f"[integration-status] email lookup failed: {e}")
-
-    # ── 3. Canonical truth ──
-    canonical_truth = {
-        "crm_connected": any(i["category"] == "crm" for i in integrations),
-        "accounting_connected": any(i["category"] == "accounting" for i in integrations),
-        "email_connected": any(i["category"] == "email" for i in integrations),
-        "hris_connected": any(i["category"] == "hris" for i in integrations),
-        "total_connected": len(integrations),
+    record_type_map = {
+        "crm": "deals",
+        "accounting": "invoices",
+        "hris": "employees",
+        "ats": "candidates",
+        "file_storage": "files",
+        "email": "emails",
     }
 
-    # ── 4. Add placeholder entries for unconnected core categories ──
-    connected_cats = {i["category"] for i in integrations}
-    for cat in ["crm", "accounting", "email"]:
-        if cat not in connected_cats:
+    status_map = {}
+    try:
+        status_rows = sb.table("integration_status").select(
+            "integration_name, provider, category, records_count, record_type, last_sync_at, error_message"
+        ).eq("user_id", user_id).execute()
+        for row in (status_rows.data or []):
+            for key in (row.get("integration_name"), row.get("provider")):
+                if key:
+                    status_map[str(key).strip().lower()] = row
+    except Exception as e:
+        logger.warning(f"[integration-status] cached status lookup failed: {e}")
+
+    for item in (live_truth.get("integrations") or []):
+        category = normalize_category(item.get("category"), item.get("provider"), item.get("integration_slug"))
+        provider = item.get("provider") or item.get("integration_name") or category
+        status_row = status_map.get(str(item.get("integration_name") or "").lower()) or status_map.get(str(provider).lower())
+
+        integrations.append({
+            "integration_name": item.get("integration_name") or provider,
+            "category": category,
+            "connected": True,
+            "provider": provider,
+            "connected_at": item.get("connected_at"),
+            "records_count": (status_row or {}).get("records_count", 0),
+            "record_type": (status_row or {}).get("record_type") or record_type_map.get(category, "records"),
+            "last_sync_at": (status_row or {}).get("last_sync_at") or item.get("connected_at"),
+            "error_message": (status_row or {}).get("error_message"),
+        })
+
+    connected_categories = {normalize_category(i.get("category")) for i in integrations if i.get("connected")}
+    for category in ("crm", "accounting", "email", "hris"):
+        if category not in connected_categories:
             integrations.append({
-                "integration_name": cat,
-                "category": cat,
+                "integration_name": category,
+                "category": category,
                 "connected": False,
                 "provider": None,
+                "connected_at": None,
                 "records_count": 0,
-                "record_type": None,
+                "record_type": record_type_map.get(category),
                 "last_sync_at": None,
                 "error_message": None,
             })
 
-    return {"integrations": integrations, "canonical_truth": canonical_truth}
+    observation_state = get_recent_observation_events(sb, user_id, limit=1)
+    canonical_truth = {
+        **(live_truth.get("canonical_truth") or {}),
+        "live_signal_count": observation_state.get("count", 0),
+        "last_signal_at": observation_state.get("last_signal_at"),
+    }
+
+    return {
+        "integrations": integrations,
+        "canonical_truth": canonical_truth,
+        "total_connected": canonical_truth.get("total_connected", 0),
+    }
 
 
 @router.post("/user/integration-status/sync")
@@ -1944,8 +2981,10 @@ async def get_user_data_coverage(current_user: dict = Depends(get_current_user))
         int_result = get_sb().table("integration_accounts").select("category").eq("user_id", user_id).execute()
         for row in (int_result.data or []):
             cat = row.get("category", "")
-            if cat == "crm": has_crm = True
-            elif cat == "accounting": has_accounting = True
+            if cat == "crm":
+                has_crm = True
+            elif cat == "accounting":
+                has_accounting = True
     except Exception:
         pass
     try:

@@ -73,7 +73,34 @@ async def get_priority_analysis_supabase(supabase_client, user_id: str) -> Optio
     """Get email priority analysis for user"""
     try:
         result = supabase_client.table("email_priority_analysis").select("*").eq("user_id", user_id).single().execute()
-        return result.data if result.data else None
+        if not result.data:
+            return None
+
+        row = result.data
+
+        # New schema shape: row.analysis holds full JSON payload
+        if isinstance(row.get("analysis"), dict):
+            return row
+
+        # Legacy schema shape: high_priority/medium_priority/low_priority as direct columns
+        if any(key in row for key in ("high_priority", "medium_priority", "low_priority")):
+            analysis = {
+                "high_priority": row.get("high_priority") or [],
+                "medium_priority": row.get("medium_priority") or [],
+                "low_priority": row.get("low_priority") or [],
+                "strategic_insights": row.get("strategic_insights") or "",
+            }
+            return {
+                "user_id": row.get("user_id"),
+                "analysis": analysis,
+                "emails_analyzed": row.get("emails_analyzed") or (
+                    len(analysis["high_priority"]) + len(analysis["medium_priority"]) + len(analysis["low_priority"])
+                ),
+                "analyzed_at": row.get("analyzed_at"),
+                "created_at": row.get("created_at"),
+            }
+
+        return row
     except Exception as e:
         if "PGRST116" in str(e):
             return None
@@ -84,10 +111,32 @@ async def get_priority_analysis_supabase(supabase_client, user_id: str) -> Optio
 async def update_priority_analysis_supabase(supabase_client, user_id: str, analysis_data: Dict[str, Any]) -> bool:
     """Update or create priority analysis"""
     try:
-        analysis_data["user_id"] = user_id
-        analysis_data["analyzed_at"] = datetime.now(timezone.utc).isoformat()
+        data = dict(analysis_data or {})
+        data["user_id"] = user_id
+        data["analyzed_at"] = datetime.now(timezone.utc).isoformat()
+
+        # Try modern schema first (analysis JSON column)
+        try:
+            result = supabase_client.table("email_priority_analysis").upsert(data, on_conflict="user_id").execute()
+            return bool(result.data)
+        except Exception as modern_err:
+            # Legacy schema fallback: write direct priority columns
+            if "PGRST204" not in str(modern_err):
+                raise
+
+            analysis_payload = data.get("analysis") or {}
+            legacy_data = {
+                "user_id": user_id,
+                "high_priority": analysis_payload.get("high_priority") or [],
+                "medium_priority": analysis_payload.get("medium_priority") or [],
+                "low_priority": analysis_payload.get("low_priority") or [],
+                "strategic_insights": analysis_payload.get("strategic_insights") or "",
+                "analyzed_at": data["analyzed_at"],
+            }
+            result = supabase_client.table("email_priority_analysis").upsert(legacy_data, on_conflict="user_id").execute()
+            return bool(result.data)
+
         
-        result = supabase_client.table("email_priority_analysis").upsert(analysis_data, on_conflict="user_id").execute()
         return bool(result.data)
     except Exception as e:
         logger.error(f"Error updating priority analysis: {e}")
@@ -149,11 +198,11 @@ async def get_soundboard_conversation_supabase(supabase_client, session_id: str)
         return None
 
 
-async def update_soundboard_conversation_supabase(supabase_client, session_id: str, updates: Dict[str, Any]) -> bool:
+async def update_soundboard_conversation_supabase(supabase_client, conversation_id: str, updates: Dict[str, Any]) -> bool:
     """Update soundboard conversation"""
     try:
         updates["updated_at"] = datetime.now(timezone.utc).isoformat()
-        result = supabase_client.table("soundboard_conversations").update(updates).eq("session_id", session_id).execute()
+        result = supabase_client.table("soundboard_conversations").update(updates).eq("id", conversation_id).execute()
         return bool(result.data)
     except Exception as e:
         logger.error(f"Error updating soundboard conversation: {e}")
@@ -240,8 +289,10 @@ async def get_user_analyses_supabase(supabase_client, user_id: str, limit: int =
 async def get_business_profile_supabase(supabase_client, user_id: str) -> Optional[Dict[str, Any]]:
     """Get business profile for user"""
     try:
-        result = supabase_client.table("business_profiles").select("*").eq("user_id", user_id).single().execute()
-        return result.data if result.data else None
+        result = supabase_client.table("business_profiles").select("*").eq("user_id", user_id).limit(1).execute()
+        if result and result.data:
+            return result.data[0]
+        return None
     except Exception as e:
         if "PGRST116" in str(e):
             return None

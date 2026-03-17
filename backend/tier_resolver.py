@@ -20,7 +20,25 @@ logger = logging.getLogger(__name__)
 SUPER_ADMIN_EMAIL = "andre@thestrategysquad.com.au"
 
 # ═══ TIER DEFINITIONS ═══
-TIERS = ['free', 'starter', 'professional', 'enterprise', 'super_admin']
+TIERS = ['free', 'starter', 'professional', 'enterprise', 'custom', 'super_admin']
+
+BRAIN_METRIC_LIMITS = {
+    'free': 10,
+    'starter': 25,
+    'professional': 50,
+    'enterprise': 75,
+    'custom': 100,
+    'super_admin': 100,
+}
+
+BRAIN_PLAN_LABELS = {
+    'free': 'Free',
+    'starter': 'Foundation',
+    'professional': 'Performance',
+    'enterprise': 'SMB Protect',
+    'custom': 'Custom',
+    'super_admin': 'Custom',
+}
 
 # ═══ ROUTE ACCESS MAP ═══
 # Route pattern → minimum tier required
@@ -90,6 +108,9 @@ API_ACCESS = {
     '/ingestion': 'free',           # Gated by counter, not tier
     '/forensic': 'free',            # Gated by counter
     '/market-intelligence': 'free',
+    '/brain/priorities': 'free',
+    '/brain/metrics': 'free',
+    '/brain/concerns': 'starter',
 
     # PAID
     '/revenue': 'starter',
@@ -155,7 +176,7 @@ def resolve_tier(user: dict) -> str:
 
 def tier_rank(tier: str) -> int:
     """Numeric rank for tier comparison."""
-    ranks = {'free': 0, 'starter': 1, 'professional': 2, 'enterprise': 3, 'super_admin': 99}
+    ranks = {'free': 0, 'starter': 1, 'professional': 2, 'enterprise': 3, 'custom': 4, 'super_admin': 99}
     return ranks.get(tier, 0)
 
 
@@ -251,3 +272,21 @@ def get_usage_limits(tier: str) -> dict:
     if tier == 'starter':
         return {'snapshots': 20, 'audits': 10}
     return {'snapshots': 999, 'audits': 999}
+
+
+def get_brain_metric_limit(user_or_tier) -> int:
+    """Return the maximum visible KPI count for Brain surfaces."""
+    if isinstance(user_or_tier, dict):
+        tier = resolve_tier(user_or_tier)
+    else:
+        tier = str(user_or_tier or 'free').lower().strip()
+    return BRAIN_METRIC_LIMITS.get(tier, BRAIN_METRIC_LIMITS['free'])
+
+
+def get_brain_plan_label(user_or_tier) -> str:
+    """Human-readable plan label for Brain surfaces."""
+    if isinstance(user_or_tier, dict):
+        tier = resolve_tier(user_or_tier)
+    else:
+        tier = str(user_or_tier or 'free').lower().strip()
+    return BRAIN_PLAN_LABELS.get(tier, 'Free')

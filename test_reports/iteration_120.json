@@ -1,0 +1,82 @@
+{
+  "summary": "Tested integration truth consistency across APIs and pages. All 19 backend API tests pass. Frontend shows temporary 'Verifying CRM/Accounting' loading badges that resolve after ~20 seconds - these are NOT perpetual states but properly resolve once integration-status finishes loading.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "RevenuePage - Header badges",
+        "issues": [
+          "Shows 'Verifying CRM' and 'Verifying Accounting' badges during initial load (~5-20 seconds) before switching to 'Connect CRM'/'Connect Accounting' prompts - not a bug, behaves as designed"
+        ]
+      },
+      {
+        "screen": "Dashboard",
+        "issues": [
+          "Shows 'Checking integrations...' and 'Data Confidence: Verifying' during initial load - these resolve correctly after integration status API returns"
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_integration_truth_iteration120.py",
+    "/app/test_reports/pytest/pytest_results_iteration120.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Integration truth shape is consistent across /api/user/integration-status and /api/integrations/merge/connected - both return canonical_truth with crm_connected, accounting_connected, email_connected, hris_connected, total_connected, live_signal_count, last_signal_at",
+    "Cognition overview at /api/cognition/overview returns integrations: { crm: boolean, accounting: boolean, email: boolean, hris: boolean } which is consistent with the canonical_truth from integration-status endpoints",
+    "Watchtower at /api/intelligence/watchtower returns fallback-safe empty events: { events: [], count: 0 } when workspace is absent - no errors",
+    "Frontend useIntegrationStatus hook merges data from 3 sources: /user/integration-status, /integrations/merge/connected, and /snapshot/latest for robustness"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_integration_truth_iteration120.py"
+  ],
+  "success_rate": {
+    "backend": "100% (19/19 passed)",
+    "frontend": "100% - pages load correctly, no perpetual states detected"
+  },
+  "test_credentials": "cal-loop-416d7f85@biqctest.io / BIQcTest!2026Z",
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Integration truth is consistent across all APIs. The 'Verifying CRM/Accounting' badges in RevenuePage and 'Checking integrations' in Dashboard are temporary loading states that resolve correctly once the useIntegrationStatus hook finishes its API calls. Test user has no workspace initialized hence /integrations/crm/deals returns 400 which is expected behavior.",
+  "api_validation_results": {
+    "/api/user/integration-status": {
+      "status": 200,
+      "canonical_truth": {
+        "crm_connected": false,
+        "accounting_connected": false,
+        "email_connected": false,
+        "hris_connected": false,
+        "total_connected": 0,
+        "live_signal_count": 0,
+        "last_signal_at": null
+      }
+    },
+    "/api/integrations/merge/connected": {
+      "status": 200,
+      "has_canonical_truth": true,
+      "has_live_signal_metadata": true
+    },
+    "/api/cognition/overview": {
+      "status": 200,
+      "integrations_shape": {
+        "crm": false,
+        "accounting": false,
+        "email": false,
+        "hris": false
+      },
+      "consistent_with_integration_status": true
+    },
+    "/api/intelligence/watchtower": {
+      "status": 200,
+      "events_count": 0,
+      "fallback_working": true
+    }
+  }
+}

@@ -14,6 +14,7 @@ import {
   Zap, CheckCircle2, Eye, ChevronDown, ChevronUp, Link2, RefreshCw,
   MessageSquare, FileText, Layers, Crosshair, Filter, BarChart3, Plug, Activity
 } from 'lucide-react';
+import { EmptyStateCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 
 
 const Panel = ({ children, className = '', ...props }) => (
@@ -71,9 +72,25 @@ const MarketPage = () => {
       }
       setReports(snaps);
     }).catch(() => {});
-    apiClient.get('/intelligence/watchtower').then(res => { if (res.data?.positions) setWatchtower(res.data); }).catch(() => {});
-    apiClient.get('/intelligence/pressure').then(res => { if (res.data?.pressures) setPressure(res.data); }).catch(() => {});
-    apiClient.get('/intelligence/freshness').then(res => { if (res.data?.freshness) setFreshness(res.data); }).catch(() => {});
+    apiClient.get('/intelligence/watchtower')
+      .then(res => { if (res.data) setWatchtower(res.data); })
+      .catch((error) => setWatchtower({
+        error: error?.response?.data?.detail || 'Canonical watchtower positions are unavailable.',
+        events: [],
+        positions: {},
+      }));
+    apiClient.get('/intelligence/pressure')
+      .then(res => { if (res.data?.pressures) setPressure(res.data); })
+      .catch((error) => setPressure({
+        has_data: false,
+        message: error?.response?.data?.detail || 'Canonical pressure calibration is unavailable.',
+      }));
+    apiClient.get('/intelligence/freshness')
+      .then(res => { if (res.data?.freshness) setFreshness(res.data); })
+      .catch((error) => setFreshness({
+        has_data: false,
+        message: error?.response?.data?.detail || 'Canonical evidence freshness is unavailable.',
+      }));
     apiClient.get('/cognition/market').then(res => {
       if (res.data && res.data.status !== 'MIGRATION_REQUIRED') {
         setCognitionMarket(res.data);
@@ -138,6 +155,13 @@ const MarketPage = () => {
   const filteredLever = lever && (!containsCRMClaim(lever.lever) || hasCRM) ? lever : null;
   const filteredMemo = memo && (!containsCRMClaim(memo) || hasCRM) ? memo : '';
   const filteredAlignment = alignment && (!containsCRMClaim(alignment) || hasCRM) ? alignment : '';
+  const marketSignals = Array.isArray(watchtower?.events) ? watchtower.events.filter((event) => {
+    const text = `${event?.domain || ''} ${event?.signal || ''} ${event?.title || ''}`.toLowerCase();
+    return /(market|competitor|demand|saturation|pricing|trend)/.test(text);
+  }) : [];
+  const watchtowerMessage = watchtower?.error || '';
+  const pressureMessage = pressure?.message || '';
+  const freshnessMessage = freshness?.message || '';
 
   const sendToChat = (msg) => setActionMessage(msg);
 
@@ -182,7 +206,52 @@ const MarketPage = () => {
           {!snapshot && <p className="text-sm text-[#64748B]">Connect your tools and complete calibration to see where your business stands.</p>}
         </div>
 
-        {/* ═══ MARKETING METRICS KPI STRIP (Req 1) ═══ */}
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]" data-testid="market-ux-main-grid">
+          <div className="space-y-4" data-testid="market-external-column">
+            <SectionLabel title="External market signals" detail="This column is reserved for forces outside your business — competitor movement, demand changes, and market pressure." testId="market-external-label" />
+            {marketSignals.length > 0 ? marketSignals.slice(0, 3).map((signal, index) => (
+              <SignalCard
+                key={signal.id || `market-signal-${index}`}
+                title={signal.title || 'External market signal'}
+                detail={signal.detail || signal.description || 'A market-facing signal is active in the latest watchtower cycle.'}
+                action={signal.recommendation || signal.action || 'Review this external signal before adjusting internal spend or positioning.'}
+                source="Market Feed"
+                signalType={signal.signal || signal.event || 'market_signal'}
+                timestamp={signal.created_at}
+                severity={signal.severity === 'high' ? 'high' : signal.severity === 'critical' ? 'critical' : 'warning'}
+                testId={`market-external-signal-${index}`}
+              />
+            )) : (
+              <EmptyStateCard
+                title={watchtowerMessage ? 'Canonical watchtower feed is unavailable.' : 'No external market alert is active.'}
+                detail={watchtowerMessage || 'The market feed is calm right now. BIQc will keep external signals separate from your internal channel performance so the next move stays clear.'}
+                testId="market-external-empty"
+              />
+            )}
+          </div>
+
+          <div className="space-y-4" data-testid="market-internal-column">
+            <SurfaceCard testId="market-evidence-health-card">
+              <SectionLabel title="Evidence health" detail="Pressure and freshness indicate whether the market story is grounded in enough current evidence." testId="market-evidence-health-label" />
+              <div className="mt-4 space-y-3" data-testid="market-evidence-health-list">
+                <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid="market-pressure-status">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Pressure calibration</p>
+                  <p className="mt-2 text-sm text-[#CBD5E1]">{pressure?.has_data ? 'Live market pressure is available for this cycle.' : (pressureMessage || 'Pressure calibration is not available yet.')}</p>
+                </div>
+                <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid="market-freshness-status">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Evidence freshness</p>
+                  <p className="mt-2 text-sm text-[#CBD5E1]">{freshness?.has_data ? 'Freshness scoring is live for this cycle.' : (freshnessMessage || 'Evidence freshness is not available yet.')}</p>
+                </div>
+                <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid="market-channel-separation-note">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Internal channel context</p>
+                  <p className="mt-2 text-sm text-[#CBD5E1]">The performance strip below is intentionally internal — useful, but separate from the external market narrative.</p>
+                </div>
+              </div>
+            </SurfaceCard>
+          </div>
+        </div>
+
+        {/* ═══ INTERNAL CHANNEL PERFORMANCE STRIP ═══ */}
         {(() => {
           const footprint = c?.digital_footprint || {};
           const hasFootprint = footprint.score != null;
@@ -190,10 +259,10 @@ const MarketPage = () => {
           return (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: 'Digital Footprint', value: footprint.score, unit: '/100', color: '#FF6A00', icon: BarChart3, desc: 'Overall digital presence score' },
-                { label: 'Social Engagement', value: footprint.social_score, unit: '/100', color: '#3B82F6', icon: MessageSquare, desc: 'Social media activity and reach' },
-                { label: 'SEO Visibility', value: footprint.seo_score, unit: '/100', color: '#10B981', icon: Eye, desc: 'How easily customers find you via search' },
-                { label: 'Content Authority', value: footprint.content_score, unit: '/100', color: '#8B5CF6', icon: FileText, desc: 'Quality and volume of published content' },
+                { label: 'Digital Footprint', value: footprint.score, unit: '/100', color: '#FF6A00', icon: BarChart3, desc: 'Internal channel strength, not external market demand.' },
+                { label: 'Social Engagement', value: footprint.social_score, unit: '/100', color: '#3B82F6', icon: MessageSquare, desc: 'Internal audience response across owned and social channels.' },
+                { label: 'SEO Visibility', value: footprint.seo_score, unit: '/100', color: '#10B981', icon: Eye, desc: 'Owned-search discoverability for your business.' },
+                { label: 'Content Authority', value: footprint.content_score, unit: '/100', color: '#8B5CF6', icon: FileText, desc: 'Content depth and authority inside your current channel footprint.' },
               ].map(metric => (
                 <div key={metric.label} className="rounded-lg p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                   <div className="flex items-center justify-between mb-2">

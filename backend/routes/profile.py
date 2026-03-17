@@ -12,6 +12,7 @@ import uuid
 import json
 import re
 import logging
+from intelligence_live_truth import get_recent_observation_events, build_watchtower_events
 
 from core.llm_router import llm_chat
 from routes.deps import (
@@ -377,7 +378,7 @@ async def business_profile_build(req: BusinessProfileBuildRequest, current_user:
     recent_chats = await get_chat_history_supabase(get_sb(), current_user["id"], limit=6)
 
     recent_docs = await get_user_documents_supabase(
-        supabase_admin,
+        get_sb(),
         current_user["id"],
         limit=6
     )
@@ -1096,6 +1097,110 @@ def parse_oac_items_with_why(text: str, max_items: int = 5) -> List[Dict[str, An
     return cleaned[:max_items]
 
 
+def _build_oac_fallback_items(
+    profile: Optional[Dict[str, Any]],
+    recent_docs: List[Dict[str, Any]],
+    recent_files: List[Dict[str, Any]],
+    evidence_web: List[Dict[str, Any]],
+    recent_chats: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    business_name = (profile or {}).get("business_name") or "the business"
+    target_market = (profile or {}).get("target_market") or "core customers"
+    challenges = (profile or {}).get("main_challenges") or "operational drift"
+
+    def citation_block(*items: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        citations: List[Dict[str, Any]] = []
+        for item in items:
+            if not item:
+                continue
+            if item.get("url"):
+                citations.append({
+                    "source_type": "web",
+                    "title": item.get("title") or item.get("url"),
+                    "url": item.get("url"),
+                    "snippet": item.get("snippet"),
+                })
+            elif item.get("title"):
+                citations.append({
+                    "source_type": "document",
+                    "title": item.get("title"),
+                })
+            elif item.get("filename"):
+                citations.append({
+                    "source_type": "data_file",
+                    "title": item.get("filename"),
+                })
+        return citations[:3]
+
+    latest_doc = recent_docs[0] if recent_docs else None
+    latest_file = recent_files[0] if recent_files else None
+    latest_web = evidence_web[0] if evidence_web else None
+    latest_chat = recent_chats[0] if recent_chats else None
+
+    return [
+        {
+            "title": "Turn current priorities into one owned operating cadence",
+            "reason": f"{business_name} is using BIQc for strategic guidance, but recurring priorities need a named owner and review rhythm to convert insight into execution.",
+            "why": f"Without a fixed weekly cadence, {business_name} risks letting urgent recommendations disperse across the team. Anchor one owner, one checkpoint, and one deadline around the current biggest challenge: {challenges}.",
+            "confidence": "medium",
+            "actions": [
+                "Nominate one operations owner for this week’s top recommendation.",
+                "Set a 20-minute operating review with a clear agenda and due dates.",
+                "Track completion status in BIQc and close one execution gap before the next cycle.",
+            ],
+            "citations": citation_block(latest_chat, latest_doc, latest_web),
+        },
+        {
+            "title": "Strengthen Business DNA where evidence is still thin",
+            "reason": f"The platform will produce sharper recommendations for {business_name} when core profile fields and supporting evidence stay current.",
+            "why": f"When target market, value proposition, and current operating constraints are stale, recommendations get broader than they should be. Tightening these fields improves relevance for {target_market} and reduces ambiguity in future advice.",
+            "confidence": "medium",
+            "actions": [
+                "Review Business DNA for outdated target market, offer, and challenge statements.",
+                "Upload one current proposal, SOP, or strategy document to deepen evidence coverage.",
+                "Re-run one analysis after the update and compare specificity.",
+            ],
+            "citations": citation_block(latest_doc, latest_file, latest_web),
+        },
+        {
+            "title": "Convert recent documents into executable operating standards",
+            "reason": "Recent documents and uploads are a strong signal that procedures can be turned into clearer operating playbooks.",
+            "why": "Teams lose momentum when guidance exists but is not translated into who-does-what-next. Converting the latest material into explicit execution steps reduces rework and keeps delivery aligned.",
+            "confidence": "medium" if (latest_doc or latest_file) else "low",
+            "actions": [
+                "Identify the most recent document with operational relevance.",
+                "Extract 3-5 non-negotiable steps and assign accountable roles.",
+                "Use SOP Generator to convert the source material into a repeatable checklist.",
+            ],
+            "citations": citation_block(latest_doc, latest_file),
+        },
+        {
+            "title": "Audit customer-facing response speed against current strategy",
+            "reason": f"If {business_name} is focused on growth, response quality and turnaround time should reinforce that strategy every week.",
+            "why": "Growth intent breaks down when follow-up speed, proposal handling, or customer communication is inconsistent. A lightweight response audit will show where operational friction is eroding commercial momentum.",
+            "confidence": "medium",
+            "actions": [
+                "Review the last 10 customer-facing interactions for response gaps.",
+                "Flag one repeated delay pattern and define the new response standard.",
+                "Escalate any high-value account with silence risk into a same-week action list.",
+            ],
+            "citations": citation_block(latest_chat, latest_web),
+        },
+        {
+            "title": "Use one weekly executive checkpoint to prevent drift",
+            "reason": "BIQc is surfacing strategic priorities, but execution quality improves when the owner sees one compact operating checkpoint every week.",
+            "why": "The fastest way to lose value from a cognition platform is to leave recommendations unclosed. A single executive checkpoint keeps insight, ownership, and consequences connected before drift compounds.",
+            "confidence": "high",
+            "actions": [
+                "Review open recommendations every Friday against completed actions.",
+                "Archive work that is done and restate any carry-over item in one sentence.",
+                "Escalate unresolved blockers into Board Room or War Room for deeper diagnosis.",
+            ],
+            "citations": citation_block(latest_chat, latest_doc, latest_web),
+        },
+    ]
+
+
 def parse_advisor_brain_response(text: str) -> List[Dict[str, Any]]:
     """
     Parse AI response into structured format with Why? + Citations.
@@ -1187,7 +1292,7 @@ async def get_oac_recommendations(current_user: dict = Depends(get_current_user)
     recent_chats = await get_chat_history_supabase(get_sb(), user_id, limit=8)
 
     recent_docs = await get_user_documents_supabase(
-        supabase_admin,
+        get_sb(),
         user_id,
         limit=8
     )
@@ -1253,13 +1358,19 @@ Citations:
 """
 
     session_id = f"oac_{uuid.uuid4()}"
-    ai_text = await get_ai_response(prompt, "general", session_id, user_id=user_id, user_data={
-        "name": (user or {}).get("name"),
-        "business_name": biz_name,
-        "industry": industry,
-    }, use_advanced=True)
+    try:
+        ai_text = await get_ai_response(prompt, "general", session_id, user_id=user_id, user_data={
+            "name": (user or {}).get("name"),
+            "business_name": biz_name,
+            "industry": industry,
+        }, use_advanced=True)
+        items = parse_oac_items_with_why(ai_text, max_items=5)
+    except Exception as ai_err:
+        logger.warning(f"[oac/recommendations] AI generation unavailable, using deterministic fallback: {ai_err}")
+        items = _build_oac_fallback_items(profile, recent_docs, recent_files, evidence_web, recent_chats)
 
-    items = parse_oac_items_with_why(ai_text, max_items=5)
+    if not items:
+        items = _build_oac_fallback_items(profile, recent_docs, recent_files, evidence_web, recent_chats)
 
     # persist cache + increment usage by 1 (daily batch counts as 1)
     rec_doc = {
@@ -1906,6 +2017,25 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
     
     # Limit to top 10 notifications
     unique_notifications = unique_notifications[:10]
+
+    if not unique_notifications:
+        try:
+            observation_state = get_recent_observation_events(get_sb(), user_id, limit=15)
+            fallback_events = build_watchtower_events(observation_state.get("events") or [], limit=10)
+            for event in fallback_events:
+                unique_notifications.append({
+                    "id": f"obs_{event.get('id')}",
+                    "type": event.get("domain") or "signal",
+                    "severity": event.get("severity") or "medium",
+                    "title": event.get("title") or "Live signal detected",
+                    "message": event.get("detail") or event.get("impact") or "A live business signal needs review.",
+                    "action": event.get("action") or event.get("recommendation") or "Review the signal and take corrective action.",
+                    "source": event.get("source") or "Live Signals",
+                    "timestamp": event.get("created_at") or datetime.now(timezone.utc).isoformat()
+                })
+            unique_notifications = unique_notifications[:10]
+        except Exception:
+            pass
     
     # Calculate summary counts
     high_count = sum(1 for n in unique_notifications if n["severity"] == "high")

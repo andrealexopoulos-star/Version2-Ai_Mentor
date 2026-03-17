@@ -14,6 +14,10 @@ import {
 } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
+import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
+import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import ActionOwnershipCard from '../components/ActionOwnershipCard';
+import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -164,6 +168,7 @@ const ACRONYMS = [
 // ── Main component ────────────────────────────────────────────────────────────
 const RiskPage = () => {
   const { cognitive, loading, error, refresh } = useSnapshot();
+  const { session, authState } = useSupabaseAuth();
   const c = cognitive || {};
   const risk = c.risk || {};
   const cap = c.capital || {};
@@ -172,7 +177,7 @@ const RiskPage = () => {
   const fv = c.founder_vitals || {};
   const rev = c.revenue || {};
 
-  const { status: integrationStatus } = useIntegrationStatus();
+  const { status: integrationStatus, loading: integrationLoading } = useIntegrationStatus();
   const [activeTab, setActiveTab] = useState('governance');
   const [sqlWorkforce, setSqlWorkforce] = useState(null);
   const [sqlScores, setSqlScores] = useState(null);
@@ -180,6 +185,8 @@ const RiskPage = () => {
   const [showAcronymLegend, setShowAcronymLegend] = useState(false);
 
   useEffect(() => {
+    if (authState === AUTH_STATE.LOADING && !session?.access_token) return;
+    if (!session?.access_token) return;
     apiClient.get('/intelligence/workforce').then(res => {
       if (res.data?.has_data) setSqlWorkforce(res.data);
     }).catch(() => {});
@@ -194,13 +201,14 @@ const RiskPage = () => {
         setUnifiedRisk(prev => ({ ...prev, ...res.data }));
       }
     }).catch(() => {});
-  }, []);
+  }, [session?.access_token, authState]);
 
   const hasCRM = integrationStatus?.canonical_truth?.crm_connected;
   const hasAccounting = integrationStatus?.canonical_truth?.accounting_connected;
   const hasEmail = integrationStatus?.canonical_truth?.email_connected ||
     (integrationStatus?.integrations || []).some(i => i.connected && ['email','outlook','gmail'].some(k => (i.category||'').toLowerCase().includes(k) || (i.provider||'').toLowerCase().includes(k)));
   const hasAnyIntegration = (integrationStatus?.canonical_truth?.total_connected || 0) > 0 || hasEmail;
+  const integrationResolved = !integrationLoading && !!integrationStatus;
 
   const spofs = risk.spof || [];
   const regulatory = risk.regulatory || [];
@@ -246,6 +254,66 @@ const RiskPage = () => {
     { id: 'people', icon: Users, color: '#10B981', title: 'Workforce & Key-Person', has: spofs.length > 0 || hasPeopleData },
   ];
 
+  const monitoredCount = RISK_CATEGORIES.filter((category) => category.has).length;
+  const explainability = {
+    whyVisible: hasAnyIntegration
+      ? `BIQc is monitoring ${monitoredCount} of ${RISK_CATEGORIES.length} risk categories using your connected systems.`
+      : 'Risk monitoring needs connected CRM, accounting, or email systems to score exposure reliably.',
+    whyNow: compositeScore != null
+      ? `Composite risk is ${Math.round(compositeScore * 100)}%, indicating current cross-domain pressure.`
+      : 'Composite risk is unavailable because current evidence is incomplete.',
+    nextAction: contradictions.length > 0
+      ? 'Resolve the top alignment contradiction first, then review the linked operational and financial chain.'
+      : 'Review the highest-risk category, assign owner + deadline, and document mitigation this week.',
+    ifIgnored: hasRiskData
+      ? 'Financial, operational, and workforce risks can cascade across domains and shorten your decision window.'
+      : 'Low visibility can delay detection, turning manageable issues into urgent incidents.',
+  };
+
+  const actionOwnership = {
+    owner: contradictions.length > 0 ? 'Founder + risk owner' : hasRiskData ? 'Risk owner' : 'Founder',
+    deadline: compositeScore != null && compositeScore > 0.6 ? 'Next 24 hours' : 'By end of this week',
+    checkpoint: contradictions[0]
+      ? `Resolve contradiction in ${contradictions[0].domain || 'priority domain'} and confirm mitigation ownership.`
+      : monitoredCount > 0
+        ? `Close highest-risk category first (${RISK_CATEGORIES.find((c) => c.has)?.title || 'Risk category'}).`
+        : 'Connect integrations to activate governance monitoring.',
+    successMetric: `Composite risk ${compositeDisplay} · monitored categories ${monitoredCount}/${RISK_CATEGORIES.length}`,
+  };
+
+  const riskPrioritySignals = [
+    runway != null ? {
+      id: 'risk-financial-runway',
+      title: `Cash runway is ${runway} month${runway === 1 ? '' : 's'}`,
+      detail: 'Liquidity pressure is real enough to watch before it compounds into people or delivery trade-offs.',
+      action: 'Review overdue cash timing, committed spend, and the next decision deadline together.',
+      source: 'Accounting',
+      signalType: 'cash_runway',
+      timestamp: c?.computed_at || null,
+      severity: runway <= 3 ? 'high' : 'warning',
+    } : null,
+    hasPeopleData ? {
+      id: 'risk-workforce-pressure',
+      title: 'People pressure is visible in live communication signals',
+      detail: fv.recommendation || fv.calendar || 'Workforce strain is starting to surface through calendar or email patterns.',
+      action: 'Check key-person dependency and capacity before execution quality drops further.',
+      source: 'Email/Calendar',
+      signalType: 'workforce_pressure',
+      timestamp: c?.computed_at || null,
+      severity: 'warning',
+    } : null,
+    topClientPct != null ? {
+      id: 'risk-concentration-top-clients',
+      title: `${topClientPct}% of revenue sits in the top three clients`,
+      detail: 'Commercial concentration means one delayed account can move the whole risk picture.',
+      action: 'Review concentration and diversify near-term revenue coverage before the next review.',
+      source: 'CRM',
+      signalType: 'concentration_risk',
+      timestamp: c?.computed_at || null,
+      severity: topClientPct >= 60 ? 'high' : 'warning',
+    } : null,
+  ].filter(Boolean);
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="risk-page">
@@ -255,10 +323,55 @@ const RiskPage = () => {
           <div>
             <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Risk & Workforce Intelligence</h1>
             <p className="text-sm text-[#9FB0C3]">
-              {hasAnyIntegration ? `Monitoring ${RISK_CATEGORIES.filter(c => c.has).length} of ${RISK_CATEGORIES.length} risk categories with live data.` : 'Connect integrations to activate risk monitoring.'}
+              {integrationLoading && !integrationResolved ? 'Verifying connected systems and live risk signals…' : hasAnyIntegration ? `Monitoring ${RISK_CATEGORIES.filter(c => c.has).length} of ${RISK_CATEGORIES.length} risk categories with live data.` : 'Connect integrations to activate risk monitoring.'}
             </p>
           </div>
-          <DataConfidence cognitive={cognitive} />
+          <DataConfidence cognitive={cognitive} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
+        </div>
+
+        <InsightExplainabilityStrip
+          whyVisible={explainability.whyVisible}
+          whyNow={explainability.whyNow}
+          nextAction={explainability.nextAction}
+          ifIgnored={explainability.ifIgnored}
+          testIdPrefix="risk-explainability"
+        />
+
+        <ActionOwnershipCard
+          title="Risk response owner plan"
+          owner={actionOwnership.owner}
+          deadline={actionOwnership.deadline}
+          checkpoint={actionOwnership.checkpoint}
+          successMetric={actionOwnership.successMetric}
+          testIdPrefix="risk-action-ownership"
+        />
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]" data-testid="risk-ux-main-grid">
+          <div className="space-y-4" data-testid="risk-priority-column">
+            <SectionLabel title="What could hurt the business first" detail="Risk is intentionally reduced to the few real exposures that can cascade across domains." testId="risk-priority-label" />
+            <div className="grid gap-4 md:grid-cols-2" data-testid="risk-summary-metric-grid">
+              <MetricCard label="Composite risk" value={compositeDisplay} caption="Cross-domain pressure from live signals" tone={compositeColor} testId="risk-composite-metric" />
+              <MetricCard label="Monitored categories" value={`${monitoredCount}/${RISK_CATEGORIES.length}`} caption="Only categories with live evidence are counted" tone="#3B82F6" testId="risk-monitored-metric" />
+              <MetricCard label="Cash runway" value={runway != null ? `${runway}m` : '—'} caption="Accounting-backed liquidity window" tone={runway != null && runway <= 3 ? '#EF4444' : '#10B981'} testId="risk-runway-metric" />
+              <MetricCard label="Top 3 client share" value={topClientPct != null ? `${topClientPct}%` : '—'} caption="Commercial concentration in major accounts" tone={topClientPct != null && topClientPct >= 60 ? '#EF4444' : '#F59E0B'} testId="risk-concentration-metric" />
+            </div>
+            {riskPrioritySignals.length > 0 ? riskPrioritySignals.map((signal) => (
+              <SignalCard key={signal.id} {...signal} testId={signal.id} />
+            )) : (
+              <EmptyStateCard title="Risk is quiet right now." detail="BIQc is not surfacing a material cross-domain risk in this cycle. That quiet state is intentional, not filler." testId="risk-priority-empty" />
+            )}
+          </div>
+
+          <div className="space-y-4" data-testid="risk-guidance-column">
+            <SurfaceCard testId="risk-reading-guidance-card">
+              <SectionLabel title="How to use this page" detail="Start with the top card here, then use the deeper sections below only if you need the supporting chain or evidence." testId="risk-reading-guidance-label" />
+              <div className="mt-4 space-y-3 text-sm text-[#CBD5E1]">
+                <p data-testid="risk-reading-guidance-1">Finance remains tied to runway and concentration.</p>
+                <p data-testid="risk-reading-guidance-2">People risk stays tied to live email and calendar strain signals.</p>
+                <p data-testid="risk-reading-guidance-3">Propagation chains below are for investigation, not first-glance overload.</p>
+              </div>
+            </SurfaceCard>
+          </div>
         </div>
 
         {/* Tab Navigation */}

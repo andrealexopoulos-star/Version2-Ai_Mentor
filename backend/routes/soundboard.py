@@ -10,6 +10,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
 import uuid
 import logging
+import os
 
 from core.llm_router import llm_chat, llm_chat_with_usage
 from routes.deps import get_current_user, get_sb, OPENAI_KEY, AI_MODEL, logger
@@ -96,6 +97,125 @@ def _polish_response(text):
     text = re.sub(r'\n{3,}', '\n\n', text).strip()
 
     return text
+
+
+def _build_grounded_exec_fallback(*, has_crm: bool, has_accounting: bool, has_email: bool, obs_events: List[Dict[str, Any]], rev: Dict[str, Any], risk: Dict[str, Any], people: Dict[str, Any]) -> str:
+    connected = []
+    if has_crm:
+        connected.append("CRM")
+    if has_accounting:
+        connected.append("Accounting")
+    if has_email:
+        connected.append("Email")
+
+    top_signals = []
+    for event in (obs_events or [])[:3]:
+        if not isinstance(event, dict):
+            continue
+        sig = event.get("signal_name", "signal")
+        sev = str(event.get("severity", "medium")).upper()
+        dom = event.get("domain", "business")
+        top_signals.append(f"- {sig} ({sev}) in {dom}")
+
+    pipeline_total = float((rev or {}).get("pipeline_total") or 0)
+    stalled_deals = int((rev or {}).get("stalled_deals") or 0)
+    overdue = (rev or {}).get("overdue_invoices") or []
+    overdue_total = sum(float(i.get("amount") or 0) for i in overdue if isinstance(i, dict))
+    risk_level = str((risk or {}).get("overall_risk") or "moderate").upper()
+    capacity = (people or {}).get("capacity")
+    fatigue = (people or {}).get("fatigue")
+
+    lines = [
+        "Situation: I am using your connected BIQc telemetry to provide this summary.",
+        f"Connected systems: {', '.join(connected) if connected else 'integration visibility limited in this turn'}.",
+        f"Live signals observed: {len(obs_events or [])}.",
+    ]
+    if top_signals:
+        lines.append("Top signals:\n" + "\n".join(top_signals))
+
+    lines.append("Decision: Prioritise one cross-functional containment action across revenue, execution cadence, and client response latency this week.")
+    lines.append(
+        "This week:\n"
+        f"- Revenue checkpoint: pipeline ${pipeline_total:,.0f}, stalled deals {stalled_deals}.\n"
+        f"- Cash checkpoint: overdue invoices ${overdue_total:,.0f}.\n"
+        f"- Risk checkpoint: overall risk {risk_level}."
+        + (f"\n- Workforce checkpoint: capacity {capacity if capacity is not None else 'unknown'} / fatigue {fatigue if fatigue is not None else 'unknown'}." if (capacity is not None or fatigue is not None) else "")
+    )
+    lines.append("Risk if delayed: unresolved signal clusters can compound into forecast misses, slower cash conversion, and lower client confidence.")
+    return "\n\n".join(lines)
+
+
+def _generic_response_detected(text: str) -> bool:
+    cleaned = (text or "").strip().lower()
+    if not cleaned:
+        return True
+    generic_markers = [
+        "it depends",
+        "in general",
+        "generally speaking",
+        "every business",
+        "for most businesses",
+        "without more context",
+        "you may want to",
+        "consider improving",
+    ]
+    marker_hit = any(marker in cleaned for marker in generic_markers)
+    digit_count = sum(ch.isdigit() for ch in cleaned)
+    return marker_hit or digit_count < 2
+
+
+def _build_specificity_fallback(*, profile: Dict[str, Any], top_concerns: List[Dict[str, Any]], coverage_pct: float, live_signal_count: int) -> str:
+    business_name = (profile or {}).get("business_name") or "your business"
+    industry = (profile or {}).get("industry") or "your industry"
+    top = top_concerns[0] if top_concerns else {}
+    issue = top.get("issue_brief") or top.get("decision_label") or "an unresolved priority in your operating system"
+    action = top.get("action_brief") or top.get("recommendation") or "assign an owner and execute one containment action this week"
+    risk = top.get("if_ignored_brief") or "the issue will compound into revenue timing and delivery pressure"
+    freshness = top.get("data_freshness") or "unknown"
+    source_count = top.get("data_sources_count") or 1
+
+    return (
+        f"Situation: For {business_name} in {industry}, BIQc has enough evidence to isolate one immediate decision area: {issue}. "
+        f"Coverage is {coverage_pct}% with {live_signal_count} live signals in this cycle.\n\n"
+        f"Decision: Execute this now — {action}.\n\n"
+        f"This week: Assign one owner, lock a deadline, and review measurable movement within 48 hours. "
+        f"Current evidence footprint: {source_count} source stream(s), freshness {freshness}.\n\n"
+        f"Risk if delayed: {risk}."
+    )
+
+
+def _soundboard_contract_meta(*, has_crm: bool, has_accounting: bool, has_email: bool, live_signal_count: int, live_signal_age_hours: Optional[float], coverage_pct: float, top_concerns: List[Dict[str, Any]]) -> Dict[str, Any]:
+    data_sources_count = int(has_crm) + int(has_accounting) + int(has_email)
+    if live_signal_count > 0:
+        data_sources_count += 1
+    if top_concerns:
+        data_sources_count += 1
+
+    freshness = "unknown"
+    if live_signal_age_hours is not None:
+        freshness = f"{int(round(live_signal_age_hours * 60))}m" if live_signal_age_hours < 1 else f"{int(round(live_signal_age_hours))}h"
+
+    confidence = 0.28 + (0.12 * int(has_crm)) + (0.12 * int(has_accounting)) + (0.1 * int(has_email))
+    confidence += 0.12 if live_signal_count > 0 else 0
+    confidence += 0.16 * min(1.0, float(coverage_pct or 0) / 100.0)
+    confidence = max(0.2, min(0.98, confidence))
+
+    return {
+        "confidence_score": round(confidence, 4),
+        "data_sources_count": max(1, data_sources_count),
+        "data_freshness": freshness,
+        "lineage": {
+            "engine": "soundboard_v2",
+            "coverage_pct": coverage_pct,
+            "live_signals_count": live_signal_count,
+            "connected_sources": {
+                "crm": has_crm,
+                "accounting": has_accounting,
+                "email": has_email,
+            },
+            "top_concern_ids": [c.get("concern_id") for c in (top_concerns or []) if isinstance(c, dict)],
+        },
+    }
 
 
 # ─── Strategic Advisor System Prompt (Sprint 4 Enhanced) ───
@@ -208,6 +328,359 @@ class SoundboardChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
     intelligence_context: Optional[Dict[str, Any]] = None
+    mode: Optional[str] = "auto"
+
+
+def _has_configured_key(value: Optional[str]) -> bool:
+    return bool(value and str(value).strip() and str(value).strip() not in {"CONFIGURED_IN_AZURE", "None", "null"})
+
+
+def _infer_intent_heuristic(message: str) -> tuple[str, str, str]:
+    text = (message or "").lower()
+    domain = "general"
+    if any(word in text for word in ("invoice", "cash", "margin", "profit", "revenue", "xero", "budget", "burn")):
+        domain = "finance"
+    elif any(word in text for word in ("deal", "pipeline", "lead", "hubspot", "close rate", "prospect")):
+        domain = "sales"
+    elif any(word in text for word in ("campaign", "seo", "ads", "social", "brand", "linkedin", "market")):
+        domain = "marketing"
+    elif any(word in text for word in ("risk", "compliance", "incident", "exposure", "audit")):
+        domain = "risk"
+    elif any(word in text for word in ("ops", "process", "workflow", "delivery", "capacity", "sop")):
+        domain = "operations"
+    elif any(word in text for word in ("team", "staff", "hiring", "people", "culture", "workforce")):
+        domain = "hr"
+    elif any(word in text for word in ("plan", "strategy", "forecast", "next quarter", "scenario")):
+        domain = "planning"
+
+    action = "recommend"
+    if any(word in text for word in ("forecast", "predict", "runway", "projection")):
+        action = "forecast"
+    elif any(word in text for word in ("create", "write", "draft", "generate")):
+        action = "create"
+    elif any(word in text for word in ("update", "change", "revise")):
+        action = "update"
+    elif any(word in text for word in ("compare", "versus", "vs", "benchmark")):
+        action = "compare"
+    elif any(word in text for word in ("why", "explain", "what happened")):
+        action = "explain"
+    elif any(word in text for word in ("diagnose", "debug", "issue", "problem", "stuck")):
+        action = "diagnose"
+    elif any(word in text for word in ("summarise", "summarize", "recap")):
+        action = "summarise"
+
+    complexity = "medium"
+    if len(text) < 50 or any(word in text for word in ("hi", "hello", "thanks", "invoice?", "quick")):
+        complexity = "low"
+    if len(text) > 220 or any(word in text for word in ("forecast", "scenario", "diagnose", "root cause", "board", "strategy")):
+        complexity = "high"
+
+    return domain, action, complexity
+
+
+def _resolve_model_route(mode: str, intent_domain: str, intent_action: str, complexity: str, has_openai: bool, has_google: bool) -> tuple[str, List[str], str, str]:
+    if not has_openai and not has_google:
+        raise RuntimeError("AI provider keys are not configured. Add a valid OPENAI_API_KEY and/or GOOGLE_API_KEY in the backend environment to restore Soundboard replies.")
+
+    mode = (mode or "auto").lower()
+    openai_pro = ["gpt-5.4-pro", "gpt-5.2", "o3-pro", "gpt-4o"]
+    openai_thinking = ["gpt-5.4", "gpt-5.2", "o3", "gpt-4o"]
+    openai_fast = ["gpt-5.3", "gpt-5.2", "gpt-4o-mini", "gpt-4o"]
+    gemini_pro = ["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"]
+    gemini_fast = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.0-flash"]
+
+    if mode == "normal":
+        if has_openai:
+            return "openai", openai_fast, "Normal", "User-selected normal mode (GPT-5.3 fast path)"
+        return "gemini", gemini_fast, "Normal", "User-selected normal mode routed to Gemini fallback"
+
+    if mode == "thinking":
+        return "openai", openai_thinking if has_openai else gemini_pro, "Pro Thinking", "User-selected deep reasoning mode"
+    if mode == "pro":
+        if has_google:
+            return "gemini", gemini_pro, "Pro", "User-selected long-context analysis mode"
+        return "openai", openai_pro, "Pro", "User-selected pro mode routed to OpenAI fallback"
+    if mode == "fast":
+        if has_google:
+            return "gemini", gemini_fast, "Fast", "User-selected fast mode"
+        return "openai", openai_fast, "Fast", "User-selected fast mode routed to OpenAI fallback"
+
+    if intent_domain in ("finance", "risk", "planning") or intent_action in ("forecast", "diagnose") or complexity == "high":
+        if has_openai:
+            return "openai", openai_pro, "Pro Thinking", "Deep reasoning — financial/risk/strategic analysis"
+        return "gemini", gemini_pro, "Pro", "Deep reasoning routed to Gemini due to OpenAI availability"
+
+    if intent_domain == "marketing" and complexity != "low":
+        if has_google:
+            return "gemini", gemini_pro, "Pro", "Market intelligence & competitive research"
+        return "openai", openai_fast, "Fast", "Marketing query routed to OpenAI fallback"
+
+    if intent_domain in ("sales", "operations", "hr") or intent_action in ("create", "update"):
+        if has_openai:
+            return "openai", openai_fast, "Instant", "Fast structured response for operational query"
+        return "gemini", gemini_fast, "Fast", "Operational query routed to Gemini fallback"
+
+    if has_google and (complexity == "low" or intent_domain == "general"):
+        return "gemini", gemini_fast, "Fast", "Quick query — Gemini Flash"
+    if has_openai:
+        return "openai", openai_fast, "Instant", "General query — OpenAI fast path"
+    return "gemini", gemini_pro, "Pro", "Fallback to available Gemini provider"
+
+
+def _is_auth_error(error_text: str) -> bool:
+    text = error_text.lower()
+    return any(token in text for token in (
+        "incorrect api key", "invalid api key", "authentication", "unauthorized", "401", "permission denied", "api key not valid"
+    ))
+
+
+def _is_model_error(error_text: str) -> bool:
+    text = error_text.lower()
+    return any(token in text for token in (
+        "model", "not found", "does not exist", "unsupported", "not available", "access", "permission", "404"
+    ))
+
+
+async def _call_openai_with_fallback(api_key: str, system_message: str, clean_message: str, messages_history: List[Dict[str, Any]], model_candidates: List[str], reasoning: bool = False) -> tuple[str, str]:
+    import openai as _openai
+
+    if not _has_configured_key(api_key):
+        raise RuntimeError("OPENAI_API_KEY is not configured. Add a valid OpenAI key to restore Soundboard replies.")
+
+    client = _openai.AsyncOpenAI(api_key=api_key)
+    formatted_messages = [{"role": "system", "content": system_message}]
+    for message in (messages_history or [])[-12:]:
+        formatted_messages.append({"role": message.get("role", "user"), "content": message.get("content", "")})
+    formatted_messages.append({"role": "user", "content": clean_message})
+
+    last_error = None
+    for candidate in model_candidates:
+        try:
+            request_kwargs = {
+                "model": candidate,
+                "messages": formatted_messages,
+                "max_tokens": 2000,
+            }
+            if not any(candidate.startswith(prefix) for prefix in ("gpt-5", "o3", "o4")):
+                request_kwargs["temperature"] = 0.7
+            if reasoning and any(candidate.startswith(prefix) for prefix in ("gpt-5", "o3", "o4")):
+                request_kwargs["reasoning_effort"] = "high"
+
+            completion = await client.chat.completions.create(**request_kwargs)
+            reply = completion.choices[0].message.content or ""
+            if reply:
+                return reply, candidate
+            last_error = RuntimeError(f"OpenAI returned an empty response for {candidate}")
+        except Exception as exc:
+            last_error = exc
+            error_text = str(exc)
+            if _is_auth_error(error_text):
+                raise RuntimeError("OpenAI rejected the configured API key. Please verify OPENAI_API_KEY in the backend environment.") from exc
+            if _is_model_error(error_text):
+                logger.warning(f"[SOUNDBOARD] OpenAI model fallback from {candidate}: {exc}")
+                continue
+            logger.warning(f"[SOUNDBOARD] OpenAI attempt failed for {candidate}: {exc}")
+            continue
+
+    raise RuntimeError(f"OpenAI chat failed across fallback models: {last_error}")
+
+
+async def _call_gemini_with_fallback(api_key: str, system_message: str, clean_message: str, model_candidates: List[str]) -> tuple[str, str]:
+    import httpx as _httpx
+
+    if not _has_configured_key(api_key):
+        raise RuntimeError("GOOGLE_API_KEY is not configured. Add a valid Google AI key to restore Gemini-powered Soundboard replies.")
+
+    last_error = None
+    async with _httpx.AsyncClient(timeout=30) as client:
+        for candidate in model_candidates:
+            try:
+                gemini_model = candidate.replace("-preview", "")
+                response = await client.post(
+                    f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
+                    params={"key": api_key},
+                    json={
+                        "contents": [{"parts": [{"text": f"{system_message}\n\n{clean_message}"}]}],
+                        "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.7},
+                    },
+                )
+                if response.status_code == 200:
+                    payload = response.json()
+                    reply = payload.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    if reply:
+                        return reply, candidate
+                    last_error = RuntimeError(f"Gemini returned an empty response for {candidate}")
+                    continue
+
+                error_text = response.text
+                last_error = RuntimeError(f"Gemini {candidate} failed with {response.status_code}: {error_text[:500]}")
+                if response.status_code in (401, 403) or _is_auth_error(error_text):
+                    raise RuntimeError("Google AI rejected the configured API key. Please verify GOOGLE_API_KEY in the backend environment.")
+                if response.status_code in (400, 404) and _is_model_error(error_text):
+                    logger.warning(f"[SOUNDBOARD] Gemini model fallback from {candidate}: {error_text[:200]}")
+                    continue
+                logger.warning(f"[SOUNDBOARD] Gemini attempt failed for {candidate}: {error_text[:200]}")
+            except Exception as exc:
+                last_error = exc
+                error_text = str(exc)
+                if _is_auth_error(error_text):
+                    raise RuntimeError("Google AI rejected the configured API key. Please verify GOOGLE_API_KEY in the backend environment.") from exc
+                if _is_model_error(error_text):
+                    logger.warning(f"[SOUNDBOARD] Gemini model fallback from {candidate}: {exc}")
+                    continue
+                logger.warning(f"[SOUNDBOARD] Gemini attempt failed for {candidate}: {exc}")
+                continue
+
+    raise RuntimeError(f"Gemini chat failed across fallback models: {last_error}")
+
+
+async def _call_anthropic_with_fallback(api_key: str, system_message: str, clean_message: str, model_candidates: List[str]) -> tuple[str, str]:
+    import httpx as _httpx
+
+    if not _has_configured_key(api_key):
+        raise RuntimeError("ANTHROPIC_API_KEY is not configured. Add a valid Anthropic key to enable Trinity reasoning.")
+
+    payload_base = {
+        "temperature": 0.45,
+        "max_tokens": 1800,
+        "system": system_message,
+        "messages": [{"role": "user", "content": clean_message}],
+    }
+
+    last_error = ""
+    for model in model_candidates:
+        try:
+            async with _httpx.AsyncClient(timeout=70.0) as client:
+                resp = await client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    },
+                    json={**payload_base, "model": model},
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                content = data.get("content") or []
+                text = content[0].get("text", "") if content and isinstance(content[0], dict) else ""
+                if text and text.strip():
+                    return text.strip(), model
+        except Exception as e:
+            msg = str(e)
+            last_error = msg
+            logger.warning(f"Anthropic model '{model}' failed: {msg}")
+            if _is_auth_error(msg):
+                break
+            continue
+
+    raise RuntimeError(f"Anthropic chat failed across fallback models: {last_error}")
+
+
+def _truncate_for_synthesis(text: str, max_chars: int = 2400) -> str:
+    t = (text or "").strip()
+    if len(t) <= max_chars:
+        return t
+    return t[:max_chars] + "\n\n[...truncated for synthesis]"
+
+
+async def _call_trinity_orchestration(
+    *,
+    openai_key: str,
+    google_key: str,
+    anthropic_key: str,
+    system_message: str,
+    clean_message: str,
+    messages_history: List[Dict[str, Any]],
+) -> tuple[str, str]:
+    has_openai = _has_configured_key(openai_key)
+    has_google = _has_configured_key(google_key)
+    has_anthropic = _has_configured_key(anthropic_key)
+    if not has_openai and not has_google and not has_anthropic:
+        raise RuntimeError("Trinity mode requires at least one configured provider key (OPENAI_API_KEY, GOOGLE_API_KEY, or ANTHROPIC_API_KEY).")
+
+    parallel_tasks = []
+
+    if has_openai:
+        parallel_tasks.append(_call_openai_with_fallback(
+            api_key=openai_key,
+            system_message=system_message,
+            clean_message=clean_message,
+            messages_history=messages_history,
+            model_candidates=["gpt-5.4", "gpt-5.3", "gpt-5.2"],
+            reasoning=True,
+        ))
+        parallel_tasks.append(_call_openai_with_fallback(
+            api_key=openai_key,
+            system_message=system_message,
+            clean_message=clean_message,
+            messages_history=messages_history,
+            model_candidates=["codex-5.3", "gpt-5.3", "gpt-5.2"],
+            reasoning=False,
+        ))
+
+    if has_google:
+        parallel_tasks.append(_call_gemini_with_fallback(
+            api_key=google_key,
+            system_message=system_message,
+            clean_message=clean_message,
+            model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+        ))
+
+    if has_anthropic:
+        parallel_tasks.append(_call_anthropic_with_fallback(
+            api_key=anthropic_key,
+            system_message=system_message,
+            clean_message=clean_message,
+            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+        ))
+
+    results = await asyncio.gather(*parallel_tasks, return_exceptions=True)
+
+    model_outputs = []
+    for result in results:
+        if isinstance(result, Exception):
+            continue
+        text, model = result
+        if text:
+            model_outputs.append({"model": model, "text": text})
+
+    if not model_outputs:
+        raise RuntimeError("Trinity mode failed across GPT-5.4, Codex-5.3, and Gemini Pro candidates.")
+
+    if len(model_outputs) == 1:
+        only = model_outputs[0]
+        return only["text"], f"trinity-degraded/{only['model']}"
+
+    fusion_prompt = "\n\n".join(
+        [f"[{m['model']}]\n{_truncate_for_synthesis(m['text'])}" for m in model_outputs]
+    )
+    synthesis_system = (
+        "You are BIQc Trinity Fusion. Merge multi-model analyses into one operator-grade answer. "
+        "Output must be concise, factual, and action-first. Include:\n"
+        "1) Core diagnosis\n2) Why now\n3) Immediate action (48h)\n4) If ignored\n"
+        "Do NOT mention model names or that multiple models were used."
+    )
+    synthesis_user = f"User query:\n{clean_message}\n\nCandidate analyses:\n{fusion_prompt}"
+
+    if has_openai:
+        fused, fused_model = await _call_openai_with_fallback(
+            api_key=openai_key,
+            system_message=synthesis_system,
+            clean_message=synthesis_user,
+            messages_history=[],
+            model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+            reasoning=False,
+        )
+        return fused, f"trinity/{fused_model}"
+
+    fused, fused_model = await _call_gemini_with_fallback(
+        api_key=google_key,
+        system_message=synthesis_system,
+        clean_message=synthesis_user,
+        model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+    )
+    return fused, f"trinity/{fused_model}"
 
 
 class ConversationRename(BaseModel):
@@ -232,7 +705,15 @@ async def get_soundboard_conversation_detail(conversation_id: str, current_user:
     if not result.data:
         raise HTTPException(status_code=404, detail="Conversation not found")
     conversation = result.data[0]
-    return {"conversation": conversation, "messages": conversation.get("messages", [])}
+    try:
+        messages_result = sb.table("soundboard_messages").select(
+            "role, content, timestamp"
+        ).eq("conversation_id", conversation_id).eq("user_id", current_user["id"]).order("timestamp", desc=False).execute()
+        messages = messages_result.data or []
+    except Exception:
+        # Backward compatibility for deployments storing messages in conversation JSON column.
+        messages = conversation.get("messages", [])
+    return {"conversation": conversation, "messages": messages}
 
 
 @router.post("/soundboard/chat")
@@ -255,7 +736,17 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         if result.data:
             conversation = result.data[0]
 
-    messages_history = (conversation.get("messages", [])[-20:]) if conversation else []
+    messages_history = []
+    if conversation:
+        try:
+            history_result = sb.table("soundboard_messages").select(
+                "role, content, timestamp"
+            ).eq("conversation_id", conversation["id"]).eq("user_id", user_id).order("timestamp", desc=True).limit(20).execute()
+            history_rows = list(reversed(history_result.data or []))
+            messages_history = [{"role": row.get("role"), "content": row.get("content")} for row in history_rows]
+        except Exception:
+            # Backward compatibility when soundboard_messages table is unavailable.
+            messages_history = (conversation.get("messages", [])[-20:]) if isinstance(conversation.get("messages"), list) else []
 
     # Cognitive Core context
     core_context = await cognitive_core.get_context_for_agent(user_id, "MySoundboard")
@@ -316,6 +807,31 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         pass
 
     logger.info(f"[GUARDRAIL] user={user_id[:8]} coverage={coverage_pct}% status={guardrail_status} critical_missing={len(missing_critical)}")
+
+    top_brain_concerns: List[Dict[str, Any]] = []
+    try:
+        concern_res = (
+            sb.schema("business_core")
+            .table("brain_evaluations")
+            .select("concern_id,priority_score,recommendation,issue_brief,why_now_brief,action_brief,if_ignored_brief,data_sources_count,data_freshness")
+            .eq("tenant_id", user_id)
+            .order("evaluated_at", desc=True)
+            .limit(3)
+            .execute()
+        )
+        top_brain_concerns = concern_res.data or []
+    except Exception:
+        top_brain_concerns = []
+
+    contract_meta = _soundboard_contract_meta(
+        has_crm=has_crm,
+        has_accounting=has_accounting,
+        has_email=has_email,
+        live_signal_count=live_signal_count,
+        live_signal_age_hours=live_signal_age_hours,
+        coverage_pct=coverage_pct,
+        top_concerns=top_brain_concerns,
+    )
 
     # ═══ FULL BUSINESS DNA ═══
     biz_context = ""
@@ -415,6 +931,10 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     # ═══ LIVE INTEGRATION DATA (CRM, Accounting, Email) ═══
     integration_context = ""
+    obs_events: List[Dict[str, Any]] = []
+    rev: Dict[str, Any] = {}
+    risk: Dict[str, Any] = {}
+    people: Dict[str, Any] = {}
 
     # FIRST: Inject observation_events (cached signals from emission layer)
     try:
@@ -450,12 +970,17 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 days_stalled = metric.get('days_in_stage', entity.get('days_stalled', ''))
 
                 line = f"SIGNAL: {sig} | severity={severity}"
-                if name: line += f" | deal='{name}'"
+                if name:
+                    line += f" | deal='{name}'"
                 if amount:
-                    try: line += f" | amount=${float(amount):,.0f}"
-                    except: line += f" | amount={amount}"
-                if stage: line += f" | stage={stage}"
-                if days_stalled: line += f" | stalled={days_stalled} days"
+                    try:
+                        line += f" | amount=${float(amount):,.0f}"
+                    except Exception:
+                        line += f" | amount={amount}"
+                if stage:
+                    line += f" | stage={stage}"
+                if days_stalled:
+                    line += f" | stalled={days_stalled} days"
                 integration_context += line + "\n"
 
             logger.info(f"[soundboard] Injected {len(obs_events)} observation_events for user {user_id[:8]}")
@@ -604,6 +1129,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "context_fields": context_fields,
             "live_signals": live_signal_count,
             "conversation_id": req.conversation_id,
+            **contract_meta,
         }
 
     # P1: Signal freshness injection
@@ -660,6 +1186,18 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 calibration_context += f"\nAdvisor Tone Preference: {preferences}"
         if calibration_context:
             guardrail_injection += f"\n[CALIBRATION CONTEXT (no integrations connected — use this data for personalised guidance):{calibration_context}]\n"
+
+    if top_brain_concerns:
+        concern_lines = ["\n═══ TOP BRAIN CONCERNS (REFERENCE THESE SPECIFICALLY) ═══"]
+        for idx, concern in enumerate(top_brain_concerns[:3], start=1):
+            concern_lines.append(
+                f"{idx}) {concern.get('concern_id', 'concern')} | priority={concern.get('priority_score', 0)} | "
+                f"issue={concern.get('issue_brief') or concern.get('why_now_brief') or concern.get('recommendation') or 'n/a'} | "
+                f"action={concern.get('action_brief') or concern.get('recommendation') or 'n/a'}"
+            )
+        guardrail_injection += "\n" + "\n".join(concern_lines) + "\n"
+    else:
+        guardrail_injection += "\n[NO PERSISTED BRAIN CONCERNS AVAILABLE THIS TURN — USE LIVE SIGNALS + BUSINESS DNA ONLY, DO NOT GENERATE GENERIC THEORY.]\n"
 
     system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + signal_injection + guardrail_injection + contract_injection + f"\n\nCONTEXT:\n{user_context}"
 
@@ -729,122 +1267,130 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     feature = 'trinity_daily' if mode == 'trinity' else 'soundboard_daily'
     await check_rate_limit(user_id, feature, get_sb())
 
-    # ═══ HYBRID MODEL ROUTING — Direct OpenAI API + Emergent for Gemini ═══
+    # ═══ HYBRID MODEL ROUTING — Direct provider keys only ═══
     # OpenAI: Uses your OPENAI_API_KEY directly (already in Azure/Supabase/GitHub)
-    # Gemini:  Uses GOOGLE_API_KEY when set, falls back to Emergent key otherwise
+    # Gemini:  Uses GOOGLE_API_KEY directly
 
-    import openai as _openai
     OPENAI_DIRECT_KEY = os.environ.get("OPENAI_API_KEY", "")
     GOOGLE_DIRECT_KEY = os.environ.get("GOOGLE_API_KEY", "")
-    EMERGENT_FALLBACK  = os.environ.get("EMERGENT_LLM_KEY", "")
+    ANTHROPIC_DIRECT_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+    has_openai_key = _has_configured_key(OPENAI_DIRECT_KEY)
+    has_google_key = _has_configured_key(GOOGLE_DIRECT_KEY)
+    has_anthropic_key = _has_configured_key(ANTHROPIC_DIRECT_KEY)
 
     # Step 1: Intent classification with o4-mini (fast thinking, direct OpenAI key)
-    intent_domain = "general"
-    intent_action = "recommend"
-    complexity = "medium"
-    try:
-        clf_client = _openai.AsyncOpenAI(api_key=OPENAI_DIRECT_KEY)
-        clf_r = await clf_client.chat.completions.create(
-            model="o4-mini",
-            messages=[
-                {"role": "system", "content": 'Classify this business query. Respond with JSON only: {"domain":"finance|sales|marketing|operations|hr|risk|planning|general","action":"summarise|forecast|create|update|compare|explain|recommend|diagnose","complexity":"low|medium|high"}'},
-                {"role": "user", "content": req.message[:400]},
-            ],
-            max_tokens=80,
-        )
-        import json as _json
-        clf_str = clf_r.choices[0].message.content or "{}"
-        clf = _json.loads(clf_str)
-        intent_domain = clf.get("domain", "general")
-        intent_action = clf.get("action", "recommend")
-        complexity = clf.get("complexity", "medium")
-        logger.info(f"[INTENT] domain={intent_domain} action={intent_action} complexity={complexity}")
-    except Exception as e:
-        logger.warning(f"Intent classification failed: {e}")
+    intent_domain, intent_action, complexity = _infer_intent_heuristic(req.message)
+    if has_openai_key:
+        try:
+            import json as _json
+            reply, _ = await _call_openai_with_fallback(
+                api_key=OPENAI_DIRECT_KEY,
+                system_message='Classify this business query. Respond with JSON only: {"domain":"finance|sales|marketing|operations|hr|risk|planning|general","action":"summarise|forecast|create|update|compare|explain|recommend|diagnose","complexity":"low|medium|high"}',
+                clean_message=req.message[:400],
+                messages_history=[],
+                model_candidates=["o4-mini", "gpt-4o-mini"],
+                reasoning=False,
+            )
+            clf = _json.loads(reply or "{}")
+            intent_domain = clf.get("domain", intent_domain)
+            intent_action = clf.get("action", intent_action)
+            complexity = clf.get("complexity", complexity)
+        except Exception as e:
+            logger.warning(f"Intent classification failed, using heuristic fallback: {e}")
+    logger.info(f"[INTENT] domain={intent_domain} action={intent_action} complexity={complexity}")
 
-    # Step 2: Route to best model
-    # ┌──────────────────────────────────────────────────────────────────────────┐
-    # │ THINKING PRO  → o3-pro     Deep reasoning: finance, risk, strategy       │
-    # │ INSTANT       → gpt-5.2    Sales, operations, fast structured responses  │
-    # │ GEMINI PRO    → gemini-2.5-pro  Market intel, competitive research       │
-    # │ GEMINI FLASH  → gemini-2.5-flash  Quick queries, greetings               │
-    # └──────────────────────────────────────────────────────────────────────────┘
-    if intent_domain in ("finance", "risk", "planning") or intent_action in ("forecast", "diagnose") or complexity == "high":
-        provider, model_name, mode_label = "openai", "gpt-5.4-pro", "Pro Thinking"
-        routing_reason = "Deep reasoning — financial/risk/strategic analysis"
-    elif intent_domain == "marketing" and complexity != "low":
-        provider, model_name, mode_label = "gemini", "gemini-3-pro-preview", "Gemini 3 Pro"
-        routing_reason = "Gemini 3.1 — market intelligence & competitive research (1M context)"
-    elif intent_domain in ("sales", "operations", "hr") or intent_action in ("create", "update"):
-        provider, model_name, mode_label = "openai", "gpt-5.3", "Instant"
-        routing_reason = "Fast structured response for operational query"
-    elif complexity == "low" or intent_domain == "general":
-        provider, model_name, mode_label = "gemini", "gemini-3-flash-preview", "Instant Flash"
-        routing_reason = "Quick query — Gemini 3 Flash"
-    else:
-        provider, model_name, mode_label = "gemini", "gemini-3-pro-preview", "Gemini 3 Pro"
-        routing_reason = "Advanced reasoning and intelligence"
-
-    logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_name} — {routing_reason}")
-    contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_name})\n"
-
-    # Step 3: Generate response — Direct APIs
+    # Step 2/3: Route + Generate response
     try:
         import time as _time
         _start = _time.time()
 
-        if provider == "openai":
-            # Direct OpenAI API call — your own key
-            client = _openai.AsyncOpenAI(api_key=OPENAI_DIRECT_KEY)
-            
-            # Build messages for OpenAI
-            _msgs = [{"role": "system", "content": system_message}]
-            for m in (messages_history or [])[-12:]:
-                _msgs.append({"role": m.get("role", "user"), "content": m.get("content", "")})
-            _msgs.append({"role": "user", "content": clean_message})
-
-            # gpt-5.4 thinking mode uses reasoning_effort
-            extra_params = {}
-            if model_name in ("gpt-5.4", "o3", "o3-pro", "o4"):
-                extra_params["reasoning_effort"] = "high"
-            
-            completion = await client.chat.completions.create(
-                model=model_name,
-                messages=_msgs,
-                temperature=0.7 if "gpt-5.4" not in model_name else None,
-                max_tokens=2000,
-                **extra_params,
+        if mode == "trinity":
+            mode_label = "BIQc Trinity"
+            routing_reason = "User-selected Trinity mode (GPT-5.4 + Codex-5.3 + Gemini Pro orchestration)"
+            response, resolved_model = await _call_trinity_orchestration(
+                openai_key=OPENAI_DIRECT_KEY,
+                google_key=GOOGLE_DIRECT_KEY,
+                anthropic_key=ANTHROPIC_DIRECT_KEY,
+                system_message=system_message,
+                clean_message=clean_message,
+                messages_history=messages_history,
             )
-            response = completion.choices[0].message.content or ""
-
+            response_model = resolved_model
         else:
-            # Gemini — use GOOGLE_API_KEY if set, otherwise Emergent
-            if GOOGLE_DIRECT_KEY and GOOGLE_DIRECT_KEY not in ("CONFIGURED_IN_AZURE", ""):
-                # Direct Google Gemini API
-                import httpx as _httpx
-                gemini_model = model_name.replace("-preview", "")
-                async with _httpx.AsyncClient() as _hclient:
-                    gemini_r = await _hclient.post(
-                        f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
-                        params={"key": GOOGLE_DIRECT_KEY},
-                        json={"contents": [{"parts": [{"text": f"{system_message}\n\n{clean_message}"}]}], "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.7}},
-                        timeout=30,
+            try:
+                provider, model_candidates, mode_label, routing_reason = _resolve_model_route(
+                    mode=mode,
+                    intent_domain=intent_domain,
+                    intent_action=intent_action,
+                    complexity=complexity,
+                    has_openai=has_openai_key,
+                    has_google=has_google_key,
+                )
+            except RuntimeError as e:
+                logger.error(f"Soundboard route selection error: {e}")
+                raise HTTPException(status_code=503, detail=str(e))
+
+            logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_candidates[0]} — {routing_reason}")
+            contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_candidates[0]})\n"
+
+            reasoning_mode = mode == "thinking" or intent_action in ("forecast", "diagnose") or complexity == "high"
+            if provider == "openai":
+                try:
+                    response, resolved_model = await _call_openai_with_fallback(
+                        api_key=OPENAI_DIRECT_KEY,
+                        system_message=system_message,
+                        clean_message=clean_message,
+                        messages_history=messages_history,
+                        model_candidates=model_candidates,
+                        reasoning=reasoning_mode,
                     )
-                    gemini_data = gemini_r.json()
-                    response = gemini_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "Gemini unavailable")
+                except Exception as openai_error:
+                    if has_anthropic_key:
+                        logger.warning(f"[SOUNDBOARD] OpenAI route failed, falling back to Anthropic: {openai_error}")
+                        response, resolved_model = await _call_anthropic_with_fallback(
+                            api_key=ANTHROPIC_DIRECT_KEY,
+                            system_message=system_message,
+                            clean_message=clean_message,
+                            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+                        )
+                        provider = "anthropic-fallback"
+                    elif has_google_key:
+                        logger.warning(f"[SOUNDBOARD] OpenAI route failed, falling back to Gemini: {openai_error}")
+                        response, resolved_model = await _call_gemini_with_fallback(
+                            api_key=GOOGLE_DIRECT_KEY,
+                            system_message=system_message,
+                            clean_message=clean_message,
+                            model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+                        )
+                        provider = "gemini-fallback"
+                    else:
+                        raise
             else:
-                # Fallback to Emergent for Gemini (until GOOGLE_API_KEY is set)
-                from emergentintegrations.llm.chat import LlmChat, UserMessage
-                _chat = LlmChat(
-                    api_key=EMERGENT_FALLBACK,
-                    session_id=f"sb-g-{user_id}-{uuid.uuid4()}",
-                    system_message=system_message,
-                ).with_model("gemini", model_name)
-                _resp = await _chat.send_message(UserMessage(text=clean_message))
-                response = _resp if isinstance(_resp, str) else str(_resp)
+                try:
+                    response, resolved_model = await _call_gemini_with_fallback(
+                        api_key=GOOGLE_DIRECT_KEY,
+                        system_message=system_message,
+                        clean_message=clean_message,
+                        model_candidates=model_candidates,
+                    )
+                except Exception as gemini_error:
+                    if has_openai_key:
+                        logger.warning(f"[SOUNDBOARD] Gemini route failed, falling back to OpenAI: {gemini_error}")
+                        response, resolved_model = await _call_openai_with_fallback(
+                            api_key=OPENAI_DIRECT_KEY,
+                            system_message=system_message,
+                            clean_message=clean_message,
+                            messages_history=messages_history,
+                            model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+                            reasoning=reasoning_mode,
+                        )
+                        provider = "openai-fallback"
+                    else:
+                        raise
+            response_model = f"{provider}/{resolved_model}"
 
         _elapsed = int((_time.time() - _start) * 1000)
-        logger.info(f"[SOUNDBOARD] {mode_label} {provider}/{model_name} in {_elapsed}ms ({len(response)} chars)")
+        logger.info(f"[SOUNDBOARD] {mode_label} {response_model} in {_elapsed}ms ({len(response)} chars)")
 
         if isinstance(response, str):
             response = _polish_response(response)
@@ -852,9 +1398,39 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         else:
             response = sanitise_output(_polish_response(str(response)))
 
+        lowered = response.lower()
+        disclaimer_markers = [
+            "i do not have access",
+            "i don't have access",
+            "cannot access",
+            "can't access",
+            "no data available",
+        ]
+        has_live_business_context = bool(obs_events) or has_crm or has_accounting or has_email
+        if has_live_business_context and any(marker in lowered for marker in disclaimer_markers):
+            response = _build_grounded_exec_fallback(
+                has_crm=has_crm,
+                has_accounting=has_accounting,
+                has_email=has_email,
+                obs_events=obs_events,
+                rev=rev,
+                risk=risk,
+                people=people,
+            )
+            response = sanitise_output(response)
+
+        if _generic_response_detected(response):
+            response = _build_specificity_fallback(
+                profile=profile or {},
+                top_concerns=top_brain_concerns,
+                coverage_pct=coverage_pct,
+                live_signal_count=live_signal_count,
+            )
+            response = sanitise_output(response)
+
         _actual_tokens = len(system_message.split()) + len(clean_message.split()) + len(response.split())
         log_llm_call_to_db(
-            tenant_id=user_id, model_name=f"{provider}/{model_name}", endpoint='soundboard/chat',
+            tenant_id=user_id, model_name=response_model, endpoint='soundboard/chat',
             total_tokens=_actual_tokens, latency_ms=_elapsed, feature_flag='soundboard',
         )
 
@@ -880,20 +1456,59 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             {"role": "assistant", "content": response, "timestamp": now}
         ]
 
-        # Save to Supabase
+        # Save to Supabase (conversation header + message rows)
         if req.conversation_id and conversation:
-            updated_messages = conversation.get("messages", []) + new_messages
-            await update_soundboard_conversation_supabase(sb, req.conversation_id, {
-                "messages": updated_messages, "updated_at": now
-            })
             conversation_id = req.conversation_id
+            sb.table("soundboard_conversations").update({
+                "updated_at": now,
+            }).eq("id", conversation_id).eq("user_id", user_id).execute()
         else:
             conversation_id = str(uuid.uuid4())
-            await create_soundboard_conversation_supabase(sb, {
-                "id": conversation_id, "user_id": user_id,
+            conv_insert = sb.table("soundboard_conversations").insert({
+                "id": conversation_id,
+                "user_id": user_id,
                 "title": conversation_title or "New Conversation",
-                "messages": new_messages, "created_at": now, "updated_at": now
-            })
+                "created_at": now,
+                "updated_at": now,
+            }).execute()
+            if not conv_insert.data:
+                raise HTTPException(status_code=500, detail="Failed to create SoundBoard conversation")
+
+        message_rows = [
+            {
+                "conversation_id": conversation_id,
+                "user_id": user_id,
+                "role": item["role"],
+                "content": item["content"],
+                "timestamp": item["timestamp"],
+            }
+            for item in new_messages
+        ]
+        messages_persisted = False
+        try:
+            msg_insert = sb.table("soundboard_messages").insert(message_rows).execute()
+            messages_persisted = bool(msg_insert.data)
+        except Exception:
+            messages_persisted = False
+
+        if not messages_persisted:
+            # Backward compatibility path: persist messages JSON directly in conversation row.
+            if req.conversation_id and conversation:
+                updated_messages = (conversation.get("messages", []) if isinstance(conversation.get("messages"), list) else []) + new_messages
+                fallback_update = sb.table("soundboard_conversations").update({
+                    "messages": updated_messages,
+                    "updated_at": now,
+                }).eq("id", conversation_id).eq("user_id", user_id).execute()
+                messages_persisted = bool(fallback_update.data)
+            else:
+                fallback_update = sb.table("soundboard_conversations").update({
+                    "messages": new_messages,
+                    "updated_at": now,
+                }).eq("id", conversation_id).eq("user_id", user_id).execute()
+                messages_persisted = bool(fallback_update.data)
+
+        if not messages_persisted:
+            raise HTTPException(status_code=500, detail="Failed to persist SoundBoard messages")
 
         # ═══ AUTO SESSION SUMMARISATION — always save ═══
         try:
@@ -953,11 +1568,41 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:6]] if guardrail_status == "DEGRADED" else [],
+            **contract_meta,
         }
 
+    except RuntimeError as e:
+        logger.error(f"Soundboard provider error: {e}")
+        fallback = _build_specificity_fallback(
+            profile=profile or {},
+            top_concerns=top_brain_concerns,
+            coverage_pct=coverage_pct,
+            live_signal_count=live_signal_count,
+        )
+        return {
+            "reply": fallback,
+            "conversation_id": req.conversation_id,
+            "guardrail": guardrail_status,
+            "coverage_pct": coverage_pct,
+            "provider_error": str(e),
+            **contract_meta,
+        }
     except Exception as e:
         logger.error(f"Soundboard chat error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        fallback = _build_specificity_fallback(
+            profile=profile or {},
+            top_concerns=top_brain_concerns,
+            coverage_pct=coverage_pct,
+            live_signal_count=live_signal_count,
+        )
+        return {
+            "reply": fallback,
+            "conversation_id": req.conversation_id,
+            "guardrail": guardrail_status,
+            "coverage_pct": coverage_pct,
+            "runtime_error": str(e),
+            **contract_meta,
+        }
 
 
 @router.patch("/soundboard/conversations/{conversation_id}")
@@ -1011,8 +1656,10 @@ async def proactive_signal_check(current_user: dict = Depends(get_current_user))
         summary = snap.data[0].get("summary", {})
         if isinstance(summary, str):
             import json as _j
-            try: summary = _j.loads(summary)
-            except: summary = {}
+            try:
+                summary = _j.loads(summary)
+            except Exception:
+                summary = {}
         
         snap_age_mins = (now - datetime.fromisoformat(
             snap.data[0]["generated_at"].replace("Z", "+00:00")

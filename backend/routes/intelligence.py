@@ -75,6 +75,8 @@ async def snapshot_generate(
 async def snapshot_latest(current_user: dict = Depends(get_current_user)):
     import json as _json
     from snapshot_agent import get_snapshot_agent
+    from supabase_client import init_supabase
+    from intelligence_live_truth import get_live_integration_truth, get_recent_observation_events, build_watchtower_events
     agent = get_snapshot_agent()
     snapshot = await agent.get_latest_snapshot(current_user["id"])
 
@@ -93,6 +95,37 @@ async def snapshot_latest(current_user: dict = Depends(get_current_user)):
         # Merge executive_memo from snapshot top-level if not in cognitive
         if cognitive and not cognitive.get("executive_memo") and snapshot.get("executive_memo"):
             cognitive["executive_memo"] = snapshot["executive_memo"]
+
+    sb = init_supabase()
+    live_truth = get_live_integration_truth(sb, current_user["id"])
+    observation_state = get_recent_observation_events(sb, current_user["id"], limit=5)
+    live_alerts = build_watchtower_events(observation_state.get("events") or [], limit=5)
+
+    if cognitive is None:
+        cognitive = {}
+
+    cognitive["integrations"] = {
+        "crm": live_truth["canonical_truth"]["crm_connected"],
+        "email": live_truth["canonical_truth"]["email_connected"],
+        "accounting": live_truth["canonical_truth"]["accounting_connected"],
+    }
+    cognitive["live_signal_count"] = observation_state.get("count", 0)
+    cognitive["top_alerts"] = live_alerts
+
+    snapshot_text = _json.dumps(cognitive).lower() if cognitive else ""
+    stale_accounting_phrase = (
+        live_truth["canonical_truth"]["accounting_connected"]
+        and any(phrase in snapshot_text for phrase in ["no accounting tool connected", "connect xero", "connect quickbooks"])
+    )
+    if stale_accounting_phrase and live_alerts:
+        live_memo = f"Live signal watch: {live_alerts[0]['detail']}"
+        cognitive["executive_memo"] = live_memo
+        if snapshot is not None:
+            snapshot["executive_memo"] = live_memo
+
+    burn_rate_overlay = ((cognitive.get("system_state") or {}).get("burn_rate_overlay") or "") if isinstance(cognitive, dict) else ""
+    if live_truth["canonical_truth"]["accounting_connected"] and "lack of accounting tool integration" in burn_rate_overlay.lower():
+        cognitive.setdefault("system_state", {})["burn_rate_overlay"] = "Accounting is connected live. Cash interpretation is using the latest connected-state truth and recent signals."
 
     return {"snapshot": snapshot, "cognitive": cognitive}
 

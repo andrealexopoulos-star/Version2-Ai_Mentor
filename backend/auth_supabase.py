@@ -8,7 +8,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict, Any
 import os
 import logging
-from supabase_client import init_supabase
+from supabase_client import get_supabase_client, init_supabase
 
 supabase_admin = init_supabase()
 from datetime import datetime
@@ -16,6 +16,28 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
+
+MASTER_ADMIN_EMAIL = "andre@thestrategysquad.com.au"
+
+
+def _is_master_admin_email(email: str | None) -> bool:
+    return str(email or "").strip().lower() == MASTER_ADMIN_EMAIL
+
+
+def _apply_master_admin_overrides(user_data: Dict[str, Any], email: str | None) -> Dict[str, Any]:
+    """Guarantee master account remains superadmin even if DB row was reset/purged."""
+    if not _is_master_admin_email(email):
+        return user_data
+
+    patched = dict(user_data or {})
+    patched["role"] = "superadmin"
+    patched["is_master_account"] = True
+    return patched
+
+
+def get_supabase_auth_client():
+    """Use a fresh anon/auth client so auth calls never mutate the global service-role client."""
+    return get_supabase_client()
 
 # Pydantic Models
 class SignUpRequest(BaseModel):
@@ -46,6 +68,19 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
         # First check if user already exists by ID (correct way)
         existing_by_id = await get_user_by_id(user_id)
         if existing_by_id:
+            if _is_master_admin_email(email) and (
+                existing_by_id.get("role") != "superadmin"
+                or not existing_by_id.get("is_master_account")
+            ):
+                try:
+                    supabase_admin.table("users").update({
+                        "role": "superadmin",
+                        "is_master_account": True,
+                        "updated_at": datetime.utcnow().isoformat(),
+                    }).eq("id", user_id).execute()
+                except Exception as patch_err:
+                    logger.warning(f"Could not enforce master admin flags for {email}: {patch_err}")
+                existing_by_id = _apply_master_admin_overrides(existing_by_id, email)
             logger.info(f"User with ID {user_id} already exists, returning existing profile")
             return existing_by_id
         
@@ -69,9 +104,9 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
                             "full_name": existing_by_email.get("full_name") or (metadata.get("full_name") if metadata else None),
                             "company_name": existing_by_email.get("company_name") or (metadata.get("company_name") if metadata else None),
                             "industry": existing_by_email.get("industry") or (metadata.get("industry") if metadata else None),
-                            "role": existing_by_email.get("role") or "user",
+                            "role": "superadmin" if _is_master_admin_email(email) else (existing_by_email.get("role") or "user"),
                             "subscription_tier": existing_by_email.get("subscription_tier") or "free",
-                            "is_master_account": existing_by_email.get("is_master_account", False),
+                            "is_master_account": True if _is_master_admin_email(email) else existing_by_email.get("is_master_account", False),
                             "created_at": existing_by_email.get("created_at") or datetime.utcnow().isoformat(),
                             "updated_at": datetime.utcnow().isoformat()
                         }
@@ -91,9 +126,9 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
 
                 # Return the merged profile
                 merged = await get_user_by_id(user_id)
-                return merged or {**existing_by_email, "id": user_id}
+                return _apply_master_admin_overrides(merged or {**existing_by_email, "id": user_id}, email)
             else:
-                return existing_by_email
+                return _apply_master_admin_overrides(existing_by_email, email)
         
         # No existing user - create new
         user_data = {
@@ -102,9 +137,9 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
             "full_name": metadata.get("full_name") if metadata else None,
             "company_name": metadata.get("company_name") if metadata else None,
             "industry": metadata.get("industry") if metadata else None,
-            "role": (metadata.get("role") if metadata else None) or "user",
+            "role": "superadmin" if _is_master_admin_email(email) else ((metadata.get("role") if metadata else None) or "user"),
             "subscription_tier": "free",
-            "is_master_account": email == "andre@thestrategysquad.com.au",
+            "is_master_account": _is_master_admin_email(email),
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat()
         }
@@ -130,7 +165,7 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
             logger.warning(f"Could not create cognitive profile: {cog_error}")
         
         logger.info(f"✅ Created NEW user profile for {email} with ID {user_id}")
-        return user_response.data[0]
+        return _apply_master_admin_overrides(user_response.data[0], email)
         
     except Exception as e:
         error_str = str(e)
@@ -188,7 +223,7 @@ async def verify_supabase_token(token: str) -> Dict[str, Any]:
             raise HTTPException(status_code=401, detail="Malformed token")
 
         # Get user from Supabase Auth using the access token
-        user_response = supabase_admin.auth.get_user(token)
+        user_response = get_supabase_auth_client().auth.get_user(token)
 
         if not user_response or not user_response.user:
             raise HTTPException(status_code=401, detail="Invalid or expired token")
@@ -213,8 +248,8 @@ async def verify_supabase_token(token: str) -> Dict[str, Any]:
         return {
             "id": user.id,
             "email": user.email,
-            "role": (db_user or {}).get("role") or ("superadmin" if user.email == "andre@thestrategysquad.com.au" else "user"),
-            "is_master_account": (db_user or {}).get("is_master_account", user.email == "andre@thestrategysquad.com.au"),
+            "role": "superadmin" if _is_master_admin_email(user.email) else ((db_user or {}).get("role") or "user"),
+            "is_master_account": True if _is_master_admin_email(user.email) else (db_user or {}).get("is_master_account", False),
             "subscription_tier": (db_user or {}).get("subscription_tier", "free"),
             "full_name": (db_user or {}).get("full_name") or user.user_metadata.get("full_name"),
             "company_name": (db_user or {}).get("company_name"),
@@ -254,7 +289,7 @@ async def signup_with_email(request: SignUpRequest):
             raise HTTPException(status_code=400, detail="User with this email already exists")
         
         # Create user in Supabase Auth
-        auth_response = supabase_admin.auth.sign_up({
+        auth_response = get_supabase_auth_client().auth.sign_up({
             "email": request.email,
             "password": request.password,
             "options": {
@@ -309,7 +344,7 @@ async def signin_with_email(request: SignInRequest):
     """
     try:
         # Authenticate with Supabase
-        auth_response = supabase_admin.auth.sign_in_with_password({
+        auth_response = get_supabase_auth_client().auth.sign_in_with_password({
             "email": request.email,
             "password": request.password
         })
@@ -327,6 +362,17 @@ async def signin_with_email(request: SignInRequest):
                 email=auth_response.user.email,
                 metadata=auth_response.user.user_metadata
             )
+
+        user_profile = _apply_master_admin_overrides(user_profile or {}, auth_response.user.email)
+        if _is_master_admin_email(auth_response.user.email):
+            try:
+                supabase_admin.table("users").update({
+                    "role": "superadmin",
+                    "is_master_account": True,
+                    "updated_at": datetime.utcnow().isoformat(),
+                }).eq("id", auth_response.user.id).execute()
+            except Exception as patch_err:
+                logger.warning(f"Could not persist master admin override during login: {patch_err}")
         
         return {
             "message": "Login successful",
@@ -335,8 +381,8 @@ async def signin_with_email(request: SignInRequest):
                 "email": auth_response.user.email,
                 "full_name": user_profile.get("full_name"),
                 "company_name": user_profile.get("company_name"),
-                "role": user_profile.get("role"),
-                "is_master_account": user_profile.get("is_master_account", False),
+                "role": "superadmin" if _is_master_admin_email(auth_response.user.email) else user_profile.get("role"),
+                "is_master_account": True if _is_master_admin_email(auth_response.user.email) else user_profile.get("is_master_account", False),
                 "subscription_tier": user_profile.get("subscription_tier", "free")
             },
             "session": {

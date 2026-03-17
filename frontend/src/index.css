@@ -872,30 +872,15 @@ input[type="password"]::placeholder {
     [data-debug-wrapper="true"] { display: contents !important; }
 }
 
-/* ── Force dark cards everywhere on the platform ─────────────────────────── */
-/* Shadcn Card, all white backgrounds, all dialog panels */
-.bg-white,
-[class*="bg-white"],
-.bg-card,
-[data-radix-popper-content-wrapper],
-[data-state="open"] > div,
-.rounded-lg.border,
-.rounded-xl.border {
-    background-color: hsl(222, 47%, 10%) !important;
-    color: hsl(210, 40%, 96%) !important;
-}
+/* ── Force dark backgrounds on Shadcn components specifically ─── */
+/* Only target the Shadcn Card wrapper class — not ALL bordered elements */
+.rounded-xl.bg-white { background-color: hsl(222, 47%, 10%) !important; }
+.bg-white { background-color: hsl(222, 47%, 10%) !important; }
 
-/* Override any remaining white text on dark backgrounds */
-.text-gray-900, .text-gray-800, .text-gray-700, .text-black { color: hsl(210, 40%, 96%) !important; }
-.text-gray-600, .text-gray-500 { color: hsl(215, 20%, 65%) !important; }
-
-/* SelectContent, DropdownMenuContent — dark */
-[data-radix-select-viewport],
-[role="listbox"],
-[role="menu"] {
-    background: hsl(222, 47%, 8%) !important;
-    border: 1px solid hsl(222, 47%, 18%) !important;
-}
+/* Select dropdowns dark */
+[data-radix-select-viewport] { background: hsl(222, 47%, 8%) !important; }
+[role="listbox"] { background: hsl(222, 47%, 8%) !important; }
+[role="menu"] { background: hsl(222, 47%, 8%) !important; }
 
 /* ==================== MOBILE RESPONSIVE STYLES ==================== */
 

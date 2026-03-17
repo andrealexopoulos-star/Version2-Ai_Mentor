@@ -9,6 +9,9 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import logging
 import os
+from datetime import datetime, timezone
+from collections import defaultdict, deque
+from threading import Lock
 
 logger = logging.getLogger("server")
 security = HTTPBearer()
@@ -88,36 +91,175 @@ TIER_LIMITS = {
     },
 }
 
+RATE_LIMIT_FEATURE_LABELS = {
+    "soundboard_daily": "Soundboard",
+    "trinity_daily": "Trinity Soundboard",
+    "boardroom_diagnosis": "Board Room Diagnosis",
+    "war_room_ask": "War Room Ask",
+}
+
+TIER_RATE_LIMIT_DEFAULTS = {
+    "free": {
+        "soundboard_daily": {"monthly_limit": 80, "burst_limit": 4, "burst_window_seconds": 300},
+        "trinity_daily": {"monthly_limit": 12, "burst_limit": 2, "burst_window_seconds": 300},
+        "boardroom_diagnosis": {"monthly_limit": 20, "burst_limit": 3, "burst_window_seconds": 300},
+        "war_room_ask": {"monthly_limit": 40, "burst_limit": 4, "burst_window_seconds": 300},
+    },
+    "starter": {
+        "soundboard_daily": {"monthly_limit": 240, "burst_limit": 8, "burst_window_seconds": 300},
+        "trinity_daily": {"monthly_limit": 40, "burst_limit": 4, "burst_window_seconds": 300},
+        "boardroom_diagnosis": {"monthly_limit": 80, "burst_limit": 6, "burst_window_seconds": 300},
+        "war_room_ask": {"monthly_limit": 180, "burst_limit": 8, "burst_window_seconds": 300},
+    },
+    "professional": {
+        "soundboard_daily": {"monthly_limit": 500, "burst_limit": 12, "burst_window_seconds": 300},
+        "trinity_daily": {"monthly_limit": 90, "burst_limit": 6, "burst_window_seconds": 300},
+        "boardroom_diagnosis": {"monthly_limit": 180, "burst_limit": 10, "burst_window_seconds": 300},
+        "war_room_ask": {"monthly_limit": 400, "burst_limit": 12, "burst_window_seconds": 300},
+    },
+    "growth": {
+        "soundboard_daily": {"monthly_limit": 900, "burst_limit": 18, "burst_window_seconds": 300},
+        "trinity_daily": {"monthly_limit": 180, "burst_limit": 10, "burst_window_seconds": 300},
+        "boardroom_diagnosis": {"monthly_limit": 320, "burst_limit": 16, "burst_window_seconds": 300},
+        "war_room_ask": {"monthly_limit": 700, "burst_limit": 18, "burst_window_seconds": 300},
+    },
+    "enterprise": {
+        "soundboard_daily": {"monthly_limit": 1600, "burst_limit": 28, "burst_window_seconds": 300},
+        "trinity_daily": {"monthly_limit": 320, "burst_limit": 16, "burst_window_seconds": 300},
+        "boardroom_diagnosis": {"monthly_limit": 600, "burst_limit": 24, "burst_window_seconds": 300},
+        "war_room_ask": {"monthly_limit": 1200, "burst_limit": 28, "burst_window_seconds": 300},
+    },
+    "super_admin": {
+        feature: {"monthly_limit": -1, "burst_limit": -1, "burst_window_seconds": 300}
+        for feature in RATE_LIMIT_FEATURE_LABELS
+    },
+}
+
+RATE_LIMIT_BURSTS = defaultdict(deque)
+RATE_LIMIT_BURSTS_LOCK = Lock()
+
+
+def _normalize_subscription_tier(tier: str | None) -> str:
+    tier_value = (tier or "free").lower()
+    aliases = {
+        "foundation": "starter",
+        "growth": "growth",
+        "starter": "starter",
+        "professional": "professional",
+        "enterprise": "enterprise",
+        "superadmin": "super_admin",
+    }
+    return aliases.get(tier_value, tier_value if tier_value in TIER_RATE_LIMIT_DEFAULTS else "free")
+
+
+def _merge_rate_limit_config(base_config, override_config):
+    merged = {feature: dict(config) for feature, config in (base_config or {}).items()}
+    for feature, override in (override_config or {}).items():
+        if not isinstance(override, dict):
+            continue
+        merged.setdefault(feature, {})
+        for field in ("monthly_limit", "burst_limit", "burst_window_seconds"):
+            if override.get(field) is not None:
+                merged[feature][field] = override.get(field)
+    return merged
+
+
+def get_user_rate_limit_state(sb, user_id: str):
+    user_row = sb.table("users").select("id, email, subscription_tier").eq("id", user_id).maybe_single().execute()
+    user_data = user_row.data or {}
+    tier = _normalize_subscription_tier(user_data.get("subscription_tier"))
+    admin_bypass = user_data.get("email") == "andre@thestrategysquad.com.au" or tier == "super_admin"
+
+    override_config = {}
+    operator_profile = {}
+    try:
+        operator_result = sb.table("user_operator_profile").select("operator_profile").eq("user_id", user_id).maybe_single().execute()
+        operator_profile = (operator_result.data or {}).get("operator_profile") or {}
+        override_config = operator_profile.get("rate_limits") or {}
+    except Exception:
+        pass
+
+    base_config = TIER_RATE_LIMIT_DEFAULTS.get(tier, TIER_RATE_LIMIT_DEFAULTS["free"])
+    effective_config = _merge_rate_limit_config(base_config, override_config)
+
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0).date().isoformat()
+    usage_rows = []
+    try:
+        usage_result = sb.table("ai_usage_log").select("feature, count, date").eq("user_id", user_id).gte("date", month_start).execute()
+        usage_rows = usage_result.data or []
+    except Exception:
+        usage_rows = []
+
+    monthly_usage = {feature: 0 for feature in effective_config.keys()}
+    for row in usage_rows:
+        feature = row.get("feature")
+        if feature not in monthly_usage:
+            monthly_usage[feature] = 0
+        monthly_usage[feature] += int(row.get("count") or 0)
+
+    return {
+        "user": user_data,
+        "tier": tier,
+        "admin_bypass": admin_bypass,
+        "defaults": base_config,
+        "overrides": override_config,
+        "effective": effective_config,
+        "monthly_usage": monthly_usage,
+    }
+
 async def check_rate_limit(user_id: str, feature: str, sb=None) -> bool:
-    """Returns True if allowed, raises HTTPException if rate limited."""
+    """Tier-aware monthly quota + burst protection. Raises HTTPException if blocked."""
     if not sb:
         return True  # Skip if no DB connection
     try:
-        from datetime import date
-        # Get user's subscription tier
-        user = sb.table("users").select("subscription_tier").eq("id", user_id).maybe_single().execute()
-        tier = (user.data or {}).get("subscription_tier", "free")
-        limits = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
-        limit = limits.get(feature, 10)
-        if limit == -1:
+        state = get_user_rate_limit_state(sb, user_id)
+        if state.get("admin_bypass"):
+            return True
+
+        config = state["effective"].get(feature) or {"monthly_limit": 120, "burst_limit": 6, "burst_window_seconds": 300}
+        monthly_limit = int(config.get("monthly_limit", 120))
+        burst_limit = int(config.get("burst_limit", 6))
+        burst_window = int(config.get("burst_window_seconds", 300))
+        feature_label = RATE_LIMIT_FEATURE_LABELS.get(feature, feature.replace("_", " ").title())
+
+        if monthly_limit == -1:
             return True  # Unlimited
 
-        # Check today's usage
-        today = str(date.today())
-        key = f"{user_id}:{feature}:{today}"
-        usage_row = sb.table("ai_usage_log").select("count").eq("key", key).maybe_single().execute()
-        current = int((usage_row.data or {}).get("count", 0))
+        now = datetime.now(timezone.utc).timestamp()
+        bucket_key = f"{user_id}:{feature}"
+        if burst_limit > 0:
+            with RATE_LIMIT_BURSTS_LOCK:
+                bucket = RATE_LIMIT_BURSTS[bucket_key]
+                while bucket and bucket[0] <= now - burst_window:
+                    bucket.popleft()
+                if len(bucket) >= burst_limit:
+                    retry_after = max(1, int(burst_window - (now - bucket[0])))
+                    raise HTTPException(
+                        status_code=429,
+                        detail=f"{feature_label} is moving too fast right now. Please wait {retry_after} seconds before trying again.",
+                        headers={
+                            "Retry-After": str(retry_after),
+                            "X-RateLimit-Limit": str(burst_limit),
+                            "X-RateLimit-Window": str(burst_window),
+                        },
+                    )
+                bucket.append(now)
 
-        if current >= limit:
+        current = int(state.get("monthly_usage", {}).get(feature, 0))
+        if current >= monthly_limit:
             raise HTTPException(
                 status_code=429,
-                detail=f"Daily limit of {limit} {feature.replace('_', ' ')} reached. Upgrade your plan at /upgrade to continue.",
-                headers={"X-RateLimit-Limit": str(limit), "X-RateLimit-Reset": "tomorrow"},
+                detail=f"Monthly {feature_label} quota reached ({monthly_limit}). Upgrade the subscription or increase the limit in Admin.",
+                headers={"X-RateLimit-Limit": str(monthly_limit), "X-RateLimit-Reset": "next_month"},
             )
 
-        # Increment usage
+        today = datetime.now(timezone.utc).date().isoformat()
+        key = f"{user_id}:{feature}:{today}"
+        usage_row = sb.table("ai_usage_log").select("count").eq("key", key).maybe_single().execute()
+        current_day = int((usage_row.data or {}).get("count", 0))
+
         sb.table("ai_usage_log").upsert(
-            {"key": key, "user_id": user_id, "feature": feature, "date": today, "count": current + 1},
+            {"key": key, "user_id": user_id, "feature": feature, "date": today, "count": current_day + 1},
             on_conflict="key"
         ).execute()
         return True

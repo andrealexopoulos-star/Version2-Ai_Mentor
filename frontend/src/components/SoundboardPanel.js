@@ -4,6 +4,7 @@ import { apiClient } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { trackEvent, EVENTS } from '../lib/analytics';
 import DataCoverageGate from './DataCoverageGate';
+import { CheckInAlerts } from './CheckInAlerts';
 import { fontFamily } from '../design-system/tokens';
 
 
@@ -29,10 +30,20 @@ function isDataQuery(msg) {
 const SCAN_USAGE_CACHE_KEY = 'biqc_scan_usage_cache';
 const SCAN_USAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+const getSoundboardErrorMessage = (error) => {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  const reply = error?.response?.data?.reply;
+  if (typeof reply === 'string' && reply.trim()) return reply;
+  return 'Connection issue. Try again.';
+};
+
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showModeMenu, setShowModeMenu] = useState(false);
+  const [selectedMode, setSelectedMode] = useState('auto');
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
@@ -45,6 +56,26 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [recordingScans, setRecordingScans] = useState({});
   const { session, user } = useSupabaseAuth();
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || '';
+  const userTier = String(user?.subscription_tier || 'free').toLowerCase();
+  const isAndre = user?.email === 'andre@thestrategysquad.com.au';
+
+  const BIQC_MODES = [
+    { id: 'auto', label: 'BIQc Auto', desc: 'Adaptive routing across BIQc cognition pathways', icon: '⚡', backend_mode: 'auto', minTier: 'free' },
+    { id: 'normal', label: 'Normal', desc: 'Default paid conversation mode', icon: '◉', backend_mode: 'normal', minTier: 'foundation' },
+    { id: 'thinking', label: 'Deep Thinking', desc: 'High-depth strategic reasoning mode', icon: '🧠', backend_mode: 'thinking', minTier: 'foundation' },
+    { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'foundation' },
+    { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'pro' },
+  ];
+
+  const tierRank = { free: 0, starter: 0, foundation: 1, growth: 2, custom: 3, pro: 2, enterprise: 3 };
+  const isPaidUser = (tierRank[userTier] ?? 0) >= 1;
+  const canUseTrinity = isAndre || ['pro', 'enterprise', 'growth', 'custom'].includes(userTier);
+  const availableModes = BIQC_MODES.filter((mode) => {
+    if (isAndre) return true;
+    if (mode.id === 'trinity') return canUseTrinity;
+    return (tierRank[userTier] ?? 0) >= (tierRank[mode.minTier] ?? 0);
+  });
+  const activeMode = availableModes.find((mode) => mode.id === selectedMode) || availableModes[0] || BIQC_MODES[0];
 
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
@@ -84,6 +115,16 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     }).catch(() => {});
     fetchScanUsage();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (isPaidUser && selectedMode === 'auto') {
+      setSelectedMode('normal');
+      return;
+    }
+    if (!availableModes.some((mode) => mode.id === selectedMode)) {
+      setSelectedMode(isPaidUser ? 'normal' : 'auto');
+    }
+  }, [isPaidUser, selectedMode, availableModes]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -134,6 +175,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       const res = await apiClient.post('/soundboard/chat', {
         message: msgToSend,
         conversation_id: activeConvId,
+        mode: activeMode?.backend_mode || 'auto',
       });
       if (res.data?.reply) {
         const assistantMsg = { role: 'assistant', text: res.data.reply };
@@ -164,8 +206,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           }
         }
       }
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', text: 'Connection issue. Try again.' }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'assistant', text: getSoundboardErrorMessage(error) }]);
     }
     setLoading(false);
   };
@@ -309,6 +351,10 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         })()}
       </div>
 
+      <div className="px-3 pt-2 shrink-0" data-testid="soundboard-checkin-alerts-slot">
+        <CheckInAlerts />
+      </div>
+
       {/* History dropdown */}
       {showHistory && (
         <div className="border-b overflow-y-auto max-h-60 shrink-0" style={{ borderColor: 'var(--biqc-border)', background: '#0D1420' }}>
@@ -428,6 +474,48 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             </button>
           </div>
         )}
+
+        <div className="mb-2 relative" data-testid="soundboard-panel-mode-wrapper">
+          <button
+            onClick={() => setShowModeMenu((v) => !v)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all hover:brightness-110"
+            style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+            data-testid="soundboard-panel-mode-selector"
+          >
+            <span>{activeMode?.icon}</span>
+            <span>{activeMode?.label}</span>
+            <ChevronDown className="w-3 h-3" />
+          </button>
+
+          {showModeMenu && (
+            <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-xl z-50"
+              style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+              {availableModes.map((mode, idx) => (
+                <button
+                  key={mode.id}
+                  onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
+                  className="w-full flex items-start gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
+                  style={{ borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none' }}
+                  data-testid={`soundboard-panel-mode-option-${mode.id}`}
+                >
+                  <span className="text-sm shrink-0">{mode.icon}</span>
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>{mode.label}</p>
+                    <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
+                  </div>
+                </button>
+              ))}
+
+              {!canUseTrinity && (
+                <a href="/upgrade" className="block px-3 py-2 text-[10px] no-underline"
+                  style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="soundboard-panel-trinity-upgrade-link">
+                  BIQc Trinity is available on Pro and Enterprise plans.
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="rounded-2xl flex items-end gap-1 p-1.5" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${attachedFile ? 'rgba(255,106,0,0.4)' : '#243140'}` }}>
           <input type="file" ref={fileRef} className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.md,.json,.py,.js" />
           <button onClick={() => fileRef.current?.click()} className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0" data-testid="sb-upload">

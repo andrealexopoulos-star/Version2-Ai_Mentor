@@ -10,6 +10,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+from intelligence_live_truth import get_live_integration_truth, get_latest_snapshot_context, get_recent_observation_events, build_watchtower_events
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -33,8 +34,8 @@ class AutomationExecute(BaseModel):
 
 
 def _get_sb():
-    from supabase_client import get_supabase_client
-    return get_supabase_client()
+    from supabase_client import init_supabase
+    return init_supabase()
 
 
 def _call_rpc(sb, fn_name: str, params: dict) -> dict:
@@ -45,6 +46,51 @@ def _call_rpc(sb, fn_name: str, params: dict) -> dict:
     except Exception as e:
         error_msg = str(e)
         return {'status': 'error', 'error': error_msg}
+
+
+def _overlay_live_truth(sb, tenant_id: str, tab: str, result: dict) -> dict:
+    live_truth = get_live_integration_truth(sb, tenant_id)
+    snapshot_context = get_latest_snapshot_context(sb, tenant_id)
+    observation_state = get_recent_observation_events(sb, tenant_id, limit=10)
+
+    integrations = {
+        'crm': live_truth['canonical_truth']['crm_connected'],
+        'email': live_truth['canonical_truth']['email_connected'],
+        'accounting': live_truth['canonical_truth']['accounting_connected'],
+        'hris': live_truth['canonical_truth']['hris_connected'],
+    }
+
+    enriched = dict(result or {})
+    enriched['integrations'] = integrations
+    enriched['integrations_connected'] = live_truth['canonical_truth']['total_connected']
+    enriched['live_signal_count'] = observation_state.get('count', 0)
+    enriched['last_signal_at'] = observation_state.get('last_signal_at')
+    enriched['snapshot_generated_at'] = snapshot_context.get('generated_at')
+
+    if snapshot_context.get('executive_memo') and not enriched.get('executive_memo'):
+        enriched['executive_memo'] = snapshot_context['executive_memo']
+
+    tab_data = enriched.setdefault('tab_data', {}) if isinstance(enriched, dict) else {}
+    if tab == 'overview':
+        tab_data['crm_connected'] = integrations['crm']
+        tab_data['accounting_connected'] = integrations['accounting']
+        tab_data['email_connected'] = integrations['email']
+        tab_data['integrations_connected'] = live_truth['canonical_truth']['total_connected']
+        if not enriched.get('top_alerts'):
+            enriched['top_alerts'] = build_watchtower_events(observation_state.get('events') or [], limit=5)
+        if observation_state.get('count'):
+            enriched['evidence_count'] = max(int(enriched.get('evidence_count') or 0), int(observation_state['count']))
+    elif tab == 'revenue':
+        if integrations['crm'] and tab_data.get('pipeline_health') == 'disconnected':
+            tab_data['pipeline_health'] = 'monitoring'
+        tab_data['crm_required'] = not integrations['crm']
+        tab_data['accounting_required'] = not integrations['accounting']
+    elif tab == 'operations':
+        tab_data['crm_required'] = not integrations['crm']
+    elif tab == 'risk':
+        tab_data['accounting_required'] = not integrations['accounting']
+
+    return enriched
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -83,7 +129,7 @@ def cognition_contract(tab: str, current_user: dict = Depends(get_current_user))
             }
         raise HTTPException(status_code=500, detail=result.get('error'))
 
-    return result
+    return _overlay_live_truth(sb, current_user['id'], tab, result)
 
 
 # ═══════════════════════════════════════════════════════════════

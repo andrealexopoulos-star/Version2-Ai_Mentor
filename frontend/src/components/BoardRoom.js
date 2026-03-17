@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { supabase } from '../context/SupabaseAuthContext';
 import { useSnapshot } from '../hooks/useSnapshot';
+import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { apiClient } from '../lib/api';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
-
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+import InsightExplainabilityStrip from './InsightExplainabilityStrip';
 
 const STATE_CONFIG = {
   STABLE:      { label: 'Stable',      color: '#10B981', bg: '#10B98110', border: '#10B98130', dot: '#10B981' },
@@ -25,18 +25,49 @@ const DIAGNOSIS_AREAS = [
   { id: 'market_position', label: 'Market Position', icon: '\u2691', color: '#0D9488', desc: 'Competitive landscape, positioning, opportunity decay.' },
 ];
 
-const BoardRoom = () => {
+const BoardRoom = ({ embeddedShell = false }) => {
   const [activeDiagnosis, setActiveDiagnosis] = useState(null);
   const [diagnosisResult, setDiagnosisResult] = useState(null);
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagError, setDiagError] = useState(null);
 
   const { cognitive: snapshot, loading: briefingLoading } = useSnapshot();
+  const { status: integrationStatus } = useIntegrationStatus();
   const narrative = snapshot ? { primary_tension: snapshot.executive_memo, force_summary: snapshot.system_state_interpretation, strategic_direction: snapshot.priority_compression?.primary_focus } : null;
   const st = STATE_CONFIG[snapshot?.system_state] || STATE_CONFIG.STABLE;
   const dpi = snapshot?.system_state === 'CRITICAL' ? 80 : snapshot?.system_state === 'COMPRESSION' ? 55 : snapshot?.system_state === 'DRIFT' ? 35 : 10;
   const forces = (snapshot?.inevitabilities || []).map(function(inv) { return { domain: inv.domain, detail: inv.signal, position: inv.intensity }; });
-  const hasBrief = narrative && narrative.primary_tension;
+  const topAlerts = (snapshot?.top_alerts || []).slice(0, 3);
+  const integrationMap = snapshot?.integrations || {
+    crm: integrationStatus?.canonical_truth?.crm_connected,
+    accounting: integrationStatus?.canonical_truth?.accounting_connected,
+    email: integrationStatus?.canonical_truth?.email_connected,
+  };
+  const integrationLabels = Object.entries(integrationMap).filter(([, connected]) => connected).map(([key]) => key);
+  const primaryBrief = narrative?.primary_tension || topAlerts[0]?.detail;
+  const hasBrief = Boolean(primaryBrief);
+  const explainCards = [
+    {
+      title: 'Why BIQc is escalating this',
+      value: topAlerts[0]?.detail || narrative?.force_summary || 'This is the strongest live signal across your connected systems right now.',
+    },
+    {
+      title: 'Data behind it',
+      value: `${snapshot?.live_signal_count || topAlerts.length || 0} live signal${(snapshot?.live_signal_count || topAlerts.length || 0) === 1 ? '' : 's'} across ${integrationLabels.length || 0} connected system${integrationLabels.length === 1 ? '' : 's'}${integrationLabels.length ? ` (${integrationLabels.join(', ')})` : ''}.`,
+    },
+    {
+      title: 'Act next',
+      value: topAlerts[0]?.action || narrative?.strategic_direction || 'Use Board Room diagnosis to identify the best next move before this spreads.',
+    },
+  ];
+  const explainability = {
+    whyVisible: integrationLabels.length
+      ? `Board Room is escalating this based on ${integrationLabels.length} connected system${integrationLabels.length === 1 ? '' : 's'} (${integrationLabels.join(', ')}).`
+      : 'Board Room is active, but richer diagnosis needs connected systems and live signals.',
+    whyNow: topAlerts[0]?.detail || narrative?.force_summary || 'Signal pressure is rising across your monitored domains.',
+    nextAction: topAlerts[0]?.action || narrative?.strategic_direction || 'Run a diagnosis area and commit to one decision in this session.',
+    ifIgnored: diagnosisResult?.if_ignored || 'Decision delay narrows options and increases second-order impact across delivery, cash, and customers.',
+  };
 
   const runDiagnosis = async (area) => {
     setActiveDiagnosis(area.id);
@@ -44,17 +75,11 @@ const BoardRoom = () => {
     setDiagError(null);
     setDiagnosing(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/boardroom-diagnosis`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': process.env.REACT_APP_SUPABASE_ANON_KEY },
-        body: JSON.stringify({ focus_area: area.id }),
-      });
-      if (!res.ok) throw new Error(`${res.status}`);
-      setDiagnosisResult(await res.json());
+      const res = await apiClient.post('/boardroom/diagnosis', { focus_area: area.id });
+      setDiagnosisResult(res.data);
     } catch (e) {
-      setDiagError(`Diagnosis unavailable. ${e.message === '404' ? 'Edge Function not deployed yet.' : 'Please try again.'}`);
+      const detail = e?.response?.data?.detail;
+      setDiagError(detail || 'Diagnosis unavailable. Please try again.');
     } finally { setDiagnosing(false); }
   };
 
@@ -62,7 +87,7 @@ const BoardRoom = () => {
   const activeArea = DIAGNOSIS_AREAS.find(a => a.id === activeDiagnosis);
 
   return (
-    <div className="flex flex-col h-full min-h-screen" style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
+    <div className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
 
       {/* ═══ HEADER — Dark themed ═══ */}
       <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0"
@@ -104,7 +129,7 @@ const BoardRoom = () => {
                       <div className="p-7 rounded-2xl"
                         style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
                         <p className="text-[15px] leading-relaxed" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
-                          {typeof narrative === 'string' ? narrative : narrative.primary_tension}
+                          {typeof narrative === 'string' ? narrative : primaryBrief}
                         </p>
                         {narrative.force_summary && (
                           <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{narrative.force_summary}</p>
@@ -120,7 +145,11 @@ const BoardRoom = () => {
                     {!hasBrief && (
                       <div className="p-7 rounded-2xl text-center"
                         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
-                        <p className="text-sm" style={{ color: '#64748B' }}>Executive briefing will appear here once intelligence is generated.</p>
+                        <p className="text-sm" style={{ color: '#64748B' }}>
+                          {integrationLabels.length
+                            ? `BIQc can already see ${integrationLabels.join(', ')} data, but the executive briefing synthesis is still catching up.`
+                            : 'Executive briefing will appear here once intelligence is generated.'}
+                        </p>
                       </div>
                     )}
 
@@ -134,6 +163,22 @@ const BoardRoom = () => {
                         ))}
                       </div>
                     )}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {explainCards.map((card) => (
+                        <div key={card.title} className="p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                          <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{card.title}</span>
+                          <p className="text-[12px] mt-2 leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{card.value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <InsightExplainabilityStrip
+                      whyVisible={explainability.whyVisible}
+                      whyNow={explainability.whyNow}
+                      nextAction={explainability.nextAction}
+                      ifIgnored={explainability.ifIgnored}
+                      testIdPrefix="boardroom-explainability"
+                    />
                   </div>
                 )}
               </section>
@@ -193,6 +238,15 @@ const BoardRoom = () => {
 
               {diagnosisResult && (
                 <div className="space-y-5">
+                  {diagnosisResult.degraded && (
+                    <div className="p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)' }} data-testid="boardroom-diagnosis-degraded-banner">
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Resilience mode</span>
+                      <p className="text-xs leading-relaxed" style={{ color: '#243140' }}>
+                        Upstream diagnosis service is unstable. BIQc is returning telemetry-grounded fallback guidance so decision execution can continue.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Headline */}
                   <div className="p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <div className="flex items-center gap-3 mb-5">
@@ -204,13 +258,13 @@ const BoardRoom = () => {
                         )}
                       </div>
                     </div>
-                    <p className="text-lg leading-relaxed" style={{ color: '#1F2937', fontWeight: 500 }}>{diagnosisResult.headline}</p>
+                    <p className="text-lg leading-relaxed break-words" style={{ color: '#1F2937', fontWeight: 500 }}>{diagnosisResult.headline}</p>
                   </div>
 
                   {/* Narrative */}
                   {diagnosisResult.narrative && (
                     <div className="p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.05)' }}>
-                      <p className="text-[15px] leading-loose whitespace-pre-line" style={{ color: '#243140' }}>{diagnosisResult.narrative}</p>
+                      <p className="text-[15px] leading-loose whitespace-pre-wrap break-words" style={{ color: '#243140' }}>{diagnosisResult.narrative}</p>
                     </div>
                   )}
 
@@ -218,14 +272,37 @@ const BoardRoom = () => {
                   {diagnosisResult.what_to_watch && (
                     <div className="p-6 rounded-2xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
                       <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>What to Watch</span>
-                      <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3' }}>{diagnosisResult.what_to_watch}</p>
+                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: '#9FB0C3' }}>{diagnosisResult.what_to_watch}</p>
                     </div>
                   )}
 
                   {diagnosisResult.if_ignored && (
                     <div className="p-6 rounded-2xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
                       <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>If Ignored</span>
-                      <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3' }}>{diagnosisResult.if_ignored}</p>
+                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: '#9FB0C3' }}>{diagnosisResult.if_ignored}</p>
+                    </div>
+                  )}
+
+                  {(diagnosisResult.why_visible || diagnosisResult.why_now || diagnosisResult.next_action || diagnosisResult.if_ignored) && (
+                    <InsightExplainabilityStrip
+                      whyVisible={diagnosisResult.why_visible || explainability.whyVisible}
+                      whyNow={diagnosisResult.why_now || explainability.whyNow}
+                      nextAction={diagnosisResult.next_action || explainability.nextAction}
+                      ifIgnored={diagnosisResult.if_ignored || explainability.ifIgnored}
+                      testIdPrefix="boardroom-diagnosis-explainability"
+                    />
+                  )}
+
+                  {diagnosisResult.evidence_chain?.length > 0 && (
+                    <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }} data-testid="boardroom-diagnosis-evidence-chain">
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Evidence Chain</span>
+                      <div className="space-y-2">
+                        {diagnosisResult.evidence_chain.slice(0, 5).map((signal, idx) => (
+                          <div key={idx} className="text-[11px]" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+                            {(signal.domain || 'domain').toUpperCase()} · {(signal.event_type || 'event')} · {(signal.severity || 'info')} · {(signal.source || 'source')}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 

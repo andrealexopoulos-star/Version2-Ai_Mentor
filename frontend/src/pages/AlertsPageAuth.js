@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import { Bell, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircle, Plug, ArrowRight, Shield } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
+import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 
 const sevMap = { critical: { color: '#FF6A00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, high: { color: '#FF6A00', label: 'Critical' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
@@ -33,7 +36,7 @@ const AlertItem = ({ alert, onAction }) => {
 
   return (
     <div className="rounded-lg overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${s.color}20` }} data-testid={`alert-${alert.id}`}>
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors" data-testid={`alert-toggle-${alert.id}`}>
         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color, boxShadow: alert.severity === 'critical' || alert.severity === 'high' ? `0 0 10px ${s.color}40` : 'none' }} />
         <div className="flex-1 min-w-0">
           <span className="text-sm font-medium text-[#F4F7FA] block" style={{ fontFamily: fontFamily.display }}>{alert.title}</span>
@@ -46,16 +49,16 @@ const AlertItem = ({ alert, onAction }) => {
         <div className="px-5 pb-4 pt-3 space-y-3" style={{ borderTop: '1px solid var(--biqc-border)' }}>
           <div>
             <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Business Impact</span>
-            <p className="text-sm text-[#9FB0C3]">{alert.impact}</p>
+            <p className="text-sm text-[#9FB0C3] break-words whitespace-pre-wrap">{alert.impact}</p>
           </div>
           <div>
             <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Recommended Action</span>
-            <p className="text-sm text-[#9FB0C3]">{alert.action}</p>
+            <p className="text-sm text-[#9FB0C3] break-words whitespace-pre-wrap">{alert.action}</p>
           </div>
           <div className="flex flex-wrap gap-2 pt-1">
-            {alert.actions?.includes('email') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630' }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
-            {alert.actions?.includes('sms') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130' }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-            {alert.actions?.includes('handoff') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030' }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+            {alert.actions?.includes('email') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630' }} data-testid={`alert-auto-email-${alert.id}`}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
+            {alert.actions?.includes('sms') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130' }} data-testid={`alert-quick-sms-${alert.id}`}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
+            {alert.actions?.includes('handoff') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030' }} data-testid={`alert-hand-off-${alert.id}`}><Users className="w-3.5 h-3.5" />Hand Off</button>}
             <button onClick={() => handleAction('complete')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130' }} data-testid={`alert-complete-${alert.id}`}><CheckCircle2 className="w-3.5 h-3.5" />Complete</button>
             <button onClick={() => handleAction('ignore')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#64748B15', color: '#64748B', border: '1px solid #64748B30' }} data-testid={`alert-ignore-${alert.id}`}><XCircle className="w-3.5 h-3.5" />Ignore</button>
           </div>
@@ -71,10 +74,12 @@ const AlertsPageAuth = () => {
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('severity'); // severity | date
   const [dateRange, setDateRange] = useState('all'); // all | today | week | month
+  const { session, authState } = useSupabaseAuth();
   const { status: integrationStatus, loading: integrationLoading } = useIntegrationStatus();
 
   const connectedIntegrations = (integrationStatus?.integrations || []).filter(i => i.connected);
   const totalConnected = integrationStatus?.total_connected || connectedIntegrations.length;
+  const integrationResolved = !integrationLoading && !!integrationStatus;
   const hasCRM = connectedIntegrations.some(i => (i.category || '').toLowerCase().includes('crm'));
   const hasEmail = connectedIntegrations.some(i => ['email', 'gmail', 'outlook'].some(k => (i.category || '').toLowerCase().includes(k) || (i.provider || '').toLowerCase().includes(k)));
   const hasAnyData = totalConnected > 0;
@@ -83,8 +88,27 @@ const AlertsPageAuth = () => {
     setLoading(true);
     try {
       const res = await apiClient.get('/intelligence/watchtower', { timeout: 10000 });
-      if (res.data?.events?.length > 0) {
-        const mapped = res.data.events.map((e, i) => ({
+      let events = res.data?.events || [];
+
+      if (!events.length) {
+        try {
+          const fallback = await apiClient.get('/notifications/alerts', { timeout: 10000 });
+          events = (fallback.data?.notifications || []).map((n, i) => ({
+            id: n.id || i + 1,
+            severity: n.severity || 'moderate',
+            title: n.title || n.type,
+            impact: n.message || '',
+            action: n.action || 'Review and take appropriate action.',
+            created_at: n.timestamp || new Date().toISOString(),
+            source: n.source || 'notifications',
+          }));
+        } catch {
+          events = [];
+        }
+      }
+
+      if (events.length > 0) {
+        const mapped = events.map((e, i) => ({
           id: e.id || i + 1,
           severity: e.severity || 'moderate',
           title: e.title || e.signal || e.event,
@@ -99,7 +123,14 @@ const AlertsPageAuth = () => {
     } catch {} finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchAlerts(); }, []);
+  useEffect(() => {
+    if (authState === AUTH_STATE.LOADING && !session?.access_token) return;
+    if (!session?.access_token) {
+      setLoading(false);
+      return;
+    }
+    fetchAlerts();
+  }, [session?.access_token, authState]);
 
 
   // Date range filter helper
@@ -128,6 +159,30 @@ const AlertsPageAuth = () => {
   const critCount = loading ? null : alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
   const modCount = loading ? null : alerts.filter(a => a.severity === 'moderate' || a.severity === 'medium').length;
   const infoCount = loading ? null : alerts.filter(a => a.severity === 'info' || a.severity === 'low').length;
+  const explainability = {
+    whyVisible: hasAnyData
+      ? `BIQc is reading ${totalConnected} connected system${totalConnected === 1 ? '' : 's'} and ranking active operational risk signals.`
+      : 'Alert Centre activates when integrations are connected and producing live events.',
+    whyNow: alerts.length > 0
+      ? `${alerts.length} active alert${alerts.length === 1 ? '' : 's'} detected, including ${critCount || 0} critical priority item${critCount === 1 ? '' : 's'}.`
+      : 'No active alerts at this moment, but monitoring remains active for new anomalies.',
+    nextAction: alerts.length > 0
+      ? 'Open each critical alert, assign action owner, and mark complete/ignore with rationale.'
+      : 'Keep integrations connected and review this page daily for newly emerging issues.',
+    ifIgnored: hasAnyData
+      ? 'Unresolved alerts can quickly compound into client, delivery, or cashflow consequences.'
+      : 'Without connected data, true issues can remain invisible until they become severe.',
+  };
+  const actionOwnership = {
+    owner: (critCount || 0) > 0 ? 'Duty manager' : alerts.length > 0 ? 'Operations lead' : 'Monitoring owner',
+    deadline: (critCount || 0) > 0 ? 'Within 4 hours' : alerts.length > 0 ? 'By next business day' : 'Continuous',
+    checkpoint: (critCount || 0) > 0
+      ? `Close ${critCount} critical alert${critCount === 1 ? '' : 's'} with owner + rationale.`
+      : alerts.length > 0
+        ? 'Review all open alerts and classify complete vs ignore with notes.'
+        : 'Maintain daily watch cycle and keep integrations healthy.',
+    successMetric: `Open alerts ${alerts.length} · critical ${critCount || 0} · moderate ${modCount || 0}`,
+  };
 
   return (
     <DashboardLayout>
@@ -142,11 +197,30 @@ const AlertsPageAuth = () => {
                   ? `${alerts.length} active alert${alerts.length !== 1 ? 's' : ''} requiring your attention.`
                   : hasAnyData
                     ? `All ${totalConnected} connected system${totalConnected !== 1 ? 's' : ''} are healthy — no issues detected.`
+                    : !integrationResolved
+                      ? 'Verifying connected systems before checking for alerts.'
                     : 'No data sources connected — connect your tools to activate monitoring.'}
               {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>syncing...</span>}
             </p>
           </div>
         </div>
+
+        <InsightExplainabilityStrip
+          whyVisible={explainability.whyVisible}
+          whyNow={explainability.whyNow}
+          nextAction={explainability.nextAction}
+          ifIgnored={explainability.ifIgnored}
+          testIdPrefix="alerts-explainability"
+        />
+
+        <ActionOwnershipCard
+          title="Alert closure owner plan"
+          owner={actionOwnership.owner}
+          deadline={actionOwnership.deadline}
+          checkpoint={actionOwnership.checkpoint}
+          successMetric={actionOwnership.successMetric}
+          testIdPrefix="alerts-action-ownership"
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[['Critical', critCount, '#FF6A00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
@@ -166,7 +240,8 @@ const AlertsPageAuth = () => {
             {[['all','All'],['critical','Critical'],['moderate','Moderate'],['info','Info']].map(([val,label]) => (
               <button key={val} onClick={() => setFilter(val)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{ background: filter === val ? '#FF6A00' : '#141C26', color: filter === val ? 'white' : '#9FB0C3', border: `1px solid ${filter === val ? '#FF6A00' : '#243140'}`, fontFamily: fontFamily.mono }}>
+                style={{ background: filter === val ? '#FF6A00' : '#141C26', color: filter === val ? 'white' : '#9FB0C3', border: `1px solid ${filter === val ? '#FF6A00' : '#243140'}`, fontFamily: fontFamily.mono }}
+                data-testid={`alerts-filter-${val}`}>
                 {label}
               </button>
             ))}
@@ -176,7 +251,8 @@ const AlertsPageAuth = () => {
             {[['all','All time'],['today','Today'],['week','This week'],['month','This month']].map(([val,label]) => (
               <button key={val} onClick={() => setDateRange(val)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{ background: dateRange === val ? '#243140' : 'transparent', color: dateRange === val ? '#F4F7FA' : '#64748B', border: `1px solid ${dateRange === val ? '#334155' : 'transparent'}`, fontFamily: fontFamily.mono }}>
+                style={{ background: dateRange === val ? '#243140' : 'transparent', color: dateRange === val ? '#F4F7FA' : '#64748B', border: `1px solid ${dateRange === val ? '#334155' : 'transparent'}`, fontFamily: fontFamily.mono }}
+                data-testid={`alerts-date-range-${val}`}>
                 {label}
               </button>
             ))}
@@ -186,11 +262,12 @@ const AlertsPageAuth = () => {
             {[['severity','Severity'],['date','Date']].map(([val,label]) => (
               <button key={val} onClick={() => setSortBy(val)}
                 className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-all"
-                style={{ background: sortBy === val ? '#FF6A0015' : 'transparent', color: sortBy === val ? '#FF6A00' : '#64748B', border: `1px solid ${sortBy === val ? '#FF6A0030' : 'transparent'}`, fontFamily: fontFamily.mono }}>
+                style={{ background: sortBy === val ? '#FF6A0015' : 'transparent', color: sortBy === val ? '#FF6A00' : '#64748B', border: `1px solid ${sortBy === val ? '#FF6A0030' : 'transparent'}`, fontFamily: fontFamily.mono }}
+                data-testid={`alerts-sort-${val}`}>
                 {label}
               </button>
             ))}
-            <button onClick={fetchAlerts} className="ml-1 p-1.5 rounded-lg hover:bg-white/5" title="Refresh" style={{ color: loading ? '#FF6A00' : '#64748B' }}>
+            <button onClick={fetchAlerts} className="ml-1 p-1.5 rounded-lg hover:bg-white/5" title="Refresh" style={{ color: loading ? '#FF6A00' : '#64748B' }} data-testid="alerts-refresh-button">
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
             </button>
           </div>

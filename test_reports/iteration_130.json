@@ -1,0 +1,123 @@
+{
+  "summary": "Iteration 130 - Production retest after OpenAI key reset. GOOD NEWS: Soundboard AI is NOW WORKING - OpenAI key successfully configured in production. BAD NEWS: War Room still broken with product_or_service validation error - production deployment NOT updated with fix. Calibration deep scan failing with NoneType error.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/war-room/respond",
+        "issue": "Returns 400 with {\"error\":\"product_or_service is required\"}. The fix (Optional[str] = None) exists in preview code (/app/backend/routes/boardroom.py line 31) but production deployment still using old code that passes to Edge Function without default value",
+        "priority": "CRITICAL",
+        "fix_location": "Production deployment needs to be updated - code fix already exists"
+      },
+      {
+        "endpoint": "/api/enrichment/website",
+        "issue": "Returns 500: 'NoneType' object has no attribute 'observe' - AI tracing/LangSmith code not handling null tracer gracefully during website deep scan",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "Multiple API aborted requests",
+        "issue": "Console shows ERR_ABORTED for warm-cognitive-engine and several API endpoints - likely race conditions during page navigation"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "War Room Q&A",
+        "issue": "War Room input works but backend returns validation error. Error message displayed to user: {\"error\":\"product_or_service is required\"}",
+        "affected_selectors": ["[data-testid='ask-input']", "[data-testid='ask-submit']"],
+        "screenshot": "Screenshot 1 shows error displayed in chat"
+      }
+    ],
+    "design_issues": []
+  },
+  "working_features": {
+    "login": {
+      "status": "PASS",
+      "details": "Supabase auth working correctly, redirects to /advisor after login"
+    },
+    "calibration_status": {
+      "status": "PASS",
+      "details": "Returns COMPLETE status for andre@thestrategysquad.com.au"
+    },
+    "soundboard_ai": {
+      "status": "PASS",
+      "details": "OpenAI key NOW WORKING! Soundboard responds with business-specific AI insights. Shows 'I'm your Strategic Intelligence Advisor' welcome message and responds to queries."
+    },
+    "advisor_dashboard": {
+      "status": "PASS",
+      "details": "Shows Data Confidence: High (5/6 signals), Business Stability: 50 (Drifting), 3 Risks Requiring Attention with specific deal names and amounts"
+    },
+    "board_room": {
+      "status": "PARTIAL",
+      "details": "Board Room diagnosis endpoint works but navigates to main advisor page"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_130_production.py",
+    "/app/test_reports/pytest/pytest_results_iteration130.xml"
+  ],
+  "action_items": [
+    "CRITICAL: Deploy updated backend code to production - War Room fix (product_or_service: Optional[str] = None) exists in preview but NOT in production",
+    "HIGH: Fix calibration /api/enrichment/website NoneType error - add null check for LangSmith tracer before calling .observe()",
+    "LOW: Investigate warm-cognitive-engine Edge Function ERR_ABORTED errors"
+  ],
+  "critical_code_review_comments": [
+    "War Room fix exists at /app/backend/routes/boardroom.py line 31: product_or_service: Optional[str] = None - but production is NOT using this version",
+    "The Supabase Edge Function strategic-console-ai still validates product_or_service as required - backend should default it before calling Edge Function (lines 483-499 do this but code not deployed)",
+    "Calibration enrichment AI service error suggests LangSmith tracer initialization failing when keys are misconfigured"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration_130_production.py"
+  ],
+  "success_rate": {
+    "backend": "75% (6/8 tests: 4 passed, 2 failed, 2 skipped)",
+    "frontend": "80% (Login, Advisor, Soundboard working; War Room broken)"
+  },
+  "test_credentials": {
+    "email": "andre@thestrategysquad.com.au",
+    "password": "MasterMind2025*",
+    "production_url": "https://biqc.thestrategysquad.com"
+  },
+  "seed_data_creation": "None - using existing Andre account",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "OpenAI key is NOW WORKING - Soundboard AI responds successfully. War Room failure is a DEPLOYMENT issue not a code issue - the fix exists in preview code but production has not been redeployed. The Edge Function strategic-console-ai validates product_or_service, and the backend code that defaults it (lines 483-499) is not in production yet.",
+  "rca_of_issues": {
+    "war_room_validation_error": {
+      "root_cause": "DEPLOYMENT GAP - The fix (product_or_service: Optional[str] = None at line 31) exists in /app/backend/routes/boardroom.py preview code, but production deployment is running OLD code that doesn't set default before calling Edge Function",
+      "evidence": [
+        "Preview code line 31: product_or_service: Optional[str] = None",
+        "Preview code lines 483-499: defaults to 'General business advisory' and fetches from business_profiles",
+        "Production returns 400: {\"error\":\"product_or_service is required\"} meaning Edge Function validates it as required",
+        "This proves production backend is NOT passing product_or_service with default value"
+      ],
+      "mitigation": "Redeploy backend to production with latest code"
+    },
+    "calibration_deep_scan_error": {
+      "root_cause": "NoneType error on .observe() call - LangSmith/AI tracer not initialized when AI keys are misconfigured or tracer disabled",
+      "evidence": [
+        "Error: 'NoneType' object has no attribute 'observe'",
+        "This occurs in the AI response generation path during website enrichment scan"
+      ],
+      "mitigation": "Add null check: if tracer: tracer.observe(...) or use try/except around observe calls"
+    }
+  },
+  "comparison_to_iteration_129": {
+    "soundboard": "IMPROVED: Was 500 'AI provider keys not configured' → Now WORKING with AI responses",
+    "war_room": "SAME: Still returns validation error - fix not deployed to production",
+    "calibration_enrichment": "SAME: Still returns NoneType error",
+    "board_room": "SAME: Working via Edge Functions"
+  },
+  "modules_tested": {
+    "authentication": "PASS",
+    "calibration_status": "PASS",
+    "soundboard_chat": "PASS - OpenAI key working!",
+    "war_room_respond": "FAIL - product_or_service validation error (deployment issue)",
+    "boardroom_diagnosis": "SKIPPED (auth fixture issue)",
+    "calibration_enrichment": "FAIL - NoneType error",
+    "advisor_dashboard": "PASS - Shows intelligence, risks, recommendations"
+  }
+}

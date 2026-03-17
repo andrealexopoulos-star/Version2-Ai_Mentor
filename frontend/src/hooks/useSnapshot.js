@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../context/SupabaseAuthContext';
+import { supabase, useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -15,6 +15,7 @@ const CACHE_KEY = 'biqc_snapshot_cache';
  * 5. Manual refresh still available via refresh()
  */
 export function useSnapshot() {
+  const { session, authState } = useSupabaseAuth();
   const [cognitive, setCognitive] = useState(null);
   const [context, setContext] = useState(null);
   const [sources, setSources] = useState([]);
@@ -123,6 +124,7 @@ export function useSnapshot() {
 
   // On mount: load once + subscribe to Realtime
   useEffect(() => {
+    if (authState === AUTH_STATE.LOADING && !session?.access_token) return undefined;
     mountedRef.current = true;
     loadSnapshot();
 
@@ -152,7 +154,7 @@ export function useSnapshot() {
       mountedRef.current = false;
       if (channel) supabase.removeChannel(channel);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [session?.access_token, authState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Context memo from Supabase (for Board Room)
   useEffect(() => {

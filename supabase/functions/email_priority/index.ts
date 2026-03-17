@@ -171,7 +171,7 @@ For each email return EXACTLY this JSON structure:
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gemini-3-flash-preview",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: `Analyze these ${emails.length} emails and return a JSON array:\n\n${emailSummary}` },

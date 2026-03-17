@@ -1,5 +1,5 @@
 {
-  "summary": "Iteration 47: P0 SCROLL BUG FIX VERIFICATION - ALL TESTS PASSED. The 3-layer JavaScript inline style fix is working correctly on https://integrations-hub-10.preview.emergentagent.com. Tested Desktop (1440x900), Mobile (390x844), and Visual scroll tests. All inline styles applied correctly (overflow-y: auto on html and body), scrollY values change correctly (0→800), and page has sufficient scrollable content.",
+  "summary": "Iteration 47: P0 SCROLL BUG FIX VERIFICATION - ALL TESTS PASSED. The 3-layer JavaScript inline style fix is working correctly on https://kpi-intelligence-1.preview.emergentagent.com. Tested Desktop (1440x900), Mobile (390x844), and Visual scroll tests. All inline styles applied correctly (overflow-y: auto on html and body), scrollY values change correctly (0→800), and page has sufficient scrollable content.",
   "backend_issues": {
     "critical": [],
     "minor": []

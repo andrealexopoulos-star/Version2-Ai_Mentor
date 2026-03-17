@@ -12,12 +12,14 @@ import uuid
 import re
 import json
 import logging
+from html import unescape
 
 import httpx
-from core.llm_router import llm_chat
+from core.llm_router import llm_trinity_chat
+from core.helpers import serper_search, scrape_url_text
 from routes.deps import (
     get_current_user, get_current_user_from_request,
-    get_sb, OPENAI_KEY, AI_MODEL, logger, cognitive_core,
+    get_sb, logger, cognitive_core,
 )
 from supabase_client import safe_query_single
 from prompt_registry import get_prompt
@@ -54,6 +56,188 @@ class ConsoleStateSave(BaseModel):
 class WebsiteEnrichRequest(BaseModel):
     url: str
     action: str = "scan"
+
+
+def _extract_abn_candidates(text: str) -> List[str]:
+    if not text:
+        return []
+    candidates = re.findall(r"\b\d{2}\s?\d{3}\s?\d{3}\s?\d{3}\b", text)
+    normalized = []
+    seen = set()
+    for c in candidates:
+        digits = re.sub(r"\D", "", c)
+        if len(digits) == 11 and digits not in seen:
+            seen.add(digits)
+            normalized.append(f"{digits[:2]} {digits[2:5]} {digits[5:8]} {digits[8:11]}")
+    return normalized
+
+
+def _extract_domain(url: str) -> str:
+    if not url:
+        return ""
+    clean = re.sub(r"^https?://", "", url.strip(), flags=re.IGNORECASE)
+    return clean.split("/")[0].strip().lower()
+
+
+def _extract_meta_content(html: str, key: str) -> str:
+    if not html or not key:
+        return ""
+    patterns = [
+        rf'<meta[^>]+property=["\']{re.escape(key)}["\'][^>]+content=["\']([^"\']+)',
+        rf'<meta[^>]+name=["\']{re.escape(key)}["\'][^>]+content=["\']([^"\']+)',
+        rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']{re.escape(key)}["\']',
+        rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']{re.escape(key)}["\']',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, html, re.IGNORECASE)
+        if match:
+            return unescape(match.group(1)).strip()
+    return ""
+
+
+def _extract_title(html: str) -> str:
+    if not html:
+        return ""
+    match = re.search(r"<title>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    return unescape(match.group(1)).strip() if match else ""
+
+
+def _clean_business_name(candidate: str) -> str:
+    value = (candidate or "").strip()
+    if not value:
+        return ""
+    parts = [p.strip() for p in re.split(r"\||—|-", value) if p.strip()]
+    generic_titles = {"business advisory services", "home", "welcome"}
+    for part in parts:
+        if part.lower() not in generic_titles and len(part) > 2:
+            return part
+    return value if value.lower() not in generic_titles else ""
+
+
+def _extract_social_handles_from_html(html: str) -> Dict[str, str]:
+    handles = {"linkedin": "", "instagram": "", "facebook": "", "x": "", "youtube": ""}
+    if not html:
+        return handles
+    patterns = {
+        "linkedin": r"https?://(?:www\.)?linkedin\.com/[\w\-\./]+",
+        "instagram": r"https?://(?:www\.)?instagram\.com/[\w\-\./]+",
+        "facebook": r"https?://(?:www\.)?facebook\.com/[\w\-\./]+",
+        "x": r"https?://(?:www\.)?(?:x|twitter)\.com/[\w\-\./]+",
+        "youtube": r"https?://(?:www\.)?youtube\.com/[\w\-\./\?=&]+",
+    }
+    for platform, pattern in patterns.items():
+        match = re.search(pattern, html, re.IGNORECASE)
+        if match:
+            handles[platform] = match.group(0)
+    return handles
+
+
+def _extract_json_candidate(raw: Any) -> Dict[str, Any]:
+    if isinstance(raw, dict):
+        return raw
+    if not isinstance(raw, str):
+        return {}
+    try:
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, dict) else {}
+    except Exception:
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if not match:
+            return {}
+        try:
+            parsed = json.loads(match.group(0))
+            return parsed if isinstance(parsed, dict) else {}
+        except Exception:
+            return {}
+
+
+def _extract_service_lines(text: str) -> List[str]:
+    if not text:
+        return []
+    service_keywords = (
+        "advisory", "coaching", "strategy", "marketing", "operations",
+        "compliance", "regulations", "efficiency", "conflict", "mentoring",
+        "growth", "sales"
+    )
+    services: List[str] = []
+    seen = set()
+    for line in text.splitlines():
+        candidate = re.sub(r"\s+", " ", line).strip(" :\u2022-\t")
+        if not candidate or len(candidate) < 12 or len(candidate) > 90:
+            continue
+        lowered = candidate.lower()
+        if any(keyword in lowered for keyword in service_keywords):
+            if candidate not in seen:
+                seen.add(candidate)
+                services.append(candidate)
+        if len(services) >= 5:
+            break
+    return services
+
+
+def _infer_target_market(text: str, description: str = "") -> str:
+    lowered = f"{text}\n{description}".lower()
+    segments = []
+    if "startup" in lowered:
+        segments.append("startups")
+    if "enterprise" in lowered:
+        segments.append("established enterprises")
+    if "business owner" in lowered:
+        segments.append("business owners")
+    if "australia" in lowered or "australian" in lowered:
+        segments.append("Australian businesses")
+    if not segments:
+        return ""
+    ordered = []
+    for segment in segments:
+        if segment not in ordered:
+            ordered.append(segment)
+    return ", ".join(ordered)
+
+
+def _infer_competitors_from_results(results: List[Dict[str, Any]], business_name: str, domain: str) -> List[str]:
+    if not results:
+        return []
+    competitors: List[str] = []
+    seen = set()
+    business_lower = (business_name or "").lower()
+    blocked_domains = (
+        "linkedin.com", "facebook.com", "instagram.com", "youtube.com", "zoominfo.com",
+        "crunchbase.com", "yellowpages", "productreview", "indeed.com", "glassdoor.com",
+    )
+    for result in results:
+        link = (result.get("link") or "").lower()
+        title = (result.get("title") or "").strip()
+        if not title:
+            continue
+        if domain and domain in link:
+            continue
+        if any(blocked in link for blocked in blocked_domains):
+            continue
+        raw_name = re.split(r"\||—|-", title)[0].strip()
+        if not raw_name or len(raw_name) < 3:
+            continue
+        lowered = raw_name.lower()
+        if business_lower and business_lower in lowered:
+            continue
+        if lowered in seen:
+            continue
+        seen.add(lowered)
+        competitors.append(raw_name)
+        if len(competitors) >= 5:
+            break
+    return competitors
+
+
+def _extract_sentence_with_keywords(text: str, keywords: List[str]) -> str:
+    if not text:
+        return ""
+    sentences = re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", text))
+    for sentence in sentences:
+        lowered = sentence.lower()
+        if any(keyword in lowered for keyword in keywords) and 25 <= len(sentence) <= 220:
+            return sentence.strip()
+    return ""
 
 
 # ─── Constants ───
@@ -115,8 +299,6 @@ async def get_calibration_status(current_user: dict = Depends(get_current_user))
     Super admins can always skip calibration.
     """
     user_id = current_user.get("id")
-    user_role = current_user.get("role", "user")
-    user_email = current_user.get("email", "")
 
     try:
         user_name = None
@@ -441,11 +623,6 @@ async def get_lifecycle_state(request: Request):
         raise HTTPException(status_code=500, detail="Failed to get lifecycle state")
 
 
-class ConsoleStateSave(BaseModel):
-    current_step: int
-    status: str = "IN_PROGRESS"
-
-
 @router.post("/console/state")
 async def save_console_state(request: Request, payload: ConsoleStateSave):
     """Persist console step. When status=COMPLETE, also marks authoritative routing tables."""
@@ -494,11 +671,6 @@ async def save_console_state(request: Request, payload: ConsoleStateSave):
         raise HTTPException(status_code=500, detail="Failed to save console state")
 
 
-class WebsiteEnrichRequest(BaseModel):
-    url: str
-    action: str = "scan"  # scan | commit
-
-
 @router.post("/enrichment/website")
 async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
     """Draft → Review → Commit enrichment flow."""
@@ -513,46 +685,151 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
         url = f"https://{url}"
 
     if payload.action == "scan":
-        import re as _re
         try:
-            async with httpx.AsyncClient(follow_redirects=True, timeout=15.0) as client:
-                resp = await client.get(url, headers={"User-Agent": "BIQC/1.0"})
-                html = resp.text[:50000]
-            title = ""
-            desc = ""
-            og_title = ""
-            og_desc = ""
-            import re
-            t = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
-            if t:
-                title = t.group(1).strip()
-            for m in re.finditer(r'<meta\s+[^>]*>', html, re.IGNORECASE | re.DOTALL):
-                tag = m.group(0)
-                name = re.search(r'(?:name|property)\s*=\s*["\']([^"\']+)["\']', tag, re.IGNORECASE)
-                content = re.search(r'content\s*=\s*["\']([^"\']+)["\']', tag, re.IGNORECASE)
-                if name and content:
-                    n = name.group(1).lower()
-                    c = content.group(1).strip()
-                    if n == "description":
-                        desc = c
-                    elif n == "og:title":
-                        og_title = c
-                    elif n == "og:description":
-                        og_desc = c
+            page_text = await scrape_url_text(url)
+            raw_html = ""
+            try:
+                async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+                    raw_resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; BIQcBot/1.0)"})
+                    if raw_resp.status_code < 400:
+                        raw_html = raw_resp.text
+            except Exception:
+                raw_html = ""
 
-            def sanitize(s):
-                s = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', s)
-                s = re.sub(r'\s+', ' ', s).strip()
-                return s[:500]
+            domain = _extract_domain(url)
+            page_title = _extract_title(raw_html)
+            meta_description = _extract_meta_content(raw_html, "description") or _extract_meta_content(raw_html, "og:description")
+            og_site_name = _extract_meta_content(raw_html, "og:site_name") or _extract_meta_content(raw_html, "twitter:title")
+            business_name_hint = _clean_business_name(og_site_name) or _clean_business_name(page_title) or domain.split(".")[0].replace("-", " ").title()
+            service_lines = _extract_service_lines(page_text)
+            competitor_query = f'"{business_name_hint}" competitors australia {page_title or ""}'.strip()
+            company_query = f"site:{domain} company profile services about"
+            abn_query = f"{domain} ABN"
+
+            company_search = await serper_search(company_query, gl="au", hl="en", num=8)
+            competitor_search = await serper_search(competitor_query, gl="au", hl="en", num=8)
+            abn_search = await serper_search(abn_query, gl="au", hl="en", num=5)
+
+            combined_text = "\n\n".join([
+                page_text[:12000],
+                "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (company_search.get("results") or [])]),
+                "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (competitor_search.get("results") or [])]),
+                "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (abn_search.get("results") or [])]),
+            ])
+            abn_candidates = _extract_abn_candidates(combined_text)
+
+            from core.ai_core import get_ai_response
+            synthesis_prompt = (
+                f"Analyze this business website and deep web signals for onboarding.\n"
+                f"URL: {url}\n"
+                "Return JSON keys: business_name, description, industry, main_products_services, target_market, "
+                "unique_value_proposition, competitive_advantages, competitors, competitor_analysis, market_position, "
+                "abn, social_handles, trust_signals, executive_summary, confidence.\n"
+                "If unknown, return empty string. competitors must be array of names.\n\n"
+                f"DATA:\n{combined_text[:18000]}"
+            )
+            try:
+                ai_json = await get_ai_response(
+                    synthesis_prompt,
+                    "general",
+                    f"website_scan_{user_id}",
+                    user_id=user_id,
+                    metadata={"force_trinity": True, "context": "onboarding_deep_scan"},
+                )
+            except Exception as ai_error:
+                logger.warning(f"[enrichment/website] AI synthesis unavailable, falling back to deterministic scan: {ai_error}")
+                ai_json = {}
+
+            enrichment = {
+                "title": page_title,
+                "description": meta_description or _extract_sentence_with_keywords(page_text, ["results", "strategy", "growth", "service"]),
+                "business_name": business_name_hint,
+                "industry": page_title or "",
+                "main_products_services": "; ".join(service_lines[:4]),
+                "target_market": _infer_target_market(page_text, meta_description),
+                "unique_value_proposition": meta_description or _extract_sentence_with_keywords(page_text, ["measurable results", "20 years", "tailor", "holistic"]),
+                "competitive_advantages": _extract_sentence_with_keywords(page_text, ["20 years", "measurable results", "tailor", "ahead of the competition"]),
+                "competitors": _infer_competitors_from_results(competitor_search.get("results") or [], business_name_hint, domain),
+                "competitor_analysis": "",
+                "market_position": "",
+                "abn": abn_candidates[0] if abn_candidates else "",
+                "abn_candidates": abn_candidates,
+                "social_handles": _extract_social_handles_from_html(raw_html),
+                "trust_signals": [],
+                "executive_summary": "",
+                "confidence": "medium",
+                "sources": {
+                    "company": company_search.get("results") or [],
+                    "competitors": competitor_search.get("results") or [],
+                    "abn": abn_search.get("results") or [],
+                },
+            }
+
+            try:
+                parsed = _extract_json_candidate(ai_json)
+                if isinstance(parsed, dict):
+                    enrichment.update({k: parsed.get(k, enrichment.get(k)) for k in enrichment.keys() if k in parsed})
+                    if isinstance(parsed.get("competitors"), list):
+                        enrichment["competitors"] = parsed.get("competitors")
+                    if isinstance(parsed.get("trust_signals"), list):
+                        enrichment["trust_signals"] = parsed.get("trust_signals")
+            except Exception:
+                logger.warning("[enrichment/website] Could not parse AI JSON synthesis; using deterministic fallback")
+
+            # deterministic social handle fallback extraction
+            for platform, pattern in {
+                "linkedin": r"https?://(?:www\.)?linkedin\.com/[\w\-/]+",
+                "instagram": r"https?://(?:www\.)?instagram\.com/[\w\./-]+",
+                "facebook": r"https?://(?:www\.)?facebook\.com/[\w\./-]+",
+                "x": r"https?://(?:www\.)?(?:x|twitter)\.com/[\w\./-]+",
+                "youtube": r"https?://(?:www\.)?youtube\.com/[\w\./?=&-]+",
+            }.items():
+                if not enrichment["social_handles"].get(platform):
+                    m = re.search(pattern, combined_text, re.IGNORECASE)
+                    if m:
+                        enrichment["social_handles"][platform] = m.group(0)
+
+            if not enrichment.get("trust_signals"):
+                inferred = []
+                lowered = combined_text.lower()
+                for token, label in [
+                    ("20 years", "20+ years experience"),
+                    ("iso", "ISO / certification mention"),
+                    ("award", "Awards mention"),
+                    ("testimonial", "Testimonials / social proof"),
+                    ("case study", "Case studies"),
+                    ("partner", "Partnership mention"),
+                    ("accredited", "Accreditation mention"),
+                ]:
+                    if token in lowered:
+                        inferred.append(label)
+                enrichment["trust_signals"] = inferred
+
+            if not enrichment.get("competitor_analysis") and enrichment.get("competitors"):
+                enrichment["competitor_analysis"] = (
+                    f"Search results indicate competition from {', '.join((enrichment.get('competitors') or [])[:3])}. "
+                    f"Site messaging differentiates through {enrichment.get('unique_value_proposition') or 'tailored advisory and measurable outcomes'}.")
+
+            if not enrichment.get("market_position"):
+                target_market = enrichment.get("target_market") or "Australian businesses"
+                if enrichment.get("unique_value_proposition"):
+                    enrichment["market_position"] = (
+                        f"{enrichment.get('business_name') or 'This business'} positions itself for {target_market} with a focus on "
+                        f"{enrichment.get('unique_value_proposition')}."
+                    )
+
+            if not enrichment.get("executive_summary"):
+                enrichment["executive_summary"] = (
+                    f"{enrichment.get('business_name') or 'Business'} appears positioned in {enrichment.get('industry') or 'its sector'} with "
+                    f"focus on {enrichment.get('main_products_services') or 'core services'}. "
+                    f"Top competitor pressure: {enrichment.get('competitor_analysis') or 'to be validated through market signals'}."
+                )
 
             return {
                 "status": "draft",
                 "url": url,
-                "enrichment": {
-                    "title": sanitize(og_title or title),
-                    "description": sanitize(og_desc or desc),
-                },
-                "message": "Review the enrichment data below. Click Commit to save to Business DNA.",
+                "enrichment": enrichment,
+                "message": "Deep scan completed. Review and continue to calibration summary.",
             }
         except Exception as e:
             logger.error(f"[enrichment/website] Scan failed: {e}")
@@ -894,7 +1171,13 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             )
 
             from core.ai_core import get_ai_response
-            ai_text = await get_ai_response(raw_prompt, "general", f"calibration_{user_id}", user_id=user_id)
+            ai_text = await get_ai_response(
+                raw_prompt,
+                "general",
+                f"calibration_{user_id}",
+                user_id=user_id,
+                metadata={"force_trinity": True, "context": "onboarding_calibration"},
+            )
             ai_payload = {}
             try:
                 ai_payload = json.loads(ai_text)
@@ -1084,12 +1367,12 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             pass
           return {"status": "complete", "calibration_complete": True}
 
-    # Generate Emergent Advisor calibration voice response
+    # Generate BIQc Advisor calibration voice response
     advisor_response = None
     try:
         # Fetch from DB or use inline fallback
         _voice_fallback = (
-            'You are the "Emergent Advisor" (System Name: BIQc). '
+            'You are the "BIQc Advisor" (System Name: BIQc). '
             'Your status is: FAIL-SAFE | MASTER CONNECTED. '
             'You are a strategic, executive-level AI designed to "Calibrate" the user before granting them access to the "Watchtower."\n\n'
             'TONE & STYLE:\n'
@@ -1107,14 +1390,19 @@ async def save_calibration_answer(request: Request, payload: CalibrationAnswerRe
             '- Do not repeat the user answer back verbatim.\n'
             '- Do not include the next question.\n'
         )
-        cal_system_prompt = await get_prompt("calibration_voice_response_v1", _voice_fallback)
         cal_user_msg = (
             f"Question {question_id} of 9: \"{QUESTIONS_TEXT.get(question_id, '')}\"\n"
             f"User answered: \"{answer}\"\n\n"
             "Respond with JSON only."
         )
         from core.ai_core import get_ai_response
-        raw_ai = await get_ai_response(cal_user_msg, "general", f"calibration_{user_id}", user_id=user_id)
+        raw_ai = await get_ai_response(
+            cal_user_msg,
+            "general",
+            f"calibration_{user_id}",
+            user_id=user_id,
+            metadata={"force_trinity": True, "context": "onboarding_calibration"},
+        )
         if raw_ai:
             raw_ai = raw_ai.strip()
             # Strip markdown code fences if present
@@ -1153,7 +1441,7 @@ async def get_calibration_activation(request: Request):
 
     try:
         _activation_fallback = (
-            'You are the "Emergent Advisor" (System Name: BIQc). Status: FAIL-SAFE | MASTER CONNECTED. '
+            'You are the "BIQc Advisor" (System Name: BIQc). Status: FAIL-SAFE | MASTER CONNECTED. '
             'Calibration just completed. Generate a post-calibration activation briefing.\n\n'
             'Tone: Concise, cryptic but helpful, high-tech, executive. Use terminology like "Vectors locked", "Signal monitoring active."\n\n'
             'Generate a JSON object with exactly these keys. All values are strings:\n\n'
@@ -1167,13 +1455,19 @@ async def get_calibration_activation(request: Request):
         db_activation = await get_prompt("calibration_activation_v1", _activation_fallback)
         activation_prompt = f"{db_activation}\n\nBusiness context: {context_summary}"
         from core.ai_core import get_ai_response
-        ai_text = await get_ai_response(activation_prompt, "general", f"activation_{user_id}", user_id=user_id)
+        ai_text = await get_ai_response(
+            activation_prompt,
+            "general",
+            f"activation_{user_id}",
+            user_id=user_id,
+            metadata={"force_trinity": True, "context": "onboarding_calibration"},
+        )
         activation = json.loads(ai_text)
         return activation
     except Exception as e:
         logger.warning(f"[calibration/activation] AI generation failed: {e}")
         return {
-            "focus": f"Based on what you've shared, I'll be watching:\n• financial stability and cashflow patterns\n• pressure on you as the primary operator\n• signals that it's time to systematise or delegate",
+            "focus": "Based on what you've shared, I'll be watching:\n• financial stability and cashflow patterns\n• pressure on you as the primary operator\n• signals that it's time to systematise or delegate",
             "time_horizon": "In the next 7 days, I'll start noticing early signals. Over the next 30 days, patterns will become clearer as activity builds.",
             "engagement": "You don't need to ask me everything. I'll surface what matters when it matters — and you can correct me anytime.",
             "integration_framing": f"For {biz_name}, email and calendar help me spot early warning signs before they become problems. This isn't setup — it's giving me visibility.",
@@ -1291,11 +1585,10 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
             context_block += "\n---\nNEW USER MESSAGE:\n"
 
         full_message = f"{context_block}{message}\n\nRespond with JSON only."
-        raw_response = await llm_chat(
+        raw_response = await llm_trinity_chat(
             system_message=system_with_facts,
             user_message=full_message,
-            model="gpt-5.3",
-            api_key=OPENAI_KEY,
+            messages=history,
         )
 
         # Parse JSON from AI response
@@ -1385,7 +1678,7 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
 
 @router.post("/strategy/regeneration/request")
 async def queue_regeneration_request(payload: RegenerationRequestPayload, current_user: dict = Depends(get_current_user)):
-    return await request_regeneration(current_user["id"], payload.layer, payload.reason, supabase_admin)
+    return await request_regeneration(current_user["id"], payload.layer, payload.reason, get_sb())
 
 
 @router.post("/strategy/regeneration/response")
@@ -1393,7 +1686,7 @@ async def handle_regeneration_response(payload: RegenerationResponsePayload, cur
     action = payload.action.lower()
     if action not in {"accept", "refine", "keep"}:
         raise HTTPException(status_code=400, detail="Invalid response action")
-    return await record_regeneration_response(current_user["id"], payload.proposal_id, action, supabase_admin)
+    return await record_regeneration_response(current_user["id"], payload.proposal_id, action, get_sb())
 
 
 # ═══ RECALIBRATION & CHECK-IN SCHEDULING ═══

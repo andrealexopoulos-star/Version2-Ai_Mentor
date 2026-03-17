@@ -28,7 +28,11 @@ export const getAppBaseUrl = () => {
  * wrong server. window.location.origin is ALWAYS correct.
  */
 export const getBackendUrl = () => {
-  return window.location.origin;
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  if (!backendUrl) {
+    throw new Error('REACT_APP_BACKEND_URL is required');
+  }
+  return backendUrl.replace(/\/$/, '');
 };
 
 /**

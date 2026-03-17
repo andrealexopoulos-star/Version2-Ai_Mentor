@@ -85,6 +85,8 @@ import OpsAdvisoryCentre from './pages/OpsAdvisoryCentre';
 import ConnectEmail from './pages/ConnectEmail';
 import IntelCentre from './pages/IntelCentre';
 import MySoundBoard from './pages/MySoundBoard';
+import BoardRoomPage from './pages/BoardRoomPage';
+import WarRoomPage from './pages/WarRoomPage';
 import IntelligenceBaseline from './pages/IntelligenceBaseline';
 import OperatorDashboard from './pages/OperatorDashboard';
 import PromptLab from './pages/PromptLab';
@@ -259,8 +261,10 @@ function AppRoutes() {
         <Route path="/automations" element={<ProtectedRoute><AutomationsPageAuth /></ProtectedRoute>} />
         <Route path="/soundboard" element={<ProtectedRoute><TierGate><MySoundBoard /></TierGate></ProtectedRoute>} />
         <Route path="/email-inbox" element={<ProtectedRoute><TierGate><EmailInbox /></TierGate></ProtectedRoute>} />
-        <Route path="/war-room" element={<ProtectedRoute><TierGate><div className="h-screen bg-black"><WarRoomConsole /></div></TierGate></ProtectedRoute>} />
-        <Route path="/board-room" element={<ProtectedRoute><TierGate><div className="h-screen bg-black"><BoardRoom /></div></TierGate></ProtectedRoute>} />
+        <Route path="/war-room" element={<ProtectedRoute><TierGate><WarRoomPage /></TierGate></ProtectedRoute>} />
+        <Route path="/board-room" element={<ProtectedRoute><TierGate><BoardRoomPage /></TierGate></ProtectedRoute>} />
+        <Route path="/warroom" element={<Navigate to="/war-room" replace />} />
+        <Route path="/boardroom" element={<Navigate to="/board-room" replace />} />
         <Route path="/sop-generator" element={<ProtectedRoute><TierGate><SOPGenerator /></TierGate></ProtectedRoute>} />
         <Route path="/decisions" element={<ProtectedRoute><DecisionsPage /></ProtectedRoute>} />
         <Route path="/diagnosis" element={<ProtectedRoute><TierGate><Diagnosis /></TierGate></ProtectedRoute>} />
@@ -273,7 +277,8 @@ function AppRoutes() {
         <Route path="/intelligence-baseline" element={<ProtectedRoute><TierGate><IntelligenceBaseline /></TierGate></ProtectedRoute>} />
         <Route path="/operator" element={<ProtectedRoute><TierGate><OperatorDashboard /></TierGate></ProtectedRoute>} />
         <Route path="/market-analysis" element={<ProtectedRoute><TierGate><MarketAnalysis /></TierGate></ProtectedRoute>} />
-        <Route path="/oac" element={<ProtectedRoute><TierGate><OpsAdvisoryCentre /></TierGate></ProtectedRoute>} />
+        <Route path="/ops-advisory" element={<ProtectedRoute><TierGate><OpsAdvisoryCentre /></TierGate></ProtectedRoute>} />
+        <Route path="/oac" element={<Navigate to="/ops-advisory" replace />} />
         <Route path="/marketing-automation" element={<ProtectedRoute><TierGate><MarketingAutomationPage /></TierGate></ProtectedRoute>} />
         <Route path="/ab-testing" element={<ProtectedRoute><TierGate><ABTestingPage /></TierGate></ProtectedRoute>} />
 

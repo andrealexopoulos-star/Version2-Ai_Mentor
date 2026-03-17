@@ -115,6 +115,21 @@ const EmailInbox = () => {
     }
   }, [activeProvider]);
 
+  const normalizePriorityPayload = (payload, fallbackMeta = {}) => {
+    if (!payload || typeof payload !== 'object') return null;
+    const base = payload.analysis && typeof payload.analysis === 'object' ? payload.analysis : payload;
+    if (base.message && !base.high_priority && !base.medium_priority && !base.low_priority) return null;
+    return {
+      high_priority: (base.high_priority || []).map(normalizeEmailFields),
+      medium_priority: (base.medium_priority || []).map(normalizeEmailFields),
+      low_priority: (base.low_priority || []).map(normalizeEmailFields),
+      strategic_insights: base.strategic_insights || '',
+      total_analyzed: base.total_analyzed || fallbackMeta.total_analyzed || 0,
+      analyzed_at: payload.analyzed_at || fallbackMeta.analyzed_at || new Date().toISOString(),
+      from_cache: Boolean(fallbackMeta.from_cache),
+    };
+  };
+
   const fetchPriorityInbox = async (provider) => {
     try {
       setLoading(true);
@@ -136,40 +151,29 @@ const EmailInbox = () => {
         setLoading(false);
       }
 
-      // 2. Refresh from edge function in background
-      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-      const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-      const res = await fetch(`${supabaseUrl}/functions/v1/email_priority`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': supabaseAnonKey,              // required by Supabase edge functions
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ provider }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        if (!cached?.length) {
-          console.error('Priority inbox fetch failed:', err);
-        }
-        setLoading(false);
-        return;
+      // 2. Prefer backend-backed inbox retrieval to avoid direct edge JWT issues in production.
+      let latest = null;
+      try {
+        const existing = await apiClient.get('/email/priority-inbox');
+        latest = normalizePriorityPayload(existing.data, { from_cache: false });
+      } catch (error) {
+        console.error('Priority inbox existing fetch failed:', error?.response?.data || error.message);
       }
 
-      const data = await res.json();
-      if (data.ok) {
-        // Normalize field names from edge function response
-        const normalized = {
-          high_priority:   (data.high_priority || []).map(normalizeEmailFields),
-          medium_priority: (data.medium_priority || []).map(normalizeEmailFields),
-          low_priority:    (data.low_priority || []).map(normalizeEmailFields),
-          strategic_insights: data.strategic_insights || '',
-          total_analyzed: data.total_analyzed || 0,
-          analyzed_at: new Date().toISOString(),
-        };
-        setPriorityAnalysis(normalized);
+      if (!latest) {
+        try {
+          const analyzed = await apiClient.post('/email/analyze-priority');
+          latest = normalizePriorityPayload(analyzed.data, { from_cache: false, analyzed_at: new Date().toISOString() });
+        } catch (error) {
+          if (!cached?.length) {
+            console.error('Priority inbox analysis failed:', error?.response?.data || error.message);
+            toast.error(error?.response?.data?.detail || 'Priority Inbox is temporarily unavailable.');
+          }
+        }
+      }
+
+      if (latest) {
+        setPriorityAnalysis(latest);
       }
     } catch (error) {
       console.error('Priority inbox fetch error:', error);
@@ -244,7 +248,6 @@ const EmailInbox = () => {
       setAnalyzing(true);
       toast.info('Analyzing your inbox with AI... This may take a moment.');
       
-      // Both Gmail and Outlook now use Edge Functions
       await fetchPriorityInbox(activeProvider);
       toast.success(`${activeProvider === 'gmail' ? 'Gmail' : 'Outlook'} inbox analyzed! Your emails are now prioritized.`);
     } catch (error) {

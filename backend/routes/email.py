@@ -4,6 +4,7 @@ Extracted from server.py. Includes token helpers and all email-related routes.
 """
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
+from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone, timedelta
 import os
@@ -12,7 +13,9 @@ import asyncio
 import logging
 import re
 import jwt
+import uuid
 from urllib.parse import quote
+from dateutil import parser as dateutil_parser
 
 import httpx
 from core.llm_router import llm_chat
@@ -31,13 +34,16 @@ from supabase_email_helpers import (
     delete_user_calendar_events_supabase,
     get_user_calendar_events_supabase,
     find_email_by_id_supabase,
+    delete_user_sync_jobs_supabase,
 )
 from supabase_intelligence_helpers import (
     get_email_intelligence_supabase, update_email_intelligence_supabase,
     get_priority_analysis_supabase, update_priority_analysis_supabase,
     get_business_profile_supabase,
+    update_calendar_intelligence_supabase,
 )
 from config.urls import get_backend_url, get_frontend_url
+from biqc_jobs import enqueue_job
 
 JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'fallback-secret')
 
@@ -46,8 +52,8 @@ router = APIRouter()
 
 def _get_oauth_base_url() -> str:
     """Get the custom domain base URL for OAuth redirects.
-    On Emergent deployments, env vars resolve to *.emergent.host which OAuth providers reject.
-    This function strips the internal domain and returns the public custom domain."""
+    In some internal preview environments, env vars resolve to *.emergent.host which OAuth providers reject.
+    This function strips internal preview domains and returns the public custom domain."""
     url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
     if '.emergent.host' in url:
         url = url.replace('.emergent.host', '.com')
@@ -67,6 +73,72 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 # Prompt fallbacks
 _EMAIL_PRIORITY_FALLBACK = "You are a strategic business email analyst. Always respond with valid JSON only."
 _EMAIL_REPLY_FALLBACK = "You are BIQC, a decisive business intelligence advisor. Generate concise, action-oriented email replies."
+
+
+class CalendarEventCreateRequest(BaseModel):
+    title: str
+    summary: Optional[str] = None
+    start_at: str
+    end_at: str
+    location: Optional[str] = None
+    attendee_emails: Optional[List[str]] = None
+
+
+def _heuristic_priority(email: Dict[str, Any]) -> Dict[str, Any]:
+    subject = str(email.get("subject") or "")
+    preview = str(email.get("body_preview") or "")
+    combined = f"{subject} {preview}".lower()
+
+    high_tokens = ["urgent", "overdue", "invoice", "payment", "contract", "deadline", "escalat", "proposal", "quote"]
+    medium_tokens = ["meeting", "follow up", "follow-up", "review", "update", "decision", "client"]
+
+    if any(token in combined for token in high_tokens):
+        priority = "high"
+        reason = "Contains urgency, commercial risk, or deadline language."
+        action = "Review today and send a decisive reply or escalation."
+    elif any(token in combined for token in medium_tokens):
+        priority = "medium"
+        reason = "Requires owner attention but is not obviously time-critical."
+        action = "Review this cycle and confirm next step or owner."
+    else:
+        priority = "low"
+        reason = "Appears informational and can be triaged after urgent items."
+        action = "Archive, delegate, or batch with other low-priority messages."
+
+    return {
+        "priority": priority,
+        "reason": reason,
+        "suggested_action": action,
+        "action_item": None,
+        "due_date": None,
+    }
+
+
+def _normalize_priority_response(priority_analysis: Dict[str, Any], recent_emails: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def enrich_priority(items):
+        enriched = []
+        for item in items:
+            idx = int(item.get("email_index", 1) or 1) - 1
+            if 0 <= idx < len(recent_emails):
+                email = recent_emails[idx]
+                enriched.append({
+                    **item,
+                    "email_id": email.get("id"),
+                    "from": email.get("from_name") or email.get("from_address"),
+                    "subject": email.get("subject"),
+                    "received": email.get("received_date"),
+                    "snippet": email.get("body_preview") or "",
+                })
+        return enriched
+
+    normalized = dict(priority_analysis or {})
+    normalized.setdefault("high_priority", [])
+    normalized.setdefault("medium_priority", [])
+    normalized.setdefault("low_priority", [])
+    normalized["high_priority"] = enrich_priority(normalized.get("high_priority", []))
+    normalized["medium_priority"] = enrich_priority(normalized.get("medium_priority", []))
+    normalized["low_priority"] = enrich_priority(normalized.get("low_priority", []))
+    return normalized
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -221,10 +293,10 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     user_id = current_user['id']
     
     # CRITICAL: Force custom domain for OAuth redirect URI
-    # On Emergent deployments, all domains resolve to *.emergent.host internally
+    # In some preview environments, domains resolve to *.emergent.host internally
     # But Azure/Google only accept the custom domain
     base_url = _get_oauth_base_url()
-    # Strip emergent.host — always use the custom domain
+    # Strip internal preview host — always use the custom domain
     if '.emergent.host' in base_url:
         base_url = base_url.replace('.emergent.host', '.com')
     if 'preview.emergentagent.com' in base_url:
@@ -233,7 +305,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     logger.info(f"📧 Outlook OAuth redirect_uri: {redirect_uri}")
     
     # URL encode parameters to prevent malformed URLs
-    scope = "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
+    scope = "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
     encoded_redirect = quote(redirect_uri, safe='')
     encoded_scope = quote(scope, safe='')
     
@@ -663,7 +735,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         "code": code,
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code",
-        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
+        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
     }
     
     logger.info(f"Outlook callback: exchanging code for tokens")
@@ -934,14 +1006,27 @@ async def comprehensive_outlook_sync(current_user: dict = Depends(get_current_us
     }
     await create_sync_job_supabase(get_sb(), job_doc)
     
-    # Start background sync
-    import asyncio
-    asyncio.create_task(run_comprehensive_email_analysis(user_id, job_id))
-    
+    queued = await enqueue_job(
+        "email-analysis",
+        {"user_id": user_id, "job_id": job_id, "workspace_id": user_id},
+        company_id=user_id,
+        window_seconds=120,
+    )
+
+    if queued.get("queued"):
+        return {
+            "status": "queued",
+            "job_type": "email-analysis",
+            "job_id": queued.get("job_id") or job_id,
+            "message": "Comprehensive email analysis queued. This will take 5-10 minutes.",
+            "expected_duration": "5-10 minutes"
+        }
+
+    await run_comprehensive_email_analysis(user_id, job_id)
     return {
         "status": "started",
         "job_id": job_id,
-        "message": "Comprehensive email analysis started. This will take 5-10 minutes. I'll notify you when complete.",
+        "message": "Comprehensive email analysis started inline because Redis is unavailable.",
         "expected_duration": "5-10 minutes"
     }
 
@@ -954,7 +1039,7 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
         
         if not tokens or not tokens.get("access_token"):
             await update_sync_job_supabase(
-                supabase_admin,
+                get_sb(),
                 job_id,
                 {"status": "failed", "error_message": "No access token", "completed_at": datetime.now(timezone.utc).isoformat()}
             )
@@ -972,8 +1057,6 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
         async with httpx.AsyncClient(timeout=30) as client:
             folders_response = await client.get(folders_url, headers=headers)
             folders_data = folders_response.json()
-        
-        all_folders = folders_data.get("value", [])
         
         # ========================================
         # PHASE 1 INGESTION PROTOCOL
@@ -993,7 +1076,6 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
         
         total_emails = 0
         emails_by_sender = {}
-        emails_by_topic = {}
         client_communications = []
         
         # Process each folder
@@ -1090,7 +1172,7 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
                 "insights_generated": 0
             }
             await update_sync_job_supabase(
-                supabase_admin,
+                get_sb(),
                 job_id,
                 {"progress": current_progress}
             )
@@ -1118,7 +1200,7 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
     except Exception as e:
         logger.error(f"Comprehensive sync error: {e}")
         await update_sync_job_supabase(
-            supabase_admin,
+            get_sb(),
             job_id,
             {
                 "status": "failed",
@@ -1250,7 +1332,7 @@ async def refresh_outlook_token_supabase(user_id: str, refresh_token: str) -> Di
         "client_secret": AZURE_CLIENT_SECRET,
         "refresh_token": refresh_token,
         "grant_type": "refresh_token",
-        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic"
+        "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
     }
     
     logger.info(f"🔄 Refreshing Outlook token for user {user_id}")
@@ -1602,6 +1684,90 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
     }
 
 
+@router.post("/outlook/calendar/create")
+async def create_calendar_event(
+    payload: CalendarEventCreateRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a follow-up event in Outlook Calendar."""
+    tokens = await get_outlook_tokens(current_user["id"])
+    if not tokens:
+        raise HTTPException(status_code=400, detail="Outlook not connected")
+
+    access_token = tokens.get("access_token")
+    refresh_token = tokens.get("refresh_token")
+    if not access_token:
+        raise HTTPException(status_code=400, detail="Outlook token unavailable")
+
+    expires_at = tokens.get("expires_at") or tokens.get("token_expiry")
+    if expires_at:
+        try:
+            expiry_dt = datetime.fromisoformat(str(expires_at).replace("Z", "+00:00"))
+            if expiry_dt <= datetime.now(timezone.utc) + timedelta(minutes=1):
+                if refresh_token:
+                    refreshed = await refresh_outlook_token_supabase(current_user["id"], refresh_token)
+                    access_token = refreshed.get("access_token") or access_token
+                else:
+                    raise HTTPException(status_code=401, detail="Outlook token expired. Please reconnect Outlook.")
+        except HTTPException:
+            raise
+        except Exception:
+            pass
+
+    try:
+        start_dt = datetime.fromisoformat(payload.start_at.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(payload.end_at.replace("Z", "+00:00"))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid calendar date payload")
+
+    if end_dt <= start_dt:
+        raise HTTPException(status_code=400, detail="Calendar event end must be after start")
+
+    attendees = []
+    for email in payload.attendee_emails or []:
+        if not email:
+            continue
+        attendees.append({
+            "emailAddress": {"address": email},
+            "type": "required",
+        })
+
+    body_content = payload.summary or "BIQc follow-up event"
+    event_payload = {
+        "subject": payload.title,
+        "body": {"contentType": "HTML", "content": body_content.replace("\n", "<br/>")},
+        "start": {"dateTime": start_dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"), "timeZone": "UTC"},
+        "end": {"dateTime": end_dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"), "timeZone": "UTC"},
+        "location": {"displayName": payload.location or "BIQc follow-up"},
+        "attendees": attendees,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post("https://graph.microsoft.com/v1.0/me/events", headers=headers, json=event_payload)
+        if response.status_code == 401 and refresh_token:
+            refreshed = await refresh_outlook_token_supabase(current_user["id"], refresh_token)
+            access_token = refreshed.get("access_token") or access_token
+            headers["Authorization"] = f"Bearer {access_token}"
+            response = await client.post("https://graph.microsoft.com/v1.0/me/events", headers=headers, json=event_payload)
+        if response.status_code not in {200, 201}:
+            raise HTTPException(status_code=400, detail=f"Failed to create Outlook event: {response.text}")
+        data = response.json()
+
+    return {
+        "status": "created",
+        "event_id": data.get("id"),
+        "web_link": data.get("webLink"),
+        "subject": data.get("subject"),
+        "start": data.get("start", {}).get("dateTime"),
+        "end": data.get("end", {}).get("dateTime"),
+    }
+
+
 # ==================== SMART EMAIL INTELLIGENCE ====================
 
 @router.post("/email/analyze-priority")
@@ -1669,7 +1835,7 @@ Return ONLY valid JSON, no markdown."""
 
     try:
         email_sys = await get_prompt("email_priority_analysis_v1", _EMAIL_PRIORITY_FALLBACK)
-        response = await llm_chat(system_message=email_sys, user_message=priority_prompt, model=AI_MODEL, api_key=OPENAI_KEY)
+        response = await llm_chat(system_message=email_sys, user_message=priority_prompt, model="gpt-4o-mini", api_key=OPENAI_KEY)
         
         # Parse AI response
         import json
@@ -1684,26 +1850,7 @@ Return ONLY valid JSON, no markdown."""
             else:
                 priority_analysis = {"error": "Could not parse AI response", "raw": response[:500]}
         
-        # Enrich with email details
-        def enrich_priority(items):
-            enriched = []
-            for item in items:
-                idx = item.get("email_index", 1) - 1
-                if 0 <= idx < len(recent_emails):
-                    email = recent_emails[idx]
-                    enriched.append({
-                        **item,
-                        "email_id": email.get("id"),
-                        "from": email.get("from_name") or email.get("from_address"),
-                        "subject": email.get("subject"),
-                        "received": email.get("received_date")
-                    })
-            return enriched
-        
-        if "high_priority" in priority_analysis:
-            priority_analysis["high_priority"] = enrich_priority(priority_analysis.get("high_priority", []))
-            priority_analysis["medium_priority"] = enrich_priority(priority_analysis.get("medium_priority", []))
-            priority_analysis["low_priority"] = enrich_priority(priority_analysis.get("low_priority", []))
+        priority_analysis = _normalize_priority_response(priority_analysis, recent_emails)
         
         # Store analysis in Supabase
         analysis_data = {
@@ -1716,7 +1863,24 @@ Return ONLY valid JSON, no markdown."""
         
     except Exception as e:
         logger.error(f"Email priority analysis error: {e}")
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        heuristic = {"high_priority": [], "medium_priority": [], "low_priority": []}
+        for idx, email in enumerate(recent_emails[:20]):
+            classified = _heuristic_priority(email)
+            heuristic[f"{classified['priority']}_priority"].append({
+                "email_index": idx + 1,
+                "reason": classified["reason"],
+                "suggested_action": classified["suggested_action"],
+                "action_item": classified["action_item"],
+                "due_date": classified["due_date"],
+            })
+        heuristic["strategic_insights"] = "AI classification is temporarily degraded, so BIQc used deterministic priority rules based on urgency, commercial risk, and response signals."
+        normalized = _normalize_priority_response(heuristic, recent_emails)
+        analysis_data = {
+            "analysis": normalized,
+            "emails_analyzed": len(recent_emails),
+        }
+        await update_priority_analysis_supabase(get_sb(), user_id, analysis_data)
+        return normalized
 
 
 @router.post("/email/suggest-reply/{email_id}")
@@ -1833,7 +1997,7 @@ Return ONLY valid JSON in this exact format:
 
         # 6. Generate with LLM
         reply_sys = await get_prompt("email_reply_generator_v1", _EMAIL_REPLY_FALLBACK)
-        response = await llm_chat(system_message=reply_sys, user_message=reply_prompt, model=AI_MODEL, api_key=OPENAI_KEY)
+        response = await llm_chat(system_message=reply_sys, user_message=reply_prompt, model="gpt-4o-mini", api_key=OPENAI_KEY)
         
         # 7. Parse response
         import json

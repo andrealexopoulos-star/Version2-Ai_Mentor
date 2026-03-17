@@ -6,6 +6,7 @@ from fastapi import FastAPI, APIRouter, Depends, Request
 from fastapi.security import HTTPBearer
 import os
 import logging
+from contextlib import suppress
 
 from supabase_client import init_supabase
 from core.config import configure_middleware, configure_oauth, init_services, OPENAI_KEY
@@ -35,20 +36,52 @@ app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ═══ SUPABASE INIT ═══
-supabase_admin = init_supabase()
+# ═══ RUNTIME STATE (LAZY INIT FOR AZURE STARTUP STABILITY) ═══
+supabase_admin = None
+services = {}
+cognitive_core = None
 
-# ═══ SERVICE INITIALIZATION ═══
-services = init_services(supabase_admin)
-cognitive_core = services["cognitive_core"]
 
-# ═══ ROUTE DEPS INJECTION ═══
-from routes.deps import init_route_deps
-init_route_deps(supabase_admin, OPENAI_KEY, cognitive_core)
+def _initialize_core_runtime() -> None:
+    """Initialize optional runtime services without blocking app boot."""
+    global supabase_admin, services, cognitive_core
 
-# ═══ PROMPT REGISTRY ═══
-from prompt_registry import init_prompt_registry
-init_prompt_registry(supabase_admin)
+    try:
+        supabase_admin = init_supabase()
+    except Exception as exc:
+        supabase_admin = None
+        logger.warning("Supabase initialization skipped during startup: %s", exc)
+
+    try:
+        from routes.deps import init_route_deps
+        init_route_deps(supabase_admin, OPENAI_KEY, None)
+    except Exception as exc:
+        logger.warning("Route dependency initialization skipped: %s", exc)
+
+    if not supabase_admin:
+        services = {}
+        cognitive_core = None
+        return
+
+    try:
+        services = init_services(supabase_admin) or {}
+        cognitive_core = services.get("cognitive_core")
+    except Exception as exc:
+        services = {}
+        cognitive_core = None
+        logger.warning("Optional service initialization skipped during startup: %s", exc)
+
+    try:
+        from routes.deps import init_route_deps
+        init_route_deps(supabase_admin, OPENAI_KEY, cognitive_core)
+    except Exception as exc:
+        logger.warning("Route dependency refresh skipped: %s", exc)
+
+    try:
+        from prompt_registry import init_prompt_registry
+        init_prompt_registry(supabase_admin)
+    except Exception as exc:
+        logger.warning("Prompt registry initialization skipped: %s", exc)
 
 # ═══ APP CREATION ═══
 app = FastAPI(title="Strategic Advisor API")
@@ -60,6 +93,7 @@ security = HTTPBearer()
 
 # ═══ AUTH HELPERS (kept on server for backward-compat lazy imports from routes) ═══
 from routes.deps import get_current_user
+from biqc_jobs import biqc_jobs
 
 async def get_admin_user(current_user: dict = Depends(get_current_user)):
     from fastapi import HTTPException
@@ -91,7 +125,7 @@ from routes.deps import get_current_user as _deps_get_current_user
 
 @app.get("/health")
 async def root_health():
-    return {"status": "healthy"}
+    return {"status": "ok"}
 
 @api_router.get("/")
 async def api_root():
@@ -99,10 +133,35 @@ async def api_root():
 
 @api_router.get("/health")
 async def api_health():
-    return {"status": "healthy"}
+    return {"status": "ok"}
 
 
-# ═══ VOICE CHAT (REALTIME) — Direct OpenAI, no emergentintegrations ═══
+@app.on_event("startup")
+async def startup_core_runtime():
+    _initialize_core_runtime()
+    app.state.supabase_admin = supabase_admin
+    app.state.services = services
+    app.state.cognitive_core = cognitive_core
+
+
+@app.on_event("startup")
+async def startup_redis_runtime():
+    try:
+        await biqc_jobs.initialize()
+        if biqc_jobs.redis_connected:
+            await biqc_jobs.start_worker()
+    except Exception as exc:
+        logger.warning("Redis runtime skipped during startup: %s", exc)
+    app.state.biqc_jobs = biqc_jobs
+
+
+@app.on_event("shutdown")
+async def shutdown_redis_runtime():
+    with suppress(Exception):
+        await biqc_jobs.shutdown()
+
+
+# ═══ VOICE CHAT (REALTIME) — Direct OpenAI routing ═══
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 voice_router = APIRouter()
 if OPENAI_API_KEY:
@@ -162,7 +221,7 @@ Rules:
             sdp_answer = await llm_realtime_negotiate(sdp_offer.decode(), api_key=OPENAI_API_KEY)
             return JSONResponse(content={"sdp": sdp_answer})
 
-        logger.info("Voice chat initialized (direct OpenAI — no emergentintegrations)")
+        logger.info("Voice chat initialized (direct OpenAI routing)")
     except Exception as e:
         logger.error(f"Failed to initialize voice chat: {e}")
 
@@ -286,10 +345,20 @@ api_router.include_router(cognition_router)
 from routes.tutorials import router as tutorials_router
 api_router.include_router(tutorials_router)
 
+from routes.business_brain import router as business_brain_router
+api_router.include_router(business_brain_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)
 app.include_router(voice_router, prefix="/api/voice")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("server:app", host="0.0.0.0", port=port)
 # This part tells the brain to show the website files
 if os.path.exists("frontend/build"):
     app.mount("/", StaticFiles(directory="frontend/build", html=True), name="frontend")

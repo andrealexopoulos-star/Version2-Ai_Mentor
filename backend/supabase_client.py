@@ -8,10 +8,12 @@ GUARDRAILS:
 """
 import os
 import logging
+from pathlib import Path
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
-load_dotenv()
+ROOT_DIR = Path(__file__).resolve().parent
+load_dotenv(ROOT_DIR / '.env', override=False)
 logger = logging.getLogger(__name__)
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")

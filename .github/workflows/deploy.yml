@@ -8,9 +8,13 @@ env:
   REGISTRY: biqcregistry.azurecr.io
   FRONTEND_IMAGE: biqcregistry.azurecr.io/biqc-frontend
   BACKEND_IMAGE: biqcregistry.azurecr.io/biqc-backend
+  IMAGE_TAG: ${{ github.sha }}
   AZURE_WEBAPP_FRONTEND: biqc-web
   AZURE_WEBAPP_BACKEND: biqc-api
   AZURE_RESOURCE_GROUP: biqc-production
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  BACKEND_HEALTH_URL: https://biqc-api.azurewebsites.net/api/health
+  BACKEND_AUTH_PROBE_URL: https://biqc-api.azurewebsites.net/api/user/integration-status
 
 jobs:
   # ─── BUILD & PUSH FRONTEND ───────────────────────────────────────────────
@@ -20,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Login to Azure Container Registry
         uses: docker/login-action@v3
@@ -30,18 +34,22 @@ jobs:
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build & push frontend image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.frontend
           push: true
           tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
             ${{ env.FRONTEND_IMAGE }}:latest
           build-args: |
             REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}
             REACT_APP_SUPABASE_URL=${{ secrets.REACT_APP_SUPABASE_URL }}
             REACT_APP_SUPABASE_ANON_KEY=${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
             REACT_APP_GOOGLE_CLIENT_ID=${{ secrets.REACT_APP_GOOGLE_CLIENT_ID }}
+
+      - name: Record frontend image tag
+        run: echo "Frontend image = ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}"
 
   # ─── BUILD & PUSH BACKEND ────────────────────────────────────────────────
   build-backend:
@@ -50,7 +58,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Login to Azure Container Registry
         uses: docker/login-action@v3
@@ -66,7 +74,6 @@ jobs:
           WORKDIR /app
           RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
           COPY backend/requirements.txt .
-          RUN pip install --no-cache-dir emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/ || echo "emergentintegrations skipped"
           RUN pip install --no-cache-dir -r requirements.txt
           COPY backend/ .
           EXPOSE 8001
@@ -75,13 +82,17 @@ jobs:
           EOF
 
       - name: Build & push backend image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.backend
           push: true
           tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}
             ${{ env.BACKEND_IMAGE }}:latest
+
+      - name: Record backend image tag
+        run: echo "Backend image = ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}"
 
   # ─── DEPLOY TO AZURE ─────────────────────────────────────────────────────
   deploy:
@@ -91,7 +102,7 @@ jobs:
 
     steps:
       - name: Login to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -100,7 +111,7 @@ jobs:
           az webapp config container set \
             --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --docker-custom-image-name ${{ env.FRONTEND_IMAGE }}:latest \
+            --docker-custom-image-name ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }} \
             --docker-registry-server-url https://${{ env.REGISTRY }} \
             --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
             --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
@@ -110,7 +121,7 @@ jobs:
           az webapp config container set \
             --name ${{ env.AZURE_WEBAPP_BACKEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --docker-custom-image-name ${{ env.BACKEND_IMAGE }}:latest \
+            --docker-custom-image-name ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }} \
             --docker-registry-server-url https://${{ env.REGISTRY }} \
             --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
             --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
@@ -122,6 +133,53 @@ jobs:
       - name: Restart backend
         run: |
           az webapp restart --name ${{ env.AZURE_WEBAPP_BACKEND }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
+
+      - name: Verify frontend image pin
+        run: |
+          LIVE_FRONTEND_IMAGE=$(az webapp config container show \
+            --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
+          echo "Live frontend image: ${LIVE_FRONTEND_IMAGE}"
+          test "${LIVE_FRONTEND_IMAGE}" = "DOCKER|${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+
+      - name: Verify backend image pin
+        run: |
+          LIVE_BACKEND_IMAGE=$(az webapp config container show \
+            --name ${{ env.AZURE_WEBAPP_BACKEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
+          echo "Live backend image: ${LIVE_BACKEND_IMAGE}"
+          test "${LIVE_BACKEND_IMAGE}" = "DOCKER|${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+
+      - name: Smoke test backend health
+        run: |
+          for i in $(seq 1 18); do
+            if curl --fail --silent --show-error ${{ env.BACKEND_HEALTH_URL }} > /tmp/backend_health.json; then
+              echo "Backend health check passed on attempt ${i}"
+              cat /tmp/backend_health.json
+              break
+            fi
+            if [ "$i" -eq 18 ]; then
+              echo "Backend health check failed after retries"
+              exit 1
+            fi
+            echo "Backend not ready yet (attempt ${i}) — retrying in 10s"
+            sleep 10
+          done
+
+      - name: Smoke test frontend + API routing
+        run: |
+          curl --fail --silent --show-error https://biqc.thestrategysquad.com > /tmp/frontend_home.html
+          grep -qi "BIQc" /tmp/frontend_home.html
+
+          API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" ${{ env.BACKEND_AUTH_PROBE_URL }})
+          echo "integration-status probe HTTP ${API_CODE}"
+          if [ "$API_CODE" -ne 401 ] && [ "$API_CODE" -ne 403 ]; then
+            echo "Expected auth-gated API response (401/403) but got ${API_CODE}"
+            cat /tmp/api_probe.json
+            exit 1
+          fi
 
       # ── PERMANENT FIX: Enforce Supabase site_url after every deploy ──────
       - name: Lock Supabase site_url to production

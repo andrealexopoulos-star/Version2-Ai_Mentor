@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 from routes.auth import get_current_user
+from biqc_jobs import enqueue_job
 
 MAX_PAGES = 7
 MAX_DEPTH = 2
@@ -652,11 +653,13 @@ def compute_layered_scores(pages_crawled, total_html, noise_ratio, field_count, 
 # API ENDPOINT
 # ═══════════════════════════════════════════════════════════════
 
-@router.post("/ingestion/hybrid")
-async def run_hybrid_ingestion(req: HybridIngestionRequest, current_user: dict = Depends(get_current_user)):
-    url = req.url.strip()
+async def execute_hybrid_ingestion_job(payload: Dict[str, Any]) -> Dict[str, Any]:
+    url = str(payload.get('url') or '').strip()
     if not url:
-        raise HTTPException(status_code=400, detail="URL required")
+        raise ValueError("URL required")
+    user_id = str(payload.get('user_id') or payload.get('workspace_id') or '')
+    if not user_id:
+        raise ValueError("user_id required")
 
     # Layer A: Hybrid crawl
     crawl = await hybrid_crawl(url)
@@ -670,7 +673,7 @@ async def run_hybrid_ingestion(req: HybridIngestionRequest, current_user: dict =
     try:
         from supabase_client import get_supabase_client
         sb = get_supabase_client()
-        snap = sb.table('intelligence_snapshots').select('cognitive_snapshot').eq('user_id', current_user['id']).order('generated_at', desc=True).limit(1).execute()
+        snap = sb.table('intelligence_snapshots').select('cognitive_snapshot').eq('user_id', user_id).order('generated_at', desc=True).limit(1).execute()
         if snap.data:
             existing_snapshot = snap.data[0].get('cognitive_snapshot')
     except Exception:
@@ -710,7 +713,7 @@ async def run_hybrid_ingestion(req: HybridIngestionRequest, current_user: dict =
         from supabase_client import get_supabase_client
         sb = get_supabase_client()
         session_data = {
-            'workspace_id': current_user['id'],
+            'workspace_id': user_id,
             'target_url': url,
             'canonical_url': crawl['canonical_url'],
             'pages_crawled': crawl['pages_crawled'],
@@ -769,3 +772,36 @@ async def run_hybrid_ingestion(req: HybridIngestionRequest, current_user: dict =
         'failure_codes': crawl.get('failure_codes', []),
         'extraction_status': crawl['status'],
     }
+
+
+@router.post("/ingestion/hybrid")
+async def run_hybrid_ingestion(req: HybridIngestionRequest, current_user: dict = Depends(get_current_user)):
+    url = req.url.strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="URL required")
+
+    queued = await enqueue_job(
+        "website-ingestion",
+        {
+            "mode": "hybrid",
+            "url": url,
+            "user_id": current_user['id'],
+            "workspace_id": current_user['id'],
+        },
+        company_id=current_user['id'],
+        window_seconds=180,
+    )
+
+    if queued.get('queued'):
+        return {
+            'status': 'queued',
+            'job_type': 'website-ingestion',
+            'job_id': queued.get('job_id'),
+            'mode': 'hybrid',
+        }
+
+    return await execute_hybrid_ingestion_job({
+        'url': url,
+        'user_id': current_user['id'],
+        'workspace_id': current_user['id'],
+    })

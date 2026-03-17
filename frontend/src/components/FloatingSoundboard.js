@@ -16,6 +16,14 @@ const DATA_QUERY_PATTERNS = [
   /^how many (deals|leads|contacts|invoices|clients)/i,
   /^(list|give me|pull up) (my |our )?(deals|invoices|pipeline|leads|contacts)/i,
 ];
+
+const getSoundboardErrorMessage = (error) => {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  const reply = error?.response?.data?.reply;
+  if (typeof reply === 'string' && reply.trim()) return reply;
+  return "I'm having trouble connecting. Try again in a moment.";
+};
 function isDataQuery(msg) {
   const lower = msg.trim().toLowerCase();
   return DATA_QUERY_PATTERNS.some(pattern => pattern.test(lower));
@@ -265,8 +273,8 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
 
       // Regular chat
       await sendToChat(fullMessage);
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', text: 'I\'m having trouble connecting. Try again in a moment.' }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'assistant', text: getSoundboardErrorMessage(error) }]);
     } finally {
       setLoading(false);
     }

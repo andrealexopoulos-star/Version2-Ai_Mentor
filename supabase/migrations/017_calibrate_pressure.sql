@@ -3,6 +3,26 @@
 -- Replaces: backend/pressure_calibration.py (300 lines Python)
 -- ═══════════════════════════════════════════════════════════════
 
+CREATE TABLE IF NOT EXISTS decision_pressure (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  domain TEXT NOT NULL,
+  pressure_level TEXT NOT NULL CHECK (pressure_level IN ('LOW', 'MODERATE', 'HIGH', 'CRITICAL')),
+  window_days INT,
+  first_applied_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  basis JSONB NOT NULL DEFAULT '{}'::JSONB,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_decision_pressure_user_active
+  ON decision_pressure(user_id, active, domain);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_decision_pressure_user_domain_active
+  ON decision_pressure(user_id, domain)
+  WHERE active = true;
+
 ALTER TABLE decision_pressure ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN

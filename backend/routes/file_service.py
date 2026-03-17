@@ -21,6 +21,7 @@ router = APIRouter()
 
 from routes.auth import get_current_user
 from guardrails import sanitise_output, log_llm_call_to_db
+from biqc_jobs import enqueue_job
 
 OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "")
 
@@ -37,8 +38,10 @@ class DownloadRequest(BaseModel):
 
 
 def _get_storage():
-    from supabase_client import get_supabase_client
-    return get_supabase_client()
+    # Server-side file generation runs in backend workers without a user JWT.
+    # Use service-role client to avoid Storage/Table RLS write failures.
+    from supabase_client import get_supabase_admin
+    return get_supabase_admin()
 
 
 async def _generate_image(prompt: str, size: str = "1024x1024") -> bytes:
@@ -51,10 +54,19 @@ async def _generate_image(prompt: str, size: str = "1024x1024") -> bytes:
             prompt=prompt,
             n=1,
             size=size,
-            response_format="b64_json",
         )
         import base64
-        return base64.b64decode(response.data[0].b64_json)
+        first = response.data[0]
+        if getattr(first, 'b64_json', None):
+            return base64.b64decode(first.b64_json)
+        image_url = getattr(first, 'url', None)
+        if image_url:
+            import httpx
+            async with httpx.AsyncClient(timeout=60) as http_client:
+                image_response = await http_client.get(image_url)
+                image_response.raise_for_status()
+                return image_response.content
+        raise RuntimeError('OpenAI image response did not contain image data')
     except Exception as e:
         logger.error(f"Image generation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)[:100]}")
@@ -99,9 +111,15 @@ def _upload_to_storage(sb, tenant_id: str, bucket: str, file_name: str, content:
     return path
 
 
-@router.post("/files/generate")
-async def generate_file(req: GenerateFileRequest, current_user: dict = Depends(get_current_user)):
+async def execute_file_generation_job(payload: dict) -> dict:
     """Generate a file (logo, document, report) and store in Supabase Storage."""
+    req = GenerateFileRequest(
+        file_type=str(payload.get('file_type') or ''),
+        prompt=str(payload.get('prompt') or ''),
+        format=str(payload.get('format') or 'png'),
+        conversation_id=str(payload.get('conversation_id') or ''),
+    )
+    current_user = payload.get('current_user') or {'id': payload.get('user_id')}
     tenant_id = current_user['id']
     sb = _get_storage()
     timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
@@ -201,6 +219,40 @@ async def generate_file(req: GenerateFileRequest, current_user: dict = Depends(g
         'download_url': download_url,
         'storage_path': storage_path,
     }
+
+
+@router.post("/files/generate")
+async def generate_file(req: GenerateFileRequest, current_user: dict = Depends(get_current_user)):
+    queued = await enqueue_job(
+        "file-generation",
+        {
+            'file_type': req.file_type,
+            'prompt': req.prompt,
+            'format': req.format,
+            'conversation_id': req.conversation_id,
+            'user_id': current_user.get('id'),
+            'workspace_id': current_user.get('id'),
+            'current_user': {'id': current_user.get('id')},
+        },
+        company_id=current_user.get('id'),
+        window_seconds=180,
+    )
+
+    if queued.get('queued'):
+        return {
+            'status': 'queued',
+            'job_type': 'file-generation',
+            'job_id': queued.get('job_id'),
+        }
+
+    return await execute_file_generation_job({
+        'file_type': req.file_type,
+        'prompt': req.prompt,
+        'format': req.format,
+        'conversation_id': req.conversation_id,
+        'user_id': current_user.get('id'),
+        'current_user': {'id': current_user.get('id')},
+    })
 
 
 @router.get("/files/list")

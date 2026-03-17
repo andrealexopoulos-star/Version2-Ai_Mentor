@@ -6,10 +6,14 @@ import { TrendingUp, TrendingDown, AlertTriangle, Users, BarChart3, DollarSign, 
 import DataConfidence from '../components/DataConfidence';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
+import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { fontFamily } from '../design-system/tokens';
 import { Link, useNavigate } from 'react-router-dom';
+import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import ActionOwnershipCard from '../components/ActionOwnershipCard';
+import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 
 
 const Panel = ({ children, className = '' }) => (
@@ -18,6 +22,7 @@ const Panel = ({ children, className = '' }) => (
 
 const RevenuePage = () => {
   const { cognitive } = useSnapshot();
+  const { session, authState } = useSupabaseAuth();
   const c = cognitive || {};
   const navigate = useNavigate();
   const [deals, setDeals] = useState(null);
@@ -30,16 +35,21 @@ const RevenuePage = () => {
   const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
 
   useEffect(() => {
+    if (authState === AUTH_STATE.LOADING && !session?.access_token) return;
+    if (!session?.access_token) {
+      setLoading(false);
+      return;
+    }
     const fetchData = async () => {
       setSyncProgress(10);
       try {
         setSyncProgress(30);
         const [dealsRes, finRes, scenRes, unifiedRes, cognitionRes] = await Promise.allSettled([
-          apiClient.get('/integrations/crm/deals', { timeout: 8000 }),
-          apiClient.get('/integrations/accounting/summary', { timeout: 8000 }),
-          apiClient.get('/intelligence/scenarios', { timeout: 8000 }),
-          apiClient.get('/unified/revenue', { timeout: 8000 }),
-          apiClient.get('/cognition/revenue', { timeout: 8000 }),
+          apiClient.get('/integrations/crm/deals', { timeout: 20000 }),
+          apiClient.get('/integrations/accounting/summary', { timeout: 20000 }),
+          apiClient.get('/intelligence/scenarios', { timeout: 20000 }),
+          apiClient.get('/unified/revenue', { timeout: 20000 }),
+          apiClient.get('/cognition/revenue', { timeout: 20000 }),
         ]);
         setSyncProgress(80);
         if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
@@ -61,7 +71,7 @@ const RevenuePage = () => {
       } catch {} finally { setLoading(false); setSyncProgress(100); }
     };
     fetchData();
-  }, []);
+  }, [session?.access_token, authState]);
 
   // Get integration timestamps
   const crmIntegration = (integrationStatus?.integrations || []).find(i => i.connected && (i.category||'').toLowerCase() === 'crm');
@@ -79,6 +89,9 @@ const RevenuePage = () => {
 
   const crmConnected = !!crmIntegration;
   const accountingConnected = !!accountingIntegration;
+  const integrationResolved = !integrationLoading && !!integrationStatus;
+  const totalConnectedSystems = integrationStatus?.canonical_truth?.total_connected || 0;
+  const hasAnyConnectedSystem = totalConnectedSystems > 0;
   const hasDeals = deals && deals.length > 0;
   const hasFinancials = financials && financials.connected;
   const totalPipeline = hasDeals ? deals.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0) : null;
@@ -100,6 +113,7 @@ const RevenuePage = () => {
   const bestCase = hasDeals ? openDeals.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0) : null;
   const baseCase = hasDeals ? highProbDeals.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0) + medProbDeals.reduce((s, d) => s + (parseFloat(d.amount) || 0) * 0.5, 0) : null;
   const worstCase = hasDeals ? highProbDeals.reduce((s, d) => s + (parseFloat(d.amount) || 0) * 0.8, 0) : null;
+  const weightedPipeline = hasDeals ? Math.round(openDeals.reduce((sum, deal) => sum + ((parseFloat(deal.amount) || 0) * ((deal.probability || 0) / 100)), 0)) : null;
 
   // Concentration risk — computed from real data
   const dealsByCompany = {};
@@ -119,6 +133,105 @@ const RevenuePage = () => {
   const healthColor = healthScore === 'good' ? '#10B981' : healthScore === 'moderate' ? '#F59E0B' : '#FF6A00';
   const healthPct = winRate != null ? Math.min(Math.round(winRate * 2), 100) : 0;
 
+  const explainability = {
+    whyVisible: hasDeals
+      ? `BIQc is reading ${deals.length} CRM deal${deals.length === 1 ? '' : 's'}${crmIntegration?.provider ? ` from ${crmIntegration.provider}` : ''}${accountingConnected ? ' and your accounting feed' : ''}.`
+      : 'Revenue Engine is waiting for connected CRM/accounting data to compute pipeline health.',
+    whyNow: stalledCount > 0
+      ? `${stalledCount} deal${stalledCount === 1 ? '' : 's'} have stalled for more than 7 days, increasing close-delay risk.`
+      : topClientPct > 40
+        ? `${topClientPct}% of your pipeline is concentrated in one client, increasing downside risk if timing slips.`
+        : 'Pipeline is active; this view helps catch early slippage before revenue misses hit cash.',
+    nextAction: stalledCount > 0
+      ? 'Prioritise stalled deals: assign owner, set a 48-hour follow-up deadline, and unblock approval bottlenecks.'
+      : hasDeals
+        ? 'Review scenario tab, then lock one best-case lever and one downside hedge this week.'
+        : 'Connect CRM first, then accounting, so BIQc can compute velocity, concentration, and cash-linked revenue risk.',
+    ifIgnored: hasDeals
+      ? 'Stalled pipeline and concentration risk can compound into forecast misses, margin pressure, and late cash inflows.'
+      : 'Without connected data, hidden revenue risks stay invisible until they become urgent.',
+  };
+
+  const actionOwnership = {
+    owner: stalledCount > 0 ? 'Sales lead' : topClientPct > 40 ? 'Founder + sales lead' : 'Revenue operations owner',
+    deadline: stalledCount > 0 ? 'Next 48 hours' : 'By end of this week',
+    checkpoint: stalledCount > 0
+      ? `Reduce stalled deals from ${stalledCount} before next pipeline review.`
+      : topClientPct > 40
+        ? `Lower concentration from ${topClientPct}% by expanding top-of-funnel coverage.`
+        : 'Lock one best-case lever and one downside hedge in this cycle.',
+    successMetric: hasDeals
+      ? `Win rate ${winRate ?? '—'}% · active deals ${activeDeals ?? 0}`
+      : 'Connect CRM + Accounting to activate measurable revenue KPIs',
+  };
+
+  const accountingError = financials?.error || '';
+  const overdueInvoices = financials?.summary?.overdue_count || financials?.summary?.overdue_invoices || 0;
+  const overdueValue = financials?.summary?.overdue_total || financials?.summary?.total_overdue || 0;
+  const emailSignals = (c?.top_alerts || []).filter((item) => {
+    const text = `${item?.source || ''} ${item?.signal || ''} ${item?.event || ''}`.toLowerCase();
+    return /(email|outlook|gmail|response)/.test(text);
+  });
+
+  const revenueSignals = [
+    stalledCount > 0 ? {
+      id: 'revenue-stalled-deals',
+      title: `${stalledCount} stalled deal${stalledCount === 1 ? '' : 's'} need owner follow-up`,
+      detail: `These opportunities have had no meaningful movement for more than 7 days, so pipeline timing is slipping.`,
+      action: 'Assign the next conversation owner and lock a 48-hour follow-up window.',
+      source: 'CRM',
+      signalType: 'stalled_deals',
+      timestamp: crmConnectedAt,
+      severity: stalledCount >= 5 ? 'high' : 'medium',
+    } : null,
+    overdueInvoices > 0 ? {
+      id: 'revenue-overdue-invoices',
+      title: `${overdueInvoices} overdue invoice${overdueInvoices === 1 ? '' : 's'} are constraining cash timing`,
+      detail: `Outstanding overdue value is ${new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(Number(overdueValue || 0))}.`,
+      action: 'Escalate the oldest overdue balances and confirm the collections owner for this cycle.',
+      source: 'Accounting',
+      signalType: 'overdue_invoices',
+      timestamp: accountingConnectedAt,
+      severity: Number(overdueInvoices) >= 3 ? 'high' : 'medium',
+    } : null,
+    topClientPct > 40 ? {
+      id: 'revenue-concentration',
+      title: `${topClientPct}% of pipeline value is concentrated in one client`,
+      detail: 'Revenue timing is vulnerable if this account delays or reprioritises.',
+      action: 'Broaden near-term pipeline coverage before the next forecast review.',
+      source: 'CRM',
+      signalType: 'revenue_concentration',
+      timestamp: crmConnectedAt,
+      severity: topClientPct >= 60 ? 'high' : 'warning',
+    } : null,
+    emailSignals[0] ? {
+      id: 'revenue-email-derived',
+      title: emailSignals[0].title || 'Email-derived commercial pressure detected',
+      detail: emailSignals[0].detail || emailSignals[0].description || 'A commercial signal surfaced from customer communications.',
+      action: emailSignals[0].recommendation || 'Review the email-derived signal before it becomes a deal or cash issue.',
+      source: 'Email/Calendar',
+      signalType: 'email_derived_commercial_signal',
+      timestamp: emailSignals[0].created_at,
+      severity: 'warning',
+    } : null,
+    accountingError ? {
+      id: 'revenue-accounting-sync',
+      title: 'Accounting feed needs attention',
+      detail: accountingError,
+      action: 'Reconnect the accounting source so overdue invoices and cash timing are trustworthy again.',
+      source: 'Accounting',
+      signalType: 'accounting_sync_error',
+      timestamp: accountingConnectedAt,
+      severity: 'high',
+    } : null,
+  ].filter(Boolean);
+
+  const sourceHealthRows = [
+    { id: 'crm', label: crmIntegration?.provider || 'CRM', status: crmConnected ? 'Live' : 'Needs connection', detail: crmConnected ? `${activeDeals ?? 0} active opportunities in scope.` : 'Connect CRM to activate pipeline, velocity, and concentration views.' },
+    { id: 'accounting', label: accountingIntegration?.provider || 'Accounting', status: hasFinancials && !accountingError ? 'Live' : (accountingConnected ? 'Attention required' : 'Needs connection'), detail: hasFinancials && !accountingError ? `${overdueInvoices} overdue invoices surfaced in this cycle.` : (accountingError || 'Connect accounting to surface overdue invoices and cash timing.') },
+    { id: 'email', label: 'Email-derived commercial signals', status: emailSignals.length > 0 ? 'Live' : 'Quiet', detail: emailSignals.length > 0 ? `${emailSignals.length} communication-based signal${emailSignals.length === 1 ? '' : 's'} currently feed revenue context.` : 'No email-derived commercial signal is active right now.' },
+  ];
+
   const TABS = [
     { id: 'pipeline', label: 'Pipeline' },
     { id: 'scenarios', label: 'Scenarios' },
@@ -136,7 +249,12 @@ const RevenuePage = () => {
           <div>
             <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1.5" style={{ fontFamily: fontFamily.display }}>Revenue Engine</h1>
             <div className="flex flex-wrap items-center gap-2">
-              {crmConnected ? (
+              {!integrationResolved ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Verifying CRM
+                </span>
+              ) : crmConnected ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
                   style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
                   <CheckCircle2 className="w-3 h-3" />
@@ -146,11 +264,17 @@ const RevenuePage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=crm')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  data-testid="revenue-connect-crm-button">
                   <Plug className="w-3 h-3" /> Connect CRM <ArrowRight className="w-3 h-3" />
                 </button>
               )}
-              {accountingConnected ? (
+              {!integrationResolved ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Verifying Accounting
+                </span>
+              ) : accountingConnected ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
                   style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
                   <CheckCircle2 className="w-3 h-3" />
@@ -160,21 +284,81 @@ const RevenuePage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=financial')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  data-testid="revenue-connect-accounting-button">
                   <Plug className="w-3 h-3" /> Connect Accounting <ArrowRight className="w-3 h-3" />
                 </button>
               )}
             </div>
           </div>
-          <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} />
+          <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
+        </div>
+
+        <InsightExplainabilityStrip
+          whyVisible={explainability.whyVisible}
+          whyNow={explainability.whyNow}
+          nextAction={explainability.nextAction}
+          ifIgnored={explainability.ifIgnored}
+          testIdPrefix="revenue-explainability"
+        />
+
+        <ActionOwnershipCard
+          title="Revenue execution owner plan"
+          owner={actionOwnership.owner}
+          deadline={actionOwnership.deadline}
+          checkpoint={actionOwnership.checkpoint}
+          successMetric={actionOwnership.successMetric}
+          testIdPrefix="revenue-action-ownership"
+        />
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" data-testid="revenue-ux-main-grid">
+          <div className="space-y-4" data-testid="revenue-top-signals-column">
+            <SectionLabel title="What needs intervention now" detail="Every top signal below shows its source clearly so revenue issues are never detached from the system creating them." testId="revenue-top-signals-label" />
+            <div className="grid gap-4 md:grid-cols-2" data-testid="revenue-kpi-hero-grid">
+              <MetricCard label="Pipeline value" value={totalPipeline != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(totalPipeline) : '—'} caption="Open opportunities in the current revenue window" tone="#FF6A00" testId="revenue-pipeline-metric" />
+              <MetricCard label="Weighted pipeline" value={weightedPipeline != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(weightedPipeline) : '—'} caption="Probability-adjusted pipeline value" tone="#3B82F6" testId="revenue-weighted-metric" />
+              <MetricCard label="Win rate" value={winRate != null ? `${winRate}%` : '—'} caption="Closed-won share across visible deals" tone={winRate != null && winRate >= 50 ? '#10B981' : '#F59E0B'} testId="revenue-win-rate-metric" />
+              <MetricCard label="Client concentration" value={topClientPct ? `${topClientPct}%` : '—'} caption="Share of pipeline held by the top client" tone={topClientPct >= 40 ? '#EF4444' : '#10B981'} testId="revenue-concentration-metric" />
+            </div>
+            {revenueSignals.length > 0 ? revenueSignals.slice(0, 3).map((signal) => (
+              <SignalCard key={signal.id} {...signal} testId={signal.id} />
+            )) : (
+              <EmptyStateCard title="No urgent revenue signal is active." detail="The pipeline is calm right now. This page will stay quiet until live CRM, accounting, or email-derived revenue pressure needs action." testId="revenue-top-signals-empty" />
+            )}
+          </div>
+
+          <div className="space-y-4" data-testid="revenue-source-health-column">
+            <SurfaceCard testId="revenue-source-health-card">
+              <SectionLabel title="Source clarity" detail="Revenue is intentionally split by CRM, accounting, and email-derived evidence so the next action is obvious." testId="revenue-source-health-label" />
+              <div className="mt-4 space-y-3" data-testid="revenue-source-health-list">
+                {sourceHealthRows.map((row) => (
+                  <div key={row.id} className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid={`revenue-source-health-${row.id}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>{row.label}</p>
+                      <span className="text-[10px] uppercase tracking-[0.14em] text-[#CBD5E1]" style={{ fontFamily: fontFamily.mono }}>{row.status}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-[#CBD5E1]">{row.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </SurfaceCard>
+          </div>
         </div>
 
         {/* Sync progress bar */}
-        {(loading || syncProgress < 100) && (
+        {(loading || (hasAnyConnectedSystem && syncProgress < 100)) && (
           <div className="rounded-xl p-4" style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.12)' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>
-                {syncProgress < 50 ? 'Connecting to data sources…' : syncProgress < 90 ? 'Importing pipeline data…' : 'Finalising…'}
+                {integrationLoading && !integrationResolved
+                  ? 'Verifying connected systems…'
+                  : !hasAnyConnectedSystem
+                    ? 'Waiting for connected CRM/accounting systems…'
+                    : syncProgress < 50
+                      ? 'Syncing connected revenue sources…'
+                      : syncProgress < 90
+                        ? 'Importing pipeline and financial signals…'
+                        : 'Finalising revenue intelligence…'}
               </span>
               <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{syncProgress}%</span>
             </div>
@@ -190,7 +374,19 @@ const RevenuePage = () => {
           </div>
         )}
 
-        {!loading && !hasDeals && !hasFinancials && (
+        {!loading && integrationLoading && (
+          <Panel>
+            <div className="flex items-start gap-3">
+              <Loader2 className="w-5 h-5 text-[#3B82F6] animate-spin flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.display }}>Verifying your connected systems</p>
+                <p className="text-xs text-[#64748B]">BIQc is checking CRM, accounting, and live pipeline signals before rendering revenue analysis.</p>
+              </div>
+            </div>
+          </Panel>
+        )}
+
+        {!loading && !integrationLoading && !hasDeals && !hasFinancials && (
           <Panel className="py-10">
             {crmConnected || accountingConnected ? (
               <div className="text-center py-4">

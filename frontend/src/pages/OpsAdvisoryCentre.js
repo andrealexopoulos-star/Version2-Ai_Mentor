@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Skeleton } from '../components/ui/skeleton';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
-import { Sparkles, Lock } from 'lucide-react';
+import { Sparkles, Lock, RefreshCw } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
+import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import ActionOwnershipCard from '../components/ActionOwnershipCard';
+
+const Panel = ({ children, className = '' }) => (
+  <div className={`rounded-xl p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+    {children}
+  </div>
+);
 
 const OpsAdvisoryCentre = () => {
   const [loading, setLoading] = useState(true);
@@ -28,79 +34,111 @@ const OpsAdvisoryCentre = () => {
     fetchRecommendations();
   }, []);
 
+  const items = data?.items || [];
+  const firstItem = items[0];
+  const usage = data?.usage || {};
+
+  const explainability = {
+    whyVisible: 'Ops Advisory is generated from your profile, connected operational telemetry, and recent execution signals.',
+    whyNow: firstItem?.reason || 'Advisories are refreshed continuously as new operational data enters BIQc.',
+    nextAction: firstItem?.actions?.[0] || 'Assign one owner to the top recommendation and execute within this operating cycle.',
+    ifIgnored: 'Execution drift can compound into service slippage, rework, and customer trust decline.',
+  };
+
+  const actionOwnership = {
+    owner: 'Operations lead',
+    deadline: 'Within 48 hours',
+    checkpoint: firstItem?.title || 'Complete first advisory recommendation and review status in next stand-up.',
+    successMetric: `Recommendations used ${usage.used || 0}/${usage.limit || 0}`,
+  };
+
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-5xl animate-fade-in">
+      <div className="space-y-6 max-w-[1200px] animate-fade-in" data-testid="ops-advisory-page" style={{ fontFamily: fontFamily.body }}>
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
-            <span className="badge badge-primary">Daily Insights</span>
+            <Sparkles className="w-5 h-5" style={{ color: '#FF6A00' }} />
+            <span className="text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="ops-advisory-badge">Ops Advisory</span>
           </div>
-          <h1 style={{ color: 'var(--text-primary)' }}>Strategic Intelligence</h1>
-          <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
+          <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }} data-testid="ops-advisory-title">Strategic Intelligence</h1>
+          <p className="mt-2 text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }} data-testid="ops-advisory-subtitle">
             Evidence-backed strategic intelligence based on your profile and recent activity
           </p>
         </div>
 
+        <InsightExplainabilityStrip
+          whyVisible={explainability.whyVisible}
+          whyNow={explainability.whyNow}
+          nextAction={explainability.nextAction}
+          ifIgnored={explainability.ifIgnored}
+          testIdPrefix="ops-advisory-explainability"
+        />
+
+        <ActionOwnershipCard
+          title="Ops advisory owner plan"
+          owner={actionOwnership.owner}
+          deadline={actionOwnership.deadline}
+          checkpoint={actionOwnership.checkpoint}
+          successMetric={actionOwnership.successMetric}
+          testIdPrefix="ops-advisory-action-ownership"
+        />
+
         {loading ? (
-          <Card className="card">
-            <CardHeader>
-              <Skeleton className="h-5 w-48" />
-              <Skeleton className="h-4 w-80" />
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-[92%]" />
-              <Skeleton className="h-4 w-[86%]" />
-            </CardContent>
-          </Card>
+          <Panel data-testid="ops-advisory-loading-panel">
+            <div className="space-y-3 animate-pulse">
+              <div className="h-5 w-52 rounded" style={{ background: '#1E2D3D' }} />
+              <div className="h-4 w-80 rounded" style={{ background: '#1E2D3D' }} />
+              <div className="h-4 w-full rounded" style={{ background: '#1E2D3D' }} />
+              <div className="h-4 w-[88%] rounded" style={{ background: '#1E2D3D' }} />
+            </div>
+          </Panel>
         ) : data?.locked ? (
-          <Card className="card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                Upgrade to unlock more recommendations
-              </CardTitle>
-              <CardDescription>
-                You&apos;ve reached your monthly limit for your current plan.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <Panel data-testid="ops-advisory-locked-panel">
+            <div className="flex items-start gap-3 mb-3">
+              <Lock className="w-4 h-4 mt-0.5" style={{ color: '#FF6A00' }} />
+              <div>
+                <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Upgrade to unlock more recommendations</h3>
+                <p className="text-xs mt-1" style={{ color: '#9FB0C3' }}>You&apos;ve reached your monthly limit for your current plan.</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="text-sm" style={{ color: '#9FB0C3' }}>
                 Used {data?.usage?.used || 0} of {data?.usage?.limit || 0} this month.
               </div>
-              <Button className="btn-primary" onClick={() => (window.location.href = '/pricing')}>
+              <Link to="/upgrade" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold" style={{ background: '#FF6A00', color: '#fff' }} data-testid="ops-advisory-view-plans-button">
                 View Plans
-              </Button>
-            </CardContent>
-          </Card>
+              </Link>
+            </div>
+          </Panel>
         ) : (
           <>
-            <Card className="card">
-              <CardHeader>
-                <CardTitle>Recommendations</CardTitle>
-                <CardDescription>
+            <Panel data-testid="ops-advisory-recommendations-panel">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Recommendations</h2>
+                <p className="text-xs mt-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
                   {data?.meta?.date ? `Generated for ${data.meta.date}` : 'Generated today'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+                </p>
+              </div>
+
+              <div>
                 <div className="space-y-3">
-                  {(data?.items || []).map((item, idx) => (
+                  {items.map((item, idx) => (
                     <div
                       key={idx}
                       className="p-4 rounded-xl"
-                      style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
+                      style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
+                      data-testid={`ops-advisory-item-${idx}`}
                     >
-                      <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      <div className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
                         {item.title}
                       </div>
                       {item.reason && (
-                        <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                        <div className="text-sm mt-1 break-words" style={{ color: '#9FB0C3' }}>
                           {item.reason}
                         </div>
                       )}
                       {item.actions?.length ? (
-                        <ul className="mt-3 list-disc pl-5 space-y-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        <ul className="mt-3 list-disc pl-5 space-y-1 text-sm" style={{ color: '#9FB0C3' }}>
                           {item.actions.map((a, i) => (
                             <li key={i}>{a}</li>
                           ))}
@@ -108,33 +146,29 @@ const OpsAdvisoryCentre = () => {
                       ) : null}
 
                       {(item.why || item.citations?.length) ? (
-                        <div className="mt-4">
-                          <Accordion type="single" collapsible>
-                            <AccordionItem value={`why-${idx}`}>
-                              <AccordionTrigger className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                                Why?
-                              </AccordionTrigger>
-                              <AccordionContent>
+                        <details className="mt-4" data-testid={`ops-advisory-item-details-${idx}`}>
+                          <summary className="text-sm cursor-pointer" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>Why this recommendation?</summary>
+                          <div className="pt-2">
                                 {item.why ? (
-                                  <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                  <div className="text-sm break-words" style={{ color: '#9FB0C3' }}>
                                     {item.why}
                                   </div>
                                 ) : null}
 
                                 {item.confidence ? (
-                                  <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                                  <div className="text-xs mt-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
                                     Confidence: {item.confidence}
                                   </div>
                                 ) : null}
 
                                 {item.citations?.length ? (
                                   <div className="mt-3">
-                                    <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Sources</div>
+                                    <div className="text-xs font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources</div>
                                     <ul className="mt-2 space-y-2">
                                       {item.citations.map((c, i) => (
                                         <li key={i} className="text-sm">
-                                          <div style={{ color: 'var(--text-secondary)' }}>
-                                            <span className="mr-2 text-xs" style={{ color: 'var(--text-muted)' }}>[{c.source_type}]</span>
+                                          <div style={{ color: '#9FB0C3' }}>
+                                            <span className="mr-2 text-xs" style={{ color: '#64748B' }}>[{c.source_type}]</span>
                                             {c.url ? (
                                               <a href={c.url} target="_blank" rel="noreferrer" className="underline">
                                                 {c.title || c.url}
@@ -144,7 +178,7 @@ const OpsAdvisoryCentre = () => {
                                             )}
                                           </div>
                                           {c.snippet ? (
-                                            <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                                            <div className="text-xs mt-1 break-words" style={{ color: '#64748B' }}>
                                               {c.snippet}
                                             </div>
                                           ) : null}
@@ -153,24 +187,25 @@ const OpsAdvisoryCentre = () => {
                                     </ul>
                                   </div>
                                 ) : null}
-                              </AccordionContent>
-                            </AccordionItem>
-                          </Accordion>
-                        </div>
+                          </div>
+                        </details>
                       ) : null}
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </Panel>
 
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              <div className="text-sm" style={{ color: '#64748B', fontFamily: fontFamily.mono }} data-testid="ops-advisory-usage-info">
                 Used {data?.usage?.used || 0} of {data?.usage?.limit || 0} recommendations this month.
               </div>
-              <Button className="btn-secondary" onClick={fetchRecommendations}>
-                Refresh
-              </Button>
+              <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold"
+                style={{ background: '#243140', color: '#F4F7FA', border: '1px solid #334155' }}
+                onClick={fetchRecommendations}
+                data-testid="ops-advisory-refresh-button">
+                <RefreshCw className="w-3.5 h-3.5" /> Refresh
+              </button>
             </div>
           </>
         )}

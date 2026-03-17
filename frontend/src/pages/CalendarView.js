@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar as CalendarIcon, RefreshCw, Users, Clock, 
   MapPin, Loader2, Video, TrendingUp, AlertCircle
@@ -10,10 +11,31 @@ import {
 import DashboardLayout from '../components/DashboardLayout';
 
 const CalendarView = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [calendarIntel, setCalendarIntel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [advisorDraft, setAdvisorDraft] = useState(() => {
+    let initial = location.state?.advisorFollowUp || null;
+    if (!initial) {
+      try {
+        const stored = sessionStorage.getItem('biqc_calendar_draft');
+        initial = stored ? JSON.parse(stored) : null;
+      } catch {
+        initial = null;
+      }
+    }
+    if (!initial) return null;
+    return {
+      title: initial.title || 'BIQc follow-up',
+      summary: `${initial.summary || ''}${initial.whyNow ? `\n\nWhy now: ${initial.whyNow}` : ''}${initial.ifIgnored ? `\n\nIf ignored: ${initial.ifIgnored}` : ''}${initial.sourceSummary ? `\n\n${initial.sourceSummary}` : ''}`.trim(),
+      startAt: initial.startAt || new Date().toISOString(),
+      endAt: initial.endAt || new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    };
+  });
 
   useEffect(() => {
     fetchCalendarData();
@@ -81,9 +103,87 @@ const CalendarView = () => {
   const groupedEvents = groupEventsByDate(events);
   const today = new Date().toISOString().split('T')[0];
 
+  const createDraftEvent = async () => {
+    if (!advisorDraft) return;
+    setDraftSaving(true);
+    try {
+      const response = await apiClient.post('/outlook/calendar/create', {
+        title: advisorDraft.title,
+        summary: advisorDraft.summary,
+        start_at: advisorDraft.startAt,
+        end_at: advisorDraft.endAt,
+      }, { timeout: 20000 });
+      toast.success(`Follow-up created${response?.data?.subject ? `: ${response.data.subject}` : ''}`);
+      try { sessionStorage.removeItem('biqc_calendar_draft'); } catch {}
+      setAdvisorDraft(null);
+      navigate(location.pathname, { replace: true, state: {} });
+      await fetchCalendarData();
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Failed to create follow-up event.');
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl animate-fade-in">
+        {advisorDraft && (
+          <div className="p-5 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,106,0,0.25)' }} data-testid="calendar-advisor-draft-card">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="max-w-3xl">
+                <p className="text-xs uppercase tracking-[0.14em] mb-2" style={{ color: '#FF6A00' }}>Advisor follow-up draft</p>
+                <input
+                  value={advisorDraft.title}
+                  onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, title: event.target.value }))}
+                  className="w-full bg-transparent text-lg font-semibold outline-none"
+                  style={{ color: 'var(--text-primary)' }}
+                  data-testid="calendar-advisor-draft-title"
+                />
+                <textarea
+                  value={advisorDraft.summary}
+                  onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, summary: event.target.value }))}
+                  className="mt-3 w-full rounded-lg bg-transparent p-0 text-sm outline-none"
+                  style={{ color: 'var(--text-secondary)', minHeight: '110px' }}
+                  data-testid="calendar-advisor-draft-summary"
+                />
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <label className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    Start
+                    <input
+                      type="datetime-local"
+                      value={advisorDraft.startAt ? advisorDraft.startAt.slice(0, 16) : ''}
+                      onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, startAt: new Date(event.target.value).toISOString() }))}
+                      className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                      style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
+                      data-testid="calendar-advisor-draft-start"
+                    />
+                  </label>
+                  <label className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    End
+                    <input
+                      type="datetime-local"
+                      value={advisorDraft.endAt ? advisorDraft.endAt.slice(0, 16) : ''}
+                      onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, endAt: new Date(event.target.value).toISOString() }))}
+                      className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                      style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
+                      data-testid="calendar-advisor-draft-end"
+                    />
+                  </label>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button onClick={createDraftEvent} disabled={draftSaving} className="btn-primary" data-testid="calendar-advisor-draft-create">
+                  {draftSaving ? 'Creating…' : 'Create follow-up event'}
+                </Button>
+                <Button variant="outline" onClick={() => { try { sessionStorage.removeItem('biqc_calendar_draft'); } catch {} setAdvisorDraft(null); navigate(location.pathname, { replace: true, state: {} }); }} data-testid="calendar-advisor-draft-dismiss">
+                  Dismiss draft
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>

@@ -75,6 +75,9 @@ const AdminDashboard = () => {
   const [search, setSearch] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
   const [healthData, setHealthData] = useState(null);
+  const [rateLimitDetail, setRateLimitDetail] = useState(null);
+  const [rateLimitDefaults, setRateLimitDefaults] = useState(null);
+  const [rateLimitSaving, setRateLimitSaving] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -87,6 +90,7 @@ const AdminDashboard = () => {
       ]);
       setUsers(usersRes.data.users || usersRes.data || []);
       setStats(statsRes.data);
+      try { const rl = await apiClient.get('/admin/rate-limits/defaults'); setRateLimitDefaults(rl.data); } catch {}
       // Load health
       try { const h = await apiClient.get('/health/detailed'); setHealthData(h.data); } catch {}
     } catch {} finally { setLoading(false); }
@@ -96,20 +100,68 @@ const AdminDashboard = () => {
     setSelectedUser(userId);
     setLoadingDetail(true);
     try {
-      const [bp, uop, integrations, snapshots, signals] = await Promise.all([
+      const [bp, uop, integrations, snapshots, signals, rateLimits] = await Promise.all([
         supabase.from('business_profiles').select('*').eq('user_id', userId).maybeSingle(),
         supabase.from('user_operator_profile').select('persona_calibration_status, agent_persona, updated_at').eq('user_id', userId).maybeSingle(),
         supabase.from('integration_accounts').select('provider, category, connected_at').eq('user_id', userId),
         supabase.from('intelligence_snapshots').select('snapshot_type, generated_at').eq('user_id', userId).order('generated_at', { ascending: false }).limit(5),
         supabase.from('observation_events').select('id', { count: 'exact' }).eq('user_id', userId),
+        apiClient.get(`/admin/users/${userId}/rate-limits`).catch(() => ({ data: null })),
       ]);
       setUserDetail({ business_profile: bp.data, operator_profile: uop.data, integrations: integrations.data || [], snapshots: snapshots.data || [], signal_count: signals.count || 0 });
+      setRateLimitDetail(rateLimits.data);
     } catch {} finally { setLoadingDetail(false); }
   };
 
   const suspendUser = async (uid) => { if (!window.confirm('Suspend?')) return; setActionLoading(uid); try { await apiClient.post(`/admin/users/${uid}/suspend`); toast.success('Suspended'); loadData(); } catch { toast.error('Failed'); } finally { setActionLoading(null); } };
   const unsuspendUser = async (uid) => { setActionLoading(uid); try { await apiClient.post(`/admin/users/${uid}/unsuspend`); toast.success('Unsuspended'); loadData(); } catch { toast.error('Failed'); } finally { setActionLoading(null); } };
   const impersonateUser = async (uid) => { try { const res = await apiClient.post(`/admin/users/${uid}/impersonate`); const tk = res.data?.token || res.data?.access_token; if (!tk) return; const { data: { session } } = await supabase.auth.getSession(); if (session?.access_token) { localStorage.setItem('biqc_admin_token_backup', session.access_token); } await supabase.auth.setSession({ access_token: tk, refresh_token: res.data?.refresh_token || tk }); window.location.href = '/advisor'; } catch { toast.error('Failed'); } };
+  const changeRateLimit = (feature, field, value) => {
+    setRateLimitDetail(prev => ({
+      ...prev,
+      overrides: {
+        ...(prev?.overrides || {}),
+        [feature]: {
+          ...(prev?.overrides?.[feature] || prev?.effective?.[feature] || {}),
+          [field]: value === '' ? null : Number(value),
+        },
+      },
+    }));
+  };
+  const saveRateLimits = async () => {
+    if (!selectedUser || !rateLimitDetail?.overrides) return;
+    setRateLimitSaving(true);
+    try {
+      const res = await apiClient.put(`/admin/users/${selectedUser}/rate-limits`, { overrides: rateLimitDetail.overrides });
+      setRateLimitDetail(res.data);
+      toast.success('Rate limits updated');
+    } catch {
+      toast.error('Failed to save rate limits');
+    } finally { setRateLimitSaving(false); }
+  };
+  const resetMonthlyUsage = async () => {
+    if (!selectedUser || !window.confirm('Reset this user\'s current month AI usage?')) return;
+    setRateLimitSaving(true);
+    try {
+      await apiClient.post(`/admin/users/${selectedUser}/rate-limits/reset-month`);
+      const res = await apiClient.get(`/admin/users/${selectedUser}/rate-limits`);
+      setRateLimitDetail(res.data);
+      toast.success('Current month usage reset');
+    } catch {
+      toast.error('Failed to reset usage');
+    } finally { setRateLimitSaving(false); }
+  };
+  const resetRateOverrides = async () => {
+    if (!selectedUser || !window.confirm('Reset this user to tier default rate limits?')) return;
+    setRateLimitSaving(true);
+    try {
+      const res = await apiClient.delete(`/admin/users/${selectedUser}/rate-limits`);
+      setRateLimitDetail(res.data);
+      toast.success('Rate limit overrides cleared');
+    } catch {
+      toast.error('Failed to reset rate limits');
+    } finally { setRateLimitSaving(false); }
+  };
 
   const filteredUsers = users.filter(u => !search || [u.email, u.full_name, u.company_name].some(v => (v || '').toLowerCase().includes(search.toLowerCase())));
   const su = users.find(u => u.id === selectedUser);
@@ -227,6 +279,62 @@ const AdminDashboard = () => {
                             <span className="text-xs block" style={{ fontFamily: M, color: c }}>{v}</span>
                           </div>
                         ))}
+                      </div>
+                    )}
+                    {rateLimitDetail && (
+                      <div className="space-y-3 mb-4" style={{ borderTop: '1px solid var(--biqc-border)', paddingTop: 12 }}>
+                        <div>
+                          <span className="text-[10px] text-[#64748B] uppercase" style={{ fontFamily: M }}>AI Rate Limits</span>
+                          <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: B }}>
+                            Tier: {rateLimitDetail.tier} {rateLimitDetail.admin_bypass ? '• Andre bypass active' : '• monthly quota + burst window'}
+                          </p>
+                        </div>
+                        {Object.entries(rateLimitDetail.feature_labels || {}).map(([feature, label]) => {
+                          const effective = rateLimitDetail.effective?.[feature] || {};
+                          const defaults = rateLimitDetail.defaults?.[feature] || rateLimitDefaults?.tiers?.[rateLimitDetail.tier]?.[feature] || {};
+                          const usage = rateLimitDetail.monthly_usage?.[feature] || 0;
+                          return (
+                            <div key={feature} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                              <div className="flex items-center justify-between gap-2 mb-2">
+                                <div>
+                                  <p className="text-xs text-[#F4F7FA]" style={{ fontFamily: B }}>{label}</p>
+                                  <p className="text-[10px] text-[#64748B]" style={{ fontFamily: M }}>
+                                    Usage this month: {usage} / {effective.monthly_limit === -1 ? '∞' : effective.monthly_limit}
+                                  </p>
+                                </div>
+                                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: M }}>
+                                  Default {defaults.monthly_limit ?? '—'} • burst {defaults.burst_limit ?? '—'}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                {[['monthly_limit', 'Monthly'], ['burst_limit', 'Burst'], ['burst_window_seconds', 'Window(s)']].map(([field, labelText]) => (
+                                  <label key={field} className="block">
+                                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: M }}>{labelText}</span>
+                                    <input
+                                      type="number"
+                                      value={rateLimitDetail.overrides?.[feature]?.[field] ?? effective[field] ?? ''}
+                                      onChange={(e) => changeRateLimit(feature, field, e.target.value)}
+                                      className="mt-1 w-full px-2 py-2 rounded-lg text-xs outline-none"
+                                      style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: M }}
+                                      data-testid={`admin-rate-${feature}-${field}`}
+                                    />
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div className="grid grid-cols-3 gap-2">
+                          <button onClick={saveRateLimits} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030', fontFamily: B }} data-testid="admin-save-rate-limits-btn">
+                            {rateLimitSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Gauge className="w-3.5 h-3.5" />} Save Limits
+                          </button>
+                          <button onClick={resetRateOverrides} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#64748B15', color: '#64748B', border: '1px solid #64748B30', fontFamily: B }} data-testid="admin-reset-rate-overrides-btn">
+                            <RefreshCw className="w-3.5 h-3.5" /> Reset to Tier
+                          </button>
+                          <button onClick={resetMonthlyUsage} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F620', fontFamily: B }} data-testid="admin-reset-usage-btn">
+                            <RefreshCw className="w-3.5 h-3.5" /> Reset Month Usage
+                          </button>
+                        </div>
                       </div>
                     )}
                     <div className="space-y-2" style={{ borderTop: '1px solid var(--biqc-border)', paddingTop: 12 }}>

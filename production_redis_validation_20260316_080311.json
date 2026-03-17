@@ -1,0 +1,137 @@
+{
+  "test_summary": {
+    "target": "https://biqc.thestrategysquad.com",
+    "duration_seconds": 35.1,
+    "total_tests": 10,
+    "passed": 10,
+    "failed": 0,
+    "timestamp": "2026-03-16T08:03:11.912273+00:00"
+  },
+  "redis_status": {
+    "connected": false,
+    "last_error": "Timeout connecting to server",
+    "queue_namespace": "biqc-jobs"
+  },
+  "blocker_analysis": {
+    "total_blockers": 2,
+    "critical_blockers": 2,
+    "blockers": [
+      {
+        "type": "redis_connectivity",
+        "severity": "critical",
+        "description": "Redis is not connected in production",
+        "evidence": "Redis connected: False"
+      },
+      {
+        "type": "redis_timeout",
+        "severity": "critical",
+        "description": "Redis connection timeout in production",
+        "evidence": "Timeout connecting to server"
+      }
+    ]
+  },
+  "detailed_results": {
+    "authentication": {
+      "status": "PASS",
+      "user_id": "52a60959-b8f7-4032-a744-e164d8749ce6",
+      "details": "Successfully authenticated user 52a60959-b8f7-4032-a744-e164d8749ce6"
+    },
+    "basic_health": {
+      "status": "PASS",
+      "redis_connected": false,
+      "details": "Redis connected: False"
+    },
+    "workers_health": {
+      "status": "PASS",
+      "redis_queue": {
+        "redis_connected": false,
+        "queue_namespace": "biqc-jobs",
+        "worker_running": false,
+        "last_error": "Timeout connecting to server",
+        "queue_depth": 0,
+        "delayed_depth": 0,
+        "logging_buffer_depth": 0
+      },
+      "details": "Redis connected: False, Queue namespace: biqc-jobs"
+    },
+    "detailed_health": {
+      "status": "PASS",
+      "redis": {
+        "redis_connected": false,
+        "queue_namespace": "biqc-jobs",
+        "worker_running": false,
+        "last_error": "Timeout connecting to server",
+        "queue_depth": 0,
+        "delayed_depth": 0,
+        "logging_buffer_depth": 0
+      },
+      "details": "Redis connected: False, Last error: Timeout connecting to server"
+    },
+    "outlook_comprehensive-sync": {
+      "status": "PASS",
+      "http_status": 200,
+      "queue_behavior": {
+        "type": "fallback_inline",
+        "reason": "redis_unavailable",
+        "message": "Started inline because Redis is unavailable"
+      },
+      "response_size": 189,
+      "details": "Status 200, Behavior: fallback_inline, Message: Started inline because Redis is unavailable"
+    },
+    "research_analyze-website": {
+      "status": "PASS",
+      "http_status": 200,
+      "queue_behavior": {
+        "type": "immediate",
+        "reason": "synchronous_processing",
+        "message": "Processed immediately (synchronous)"
+      },
+      "response_size": 484,
+      "details": "Status 200, Behavior: immediate, Message: Processed immediately (synchronous)"
+    },
+    "marketing_benchmark": {
+      "status": "PASS",
+      "http_status": 200,
+      "queue_behavior": {
+        "type": "unknown",
+        "reason": "indeterminate",
+        "message": "Could not determine behavior from response"
+      },
+      "response_size": 78,
+      "details": "Status 200, Behavior: unknown, Message: Could not determine behavior from response"
+    },
+    "ingestion_run": {
+      "status": "PASS",
+      "http_status": 422,
+      "queue_behavior": {
+        "type": "unknown",
+        "reason": "indeterminate",
+        "message": "Could not determine behavior from response"
+      },
+      "response_size": 137,
+      "details": "Status 422, Behavior: unknown, Message: Could not determine behavior from response"
+    },
+    "ingestion_hybrid": {
+      "status": "PASS",
+      "http_status": 422,
+      "queue_behavior": {
+        "type": "unknown",
+        "reason": "indeterminate",
+        "message": "Could not determine behavior from response"
+      },
+      "response_size": 137,
+      "details": "Status 422, Behavior: unknown, Message: Could not determine behavior from response"
+    },
+    "files_generate": {
+      "status": "PASS",
+      "http_status": 422,
+      "queue_behavior": {
+        "type": "unknown",
+        "reason": "indeterminate",
+        "message": "Could not determine behavior from response"
+      },
+      "response_size": 387,
+      "details": "Status 422, Behavior: unknown, Message: Could not determine behavior from response"
+    }
+  }
+}

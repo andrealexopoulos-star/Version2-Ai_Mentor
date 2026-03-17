@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Eye, EyeOff, Shield, Lock, Activity, Zap } from 'lucide-react';
@@ -16,6 +16,34 @@ const LoginSupabase = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reset_auth') !== '1') return;
+
+    const resetLocalAuth = async () => {
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch {}
+
+      try {
+        localStorage.removeItem('biqc-auth');
+        Object.keys(localStorage)
+          .filter((key) => key.startsWith('sb-'))
+          .forEach((key) => localStorage.removeItem(key));
+
+        Object.keys(sessionStorage)
+          .filter((key) => key.startsWith('biqc_auth_bootstrap_'))
+          .forEach((key) => sessionStorage.removeItem(key));
+      } catch {}
+
+      params.delete('reset_auth');
+      const query = params.toString();
+      window.history.replaceState({}, '', `/login-supabase${query ? `?${query}` : ''}`);
+    };
+
+    resetLocalAuth();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,6 +133,15 @@ const LoginSupabase = () => {
                 </>
               )}
             </button>
+          </div>
+
+          <div
+            className="mb-6 rounded-xl border px-3 py-2 text-xs"
+            style={{ borderColor: '#334155', background: '#0F172A', color: '#94A3B8', fontFamily: fontFamily.mono }}
+            data-testid="login-oauth-tester-note"
+          >
+            Google OAuth may be restricted to approved test users while verification is pending.
+            If access is blocked, use Microsoft or email/password sign-in.
           </div>
 
           {/* Divider */}
