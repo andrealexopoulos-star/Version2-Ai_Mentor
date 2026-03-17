@@ -207,6 +207,7 @@ class KpiThresholdInput(BaseModel):
 
 
 class KpiThresholdUpdateRequest(BaseModel):
+    selected_metric_keys: Optional[List[str]] = None
     thresholds: List[KpiThresholdInput] = Field(default_factory=list)
 
 
@@ -443,7 +444,10 @@ async def update_brain_kpis(
     tenant_id = current_user["id"]
     engine = BusinessBrainEngine(get_sb(), tenant_id, current_user)
     try:
-        config = engine.save_kpi_thresholds([item.model_dump() for item in payload.thresholds])
+        config = engine.save_kpi_thresholds(
+            [item.model_dump() for item in payload.thresholds],
+            payload.selected_metric_keys,
+        )
         return {
             "tenant_id": tenant_id,
             **config,

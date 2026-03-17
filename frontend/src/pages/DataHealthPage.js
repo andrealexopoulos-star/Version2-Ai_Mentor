@@ -67,7 +67,7 @@ const DataHealthPage = () => {
   const handleForceSync = async () => {
     setSyncing(true);
     try {
-      await apiClient.post('/intelligence/sync');
+      await apiClient.post('/user/integration-status/sync');
       toast.success('Sync triggered — data will update shortly');
       await fetchData();
       refreshIntegrations();

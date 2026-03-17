@@ -317,83 +317,101 @@ const CalendarView = () => {
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
-            {Object.entries(groupedEvents).map(([date, dateEvents]) => (
-              <div key={date}>
-                <h3 
-                  className="text-sm font-semibold mb-3 px-1"
-                  style={{ 
-                    color: date === today ? 'var(--accent-primary)' : 'var(--text-muted)'
-                  }}
-                >
-                  {date === today ? '📅 Today' : formatDate(dateEvents[0]?.start)}
-                </h3>
-                <div className="space-y-3">
-                  {dateEvents.map((event, idx) => (
-                    <div 
-                      key={idx}
-                      className="p-4 rounded-xl border transition-all hover:shadow-md"
-                      style={{ 
-                        background: 'var(--bg-card)', 
-                        borderColor: 'var(--border-light)',
-                        borderLeft: `4px solid ${event.importance === 'high' ? '#EF4444' : 'var(--accent-primary)'}`
-                      }}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span 
-                              className="text-sm font-medium"
-                              style={{ color: 'var(--accent-primary)' }}
-                            >
-                              {formatTime(event.start)} - {formatTime(event.end)}
-                            </span>
-                            {event.importance === 'high' && (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600">
-                                Important
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(300px,0.75fr)]" data-testid="calendar-command-grid">
+            <div className="space-y-6">
+              {Object.entries(groupedEvents).map(([date, dateEvents]) => (
+                <div key={date}>
+                  <h3 
+                    className="text-sm font-semibold mb-3 px-1"
+                    style={{ 
+                      color: date === today ? 'var(--accent-primary)' : 'var(--text-muted)'
+                    }}
+                  >
+                    {date === today ? '📅 Today' : formatDate(dateEvents[0]?.start)}
+                  </h3>
+                  <div className="space-y-3">
+                    {dateEvents.map((event, idx) => (
+                      <div 
+                        key={idx}
+                        className="p-4 rounded-xl border transition-all hover:shadow-md"
+                        style={{ 
+                          background: 'var(--bg-card)', 
+                          borderColor: 'var(--border-light)',
+                          borderLeft: `4px solid ${event.importance === 'high' ? '#EF4444' : 'var(--accent-primary)'}`
+                        }}
+                        data-testid={`calendar-event-card-${idx}`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span 
+                                className="text-sm font-medium"
+                                style={{ color: 'var(--accent-primary)' }}
+                              >
+                                {formatTime(event.start)} - {formatTime(event.end)}
                               </span>
+                              {event.importance === 'high' && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600">
+                                  Important
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                              {event.subject || 'Untitled Event'}
+                            </h4>
+                            
+                            {event.location && (
+                              <div className="flex items-center gap-1.5 text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
+                                <MapPin className="w-3.5 h-3.5" />
+                                {event.location}
+                              </div>
+                            )}
+                            
+                            {event.attendees?.length > 0 && (
+                              <div className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
+                                <Users className="w-3.5 h-3.5" />
+                                {event.attendees.slice(0, 3).join(', ')}
+                                {event.attendees.length > 3 && ` +${event.attendees.length - 3} more`}
+                              </div>
+                            )}
+                            
+                            {event.preview && (
+                              <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
+                                {event.preview}
+                              </p>
                             )}
                           </div>
-                          <h4 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                            {event.subject || 'Untitled Event'}
-                          </h4>
                           
-                          {event.location && (
-                            <div className="flex items-center gap-1.5 text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
-                              <MapPin className="w-3.5 h-3.5" />
-                              {event.location}
-                            </div>
-                          )}
-                          
-                          {event.attendees?.length > 0 && (
-                            <div className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
-                              <Users className="w-3.5 h-3.5" />
-                              {event.attendees.slice(0, 3).join(', ')}
-                              {event.attendees.length > 3 && ` +${event.attendees.length - 3} more`}
-                            </div>
-                          )}
-                          
-                          {event.preview && (
-                            <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-                              {event.preview}
-                            </p>
+                          {event.is_all_day && (
+                            <span 
+                              className="text-xs px-2 py-1 rounded-lg"
+                              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
+                            >
+                              All Day
+                            </span>
                           )}
                         </div>
-                        
-                        {event.is_all_day && (
-                          <span 
-                            className="text-xs px-2 py-1 rounded-lg"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
-                          >
-                            All Day
-                          </span>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-4" data-testid="calendar-side-panel">
+              <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
+                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Execution cadence</p>
+                <p className="mt-2 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Keep tomorrow’s schedule decision-ready.</p>
+                <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Stage follow-ups, identify overloaded days, and make each meeting block more intentional.</p>
+              </div>
+              <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
+                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Today at a glance</p>
+                <div className="mt-3 space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <div className="flex items-center justify-between"><span>Meetings today</span><strong style={{ color: 'var(--text-primary)' }}>{groupedEvents[today]?.length || 0}</strong></div>
+                  <div className="flex items-center justify-between"><span>Important events</span><strong style={{ color: 'var(--text-primary)' }}>{events.filter((event) => event.importance === 'high').length}</strong></div>
+                  <div className="flex items-center justify-between"><span>Events with attendees</span><strong style={{ color: 'var(--text-primary)' }}>{events.filter((event) => event.attendees?.length > 0).length}</strong></div>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
         )}
       </div>

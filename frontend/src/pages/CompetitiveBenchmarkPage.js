@@ -42,6 +42,22 @@ const PILLARS = [
   },
 ];
 
+const BENCHMARK_KEY_MAP = {
+  website: 'digital_presence',
+  social: 'social_engagement',
+  reviews: 'brand_visibility',
+  content: 'content_maturity',
+  seo: 'ai_citation_share',
+};
+
+const normalizeBenchmarkScores = (scores = {}) => ({
+  website: scores.digital_presence != null ? Math.round(Number(scores.digital_presence) * 100) : null,
+  social: scores.social_engagement != null ? Math.round(Number(scores.social_engagement) * 100) : null,
+  reviews: scores.brand_visibility != null ? Math.round(Number(scores.brand_visibility) * 100) : null,
+  content: scores.content_maturity != null ? Math.round(Number(scores.content_maturity) * 100) : null,
+  seo: scores.ai_citation_share != null ? Math.round(Number(scores.ai_citation_share) * 100) : null,
+});
+
 // ── Tooltip ───────────────────────────────────────────────────────────────────
 const Tooltip = ({ text, children }) => {
   const [show, setShow] = useState(false);
@@ -158,35 +174,40 @@ export default function CompetitiveBenchmarkPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [snapRes, cogRes] = await Promise.allSettled([
+      const [snapRes, cogRes, benchRes] = await Promise.allSettled([
         apiClient.get('/snapshot/latest'),
         apiClient.get('/cognition/overview'),
+        apiClient.get('/marketing/benchmark/latest'),
       ]);
       const cognitive = snapRes.status === 'fulfilled' ? snapRes.value.data?.cognitive : null;
       const cogData = cogRes.status === 'fulfilled' && cogRes.value.data?.status !== 'MIGRATION_REQUIRED' ? cogRes.value.data : null;
+      const benchmark = benchRes.status === 'fulfilled' ? benchRes.value.data : null;
       const footprint = cognitive?.digital_footprint || {};
       const competitive = cognitive?.competitive_landscape || {};
 
       // Only use REAL scores — never random fallbacks
-      const realScore = footprint.score || null;
+      const benchmarkOverall = benchmark?.scores?.overall != null ? Math.round(Number(benchmark.scores.overall) * 100) : null;
+      const realScore = footprint.score || benchmarkOverall || null;
       const isReal = realScore != null;
+
+      const normalizedBenchmarkPillars = benchmark?.scores ? normalizeBenchmarkScores(benchmark.scores) : {};
 
       setHasRealData(isReal);
       setData({
         overallScore: realScore,
         pillars: {
-          website: footprint.website_score || null,
-          social: footprint.social_score || null,
-          reviews: footprint.review_score || null,
-          content: footprint.content_score || null,
-          seo: footprint.seo_score || null,
+          website: footprint.website_score || normalizedBenchmarkPillars.website || null,
+          social: footprint.social_score || normalizedBenchmarkPillars.social || null,
+          reviews: footprint.review_score || normalizedBenchmarkPillars.reviews || null,
+          content: footprint.content_score || normalizedBenchmarkPillars.content || null,
+          seo: footprint.seo_score || normalizedBenchmarkPillars.seo || null,
         },
         percentile: footprint.percentile || null,
         industryAvg: footprint.industry_average || null,
-        competitors: competitive.competitors || [],
+        competitors: competitive.competitors || benchmark?.competitors || [],
         trend: footprint.trend || null,
-        lastUpdated: footprint.last_scan || cogData?.computed_at || null,
-        scanSource: footprint.source || 'Web scraping',
+        lastUpdated: footprint.last_scan || benchmark?.updated_at || cogData?.computed_at || null,
+        scanSource: footprint.source || benchmark?.status || 'Web scraping',
         scanDomain: cognitive?.business_profile?.website || null,
       });
     } catch {} finally { setLoading(false); }
@@ -219,14 +240,16 @@ export default function CompetitiveBenchmarkPage() {
     setAnalyzingCompetitor(idx);
     setCompetitorError('');
     try {
-      const res = await apiClient.post('/intelligence/benchmark-competitor', { domain: clean }, { timeout: 30000 });
+      const res = await apiClient.post('/marketing/benchmark', { competitors: [clean] }, { timeout: 30000 });
       if (res.data?.scores) {
         setCompetitorResults(prev => {
           const existing = prev.findIndex(r => r.domain === clean);
-          const entry = { domain: clean, scores: res.data.scores, overallScore: res.data.overall_score };
+          const entry = { domain: clean, scores: normalizeBenchmarkScores(res.data.scores || {}), overallScore: res.data.overall != null ? Math.round(Number(res.data.overall) * 100) : null };
           if (existing >= 0) { const n = [...prev]; n[existing] = entry; return n; }
           return [...prev, entry];
         });
+      } else if (res.data?.status === 'queued') {
+        setCompetitorError('Benchmark queued. Refresh shortly to compare against the latest stored benchmark.');
       } else {
         setCompetitorError(`Could not fetch data for ${clean}. Try a different domain.`);
       }

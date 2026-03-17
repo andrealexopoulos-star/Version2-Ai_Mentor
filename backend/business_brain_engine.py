@@ -315,6 +315,7 @@ class BusinessBrainEngine:
         self.catalog_source = self.catalog_diagnostics.get("resolved_source", "fallback_core_metrics")
         self.catalog = load_metric_catalog()
         self.kpi_preferences = self._load_kpi_preferences()
+        self.selected_metric_keys = self._load_selected_metric_keys()
         self.kpi_thresholds = self._load_kpi_thresholds()
         self.business_core_ready = self._detect_business_core_schema()
         self._sync_metric_catalog()
@@ -333,8 +334,49 @@ class BusinessBrainEngine:
         thresholds = section.get("thresholds") or {}
         return thresholds if isinstance(thresholds, dict) else {}
 
+    def _load_selected_metric_keys(self) -> List[str]:
+        section = self.kpi_preferences.get("brain_kpis") or {}
+        selected = section.get("selected_metric_keys") or []
+        if not isinstance(selected, list):
+            return []
+
+        allowed = {metric.name for metric in self.catalog}
+        normalized: List[str] = []
+        seen = set()
+        for item in selected:
+            key = str(item or "").strip().lower()
+            if not key or key in seen or key not in allowed:
+                continue
+            normalized.append(key)
+            seen.add(key)
+        return normalized
+
     def _visible_catalog(self) -> List[MetricDefinition]:
-        return sorted(self.catalog, key=lambda x: x.index)[: self.visible_metric_limit]
+        ordered_catalog = sorted(self.catalog, key=lambda x: x.index)
+        if not self.selected_metric_keys:
+            return ordered_catalog[: self.visible_metric_limit]
+
+        selected_lookup = {metric.name: metric for metric in ordered_catalog}
+        selected = [selected_lookup[key] for key in self.selected_metric_keys if key in selected_lookup]
+        return selected[: self.visible_metric_limit]
+
+    def _catalog_metric_payload(self, metric: MetricDefinition) -> Dict[str, Any]:
+        selected_set = set(self.selected_metric_keys)
+        selected_count = len(selected_set)
+        is_selected = metric.name in selected_set
+        limit_reached = selected_count >= self.visible_metric_limit
+        return {
+            "metric_id": metric.index,
+            "metric_name": metric.label,
+            "metric_key": metric.name,
+            "category": metric.domain,
+            "description": metric.definition,
+            "formula": metric.formula,
+            "primary_source": metric.source,
+            "selected": is_selected,
+            "selection_disabled": bool(not is_selected and limit_reached),
+            "threshold_config": self._threshold_config_for_metric(metric),
+        }
 
     def _threshold_config_for_metric(self, metric: MetricDefinition) -> Dict[str, Any]:
         saved = self.kpi_thresholds.get(metric.name) or {}
@@ -601,30 +643,43 @@ class BusinessBrainEngine:
         }
 
     def get_kpi_configuration(self) -> Dict[str, Any]:
-        metrics: List[Dict[str, Any]] = []
-        for metric in self._visible_catalog():
-            threshold_config = self._threshold_config_for_metric(metric)
-            metrics.append({
-                "metric_id": metric.index,
-                "metric_name": metric.label,
-                "metric_key": metric.name,
-                "category": metric.domain,
-                "description": metric.definition,
-                "formula": metric.formula,
-                "primary_source": metric.source,
-                "threshold_config": threshold_config,
-            })
+        visible_metrics = [self._catalog_metric_payload(metric) for metric in self._visible_catalog()]
+        catalog_metrics = [self._catalog_metric_payload(metric) for metric in sorted(self.catalog, key=lambda x: x.index)]
+        selected_keys = [metric["metric_key"] for metric in catalog_metrics if metric["selected"]]
         return {
             **self.brain_policy(),
-            "metrics": metrics,
+            "selected_metric_keys": selected_keys,
+            "selected_count": len(selected_keys),
+            "selection_limit_reached": len(selected_keys) >= self.visible_metric_limit,
+            "selection_upgrade_prompt": f"Free tier includes {self.visible_metric_limit} active KPIs. Upgrade to track more metrics." if self.plan_tier == "free" else None,
+            "metrics": visible_metrics,
+            "catalog_metrics": catalog_metrics,
         }
 
-    def save_kpi_thresholds(self, thresholds: List[Dict[str, Any]]) -> Dict[str, Any]:
-        allowed_metric_keys = {metric.name for metric in self._visible_catalog()}
+    def save_kpi_thresholds(self, thresholds: List[Dict[str, Any]], selected_metric_keys: Optional[List[str]] = None) -> Dict[str, Any]:
+        ordered_catalog = sorted(self.catalog, key=lambda x: x.index)
+        allowed_catalog_keys = [metric.name for metric in ordered_catalog]
+        allowed_catalog_key_set = set(allowed_catalog_keys)
         existing_config = dict(self.kpi_preferences or {})
         brain_kpis = dict(existing_config.get("brain_kpis") or {})
         stored_thresholds = dict(brain_kpis.get("thresholds") or {})
         now = datetime.now(timezone.utc).isoformat()
+
+        if selected_metric_keys is not None:
+            sanitized_selection: List[str] = []
+            seen = set()
+            for item in selected_metric_keys:
+                key = str(item or "").strip().lower()
+                if not key or key in seen or key not in allowed_catalog_key_set:
+                    continue
+                sanitized_selection.append(key)
+                seen.add(key)
+            if sanitized_selection:
+                sanitized_selection = sanitized_selection[: self.visible_metric_limit]
+            brain_kpis["selected_metric_keys"] = sanitized_selection
+            self.selected_metric_keys = sanitized_selection
+
+        allowed_metric_keys = {metric.name for metric in self._visible_catalog()}
 
         for threshold in thresholds:
             metric_key = str(threshold.get("metric_key") or "").strip().lower()
