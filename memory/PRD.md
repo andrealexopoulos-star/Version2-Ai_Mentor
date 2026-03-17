@@ -1,4 +1,11 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 27 — Production Redis Recovery + File Generation Queue Unblock (Complete — Mar 2026)
+- **Production Redis blocker resolved** — Live Azure health now confirms `redis_connected=true`, `worker_running=true`, `queue_depth=0`, and `REDIS_URL configured=true` on `biqc-api.azurewebsites.net`
+- **Root cause for queued-but-never-saved files fixed** — `backend/routes/file_service.py` storage client switched from anon client to service-role client for backend worker writes, preventing Supabase Storage/Table RLS unauthorized failures in async worker context
+- **`/api/files/generate` production behavior restored** — endpoint returns `status=queued` and jobs now complete with real records in `generated_files` (verified with live output showing generated logo file row)
+- **Verification completed live** — tested against production with authenticated user flow, observed queued job IDs and downstream saved artifact row (`file_type=logo`) returned from `/api/files/list`
+- **Follow-up note** — `/api/health/detailed` may still show `overall=degraded` in some containers due to `supervisorctl` binary absence in worker checks; this is health-check noise and separate from Redis queue correctness
+
 ### Sprint 26 — Redis Queue Migration for Route-Level Background Work (Complete — Mar 2026)
 - **Unsafe route-level `asyncio.create_task()` removed from target routes** — converted route-local background spawning in `backend/routes/email.py` and `backend/routes/integrations.py` to Redis queue submissions through the existing `biqc_jobs.py` runtime
 - **Heavy API routes queue-enabled** — `backend/routes/ingestion_engine.py`, `backend/routes/hybrid_ingestion.py`, `backend/routes/research.py`, `backend/routes/marketing_intel.py`, and `backend/routes/file_service.py` now enqueue Redis jobs and return immediately with queued responses when Redis is available; inline fallback remains only when Redis is unavailable
