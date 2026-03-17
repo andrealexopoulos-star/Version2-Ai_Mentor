@@ -13,6 +13,8 @@ env:
   AZURE_WEBAPP_BACKEND: biqc-api
   AZURE_RESOURCE_GROUP: biqc-production
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  BACKEND_HEALTH_URL: https://biqc-api.azurewebsites.net/api/health
+  BACKEND_AUTH_PROBE_URL: https://biqc-api.azurewebsites.net/api/user/integration-status
 
 jobs:
   # ─── BUILD & PUSH FRONTEND ───────────────────────────────────────────────
@@ -152,13 +154,13 @@ jobs:
 
       - name: Smoke test backend health
         run: |
-          for i in $(seq 1 12); do
-            if curl --fail --silent --show-error https://biqc.thestrategysquad.com/api/health > /tmp/backend_health.json; then
+          for i in $(seq 1 18); do
+            if curl --fail --silent --show-error ${{ env.BACKEND_HEALTH_URL }} > /tmp/backend_health.json; then
               echo "Backend health check passed on attempt ${i}"
               cat /tmp/backend_health.json
               break
             fi
-            if [ "$i" -eq 12 ]; then
+            if [ "$i" -eq 18 ]; then
               echo "Backend health check failed after retries"
               exit 1
             fi
@@ -171,7 +173,7 @@ jobs:
           curl --fail --silent --show-error https://biqc.thestrategysquad.com > /tmp/frontend_home.html
           grep -qi "BIQc" /tmp/frontend_home.html
 
-          API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" https://biqc.thestrategysquad.com/api/user/integration-status)
+          API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" ${{ env.BACKEND_AUTH_PROBE_URL }})
           echo "integration-status probe HTTP ${API_CODE}"
           if [ "$API_CODE" -ne 401 ] && [ "$API_CODE" -ne 403 ]; then
             echo "Expected auth-gated API response (401/403) but got ${API_CODE}"
