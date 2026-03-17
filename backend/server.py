@@ -31,7 +31,7 @@ from core.models import (
     BusinessIdentityDomain, MarketDomain, OfferDomain, TeamDomain, StrategyDomain,
     ProfileDomains, ChangeLogEntry, VersionedBusinessProfile,
 )
-
+app = FastAPI()
 # ═══ LOGGING ═══
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -359,3 +359,9 @@ if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("server:app", host="0.0.0.0", port=port)
+# This part tells the brain to show the website files
+if os.path.exists("frontend/build"):
+    app.mount("/", StaticFiles(directory="frontend/build", html=True), name="frontend")
+    @app.get("/{catchall:path}")
+    async def serve_frontend(catchall: str):
+        return FileResponse("frontend/build/index.html")
