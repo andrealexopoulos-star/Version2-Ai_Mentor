@@ -1,178 +1,186 @@
 <analysis>**original_problem_statement:**
-The user's primary goal is to build a unified “Business Brain” for their AI platform, BIQc. This brain must ingest data from multiple connectors (CRM, accounting, email) via Merge.dev, normalize it into a vendor-agnostic canonical model, and use a sophisticated inference engine to compute and rank business concerns. The output of this brain must feed directly into the  page, providing user-friendly, high-fidelity insights without generic fallbacks or placeholder text. The entire system must be built without dependencies on Emergent-managed libraries.
+The user's primary goal is to build a unified “Business Brain” for their AI platform, BIQc. This brain must ingest data from multiple connectors (e.g., CRM, accounting, email) via Merge.dev, normalize it, and use a sophisticated inference engine with 100+ KPIs to compute and rank business concerns for the  page.
 
-The implementation is to follow a detailed project plan provided by the user, which includes creating a new  database schema, Supabase edge functions for data ingestion, a Business Brain Engine service with REST APIs, and integrating a catalog of 100 business KPIs.
-
-Once the Brain is successfully implemented and validated on the  page, the project will proceed to redesign the  page.
+Over the session, the scope has expanded significantly to include:
+- A major redesign of the , , , , and  pages, driven by a forensic UX/UI audit. The user demands deep, data-rich insights on these pages, not just cosmetic changes.
+- Implementation of a tiered pricing model for KPI access (Free, Foundation, Performance, SMB Protect, Custom), with settings configurable on a new Business DNA page.
+- A request to add a new SMB Protect plan tier.
+- A full rework of the main navigation sidebar to be collapsible and provide a universal back button.
+- Multiple iterative redesigns of the BIQc Insights/Advisor cards to reduce cognitive load and provide more specific, actionable Brain Briefs.
+- A critical backend architecture refactor to integrate an existing Azure Redis cache, moving all heavy background tasks from unsafe  calls to a distributed Redis job queue.
 
 **PRODUCT REQUIREMENTS:**
--   **Unified Business Brain:** A single, sophisticated engine must be the sole source of truth for business priorities, replacing all previous disparate logic.
--   **Canonical Data Model:** All integration data must be normalized into a new  schema.
--   **KPI-Driven Insights:** The brain must use the user-provided list of 100 KPIs as its authoritative metric definition source.
--   **No Generic Fallbacks:** The UI must show real data or an explicit unavailable state. No placeholder text or misleading all clear messages are permitted.
--   **No Emergent Dependencies:** The platform must use direct integrations only.
--   **Strict Deployment Verification:** All development must be forensically tested on the user's live production environment () to ensure code and runtime are aligned.
+-   **Sophisticated Business Brain:** The Brain must be the single source of truth, providing specific, data-grounded insights with military-grade sophistication.
+-   **Data-First UI:** All pages, especially the redesigned ones, must be fed by real, deep data from the platform's engines. Generic or repetitive content is unacceptable.
+-   **Actionable & Low-Cognitive-Load UX:** The UI, particularly the Advisor cards, must be clear, concise, and provide direct paths to action (e.g., SoundBoard chat, Add to Calendar, Assign Owner).
+-   **Distributed Backend Execution Model:** All long-running, non-blocking tasks (e.g., email sync, website ingestion, market analysis) must run asynchronously on a Redis-backed job queue. API routes for these tasks should return immediately with a queued status.
+-   **Stable Production Environment:** All features must be forensically tested and proven to work on the user's live production environment.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The agent has architected and implemented the foundational Business Brain as requested by the user. This involved a major refactoring of the backend. Key components created include:
--   A new  SQL schema with tables for a canonical data model (customers, deals, invoices, etc.) and a . Migrations have been created.
--   A canonical  file containing the user's 100 KPIs.
--   A new FastAPI service (Business Brain Engine) with REST endpoints: , , and a diagnostic endpoint .
--   Supabase Edge Functions for data ingestion () and metric computation ().
--   The  page has been completely refactored to be driven **exclusively** by the  endpoint, with robust handling for when the Brain is unavailable.
-
-The session was dominated by collaborative, and often frustrating, debugging of the user's Azure production deployment. The primary challenge was ensuring the latest backend image containing the Business Brain was correctly deployed and running, as the environment was frequently serving stale images.
+The Business Brain architecture is in place, with a new structured brief API contract that provides rich, non-repetitive content for UI cards. The Advisor page and navigation have been significantly redesigned to improve UX and reduce cognitive load. The backend has been fully refactored to use a Redis job queue for asynchronous tasks, replacing all previous unsafe  calls. However, while the code for Redis integration is complete and tested locally, it is **not functional in production** due to a persistent authentication error.
 
 **Last working item**:
--   **Last item agent was working:** The user has just confirmed they have triggered new builds for both frontend and backend and requested the agent to begin testing on the live production environment. The agent's final action was to initiate a full forensic validation of both services.
--   **Status:** IN PROGRESS
--   **Agent Testing Done:** N (Just started).
--   **Which testing method agent to use?** Manual testing using PowerShell/curl and the screenshot tool.
--   **User Testing Done:** N
+-   **Last item agent was working:** The agent was trying to resolve a persistent  error when the backend attempts to connect to the user's Azure Redis instance in production. This was the final step of a long and collaborative debugging session. The agent's last attempt was to modify the backend to correctly parse Azure's native connection string, but this did not resolve the live authentication issue.
+-   **Status:** BLOCKED
+-   **Agent Testing Done:** Y (Agent confirmed locally that the Redis code works. All live production tests confirm that the backend is running but failing to authenticate with Redis.)
+-   **Which testing method agent to use?** Manual investigation by the user in their Azure portal is required. The agent cannot proceed further. The user needs to verify the  environment variable in the  App Service, ensuring the secret is correct and properly URL-encoded.
+-   **User Testing Done:** Y (User has been actively participating in debugging by providing screenshots and running commands.)
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Complete Forensic Validation of the Business Brain Production Deployment (P0)**
-    -   **Description:** This is the highest priority task. After a long history of deployment mismatches, it is critical to confirm that the user's latest deployment has successfully activated the new Business Brain architecture on their live production environment.
+-   **Issue 1: Production Redis Authentication Failure (P0)**
+    -   **Description:** The backend fails to connect to the production Azure Redis instance with an  error. This prevents the entire distributed job queue system from activating, forcing all background tasks to run inline, which risks blocking API requests and hinders scalability.
+    -   **Attempted fixes:** Numerous fixes were attempted, including correcting the URL format, URL-encoding the secret key, trying different auth schemes ( vs. no username), regenerating keys, and finally making the backend code more forgiving to Azure's native connection string format. None of these resolved the issue.
+    -   **Next debug checklist:** The issue is confirmed to be with the credential value in the Azure environment, not the application code. The user must:
+        1.  Regenerate the Redis access key (e.g., secondary key) one last time.
+        2.  Use PowerShell or another tool to ensure the key is correctly URL-encoded.
+        3.  Carefully construct the full  string and set it in the  App Service environment variables.
+        4.  If it still fails, the user must investigate potential networking/firewall rules between the App Service and the Redis instance that might be interfering with authentication, or consider that the Redis instance itself has a non-standard configuration.
+    -   **Why fix this issue and what will be achieved with the fix?** This is the final step to complete the backend execution model refactor. Fixing it will activate the distributed job queue, making the application scalable, reliable, and preventing long-running tasks from blocking the user-facing API.
+    -   **Status:** BLOCKED
+    -   **Is recurring issue?** Y (This issue has dominated the last quarter of the conversation.)
+    -   **Should Test frontend/backend/both after fix?** Backend (via health check endpoints).
+
+-   **Issue 2: Live Production  Endpoint Returns 500 (P1)**
+    -   **Description:** During live testing, the agent discovered that the file generation endpoint is consistently failing with a 500 error. This is a separate issue from the Redis problem.
+    -   **Attempted fixes:** A patch was applied to an OpenAI image call, but the issue persists.
     -   **Next debug checklist:**
-        1.  Verify the  service is running the newest image tag (not  or an old hash).
-        2.  Call . It **must** return a JSON response (not a 404), proving the new endpoint exists.
-        3.  Call . The response **must** show  and .
-        4.  Call . It must return valid, live concern data.
-        5.  Take a screenshot of the  page to visually confirm it's rendering the Brain's priority cards correctly and not showing the Brain unavailable state.
-    -   **Why fix this issue and what will be achieved with the fix?** This will finally validate the completion of the entire Business Brain refactoring and unblock all future UI/UX work, starting with the  page.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** Y (Deployment drift has been the central issue of the project).
-    -   **Should Test frontend/backend/both after fix?** Both.
-    -   **Blocked on other issue:** None. This is the primary blocker.
+        1. Trigger the endpoint again on the live environment.
+        2. Ask the user to retrieve the specific error log from the Azure  service for the 500 error.
+        3. Investigate the error trace, which is likely related to an invalid API key, an unexpected response from an external service, or a permissions issue.
+    -   **Why fix this issue and what will be achieved with the fix?** This feature is required for generating reports and images within the application.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Backend.
 
 **In progress Task List**:
--   **Task 1: Implement the Business Brain Architecture (P0)**
-    -   **Where to resume:** The code for all core components is complete. The final step is the forensic validation of the production deployment to ensure it is fully active and feeding the  page correctly.
-    -   **What will be achieved with this?** A fundamental shift to a sophisticated, centralized, brain-first intelligence architecture as mandated by the user.
-    -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Both.
-    -   **Blocked on something:** Issue 1: Complete Forensic Validation of the Business Brain Production Deployment.
+-   None. All work is either complete or blocked by the issues above.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **P0: Redesign  page:** Once the Business Brain is confirmed live and stable on the  page, proceed with the UX/UI redesign of the  page, ensuring it is also fed by the new Brain.
+    -   **P0: Complete the Forensic UX/UI Audit:** Once Redis is working, the user expects the agent to proceed with redesigning and implementing the remaining pages (, , , etc.) to be data-rich and meet the new benchmark for cognitive depth, not just cosmetic changes. This will involve wiring up underutilized data assets.
+    -   **P0: Deepen the Assign Owner Workflow:** The user wants the  action to be a full end-to-end flow. This includes navigating to the Actions page, pre-filling an email/task with a brief from the Brain, and creating a calendar event for the due date.
 -   **Future Tasks:**
-    -   **P1: Implement Token Health Monitor:** Implement a token-health monitor and pre-expiry warning surfaces to improve integration reliability (user deferred this until after the UX audit).
-    -   **P1: Implement Full Computation for Top 100 KPIs:** Gradually build out the backend logic to compute all 100 KPIs defined in the catalog.
-    -   **P2: Enhance Business Brain Sophistication:** Evolve the brain to include trend analysis, cross-source causality, and decision simulation (Phase 2 & 3 of the sophistication plan).
-    -   **P2: Redesign Remaining Pages:** Continue the UX/UI overhaul for other pages (, etc.).
+    -   **P1: Integrate Google Ads & SEMrush:** Integrate these services into the Marketing section.
+    -   **P1: Harden Website Scan/Calibration:** Improve the robustness of the initial website scan process.
+    -   **P1: Fix Business Brief is being generated Stall:** Investigate and fix the issue where this banner appears but the brief never loads.
+    -   **P2: Implement Deeper Cognitive Features:** Wire up underutilized assets to provide features like competitor analysis, continuity monitoring, and client/staff review analysis, as detailed in the agent-provided matrix.
 
 **Completed work in this session**
--   **Architected & Implemented Business Brain v1:**
-    -   Created  canonical SQL schema and migrations.
-    -   Created Supabase Edge Functions for ingestion and metrics (, ).
-    -   Built a new FastAPI Business Brain Engine with , , and a diagnostic  endpoint.
--   **Integrated Top 100 KPI Catalog:**
-    -   Persisted the user-provided 100 KPIs into  and wired it as the single source of truth.
--   **Refactored  Page:**
-    -   Rewired the page to be driven **solely** by .
-    -   Removed all generic fallbacks and placeholder text.
-    -   Created a robust Brain unavailable UI state to prevent misleading the user.
--   **Fixed Critical Bugs:**
-    -   **Data Integrity:** Separated Accounts Receivable (AR) from Accounts Payable (AP) and corrected logic that counted  invoices as overdue.
-    -   **Persistence:** Fixed a schema mismatch bug preventing email analysis from being saved.
-    -   **Responsive UI:** Corrected the  page layout to prevent it from breaking on laptop viewports.
--   **Resolved Production Deployment Issues:**
-    -   Successfully guided the user through intense Azure CLI/PowerShell debugging to identify and fix issues related to stale image tags, incorrect tag syntax, and flawed deployment commands.
+-   **Architectural Refactor:**
+    -   **Redis Job Queue Migration:** Replaced all  calls with a robust Redis job queue system (). Code is complete, but blocked in production.
+    -   **Brain Brief API Contract:** Implemented a new structured JSON payload from the Business Brain to provide rich, non-repetitive content for UI cards.
+-   **UI/UX Overhaul:**
+    -   **Advisor Page Redesign:** Completely reworked the BIQc Insights cards with a new layout and action flows (SoundBoard chat, calendar drafts, owner assignment).
+    -   **Navigation Restructure:** Rebuilt the main sidebar to be collapsible, have standalone top-level items, and include a universal back button. Ensured more pages use the shared layout shell for consistency.
+-   **Feature Implementation & Bug Fixes:**
+    -   Implemented action handoffs for SoundBoard, Calendar, and Assign Owner flows.
+    -   Fixed numerous production bugs, including CI/CD dependency conflicts, Advisor page rendering issues, and an expired token issue in the calendar creation flow.
+    -   Added a scope guard to the War Room to prevent off-topic AI responses.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Unreliable CI/CD Pipeline**
-    -   **Debug checklist:** The root cause of the persistent runtime mismatch is likely a faulty or misconfigured CI/CD pipeline. The session focused on manual overrides, not fixing the pipeline itself.
-    -   **Why to solve this issue and what will be achieved with this?** To prevent this entire class of problems from recurring and ensure that development progress is reliably reflected in the live environment.
-    -   **Should Test frontend/backend/both after fix:** N/A (DevOps issue).
+-   **Issue 1: Business Brief is being generated never completes**
+    -   **Debug checklist:**
+        1. Identify which process is supposed to generate this brief.
+        2. Check the logs for that process (API or a worker) to see if it starts, runs, or errors out silently.
+        3. Verify the frontend logic that polls for or receives the result.
+    -   **Why to solve this issue and what will be achieved with this?** A core part of the initial user experience is blocked, leaving the user in a permanent loading state.
+    -   **Should Test frontend/backend/both after fix:** Both.
     -   **Is recurring issue?** Y
 
 **Known issue recurrence from previous fork**
 -   **Issue recurrence in previous fork:** Production Deployment Instability.
--   **Recurrence count:** Extremely High (This was the central conflict of the entire session).
--   **Status:** IN PROGRESS (Manual workarounds and diagnostic endpoints were created, but the underlying CI/CD pipeline reliability is still a risk).
+-   **Recurrence count:** High. The session was plagued by CI/CD build failures and runtime environment configuration issues (especially Redis), confirming that the user's deployment pipeline is a persistent source of friction.
+-   **Status:** IN PROGRESS (The agent has repeatedly helped debug and work around these issues, but the root cause in the user's DevOps setup remains).
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Brain-First Architecture:** A paradigm shift where a central, sophisticated engine generates insights, and the UI is a dumb renderer of that output.
--   **Canonical Data Model:** Normalizing data from various sources (Xero, HubSpot) into a single, vendor-agnostic schema ().
--   **Metric Registry:** Using a file-based catalog () as the single source of truth for all business metric definitions.
--   **Azure App Service Deployment:** The application is deployed on Azure App Service. Debugging is done via Azure CLI and PowerShell.
--   **Production Runtime Debugging:** The session heavily involved diagnosing live production environments to resolve discrepancies between developed code and running applications.
+-   **Structured Brief Contract:** A key architectural pattern where the backend provides a rich, well-defined JSON object for each UI card, preventing the frontend from having to stitch together vague data fields.
+-   **Distributed Job Queue (Redis):** The backend now uses Redis to offload long-running tasks. API routes enqueue jobs and return immediately, while separate worker processes execute the jobs asynchronously.
+-   **Production Runtime Debugging:** The session was defined by intense, collaborative debugging of the live production environment using , user-executed PowerShell commands, and analysis of user-provided screenshots.
+-   **Declarative UI:** The redesign of the Advisor cards follows a pattern where the UI is a direct, clean rendering of the structured data provided by the Brain Brief contract.
 
 **key DB schema**
 -   ****: {id, external_ids, name, ...}
 -   ****: {id, external_ids, name, ...}
 -   ****: {id, external_ids, customer_id, ...}
 -   ****: {id, external_ids, customer_id, ...}
--   ****: {id, external_ids, invoice_id, ...}
--   ****: {id, external_ids, deal_id, ...}
--   ****: {id, external_ids, owner_id, ...}
--   ****: {id, external_ids, name, ...}
--   ****: {source_id, connector_type, ...}
 -   ****: {concern_id, name, priority_formula, ...}
 -   ****: {metric_id, name, formula_template, ...}
 -   ****: {tenant_id, metric_name, value, period, ...}
 
+**changes in tech stack**
+-   **Redis:** Introduced as a critical backend component for the distributed job queue. The  Python package was added.
+
 **All files of reference**
--   : Major refactor to consume data solely from the  endpoint.
--   : New file containing all Business Brain API endpoints.
--   : New directory containing the core logic for the Brain.
--   : New canonical source for all 100 KPI definitions.
--   : New SQL migration for the canonical data model.
--   : New SQL migration for metric and concern registries.
--   : New Edge Function for data ingestion.
--   : New Edge Function for scheduled metric calculation.
+-   : New file containing all Redis queue logic, job handlers, and connection management.
+-   : Updated to initialize the Redis runtime on startup.
+-   Multiple backend route files (, , , etc.): Updated to replace  with .
+-   : Updated to generate the new, richer structured brief payload.
+-   : Heavily refactored to consume the new brief payload and implement the redesigned card layout and action buttons.
+-   : Heavily refactored to implement the user-requested collapsible navigation structure.
+-    & : Updated to handle context passed from the Advisor cards.
+
+**Areas that need refactoring**:
+-   The user's CI/CD pipeline and Azure environment variable management are extremely fragile and are the primary source of project friction and delays. This is a DevOps issue, but it significantly impacts development velocity.
 
 **key api endpoints**
--   ****: (NEW & CRITICAL) The sole endpoint for driving the  page. Returns a ranked list of business concerns.
--   ****: (NEW) Returns computed metrics for a tenant, with a coverage report against the 100-KPI catalog.
--   ****: (NEW) An admin endpoint to manage concern definitions.
--   ****: (NEW) A diagnostic endpoint to verify the identity and health of the running backend build.
+-   : Used to check the status of backend services, including Redis connectivity.
+-   : Now returns the enhanced structured brief payload.
+-   : New endpoint to create calendar events.
+-   , : These and other heavy routes should now return . In production, they are still running inline due to the Redis connection failure.
 
 **Critical Info for New Agent**
--   **Deployment Drift is the #1 Blocker:** Your first priority is always to complete the forensic validation of the user's production deployment. NEVER assume the code you see is the code that is running. The user is on Azure App Service and is technical with PowerShell. Use the new  endpoint as your first step to prove the backend build identity.
--   **The Business Brain is the Only Source of Truth:** The user has mandated that all priority intelligence must come from the  endpoint. There are no fallbacks. If the Brain is unavailable, the UI must explicitly state that. Do not re-introduce any generic text or client-side decision logic.
--   **Communicate with Precision and Empathy:** The user is extremely frustrated by past deployment issues. Be direct, provide evidence for your findings (e.g., API responses), and do not make assumptions. Your instructions must be exact, especially PowerShell commands.
--   **Proceed with Forensic Validation:** The immediate task is to test the user's latest deployment on  to confirm the Brain is fully active.
+-   **THE #1 BLOCKER IS PRODUCTION REDIS AUTHENTICATION.** Do not attempt to fix this with more code changes. The code is complete. The problem is a misconfiguration of the  environment variable in the user's Azure App Service. The live error is . You must guide the user to provide the correct, URL-encoded credential string. The application will not be fully functional or scalable until this is resolved.
+-   **The Brain Brief is the Standard.** All new UI work involving insights must consume the new structured brief payload from the Brain. This pattern was a major breakthrough in the session for reducing UI repetition and cognitive load. Do not regress.
+-   **The User Demands Cognitive Depth.** The user is highly critical of UI changes that are purely cosmetic. Future work on page redesigns must be backed by deep, meaningful data from the platform's various engines. Before implementing, reference the data-first matrix the previous agent created to identify underutilized assets that can add value.
+-   **Forensic Production Validation is Mandatory.** Do not claim work is done until it has been visually verified and tested on the user's live production URL using their test account. Assume that the production environment may differ from the local environment.
 
 **documents and test reports created in this job**
--   
+-   A detailed Page-by-page matrix for the rebuild was generated and sent to the user in the chat, outlining how to use underutilized assets to add depth to each page. **The next agent should save this analysis to  for future reference.**
+-   The  file was updated to reflect the Redis integration and other changes.
+-   Multiple test reports from the testing agent were generated in .
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Provides screenshot confirming  is pinned to a specific tag, but  returns 404.
-2.  **Agent:** Explains this proves the tag is for an old build and that a new backend image must be built.
-3.  **User:** Provides screenshot showing no new tags are available in the container registry.
-4.  **Agent:** Confirms this and instructs the user they must trigger their CI/CD pipeline to build a new image.
-5.  **User:** i have save to git, pulled merge and actioned new image for both front end and back end i would like you to proceed with a test...
-6.  **Agent:** Acknowledges and begins forensic validation.
-7.  **User:** Provides screenshot showing the  page layout is broken on their laptop screen (cards are crushed).
-8.  **Agent:** Identifies this as a responsive layout bug and proposes a layout-only patch.
-9.  **User:** yes proceed with the layout patch and thorough testing...
-10. **Agent:** Implements the layout patch and confirms via forensic testing that it works, but also finds that the production backend is still not on the latest build ( instead of ). The session ends with the agent explaining what needs to be done to get the latest backend active.
+1.  **User:**  - Confirms they've updated the Redis URL and restarted the app.
+2.  **Agent:** Reports no change,  persists.
+3.  **User:**  - Confirms another attempt to fix the Redis URL.
+4.  **Agent:** Asks for a runtime check inside the  container to get the exact error.
+5.  **User:** Provides a screenshot of the command failing because it was run in PowerShell, not bash.
+6.  **Agent:** Provides the correct PowerShell commands to test the connection.
+7.  **User:** Provides a blurry screenshot of the output.
+8.  **Agent:** Deciphers that the connection is still failing with an auth error and recommends regenerating the Redis key.
+9.  **User:**  - Asks to test after making an unstated change.
+10. **Agent:** Reports the backend is now crashing on startup.
+11. **User:**  - Asks for help with the Azure startup command.
+12. **Agent:** Advises to leave the startup command blank.
+13. **User:**  - Confirms the change.
+14. **Agent:** Reports the app is running again, but the Redis auth error persists. Asks for the exact URL structure being used.
+15. **User:**  - Provides the URL structure, revealing an unencoded  sign.
+...The conversation continues with the agent guiding the user to properly URL-encode the key, which still does not resolve the issue, leading to the final conclusion that the credential value itself is the problem.
 
 **Project Health Check:**
--   **Broken:** While the codebase has seen massive improvements with the new Business Brain architecture, the live production environment is not yet confirmed to be running this latest version. The core feature is therefore not yet validated as operational for the user, and the project is blocked on this final deployment verification.
+-   **Broken:** The backend's new distributed execution model is non-functional in production due to the Redis authentication failure. This is a critical architectural blocker that prevents the application from scaling and running background jobs reliably.
 
 **3rd Party Integrations**
 -   **Supabase:** Primary database and Edge Functions runtime.
 -   **Merge.dev:** Unified API for all data connectors (CRM, Accounting, etc.).
--   **Microsoft Azure:** The application is deployed on Azure App Service, with images stored in Azure Container Registry (ACR).
+-   **Microsoft Azure:** The application is deployed on Azure App Service.
+-   **Azure Redis Cache:** Critical backend component for the job queue. **Currently NOT FUNCTIONAL in production due to an authentication failure.**
 
 **Testing status**
--   **Testing agent used after significant changes:** YES, multiple times to validate the Brain-only logic and failure states.
+-   **Testing agent used after significant changes:** YES, used extensively after the Redis migration and UI changes.
 -   **Troubleshoot agent used after agent stuck in loop:** NO.
--   **Test files created:** None.
--   **Known regressions:** The entire  page experience will be degraded or non-functional until the latest backend and frontend images are confirmed to be running in production.
+-   **Test files created:**  was created to validate the Redis connection and queueing logic.
+-   **Known regressions:** The Redis job queue is not working in production. Routes that should be asynchronous are falling back to synchronous, inline execution.
 
 **Credentials to test flow:**
--   **URL:** 
+-   **URL:** User's production URL must be obtained from the environment.
 -   **Username:** 
 -   **Password:** 
 
 **What agent forgot to execute**
--   The agent has been meticulously following the user's explicit instructions, which have been overwhelmingly focused on the Business Brain implementation and production deployment debugging. No tasks have been forgotten; rather, all other work has been correctly paused pending the resolution of the P0 deployment blocker.</analysis>
+-   The agent correctly prioritized the critical Redis blocker over other user requests. No tasks were forgotten; they were deferred in alignment with addressing the P0 issue.</analysis>

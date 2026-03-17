@@ -38,8 +38,10 @@ class DownloadRequest(BaseModel):
 
 
 def _get_storage():
-    from supabase_client import get_supabase_client
-    return get_supabase_client()
+    # Server-side file generation runs in backend workers without a user JWT.
+    # Use service-role client to avoid Storage/Table RLS write failures.
+    from supabase_client import get_supabase_admin
+    return get_supabase_admin()
 
 
 async def _generate_image(prompt: str, size: str = "1024x1024") -> bytes:

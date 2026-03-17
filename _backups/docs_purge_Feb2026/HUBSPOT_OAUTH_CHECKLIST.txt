@@ -71,7 +71,7 @@ PART C: TEST IN BIQC
 ───────────────────────────────────────────────────────────────────────
 
 Step 11: Open BIQC Integrations
-  □ Navigate to: https://advisor-engine.preview.emergentagent.com/integrations
+  □ Navigate to: https://business-brain-redis.preview.emergentagent.com/integrations
   □ Login as: andre@thestrategysquad.com.au (if not already logged in)
   
 Step 12: Connect HubSpot

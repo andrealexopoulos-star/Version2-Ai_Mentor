@@ -1,7 +1,7 @@
 {
   "test_run": {
     "timestamp": "2026-02-05T13:00:55.795503",
-    "base_url": "https://advisor-engine.preview.emergentagent.com",
+    "base_url": "https://business-brain-redis.preview.emergentagent.com",
     "total_tests": 12,
     "passed_tests": 11,
     "success_rate": "91.7%"
