@@ -201,12 +201,34 @@ def _check_edge_function(name: str):
     headers = {'Content-Type': 'application/json'}
     if service_role:
         headers['Authorization'] = f"Bearer {service_role}"
+
+    probe_map = {
+        'intelligence-bridge': {
+            'method': 'POST',
+            'json': {
+                'user_id': 'healthcheck',
+                'snapshot': {'id': 'healthcheck', 'open_risks': [], 'contradictions': []},
+            },
+        },
+        'watchtower-brain': {
+            'method': 'POST',
+            'json': {'message': 'Step 1', 'history': []},
+        },
+    }
+    probe = probe_map.get(name, {'method': 'GET'})
     try:
-        res = requests.get(url, headers=headers, timeout=2)
+        if probe['method'] == 'POST':
+            res = requests.post(url, headers=headers, json=probe.get('json') or {}, timeout=4)
+        else:
+            res = requests.get(url, headers=headers, timeout=2)
         if res.status_code == 404:
             return {'status': 'missing', 'detail': 'not deployed (404)'}
         if res.status_code in {200, 204, 400, 401, 403, 405}:
             return {'status': 'working', 'detail': f'reachable ({res.status_code})'}
+        if name == 'watchtower-brain' and res.status_code == 500:
+            body = (res.text or '')[:180]
+            if 'Active system prompt not found' in body:
+                return {'status': 'partial', 'detail': 'reachable, but system prompt missing'}
         return {'status': 'partial', 'detail': f'unexpected status {res.status_code}'}
     except Exception as e:
         return {'status': 'partial', 'detail': str(e)[:180]}
@@ -284,7 +306,7 @@ async def cognition_platform_audit(current_user: dict = Depends(get_current_user
         },
         {
             'function': 'brain_initial_calibration',
-            **_check_rpc(sb, 'business_core.brain_initial_calibration', {'p_tenant_id': tenant_id}),
+            **_check_rpc(sb, 'brain_initial_calibration', {'p_tenant_id': tenant_id}),
         },
     ]
 
@@ -297,8 +319,10 @@ async def cognition_platform_audit(current_user: dict = Depends(get_current_user
         'watchtower-brain',
         'market-signal-scorer',
         'calibration-engine',
+        'business-brain-merge-ingest',
+        'business-brain-metrics-cron',
     ]
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    with ThreadPoolExecutor(max_workers=10) as pool:
         edge_results = list(pool.map(_check_edge_function, edge_functions))
     edge_checks = [
         {

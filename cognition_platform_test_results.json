@@ -1,0 +1,560 @@
+{
+  "auth_login": {
+    "status": "PASS",
+    "token_length": 1294,
+    "user_id": "52a60959-b8f7-4032-a744-e164d8749ce6",
+    "details": "Login successful, token obtained (1294 chars)"
+  },
+  "platform_audit": {
+    "status": "PASS",
+    "all_states_match": true,
+    "audit_data": {
+      "generated_at": "2026-03-17T02:38:41.204830+00:00",
+      "tenant_id": "52a60959-b8f7-4032-a744-e164d8749ce6",
+      "summary": {
+        "working": 20,
+        "partial": 4,
+        "missing": 10,
+        "total_checks": 34,
+        "readiness_score": 58.8
+      },
+      "sql_schema_and_tables": [
+        {
+          "schema": "business_core",
+          "table": "customers",
+          "status": "missing_or_blocked",
+          "detail": "{'message': 'permission denied for table customers', 'code': '42501', 'hint': None, 'details': None}"
+        },
+        {
+          "schema": "business_core",
+          "table": "companies",
+          "status": "missing_or_blocked",
+          "detail": "{'message': 'permission denied for table companies', 'code': '42501', 'hint': None, 'details': None}"
+        },
+        {
+          "schema": "business_core",
+          "table": "deals",
+          "status": "missing_or_blocked",
+          "detail": "{'message': 'permission denied for table deals', 'code': '42501', 'hint': None, 'details': None}"
+        },
+        {
+          "schema": "business_core",
+          "table": "invoices",
+          "status": "missing_or_blocked",
+          "detail": "{'message': 'permission denied for table invoices', 'code': '42501', 'hint': None, 'details': None}"
+        },
+        {
+          "schema": "business_core",
+          "table": "business_metrics",
+          "status": "missing_or_blocked",
+          "detail": "{'message': 'permission denied for table business_metrics', 'code': '42501', 'hint': None, 'details': None}"
+        },
+        {
+          "schema": "business_core",
+          "table": "concern_registry",
+          "status": "missing_or_blocked",
+          "detail": "{'message': 'permission denied for table concern_registry', 'code': '42501', 'hint': None, 'details': None}"
+        },
+        {
+          "schema": "business_core",
+          "table": "concern_evaluations",
+          "status": "missing_or_blocked",
+          "detail": "{'message': 'permission denied for table concern_evaluations', 'code': '42501', 'hint': None, 'details': None}"
+        },
+        {
+          "schema": "business_core",
+          "table": "integration_snapshots",
+          "status": "working",
+          "detail": "queryable"
+        },
+        {
+          "schema": "business_core",
+          "table": "brain_concerns",
+          "status": "working",
+          "detail": "queryable"
+        },
+        {
+          "schema": "business_core",
+          "table": "brain_evaluations",
+          "status": "working",
+          "detail": "queryable"
+        },
+        {
+          "schema": "public",
+          "table": "ic_intelligence_events",
+          "status": "working",
+          "detail": "queryable"
+        },
+        {
+          "schema": "public",
+          "table": "ic_daily_metric_snapshots",
+          "status": "working",
+          "detail": "queryable"
+        },
+        {
+          "schema": "public",
+          "table": "ic_ontology_nodes",
+          "status": "working",
+          "detail": "queryable"
+        },
+        {
+          "schema": "public",
+          "table": "ic_ontology_edges",
+          "status": "working",
+          "detail": "queryable"
+        },
+        {
+          "schema": "public",
+          "table": "ic_decisions",
+          "status": "working",
+          "detail": "queryable"
+        },
+        {
+          "schema": "public",
+          "table": "ic_model_registry",
+          "status": "working",
+          "detail": "queryable"
+        },
+        {
+          "schema": "public",
+          "table": "automation_actions",
+          "status": "working",
+          "detail": "queryable"
+        },
+        {
+          "schema": "public",
+          "table": "automation_executions",
+          "status": "working",
+          "detail": "queryable"
+        },
+        {
+          "schema": "public",
+          "table": "generated_files",
+          "status": "working",
+          "detail": "queryable"
+        }
+      ],
+      "sql_functions": [
+        {
+          "function": "ic_generate_cognition_contract",
+          "status": "working",
+          "detail": "callable"
+        },
+        {
+          "function": "ic_calculate_risk_baseline",
+          "status": "working",
+          "detail": "callable (overloaded signature)"
+        },
+        {
+          "function": "brain_initial_calibration",
+          "status": "missing",
+          "detail": "{'message': 'Could not find the function public.brain_initial_calibration(p_tenant_id) in the schema cache', 'code': 'PGRST202', 'hint': 'Perhaps you meant to call the function pub"
+        }
+      ],
+      "edge_functions": [
+        {
+          "edge_function": "biqc-insights-cognitive",
+          "status": "working",
+          "detail": "reachable (401)"
+        },
+        {
+          "edge_function": "email_priority",
+          "status": "working",
+          "detail": "reachable (401)"
+        },
+        {
+          "edge_function": "gmail_prod",
+          "status": "working",
+          "detail": "reachable (401)"
+        },
+        {
+          "edge_function": "refresh_tokens",
+          "status": "partial",
+          "detail": "HTTPSConnectionPool(host='vwwandhoydemcybltoxz.supabase.co', port=443): Read timed out. (read timeout=2)"
+        },
+        {
+          "edge_function": "intelligence-bridge",
+          "status": "working",
+          "detail": "reachable (200)"
+        },
+        {
+          "edge_function": "watchtower-brain",
+          "status": "partial",
+          "detail": "reachable, but system prompt missing"
+        },
+        {
+          "edge_function": "market-signal-scorer",
+          "status": "working",
+          "detail": "reachable (200)"
+        },
+        {
+          "edge_function": "calibration-engine",
+          "status": "working",
+          "detail": "reachable (200)"
+        },
+        {
+          "edge_function": "business-brain-merge-ingest",
+          "status": "missing",
+          "detail": "not deployed (404)"
+        },
+        {
+          "edge_function": "business-brain-metrics-cron",
+          "status": "missing",
+          "detail": "not deployed (404)"
+        }
+      ],
+      "webhooks": [
+        {
+          "webhook": "stripe",
+          "status": "partial",
+          "detail": "STRIPE_WEBHOOK_SECRET missing"
+        },
+        {
+          "webhook": "merge",
+          "status": "partial",
+          "detail": "connector polling active; webhook-first ingestion not fully enabled"
+        }
+      ],
+      "serving_map": [
+        {
+          "platform_surface": "/advisor",
+          "primary_apis": [
+            "/api/brain/priorities",
+            "/api/unified/advisor"
+          ],
+          "status": "working"
+        },
+        {
+          "platform_surface": "/revenue",
+          "primary_apis": [
+            "/api/unified/revenue",
+            "/api/cognition/revenue"
+          ],
+          "status": "working"
+        },
+        {
+          "platform_surface": "/operations",
+          "primary_apis": [
+            "/api/unified/operations",
+            "/api/cognition/operations"
+          ],
+          "status": "working"
+        },
+        {
+          "platform_surface": "/risk",
+          "primary_apis": [
+            "/api/unified/risk",
+            "/api/cognition/risk"
+          ],
+          "status": "working"
+        },
+        {
+          "platform_surface": "/market",
+          "primary_apis": [
+            "/api/unified/market",
+            "/api/cognition/market"
+          ],
+          "status": "working"
+        },
+        {
+          "platform_surface": "/soundboard",
+          "primary_apis": [
+            "/api/soundboard/chat",
+            "/api/cognition/overview"
+          ],
+          "status": "working"
+        }
+      ]
+    },
+    "verification_results": {
+      "intelligence-bridge": "\u2705 MATCH",
+      "market-signal-scorer": "\u2705 MATCH",
+      "calibration-engine": "\u2705 MATCH",
+      "business-brain-merge-ingest": "\u2705 MATCH",
+      "business-brain-metrics-cron": "\u2705 MATCH",
+      "watchtower-brain": "\u2705 MATCH"
+    },
+    "details": "Platform audit returned 200, 6 services checked"
+  },
+  "brain_runtime": {
+    "status": "PASS",
+    "business_core_ready": false,
+    "expected_value": false,
+    "state_match": true,
+    "runtime_data": {
+      "tenant_id": "52a60959-b8f7-4032-a744-e164d8749ce6",
+      "server_time": "2026-03-17T02:38:42.603902+00:00",
+      "business_core_ready": false,
+      "brain_policy": {
+        "plan_tier": "super_admin",
+        "plan_label": "Custom",
+        "visible_metric_limit": 100,
+        "catalog_total_metrics": 100,
+        "custom_thresholds_active": 0
+      },
+      "catalog_source_resolved": "/app/backend/business_brain_top100_catalog.json",
+      "catalog_metric_count": 100,
+      "catalog_diagnostics": {
+        "candidates": [
+          {
+            "path": "/app/backend/business_brain_top100_catalog.json",
+            "exists": true,
+            "parsed_count": 100,
+            "format": "json",
+            "error": null
+          },
+          {
+            "path": "/app/backend/backend/business_brain_top100_catalog.json",
+            "exists": false,
+            "parsed_count": 0,
+            "format": "json",
+            "error": null
+          },
+          {
+            "path": "/app/business_brain_top100_catalog.json",
+            "exists": false,
+            "parsed_count": 0,
+            "format": "json",
+            "error": null
+          },
+          {
+            "path": "/home/oai/share/biqc_top100_metrics.md",
+            "exists": false,
+            "parsed_count": 0,
+            "format": "markdown",
+            "error": null
+          },
+          {
+            "path": "/app/memory/biqc_top100_metrics.md",
+            "exists": false,
+            "parsed_count": 0,
+            "format": "markdown",
+            "error": null
+          }
+        ],
+        "resolved_source": "/app/backend/business_brain_top100_catalog.json",
+        "resolved_count": 100
+      },
+      "tier_mode": "custom",
+      "runtime_expectation": {
+        "target_metric_count": 100,
+        "target_business_core_ready": true
+      }
+    },
+    "details": "Runtime check returned 200, business_core_ready=False"
+  },
+  "brain_calibration": {
+    "status": "PASS",
+    "calibration_status": "fallback",
+    "expected_status": "fallback",
+    "status_match": true,
+    "calibration_data": {
+      "status": "fallback",
+      "tenant_id": "52a60959-b8f7-4032-a744-e164d8749ce6",
+      "top_5_concerns": [
+        {
+          "concern_id": "cashflow_risk",
+          "priority_score": 20.8567,
+          "impact": 8.6,
+          "urgency": 7.74,
+          "confidence": 0.94,
+          "effort": 3.0,
+          "recommendation": "ERROR \u2014 investigate Merge/Xero token health and API state immediately, then run Refresh intelligence.",
+          "tier": "free",
+          "evidence": [
+            {
+              "provider": "Xero",
+              "error": "401: IntegrationAuthFailed: Merge account token is invalid or expired"
+            }
+          ],
+          "explanation": "A non-live or failed accounting API state was detected and requires immediate remediation before client-facing use.",
+          "source": {
+            "event_id": null,
+            "provider": "Xero Accounting",
+            "signal_key": "accounting-sync-unavailable",
+            "bucket": "decide_now"
+          },
+          "time_window": {
+            "period": "live",
+            "evaluated_at": "2026-03-17T02:38:47.136577+00:00"
+          },
+          "deterministic_rule": "executive_surface_live_priority",
+          "probabilistic_model": "business_brain_live_surface_v1",
+          "priority_formula": {
+            "formula": "impact*urgency*confidence/max(1,effort)"
+          },
+          "issue_brief": "A non-live or failed accounting API state was detected and requires immediate remediation before client-facing use.",
+          "why_now_brief": "401: IntegrationAuthFailed: Merge account token is invalid or expired",
+          "action_brief": "ERROR \u2014 investigate Merge/Xero token health and API state immediately, then run Refresh intelligence.",
+          "if_ignored_brief": "You may be making cash decisions blind while receivables risk is hidden.",
+          "fact_points": [],
+          "source_summary": "Source signals came from Xero Accounting.",
+          "confidence_note": "Confidence derived from live signal interval 91\u201397%.",
+          "outlook_30_60_90": {
+            "ignored": [
+              86,
+              96,
+              99
+            ],
+            "actioned": [
+              72,
+              78,
+              77
+            ],
+            "meaning": "Projected risk path over 30, 60, and 90 days if ignored versus actioned now."
+          },
+          "repeat_count": 1,
+          "last_seen": "2026-03-17T02:38:47.136577+00:00",
+          "escalation_state": "elevated",
+          "decision_label": "ERROR: Xero live data feed is unavailable.",
+          "confidence_score": 0.94,
+          "data_sources_count": 1,
+          "data_freshness": "0m",
+          "recommended_action_id": "action.brain.cashflow_risk",
+          "evidence_lineage": {
+            "engine_mode": "live_transient",
+            "source": "Xero Accounting",
+            "signal_key": "accounting-sync-unavailable"
+          },
+          "lineage": {
+            "engine_mode": "live_transient",
+            "source": "Xero Accounting",
+            "signal_key": "accounting-sync-unavailable"
+          }
+        },
+        {
+          "concern_id": "pipeline_stagnation",
+          "priority_score": 5.5254,
+          "impact": 5.8,
+          "urgency": 5.22,
+          "confidence": 0.73,
+          "effort": 4.0,
+          "recommendation": "Review and clear top-priority inbox items before end of day.",
+          "tier": "free",
+          "evidence": [
+            {
+              "from": "Margaret BAINBRIDGE",
+              "reason": "Contains urgency, commercial risk, or deadline language.",
+              "snippet": "\u200c \u200c \u200c \u200c \u200c \u200c \u200c \u200c \u200c \u200c \u200c \u200c \u200c \u200c \u200c \u200c \u200c \u200c\r\n\r\nYEAR 7 ADANAC CAMP important information\r\nRe: Event - YEAR 7 ADANAC CAMP FINAL PAYMENT 2026 at Buckley Park College\r\n\r\nDear Parents,\r\nThe final payment for camp is due today. Please ensure that you have filled out th",
+              "subject": "YEAR 7 ADANAC CAMP important information",
+              "due_date": null,
+              "email_id": "ba430343-6074-4be7-a444-4a2cdf9c6cb5",
+              "received": "2026-03-12T20:09:31+00:00",
+              "action_item": null,
+              "email_index": 10,
+              "suggested_action": "Review today and send a decisive reply or escalation."
+            },
+            {
+              "from": "Mandy Meuwissen",
+              "reason": "Contains urgency, commercial risk, or deadline language.",
+              "snippet": "Hi Andre,\r\n\r\nI hope you had a great weekend!\r\nPlease see attached our design fees for your home.\r\n\r\nThis includes joinery design and selections for everything that we discussed last week.\r\nIf you are happy to proceed, I can update the invoice for consulti",
+              "subject": "Quote for design fees - concept dcf",
+              "due_date": null,
+              "email_id": "ed40830d-1423-4042-bb66-cb9f3ae68619",
+              "received": "2026-03-10T01:23:30+00:00",
+              "action_item": null,
+              "email_index": 19,
+              "suggested_action": "Review today and send a decisive reply or escalation."
+            }
+          ],
+          "explanation": "Customer and commercial communications need focused triage this week.",
+          "source": {
+            "event_id": null,
+            "provider": "Priority Inbox",
+            "signal_key": "priority-inbox-threads",
+            "bucket": "monitor_this_week"
+          },
+          "time_window": {
+            "period": "live",
+            "evaluated_at": "2026-03-17T02:38:47.136577+00:00"
+          },
+          "deterministic_rule": "executive_surface_live_priority",
+          "probabilistic_model": "business_brain_live_surface_v1",
+          "priority_formula": {
+            "formula": "impact*urgency*confidence/max(1,effort)"
+          },
+          "issue_brief": "Customer and commercial communications need focused triage this week.",
+          "why_now_brief": "Contains urgency, commercial risk, or deadline language.",
+          "action_brief": "Review and clear top-priority inbox items before end of day.",
+          "if_ignored_brief": "Unresolved high-priority threads can escalate into churn and delayed revenue collection.",
+          "fact_points": [
+            "Thread: YEAR 7 ADANAC CAMP important information",
+            "Thread: Quote for design fees - concept dcf"
+          ],
+          "source_summary": "Source signals came from Priority Inbox.",
+          "confidence_note": "Confidence derived from live signal interval 64\u201382%.",
+          "outlook_30_60_90": {
+            "ignored": [
+              58,
+              68,
+              77
+            ],
+            "actioned": [
+              44,
+              50,
+              55
+            ],
+            "meaning": "Projected risk path over 30, 60, and 90 days if ignored versus actioned now."
+          },
+          "repeat_count": 2,
+          "last_seen": "2026-03-17T02:38:47.136577+00:00",
+          "escalation_state": "monitoring",
+          "decision_label": "2 high-priority threads need owner attention.",
+          "confidence_score": 0.73,
+          "data_sources_count": 2,
+          "data_freshness": "0m",
+          "recommended_action_id": "action.brain.pipeline_stagnation",
+          "evidence_lineage": {
+            "engine_mode": "live_transient",
+            "source": "Priority Inbox",
+            "signal_key": "priority-inbox-threads"
+          },
+          "lineage": {
+            "engine_mode": "live_transient",
+            "source": "Priority Inbox",
+            "signal_key": "priority-inbox-threads"
+          }
+        }
+      ],
+      "confidence_score": 0.835,
+      "data_coverage": 0.3333333333333333,
+      "data_sources_count": 2,
+      "generated_at": "2026-03-17T02:38:47.137112+00:00"
+    },
+    "details": "Initial calibration returned 200, status=fallback"
+  },
+  "unified_sanity": {
+    "status": "PASS",
+    "revenue_ok": true,
+    "operations_ok": true,
+    "both_ok": true,
+    "sanity_results": {
+      "revenue": {
+        "status": "\u2705 PASS",
+        "status_code": 200,
+        "data_keys": [
+          "connected",
+          "signals",
+          "brain_summary",
+          "confidence_score",
+          "data_sources_count",
+          "data_freshness",
+          "lineage"
+        ]
+      },
+      "operations": {
+        "status": "\u2705 PASS",
+        "status_code": 200,
+        "data_keys": [
+          "connected",
+          "signals",
+          "confidence_score",
+          "data_sources_count",
+          "data_freshness",
+          "lineage"
+        ]
+      }
+    },
+    "details": "Revenue: \u2705 PASS, Operations: \u2705 PASS"
+  }
+}
