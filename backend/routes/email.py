@@ -1611,6 +1611,22 @@ async def get_calendar_events(
         raise HTTPException(status_code=400, detail="Outlook not connected")
     
     access_token = tokens.get("access_token")
+    refresh_token = tokens.get("refresh_token")
+    expires_at = tokens.get("expires_at") or tokens.get("token_expiry")
+    if expires_at:
+        try:
+            expiry_dt = datetime.fromisoformat(str(expires_at).replace("Z", "+00:00"))
+            if expiry_dt <= datetime.now(timezone.utc) + timedelta(minutes=1):
+                if refresh_token:
+                    refreshed = await refresh_outlook_token_supabase(current_user["id"], refresh_token)
+                    access_token = refreshed.get("access_token") or access_token
+                else:
+                    raise HTTPException(status_code=401, detail="Outlook token expired. Please reconnect Outlook.")
+        except HTTPException:
+            raise
+        except Exception:
+            pass
+
     headers = {"Authorization": f"Bearer {access_token}"}
     
     # Calculate date range
@@ -1628,6 +1644,11 @@ async def get_calendar_events(
     
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(graph_url, headers=headers, params=params)
+        if response.status_code == 401 and refresh_token:
+            refreshed = await refresh_outlook_token_supabase(current_user["id"], refresh_token)
+            access_token = refreshed.get("access_token") or access_token
+            headers["Authorization"] = f"Bearer {access_token}"
+            response = await client.get(graph_url, headers=headers, params=params)
         
         if response.status_code != 200:
             raise HTTPException(status_code=400, detail=f"Failed to fetch calendar: {response.text}")

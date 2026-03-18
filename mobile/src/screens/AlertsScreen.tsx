@@ -51,6 +51,14 @@ export default function AlertsScreen() {
       <Text style={styles.title}>Alerts</Text>
       <Text style={styles.subtitle}>{alerts.length} active alert{alerts.length !== 1 ? 's' : ''}</Text>
 
+      {alerts.length > 0 && (
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryPill}><Text style={styles.summaryValue}>{alerts.filter((alert) => alert.severity === 'high').length}</Text><Text style={styles.summaryLabel}>High</Text></View>
+          <View style={styles.summaryPill}><Text style={styles.summaryValue}>{alerts.filter((alert) => alert.severity === 'medium').length}</Text><Text style={styles.summaryLabel}>Medium</Text></View>
+          <View style={styles.summaryPill}><Text style={styles.summaryValue}>{alerts.length}</Text><Text style={styles.summaryLabel}>Total</Text></View>
+        </View>
+      )}
+
       {alerts.length === 0 ? (
         <EmptyState
           icon={<Ionicons name="checkmark-circle-outline" size={32} color={theme.colors.success} />}
@@ -89,6 +97,10 @@ const styles = StyleSheet.create({
   content: { padding: theme.spacing.lg, paddingTop: 60 },
   title: { fontFamily: theme.fonts.head, fontSize: 28, color: theme.colors.text, fontWeight: '600' },
   subtitle: { fontFamily: theme.fonts.mono, fontSize: 12, color: theme.colors.textMuted, marginTop: 4, marginBottom: 20, textTransform: 'uppercase', letterSpacing: 0.5 },
+  summaryRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  summaryPill: { flex: 1, padding: 12, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.bgCard },
+  summaryValue: { fontFamily: theme.fonts.mono, fontSize: 22, color: theme.colors.brand, fontWeight: '700' },
+  summaryLabel: { fontFamily: theme.fonts.mono, fontSize: 10, color: theme.colors.textMuted, marginTop: 4, textTransform: 'uppercase' },
   alertCard: { backgroundColor: theme.colors.bgCard, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border, borderLeftWidth: 3, padding: 16, marginBottom: 12 },
   alertHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   alertSeverity: { fontFamily: theme.fonts.mono, fontSize: 10, textTransform: 'uppercase', fontWeight: '700' },
