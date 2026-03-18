@@ -14,18 +14,32 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState(0);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) return;
+    if (lockoutUntil && Date.now() < lockoutUntil) {
+      setError(`Too many failed attempts. Please wait ${Math.max(1, Math.ceil((lockoutUntil - Date.now()) / 1000))} seconds.`);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
       await auth.login(email.trim(), password);
+      setFailedAttempts(0);
+      setLockoutUntil(0);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onLogin();
     } catch (err: any) {
+      const next = failedAttempts + 1;
+      setFailedAttempts(next);
+      if (next >= 3) {
+        const lockSeconds = Math.min(30, next * 5);
+        setLockoutUntil(Date.now() + lockSeconds * 1000);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setError(err.response?.data?.detail || 'Invalid credentials');
+      setError(err.response?.data?.detail || err.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
@@ -76,8 +90,8 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity style={[styles.loginButton, loading && { opacity: 0.6 }]} onPress={handleLogin} disabled={loading} activeOpacity={0.8}>
-            <Text style={styles.loginButtonText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
+          <TouchableOpacity style={[styles.loginButton, (loading || Boolean(lockoutUntil && Date.now() < lockoutUntil)) ? { opacity: 0.6 } : undefined]} onPress={handleLogin} disabled={loading || Boolean(lockoutUntil && Date.now() < lockoutUntil)} activeOpacity={0.8}>
+            <Text style={styles.loginButtonText}>{loading ? 'Signing in...' : (lockoutUntil && Date.now() < lockoutUntil ? `Retry in ${Math.max(1, Math.ceil((lockoutUntil - Date.now()) / 1000))}s` : 'Sign In')}</Text>
           </TouchableOpacity>
         </View>
 

@@ -1,46 +1,48 @@
 /**
- * BIQc Mobile — Home Screen (Cognition Overview)
- * Thin client: Fetches from /api/cognition/overview only.
- * All intelligence computed by backend.
+ * BIQc Mobile — Home Screen (Daily Brief)
+ * Mobile-first command brief for SoundBoard users.
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../theme';
-import { Card, StatusBadge, SectionHeader, LoadingScreen, EmptyState } from '../components/ui';
-import api from '../lib/api';
+import { Card, SectionHeader, LoadingScreen, EmptyState } from '../components/ui';
+import api, { auth } from '../lib/api';
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  STABLE: { label: 'Stable', color: theme.colors.success },
-  DRIFT: { label: 'Drifting', color: theme.colors.warning },
-  COMPRESSION: { label: 'Under Pressure', color: theme.colors.brand },
-  CRITICAL: { label: 'Critical', color: theme.colors.danger },
-  on_track: { label: 'On Track', color: theme.colors.success },
-};
-
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [cognition, setCognition] = useState<any>(null);
-  const [snapshot, setSnapshot] = useState<any>(null);
+  const [brief, setBrief] = useState<any>(null);
+  const [priorities, setPriorities] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
     try {
-      // Fetch user profile
-      const [userRes, cognitionRes, snapRes] = await Promise.allSettled([
+      const storedUser = await auth.getUser();
+      setUser(storedUser);
+      const [userRes, briefRes, priorityRes, alertsRes, calendarRes] = await Promise.allSettled([
         api.get('/auth/check-profile'),
-        api.get('/cognition/overview'),
-        api.get('/snapshot/latest'),
+        api.get('/intelligence/brief'),
+        api.get('/brain/priorities'),
+        api.get('/notifications/alerts'),
+        api.get('/outlook/calendar/events'),
       ]);
 
-      if (userRes.status === 'fulfilled') setUser(userRes.value.data?.user);
-      if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data?.status !== 'MIGRATION_REQUIRED') {
-        setCognition(cognitionRes.value.data);
+      if (userRes.status === 'fulfilled') setUser(userRes.value.data?.user || storedUser);
+      if (briefRes.status === 'fulfilled') setBrief(briefRes.value.data);
+      if (priorityRes.status === 'fulfilled') setPriorities(priorityRes.value.data?.concerns || []);
+      if (alertsRes.status === 'fulfilled') setAlerts(alertsRes.value.data?.notifications || []);
+      if (calendarRes.status === 'fulfilled') {
+        setCalendarEvents(Array.isArray(calendarRes.value.data) ? calendarRes.value.data : calendarRes.value.data?.events || []);
       }
-      if (snapRes.status === 'fulfilled') setSnapshot(snapRes.value.data?.cognitive);
-    } catch {} finally { setLoading(false); }
+    } catch {
+      // keep UI graceful on mobile
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -52,16 +54,12 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, [fetchData]);
 
-  if (loading) return <LoadingScreen message="Loading intelligence..." />;
+  if (loading) return <LoadingScreen message="Loading your mobile brief..." />;
 
-  const c = snapshot || {};
-  const stateStatus = typeof c.system_state === 'object' ? c.system_state?.status : c.system_state;
-  const st = STATUS_MAP[stateStatus] || STATUS_MAP.STABLE;
-  const interpretation = typeof c.system_state === 'object' ? c.system_state?.interpretation : null;
-  const memo = c.executive_memo || c.memo || '';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
   const ownerName = user?.full_name?.split(' ')[0] || 'there';
+  const topPriority = priorities[0];
 
   return (
     <ScrollView
@@ -70,49 +68,83 @@ export default function HomeScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.brand} />}
       showsVerticalScrollIndicator={false}
     >
-      {/* Greeting */}
       <Text style={styles.greeting}>Good {greeting}, {ownerName}.</Text>
+      <Text style={styles.subtitle}>Your mobile BIQc brief — built for fast decisions and SoundBoard follow-through.</Text>
 
-      {/* Status Banner */}
-      <View style={[styles.statusBanner, { borderColor: st.color + '30' }]}>
-        <View style={styles.statusRow}>
-          <View style={[styles.statusDot, { backgroundColor: st.color }]} />
-          <Text style={[styles.statusLabel, { color: st.color }]}>{snapshot ? st.label : 'Waiting for data'}</Text>
+      <Card>
+        <SectionHeader title="Daily Brief" subtitle={brief?.suppressed ? 'Attention protected' : 'Live intelligence summary'} />
+        {brief?.suppressed ? (
+          <Text style={styles.bodyText}>{brief.reason}</Text>
+        ) : (
+          <>
+            <View style={styles.metricRow}>
+              <View style={styles.metricPill}><Text style={styles.metricValue}>{brief?.summary?.actions_pending || 0}</Text><Text style={styles.metricLabel}>Actions pending</Text></View>
+              <View style={styles.metricPill}><Text style={styles.metricValue}>{brief?.summary?.observations_new || 0}</Text><Text style={styles.metricLabel}>Observations</Text></View>
+              <View style={styles.metricPill}><Text style={styles.metricValue}>{alerts.length}</Text><Text style={styles.metricLabel}>Alerts</Text></View>
+            </View>
+            <Text style={styles.bodyText}>{topPriority?.issue_brief || topPriority?.recommendation || 'Open SoundBoard and ask BIQc what matters most right now.'}</Text>
+          </>
+        )}
+      </Card>
+
+      <Card>
+        <SectionHeader title="Top Priorities" subtitle="What BIQc wants you to handle next" />
+        {priorities.length > 0 ? priorities.slice(0, 3).map((priority, index) => (
+          <View key={`${priority.concern_id}-${index}`} style={styles.priorityRow}>
+            <View style={styles.priorityDot} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.priorityTitle}>{priority.issue_brief || priority.name || priority.concern_id}</Text>
+              <Text style={styles.priorityDetail}>{priority.action_brief || priority.recommendation || 'Open SoundBoard to turn this into an action plan.'}</Text>
+            </View>
+          </View>
+        )) : <Text style={styles.bodyText}>No high-priority concern is active right now.</Text>}
+      </Card>
+
+      <Card>
+        <SectionHeader title="Ask SoundBoard now" subtitle="Jump straight into the conversation with a useful prompt" />
+        <View style={styles.promptRow}>
+          {[
+            'What needs my attention this week?',
+            'How is my cash flow looking?',
+            'What are my biggest risks right now?',
+            'Which deals are at risk of stalling?',
+          ].map((prompt) => (
+            <TouchableOpacity
+              key={prompt}
+              style={styles.promptChip}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('Chat', { prompt })}
+            >
+              <Text style={styles.promptText}>{prompt}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
-        {interpretation && <Text style={styles.statusDetail}>{interpretation}</Text>}
-      </View>
+      </Card>
 
-      {/* Cognition Indices (from backend) */}
-      {cognition && cognition.indices && (
-        <Card>
-          <SectionHeader title="Instability Indices" subtitle="Backend-computed intelligence" />
-          <View style={styles.indicesGrid}>
-            {Object.entries(cognition.indices).map(([key, value]: [string, any]) => (
-              <View key={key} style={styles.indexItem}>
-                <Text style={styles.indexValue}>{typeof value === 'number' ? (value * 100).toFixed(0) + '%' : String(value)}</Text>
-                <Text style={styles.indexLabel}>{key.replace(/_/g, ' ')}</Text>
-              </View>
-            ))}
+      <Card>
+        <SectionHeader title="Execution Today" subtitle="Alerts and meetings in one glance" />
+        <View style={styles.metricRow}>
+          <View style={styles.metricPill}><Text style={styles.metricValue}>{alerts.length}</Text><Text style={styles.metricLabel}>Alerts</Text></View>
+          <View style={styles.metricPill}><Text style={styles.metricValue}>{calendarEvents.length}</Text><Text style={styles.metricLabel}>Meetings</Text></View>
+        </View>
+        {calendarEvents.slice(0, 2).map((event, index) => (
+          <View key={`${event.id || index}`} style={styles.calendarRow}>
+            <Ionicons name="calendar-outline" size={16} color={theme.colors.brand} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.priorityTitle}>{event.subject || 'Upcoming event'}</Text>
+              <Text style={styles.priorityDetail}>{event.start ? new Date(event.start).toLocaleString() : 'Time unavailable'}</Text>
+            </View>
           </View>
-        </Card>
-      )}
+        ))}
+      </Card>
 
-      {/* Executive Memo */}
-      {memo ? (
-        <Card>
-          <View style={styles.memoHeader}>
-            <Ionicons name="flash" size={14} color={theme.colors.brand} />
-            <Text style={styles.memoTitle}>Executive Brief</Text>
-          </View>
-          <Text style={styles.memoText}>{memo.substring(0, 400)}{memo.length > 400 ? '...' : ''}</Text>
-        </Card>
-      ) : (
+      {!brief && !priorities.length && !alerts.length ? (
         <EmptyState
           icon={<Ionicons name="analytics-outline" size={32} color={theme.colors.textMuted} />}
           title="Connect your tools"
-          subtitle="CRM, accounting, and email integrations unlock intelligence."
+          subtitle="CRM, accounting, and email integrations unlock mobile BIQc intelligence."
         />
-      )}
+      ) : null}
 
       <View style={{ height: 100 }} />
     </ScrollView>
@@ -122,17 +154,19 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.bg },
   content: { padding: theme.spacing.lg, paddingTop: 60 },
-  greeting: { fontFamily: theme.fonts.head, fontSize: 28, color: theme.colors.text, fontWeight: '600', marginBottom: 20 },
-  statusBanner: { borderRadius: theme.radius.lg, borderWidth: 1, padding: theme.spacing.lg, marginBottom: theme.spacing.md, backgroundColor: theme.colors.bgCard },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  statusDot: { width: 10, height: 10, borderRadius: 5 },
-  statusLabel: { fontSize: 16, fontWeight: '600', flex: 1 },
-  statusDetail: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 8, lineHeight: 20 },
-  indicesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 },
-  indexItem: { width: '46%', backgroundColor: theme.colors.bg, borderRadius: theme.radius.md, padding: 12, borderWidth: 1, borderColor: theme.colors.border },
-  indexValue: { fontFamily: theme.fonts.mono, fontSize: 20, fontWeight: '700', color: theme.colors.text },
-  indexLabel: { fontFamily: theme.fonts.mono, fontSize: 9, color: theme.colors.textMuted, textTransform: 'uppercase', marginTop: 4 },
-  memoHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  memoTitle: { fontSize: 14, fontWeight: '600', color: theme.colors.text },
-  memoText: { fontSize: 13, color: theme.colors.textSecondary, lineHeight: 20 },
+  greeting: { fontFamily: theme.fonts.head, fontSize: 28, color: theme.colors.text, fontWeight: '600', marginBottom: 6 },
+  subtitle: { fontFamily: theme.fonts.body, fontSize: 14, color: theme.colors.textSecondary, marginBottom: 20 },
+  bodyText: { fontFamily: theme.fonts.body, fontSize: 13, color: theme.colors.textSecondary, lineHeight: 20 },
+  metricRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  metricPill: { flex: 1, padding: 12, backgroundColor: theme.colors.bg, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border },
+  metricValue: { fontFamily: theme.fonts.mono, fontSize: 22, color: theme.colors.brand, fontWeight: '700' },
+  metricLabel: { fontFamily: theme.fonts.mono, fontSize: 10, color: theme.colors.textMuted, textTransform: 'uppercase', marginTop: 4 },
+  promptRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  promptChip: { backgroundColor: theme.colors.bg, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.md, paddingHorizontal: 12, paddingVertical: 10 },
+  promptText: { fontFamily: theme.fonts.body, fontSize: 12, color: theme.colors.textSecondary },
+  priorityRow: { flexDirection: 'row', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+  priorityDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.brand, marginTop: 6 },
+  priorityTitle: { fontFamily: theme.fonts.bodySemiBold, fontSize: 14, color: theme.colors.text },
+  priorityDetail: { fontFamily: theme.fonts.body, fontSize: 12, color: theme.colors.textSecondary, marginTop: 4, lineHeight: 18 },
+  calendarRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingVertical: 10, borderTopWidth: 1, borderTopColor: theme.colors.border },
 });

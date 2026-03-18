@@ -1,9 +1,9 @@
 /**
- * BIQc Mobile — Chat Screen (Soundboard)
- * ChatGPT-grade conversational interface
+ * BIQc Mobile — Chat Screen (SoundBoard)
+ * Mobile-first business Q&A with conversation history.
  */
-import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { View, Text, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../theme';
@@ -11,12 +11,43 @@ import api from '../lib/api';
 
 type Message = { id: string; role: 'user' | 'assistant'; text: string; timestamp: number };
 
-export default function ChatScreen() {
+export default function ChatScreen({ route }: any) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [sessionId] = useState(() => `mobile-${Date.now()}`);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<any[]>([]);
   const flatListRef = useRef<FlatList>(null);
+
+  const hydrateConversation = useCallback(async (nextConversationId: string) => {
+    const detail = await api.get(`/soundboard/conversations/${nextConversationId}`);
+    setConversationId(nextConversationId);
+    setMessages((detail.data?.messages || []).map((msg: any, index: number) => ({
+      id: `${nextConversationId}-${index}`,
+      role: msg.role,
+      text: msg.content,
+      timestamp: new Date(msg.timestamp || Date.now()).getTime(),
+    })));
+  }, []);
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const res = await api.get('/soundboard/conversations');
+      const rows = res.data?.conversations || [];
+      setConversations(rows);
+      if (!conversationId && rows[0]?.id) {
+        await hydrateConversation(rows[0].id);
+      }
+    } catch {
+      // Non-fatal on first mobile load
+    }
+  }, [conversationId, hydrateConversation]);
+
+  useEffect(() => { loadConversations(); }, [loadConversations]);
+  useEffect(() => {
+    const prompt = route?.params?.prompt;
+    if (prompt) setInput(prompt);
+  }, [route?.params?.prompt]);
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
@@ -32,12 +63,13 @@ export default function ChatScreen() {
     try {
       const res = await api.post('/soundboard/chat', {
         message: text,
-        conversation_id: null,
-        session_id: sessionId,
+        conversation_id: conversationId,
       });
       const reply = res.data?.reply || res.data?.response || res.data?.message || 'No response received.';
       const assistantMsg: Message = { id: `a-${Date.now()}`, role: 'assistant', text: reply, timestamp: Date.now() };
       setMessages(prev => [...prev, assistantMsg]);
+      if (res.data?.conversation_id) setConversationId(res.data.conversation_id);
+      await loadConversations();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
       const errorMsg: Message = { id: `e-${Date.now()}`, role: 'assistant', text: 'Unable to connect. Please try again.', timestamp: Date.now() };
@@ -45,7 +77,7 @@ export default function ChatScreen() {
     } finally {
       setSending(false);
     }
-  }, [input, sending, sessionId]);
+  }, [input, sending, conversationId, loadConversations]);
 
   const renderMessage = useCallback(({ item }: { item: Message }) => (
     <View style={[styles.msgRow, item.role === 'user' && styles.msgRowUser]}>
@@ -60,11 +92,10 @@ export default function ChatScreen() {
       {messages.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="chatbubbles-outline" size={48} color={theme.colors.brand + '30'} />
-          <Text style={styles.emptyTitle}>BIQc Soundboard</Text>
-          <Text style={styles.emptySubtitle}>Ask anything about your business intelligence.</Text>
-          {/* Quick prompts */}
+          <Text style={styles.emptyTitle}>BIQc SoundBoard</Text>
+          <Text style={styles.emptySubtitle}>Ask anything about your business. SoundBoard uses live business data, profile context, and conversation memory.</Text>
           <View style={styles.promptsGrid}>
-            {['What should I focus on?', 'Summarise my risk profile', 'What are my competitors doing?', 'Draft a follow-up email'].map(prompt => (
+            {['What needs my attention this week?', 'How is my cash flow looking?', 'What are my biggest risks right now?', 'Which deals are at risk?'].map(prompt => (
               <TouchableOpacity key={prompt} style={styles.promptChip} onPress={() => { setInput(prompt); }} activeOpacity={0.7}>
                 <Text style={styles.promptText}>{prompt}</Text>
               </TouchableOpacity>
@@ -83,13 +114,25 @@ export default function ChatScreen() {
         />
       )}
 
-      {/* Input Bar */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.historyRail}>
+        {conversations.map((conversation) => (
+          <TouchableOpacity
+            key={conversation.id}
+            style={[styles.historyChip, conversationId === conversation.id && styles.historyChipActive]}
+            onPress={() => hydrateConversation(conversation.id)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.historyChipText} numberOfLines={1}>{conversation.title || 'Conversation'}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
       <View style={styles.inputBar}>
         <TextInput
           style={styles.textInput}
           value={input}
           onChangeText={setInput}
-          placeholder="Ask BIQc..."
+          placeholder="Ask BIQc anything..."
           placeholderTextColor={theme.colors.textMuted}
           multiline
           maxLength={2000}
@@ -111,12 +154,16 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.bg },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
   emptyTitle: { fontFamily: theme.fonts.head, fontSize: 24, color: theme.colors.text, marginTop: 16 },
-  emptySubtitle: { fontFamily: theme.fonts.body, fontSize: 14, color: theme.colors.textSecondary, marginTop: 4, textAlign: 'center' },
+  emptySubtitle: { fontFamily: theme.fonts.body, fontSize: 14, color: theme.colors.textSecondary, marginTop: 4, textAlign: 'center', lineHeight: 20 },
   promptsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 24, justifyContent: 'center' },
   promptChip: { backgroundColor: theme.colors.bgCard, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.md, paddingHorizontal: 14, paddingVertical: 10 },
   promptText: { fontFamily: theme.fonts.body, fontSize: 12, color: theme.colors.textSecondary },
+  historyRail: { paddingHorizontal: 12, paddingBottom: 8, gap: 8 },
+  historyChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: theme.radius.full, backgroundColor: theme.colors.bgCard, borderWidth: 1, borderColor: theme.colors.border, marginRight: 8 },
+  historyChipActive: { borderColor: theme.colors.brand, backgroundColor: theme.colors.brandDim },
+  historyChipText: { fontFamily: theme.fonts.mono, fontSize: 11, color: theme.colors.textSecondary, maxWidth: 180 },
   messageList: { padding: 16, paddingTop: 60 },
   msgRow: { marginBottom: 12 },
   msgRowUser: { alignItems: 'flex-end' },
