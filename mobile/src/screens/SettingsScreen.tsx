@@ -13,6 +13,9 @@ import api, { auth } from '../lib/api';
 export default function SettingsScreen({ onLogout }: { onLogout: () => void }) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const effectiveTier = (profile?.role === 'superadmin' || profile?.role === 'admin' || profile?.is_master_account)
+    ? 'custom'
+    : (profile?.subscription_tier || 'free');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -62,10 +65,10 @@ export default function SettingsScreen({ onLogout }: { onLogout: () => void }) {
             <Text style={styles.profileValue}>{profile.company_name}</Text>
           </View>
         )}
-        {profile?.subscription_tier && (
+        {effectiveTier && (
           <View style={styles.profileRow}>
             <Ionicons name="shield-checkmark-outline" size={16} color={theme.colors.brand} />
-            <Text style={[styles.profileValue, { color: theme.colors.brand }]}>{profile.subscription_tier}</Text>
+            <Text style={[styles.profileValue, { color: theme.colors.brand }]}>{effectiveTier}</Text>
           </View>
         )}
       </Card>

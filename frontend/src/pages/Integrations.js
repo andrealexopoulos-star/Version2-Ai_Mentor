@@ -509,7 +509,8 @@ export default function Integrations() {
     gmailStatus.connected ? 1 : 0,
     outlookStatus.connected ? 1 : 0,
   ].reduce((sum, value) => sum + value, 0);
-  const isFreeTier = (user?.subscription_tier || 'free').toLowerCase() === 'free';
+  const isMasterAccount = user?.is_master_account === true || ['superadmin', 'super_admin', 'admin'].includes((user?.role || '').toLowerCase()) || (user?.email || '').toLowerCase() === 'andre@thestrategysquad.com.au';
+  const isFreeTier = !isMasterAccount && (user?.subscription_tier || 'free').toLowerCase() === 'free';
   const freeTierLimitReached = isFreeTier && connectedCount >= 1;
 
   return (

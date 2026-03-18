@@ -315,6 +315,9 @@ export default function CompetitiveBenchmarkPage() {
                       <Link to="/calibration" className="text-xs flex items-center justify-center gap-1 mt-2" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
                         Start calibration <ArrowRight className="w-3 h-3" />
                       </Link>
+                      <p className="text-[11px] mt-3" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
+                        Once calibration is complete, BIQc will score your digital footprint and let you compare against competitors across all five pillars.
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -356,7 +359,7 @@ export default function CompetitiveBenchmarkPage() {
                   ) : (
                     <div className="text-center py-8">
                       <p className="text-sm italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>Insufficient data</p>
-                      <p className="text-xs mt-2 text-[#64748B]">Industry ranking will appear once your digital footprint score is generated.</p>
+                      <p className="text-xs mt-2 text-[#64748B]">Industry ranking will appear once your digital footprint score is generated from calibration and live market inputs.</p>
                     </div>
                   )}
                 </CardContent>
