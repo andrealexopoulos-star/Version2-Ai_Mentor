@@ -171,6 +171,59 @@ def _normalize_priority_response(priority_analysis: Dict[str, Any], recent_email
     return normalized
 
 
+def _safe_parse_dt(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        return dateutil_parser.isoparse(str(value))
+    except Exception:
+        return None
+
+
+def _normalise_recipients(raw_value: Any) -> List[str]:
+    if not raw_value:
+        return []
+    if isinstance(raw_value, str):
+        try:
+            raw_value = json.loads(raw_value)
+        except Exception:
+            return [raw_value.lower().strip()] if "@" in raw_value else []
+    recipients: List[str] = []
+    if isinstance(raw_value, list):
+        for item in raw_value:
+            if isinstance(item, dict):
+                email = str(item.get("email") or item.get("address") or item.get("emailAddress") or "").lower().strip()
+                if email:
+                    recipients.append(email)
+            elif isinstance(item, str):
+                email = item.lower().strip()
+                if email:
+                    recipients.append(email)
+    return recipients
+
+
+def _filter_replied_inbox_emails(inbox_emails: List[Dict[str, Any]], sent_emails: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    latest_sent_by_recipient: Dict[str, datetime] = {}
+    for sent in sent_emails:
+        sent_at = _safe_parse_dt(sent.get("received_date") or sent.get("sent_date"))
+        if not sent_at:
+            continue
+        for recipient in _normalise_recipients(sent.get("to_recipients")):
+            current = latest_sent_by_recipient.get(recipient)
+            if current is None or sent_at > current:
+                latest_sent_by_recipient[recipient] = sent_at
+
+    actionable: List[Dict[str, Any]] = []
+    for email in inbox_emails:
+        sender = str(email.get("from_address") or "").lower().strip()
+        received_at = _safe_parse_dt(email.get("received_date"))
+        latest_sent = latest_sent_by_recipient.get(sender)
+        if sender and received_at and latest_sent and latest_sent >= received_at:
+            continue
+        actionable.append(email)
+    return actionable
+
+
 # ═══════════════════════════════════════════════════════════════
 # ROUTE HANDLERS (extracted from server.py lines 3556-5314)
 # ═══════════════════════════════════════════════════════════════
@@ -1838,8 +1891,10 @@ async def analyze_email_priority(current_user: dict = Depends(get_current_user))
     business_goals = profile.get("short_term_goals", "") if profile else ""
     business_challenges = profile.get("main_challenges", "") if profile else ""
     
-    # Get recent emails from Supabase
-    recent_emails = await get_user_emails_supabase(get_sb(), user_id, limit=50)
+    # Get recent actionable inbox emails only. Exclude threads already answered from Sent Items.
+    recent_inbox_emails = await get_user_emails_supabase(get_sb(), user_id, limit=100, folder="inbox")
+    recent_sent_emails = await get_user_emails_supabase(get_sb(), user_id, limit=100, folder="sentitems")
+    recent_emails = _filter_replied_inbox_emails(recent_inbox_emails, recent_sent_emails)[:50]
     
     if not recent_emails:
         return {"message": "No emails to analyze. Please sync your Outlook first."}
@@ -1911,6 +1966,8 @@ Return ONLY valid JSON, no markdown."""
         analysis_data = {
             "analysis": priority_analysis,
             "emails_analyzed": len(recent_emails),
+            "source_inbox_count": len(recent_inbox_emails),
+            "source_sent_count": len(recent_sent_emails),
         }
         await update_priority_analysis_supabase(get_sb(), user_id, analysis_data)
         
@@ -1933,6 +1990,8 @@ Return ONLY valid JSON, no markdown."""
         analysis_data = {
             "analysis": normalized,
             "emails_analyzed": len(recent_emails),
+            "source_inbox_count": len(recent_inbox_emails),
+            "source_sent_count": len(recent_sent_emails),
         }
         await update_priority_analysis_supabase(get_sb(), user_id, analysis_data)
         return normalized
@@ -2100,8 +2159,14 @@ Return ONLY valid JSON in this exact format:
 async def get_priority_inbox(current_user: dict = Depends(get_current_user)):
     """Get the latest email priority analysis - SUPABASE VERSION"""
     analysis = await get_priority_analysis_supabase(get_sb(), current_user["id"])
-    
-    if not analysis:
-        return {"message": "No priority analysis available. Run /email/analyze-priority first."}
+    inbox_rows = await get_user_emails_supabase(get_sb(), current_user["id"], limit=5, folder="inbox")
+    sent_rows = await get_user_emails_supabase(get_sb(), current_user["id"], limit=5, folder="sentitems")
+    latest_inbox = max((_safe_parse_dt(item.get("received_date")) for item in inbox_rows), default=None)
+    latest_sent = max((_safe_parse_dt(item.get("received_date")) for item in sent_rows), default=None)
+    latest_source_dt = max([dt for dt in [latest_inbox, latest_sent] if dt is not None], default=None)
+    analyzed_at = _safe_parse_dt((analysis or {}).get("analyzed_at"))
+
+    if not analysis or (latest_source_dt and (not analyzed_at or latest_source_dt > analyzed_at)):
+        return await analyze_email_priority(current_user)
     
     return analysis

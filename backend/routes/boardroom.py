@@ -411,7 +411,24 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
 
     except Exception as e:
         logger.error(f"[boardroom] Error: {e}")
-        return {"response": "Intelligence link disrupted. Retry.", "escalations": []}
+        fallback_events = []
+        try:
+            fallback_events = sb.table("observation_events").select(
+                "domain, signal_name, severity, executive_summary, created_at"
+            ).eq("user_id", user_id).order("created_at", desc=True).limit(3).execute().data or []
+        except Exception:
+            fallback_events = []
+
+        if fallback_events:
+            top = fallback_events[0]
+            response = (
+                f"Board Room is in resilience mode, but the current highest-pressure signal is in {top.get('domain', 'business')}. "
+                f"Latest signal: {top.get('executive_summary') or top.get('signal_name') or 'live telemetry requires review'}. "
+                f"Action now: assign an owner and review the next 48-hour consequence window before drift compounds."
+            )
+        else:
+            response = "Board Room is temporarily degraded. Use the latest BIQc priorities and verify live source health before making a decision."
+        return {"response": response, "escalations": []}
 
 
 @router.post("/boardroom/diagnosis")
