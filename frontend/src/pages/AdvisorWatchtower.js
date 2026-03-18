@@ -1570,7 +1570,6 @@ export default function AdvisorWatchtower() {
     || (!brainHasRenderableContext && (integrationContextLoading || integrationContext.sourceHealth?.brain?.status === 'pending') && !loadingGuardExpired);
   const brainUnavailable = !brainLoading && (
     Boolean(brainContext.error)
-    || Boolean(integrationContextError)
     || brainSourceUnavailable
     || (!brainLive && !brainContext.allClear && !brainHasRenderableContext)
   );
@@ -1731,6 +1730,16 @@ export default function AdvisorWatchtower() {
               data-testid="advisor-critical-error"
             >
               Live cognition feed is delayed right now. BIQc Business Brain decisions are temporarily unavailable.
+            </div>
+          )}
+
+          {!criticalError && integrationContextError && (
+            <div
+              className="mb-8 rounded-2xl border px-4 py-3 text-sm"
+              style={{ borderColor: '#334155', background: '#111827', color: '#CBD5E1' }}
+              data-testid="advisor-integration-context-warning"
+            >
+              Supporting source checks are partially degraded right now, but BIQc Business Brain decisions will still render from the latest available intelligence.
             </div>
           )}
 
