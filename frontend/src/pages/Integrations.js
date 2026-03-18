@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
-import { supabase } from '../context/SupabaseAuthContext';
+import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { getBackendUrl } from '../config/urls';
 import { toast } from 'sonner';
 import { useMergeLink } from '@mergeapi/react-merge-link';
@@ -154,6 +154,7 @@ const MERGE_CATEGORY_MAP = {
 };
 
 export default function Integrations() {
+  const { user } = useSupabaseAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
@@ -429,9 +430,12 @@ export default function Integrations() {
   });
 
   const connectedCount = [
-    ...ALL_INTEGRATIONS.filter(i => isConnected(i)),
-    ...EMAIL_CALENDAR.filter(i => isConnected(i)),
-  ].length;
+    Object.keys(mergeIntegrations).length,
+    gmailStatus.connected ? 1 : 0,
+    outlookStatus.connected ? 1 : 0,
+  ].reduce((sum, value) => sum + value, 0);
+  const isFreeTier = (user?.subscription_tier || 'free').toLowerCase() === 'free';
+  const freeTierLimitReached = isFreeTier && connectedCount >= 1;
 
   return (
     <DashboardLayout>
@@ -505,6 +509,19 @@ export default function Integrations() {
 
         <div className="px-6 py-5 space-y-7">
 
+          {isFreeTier && (
+            <div className="rounded-2xl border p-4" style={{ borderColor: freeTierLimitReached ? 'rgba(255,106,0,0.28)' : 'var(--biqc-border, #243140)', background: freeTierLimitReached ? 'rgba(255,106,0,0.08)' : 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-free-tier-banner">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Free Tier Access</p>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Free tier includes 1 connected integration.</p>
+                  <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>{freeTierLimitReached ? 'You have reached the free-tier limit. Disconnect the current source or upgrade to connect more.' : 'Choose the one system that matters most to your operating rhythm right now.'}</p>
+                </div>
+                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.12)', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="integrations-free-tier-counter">{connectedCount}/1 connected</span>
+              </div>
+            </div>
+          )}
+
           {/* ── EMAIL & CALENDAR — visible on All and Connected tabs ── */}
           {!searchTerm && (selectedCategory === 'all' || selectedCategory === 'connected') && (
             <div>
@@ -517,6 +534,7 @@ export default function Integrations() {
                     connected={isConnected(item)} connectedLabel={getConnectedLabel(item)}
                     disconnecting={disconnecting === item.id} openingMerge={openingMerge === item.id}
                     onConnect={handleConnect} onDisconnect={handleDisconnect}
+                    canConnectMore={!freeTierLimitReached || isConnected(item)}
                     isStale={false}
                     badge="Supabase" badgeColor="#3B82F6" />
                 ))}
@@ -544,6 +562,7 @@ export default function Integrations() {
                     connected={isConnected(integration)} connectedLabel={getConnectedLabel(integration)}
                     disconnecting={disconnecting === integration.id} openingMerge={openingMerge === integration.id}
                     onConnect={handleConnect} onDisconnect={handleDisconnect}
+                    canConnectMore={!freeTierLimitReached || isConnected(integration)}
                     isStale={isMergeStale(integration)}
                     badge="Merge API" badgeColor="#FF6A00" />
                 ))}
@@ -586,6 +605,7 @@ export default function Integrations() {
                     connected={false} connectedLabel={null}
                     disconnecting={false} openingMerge={false}
                     onConnect={handleConnect} onDisconnect={handleDisconnect}
+                    canConnectMore={!freeTierLimitReached}
                     badge="Coming Soon" badgeColor="#F59E0B" comingSoon />
                 ))}
               </div>
@@ -624,7 +644,7 @@ function SectionLabel({ icon: Icon, label, badge, badgeColor }) {
 }
 
 // ── Integration card ──────────────────────────────────────────────────────────
-function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, badgeColor, comingSoon, isStale = false }) {
+function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, badgeColor, comingSoon, isStale = false, canConnectMore = true }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -701,14 +721,16 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
         ) : (
           <button
             onClick={() => onConnect(integration)}
-            disabled={openingMerge}
+            disabled={openingMerge || !canConnectMore}
             className="w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
             style={{
-              background: openingMerge
+              background: !canConnectMore
+                ? 'rgba(71,85,105,0.22)'
+                : openingMerge
                 ? 'rgba(255,106,0,0.15)'
                 : 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(200,210,220,0.04) 100%)',
-              border: '1px solid #FF6A00',
-              color: openingMerge ? '#FF6A00' : '#E8F0F8',
+              border: !canConnectMore ? '1px solid #334155' : '1px solid #FF6A00',
+              color: !canConnectMore ? '#94A3B8' : (openingMerge ? '#FF6A00' : '#E8F0F8'),
               fontFamily: fontFamily.body,
               boxShadow: hovered && !openingMerge
                 ? '0 0 12px rgba(255,106,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)'
@@ -732,7 +754,7 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
             }}
             data-testid={`connect-${integration.id}`}>
             {openingMerge ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plug className="w-3 h-3" />}
-            {openingMerge ? 'Opening...' : 'Connect'}
+            {openingMerge ? 'Opening...' : (!canConnectMore ? 'Free limit reached' : 'Connect')}
           </button>
         )}
       </div>

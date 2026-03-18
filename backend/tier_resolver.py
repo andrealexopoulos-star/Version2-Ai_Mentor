@@ -54,6 +54,7 @@ ROUTE_ACCESS = {
     '/integrations': 'free',         # Connect integrations
     '/connect-email': 'free',        # Email integration
     '/data-health': 'free',          # Data health check
+    '/competitive-benchmark': 'free',
     '/calibration': 'free',          # Onboarding calibration
     '/onboarding': 'free',
     '/onboarding-decision': 'free',
@@ -66,15 +67,15 @@ ROUTE_ACCESS = {
     '/compliance': 'starter',
     '/reports': 'starter',
     '/audit-log': 'starter',
-    '/soundboard': 'starter',
+    '/soundboard': 'free',
     '/war-room': 'starter',
     '/board-room': 'starter',
     '/sop-generator': 'starter',
-    '/alerts': 'starter',
-    '/actions': 'starter',
+    '/alerts': 'free',
+    '/actions': 'free',
     '/automations': 'starter',
-    '/email-inbox': 'starter',
-    '/calendar': 'starter',
+    '/email-inbox': 'free',
+    '/calendar': 'free',
     '/analysis': 'starter',
     '/diagnosis': 'starter',
     '/documents': 'starter',
@@ -120,15 +121,15 @@ API_ACCESS = {
     '/intelligence/scores': 'starter',
     '/intelligence/concentration': 'starter',
     '/intelligence/contradictions': 'starter',
-    '/intelligence/pressure': 'starter',
-    '/intelligence/freshness': 'starter',
+    '/intelligence/pressure': 'free',
+    '/intelligence/freshness': 'free',
     '/intelligence/silence': 'starter',
     '/intelligence/escalations': 'starter',
-    '/intelligence/watchtower': 'starter',
+    '/intelligence/watchtower': 'free',
     '/intelligence/summary': 'starter',
     '/intelligence/governance-summary': 'starter',
     '/reports': 'starter',
-    '/soundboard': 'starter',
+    '/soundboard': 'free',
     '/boardroom': 'starter',
     '/strategic-console': 'starter',
     '/generate': 'starter',
@@ -136,9 +137,12 @@ API_ACCESS = {
     '/advisory': 'starter',
     '/watchtower': 'starter',
     '/emission': 'starter',
-    '/email/priority-inbox': 'starter',
-    '/email/analyze': 'starter',
-    '/email/suggest': 'starter',
+    '/email/priority-inbox': 'free',
+    '/email/analyze': 'free',
+    '/email/suggest': 'free',
+    '/notifications/alerts': 'free',
+    '/outlook': 'free',
+    '/workflows': 'free',
 
     # ADMIN
     '/admin': 'super_admin',
@@ -147,9 +151,9 @@ API_ACCESS = {
 # ═══ MARKET SUB-FEATURES GATING ═══
 MARKET_SUB_FEATURES = {
     'intelligence': 'free',     # Focus tab — allowed
-    'saturation': 'starter',    # Saturation tab — paid
-    'demand': 'starter',        # Demand tab — paid
-    'friction': 'starter',      # Friction tab — paid
+    'saturation': 'free',       # Saturation tab — free
+    'demand': 'free',           # Demand tab — free
+    'friction': 'free',         # Friction tab — free
     'reports': 'free',          # Reports tab — allowed
 }
 

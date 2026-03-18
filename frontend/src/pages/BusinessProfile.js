@@ -52,9 +52,16 @@ const BusinessProfile = () => {
     }
   }, [user?.id]);
 
+  useEffect(() => {
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
+    return () => clearTimeout(safetyTimer);
+  }, []);
+
   const fetchProfile = async () => {
     try {
-      const profileRes = await apiClient.get('/business-profile/context', { timeout: 12000 });
+      const profileRes = await apiClient.get('/business-profile/context', { timeout: 5000 });
       const ctx = profileRes.data || {};
 
       const rawProfile = ctx.profile || {};
@@ -94,8 +101,26 @@ const BusinessProfile = () => {
 
       enrichFromIntegrations();
     } catch (error) {
+      try {
+        const snapshotRes = await apiClient.get('/snapshot/latest', { timeout: 5000 });
+        const cognitiveProfile = snapshotRes?.data?.cognitive?.business_profile || {};
+        setProfile((prev) => ({
+          business_name: prev.business_name || user?.company_name || user?.business_name || '',
+          industry: prev.industry || user?.industry || '',
+          website: cognitiveProfile.website || prev.website || '',
+          location: cognitiveProfile.location || prev.location || '',
+          target_market: cognitiveProfile.target_market || prev.target_market || '',
+          ...prev,
+        }));
+      } catch {
+        setProfile((prev) => ({
+          business_name: prev.business_name || user?.company_name || user?.business_name || '',
+          industry: prev.industry || user?.industry || '',
+          ...prev,
+        }));
+      }
       console.error('Failed to load profile:', error);
-      toast.error('Failed to load profile');
+      toast.error('Business DNA loaded in fallback mode while profile data catches up.');
     } finally {
       setLoading(false);
     }
@@ -103,7 +128,7 @@ const BusinessProfile = () => {
 
   const fetchScores = async () => {
     try {
-      const response = await apiClient.get('/business-profile/scores', { timeout: 8000 });
+      const response = await apiClient.get('/business-profile/scores', { timeout: 5000 });
       setScores(response.data || { completeness: 0, strength: 0 });
     } catch {
       setScores({ completeness: 0, strength: 0 });

@@ -1,5 +1,5 @@
 import { CognitiveMesh } from '../components/LoadingSystems';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
@@ -302,11 +302,21 @@ const EmailInbox = () => {
 
     return (
       <div
+        onClick={() => setSelectedEmail(email.email_id)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setSelectedEmail(email.email_id);
+          }
+        }}
+        role="button"
+        tabIndex={0}
         className={`p-4 rounded-xl border transition-all ${isSelected ? 'ring-1 ring-[#FF6A00]' : ''}`}
         style={{
           background: 'var(--biqc-bg-card, #141C26)',
           borderColor: isSelected ? '#FF6A00' : 'var(--biqc-border, #1E2D3D)',
         }}
+        data-testid={`priority-email-card-${email.email_id}`}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -613,6 +623,15 @@ const EmailInbox = () => {
   };
 
   const analysis = priorityAnalysis || {};
+  const allPriorityEmails = useMemo(() => ([
+    ...(priorityAnalysis?.high_priority || []),
+    ...(priorityAnalysis?.medium_priority || []),
+    ...(priorityAnalysis?.low_priority || []),
+  ]), [priorityAnalysis]);
+  const selectedEmailData = useMemo(() => {
+    if (!allPriorityEmails.length) return null;
+    return allPriorityEmails.find((email) => email.email_id === selectedEmail) || allPriorityEmails[0];
+  }, [allPriorityEmails, selectedEmail]);
 
   return (
     <DashboardLayout>
@@ -718,6 +737,22 @@ const EmailInbox = () => {
           </div>
         )}
 
+        {priorityAnalysis && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3" data-testid="priority-inbox-summary-grid">
+            {[
+              ['High priority', (priorityAnalysis.high_priority || []).length, '#EF4444'],
+              ['Medium priority', (priorityAnalysis.medium_priority || []).length, '#F59E0B'],
+              ['Low priority', (priorityAnalysis.low_priority || []).length, '#10B981'],
+              ['Analyzed', priorityAnalysis.total_analyzed || allPriorityEmails.length, '#3B82F6'],
+            ].map(([label, value, color]) => (
+              <div key={label} className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}>
+                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>{label}</p>
+                <p className="mt-2 text-2xl font-bold" style={{ color }}>{value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Loading State */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -758,33 +793,83 @@ const EmailInbox = () => {
           </div>
         ) : (
           /* Priority Sections */
-          <div className="space-y-4">
-            {priorityAnalysis?.from_cache && (
-              <p className="text-xs text-center" style={{ color: '#64748B' }}>
-                Showing cached results · <button className="underline" style={{ color: '#FF6A00' }} onClick={runPriorityAnalysis}>Refresh now</button>
-              </p>
-            )}
-            <PrioritySection
-              title="High Priority"
-              emails={priorityAnalysis.high_priority || []}
-              priority="high"
-              icon={AlertCircle}
-              color="#EF4444"
-            />
-            <PrioritySection
-              title="Medium Priority"
-              emails={priorityAnalysis.medium_priority || []}
-              priority="medium"
-              icon={Clock}
-              color="#F59E0B"
-            />
-            <PrioritySection
-              title="Low Priority"
-              emails={priorityAnalysis.low_priority || []}
-              priority="low"
-              icon={CheckCircle2}
-              color="#10B981"
-            />
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.75fr)]" data-testid="priority-inbox-command-grid">
+            <div className="space-y-4">
+              {priorityAnalysis?.from_cache && (
+                <p className="text-xs text-center" style={{ color: '#64748B' }}>
+                  Showing cached results · <button className="underline" style={{ color: '#FF6A00' }} onClick={runPriorityAnalysis}>Refresh now</button>
+                </p>
+              )}
+              <div className="rounded-xl border px-4 py-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }} data-testid="priority-inbox-guidance-card">
+                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Command centre flow</p>
+                <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Open the highest-risk thread first, validate BIQc’s rationale, then trigger a reply or reclassify before the customer signal degrades.</p>
+              </div>
+              <PrioritySection
+                title="High Priority"
+                emails={priorityAnalysis.high_priority || []}
+                priority="high"
+                icon={AlertCircle}
+                color="#EF4444"
+              />
+              <PrioritySection
+                title="Medium Priority"
+                emails={priorityAnalysis.medium_priority || []}
+                priority="medium"
+                icon={Clock}
+                color="#F59E0B"
+              />
+              <PrioritySection
+                title="Low Priority"
+                emails={priorityAnalysis.low_priority || []}
+                priority="low"
+                icon={CheckCircle2}
+                color="#10B981"
+              />
+            </div>
+            <div className="space-y-4" data-testid="priority-inbox-detail-column">
+              <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }} data-testid="priority-inbox-detail-panel">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Selected thread</p>
+                    <p className="mt-2 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{selectedEmailData?.subject || 'Select a thread'}</p>
+                  </div>
+                  {selectedEmailData && <PriorityBadge level={selectedEmailData.user_override || selectedEmailData.priority_level || 'medium'} />}
+                </div>
+                {selectedEmailData ? (
+                  <div className="mt-4 space-y-4">
+                    <div className="rounded-lg border p-4" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)' }}>
+                      <p className="text-xs text-[#94A3B8]">From</p>
+                      <p className="mt-1 text-sm text-[#F4F7FA]">{selectedEmailData.from}</p>
+                      <p className="mt-2 text-xs text-[#64748B]">{selectedEmailData.received ? new Date(selectedEmailData.received).toLocaleString() : 'No timestamp available'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Why BIQc ranked this</p>
+                      <p className="mt-2 text-sm text-[#CBD5E1]">{selectedEmailData.reason || 'This thread intersects with customer, commercial, or timing pressure.'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Recommended action</p>
+                      <p className="mt-2 text-sm text-[#CBD5E1]">{selectedEmailData.suggested_action || 'Review thread context and send a decisive response.'}</p>
+                    </div>
+                    {selectedEmailData.snippet && (
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Preview</p>
+                        <p className="mt-2 text-sm text-[#9FB0C3]">{selectedEmailData.snippet}</p>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={() => fetchReplySuggestions(selectedEmailData.email_id)} className="btn-primary" data-testid="priority-inbox-generate-reply-button">
+                        <Sparkles className="w-4 h-4 mr-2" />Generate reply
+                      </Button>
+                      <Button variant="outline" onClick={() => reclassifyEmail(selectedEmailData.email_id, 'high')} data-testid="priority-inbox-mark-high-button">
+                        Mark high
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-[#64748B]">Select a priority email from the left column to view full context and act faster.</p>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

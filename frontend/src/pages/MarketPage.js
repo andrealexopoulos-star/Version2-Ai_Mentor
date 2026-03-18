@@ -162,6 +162,25 @@ const MarketPage = () => {
   const watchtowerMessage = watchtower?.error || '';
   const pressureMessage = pressure?.message || '';
   const freshnessMessage = freshness?.message || '';
+  const pressureAvailable = Boolean(pressure?.pressures && Object.keys(pressure.pressures).length > 0);
+  const freshnessAvailable = Boolean(freshness?.freshness && Object.keys(freshness.freshness).length > 0);
+  const watchtowerAvailable = Boolean(
+    (!watchtower?.error && Array.isArray(watchtower?.events))
+    || (watchtower?.positions && Object.keys(watchtower.positions).length > 0)
+  );
+  const marketPressureSummary = pressureAvailable
+    ? Object.entries(pressure.pressures)
+        .slice(0, 2)
+        .map(([domain, value]) => `${domain}: ${value.level}`)
+        .join(' · ')
+    : null;
+  const freshnessSummary = freshnessAvailable
+    ? Object.entries(freshness.freshness)
+        .filter(([, value]) => value.status !== 'no_data')
+        .slice(0, 2)
+        .map(([domain, value]) => `${domain}: ${value.status}`)
+        .join(' · ')
+    : null;
 
   const sendToChat = (msg) => setActionMessage(msg);
 
@@ -223,8 +242,10 @@ const MarketPage = () => {
               />
             )) : (
               <EmptyStateCard
-                title={watchtowerMessage ? 'Canonical watchtower feed is unavailable.' : 'No external market alert is active.'}
-                detail={watchtowerMessage || 'The market feed is calm right now. BIQc will keep external signals separate from your internal channel performance so the next move stays clear.'}
+                title={watchtowerMessage ? 'Canonical watchtower feed is unavailable.' : (watchtowerAvailable ? 'No external market alert is active.' : 'External market feed is still warming up.')}
+                detail={watchtowerMessage || (watchtowerAvailable
+                  ? 'The market feed is calm right now. BIQc will keep external signals separate from your internal channel performance so the next move stays clear.'
+                  : 'Market watchtower positions exist in the platform, but no market-classified signal is active in the current cycle.')}
                 testId="market-external-empty"
               />
             )}
@@ -236,11 +257,11 @@ const MarketPage = () => {
               <div className="mt-4 space-y-3" data-testid="market-evidence-health-list">
                 <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid="market-pressure-status">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Pressure calibration</p>
-                  <p className="mt-2 text-sm text-[#CBD5E1]">{pressure?.has_data ? 'Live market pressure is available for this cycle.' : (pressureMessage || 'Pressure calibration is not available yet.')}</p>
+                  <p className="mt-2 text-sm text-[#CBD5E1]">{pressureAvailable ? `Live pressure available: ${marketPressureSummary || 'signal mix detected for this cycle.'}` : (pressureMessage || 'Pressure calibration is not available yet.')}</p>
                 </div>
                 <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid="market-freshness-status">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Evidence freshness</p>
-                  <p className="mt-2 text-sm text-[#CBD5E1]">{freshness?.has_data ? 'Freshness scoring is live for this cycle.' : (freshnessMessage || 'Evidence freshness is not available yet.')}</p>
+                  <p className="mt-2 text-sm text-[#CBD5E1]">{freshnessAvailable ? `Freshness scoring is live: ${freshnessSummary || 'recent evidence is now available.'}` : (freshnessMessage || 'Evidence freshness is not available yet.')}</p>
                 </div>
                 <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid="market-channel-separation-note">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Internal channel context</p>

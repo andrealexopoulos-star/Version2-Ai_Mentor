@@ -35,8 +35,35 @@ from supabase_drive_helpers import (
     get_user_drive_files, count_user_drive_files,
 )
 from biqc_jobs import enqueue_job
+from tier_resolver import resolve_tier
 
 router = APIRouter()
+
+
+def _connected_integration_count(user_id: str) -> int:
+    sb = get_sb()
+    count = 0
+    try:
+        merge_rows = sb.table("integration_accounts").select("id").eq("user_id", user_id).execute()
+        count += len(merge_rows.data or [])
+    except Exception:
+        pass
+    try:
+        email_rows = sb.table("email_connections").select("provider").eq("user_id", user_id).eq("connected", True).execute()
+        count += len(email_rows.data or [])
+    except Exception:
+        pass
+    return count
+
+
+def _enforce_free_integration_limit(current_user: dict) -> None:
+    if resolve_tier(current_user) != 'free':
+        return
+    if _connected_integration_count(current_user["id"]) > 0:
+        raise HTTPException(
+            status_code=403,
+            detail="Free tier includes 1 connected integration. Disconnect an existing connection or upgrade to add more.",
+        )
 
 
 # ─── Models ───
@@ -206,6 +233,8 @@ async def create_merge_link_token(
 ):
     """Generate Merge.dev link token for workspace (P0: workspace-scoped)"""
     from workspace_helpers import get_or_create_user_account
+
+    _enforce_free_integration_limit(current_user)
     
     merge_api_key = os.environ.get("MERGE_API_KEY")
     

@@ -1,4 +1,14 @@
 # BIQc Platform — Product Requirements Document
+### Sprint 31 — Free-Tier Launch Hardening Pass (In Progress — Mar 2026)
+- **Free-tier access rules widened to match launch scope** — backend and frontend tier resolvers now treat `soundboard`, `alerts`, `actions`, `priority inbox`, `calendar`, `market tabs`, `competitive benchmarking`, and the core intelligence endpoints (`/intelligence/watchtower`, `/intelligence/pressure`, `/intelligence/freshness`) as free-tier accessible so the launch packaging and product behavior now align.
+- **Business DNA upgraded from threshold editor to KPI selector** — `backend/business_brain_engine.py` + `backend/routes/business_brain.py` now support `selected_metric_keys`, and `frontend/src/components/business-dna/KpiThresholdTab.js` now exposes a real free-tier KPI allocation flow with 10 active KPI slots, search, limit messaging, selection persistence, and threshold editing only for selected KPIs.
+- **Business DNA loading hardened** — `frontend/src/pages/BusinessProfile.js` now has a safety timeout and snapshot-based fallback so the page renders instead of sitting in a permanent loading skeleton when profile context is slow.
+- **Free-tier integrations hardened** — `frontend/src/pages/Integrations.js` now clearly shows the 1-integration free-tier allowance and disables extra connect attempts when the limit is reached. Backend guardrails were added to Merge link-token creation plus Outlook/Gmail login starts so free-tier users cannot silently exceed the allowance.
+- **Priority Inbox and Calendar UX strengthened** — `frontend/src/pages/EmailInbox.js` now includes summary cards, a command-centre guidance panel, and a persistent selected-thread detail pane. `frontend/src/pages/CalendarView.js` now uses a split command-grid layout with a side execution panel instead of a plain list-only view.
+- **Real supporting bugs fixed** — `DataHealthPage` now triggers a real sync endpoint (`/user/integration-status/sync`) instead of a missing one. `CompetitiveBenchmarkPage` now reads/writes through the real marketing benchmark endpoints and maps scores correctly. `MarketPage` no longer relies on nonexistent `has_data` flags and now treats returned pressure/freshness payloads as live data when present.
+- **Manual SQL still required for live Market / Positioning richness** — repo migration `supabase/migrations/062_market_watchtower_rpc_restore.sql` was added to restore `compute_pressure_levels`, `compute_evidence_freshness`, and `compute_watchtower_positions`. The user still needs to run this in Supabase for the live Market page to stop reporting missing canonical RPC functions.
+- **Verification completed** — frontend smoke + agents confirmed the free-tier pages now load without runtime crashes, Business DNA renders, and backend verification passed for KPI save flows, soundboard, calendar, inbox, sync, marketing benchmark, and intelligence endpoints with no free-tier gating regressions.
+
 ### Sprint 30 — Business Brain Ingest Root Cause + Category-Scoped Patch (In Progress — Mar 2026)
 - **Live root cause confirmed from `business_core.source_runs`** — recent runs for both `accounting:xero` and `crm:hubspot` are failing with `Merge request failed (404) /crm/v1/companies:` and the canonical `business_core` tables (`customers`, `deals`, `invoices`, `payments`, `companies`, `owners`) remain empty.
 - **Canonical ingest function patched locally** — `supabase/functions/business-brain-merge-ingest/index.ts` now uses category-scoped `DATASET_PLAN`s so CRM connectors only fetch CRM endpoints, accounting connectors only fetch accounting endpoints, and marketing connectors only fetch marketing endpoints. Optional datasets now skip 400/404 endpoint gaps instead of failing the whole run; required dataset failures surface as `partial`/`failed` in `business_core.source_runs`.
@@ -314,8 +324,8 @@ Run `/app/supabase_migrations/create_integration_status.sql` in Supabase SQL edi
 ## Remaining Backlog
 
 ### P0
-1. **Deploy patched `business-brain-merge-ingest` edge function to Supabase** and immediately trigger a fresh run; verify `business_core.source_runs` changes from `failed` to `completed`/`partial`
-2. **Confirm canonical data population** in `business_core.customers`, `deals`, `invoices`, `payments`, `companies`, and `owners` after the patched ingest runs
+1. **Run `supabase/migrations/062_market_watchtower_rpc_restore.sql` in live Supabase** to restore the missing Market / Watchtower / Pressure / Freshness canonical RPC functions.
+2. **Re-verify `/market` after the SQL migration** so pressure, evidence freshness, and watchtower cards switch from unavailable to live data.
 3. **Run SQL migration** `create_integration_status.sql` in Supabase (vwwandhoydemcybltoxz) to enable `records_count` caching for integration status
 4. **Run SQL migration** `supabase/migrations/055_ai_rate_limiting.sql` in Supabase SQL editor to activate AI usage/rate limiting
 5. **Fix Outlook/Gmail OAuth in production** — Set `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_REDIRECT_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in Azure App Service
@@ -327,10 +337,11 @@ Run `/app/supabase_migrations/create_integration_status.sql` in Supabase SQL edi
 ### P1
 8. Tighten Data Confidence scoring so connected live-signal routes do not still under-score healthy pages
 9. Improve War Room / Board Room specificity so executive summaries go beyond a single live-signal sentence
-10. Reset `andre@thestrategysquad.com.au` + test account 2 passwords
-11. API performance optimization
-12. Admin panel billing adjustments
-13. Mobile App Store deployment (TestFlight/Play Store)
+10. Resume **webhook-first Merge ingestion** from the prior sprint — not dropped, only deferred while P0 ingest repair and free-tier hardening were completed first
+11. Reset `andre@thestrategysquad.com.au` + test account 2 passwords
+12. API performance optimization
+13. Admin panel billing adjustments
+14. Mobile App Store deployment (TestFlight/Play Store)
 
 ### P2
 12. Decision outcome visualization (trend charts at checkpoints)

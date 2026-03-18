@@ -44,10 +44,40 @@ from supabase_intelligence_helpers import (
 )
 from config.urls import get_backend_url, get_frontend_url
 from biqc_jobs import enqueue_job
+from tier_resolver import resolve_tier
 
 JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'fallback-secret')
 
 router = APIRouter()
+
+
+def _connected_integration_count_for_email(user_id: str) -> int:
+    sb = get_sb()
+    count = 0
+    try:
+        merge_rows = sb.table("integration_accounts").select("id").eq("user_id", user_id).execute()
+        count += len(merge_rows.data or [])
+    except Exception:
+        pass
+    try:
+        email_rows = sb.table("email_connections").select("provider").eq("user_id", user_id).eq("connected", True).execute()
+        count += len(email_rows.data or [])
+    except Exception:
+        pass
+    return count
+
+
+def _ensure_free_tier_email_slot(current_user: dict, provider: str) -> None:
+    if resolve_tier(current_user) != 'free':
+        return
+    try:
+        existing_email = get_sb().table("email_connections").select("provider").eq("user_id", current_user["id"]).eq("provider", provider).eq("connected", True).limit(1).execute()
+        if existing_email.data:
+            return
+    except Exception:
+        pass
+    if _connected_integration_count_for_email(current_user["id"]) > 0:
+        raise HTTPException(status_code=403, detail="Free tier includes 1 connected integration. Disconnect an existing connection or upgrade to add more.")
 
 
 def _get_oauth_base_url() -> str:
@@ -289,6 +319,8 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
 
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
+
+    _ensure_free_tier_email_slot(current_user, 'outlook')
     
     user_id = current_user['id']
     
@@ -388,6 +420,8 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
 
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
+
+    _ensure_free_tier_email_slot(current_user, 'gmail')
     
     user_id = current_user['id']
     

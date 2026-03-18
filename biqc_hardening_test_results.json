@@ -1,0 +1,91 @@
+{
+  "auth": {
+    "Supabase Login": {
+      "passed": true,
+      "details": "HTTP 200, token length: 1294, user_id: 52a60959-b8f7-4032-a744-e164d8749ce6",
+      "timestamp": "2026-03-17T23:44:13.282989"
+    }
+  },
+  "brain_kpis": {
+    "GET /api/brain/kpis": {
+      "passed": true,
+      "details": "HTTP 200, returned object KPIs",
+      "timestamp": "2026-03-17T23:44:15.073345"
+    },
+    "PUT /api/brain/kpis": {
+      "passed": true,
+      "details": "HTTP 200, KPI selection/threshold update successful",
+      "timestamp": "2026-03-17T23:44:17.073721"
+    }
+  },
+  "email_priority": {
+    "GET /api/email/priority-inbox": {
+      "passed": true,
+      "details": "HTTP 200, returned priority inbox data",
+      "timestamp": "2026-03-17T23:44:18.188779"
+    }
+  },
+  "outlook_calendar": {
+    "GET /api/outlook/calendar/events": {
+      "passed": true,
+      "details": "HTTP 200, returned calendar events",
+      "timestamp": "2026-03-17T23:44:20.197303"
+    }
+  },
+  "integrations_merge": {
+    "GET /api/integrations/merge/connected": {
+      "passed": true,
+      "details": "HTTP 200, returned merge connection status",
+      "timestamp": "2026-03-17T23:44:22.739478"
+    }
+  },
+  "user_integration_sync": {
+    "POST /api/user/integration-status/sync": {
+      "passed": true,
+      "details": "HTTP 200, sync initiated successfully",
+      "timestamp": "2026-03-17T23:44:25.956158"
+    }
+  },
+  "marketing_benchmark": {
+    "GET /api/marketing/benchmark/latest": {
+      "passed": true,
+      "details": "HTTP 200, returned latest benchmark data",
+      "timestamp": "2026-03-17T23:44:27.181142"
+    },
+    "POST /api/marketing/benchmark": {
+      "passed": true,
+      "details": "HTTP 200, benchmark calculation initiated",
+      "timestamp": "2026-03-17T23:44:28.052021"
+    }
+  },
+  "soundboard_chat": {
+    "POST /api/soundboard/chat": {
+      "passed": true,
+      "details": "HTTP 200, no subscription gating detected",
+      "timestamp": "2026-03-17T23:44:35.310111"
+    }
+  },
+  "intelligence_endpoints": {
+    "GET /api/intelligence/watchtower": {
+      "passed": true,
+      "details": "HTTP 200, no subscription gating detected",
+      "timestamp": "2026-03-17T23:44:36.701088"
+    },
+    "GET /api/intelligence/pressure": {
+      "passed": true,
+      "details": "HTTP 200, no subscription gating detected",
+      "timestamp": "2026-03-17T23:44:38.236376"
+    },
+    "GET /api/intelligence/freshness": {
+      "passed": true,
+      "details": "HTTP 200, no subscription gating detected",
+      "timestamp": "2026-03-17T23:44:39.402308"
+    }
+  },
+  "test_timestamp": "2026-03-17T23:44:12.082163",
+  "summary": {
+    "passed": 13,
+    "failed": 0,
+    "total": 13
+  }
+}
