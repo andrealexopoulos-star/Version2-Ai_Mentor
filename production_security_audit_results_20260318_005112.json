@@ -1,0 +1,602 @@
+{
+  "timestamp": "2026-03-18T00:50:46.474949",
+  "target": "https://biqc.thestrategysquad.com",
+  "auth": {
+    "success": true,
+    "user_id": "52a60959-b8f7-4032-a744-e164d8749ce6",
+    "token_length": 1294,
+    "response_time": 1.3258044719696045
+  },
+  "protected_endpoints": {
+    "total": 12,
+    "successful": 12,
+    "health_percentage": 100.0,
+    "details": {
+      "/auth/supabase/me": {
+        "status_code": 200,
+        "response_time": 0.3281378746032715,
+        "has_placeholders": false,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "user",
+          "message"
+        ],
+        "success": true
+      },
+      "/brain/kpis": {
+        "status_code": 200,
+        "response_time": 0.7421054840087891,
+        "has_placeholders": false,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "tenant_id",
+          "plan_tier",
+          "plan_label",
+          "visible_metric_limit",
+          "catalog_total_metrics",
+          "custom_thresholds_active",
+          "selected_metric_keys",
+          "selected_count",
+          "selection_limit_reached",
+          "selection_upgrade_prompt",
+          "metrics",
+          "catalog_metrics"
+        ],
+        "success": true
+      },
+      "/intelligence/watchtower": {
+        "status_code": 200,
+        "response_time": 0.4767794609069824,
+        "has_placeholders": false,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "status",
+          "has_data",
+          "positions",
+          "events",
+          "count",
+          "computed_at"
+        ],
+        "success": true
+      },
+      "/intelligence/pressure": {
+        "status_code": 200,
+        "response_time": 0.6064555644989014,
+        "has_placeholders": false,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "pressures",
+          "computed_at"
+        ],
+        "success": true
+      },
+      "/intelligence/freshness": {
+        "status_code": 200,
+        "response_time": 0.5324857234954834,
+        "has_placeholders": true,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "freshness",
+          "computed_at"
+        ],
+        "success": true
+      },
+      "/email/priority-inbox": {
+        "status_code": 200,
+        "response_time": 0.4073479175567627,
+        "has_placeholders": false,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "user_id",
+          "analysis",
+          "emails_analyzed",
+          "analyzed_at",
+          "created_at"
+        ],
+        "success": true
+      },
+      "/outlook/calendar/events": {
+        "status_code": 200,
+        "response_time": 0.6910078525543213,
+        "has_placeholders": false,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "events",
+          "total",
+          "date_range"
+        ],
+        "success": true
+      },
+      "/integrations/merge/connected": {
+        "status_code": 200,
+        "response_time": 0.5615396499633789,
+        "has_placeholders": false,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "integrations",
+          "canonical_truth"
+        ],
+        "success": true
+      },
+      "/user/integration-status": {
+        "status_code": 200,
+        "response_time": 0.5530529022216797,
+        "has_placeholders": false,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "integrations",
+          "canonical_truth",
+          "total_connected"
+        ],
+        "success": true
+      },
+      "/user/data-coverage": {
+        "status_code": 200,
+        "response_time": 0.5419363975524902,
+        "has_placeholders": false,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "coverage_pct",
+          "per_domain",
+          "missing_fields",
+          "missing_critical",
+          "guardrail_status",
+          "earned_points",
+          "total_points"
+        ],
+        "success": true
+      },
+      "/notifications/alerts": {
+        "status_code": 200,
+        "response_time": 0.5860838890075684,
+        "has_placeholders": false,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "notifications",
+          "summary",
+          "has_alerts"
+        ],
+        "success": true
+      },
+      "/marketing/benchmark/latest": {
+        "status_code": 200,
+        "response_time": 0.48616838455200195,
+        "has_placeholders": false,
+        "security_headers": {
+          "x_frame_options": null,
+          "x_content_type_options": "nosniff",
+          "strict_transport_security": null,
+          "content_security_policy": null,
+          "x_xss_protection": null,
+          "referrer_policy": null,
+          "server_header": "nginx/1.29.6",
+          "has_cors_headers": false
+        },
+        "data_keys": [
+          "status"
+        ],
+        "success": true
+      }
+    }
+  },
+  "security_headers": {},
+  "rate_limiting": {
+    "attempts": 5,
+    "blocked": false,
+    "responses": [
+      {
+        "attempt": 1,
+        "status_code": 401,
+        "response_time": 1773795056.974653
+      },
+      {
+        "attempt": 2,
+        "status_code": 401,
+        "response_time": 1773795058.3282113
+      },
+      {
+        "attempt": 3,
+        "status_code": 401,
+        "response_time": 1773795059.6853938
+      },
+      {
+        "attempt": 4,
+        "status_code": 401,
+        "response_time": 1773795061.0521152
+      },
+      {
+        "attempt": 5,
+        "status_code": 401,
+        "response_time": 1773795062.403216
+      }
+    ]
+  },
+  "fallback_audit": {
+    "total_tested": 5,
+    "fallback_responses": 1,
+    "details": {
+      "/brain/priorities": {
+        "status_code": 200,
+        "is_fallback": true,
+        "detected_indicators": [
+          "fallback"
+        ],
+        "response_size": 31608
+      },
+      "/intelligence/watchtower": {
+        "status_code": 200,
+        "is_fallback": false,
+        "detected_indicators": [],
+        "response_size": 684
+      },
+      "/intelligence/pressure": {
+        "status_code": 200,
+        "is_fallback": false,
+        "detected_indicators": [],
+        "response_size": 481
+      },
+      "/integrations/merge/connected": {
+        "status_code": 200,
+        "is_fallback": false,
+        "detected_indicators": [],
+        "response_size": 1298
+      },
+      "/marketing/benchmark/latest": {
+        "status_code": 200,
+        "is_fallback": false,
+        "detected_indicators": [],
+        "response_size": 26
+      }
+    }
+  },
+  "free_tier_check": {
+    "total": 5,
+    "accessible": 5,
+    "details": {
+      "/brain/kpis": {
+        "status_code": 200,
+        "subscription_blocked": false,
+        "free_tier_accessible": true
+      },
+      "/intelligence/watchtower": {
+        "status_code": 200,
+        "subscription_blocked": false,
+        "free_tier_accessible": true
+      },
+      "/intelligence/pressure": {
+        "status_code": 200,
+        "subscription_blocked": false,
+        "free_tier_accessible": true
+      },
+      "/email/priority-inbox": {
+        "status_code": 200,
+        "subscription_blocked": false,
+        "free_tier_accessible": true
+      },
+      "/user/integration-status": {
+        "status_code": 200,
+        "subscription_blocked": false,
+        "free_tier_accessible": true
+      }
+    }
+  },
+  "unauthenticated_blocking": {
+    "total": 5,
+    "properly_blocked": 5,
+    "details": {
+      "/brain/kpis": {
+        "blocked": true,
+        "status_code": 403
+      },
+      "/intelligence/watchtower": {
+        "blocked": true,
+        "status_code": 403
+      },
+      "/email/priority-inbox": {
+        "blocked": true,
+        "status_code": 403
+      },
+      "/user/integration-status": {
+        "blocked": true,
+        "status_code": 403
+      },
+      "/notifications/alerts": {
+        "blocked": true,
+        "status_code": 403
+      }
+    }
+  },
+  "security_findings": [
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:48.129080"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:48.129124"
+    },
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:48.871300"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:48.871341"
+    },
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:49.351194"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:49.351234"
+    },
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:49.957782"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:49.957836"
+    },
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:50.490407"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:50.490449"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Data Quality",
+      "issue": "Endpoint /intelligence/freshness may contain placeholder data",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:50.490512"
+    },
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:50.897885"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:50.897925"
+    },
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:51.589741"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:51.589782"
+    },
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:52.151492"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:52.151531"
+    },
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:52.704687"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:52.704727"
+    },
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:53.246781"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:53.246828"
+    },
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:53.833088"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:53.833129"
+    },
+    {
+      "severity": "LOW",
+      "category": "Security Headers",
+      "issue": "Missing X-Frame-Options header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:54.319371"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Security Headers",
+      "issue": "Missing Strict-Transport-Security header",
+      "details": "",
+      "timestamp": "2026-03-18T00:50:54.319411"
+    },
+    {
+      "severity": "MEDIUM",
+      "category": "Rate Limiting",
+      "issue": "No rate limiting detected on failed login attempts",
+      "details": "",
+      "timestamp": "2026-03-18T00:51:03.403331"
+    },
+    {
+      "severity": "INFO",
+      "category": "Data Availability",
+      "issue": "Endpoint /brain/priorities returning fallback data",
+      "details": "Indicators: ['fallback']",
+      "timestamp": "2026-03-18T00:51:08.134596"
+    }
+  ],
+  "recommendations": [
+    "Implement rate limiting on authentication endpoints"
+  ]
+}
