@@ -76,3 +76,12 @@
   - Priority Inbox
   - Calendar
   - Competitive Benchmark
+
+## Mobile App Matrix
+- Login works against production auth
+- SoundBoard opens as the primary tab
+- SoundBoard can load conversation history
+- SoundBoard can send a business question and persist `conversation_id`
+- Daily Brief tab shows brief + top priorities + alerts + meetings
+- Alerts tab uses `/notifications/alerts`
+- Settings shows user + tier correctly

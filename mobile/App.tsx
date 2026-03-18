@@ -29,8 +29,8 @@ import {
 const Tab = createBottomTabNavigator();
 
 const TAB_ICONS: Record<string, { active: string; inactive: string }> = {
-  Home: { active: 'grid', inactive: 'grid-outline' },
-  Chat: { active: 'chatbubble', inactive: 'chatbubble-outline' },
+  Chat: { active: 'chatbubble-ellipses', inactive: 'chatbubble-ellipses-outline' },
+  Home: { active: 'flash', inactive: 'flash-outline' },
   Market: { active: 'compass', inactive: 'compass-outline' },
   Alerts: { active: 'notifications', inactive: 'notifications-outline' },
   Settings: { active: 'settings', inactive: 'settings-outline' },
@@ -39,6 +39,7 @@ const TAB_ICONS: Record<string, { active: string; inactive: string }> = {
 function MainTabs({ onLogout }: { onLogout: () => void }) {
   return (
     <Tab.Navigator
+      initialRouteName="Chat"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: styles.tabBar,
@@ -59,8 +60,8 @@ function MainTabs({ onLogout }: { onLogout: () => void }) {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Overview' }} />
-      <Tab.Screen name="Chat" component={ChatScreen} options={{ tabBarLabel: 'Chat' }} />
+      <Tab.Screen name="Chat" component={ChatScreen} options={{ tabBarLabel: 'SoundBoard' }} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Brief' }} />
       <Tab.Screen name="Market" component={MarketScreen} options={{ tabBarLabel: 'Market' }} />
       <Tab.Screen name="Alerts" component={AlertsScreen} options={{ tabBarLabel: 'Alerts' }} />
       <Tab.Screen name="Settings" options={{ tabBarLabel: 'Settings' }}>

@@ -277,7 +277,7 @@ const MarketPage = () => {
         {(() => {
           const footprint = c?.digital_footprint || {};
           const hasFootprint = footprint.score != null;
-          const hasMarketing = channelsData?.channels?.some(ch => ch.status === 'connected');
+          const hasMarketing = channelsData?.channels?.some(ch => ch.status === 'connected' && ['google_ads', 'meta_ads', 'linkedin', 'analytics', 'email_platform', 'marketing'].includes(ch.key));
           return (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
@@ -300,7 +300,7 @@ const MarketPage = () => {
                         </div>
                       </>
                     : <span className="text-xs italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>
-                        {hasMarketing ? 'Syncing…' : 'Connect marketing tools'}
+                        {hasMarketing ? 'Signal still calibrating…' : 'Connect marketing tools'}
                       </span>
                   }
                 </div>

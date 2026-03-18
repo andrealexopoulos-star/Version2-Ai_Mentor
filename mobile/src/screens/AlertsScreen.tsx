@@ -1,6 +1,6 @@
 /**
  * BIQc Mobile — Alerts Screen
- * Thin client: Fetches from /api/alerts only.
+ * Thin client: Fetches from /api/notifications/alerts.
  * All alert logic computed by backend.
  */
 import React, { useEffect, useState, useCallback } from 'react';
@@ -25,48 +25,8 @@ export default function AlertsScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      // Try multiple alert sources
-      const [alertsRes, snapRes] = await Promise.allSettled([
-        api.get('/intelligence/watchtower'),
-        api.get('/snapshot/latest'),
-      ]);
-
-      let allAlerts: any[] = [];
-
-      if (alertsRes.status === 'fulfilled' && alertsRes.value.data?.positions) {
-        allAlerts = alertsRes.value.data.positions
-          .filter((p: any) => p.severity === 'high' || p.severity === 'medium')
-          .map((p: any) => ({
-            id: p.id || Math.random().toString(36),
-            title: p.signal || p.title,
-            domain: p.domain,
-            severity: p.severity,
-            created_at: p.detected_at || p.created_at,
-          }));
-      }
-
-      if (snapRes.status === 'fulfilled') {
-        const rq = snapRes.value.data?.cognitive?.resolution_queue || [];
-        const snapAlerts = rq.map((r: any) => ({
-          id: r.id || Math.random().toString(36),
-          title: r.title || r.signal,
-          domain: r.domain,
-          severity: r.severity || 'medium',
-          created_at: r.created_at,
-          recommendation: r.recommendation,
-        }));
-        allAlerts = [...allAlerts, ...snapAlerts];
-      }
-
-      // Deduplicate by title
-      const seen = new Set<string>();
-      allAlerts = allAlerts.filter(a => {
-        if (seen.has(a.title)) return false;
-        seen.add(a.title);
-        return true;
-      });
-
-      setAlerts(allAlerts);
+      const alertsRes = await api.get('/notifications/alerts');
+      setAlerts(alertsRes.data?.notifications || []);
     } catch {} finally { setLoading(false); }
   }, []);
 
@@ -95,7 +55,7 @@ export default function AlertsScreen() {
         <EmptyState
           icon={<Ionicons name="checkmark-circle-outline" size={32} color={theme.colors.success} />}
           title="All clear"
-          subtitle="No active alerts. Your business is running smoothly."
+          subtitle="No active BIQc alerts right now. Daily brief and push notifications will keep you updated."
         />
       ) : (
         alerts.map((alert) => {
