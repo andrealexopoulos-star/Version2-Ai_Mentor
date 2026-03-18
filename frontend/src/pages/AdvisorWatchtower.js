@@ -1120,11 +1120,16 @@ export default function AdvisorWatchtower() {
     [signals, isSignalActioned],
   );
 
+  const visibleSignals = useMemo(() => {
+    if (openSignals.length > 0) return openSignals;
+    return signals;
+  }, [openSignals, signals]);
+
   const prioritizedSignals = useMemo(() => {
-    return [...openSignals].sort((left, right) => {
+    return [...visibleSignals].sort((left, right) => {
       return signalPriorityScore(right, rolePreference) - signalPriorityScore(left, rolePreference);
     });
-  }, [openSignals, rolePreference]);
+  }, [visibleSignals, rolePreference]);
 
   const decisions = useMemo(
     () => buildDecisionSurface(prioritizedSignals),
