@@ -1,7 +1,7 @@
 {
   "test_run": {
     "timestamp": "2026-02-05T12:58:19.895471",
-    "base_url": "https://data-pipeline-test-7.preview.emergentagent.com",
+    "base_url": "https://truth-engine-19.preview.emergentagent.com",
     "total_tests": 8,
     "passed_tests": 6,
     "success_rate": "75.0%"

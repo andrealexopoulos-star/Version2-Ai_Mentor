@@ -13,7 +13,7 @@ Test Requirements:
 7) GET /api/brain/metrics?include_coverage=true&metric_name=total_revenue filters or returns coherent single metric coverage
 
 Credentials: andre@thestrategysquad.com.au / MasterMind2025*
-URL: https://data-pipeline-test-7.preview.emergentagent.com
+URL: https://truth-engine-19.preview.emergentagent.com
 """
 
 import json
@@ -22,7 +22,7 @@ import sys
 from typing import Dict, Any, Optional
 
 # Test configuration
-BASE_URL = "https://data-pipeline-test-7.preview.emergentagent.com"
+BASE_URL = "https://truth-engine-19.preview.emergentagent.com"
 TEST_EMAIL = "andre@thestrategysquad.com.au"
 TEST_PASSWORD = "MasterMind2025*"
 

@@ -264,7 +264,7 @@ const scoreIntent = (text = '') => {
 const detectConflicts = (signals) => {
   const conflicts = [];
   const seen = new Set();
-  const candidateSignals = signals.slice(0, 12);
+  const candidateSignals = signals.filter((signal) => signal?.conflictEligible !== false).slice(0, 12);
 
   for (let i = 0; i < candidateSignals.length; i += 1) {
     for (let j = i + 1; j < candidateSignals.length; j += 1) {
@@ -480,7 +480,11 @@ const buildSignalsFromBrainConcerns = (brainPayload) => {
   };
 
   return dedupeSignals(
-    concerns.map((concern, index) => toSignal({
+    concerns
+      .filter((concern) => concern?.truth_state !== 'blocked')
+      .map((concern, index) => ({ concern, index }))
+      .map(({ concern, index }) => {
+        const signal = toSignal({
       id: `brain-${concern.concern_id || index}`,
       signal: concern.concern_id || `brain_concern_${index + 1}`,
       domain: domainForConcern(concern.concern_id),
@@ -503,7 +507,16 @@ const buildSignalsFromBrainConcerns = (brainPayload) => {
       last_seen: concern.last_seen,
       escalation_state: concern.escalation_state,
       decision_label: concern.decision_label,
-    }, 'business_brain')),
+    }, 'business_brain');
+
+        return {
+          ...signal,
+          truthState: concern.truth_state || 'verified',
+          signalAvailability: concern.signal_availability,
+          conflictEligible: concern.conflict_eligible !== false && concern.truth_state === 'verified',
+          sourceTruth: concern.source_truth || [],
+        };
+      }),
   );
 };
 
@@ -686,6 +699,8 @@ export default function AdvisorWatchtower() {
     tierMode: 'free',
     allClear: false,
     concerns: [],
+    integrityAlerts: [],
+    truthSummary: null,
     generatedAt: null,
     error: '',
   });
@@ -815,6 +830,8 @@ export default function AdvisorWatchtower() {
         tierMode: brainPayload?.tier_mode || 'free',
         allClear: Boolean(brainPayload?.all_clear),
         concerns: brainPayload?.concerns || [],
+        integrityAlerts: brainPayload?.integrity_alerts || [],
+        truthSummary: brainPayload?.truth_summary || null,
         generatedAt: brainPayload?.generated_at || null,
         error: brainRequestError,
       });
@@ -825,7 +842,7 @@ export default function AdvisorWatchtower() {
           brain: {
             provider: 'BIQc Business Brain',
             connected: true,
-            live: Boolean(brainPayload) && !brainRequestFailed && (!brainRequestError || (brainPayload?.concerns || []).length > 0 || Boolean(brainPayload?.all_clear)),
+            live: Boolean(brainPayload) && !brainRequestFailed && (!brainRequestError || (brainPayload?.concerns || []).length > 0 || (brainPayload?.integrity_alerts || []).length > 0 || Boolean(brainPayload?.all_clear)),
             status: brainRequestFailed ? 'unavailable' : 'live',
             endpoint: '/brain/priorities',
             error: brainRequestError || '',
@@ -894,7 +911,13 @@ export default function AdvisorWatchtower() {
           ? 'Priority inbox analysis not generated yet'
           : '');
       const brainError = brainRequestError
-        || (brainPayload && Array.isArray(brainPayload.concerns) && brainPayload.concerns.length === 0 ? 'No brain concerns generated from current data window' : '');
+        || (brainPayload
+          && Array.isArray(brainPayload.concerns)
+          && brainPayload.concerns.length === 0
+          && !(brainPayload?.integrity_alerts || []).length
+          && !brainPayload?.all_clear
+          ? 'No brain concerns generated from current data window'
+          : '');
 
       const crmConnected = Object.values(mergeConnected).some((entry) => String(entry?.category || '').toLowerCase() === 'crm' && Boolean(entry?.connected));
       const accountingConnected = Object.values(mergeConnected).some((entry) => String(entry?.category || '').toLowerCase() === 'accounting' && Boolean(entry?.connected));
@@ -1108,8 +1131,28 @@ export default function AdvisorWatchtower() {
   const signals = useMemo(() => {
     const brainSignals = buildSignalsFromBrainConcerns(brainContext);
     if (brainSignals.length > 0) return brainSignals;
-    return [];
-  }, [brainContext]);
+    const executiveSignals = integrationContext.executiveSurface ? buildSignalsFromExecutiveSurface(integrationContext.executiveSurface) : [];
+    if (executiveSignals.length > 0) return executiveSignals;
+    const integrationSignals = buildIntegrationSignals(integrationContext);
+    if (integrationSignals.length > 0) return integrationSignals;
+    return buildSignals(overview, cognitive, watchtowerEvents);
+  }, [brainContext, integrationContext, overview, cognitive, watchtowerEvents]);
+
+  const integrityAlerts = useMemo(() => brainContext.integrityAlerts || [], [brainContext.integrityAlerts]);
+  const truthGateAlerts = useMemo(() => {
+    if (integrityAlerts.length > 0) return integrityAlerts;
+
+    return Object.values(integrationContext.sourceHealth || {})
+      .filter((entry) => entry?.status === 'unavailable' && entry?.provider && entry?.provider !== 'BIQc Business Brain')
+      .map((entry) => ({
+        id: `source-health-${String(entry.provider).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        title: `${entry.provider} truth is currently unavailable`,
+        detail: entry.error || `${entry.provider} could not be verified from the live connector.`,
+        action: 'Reconnect or refresh this integration before treating its signals as current truth.',
+        truth_state: 'blocked',
+        last_verified_at: null,
+      }));
+  }, [integrityAlerts, integrationContext.sourceHealth]);
 
   const isSignalActioned = useCallback((signal) => {
     if (actionState.byKey?.[signal.dedupeKey]) return true;
@@ -1560,11 +1603,12 @@ export default function AdvisorWatchtower() {
   const noActiveDecisions = decisions.every((decision) => !decision.signal);
   const brainHasRenderableContext = Boolean(
     (brainContext.concerns || []).length
+    || (brainContext.integrityAlerts || []).length
     || liveSignalCount
     || (watchtowerEvents || []).length
     || (overview?.top_alerts || []).length
   );
-  const brainLive = Boolean(integrationContext.sourceHealth?.brain?.live || (brainContext.concerns || []).length || brainContext.allClear);
+  const brainLive = Boolean(integrationContext.sourceHealth?.brain?.live || (brainContext.concerns || []).length || (brainContext.integrityAlerts || []).length || brainContext.allClear);
   const brainSourceUnavailable = integrationContext.sourceHealth?.brain?.status === 'unavailable';
   const brainLoading = authState === AUTH_STATE.LOADING
     || (!brainHasRenderableContext && (integrationContextLoading || integrationContext.sourceHealth?.brain?.status === 'pending') && !loadingGuardExpired);
@@ -2084,6 +2128,59 @@ export default function AdvisorWatchtower() {
                 </div>
               </section>
 
+              {truthGateAlerts.length > 0 && (
+                <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: '#FB923C55', background: 'linear-gradient(135deg, rgba(251,146,60,0.08), rgba(239,68,68,0.08))' }} data-testid="advisor-truth-gate-section">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.12em] text-[#FDBA74]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-truth-gate-label">
+                        Forensic Truth Gate
+                      </p>
+                      <h2 className="mt-2 text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-truth-gate-title">
+                        BIQc blocked unverified source claims before they reached the decision surface.
+                      </h2>
+                      <p className="mt-2 text-sm" style={{ color: '#FCD34D' }} data-testid="advisor-truth-gate-copy">
+                        Restore the affected integrations, then rerun verification to bring these domains back into live cognition.
+                      </p>
+                    </div>
+                    <Link
+                      to="/integrations"
+                      className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-black/10"
+                      style={{ borderColor: '#FB923C66', color: '#FDE68A', fontFamily: fontFamily.mono }}
+                      data-testid="advisor-truth-gate-open-integrations-button"
+                    >
+                      Review integrations <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    {truthGateAlerts.slice(0, 4).map((alert) => (
+                      <article
+                        key={alert.id}
+                        className="rounded-2xl border p-4"
+                        style={{ borderColor: '#FB923C55', background: 'rgba(15,23,42,0.42)' }}
+                        data-testid={`advisor-truth-gate-alert-${alert.id}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.12em] text-[#FDBA74]" style={{ fontFamily: fontFamily.mono }} data-testid={`advisor-truth-gate-alert-state-${alert.id}`}>
+                              {String(alert.truth_state || 'blocked').replace(/_/g, ' ')}
+                            </p>
+                            <h3 className="mt-2 text-sm font-semibold text-[#F8FAFC]" data-testid={`advisor-truth-gate-alert-title-${alert.id}`}>{alert.title}</h3>
+                          </div>
+                          <ShieldAlert className="h-4 w-4 text-[#FDBA74]" />
+                        </div>
+                        <p className="mt-3 text-sm text-[#FDE68A]" data-testid={`advisor-truth-gate-alert-detail-${alert.id}`}>{alert.detail}</p>
+                        {alert.last_verified_at && (
+                          <p className="mt-3 text-xs text-[#CBD5E1]" data-testid={`advisor-truth-gate-alert-last-verified-${alert.id}`}>
+                            Last verified: {formatTime(alert.last_verified_at)}
+                          </p>
+                        )}
+                        <p className="mt-3 text-xs text-[#CBD5E1]" data-testid={`advisor-truth-gate-alert-action-${alert.id}`}>{alert.action}</p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-advanced-toggle-section">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-advanced-toggle-copy">
@@ -2140,7 +2237,9 @@ export default function AdvisorWatchtower() {
                   </div>
                 ) : (
                   <div className="rounded-2xl border p-4 text-sm" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)' }} data-testid="advisor-conflict-empty-state">
-                    No conflicting action directions detected in current high-priority signals.
+                    {truthGateAlerts.length > 0
+                      ? 'Only fully verified signals are eligible for conflict resolution. Restore blocked source truth to expand this view.'
+                      : 'No conflicting action directions detected in current high-priority signals.'}
                   </div>
                 )}
               </section>

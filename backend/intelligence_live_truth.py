@@ -13,6 +13,8 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+STALE_SOURCE_HOURS = 12.0
+
 
 def parse_json_field(value: Any) -> Optional[Dict[str, Any]]:
     if isinstance(value, dict):
@@ -51,6 +53,102 @@ def normalize_category(raw_category: Any, provider: Any = None, integration_slug
     if any(k in combined for k in ("outlook", "gmail", "mail", "email")):
         return "email"
     return "unknown"
+
+
+def parse_dt(value: Any) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def age_hours(value: Any) -> Optional[float]:
+    parsed = parse_dt(value)
+    if not parsed:
+        return None
+    return round(max(0.0, (datetime.now(timezone.utc) - parsed).total_seconds() / 3600.0), 2)
+
+
+def normalize_connector_type(raw_value: Any) -> str:
+    text = str(raw_value or "").strip().lower()
+    if any(token in text for token in ("accounting", "xero", "quickbooks", "netsuite", "sage")):
+        return "accounting"
+    if any(token in text for token in ("crm", "hubspot", "salesforce", "pipedrive", "zoho")):
+        return "crm"
+    if any(token in text for token in ("email", "outlook", "gmail", "mail")):
+        return "email"
+    if "calendar" in text:
+        return "calendar"
+    if "marketing" in text:
+        return "marketing"
+    return "unknown"
+
+
+def get_connector_truth_summary(sb, user_id: str) -> Dict[str, Dict[str, Any]]:
+    categories = ("crm", "accounting", "email", "calendar", "marketing")
+    summary: Dict[str, Dict[str, Any]] = {
+        category: {
+            "category": category,
+            "truth_state": "unverified",
+            "last_verified_at": None,
+            "age_hours": None,
+            "status": "not_observed",
+            "error_message": None,
+            "truth_reason": f"No verified {category} ingest has completed yet.",
+        }
+        for category in categories
+    }
+
+    try:
+        rows = (
+            sb.schema("business_core")
+            .table("source_runs")
+            .select("connector_type,status,error_message,ingested_at,updated_at,created_at")
+            .eq("tenant_id", user_id)
+            .order("ingested_at", desc=True)
+            .limit(100)
+            .execute()
+            .data
+            or []
+        )
+        for row in rows:
+            category = normalize_connector_type(row.get("connector_type"))
+            if category not in summary:
+                continue
+
+            candidate_ts = row.get("ingested_at") or row.get("updated_at") or row.get("created_at")
+            current_ts = summary[category].get("last_verified_at")
+            if parse_dt(current_ts) and parse_dt(candidate_ts) and parse_dt(candidate_ts) <= parse_dt(current_ts):
+                continue
+
+            run_status = str(row.get("status") or "unknown").lower()
+            current_age_hours = age_hours(candidate_ts)
+            if run_status in {"completed", "partial"}:
+                if current_age_hours is not None and current_age_hours > STALE_SOURCE_HOURS:
+                    truth_state = "stale"
+                    truth_reason = f"Last verified {category} ingest is {current_age_hours:.1f}h old."
+                else:
+                    truth_state = "live"
+                    truth_reason = f"{category.title()} ingest verified {current_age_hours:.1f}h ago." if current_age_hours is not None else f"{category.title()} ingest is verified."
+            else:
+                truth_state = "error"
+                truth_reason = str(row.get("error_message") or f"Latest {category} ingest failed.")
+
+            summary[category] = {
+                "category": category,
+                "truth_state": truth_state,
+                "last_verified_at": candidate_ts,
+                "age_hours": current_age_hours,
+                "status": run_status,
+                "error_message": row.get("error_message"),
+                "truth_reason": truth_reason,
+            }
+    except Exception as e:
+        logger.warning(f"[live-truth] source-runs truth lookup failed: {e}")
+
+    return summary
 
 
 def merge_row_is_connected(row: Dict[str, Any]) -> bool:
@@ -101,6 +199,7 @@ def email_row_is_connected(row: Dict[str, Any]) -> bool:
 def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
     integrations: List[Dict[str, Any]] = []
     dedupe: Dict[str, Dict[str, Any]] = {}
+    connector_truth = get_connector_truth_summary(sb, user_id)
 
     def upsert_integration(item: Dict[str, Any]):
         category = normalize_category(item.get("category"), item.get("provider"), item.get("integration_slug"))
@@ -192,7 +291,35 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
         # Optional table in some environments
         pass
 
-    integrations = list(dedupe.values())
+    integrations = []
+    for item in dedupe.values():
+        category = normalize_category(item.get("category"), item.get("provider"), item.get("integration_slug"))
+        truth_meta = dict(connector_truth.get(category) or {})
+
+        if truth_meta.get("truth_state") == "unverified":
+            connected_at = item.get("updated_at") or item.get("connected_at")
+            derived_age_hours = age_hours(connected_at)
+            if derived_age_hours is not None:
+                truth_meta = {
+                    "category": category,
+                    "truth_state": "stale" if derived_age_hours > STALE_SOURCE_HOURS else "live",
+                    "last_verified_at": connected_at,
+                    "age_hours": derived_age_hours,
+                    "status": "connection_only",
+                    "error_message": None,
+                    "truth_reason": (
+                        f"Connection confirmed {derived_age_hours:.1f}h ago; canonical source-run verification is still pending."
+                    ),
+                }
+
+        integrations.append({
+            **item,
+            "truth_state": truth_meta.get("truth_state", "unverified"),
+            "last_verified_at": truth_meta.get("last_verified_at"),
+            "truth_reason": truth_meta.get("truth_reason"),
+            "age_hours": truth_meta.get("age_hours"),
+            "source_run_status": truth_meta.get("status"),
+        })
 
     canonical_truth = {
         "crm_connected": any(normalize_category(i.get("category")) == "crm" and i.get("connected") for i in integrations),
@@ -200,9 +327,13 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
         "email_connected": any(normalize_category(i.get("category")) == "email" and i.get("connected") for i in integrations),
         "hris_connected": any(normalize_category(i.get("category")) == "hris" and i.get("connected") for i in integrations),
         "total_connected": len([i for i in integrations if i.get("connected")]),
+        "crm_state": (connector_truth.get("crm") or {}).get("truth_state", "unverified"),
+        "accounting_state": (connector_truth.get("accounting") or {}).get("truth_state", "unverified"),
+        "email_state": (connector_truth.get("email") or {}).get("truth_state", "unverified"),
+        "verified_live_count": len([item for item in integrations if item.get("truth_state") == "live"]),
     }
 
-    return {"integrations": integrations, "canonical_truth": canonical_truth}
+    return {"integrations": integrations, "canonical_truth": canonical_truth, "connector_truth": connector_truth}
 
 
 def get_latest_snapshot_context(sb, user_id: str) -> Dict[str, Any]:

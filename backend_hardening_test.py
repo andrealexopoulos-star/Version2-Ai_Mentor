@@ -11,7 +11,7 @@ import time
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://data-pipeline-test-7.preview.emergentagent.com"
+BASE_URL = "https://truth-engine-19.preview.emergentagent.com"
 TEST_EMAIL = "andre@thestrategysquad.com.au"
 TEST_PASSWORD = "MasterMind2025*"
 

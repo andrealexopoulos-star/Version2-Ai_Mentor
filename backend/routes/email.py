@@ -333,7 +333,6 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     Initiate Microsoft OAuth flow for Outlook
     Accepts authentication token as query parameter (for browser redirects)
     """
-    from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
     # provider param is optional — endpoint URL already defines this as outlook
@@ -444,7 +443,6 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     Initiate Google OAuth flow for Gmail
     Accepts authentication token as query parameter (for browser redirects)
     """
-    from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
     # provider param is optional — endpoint URL already defines this as gmail
@@ -546,7 +544,6 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
 @router.get("/auth/gmail/callback")
 async def gmail_callback(code: str, state: str = None, error: str = None, error_description: str = None):
     """Handle Google OAuth callback and store tokens - SECURE IMPLEMENTATION"""
-    from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
     
@@ -610,7 +607,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         "grant_type": "authorization_code"
     }
     
-    logger.info(f"Gmail callback: exchanging code for tokens")
+    logger.info("Gmail callback: exchanging code for tokens")
     
     async with httpx.AsyncClient() as client:
         response = await client.post(token_url, data=payload)
@@ -633,7 +630,6 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         
         # Get user email from Google
         google_email = None
-        google_name = None
         try:
             user_info_response = await client.get(
                 "https://www.googleapis.com/oauth2/v2/userinfo",
@@ -642,7 +638,6 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
             if user_info_response.status_code == 200:
                 user_info = user_info_response.json()
                 google_email = user_info.get("email")
-                google_name = user_info.get("name")
                 logger.info(f"Gmail account: {google_email}")
         except Exception as e:
             logger.warning(f"Could not fetch Google user info: {e}")
@@ -762,7 +757,6 @@ async def gmail_disconnect(current_user: dict = Depends(get_current_user)):
 @router.get("/auth/outlook/callback")
 async def outlook_callback(code: str, state: str = None, error: str = None, error_description: str = None):
     """Proxy Microsoft OAuth callback to Supabase Edge Function"""
-    from fastapi.responses import RedirectResponse
     import hashlib
     import hmac
     
@@ -839,7 +833,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         "scope": "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.Read Calendars.ReadBasic Calendars.ReadWrite"
     }
     
-    logger.info(f"Outlook callback: exchanging code for tokens")
+    logger.info("Outlook callback: exchanging code for tokens")
     
     async with httpx.AsyncClient() as client:
         response = await client.post(token_url, data=payload)
@@ -851,7 +845,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         
         token_data = response.json()
     
-    logger.info(f"Token exchange successful")
+    logger.info("Token exchange successful")
     
     # Get user info from Microsoft Graph
     access_token = token_data.get("access_token")
@@ -980,7 +974,7 @@ async def sync_outlook_emails(
                 try:
                     new_tokens = await refresh_outlook_token_supabase(user_id, refresh_token)
                     access_token = new_tokens["access_token"]
-                    logger.info(f"✅ Token refreshed successfully")
+                    logger.info("✅ Token refreshed successfully")
                 except Exception as refresh_error:
                     logger.error(f"❌ Token refresh failed: {refresh_error}")
                     raise HTTPException(
@@ -1001,7 +995,7 @@ async def sync_outlook_emails(
     }
     
     # PRE-CHECK: Log outbound request (redact token)
-    logger.info(f"📤 Microsoft Graph Request:")
+    logger.info("📤 Microsoft Graph Request:")
     logger.info(f"   URL: {graph_url}")
     logger.info(f"   Folder: {folder}")
     logger.info(f"   Params: {params}")
@@ -1013,7 +1007,7 @@ async def sync_outlook_emails(
         # PRE-CHECK: Log exact Graph error if not 200
         if response.status_code != 200:
             error_body = response.text
-            logger.error(f"❌ Microsoft Graph Error:")
+            logger.error("❌ Microsoft Graph Error:")
             logger.error(f"   Status: {response.status_code}")
             logger.error(f"   Response Body: {error_body}")
             
@@ -1030,7 +1024,7 @@ async def sync_outlook_emails(
                     status_code=response.status_code,
                     detail=f"Microsoft Graph error: {error_code} - {error_message}"
                 )
-            except:
+            except Exception:
                 raise HTTPException(status_code=400, detail=f"Failed to fetch emails: {error_body}")
         
         emails_data = response.json()
@@ -1156,8 +1150,7 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
         folders_url = "https://graph.microsoft.com/v1.0/me/mailFolders"
         
         async with httpx.AsyncClient(timeout=30) as client:
-            folders_response = await client.get(folders_url, headers=headers)
-            folders_data = folders_response.json()
+            await client.get(folders_url, headers=headers)
         
         # ========================================
         # PHASE 1 INGESTION PROTOCOL
@@ -1530,14 +1523,19 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
             except Exception as e:
                 logger.warning(f"Could not parse expires_at: {e}")
         
-        # Get email count and metadata
-        emails_count = await count_user_emails_supabase(get_sb(), user_id)
+        # Get email count and metadata without blocking the whole advisor surface.
+        emails_count = None
+        try:
+            emails_count = await asyncio.wait_for(count_user_emails_supabase(get_sb(), user_id), timeout=1.5)
+        except Exception:
+            emails_count = None
         connected_email = tokens.get("microsoft_email")
         connected_name = tokens.get("microsoft_name")
         
         return {
             "connected": True,
-            "emails_synced": emails_count,
+            "emails_synced": emails_count or 0,
+            "emails_count_verified": emails_count is not None,
             "user_email": current_user.get("email"),
             "connected_email": connected_email,
             "connected_name": connected_name,
@@ -1653,7 +1651,7 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
         
         return {
             "success": True,
-            "message": f"Microsoft Outlook disconnected successfully",
+            "message": "Microsoft Outlook disconnected successfully",
             "deleted_emails": deleted_emails,
             "deleted_jobs": deleted_jobs
         }
@@ -1965,7 +1963,7 @@ Return ONLY valid JSON, no markdown."""
         import json
         try:
             priority_analysis = json.loads(response.strip())
-        except:
+        except Exception:
             # Try to extract JSON from response
             import re
             json_match = re.search(r'\{[\s\S]*\}', response)
@@ -2133,14 +2131,14 @@ Return ONLY valid JSON in this exact format:
         try:
             # Try direct parse
             result = json.loads(response.strip())
-        except:
+        except Exception:
             # Try to extract JSON from response
             import re
             json_match = re.search(r'\{[\s\S]*\}', response)
             if json_match:
                 try:
                     result = json.loads(json_match.group())
-                except:
+                except Exception:
                     pass
         
         if not result or "suggested_reply" not in result:
