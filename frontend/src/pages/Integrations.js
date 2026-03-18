@@ -160,6 +160,7 @@ export default function Integrations() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [mergeIntegrations, setMergeIntegrations] = useState({});
+  const [integrationStatusRows, setIntegrationStatusRows] = useState([]);
   const [outlookStatus, setOutlookStatus] = useState({ connected: false, connected_email: null });
   const [gmailStatus, setGmailStatus] = useState({ connected: false, connected_email: null });
   const [disconnecting, setDisconnecting] = useState(null);
@@ -215,8 +216,30 @@ export default function Integrations() {
   const loadMergeIntegrations = useCallback(async () => {
     try {
       const res = await apiClient.get('/integrations/merge/connected');
-      setMergeIntegrations(res.data?.integrations || {});
-    } catch {}
+      const directMap = res.data?.integrations || {};
+      if (Object.keys(directMap).length > 0) {
+        setMergeIntegrations(directMap);
+        return;
+      }
+      const fallbackRes = await apiClient.get('/user/integration-status');
+      const rows = fallbackRes.data?.integrations || [];
+      setIntegrationStatusRows(rows);
+      const derivedMap = rows.reduce((acc, row) => {
+        if (!row?.connected) return acc;
+        const provider = String(row.integration_name || row.provider || '').trim().toLowerCase().replace(/\s+/g, '-');
+        const category = String(row.category || 'general').trim().toLowerCase();
+        acc[`${category}:${provider}`] = {
+          provider: row.integration_name || row.provider,
+          category,
+          connected: true,
+          connected_at: row.connected_at || row.last_sync_at || null,
+        };
+        return acc;
+      }, {});
+      setMergeIntegrations(derivedMap);
+    } catch {
+      setMergeIntegrations({});
+    }
   }, []);
 
   const loadOutlookStatus = useCallback(async () => {
@@ -430,7 +453,7 @@ export default function Integrations() {
   });
 
   const connectedCount = [
-    Object.keys(mergeIntegrations).length,
+    Math.max(Object.keys(mergeIntegrations).length, integrationStatusRows.filter((row) => row.connected && row.category !== 'email').length),
     gmailStatus.connected ? 1 : 0,
     outlookStatus.connected ? 1 : 0,
   ].reduce((sum, value) => sum + value, 0);

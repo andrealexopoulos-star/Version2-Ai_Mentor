@@ -16,6 +16,21 @@ const LoginSupabase = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState(0);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!lockoutUntil) return undefined;
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((lockoutUntil - Date.now()) / 1000));
+      setCooldownSeconds(remaining);
+      if (remaining <= 0) {
+        setLockoutUntil(0);
+      }
+    }, 250);
+    return () => clearInterval(timer);
+  }, [lockoutUntil]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -48,6 +63,10 @@ const LoginSupabase = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoginError('');
+    if (lockoutUntil && Date.now() < lockoutUntil) {
+      setLoginError(`Too many failed attempts. Please wait ${Math.max(1, cooldownSeconds)} seconds and try again.`);
+      return;
+    }
     if (!formData.email || !formData.password) {
       setLoginError('Please enter both email and password');
       return;
@@ -55,8 +74,18 @@ const LoginSupabase = () => {
     setLoading(true);
     try {
       await signIn(formData.email, formData.password);
+      setFailedAttempts(0);
+      setLockoutUntil(0);
+      setCooldownSeconds(0);
       toast.success('Welcome back!');
     } catch (error) {
+      const nextFailedAttempts = failedAttempts + 1;
+      setFailedAttempts(nextFailedAttempts);
+      if (nextFailedAttempts >= 3) {
+        const lockoutSeconds = Math.min(30, nextFailedAttempts * 5);
+        setLockoutUntil(Date.now() + lockoutSeconds * 1000);
+        setCooldownSeconds(lockoutSeconds);
+      }
       const msg = (error.message || '').toLowerCase();
       if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('not found') ||
           msg.includes('body stream') || msg.includes('json') || msg.includes('failed to fetch') ||
@@ -201,11 +230,11 @@ const LoginSupabase = () => {
             )}
 
             <div style={{ width: '100%' }}>
-              <button type="submit" disabled={loading || oauthLoading}
-                style={{ background: '#FF6A00', color: 'white', width: '100%', height: '48px', borderRadius: '12px', border: 'none', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(255,106,0,0.3)', opacity: loading || oauthLoading ? 0.5 : 1, WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+                <button type="submit" disabled={loading || oauthLoading || (lockoutUntil && Date.now() < lockoutUntil)}
+                style={{ background: '#FF6A00', color: 'white', width: '100%', height: '48px', borderRadius: '12px', border: 'none', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(255,106,0,0.3)', opacity: loading || oauthLoading || (lockoutUntil && Date.now() < lockoutUntil) ? 0.5 : 1, WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
                 aria-busy={loading}
                 data-testid="login-submit-btn">
-                {loading ? "Signing in..." : "Sign in"}
+                {loading ? "Signing in..." : (lockoutUntil && Date.now() < lockoutUntil ? `Retry in ${Math.max(1, cooldownSeconds)}s` : "Sign in")}
               </button>
             </div>
           </form>

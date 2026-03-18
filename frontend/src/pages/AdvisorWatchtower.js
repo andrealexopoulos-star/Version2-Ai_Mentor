@@ -820,6 +820,20 @@ export default function AdvisorWatchtower() {
         generatedAt: brainPayload?.generated_at || null,
         error: brainRequestError,
       });
+      setIntegrationContext((prev) => ({
+        ...prev,
+        sourceHealth: {
+          ...prev.sourceHealth,
+          brain: {
+            provider: 'BIQc Business Brain',
+            connected: true,
+            live: Boolean(brainPayload) && !brainRequestFailed && (!brainRequestError || (brainPayload?.concerns || []).length > 0 || Boolean(brainPayload?.all_clear)),
+            status: brainRequestFailed ? 'unavailable' : 'live',
+            endpoint: '/brain/priorities',
+            error: brainRequestError || '',
+          },
+        },
+      }));
 
       if (!brainRequestError && brainPayload) {
         setBrainRetryCount(0);
@@ -1535,16 +1549,21 @@ export default function AdvisorWatchtower() {
   const migrationRequired = overview?.status === 'MIGRATION_REQUIRED';
   const queuedBeyondThree = Math.max(openSignals.length - 3, 0);
   const noActiveDecisions = decisions.every((decision) => !decision.signal);
-  const brainLive = Boolean(integrationContext.sourceHealth?.brain?.live);
+  const brainHasRenderableContext = Boolean(
+    (brainContext.concerns || []).length
+    || liveSignalCount
+    || (watchtowerEvents || []).length
+    || (overview?.top_alerts || []).length
+  );
+  const brainLive = Boolean(integrationContext.sourceHealth?.brain?.live || (brainContext.concerns || []).length || brainContext.allClear);
   const brainSourceUnavailable = integrationContext.sourceHealth?.brain?.status === 'unavailable';
   const brainLoading = authState === AUTH_STATE.LOADING
-    || integrationContextLoading
-    || integrationContext.sourceHealth?.brain?.status === 'pending';
+    || ((!loadingGuardExpired || !brainHasRenderableContext) && integrationContext.sourceHealth?.brain?.status === 'pending');
   const brainUnavailable = !brainLoading && (
     Boolean(brainContext.error)
     || Boolean(integrationContextError)
     || brainSourceUnavailable
-    || (!brainLive && !brainContext.allClear)
+    || (!brainLive && !brainContext.allClear && !brainHasRenderableContext)
   );
   const fallbackState = getStateLabel(overview, cognitive);
   const executiveState = getExecutiveStateLabel({
