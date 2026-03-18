@@ -168,7 +168,7 @@ const categoryMatches = (integrationCategory, rowCategory) => {
 };
 
 export default function Integrations() {
-  const { user } = useSupabaseAuth();
+  const { user, session, authState } = useSupabaseAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
@@ -316,6 +316,7 @@ export default function Integrations() {
   }, []);
 
   useEffect(() => {
+    if (authState === 'LOADING' || (!user && !session)) return undefined;
     loadMergeIntegrations();
     loadOutlookStatus();
     loadGmailStatus();
@@ -331,7 +332,7 @@ export default function Integrations() {
       setSearchParams({});
     }
     return () => clearTimeout(retryTimer);
-  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus, user?.id, session?.access_token, authState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const outlookConnected = searchParams.get('outlook_connected');

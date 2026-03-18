@@ -24,6 +24,15 @@ const getCachedAuthState = (userId) => {
   return null;
 };
 
+const getRecentLoginTimestamp = () => {
+  try {
+    const raw = sessionStorage.getItem('biqc_auth_recent_login');
+    return raw ? parseInt(raw, 10) : 0;
+  } catch {
+    return 0;
+  }
+};
+
 const LoadingScreen = () => {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
@@ -106,6 +115,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authGraceStart] = useState(() => Date.now());
   const isCalibrationRoute = location.pathname === '/calibration';
+  const recentLoginTs = getRecentLoginTimestamp();
 
   const hasStoredAuth = useMemo(() => {
     try {
@@ -168,7 +178,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
   // No session → login
   if (!user && !session) {
     // Grace window to avoid sign-in redirect loops during transient auth hydration.
-    if (hasStoredAuth && Date.now() - authGraceStart < 8000) {
+    if ((hasStoredAuth && Date.now() - authGraceStart < 20000) || (recentLoginTs && Date.now() - recentLoginTs < 20000)) {
       return <LoadingScreen />;
     }
     return <Navigate to="/login-supabase" replace />;

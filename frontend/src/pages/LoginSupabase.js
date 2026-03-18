@@ -73,11 +73,13 @@ const LoginSupabase = () => {
     }
     setLoading(true);
     try {
-      await signIn(formData.email, formData.password);
+      const authResult = await signIn(formData.email, formData.password);
       setFailedAttempts(0);
       setLockoutUntil(0);
       setCooldownSeconds(0);
       toast.success('Welcome back!');
+      try { sessionStorage.setItem('biqc_auth_recent_login', String(Date.now())); } catch {}
+      navigate('/advisor', { replace: true });
     } catch (error) {
       const nextFailedAttempts = failedAttempts + 1;
       setFailedAttempts(nextFailedAttempts);

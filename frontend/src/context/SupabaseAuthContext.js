@@ -35,6 +35,31 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 8000) => {
   }
 };
 
+const getStoredSessionCandidate = () => {
+  if (typeof window === 'undefined') return null;
+  const extractSession = (parsed) => {
+    if (!parsed) return null;
+    const session = parsed?.currentSession || parsed?.session || parsed;
+    if (session?.access_token && session?.refresh_token) return session;
+    return null;
+  };
+
+  try {
+    const primary = extractSession(JSON.parse(localStorage.getItem('biqc-auth') || 'null'));
+    if (primary) return primary;
+  } catch {}
+
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (!key.startsWith('sb-')) continue;
+      const parsed = extractSession(JSON.parse(localStorage.getItem(key) || 'null'));
+      if (parsed) return parsed;
+    }
+  } catch {}
+
+  return null;
+};
+
 const SupabaseAuthContext = createContext(null);
 
 export const SupabaseAuthProvider = ({ children }) => {
@@ -81,7 +106,19 @@ export const SupabaseAuthProvider = ({ children }) => {
         
         if (!isMounted) return;
         
-        const currentSession = sessionData?.session;
+        let currentSession = sessionData?.session;
+        if (!currentSession) {
+          const storedSession = getStoredSessionCandidate();
+          if (storedSession?.access_token && storedSession?.refresh_token) {
+            try {
+              const { data } = await supabase.auth.setSession({
+                access_token: storedSession.access_token,
+                refresh_token: storedSession.refresh_token,
+              });
+              currentSession = data?.session || storedSession;
+            } catch {}
+          }
+        }
         setSession(currentSession);
         if (currentSession?.user) {
           await fetchUserProfile(currentSession.user.id, currentSession);
@@ -124,6 +161,18 @@ export const SupabaseAuthProvider = ({ children }) => {
               setSession(data.session);
               fetchUserProfile(data.session.user.id, data.session);
               return;
+            }
+            const storedSession = getStoredSessionCandidate();
+            if (storedSession?.access_token && storedSession?.refresh_token) {
+              const restored = await supabase.auth.setSession({
+                access_token: storedSession.access_token,
+                refresh_token: storedSession.refresh_token,
+              });
+              if (restored?.data?.session?.user) {
+                setSession(restored.data.session);
+                fetchUserProfile(restored.data.session.user.id, restored.data.session);
+                return;
+              }
             }
           } catch {}
         }
@@ -250,6 +299,7 @@ export const SupabaseAuthProvider = ({ children }) => {
       // Clear bootstrap cache on sign-out
       const userId = session?.user?.id;
       if (userId) { try { sessionStorage.removeItem(`biqc_auth_bootstrap_${userId}`); } catch {} }
+      try { sessionStorage.removeItem('biqc_auth_recent_login'); } catch {}
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } finally {

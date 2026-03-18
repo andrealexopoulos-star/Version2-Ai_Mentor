@@ -1,0 +1,93 @@
+{
+  "summary": "Iteration 152: Truth Gate Hardening & Auth Route Restoration testing complete. All backend APIs working correctly - Board Room, War Room, and diagnosis endpoints return proper truth gate messaging when CRM/accounting/email sources are stale/unverified. Frontend authentication flow works correctly - login -> /advisor -> direct navigation to /integrations stays in app shell without bouncing to login.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/integrations/merge/connected",
+        "issue": "Intermittent 502 errors (preview environment not responding) - could cause frontend to show 0 connected integrations",
+        "priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Integrations page - Connected tab",
+        "issue": "Shows 'Connected 0' even though backend returns 4 connected integrations (HubSpot, Xero, outlook, microsoft). Likely a timing issue where API hasn't completed before render, or API returned 502.",
+        "selector": "[data-testid=\"cat-connected\"]",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Integrations truth state banner",
+        "issue": "Forensic source health banner not visible even though backend returns crm_state=stale, accounting_state=stale, email_state=unverified. The blockedTruthCategories logic should show the banner but it appears empty.",
+        "affected_selectors": ["[data-testid=\"integrations-truth-state-banner\"]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration152_truth_gate_hardening.py",
+    "/app/test_reports/pytest/pytest_results_iteration152.xml"
+  ],
+  "action_items": [
+    "Investigate why Integrations page shows 'Connected 0' when backend returns connected integrations - may need to add loading state or retry logic",
+    "Verify blockedTruthCategories array is being populated from canonicalTruth API response - banner should appear for stale/unverified states"
+  ],
+  "critical_code_review_comments": [
+    "Backend truth gate working correctly: /api/boardroom/respond, /api/boardroom/diagnosis, /api/war-room/respond all return constrained truth gate messaging",
+    "Auth route restoration working: Login -> /advisor redirect works, then navigating to /integrations stays in app shell",
+    "API responses show correct truth states: crm_state=stale, accounting_state=stale, email_state=unverified",
+    "Frontend Integrations page may have timing issue - connectedCount relies on mergeIntegrations and integrationStatusRows which may not be populated when merge/connected returns 502"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration152_truth_gate_hardening.py"
+  ],
+  "success_rate": {
+    "backend": "100% (9/9 tests passed)",
+    "frontend": "80% - Auth flow works, but Integrations page connected count and truth banner have visibility issues"
+  },
+  "test_credentials": "andre@thestrategysquad.com.au / MasterMind2025*",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend truth gate fully operational. Board Room and War Room correctly show constrained messaging when CRM/accounting/email sources are stale. Auth route restoration working - /integrations accessible after login without bounce. Minor issue: Integrations page shows 'Connected 0' and no forensic source health banner despite backend returning stale/unverified truth states - likely a frontend state population timing issue.",
+  "features_verified": {
+    "auth_route_restoration": "PASS - Direct navigation to /integrations after login stays in app shell",
+    "boardroom_truth_gate": "PASS - Returns truth gate message with degraded=true when sources stale",
+    "boardroom_diagnosis_truth_gate": "PASS - Returns forensic truth gate headline when sources stale",
+    "warroom_truth_gate": "PASS - Returns truth gate message with degraded=true when sources stale",
+    "integration_status_truth_state": "PASS - API returns truth_state and truth_reason per integration",
+    "canonical_truth_states": "PASS - API returns crm_state=stale, accounting_state=stale, email_state=unverified",
+    "daily_brief_no_regression": "PASS - cognition/overview and intelligence/brief return 200",
+    "integrations_page_truth_banner": "PARTIAL - Backend data correct but banner not visible in UI"
+  },
+  "api_response_summary": {
+    "boardroom_respond": {
+      "status": 200,
+      "truth_gate_active": true,
+      "message_preview": "Board Room truth gate is active. BIQc is withholding unsupported cross-system claims..."
+    },
+    "boardroom_diagnosis": {
+      "status": 200,
+      "degraded": true,
+      "headline": "Forensic truth gate is active"
+    },
+    "warroom_respond": {
+      "status": 200,
+      "degraded": true,
+      "message_preview": "Board Room truth gate is active..."
+    },
+    "user_integration_status": {
+      "status": 200,
+      "canonical_truth": {
+        "crm_state": "stale",
+        "accounting_state": "stale",
+        "email_state": "unverified"
+      },
+      "connected_integrations": ["HubSpot", "Xero", "outlook", "microsoft"]
+    }
+  }
+}

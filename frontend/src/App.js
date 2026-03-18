@@ -148,7 +148,16 @@ class AppErrorBoundary extends React.Component {
 // Public Route — redirect authenticated users to advisor
 const PublicRoute = ({ children }) => {
   const { user, session, loading, authState } = useSupabaseAuth();
+  const recentLoginTs = (() => {
+    try {
+      const raw = sessionStorage.getItem('biqc_auth_recent_login');
+      return raw ? parseInt(raw, 10) : 0;
+    } catch {
+      return 0;
+    }
+  })();
   if (authState === AUTH_STATE.LOADING || loading) return <LoadingScreen />;
+  if (!user && !session && recentLoginTs && Date.now() - recentLoginTs < 20000) return <LoadingScreen />;
   const isAuthenticated = user || session;
   if (isAuthenticated && authState === AUTH_STATE.NEEDS_CALIBRATION) return <Navigate to="/calibration" replace />;
   if (isAuthenticated) return <Navigate to="/advisor" replace />;
