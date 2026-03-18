@@ -50,12 +50,15 @@ const BoardRoom = ({ embeddedShell = false }) => {
   };
   const degradedTruth = Object.entries(truthStateMap).filter(([, state]) => state && state !== 'live');
   const integrationLabels = Object.entries(integrationMap).filter(([, connected]) => connected).map(([key]) => key);
-  const primaryBrief = narrative?.primary_tension || topAlerts[0]?.detail;
+  const truthGateMessage = degradedTruth.length
+    ? `Forensic truth gate is active. BIQc is limiting Board Room synthesis to verified live signals while these domains recover: ${degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.`
+    : null;
+  const primaryBrief = degradedTruth.length ? (topAlerts[0]?.detail || truthGateMessage) : (narrative?.primary_tension || topAlerts[0]?.detail);
   const hasBrief = Boolean(primaryBrief);
   const explainCards = [
     {
       title: 'Why BIQc is escalating this',
-      value: topAlerts[0]?.detail || narrative?.force_summary || 'This is the strongest live signal across your connected systems right now.',
+      value: topAlerts[0]?.detail || truthGateMessage || narrative?.force_summary || 'This is the strongest live signal across your connected systems right now.',
     },
     {
       title: 'Data behind it',
@@ -70,7 +73,7 @@ const BoardRoom = ({ embeddedShell = false }) => {
     whyVisible: integrationLabels.length
       ? `Board Room is escalating this based on ${integrationLabels.length} connected system${integrationLabels.length === 1 ? '' : 's'} (${integrationLabels.join(', ')}).`
       : 'Board Room is active, but richer diagnosis needs connected systems and live signals.',
-    whyNow: topAlerts[0]?.detail || narrative?.force_summary || 'Signal pressure is rising across your monitored domains.',
+    whyNow: topAlerts[0]?.detail || truthGateMessage || narrative?.force_summary || 'Signal pressure is rising across your monitored domains.',
     nextAction: topAlerts[0]?.action || narrative?.strategic_direction || 'Run a diagnosis area and commit to one decision in this session.',
     ifIgnored: diagnosisResult?.if_ignored || 'Decision delay narrows options and increases second-order impact across delivery, cash, and customers.',
   };
@@ -145,10 +148,10 @@ const BoardRoom = ({ embeddedShell = false }) => {
                         <p className="text-[15px] leading-relaxed" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
                           {typeof narrative === 'string' ? narrative : primaryBrief}
                         </p>
-                        {narrative.force_summary && (
+                        {narrative.force_summary && !degradedTruth.length && (
                           <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{narrative.force_summary}</p>
                         )}
-                        {narrative.strategic_direction && (
+                        {narrative.strategic_direction && !degradedTruth.length && (
                           <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--biqc-border, #1E2D3D)' }}>
                             <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Direction</span>
                             <p className="text-sm mt-1.5 leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{narrative.strategic_direction}</p>

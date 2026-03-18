@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Dict, List, Optional
 from core.llm_router import llm_chat, llm_trinity_chat
 from routes.deps import get_current_user_from_request, get_sb, OPENAI_KEY, logger, check_rate_limit, AI_MODELS
+from intelligence_live_truth import get_connector_truth_summary
 from supabase_intelligence_helpers import get_priority_analysis_supabase
 import os
 import httpx
@@ -185,6 +186,28 @@ async def _build_email_truth_fallback(sb, user_id: str) -> Optional[str]:
     return None
 
 
+def _build_cross_integration_truth_guard(sb, user_id: str) -> Optional[str]:
+    try:
+        connector_truth = get_connector_truth_summary(sb, user_id)
+        blocked = [
+            item for key, item in (connector_truth or {}).items()
+            if key in {"crm", "accounting", "email", "calendar"} and item.get("truth_state") in {"stale", "error", "unverified"}
+        ]
+        if not blocked:
+            return None
+
+        blocked_copy = ", ".join(
+            f"{item.get('category', 'source').title()} ({item.get('truth_state')})"
+            for item in blocked
+        )
+        return (
+            f"Board Room truth gate is active. BIQc is withholding unsupported cross-system claims because these sources are not live-verified right now: {blocked_copy}. "
+            f"Restore source truth first, then rerun Board Room for full strategic synthesis."
+        )
+    except Exception:
+        return None
+
+
 async def _post_with_retries(url: str, headers: Dict[str, str], payload: Dict[str, object], timeout_seconds: int = 45, retries: int = 2):
     last_error = None
     for attempt in range(1, retries + 1):
@@ -288,6 +311,10 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
     message = sanitised.get("text") or message
 
     sb = get_sb()
+    truth_guard = _build_cross_integration_truth_guard(sb, user_id)
+    if truth_guard:
+        return {"response": truth_guard, "escalations": []}
+
     try:
         from watchtower_engine import get_watchtower_engine
         from boardroom_prompt import build_boardroom_prompt
@@ -472,6 +499,21 @@ async def boardroom_diagnosis_proxy(request: Request, payload: BoardRoomDiagnosi
         raise HTTPException(status_code=400, detail="Invalid diagnosis focus area")
 
     sb = get_sb()
+    truth_guard = _build_cross_integration_truth_guard(sb, user_id)
+    if truth_guard:
+        explainability = _derive_explainability(sb, user_id, primary_domain=focus_area, primary_detail="Truth gate active")
+        return {
+            "headline": "Forensic truth gate is active",
+            "narrative": truth_guard,
+            "what_to_watch": "Restore source verification first, then rerun diagnosis for a full strategic answer.",
+            "next_action": explainability["next_action"],
+            "if_ignored": "You may act on stale or historically-only business data.",
+            "why_visible": explainability["why_visible"],
+            "why_now": "Board Room diagnosis is intentionally constrained because core integration truth is not live-verified.",
+            "evidence_chain": explainability["evidence_chain"],
+            "degraded": True,
+        }
+
     await check_rate_limit(user_id, "boardroom_diagnosis", sb)
 
     auth_header = request.headers.get("authorization")
@@ -555,6 +597,24 @@ async def war_room_respond_proxy(request: Request, payload: WarRoomAskRequest):
         raise HTTPException(status_code=400, detail="Question rejected by safety filter")
 
     sb = get_sb()
+    truth_guard = _build_cross_integration_truth_guard(sb, user_id)
+    if truth_guard:
+        explainability = _derive_explainability(
+            sb,
+            user_id,
+            primary_domain="war-room",
+            primary_detail="Truth gate active",
+        )
+        return {
+            "answer": truth_guard,
+            "why_visible": explainability["why_visible"],
+            "why_now": "War Room is intentionally constrained because some integrated sources are not live-verified.",
+            "next_action": "Restore source truth, then return to War Room for cross-system analysis.",
+            "if_ignored": "You may interrogate stale signals as if they are current strategic truth.",
+            "evidence_chain": explainability["evidence_chain"],
+            "degraded": True,
+        }
+
     await check_rate_limit(user_id, "war_room_ask", sb)
 
     if _is_crm_note_audit_query(sanitised.get("text") or payload.question):
