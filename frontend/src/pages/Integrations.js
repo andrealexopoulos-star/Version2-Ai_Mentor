@@ -595,15 +595,17 @@ export default function Integrations() {
               </p>
             </div>
             {/* Search */}
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#4A5568' }} />
-              <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Search platforms..."
-                className="w-full pl-9 pr-8 py-2 rounded-lg text-sm outline-none"
-                style={{ background: 'var(--biqc-bg-card, #141C26)', border: '1px solid var(--biqc-border, #243140)', color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.body }}
-                data-testid="integrations-search" />
-              {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#4A5568' }}><X className="w-3.5 h-3.5" /></button>}
-            </div>
+            {!isFreeTier && (
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#4A5568' }} />
+                <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="Search platforms..."
+                  className="w-full pl-9 pr-8 py-2 rounded-lg text-sm outline-none"
+                  style={{ background: 'var(--biqc-bg-card, #141C26)', border: '1px solid var(--biqc-border, #243140)', color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.body }}
+                  data-testid="integrations-search" />
+                {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#4A5568' }}><X className="w-3.5 h-3.5" /></button>}
+              </div>
+            )}
           </div>
 
           {/* Category tabs */}

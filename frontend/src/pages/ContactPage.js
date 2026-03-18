@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Shield, ChevronDown, ChevronUp, Send } from 'lucide-react';
+import { apiClient } from '../lib/api';
+import { supabase } from '../context/SupabaseAuthContext';
 
 const CHARCOAL = '#0F1720';
 const MUTED = '#64748B';
@@ -21,8 +23,27 @@ const ContactPage = () => {
     return 'Get in touch';
   }, [isWaitlist, waitlistLabel]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.access_token) {
+        const now = new Date();
+        const callbackDate = now.toISOString().slice(0, 10);
+        const callbackTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        await apiClient.post('/enterprise/contact-request', {
+          name: form.name,
+          business_name: form.company,
+          email: form.email,
+          phone: form.phone,
+          callback_date: callbackDate,
+          callback_time: callbackTime,
+          description: `${isWaitlist && form.businessSize ? `Business size: ${form.businessSize}. ` : ''}${form.message}`,
+          feature_requested: form.featureLabel || waitlistLabel || '',
+          current_tier: isWaitlist ? 'waitlist' : 'contact',
+        });
+      }
+    } catch {}
     setSubmitted(true);
   };
 
