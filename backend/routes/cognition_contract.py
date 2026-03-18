@@ -58,10 +58,14 @@ def _overlay_live_truth(sb, tenant_id: str, tab: str, result: dict) -> dict:
         'email': live_truth['canonical_truth']['email_connected'],
         'accounting': live_truth['canonical_truth']['accounting_connected'],
         'hris': live_truth['canonical_truth']['hris_connected'],
+        'crm_state': live_truth['canonical_truth'].get('crm_state'),
+        'email_state': live_truth['canonical_truth'].get('email_state'),
+        'accounting_state': live_truth['canonical_truth'].get('accounting_state'),
     }
 
     enriched = dict(result or {})
     enriched['integrations'] = integrations
+    enriched['integration_truth'] = live_truth.get('connector_truth') or {}
     enriched['integrations_connected'] = live_truth['canonical_truth']['total_connected']
     enriched['live_signal_count'] = observation_state.get('count', 0)
     enriched['last_signal_at'] = observation_state.get('last_signal_at')
@@ -75,6 +79,9 @@ def _overlay_live_truth(sb, tenant_id: str, tab: str, result: dict) -> dict:
         tab_data['crm_connected'] = integrations['crm']
         tab_data['accounting_connected'] = integrations['accounting']
         tab_data['email_connected'] = integrations['email']
+        tab_data['crm_state'] = integrations.get('crm_state')
+        tab_data['accounting_state'] = integrations.get('accounting_state')
+        tab_data['email_state'] = integrations.get('email_state')
         tab_data['integrations_connected'] = live_truth['canonical_truth']['total_connected']
         if not enriched.get('top_alerts'):
             enriched['top_alerts'] = build_watchtower_events(observation_state.get('events') or [], limit=5)
