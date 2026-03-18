@@ -176,6 +176,7 @@ export default function Integrations() {
   const [mergeIntegrations, setMergeIntegrations] = useState({});
   const [integrationStatusRows, setIntegrationStatusRows] = useState([]);
   const [canonicalTruth, setCanonicalTruth] = useState({});
+  const [integrationTruthReady, setIntegrationTruthReady] = useState(false);
   const [outlookStatus, setOutlookStatus] = useState({ connected: false, connected_email: null });
   const [gmailStatus, setGmailStatus] = useState({ connected: false, connected_email: null });
   const [disconnecting, setDisconnecting] = useState(null);
@@ -238,8 +239,10 @@ export default function Integrations() {
       const directTruth = res.status === 'fulfilled' ? (res.value.data?.canonical_truth || {}) : {};
       const rows = fallbackRes.status === 'fulfilled' ? (fallbackRes.value.data?.integrations || []) : [];
       const fallbackTruth = fallbackRes.status === 'fulfilled' ? (fallbackRes.value.data?.canonical_truth || {}) : {};
+      const hasTruthPayload = Boolean(Object.keys(directMap).length || Object.keys(directTruth).length || rows.length || Object.keys(fallbackTruth).length);
       setIntegrationStatusRows(rows);
       setCanonicalTruth(Object.keys(directTruth).length ? directTruth : fallbackTruth);
+      setIntegrationTruthReady(hasTruthPayload);
       if (Object.keys(directMap).length > 0) {
         setMergeIntegrations(directMap);
         return;
@@ -263,6 +266,7 @@ export default function Integrations() {
         const rows = fallbackRes.data?.integrations || [];
         setIntegrationStatusRows(rows);
         setCanonicalTruth(fallbackRes.data?.canonical_truth || {});
+        setIntegrationTruthReady(Boolean(rows.length || Object.keys(fallbackRes.data?.canonical_truth || {}).length));
         const derivedMap = rows.reduce((acc, row) => {
           if (!row?.connected) return acc;
           const provider = String(row.integration_name || row.provider || '').trim().toLowerCase().replace(/\s+/g, '-');
@@ -278,6 +282,7 @@ export default function Integrations() {
         setMergeIntegrations(derivedMap);
       } catch {
         setMergeIntegrations({});
+        setIntegrationTruthReady(false);
       }
     }
   }, []);
@@ -325,13 +330,19 @@ export default function Integrations() {
       loadOutlookStatus();
       loadGmailStatus();
     }, 3000);
+    const resilienceTimer = setTimeout(() => {
+      loadMergeIntegrations();
+    }, 9000);
     // Handle deep-link from Revenue/Operations pages: ?category=crm
     const urlCategory = searchParams.get('category');
     if (urlCategory && CATEGORIES.some(c => c.id === urlCategory)) {
       setSelectedCategory(urlCategory);
       setSearchParams({});
     }
-    return () => clearTimeout(retryTimer);
+    return () => {
+      clearTimeout(retryTimer);
+      clearTimeout(resilienceTimer);
+    };
   }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus, user?.id, session?.access_token, authState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -535,9 +546,9 @@ export default function Integrations() {
   const isFreeTier = !isMasterAccount && (user?.subscription_tier || 'free').toLowerCase() === 'free';
   const freeTierLimitReached = isFreeTier && connectedCount >= 1;
   const blockedTruthCategories = [
-    { label: 'CRM', state: canonicalTruth.crm_state },
-    { label: 'Accounting', state: canonicalTruth.accounting_state },
-    { label: 'Email', state: canonicalTruth.email_state },
+    { label: 'CRM', state: canonicalTruth.crm_state || Object.values(mergeIntegrations).find((item) => item?.category === 'crm')?.truth_state },
+    { label: 'Accounting', state: canonicalTruth.accounting_state || Object.values(mergeIntegrations).find((item) => item?.category === 'accounting')?.truth_state },
+    { label: 'Email', state: canonicalTruth.email_state || Object.values(mergeIntegrations).find((item) => item?.category === 'email')?.truth_state },
   ].filter((item) => item.state && item.state !== 'live');
 
   return (
@@ -556,15 +567,21 @@ export default function Integrations() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-semibold tracking-[0.15em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Data Sources</span>
-                {connectedCount > 0 && (
+                {integrationTruthReady ? (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
                     {connectedCount} live
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)', fontFamily: fontFamily.mono }} data-testid="integrations-verifying-pill">
+                    Verifying
                   </span>
                 )}
               </div>
               <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Connected Intelligence</h1>
               <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>
-                {connectedCount > 0 ? `${connectedCount} systems feeding your intelligence engine` : 'Connect your business stack to activate AI intelligence'}
+                {integrationTruthReady
+                  ? (connectedCount > 0 ? `${connectedCount} systems feeding your intelligence engine` : 'Connect your business stack to activate AI intelligence')
+                  : 'Verifying live source truth across your connected systems'}
               </p>
             </div>
             {/* Search */}
@@ -588,7 +605,7 @@ export default function Integrations() {
                 const count = cat.id === 'all' 
                   ? ALL_INTEGRATIONS.length 
                   : cat.id === 'connected' 
-                  ? connectedCount
+                  ? (integrationTruthReady ? connectedCount : '…')
                   : ALL_INTEGRATIONS.filter(i => i.category === cat.id).length;
                 return (
                   <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
@@ -612,7 +629,15 @@ export default function Integrations() {
 
         <div className="px-6 py-5 space-y-7">
 
-          {blockedTruthCategories.length > 0 && (
+          {!integrationTruthReady && (
+            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.08)' }} data-testid="integrations-truth-verifying-banner">
+              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Forensic source health</p>
+              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>BIQc is verifying live connector truth before showing connected counts.</p>
+              <p className="mt-1 text-xs" style={{ color: '#FDE68A' }}>If this persists, refresh the page or reopen the affected integrations.</p>
+            </div>
+          )}
+
+          {integrationTruthReady && blockedTruthCategories.length > 0 && (
             <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(251,146,60,0.35)', background: 'rgba(251,146,60,0.08)' }} data-testid="integrations-truth-state-banner">
               <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Forensic source health</p>
               <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
