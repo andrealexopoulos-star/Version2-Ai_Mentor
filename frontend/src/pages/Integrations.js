@@ -229,16 +229,39 @@ export default function Integrations() {
     }
   }, [pendingOpen, mergeLinkToken, mergeLinkReady, openMergeLinkModal]);
 
+  const authedJsonGet = useCallback(async (path) => {
+    const activeToken = session?.access_token || (await supabase.auth.getSession()).data.session?.access_token;
+    if (!activeToken) throw new Error('AUTH_NOT_READY');
+    const res = await fetch(`${getBackendUrl()}/api${path}${path.includes('?') ? '&' : '?'}_t=${Date.now()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${activeToken}`,
+        'Accept': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+      },
+    });
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error(`NON_JSON_${res.status}`);
+    }
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.detail || data?.message || `HTTP_${res.status}`);
+    }
+    return data;
+  }, [session?.access_token]);
+
   const loadMergeIntegrations = useCallback(async () => {
     try {
       const [res, fallbackRes] = await Promise.allSettled([
-        apiClient.get('/integrations/merge/connected'),
-        apiClient.get('/user/integration-status'),
+        authedJsonGet('/integrations/merge/connected'),
+        authedJsonGet('/user/integration-status'),
       ]);
-      const directMap = res.status === 'fulfilled' ? (res.value.data?.integrations || {}) : {};
-      const directTruth = res.status === 'fulfilled' ? (res.value.data?.canonical_truth || {}) : {};
-      const rows = fallbackRes.status === 'fulfilled' ? (fallbackRes.value.data?.integrations || []) : [];
-      const fallbackTruth = fallbackRes.status === 'fulfilled' ? (fallbackRes.value.data?.canonical_truth || {}) : {};
+      const directMap = res.status === 'fulfilled' ? (res.value?.integrations || {}) : {};
+      const directTruth = res.status === 'fulfilled' ? (res.value?.canonical_truth || {}) : {};
+      const rows = fallbackRes.status === 'fulfilled' ? (fallbackRes.value?.integrations || []) : [];
+      const fallbackTruth = fallbackRes.status === 'fulfilled' ? (fallbackRes.value?.canonical_truth || {}) : {};
       const hasTruthPayload = Boolean(Object.keys(directMap).length || Object.keys(directTruth).length || rows.length || Object.keys(fallbackTruth).length);
       setIntegrationStatusRows(rows);
       setCanonicalTruth(Object.keys(directTruth).length ? directTruth : fallbackTruth);
@@ -262,11 +285,11 @@ export default function Integrations() {
       setMergeIntegrations(derivedMap);
     } catch {
       try {
-        const fallbackRes = await apiClient.get('/user/integration-status');
-        const rows = fallbackRes.data?.integrations || [];
+        const fallbackRes = await authedJsonGet('/user/integration-status');
+        const rows = fallbackRes?.integrations || [];
         setIntegrationStatusRows(rows);
-        setCanonicalTruth(fallbackRes.data?.canonical_truth || {});
-        setIntegrationTruthReady(Boolean(rows.length || Object.keys(fallbackRes.data?.canonical_truth || {}).length));
+        setCanonicalTruth(fallbackRes?.canonical_truth || {});
+        setIntegrationTruthReady(Boolean(rows.length || Object.keys(fallbackRes?.canonical_truth || {}).length));
         const derivedMap = rows.reduce((acc, row) => {
           if (!row?.connected) return acc;
           const provider = String(row.integration_name || row.provider || '').trim().toLowerCase().replace(/\s+/g, '-');
@@ -285,7 +308,7 @@ export default function Integrations() {
         setIntegrationTruthReady(false);
       }
     }
-  }, []);
+  }, [authedJsonGet]);
 
   const loadOutlookStatus = useCallback(async () => {
     try {
