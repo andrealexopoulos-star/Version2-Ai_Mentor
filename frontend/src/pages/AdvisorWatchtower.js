@@ -787,15 +787,7 @@ export default function AdvisorWatchtower() {
     }));
 
     try {
-      let brainRes;
-      try {
-        const brainValue = await apiClient.get('/brain/priorities', { params: { recompute: recomputeBrain }, timeout: 45000 });
-        brainRes = { status: 'fulfilled', value: brainValue };
-      } catch (brainErr) {
-        brainRes = { status: 'rejected', reason: brainErr };
-      }
-
-      const requests = await Promise.allSettled([
+      const requestsPromise = Promise.allSettled([
         apiClient.get('/integrations/merge/connected', { timeout: 12000 }),
         apiClient.get('/integrations/crm/deals', { params: { page_size: 50 }, timeout: 15000 }),
         apiClient.get('/integrations/accounting/summary', { timeout: 15000 }),
@@ -804,7 +796,13 @@ export default function AdvisorWatchtower() {
         apiClient.get('/calibration/status', { timeout: 10000 }),
       ]);
 
-      const [mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
+      let brainRes;
+      try {
+        const brainValue = await apiClient.get('/brain/priorities', { params: { recompute: recomputeBrain }, timeout: 45000 });
+        brainRes = { status: 'fulfilled', value: brainValue };
+      } catch (brainErr) {
+        brainRes = { status: 'rejected', reason: brainErr };
+      }
 
       const executiveSurface = null;
       const brainPayload = brainRes.status === 'fulfilled' ? (brainRes.value?.data || null) : null;
@@ -838,6 +836,9 @@ export default function AdvisorWatchtower() {
       if (!brainRequestError && brainPayload) {
         setBrainRetryCount(0);
       }
+
+      const requests = await requestsPromise;
+      const [mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
 
       const mergeConnected = mergeRes.status === 'fulfilled' ? (mergeRes.value?.data?.integrations || {}) : {};
       const crmDeals = crmRes.status === 'fulfilled' ? (crmRes.value?.data?.results || []) : [];
@@ -1116,15 +1117,23 @@ export default function AdvisorWatchtower() {
   }, [actionState]);
 
   const openSignals = useMemo(
-    () => signals.filter((signal) => !isSignalActioned(signal)),
+    () => {
+      const actionableSignals = signals.filter((signal) => !isSignalActioned(signal));
+      return actionableSignals.length > 0 ? actionableSignals : signals;
+    },
     [signals, isSignalActioned],
   );
 
+  const visibleSignals = useMemo(() => {
+    if (openSignals.length > 0) return openSignals;
+    return signals;
+  }, [openSignals, signals]);
+
   const prioritizedSignals = useMemo(() => {
-    return [...openSignals].sort((left, right) => {
+    return [...visibleSignals].sort((left, right) => {
       return signalPriorityScore(right, rolePreference) - signalPriorityScore(left, rolePreference);
     });
-  }, [openSignals, rolePreference]);
+  }, [visibleSignals, rolePreference]);
 
   const decisions = useMemo(
     () => buildDecisionSurface(prioritizedSignals),
@@ -1558,7 +1567,7 @@ export default function AdvisorWatchtower() {
   const brainLive = Boolean(integrationContext.sourceHealth?.brain?.live || (brainContext.concerns || []).length || brainContext.allClear);
   const brainSourceUnavailable = integrationContext.sourceHealth?.brain?.status === 'unavailable';
   const brainLoading = authState === AUTH_STATE.LOADING
-    || ((!loadingGuardExpired || !brainHasRenderableContext) && integrationContext.sourceHealth?.brain?.status === 'pending');
+    || (!brainHasRenderableContext && (integrationContextLoading || integrationContext.sourceHealth?.brain?.status === 'pending') && !loadingGuardExpired);
   const brainUnavailable = !brainLoading && (
     Boolean(brainContext.error)
     || Boolean(integrationContextError)

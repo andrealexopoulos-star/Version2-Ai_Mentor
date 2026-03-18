@@ -199,7 +199,31 @@ export const SupabaseAuthProvider = ({ children }) => {
   };
 
   const signIn = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const response = await fetch(`${getBackendUrl()}/api/auth/supabase/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload?.detail || payload?.message || 'Login failed';
+      throw new Error(message);
+    }
+
+    const accessToken = payload?.session?.access_token;
+    const refreshToken = payload?.session?.refresh_token;
+    if (!accessToken || !refreshToken) {
+      throw new Error('Authentication session could not be established');
+    }
+
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
     if (error) throw error;
     return data;
   };
