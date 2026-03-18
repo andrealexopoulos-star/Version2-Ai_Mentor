@@ -153,6 +153,20 @@ const MERGE_CATEGORY_MAP = {
   knowledge: ['file_storage'],
 };
 
+const CATEGORY_ALIASES = {
+  financial: ['financial', 'accounting'],
+  ecommerce: ['ecommerce', 'accounting'],
+  storage: ['storage', 'file_storage'],
+  knowledge: ['knowledge', 'file_storage'],
+};
+
+const categoryMatches = (integrationCategory, rowCategory) => {
+  const normalizedIntegration = String(integrationCategory || '').toLowerCase();
+  const normalizedRow = String(rowCategory || '').toLowerCase();
+  if (normalizedIntegration === normalizedRow) return true;
+  return (CATEGORY_ALIASES[normalizedIntegration] || [normalizedIntegration]).includes(normalizedRow);
+};
+
 export default function Integrations() {
   const { user } = useSupabaseAuth();
   const navigate = useNavigate();
@@ -215,19 +229,17 @@ export default function Integrations() {
 
   const loadMergeIntegrations = useCallback(async () => {
     try {
-      const res = await apiClient.get('/integrations/merge/connected');
-      const directMap = res.data?.integrations || {};
-      try {
-        const fallbackRes = await apiClient.get('/user/integration-status');
-        setIntegrationStatusRows(fallbackRes.data?.integrations || []);
-      } catch {}
+      const [res, fallbackRes] = await Promise.allSettled([
+        apiClient.get('/integrations/merge/connected'),
+        apiClient.get('/user/integration-status'),
+      ]);
+      const directMap = res.status === 'fulfilled' ? (res.value.data?.integrations || {}) : {};
+      const rows = fallbackRes.status === 'fulfilled' ? (fallbackRes.value.data?.integrations || []) : [];
+      setIntegrationStatusRows(rows);
       if (Object.keys(directMap).length > 0) {
         setMergeIntegrations(directMap);
         return;
       }
-      const fallbackRes = await apiClient.get('/user/integration-status');
-      const rows = fallbackRes.data?.integrations || [];
-      setIntegrationStatusRows(rows);
       const derivedMap = rows.reduce((acc, row) => {
         if (!row?.connected) return acc;
         const provider = String(row.integration_name || row.provider || '').trim().toLowerCase().replace(/\s+/g, '-');
@@ -450,8 +462,7 @@ export default function Integrations() {
     if (directMatch) return true;
     return integrationStatusRows.some((row) => {
       const provider = String(row.integration_name || row.provider || '').toLowerCase();
-      const category = String(row.category || '').toLowerCase();
-      return Boolean(row.connected) && category === integration.category && (provider === integration.name.toLowerCase() || provider.includes(integration.id));
+      return Boolean(row.connected) && categoryMatches(integration.category, row.category) && (provider === integration.name.toLowerCase() || provider.includes(integration.id));
     });
   }, [outlookStatus, gmailStatus, mergeIntegrations, integrationStatusRows]);
 
@@ -460,8 +471,7 @@ export default function Integrations() {
     if (integration.type === 'gmail') return gmailStatus.connected_email || 'Connected';
     const statusRow = integrationStatusRows.find((row) => {
       const provider = String(row.integration_name || row.provider || '').toLowerCase();
-      const category = String(row.category || '').toLowerCase();
-      return Boolean(row.connected) && category === integration.category && (provider === integration.name.toLowerCase() || provider.includes(integration.id));
+      return Boolean(row.connected) && categoryMatches(integration.category, row.category) && (provider === integration.name.toLowerCase() || provider.includes(integration.id));
     });
     if (statusRow) return 'Connected';
     return 'Connected';

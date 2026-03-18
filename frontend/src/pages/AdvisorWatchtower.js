@@ -1563,7 +1563,7 @@ export default function AdvisorWatchtower() {
   const brainLive = Boolean(integrationContext.sourceHealth?.brain?.live || (brainContext.concerns || []).length || brainContext.allClear);
   const brainSourceUnavailable = integrationContext.sourceHealth?.brain?.status === 'unavailable';
   const brainLoading = authState === AUTH_STATE.LOADING
-    || ((!loadingGuardExpired || !brainHasRenderableContext) && integrationContext.sourceHealth?.brain?.status === 'pending');
+    || (!brainHasRenderableContext && (integrationContextLoading || integrationContext.sourceHealth?.brain?.status === 'pending') && !loadingGuardExpired);
   const brainUnavailable = !brainLoading && (
     Boolean(brainContext.error)
     || Boolean(integrationContextError)
