@@ -181,6 +181,7 @@ const MarketPage = () => {
         .map(([domain, value]) => `${domain}: ${value.status}`)
         .join(' · ')
     : null;
+  const hasLiveMarketContext = Boolean(snapshot || cognitionMarket || watchtowerAvailable || pressureAvailable || freshnessAvailable);
 
   const sendToChat = (msg) => setActionMessage(msg);
 
@@ -212,7 +213,7 @@ const MarketPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full" style={{ background: st.color, boxShadow: `0 0 12px ${st.color}50` }} />
-              <span className="text-lg font-bold" style={{ color: st.color, fontFamily: fontFamily.display }}>{snapshot ? st.label : 'Waiting for data'}</span>
+              <span className="text-lg font-bold" style={{ color: st.color, fontFamily: fontFamily.display }}>{hasLiveMarketContext ? st.label : 'Waiting for data'}</span>
             </div>
             <div className="flex items-center gap-2">
               {confidence && <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: st.color, background: `${st.color}15`, fontFamily: fontFamily.mono }}>{confidence}% confidence</span>}
@@ -222,7 +223,7 @@ const MarketPage = () => {
             </div>
           </div>
           {interpretation && <p className="text-sm text-[#9FB0C3] leading-relaxed">{interpretation}</p>}
-          {!snapshot && <p className="text-sm text-[#64748B]">Connect your tools and complete calibration to see where your business stands.</p>}
+          {!hasLiveMarketContext && <p className="text-sm text-[#64748B]">Connect your tools and complete calibration to see where your business stands.</p>}
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]" data-testid="market-ux-main-grid">
