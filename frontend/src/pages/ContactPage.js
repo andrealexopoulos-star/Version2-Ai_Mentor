@@ -124,11 +124,31 @@ const ContactPage = () => {
                 {isWaitlist && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Feature</label>
-                      <input type="text" value={form.featureLabel} readOnly
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Feature Interest *</label>
+                      <select value={form.featureLabel} onChange={(e) => update('featureLabel', e.target.value)} required
                         className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
-                        style={{ background: '#F8FAFC', border: `1px solid ${BORDER}`, color: CHARCOAL }}
-                        data-testid="contact-feature-label" />
+                        style={{ background: 'white', border: `1px solid ${BORDER}`, color: CHARCOAL }}
+                        data-testid="contact-feature-label">
+                        <option value="">Select feature</option>
+                        {[
+                          waitlistLabel,
+                          'Revenue Engine',
+                          'Operations Intelligence',
+                          'Risk & Workforce',
+                          'Board Room',
+                          'War Room',
+                          'Intel Centre',
+                          'Analysis & Diagnosis Suite',
+                          'Automations',
+                          'Documents Library',
+                          'Watchtower',
+                          'Market Analysis',
+                          'Ops Advisory Centre',
+                          'Marketing Intelligence',
+                        ].filter(Boolean).filter((value, index, arr) => arr.indexOf(value) === index).map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Business Size *</label>

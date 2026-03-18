@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
@@ -34,13 +34,7 @@ const SubscribePage = () => {
   const [loading, setLoading] = useState(null);
 
   // Poll payment status if returning from Stripe
-  useEffect(() => {
-    if (sessionId && status === 'success') {
-      pollPaymentStatus(sessionId, 0);
-    }
-  }, [sessionId, status]);
-
-  const pollPaymentStatus = async (sid, attempt) => {
+  const pollPaymentStatus = useCallback(async (sid, attempt) => {
     if (attempt >= 5) {
       setPaymentResult({ status: 'timeout', message: 'Payment verification timed out. Please refresh.' });
       return;
@@ -63,7 +57,13 @@ const SubscribePage = () => {
       setPaymentResult({ status: 'error', message: 'Error checking payment. Please refresh.' });
       setCheckingPayment(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (sessionId && status === 'success') {
+      pollPaymentStatus(sessionId, 0);
+    }
+  }, [sessionId, status, pollPaymentStatus]);
 
   const handleUpgrade = async (packageId) => {
     setLoading(packageId);

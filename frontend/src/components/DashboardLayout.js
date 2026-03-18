@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE, supabase } from '../context/SupabaseAuthContext';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
@@ -239,7 +239,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     }));
   }, [isCalibrated]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const isActive = useCallback((path) => location.pathname === path || location.pathname.startsWith(`${path}/`), [location.pathname]);
   const currentPageLabel = useMemo(() => {
     for (const section of visibleSections) {
       if (section.path && isActive(section.path)) return section.label;
@@ -248,7 +248,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       }
     }
     return 'Current page';
-  }, [visibleSections, location.pathname]);
+  }, [visibleSections, isActive]);
 
   useEffect(() => {
     setExpandedSections((prev) => {
@@ -260,7 +260,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       if (isSA) next.add('admin');
       return next;
     });
-  }, [visibleSections, location.pathname, isSA]);
+  }, [visibleSections, isSA, isActive]);
   const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';
 const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
