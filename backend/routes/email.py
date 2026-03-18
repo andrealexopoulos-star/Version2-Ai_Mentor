@@ -1523,19 +1523,13 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
             except Exception as e:
                 logger.warning(f"Could not parse expires_at: {e}")
         
-        # Get email count and metadata without blocking the whole advisor surface.
-        emails_count = None
-        try:
-            emails_count = await asyncio.wait_for(count_user_emails_supabase(get_sb(), user_id), timeout=1.5)
-        except Exception:
-            emails_count = None
         connected_email = tokens.get("microsoft_email")
         connected_name = tokens.get("microsoft_name")
         
         return {
             "connected": True,
-            "emails_synced": emails_count or 0,
-            "emails_count_verified": emails_count is not None,
+            "emails_synced": 0,
+            "emails_count_verified": False,
             "user_email": current_user.get("email"),
             "connected_email": connected_email,
             "connected_name": connected_name,
