@@ -254,22 +254,13 @@ export default function Integrations() {
 
   const loadMergeIntegrations = useCallback(async () => {
     try {
-      const [res, fallbackRes] = await Promise.allSettled([
-        authedJsonGet('/integrations/merge/connected'),
-        authedJsonGet('/user/integration-status'),
-      ]);
-      const directMap = res.status === 'fulfilled' ? (res.value?.integrations || {}) : {};
-      const directTruth = res.status === 'fulfilled' ? (res.value?.canonical_truth || {}) : {};
-      const rows = fallbackRes.status === 'fulfilled' ? (fallbackRes.value?.integrations || []) : [];
-      const fallbackTruth = fallbackRes.status === 'fulfilled' ? (fallbackRes.value?.canonical_truth || {}) : {};
-      const hasTruthPayload = Boolean(Object.keys(directMap).length || Object.keys(directTruth).length || rows.length || Object.keys(fallbackTruth).length);
+      const statusPayload = await authedJsonGet('/user/integration-status');
+      const rows = statusPayload?.integrations || [];
+      const statusTruth = statusPayload?.canonical_truth || {};
+      const hasTruthPayload = Boolean(rows.length || Object.keys(statusTruth).length);
       setIntegrationStatusRows(rows);
-      setCanonicalTruth(Object.keys(directTruth).length ? directTruth : fallbackTruth);
+      setCanonicalTruth(statusTruth);
       setIntegrationTruthReady(hasTruthPayload);
-      if (Object.keys(directMap).length > 0) {
-        setMergeIntegrations(directMap);
-        return;
-      }
       const derivedMap = rows.reduce((acc, row) => {
         if (!row?.connected) return acc;
         const provider = String(row.integration_name || row.provider || '').trim().toLowerCase().replace(/\s+/g, '-');
@@ -279,30 +270,21 @@ export default function Integrations() {
           category,
           connected: true,
           connected_at: row.connected_at || row.last_sync_at || null,
+          truth_state: row.truth_state,
+          truth_reason: row.truth_reason,
+          last_verified_at: row.last_verified_at,
         };
         return acc;
       }, {});
       setMergeIntegrations(derivedMap);
     } catch {
       try {
-        const fallbackRes = await authedJsonGet('/user/integration-status');
-        const rows = fallbackRes?.integrations || [];
-        setIntegrationStatusRows(rows);
-        setCanonicalTruth(fallbackRes?.canonical_truth || {});
-        setIntegrationTruthReady(Boolean(rows.length || Object.keys(fallbackRes?.canonical_truth || {}).length));
-        const derivedMap = rows.reduce((acc, row) => {
-          if (!row?.connected) return acc;
-          const provider = String(row.integration_name || row.provider || '').trim().toLowerCase().replace(/\s+/g, '-');
-          const category = String(row.category || 'general').trim().toLowerCase();
-          acc[`${category}:${provider}`] = {
-            provider: row.integration_name || row.provider,
-            category,
-            connected: true,
-            connected_at: row.connected_at || row.last_sync_at || null,
-          };
-          return acc;
-        }, {});
-        setMergeIntegrations(derivedMap);
+        const directPayload = await authedJsonGet('/integrations/merge/connected');
+        const directMap = directPayload?.integrations || {};
+        const directTruth = directPayload?.canonical_truth || {};
+        setCanonicalTruth(directTruth);
+        setIntegrationTruthReady(Boolean(Object.keys(directMap).length || Object.keys(directTruth).length));
+        setMergeIntegrations(directMap);
       } catch {
         setMergeIntegrations({});
         setIntegrationTruthReady(false);
