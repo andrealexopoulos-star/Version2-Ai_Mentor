@@ -1,6 +1,6 @@
 import "@/App.css";
 import "@/mobile.css";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { SupabaseAuthProvider, useSupabaseAuth, AUTH_STATE } from "./context/SupabaseAuthContext";
 import ProtectedRoute, { LoadingScreen } from "./components/ProtectedRoute";
 import TierGate from "./components/TierGate";
@@ -34,7 +34,10 @@ import SubscribePage from './pages/SubscribePage';
 import TermsAndConditions from './pages/TermsAndConditions';
 import EnterpriseTerms from './pages/EnterpriseTerms';
 import LandingIntelligent from './pages/LandingIntelligent';
+import MoreFeaturesPage from './pages/MoreFeaturesPage';
+import BIQcLegalPage from './pages/BIQcLegalPage';
 import { TermsPage as SiteTermsPage, PrivacyPage as SitePrivacyPage, DPAPage as SiteDPAPage, SecurityPage as SiteSecurityPage, TrustCentrePage as SiteTrustCentrePage } from './pages/website/TrustSubPages';
+import { resolveTier } from './lib/tierResolver';
 
 // ── Core app pages ────────────────────────────────────────────────────────────
 import AdvisorWatchtower from './pages/AdvisorWatchtower';
@@ -103,6 +106,7 @@ import DecisionsPage from './pages/DecisionsPage';
 import OnboardingWizard from './pages/OnboardingWizard';
 import OnboardingDecision from './pages/OnboardingDecision';
 import UpgradePage from './pages/UpgradePage';
+import { WAITLIST_ROUTE_MAP } from './config/launchConfig';
 
 // ── Conditional imports (pages that may not exist) ────────────────────────────
 let CognitiveV2Mockup, LoadingPreview, CalibrationPreview, AuthDebug, GmailTest, OutlookTest, ProfileImport;
@@ -161,6 +165,25 @@ const PublicRoute = ({ children }) => {
   const isAuthenticated = user || session;
   if (isAuthenticated && authState === AUTH_STATE.NEEDS_CALIBRATION) return <Navigate to="/calibration" replace />;
   if (isAuthenticated) return <Navigate to="/advisor" replace />;
+  return children;
+};
+
+const LaunchRoute = ({ children, access = 'free', featureKey = null }) => {
+  const location = useLocation();
+  const { user, session, authState, loading } = useSupabaseAuth();
+  const tier = resolveTier(user);
+  const isAndre = (user?.email || '').toLowerCase().trim() === 'andre@thestrategysquad.com.au';
+  const hasPaidAccess = isAndre || (user && tier !== 'free');
+
+  if (authState === AUTH_STATE.LOADING || loading) return <LoadingScreen />;
+  if (!user && !session) return <Navigate to="/login-supabase" replace />;
+  if (access === 'paid' && !hasPaidAccess) {
+    return <Navigate to={`/upgrade?from=${encodeURIComponent(location.pathname)}`} replace />;
+  }
+  if (access === 'waitlist' && !isAndre) {
+    const key = featureKey || WAITLIST_ROUTE_MAP[location.pathname]?.key || '';
+    return <Navigate to={`/more-features${key ? `?feature=${encodeURIComponent(key)}` : ''}`} replace />;
+  }
   return children;
 };
 
@@ -241,6 +264,8 @@ function AppRoutes() {
         <Route path="/subscribe" element={<ProtectedRoute><SubscribePage /></ProtectedRoute>} />
         <Route path="/upgrade" element={<ProtectedRoute><UpgradePage /></ProtectedRoute>} />
         <Route path="/upgrade/success" element={<ProtectedRoute><UpgradePage success /></ProtectedRoute>} />
+        <Route path="/more-features" element={<ProtectedRoute><MoreFeaturesPage /></ProtectedRoute>} />
+        <Route path="/biqc-legal" element={<ProtectedRoute><BIQcLegalPage /></ProtectedRoute>} />
 
         {/* Core app — free */}
         <Route path="/advisor" element={<ProtectedRoute><AdvisorWatchtower /></ProtectedRoute>} />
@@ -251,45 +276,45 @@ function AppRoutes() {
         <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
         <Route path="/connect-email" element={<ProtectedRoute><ConnectEmail /></ProtectedRoute>} />
         <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
-        <Route path="/forensic-audit" element={<ProtectedRoute><ForensicAuditPage /></ProtectedRoute>} />
-        <Route path="/exposure-scan" element={<ProtectedRoute><DSEEPage /></ProtectedRoute>} />
-        <Route path="/marketing-intelligence" element={<ProtectedRoute><MarketingIntelPage /></ProtectedRoute>} />
+        <Route path="/forensic-audit" element={<ProtectedRoute><LaunchRoute access="paid"><ForensicAuditPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/exposure-scan" element={<ProtectedRoute><LaunchRoute access="paid"><DSEEPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/marketing-intelligence" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="marketing-intelligence"><MarketingIntelPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
         <Route path="/competitive-benchmark" element={<ProtectedRoute><CompetitiveBenchmarkPage /></ProtectedRoute>} />
 
         {/* Paid routes */}
-        <Route path="/revenue" element={<ProtectedRoute><RevenuePage /></ProtectedRoute>} />
-        <Route path="/operations" element={<ProtectedRoute><OperationsPage /></ProtectedRoute>} />
-        <Route path="/risk" element={<ProtectedRoute><TierGate><RiskPage /></TierGate></ProtectedRoute>} />
-        <Route path="/compliance" element={<ProtectedRoute><TierGate><CompliancePage /></TierGate></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><TierGate><ReportsPage /></TierGate></ProtectedRoute>} />
-        <Route path="/audit-log" element={<ProtectedRoute><TierGate><AuditLogPage /></TierGate></ProtectedRoute>} />
-        <Route path="/alerts" element={<ProtectedRoute><TierGate><AlertsPageAuth /></TierGate></ProtectedRoute>} />
-        <Route path="/actions" element={<ProtectedRoute><TierGate><ActionsPage /></TierGate></ProtectedRoute>} />
-        <Route path="/automations" element={<ProtectedRoute><AutomationsPageAuth /></ProtectedRoute>} />
-        <Route path="/soundboard" element={<ProtectedRoute><TierGate><MySoundBoard /></TierGate></ProtectedRoute>} />
-        <Route path="/email-inbox" element={<ProtectedRoute><TierGate><EmailInbox /></TierGate></ProtectedRoute>} />
-        <Route path="/war-room" element={<ProtectedRoute><TierGate><WarRoomPage /></TierGate></ProtectedRoute>} />
-        <Route path="/board-room" element={<ProtectedRoute><TierGate><BoardRoomPage /></TierGate></ProtectedRoute>} />
+        <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="revenue-engine"><RevenuePage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="operations-intelligence"><OperationsPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/risk" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="risk-workforce"><RiskPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="risk-workforce"><CompliancePage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><LaunchRoute access="paid"><ReportsPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/audit-log" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="risk-workforce"><AuditLogPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/alerts" element={<ProtectedRoute><AlertsPageAuth /></ProtectedRoute>} />
+        <Route path="/actions" element={<ProtectedRoute><ActionsPage /></ProtectedRoute>} />
+        <Route path="/automations" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="automations"><AutomationsPageAuth /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/soundboard" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
+        <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
+        <Route path="/war-room" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="war-room"><WarRoomPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/board-room" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="board-room"><BoardRoomPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/warroom" element={<Navigate to="/war-room" replace />} />
         <Route path="/boardroom" element={<Navigate to="/board-room" replace />} />
-        <Route path="/sop-generator" element={<ProtectedRoute><TierGate><SOPGenerator /></TierGate></ProtectedRoute>} />
-        <Route path="/decisions" element={<ProtectedRoute><DecisionsPage /></ProtectedRoute>} />
-        <Route path="/diagnosis" element={<ProtectedRoute><TierGate><Diagnosis /></TierGate></ProtectedRoute>} />
-        <Route path="/analysis" element={<ProtectedRoute><TierGate><Analysis /></TierGate></ProtectedRoute>} />
-        <Route path="/documents" element={<ProtectedRoute><TierGate><Documents /></TierGate></ProtectedRoute>} />
-        <Route path="/documents/:id" element={<ProtectedRoute><TierGate><DocumentView /></TierGate></ProtectedRoute>} />
-        <Route path="/data-center" element={<ProtectedRoute><TierGate><DataCenter /></TierGate></ProtectedRoute>} />
-        <Route path="/intel-centre" element={<ProtectedRoute><TierGate><IntelCentre /></TierGate></ProtectedRoute>} />
-        <Route path="/watchtower" element={<ProtectedRoute><TierGate><Watchtower /></TierGate></ProtectedRoute>} />
-        <Route path="/intelligence-baseline" element={<ProtectedRoute><TierGate><IntelligenceBaseline /></TierGate></ProtectedRoute>} />
-        <Route path="/operator" element={<ProtectedRoute><TierGate><OperatorDashboard /></TierGate></ProtectedRoute>} />
-        <Route path="/market-analysis" element={<ProtectedRoute><TierGate><MarketAnalysis /></TierGate></ProtectedRoute>} />
-        <Route path="/ops-advisory" element={<ProtectedRoute><TierGate><OpsAdvisoryCentre /></TierGate></ProtectedRoute>} />
+        <Route path="/sop-generator" element={<ProtectedRoute><LaunchRoute access="paid"><SOPGenerator /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/decisions" element={<ProtectedRoute><LaunchRoute access="paid"><DecisionsPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/diagnosis" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="analysis-diagnosis-suite"><Diagnosis /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/analysis" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="analysis-diagnosis-suite"><Analysis /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/documents" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="documents-library"><Documents /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/documents/:id" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="documents-library"><DocumentView /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/data-center" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="watchtower"><DataCenter /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/intel-centre" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="intel-centre"><IntelCentre /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/watchtower" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="watchtower"><Watchtower /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/intelligence-baseline" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="watchtower"><IntelligenceBaseline /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/operator" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="operations-intelligence"><OperatorDashboard /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/market-analysis" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="market-analysis"><MarketAnalysis /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/ops-advisory" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="ops-advisory"><OpsAdvisoryCentre /></LaunchRoute></ProtectedRoute>} />
         <Route path="/oac" element={<Navigate to="/ops-advisory" replace />} />
-        <Route path="/marketing-automation" element={<ProtectedRoute><TierGate><MarketingAutomationPage /></TierGate></ProtectedRoute>} />
-        <Route path="/ab-testing" element={<ProtectedRoute><TierGate><ABTestingPage /></TierGate></ProtectedRoute>} />
+        <Route path="/marketing-automation" element={<ProtectedRoute><LaunchRoute access="paid"><MarketingAutomationPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/ab-testing" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="watchtower"><ABTestingPage /></LaunchRoute></ProtectedRoute>} />
 
         {/* Admin */}
         <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />

@@ -13,6 +13,7 @@ import { getBackendUrl } from '../config/urls';
 import { toast } from 'sonner';
 import { useMergeLink } from '@mergeapi/react-merge-link';
 import { fontFamily } from '../design-system/tokens';
+import { resolveTier } from '../lib/tierResolver';
 
 // ── Clearbit logo with dark fallback ─────────────────────────────────────────
 const Logo = ({ domain, name, size = 36 }) => {
@@ -548,13 +549,17 @@ export default function Integrations() {
     outlookStatus.connected ? 1 : 0,
   ].reduce((sum, value) => sum + value, 0);
   const isMasterAccount = user?.is_master_account === true || ['superadmin', 'super_admin', 'admin'].includes((user?.role || '').toLowerCase()) || (user?.email || '').toLowerCase() === 'andre@thestrategysquad.com.au';
-  const isFreeTier = !isMasterAccount && (user?.subscription_tier || 'free').toLowerCase() === 'free';
-  const freeTierLimitReached = isFreeTier && connectedCount >= 1;
+  const effectiveTier = resolveTier(user);
+  const hasPaidLaunchAccess = isMasterAccount || effectiveTier !== 'free';
+  const isFreeTier = !hasPaidLaunchAccess;
+  const launchIntegrationLimit = hasPaidLaunchAccess ? 5 : 1;
+  const freeTierLimitReached = connectedCount >= launchIntegrationLimit;
   const blockedTruthCategories = [
     { label: 'CRM', state: canonicalTruth.crm_state || Object.values(mergeIntegrations).find((item) => item?.category === 'crm')?.truth_state },
     { label: 'Accounting', state: canonicalTruth.accounting_state || Object.values(mergeIntegrations).find((item) => item?.category === 'accounting')?.truth_state },
     { label: 'Email', state: canonicalTruth.email_state || Object.values(mergeIntegrations).find((item) => item?.category === 'email')?.truth_state },
   ].filter((item) => item.state && item.state !== 'live');
+  const visibleCategories = isFreeTier ? CATEGORIES.filter((cat) => ['all', 'connected'].includes(cat.id)) : CATEGORIES;
 
   return (
     <DashboardLayout>
@@ -585,7 +590,7 @@ export default function Integrations() {
               <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Connected Intelligence</h1>
               <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>
                 {integrationTruthReady
-                  ? (connectedCount > 0 ? `${connectedCount} systems feeding your intelligence engine` : 'Connect your business stack to activate AI intelligence')
+                  ? (connectedCount > 0 ? `${connectedCount}/${launchIntegrationLimit} active integrations in your launch package` : (isFreeTier ? 'Connect one email provider to activate free-tier intelligence' : 'Connect up to 5 business systems to activate paid intelligence'))
                   : 'Verifying live source truth across your connected systems'}
               </p>
             </div>
@@ -604,7 +609,7 @@ export default function Integrations() {
           {/* Category tabs */}
           {!searchTerm && (
             <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar" role="group" aria-label="Filter by category">
-              {CATEGORIES.map(cat => {
+              {visibleCategories.map(cat => {
                 const active = selectedCategory === cat.id;
                 const Icon = cat.icon;
                 const count = cat.id === 'all' 
@@ -657,10 +662,23 @@ export default function Integrations() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Free Tier Access</p>
-                  <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Free tier includes 1 connected integration.</p>
-                  <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>{freeTierLimitReached ? 'You have reached the free-tier limit. Disconnect the current source or upgrade to connect more.' : 'Choose the one system that matters most to your operating rhythm right now.'}</p>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Free tier includes email integration only.</p>
+                  <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>{freeTierLimitReached ? 'You have reached the free-tier email limit. Disconnect the current provider or upgrade to unlock up to 5 integrations.' : 'Connect Gmail or Outlook to activate Priority Inbox, calendar intelligence, and email truth.'}</p>
                 </div>
-                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.12)', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="integrations-free-tier-counter">{connectedCount}/1 connected</span>
+                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.12)', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="integrations-free-tier-counter">{connectedCount}/{launchIntegrationLimit} connected</span>
+              </div>
+            </div>
+          )}
+
+          {hasPaidLaunchAccess && (
+            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(255,106,0,0.22)', background: 'rgba(255,106,0,0.05)' }} data-testid="integrations-paid-tier-banner">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>SMB Protect</p>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Paid launch tier includes up to 5 integrations.</p>
+                  <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>Connect email plus the business systems that matter most to your operating rhythm.</p>
+                </div>
+                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.12)', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="integrations-paid-tier-counter">{connectedCount}/{launchIntegrationLimit} connected</span>
               </div>
             </div>
           )}
@@ -687,7 +705,26 @@ export default function Integrations() {
           )}
 
           {/* ── MAIN INTEGRATIONS GRID ── */}
-          {filtered.length > 0 ? (
+          {!hasPaidLaunchAccess ? (
+            <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-paid-upgrade-card">
+              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Paid launch modules</p>
+              <h2 className="mt-3 text-xl" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Upgrade to unlock 5 integrations and the deeper operating modules.</h2>
+              <p className="mt-2 text-sm" style={{ color: '#94A3B8' }}>SMB Protect adds Exposure Scan, Marketing Auto, Reports, SOP Generator, Decision Tracker, and Ingestion Audit.</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {['Exposure Scan', 'Marketing Auto', 'Reports', 'SOP Generator', 'Decision Tracker', 'Ingestion Audit'].map((item) => (
+                  <span key={item} className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.08)', color: '#FFB37A', fontFamily: fontFamily.mono }}>{item}</span>
+                ))}
+              </div>
+              <button
+                onClick={() => navigate('/upgrade')}
+                className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
+                data-testid="integrations-upgrade-button"
+              >
+                Upgrade to SMB Protect <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          ) : filtered.length > 0 ? (
             <div>
               {!searchTerm && (
                 <SectionLabel

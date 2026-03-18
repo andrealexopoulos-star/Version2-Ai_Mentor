@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, TrendingUp, Bell, MoreHorizontal, X, Link2, Activity,
-  FileText, Settings, AlertTriangle, Radar, Target, Workflow, Inbox } from 'lucide-react';
+import { LayoutDashboard, Bell, MoreHorizontal, X, Link2, Activity,
+  FileText, Settings, Radar, Target, Workflow, Inbox, MessageSquare, Calendar, Eye, Megaphone, ClipboardList, Shield } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 
 
 // ── Primary 5-tab bar ─────────────────────────────────────────────────────────
-// Risk moved to direct tab (was 2 taps via More). Market moved to More.
 const NAV_ITEMS = [
   { id: 'pulse',   label: 'Overview', icon: LayoutDashboard, path: '/advisor' },
-  { id: 'revenue', label: 'Revenue',  icon: TrendingUp,      path: '/revenue' },
-  { id: 'risk',    label: 'Risk',     icon: AlertTriangle,   path: '/risk' },
+  { id: 'soundboard', label: 'Soundboard', icon: MessageSquare, path: '/soundboard' },
+  { id: 'inbox',   label: 'Inbox',    icon: Inbox,      path: '/email-inbox' },
   { id: 'alerts',  label: 'Alerts',   icon: Bell,            path: '/alerts' },
   { id: 'more',    label: 'More',     icon: MoreHorizontal,  path: null },
 ];
@@ -18,27 +17,37 @@ const NAV_ITEMS = [
 // ── More sheet — grouped for scannability ─────────────────────────────────────
 const MORE_SECTIONS = [
   {
-    label: 'Intelligence',
+    label: 'Free',
     items: [
       { label: 'Market & Positioning', icon: Radar,       path: '/market' },
-      { label: 'Decisions',            icon: Target,      path: '/decisions' },
-      { label: 'Operations',           icon: Activity,    path: '/operations' },
+      { label: 'Calendar',             icon: Calendar,    path: '/calendar' },
+      { label: 'Competitive Benchmark',icon: Target,      path: '/competitive-benchmark' },
     ],
   },
   {
-    label: 'Execution',
+    label: 'Operate',
     items: [
       { label: 'Actions',       icon: Bell,     path: '/actions' },
-      { label: 'Priority Inbox',icon: Inbox,    path: '/email-inbox' },
-      { label: 'Automations',   icon: Workflow, path: '/automations' },
+      { label: 'Data Health',   icon: Activity, path: '/data-health' },
+      { label: 'Business DNA',  icon: FileText, path: '/business-profile' },
     ],
   },
   {
-    label: 'Settings',
+    label: 'SMB Protect',
     items: [
-      { label: 'Integrations', icon: Link2,     path: '/integrations' },
-      { label: 'Settings',     icon: Settings,  path: '/settings' },
-      { label: 'Reports',      icon: FileText,  path: '/reports' },
+      { label: 'Exposure Scan', icon: Eye,           path: '/exposure-scan' },
+      { label: 'Marketing Auto',icon: Megaphone,    path: '/marketing-automation' },
+      { label: 'Reports',       icon: FileText,     path: '/reports' },
+    ],
+  },
+  {
+    label: 'More',
+    items: [
+      { label: 'Decision Tracker', icon: ClipboardList, path: '/decisions' },
+      { label: 'Ingestion Audit',  icon: Shield,        path: '/forensic-audit' },
+      { label: 'Email Integration',icon: Link2,         path: '/integrations' },
+      { label: 'Settings',         icon: Settings,      path: '/settings' },
+      { label: 'More Features',    icon: Workflow,      path: '/more-features' },
     ],
   },
 ];

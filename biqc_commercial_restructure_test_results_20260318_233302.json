@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-03-18T23:33:02.510904",
+  "environment": "https://truth-engine-19.preview.emergentagent.com",
+  "user": "andre@thestrategysquad.com.au",
+  "results": {
+    "authentication": false,
+    "stripe_checkout": false,
+    "integration_status": false,
+    "free_tier_apis": false,
+    "board_room_truth_gate": false,
+    "war_room_truth_gate": false
+  },
+  "summary": {
+    "passed": 0,
+    "total": 6,
+    "success": false
+  }
+}

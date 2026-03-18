@@ -574,7 +574,7 @@ export const useCalibrationState = () => {
   // ═══ PHASE 4c: Agent Calibration Complete → Show Intelligence Snapshot ═══
   const handleAgentCalibrationComplete = () => {
     autoSave(4);
-    setEntry("intelligence-first");
+    setEntry("integration_connect");
   };
 
   // ═══ PHASE 5: Snapshot → Dashboard ═══

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Shield, ChevronDown, ChevronUp, Send } from 'lucide-react';
 
 const CHARCOAL = '#0F1720';
@@ -9,9 +9,17 @@ const BORDER = 'rgba(180,195,215,0.35)';
 
 const ContactPage = () => {
   const nav = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', company: '', phone: '', message: '' });
+  const [searchParams] = useSearchParams();
+  const waitlistLabel = searchParams.get('label') || '';
+  const isWaitlist = searchParams.get('source') === 'waitlist';
+  const [form, setForm] = useState({ name: '', email: '', company: '', phone: '', businessSize: '', featureLabel: waitlistLabel, message: '' });
   const [infoOpen, setInfoOpen] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+
+  const heading = useMemo(() => {
+    if (isWaitlist && waitlistLabel) return `Join the waitlist for ${waitlistLabel}`;
+    return 'Get in touch';
+  }, [isWaitlist, waitlistLabel]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -39,10 +47,12 @@ const ContactPage = () => {
           {/* LEFT — Contact Form */}
           <div className="lg:col-span-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ fontFamily: 'var(--font-heading)', color: CHARCOAL, letterSpacing: '-0.03em' }}>
-              Get in touch
+              {heading}
             </h1>
             <p className="text-base text-slate-500 mb-8" style={{ fontFamily: 'var(--font-body)' }}>
-              Have questions? We'll show you exactly how BIQc works for your business.
+              {isWaitlist
+                ? 'Tell us why this feature matters, how large your business is, and what outcome you need. We’ll use that to prioritise launch demand.'
+                : 'Have questions? We\'ll show you exactly how BIQc works for your business.'}
             </p>
 
             {submitted ? (
@@ -50,8 +60,8 @@ const ContactPage = () => {
                 <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: '#ECFDF5' }}>
                   <Shield className="w-6 h-6 text-emerald-600" />
                 </div>
-                <h2 className="text-xl font-bold mb-2" style={{ color: CHARCOAL, fontFamily: 'var(--font-heading)' }}>We've received your request</h2>
-                <p className="text-sm text-slate-500 mb-6">A BIQc specialist will be in touch within 24 hours to schedule your demo.</p>
+                <h2 className="text-xl font-bold mb-2" style={{ color: CHARCOAL, fontFamily: 'var(--font-heading)' }}>{isWaitlist ? 'You’re on the waitlist' : 'We\'ve received your request'}</h2>
+                <p className="text-sm text-slate-500 mb-6">{isWaitlist ? 'Thanks for sharing your use case. We’ll use this to shape launch priorities and reach out when this module opens.' : 'A BIQc specialist will be in touch within 24 hours to schedule your demo.'}</p>
                 <button onClick={() => nav('/')} className="px-6 py-3 rounded-full text-sm font-semibold text-white" style={{ background: CHARCOAL }}>
                   Back to home
                 </button>
@@ -90,16 +100,42 @@ const ContactPage = () => {
                       placeholder="+61 400 000 000" data-testid="contact-phone" />
                   </div>
                 </div>
+                {isWaitlist && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Feature</label>
+                      <input type="text" value={form.featureLabel} readOnly
+                        className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
+                        style={{ background: '#F8FAFC', border: `1px solid ${BORDER}`, color: CHARCOAL }}
+                        data-testid="contact-feature-label" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Business Size *</label>
+                      <select value={form.businessSize} onChange={(e) => update('businessSize', e.target.value)} required
+                        className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
+                        style={{ background: 'white', border: `1px solid ${BORDER}`, color: CHARCOAL }}
+                        data-testid="contact-business-size">
+                        <option value="">Select size</option>
+                        <option value="Solo">Solo</option>
+                        <option value="2-10">2-10 staff</option>
+                        <option value="11-25">11-25 staff</option>
+                        <option value="26-50">26-50 staff</option>
+                        <option value="51-100">51-100 staff</option>
+                        <option value="100+">100+ staff</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>What are you looking to solve?</label>
                   <textarea value={form.message} onChange={(e) => update('message', e.target.value)} rows={4}
                     className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none resize-none transition-colors"
                     style={{ background: 'white', border: `1px solid ${BORDER}`, color: CHARCOAL }}
-                    placeholder="Tell us about your business challenges..." data-testid="contact-message" />
+                    placeholder={isWaitlist ? 'Why do you need this feature, what outcome do you want, and what has blocked you so far?' : 'Tell us about your business challenges...'} data-testid="contact-message" />
                 </div>
                 <button type="submit" className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white font-semibold w-full sm:w-auto hover:-translate-y-0.5 transition-all"
                   style={{ fontFamily: 'var(--font-heading)', background: CHARCOAL, fontSize: 15, boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="contact-submit">
-                  <Send className="w-4 h-4" /> Request Demo
+                  <Send className="w-4 h-4" /> {isWaitlist ? 'Join Waitlist' : 'Request Demo'}
                 </button>
                 <p className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>We'll respond within 24 hours. No spam, ever.</p>
               </form>
