@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Dict, List, Optional
 from core.llm_router import llm_chat, llm_trinity_chat
 from routes.deps import get_current_user_from_request, get_sb, OPENAI_KEY, logger, check_rate_limit, AI_MODELS
+from supabase_intelligence_helpers import get_priority_analysis_supabase
 import os
 import httpx
 import asyncio
@@ -158,6 +159,30 @@ def _normalise_war_room_analysis_text(data: Dict[str, object]) -> Optional[str]:
         lines.extend([f"- {item}" for item in risks[:2]])
 
     return "\n".join(lines).strip() or None
+
+
+async def _build_email_truth_fallback(sb, user_id: str) -> Optional[str]:
+    try:
+        priority_analysis = await get_priority_analysis_supabase(sb, user_id)
+        analysis = (priority_analysis or {}).get("analysis") or {}
+        high_priority = analysis.get("high_priority") or []
+        medium_priority = analysis.get("medium_priority") or []
+        if high_priority:
+            top = high_priority[0]
+            return (
+                f"Board Room is in resilience mode, but BIQc still sees {len(high_priority)} high-priority email thread(s) needing attention. "
+                f"Top thread: {top.get('subject') or 'priority email'} from {top.get('from') or 'a key contact'}. "
+                f"Why it matters: {top.get('reason') or 'commercial urgency remains active'}."
+            )
+        if medium_priority:
+            top = medium_priority[0]
+            return (
+                f"Board Room is in resilience mode. No unresolved high-priority reply gap is currently leading, but {len(medium_priority)} medium-priority email thread(s) still need review. "
+                f"Top example: {top.get('subject') or 'email thread'} from {top.get('from') or 'a contact'}."
+            )
+    except Exception:
+        pass
+    return None
 
 
 async def _post_with_retries(url: str, headers: Dict[str, str], payload: Dict[str, object], timeout_seconds: int = 45, retries: int = 2):
@@ -411,6 +436,9 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
 
     except Exception as e:
         logger.error(f"[boardroom] Error: {e}")
+        email_truth_response = await _build_email_truth_fallback(sb, user_id)
+        if email_truth_response:
+            return {"response": email_truth_response, "escalations": []}
         fallback_events = []
         try:
             fallback_events = sb.table("observation_events").select(

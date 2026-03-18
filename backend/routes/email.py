@@ -203,22 +203,36 @@ def _normalise_recipients(raw_value: Any) -> List[str]:
 
 
 def _filter_replied_inbox_emails(inbox_emails: List[Dict[str, Any]], sent_emails: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _normalise_subject(value: Any) -> str:
+        subject = str(value or "").lower().strip()
+        subject = re.sub(r"^(re|fw|fwd)\s*:\s*", "", subject)
+        return re.sub(r"\s+", " ", subject)
+
     latest_sent_by_recipient: Dict[str, datetime] = {}
+    latest_sent_by_recipient_subject: Dict[tuple[str, str], datetime] = {}
     for sent in sent_emails:
         sent_at = _safe_parse_dt(sent.get("received_date") or sent.get("sent_date"))
         if not sent_at:
             continue
+        sent_subject = _normalise_subject(sent.get("subject"))
         for recipient in _normalise_recipients(sent.get("to_recipients")):
             current = latest_sent_by_recipient.get(recipient)
             if current is None or sent_at > current:
                 latest_sent_by_recipient[recipient] = sent_at
+            if sent_subject:
+                key = (recipient, sent_subject)
+                current_subject = latest_sent_by_recipient_subject.get(key)
+                if current_subject is None or sent_at > current_subject:
+                    latest_sent_by_recipient_subject[key] = sent_at
 
     actionable: List[Dict[str, Any]] = []
     for email in inbox_emails:
         sender = str(email.get("from_address") or "").lower().strip()
         received_at = _safe_parse_dt(email.get("received_date"))
+        inbox_subject = _normalise_subject(email.get("subject"))
         latest_sent = latest_sent_by_recipient.get(sender)
-        if sender and received_at and latest_sent and latest_sent >= received_at:
+        latest_subject_reply = latest_sent_by_recipient_subject.get((sender, inbox_subject)) if inbox_subject else None
+        if sender and received_at and ((latest_subject_reply and latest_subject_reply >= received_at) or (latest_sent and latest_sent >= received_at)):
             continue
         actionable.append(email)
     return actionable
