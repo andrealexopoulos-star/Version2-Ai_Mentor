@@ -311,16 +311,23 @@ export default function Integrations() {
   }, []);
 
   useEffect(() => {
+    if (!user?.id) return undefined;
     loadMergeIntegrations();
     loadOutlookStatus();
     loadGmailStatus();
+    const retryTimer = setTimeout(() => {
+      loadMergeIntegrations();
+      loadOutlookStatus();
+      loadGmailStatus();
+    }, 3000);
     // Handle deep-link from Revenue/Operations pages: ?category=crm
     const urlCategory = searchParams.get('category');
     if (urlCategory && CATEGORIES.some(c => c.id === urlCategory)) {
       setSelectedCategory(urlCategory);
       setSearchParams({});
     }
-  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => clearTimeout(retryTimer);
+  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const outlookConnected = searchParams.get('outlook_connected');

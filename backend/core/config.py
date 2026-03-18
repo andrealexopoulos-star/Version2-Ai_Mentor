@@ -41,6 +41,7 @@ AI_MODEL_ADVANCED = "gpt-5.4-pro"
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 RATE_LIMIT_RULES = {
+    "/api/auth/supabase/login": {"window": 300, "limit": 5},
     "/api/soundboard/chat": {"window": 300, "limit": 120},
     "/api/boardroom/respond": {"window": 300, "limit": 20},
     "/api/voice/war-room/start": {"window": 300, "limit": 10},
