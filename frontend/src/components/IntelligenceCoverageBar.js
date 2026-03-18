@@ -22,13 +22,15 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
 
   // Category status for tooltip
   const cats = [
-    { key: 'crm',        label: 'CRM',        connected: canonical_truth.crm_connected },
-    { key: 'accounting', label: 'Accounting',  connected: canonical_truth.accounting_connected },
-    { key: 'email',      label: 'Email',       connected: canonical_truth.email_connected },
-    { key: 'hris',       label: 'HR System',   connected: canonical_truth.hris_connected },
+    { key: 'crm',        label: 'CRM',        connected: canonical_truth.crm_connected, state: canonical_truth.crm_state || (canonical_truth.crm_connected ? 'live' : 'unverified') },
+    { key: 'accounting', label: 'Accounting', connected: canonical_truth.accounting_connected, state: canonical_truth.accounting_state || (canonical_truth.accounting_connected ? 'live' : 'unverified') },
+    { key: 'email',      label: 'Email',      connected: canonical_truth.email_connected, state: canonical_truth.email_state || (canonical_truth.email_connected ? 'live' : 'unverified') },
+    { key: 'hris',       label: 'HR System',  connected: canonical_truth.hris_connected, state: canonical_truth.hris_connected ? 'live' : 'unverified' },
   ];
 
-  const barColor = pct >= 80 ? '#10B981' : pct >= 40 ? '#FF6A00' : '#F59E0B';
+  const hasDegradedTruth = cats.some((cat) => cat.state && cat.state !== 'live' && cat.connected);
+
+  const barColor = hasDegradedTruth ? '#F59E0B' : pct >= 80 ? '#10B981' : pct >= 40 ? '#FF6A00' : '#F59E0B';
 
   return (
     <div className="relative">
@@ -39,7 +41,7 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all hover:bg-white/5"
         style={{ border: '1px solid #243140' }}
         data-testid="intelligence-coverage-bar"
-        aria-label={`Intelligence coverage ${pct}% — click to connect more systems`}
+        aria-label={`Intelligence coverage ${pct}% — click to inspect live vs stale systems`}
       >
         <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: barColor }} />
         <div className="flex items-center gap-1.5">
@@ -67,11 +69,11 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
                 <span className="text-xs" style={{ color: '#9FB0C3' }}>{cat.label}</span>
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
                   style={{
-                    background: cat.connected ? 'rgba(16,185,129,0.1)' : 'rgba(255,106,0,0.08)',
-                    color: cat.connected ? '#10B981' : '#FF6A00',
+                    background: cat.state === 'live' ? 'rgba(16,185,129,0.1)' : cat.connected ? 'rgba(245,158,11,0.12)' : 'rgba(255,106,0,0.08)',
+                    color: cat.state === 'live' ? '#10B981' : cat.connected ? '#F59E0B' : '#FF6A00',
                     fontFamily: fontFamily.mono,
                   }}>
-                  {cat.connected ? '✓' : 'Connect'}
+                  {cat.connected ? cat.state : 'Connect'}
                 </span>
               </div>
             ))}

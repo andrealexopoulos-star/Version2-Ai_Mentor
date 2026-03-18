@@ -116,11 +116,16 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
   var c = cognitive || {};
   var st = STATE_CFG[c.system_state] || STATE_CFG.STABLE;
   const topAlerts = (c.top_alerts || []).slice(0, 3);
-  const connectedSystems = Object.entries(c.integrations || {
-    crm: integrationStatus?.canonical_truth?.crm_connected,
-    accounting: integrationStatus?.canonical_truth?.accounting_connected,
-    email: integrationStatus?.canonical_truth?.email_connected,
-  }).filter(([, connected]) => connected).map(([key]) => key);
+  const connectedSystems = Object.entries({
+    crm: c.integrations?.crm ?? integrationStatus?.canonical_truth?.crm_connected,
+    accounting: c.integrations?.accounting ?? integrationStatus?.canonical_truth?.accounting_connected,
+    email: c.integrations?.email ?? integrationStatus?.canonical_truth?.email_connected,
+  }).filter(([, connected]) => Boolean(connected)).map(([key]) => key);
+  const degradedTruth = Object.entries({
+    crm: c.integrations?.crm_state ?? integrationStatus?.canonical_truth?.crm_state,
+    accounting: c.integrations?.accounting_state ?? integrationStatus?.canonical_truth?.accounting_state,
+    email: c.integrations?.email_state ?? integrationStatus?.canonical_truth?.email_state,
+  }).filter(([, state]) => state && state !== 'live');
   const explainability = {
     whyVisible: connectedSystems.length
       ? `War Room is grounded in ${connectedSystems.join(', ')} live systems and your latest strategic snapshot.`
@@ -183,6 +188,14 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
           {cognitive && !loading && (
             <>
               <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Good {displayTimeOfDay}, {displayName}.</h1>
+              {degradedTruth.length > 0 && (
+                <div className="p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)' }} data-testid="warroom-truth-state-banner">
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Forensic truth state</span>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+                    BIQc is currently treating these domains as non-live truth: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.
+                  </p>
+                </div>
+              )}
               {c.system_state_interpretation && <p className="text-sm" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{c.system_state_interpretation}</p>}
               {c.executive_memo && (
                 <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>

@@ -1,0 +1,211 @@
+{
+  "brain_priorities": {
+    "status": "PASS",
+    "response_time": 14.657438039779663,
+    "response_code": 200,
+    "validation_results": {
+      "integrity_alerts_check": {
+        "value": 7,
+        "alerts_list": [
+          {
+            "id": "truth-gap-cashflow_risk",
+            "concern_id": "cashflow_risk",
+            "severity": "high",
+            "title": "Accounting truth is blocking cashflow risk guidance",
+            "detail": "Accounting: Last verified accounting ingest is 34.9h old.",
+            "action": "Restore the affected integration in Integrations and rerun forensic verification before acting on this concern.",
+            "truth_state": "blocked",
+            "blocked_metrics": [
+              "overdue_ar_amount",
+              "burn_rate",
+              "cash_runway_months"
+            ],
+            "last_verified_at": "2026-03-17T08:47:54.858+00:00",
+            "source_truth": [
+              {
+                "category": "accounting",
+                "truth_state": "stale",
+                "last_verified_at": "2026-03-17T08:47:54.858+00:00",
+                "age_hours": 34.85,
+                "status": "completed",
+                "error_message": null,
+                "truth_reason": "Last verified accounting ingest is 34.9h old."
+              }
+            ],
+            "concern_name": "Cashflow Risk"
+          },
+          {
+            "id": "truth-gap-revenue_leakage",
+            "concern_id": "revenue_leakage",
+            "severity": "high",
+            "title": "Crm truth is blocking revenue leakage guidance",
+            "detail": "Crm: Last verified crm ingest is 34.9h old.",
+            "action": "Restore the affected integration in Integrations and rerun forensic verification before acting on this concern.",
+            "truth_state": "blocked",
+            "blocked_metrics": [
+              "stalled_deal_value",
+              "overdue_ar_count",
+              "win_rate"
+            ],
+            "last_verified_at": "2026-03-17T08:47:52.834+00:00",
+            "source_truth": [
+              {
+                "category": "crm",
+                "truth_state": "stale",
+                "last_verified_at": "2026-03-17T08:47:52.834+00:00",
+                "age_hours": 34.85,
+                "status": "partial",
+                "error_message": null,
+                "truth_reason": "Last verified crm ingest is 34.9h old."
+              }
+            ],
+            "concern_name": "Revenue Leakage"
+          }
+        ],
+        "valid": true,
+        "requirement": "integrity_alerts > 0"
+      },
+      "truth_summary_check": {
+        "truth_summary_present": true,
+        "connector_truth_present": true,
+        "connector_truth_keys": [
+          "crm",
+          "accounting",
+          "email",
+          "calendar",
+          "marketing"
+        ],
+        "valid": true,
+        "requirement": "truth_summary.connector_truth states present"
+      },
+      "issue_brief_check": {
+        "false_zero_phrases_found": 0,
+        "problems": [],
+        "valid": true,
+        "requirement": "no false zero-value phrases in issue_brief fields"
+      }
+    },
+    "data_summary": {
+      "concerns_count": 0,
+      "integrity_alerts": 7,
+      "has_truth_summary": true,
+      "connector_truth_keys": [
+        "crm",
+        "accounting",
+        "email",
+        "calendar",
+        "marketing"
+      ]
+    },
+    "sample_data": {
+      "first_concern": null,
+      "truth_summary_sample": {
+        "verified_concerns": 0,
+        "blocked_concerns": 7
+      }
+    }
+  },
+  "integrations_merge_connected": {
+    "status": "FAIL",
+    "response_time": 2.1985769271850586,
+    "response_code": 200,
+    "states_found": {
+      "crm_state": {
+        "present": false,
+        "value": null,
+        "location": "canonical_truth"
+      },
+      "accounting_state": {
+        "present": false,
+        "value": null,
+        "location": "canonical_truth"
+      },
+      "email_state": {
+        "present": false,
+        "value": null,
+        "location": "canonical_truth"
+      }
+    },
+    "canonical_truth_states_present": false,
+    "required_states": [
+      "crm_state",
+      "accounting_state",
+      "email_state"
+    ],
+    "response_structure": {
+      "top_level_keys": [
+        "integrations",
+        "canonical_truth"
+      ],
+      "canonical_truth_keys": [
+        "crm_connected",
+        "accounting_connected",
+        "email_connected",
+        "hris_connected",
+        "total_connected",
+        "crm_state",
+        "accounting_state",
+        "email_state",
+        "verified_live_count",
+        "live_signal_count",
+        "last_signal_at"
+      ]
+    }
+  },
+  "outlook_status": {
+    "status": "PASS",
+    "response_time": 1.1056110858917236,
+    "response_code": 200,
+    "reasonable_time": true,
+    "time_threshold": 10.0,
+    "has_token_metadata": false,
+    "token_fields": [],
+    "data_summary": {
+      "connected": true,
+      "email_count": null,
+      "sync_status": null,
+      "last_sync": null
+    }
+  },
+  "spot_check": {
+    "status": "PASS",
+    "both_endpoints_working": true,
+    "results": {
+      "email_priority_inbox": {
+        "status": "PASS",
+        "response_code": 200,
+        "response_time": 1.6195907592773438,
+        "working": true,
+        "data_summary": {
+          "has_data": true,
+          "keys": [
+            "user_id",
+            "analysis",
+            "emails_analyzed",
+            "analyzed_at",
+            "created_at"
+          ],
+          "type": "dict"
+        }
+      },
+      "intelligence_watchtower": {
+        "status": "PASS",
+        "response_code": 200,
+        "response_time": 1.3354909420013428,
+        "working": true,
+        "data_summary": {
+          "has_data": true,
+          "keys": [
+            "status",
+            "has_data",
+            "positions",
+            "events",
+            "count",
+            "computed_at"
+          ],
+          "type": "dict"
+        }
+      }
+    }
+  }
+}

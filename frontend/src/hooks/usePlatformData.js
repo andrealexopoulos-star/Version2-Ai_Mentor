@@ -103,7 +103,8 @@ export function extractContactMetrics(contacts) {
 export function extractIntegrationHealth(connected) {
   if (!connected?.integrations) return null;
   const integrations = connected.integrations;
-  const connectedCount = Object.values(integrations).filter(Boolean).length;
-  const names = Object.entries(integrations).filter(([, v]) => v).map(([k]) => k);
+  const booleanOnly = Object.fromEntries(Object.entries(integrations).filter(([, value]) => typeof value === 'boolean'));
+  const connectedCount = Object.values(booleanOnly).filter(Boolean).length;
+  const names = Object.entries(booleanOnly).filter(([, v]) => v).map(([k]) => k);
   return { connectedCount, totalAvailable: Object.keys(integrations).length, names };
 }

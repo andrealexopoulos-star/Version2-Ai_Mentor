@@ -165,6 +165,8 @@ export default function CompetitiveBenchmarkPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState(null);
   const [hasRealData, setHasRealData] = useState(false);
+  const [benchmarkQueued, setBenchmarkQueued] = useState(false);
+  const autoBenchmarkTriggeredRef = useRef(false);
 
   // Req 4: Competitor comparison
   const [competitorInputs, setCompetitorInputs] = useState(['']);
@@ -210,6 +212,24 @@ export default function CompetitiveBenchmarkPage() {
         scanSource: footprint.source || benchmark?.status || 'Web scraping',
         scanDomain: cognitive?.business_profile?.website || null,
       });
+
+      const scanDomain = cognitive?.business_profile?.website || null;
+      const knownCompetitors = (competitive?.competitors || [])
+        .map((comp) => comp?.domain || comp?.name || comp)
+        .filter(Boolean)
+        .slice(0, 3);
+
+      if (!benchmark?.scores && scanDomain && !autoBenchmarkTriggeredRef.current) {
+        autoBenchmarkTriggeredRef.current = true;
+        try {
+          const queueRes = await apiClient.post('/marketing/benchmark', { competitors: knownCompetitors }, { timeout: 30000 });
+          if (queueRes.data?.status === 'queued' || queueRes.data?.status === 'complete') {
+            setBenchmarkQueued(true);
+          }
+        } catch {
+          // non-blocking; the page can still explain the no-data state
+        }
+      }
     } catch {} finally { setLoading(false); }
   }, []);
 
@@ -217,6 +237,14 @@ export default function CompetitiveBenchmarkPage() {
     fetchData();
     trackEvent('dashboard_view', { page: 'competitive-benchmark' });
   }, [fetchData]);
+
+  useEffect(() => {
+    if (!benchmarkQueued || hasRealData) return undefined;
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 12000);
+    return () => clearTimeout(timer);
+  }, [benchmarkQueued, hasRealData, fetchData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -312,9 +340,17 @@ export default function CompetitiveBenchmarkPage() {
                       <p className="text-xs text-[#64748B] max-w-xs">
                         Score is calculated from your public website, social media, Google reviews and content. Complete calibration with your website URL to generate it.
                       </p>
+                      {benchmarkQueued && (
+                        <p className="text-[11px] mt-3" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                          BIQc has started a benchmark scan for your website. Refresh shortly to see your first score.
+                        </p>
+                      )}
                       <Link to="/calibration" className="text-xs flex items-center justify-center gap-1 mt-2" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
                         Start calibration <ArrowRight className="w-3 h-3" />
                       </Link>
+                      <p className="text-[11px] mt-3" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
+                        Once calibration is complete, BIQc will score your digital footprint and let you compare against competitors across all five pillars.
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -356,7 +392,7 @@ export default function CompetitiveBenchmarkPage() {
                   ) : (
                     <div className="text-center py-8">
                       <p className="text-sm italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>Insufficient data</p>
-                      <p className="text-xs mt-2 text-[#64748B]">Industry ranking will appear once your digital footprint score is generated.</p>
+                      <p className="text-xs mt-2 text-[#64748B]">Industry ranking will appear once your digital footprint score is generated from calibration and live market inputs.</p>
                     </div>
                   )}
                 </CardContent>

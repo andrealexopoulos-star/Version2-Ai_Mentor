@@ -34,6 +34,7 @@ const DataConfidence = ({ cognitive, channelsData, loading = false }) => {
   const canonicalTruth = channelsData?.canonical_truth || {};
   const connectedSystems = canonicalTruth.total_connected || channelsData?.total_connected || 0;
   const liveSignals = cognitive?.live_signal_count || (Array.isArray(cognitive?.top_alerts) ? cognitive.top_alerts.length : 0) || 0;
+  const degradedTruth = [canonicalTruth.crm_state, canonicalTruth.accounting_state, canonicalTruth.email_state].filter((state) => state && state !== 'live').length;
   const signalChecks = [
     { key: 'system', label: 'business state', active: Boolean(cognitive?.system_state || cognitive?.system_state_interpretation) },
     { key: 'pipeline', label: 'revenue/pipeline', active: Boolean(cognitive?.revenue?.pipeline || cognitive?.pipeline_total || canonicalTruth.crm_connected) },
@@ -46,13 +47,15 @@ const DataConfidence = ({ cognitive, channelsData, loading = false }) => {
   const signals = signalChecks.filter((item) => item.active).length;
   const total = signalChecks.length;
   const level = signals >= 5 ? 'High' : signals >= 3 ? 'Medium' : 'Low';
-  const color = level === 'High' ? '#10B981' : level === 'Medium' ? '#F59E0B' : '#64748B';
+  const color = degradedTruth > 0 ? '#F59E0B' : level === 'High' ? '#10B981' : level === 'Medium' ? '#F59E0B' : '#64748B';
   const activeLabels = signalChecks.filter((item) => item.active).map((item) => item.label);
   const missingLabels = signalChecks.filter((item) => !item.active).map((item) => item.label);
   const explainer = activeLabels.length
     ? `Reading ${activeLabels.slice(0, 3).join(', ')}${activeLabels.length > 3 ? ' +' : ''}`
     : 'Waiting for connected business signals';
-  const guidance = missingLabels.length
+  const guidance = degradedTruth > 0
+    ? `Truth gate active on ${degradedTruth} source ${degradedTruth === 1 ? 'domain' : 'domains'}`
+    : missingLabels.length
     ? `Missing: ${missingLabels.slice(0, 2).join(', ')}`
     : `Live signals detected from ${connectedSystems} connected systems`;
 

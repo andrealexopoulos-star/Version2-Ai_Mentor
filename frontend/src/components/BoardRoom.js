@@ -38,11 +38,17 @@ const BoardRoom = ({ embeddedShell = false }) => {
   const dpi = snapshot?.system_state === 'CRITICAL' ? 80 : snapshot?.system_state === 'COMPRESSION' ? 55 : snapshot?.system_state === 'DRIFT' ? 35 : 10;
   const forces = (snapshot?.inevitabilities || []).map(function(inv) { return { domain: inv.domain, detail: inv.signal, position: inv.intensity }; });
   const topAlerts = (snapshot?.top_alerts || []).slice(0, 3);
-  const integrationMap = snapshot?.integrations || {
-    crm: integrationStatus?.canonical_truth?.crm_connected,
-    accounting: integrationStatus?.canonical_truth?.accounting_connected,
-    email: integrationStatus?.canonical_truth?.email_connected,
+  const integrationMap = {
+    crm: snapshot?.integrations?.crm ?? integrationStatus?.canonical_truth?.crm_connected,
+    accounting: snapshot?.integrations?.accounting ?? integrationStatus?.canonical_truth?.accounting_connected,
+    email: snapshot?.integrations?.email ?? integrationStatus?.canonical_truth?.email_connected,
   };
+  const truthStateMap = {
+    crm: integrationStatus?.canonical_truth?.crm_state || snapshot?.integrations?.crm_state,
+    accounting: integrationStatus?.canonical_truth?.accounting_state || snapshot?.integrations?.accounting_state,
+    email: integrationStatus?.canonical_truth?.email_state || snapshot?.integrations?.email_state,
+  };
+  const degradedTruth = Object.entries(truthStateMap).filter(([, state]) => state && state !== 'live');
   const integrationLabels = Object.entries(integrationMap).filter(([, connected]) => connected).map(([key]) => key);
   const primaryBrief = narrative?.primary_tension || topAlerts[0]?.detail;
   const hasBrief = Boolean(primaryBrief);
@@ -119,6 +125,14 @@ const BoardRoom = ({ embeddedShell = false }) => {
           {!activeDiagnosis && (
             <>
               <section data-testid="executive-zone">
+                {degradedTruth.length > 0 && (
+                  <div className="mb-5 p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)' }} data-testid="boardroom-truth-state-banner">
+                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Forensic truth state</span>
+                    <p className="text-xs leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+                      BIQc is currently treating these domains as non-live truth: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.
+                    </p>
+                  </div>
+                )}
                 {briefingLoading ? (
                   <div className="flex items-center justify-center py-16">
                     <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "monospace" }}>thinking...</span>

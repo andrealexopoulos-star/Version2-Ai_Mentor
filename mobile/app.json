@@ -25,7 +25,6 @@
       "package": "com.thestrategysquad.biqc"
     },
     "plugins": [
-      "expo-router",
       "expo-notifications",
       "expo-secure-store",
       "expo-haptics"

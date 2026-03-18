@@ -318,12 +318,66 @@ class MergeEmissionLayer:
         emitted = []
         now = datetime.now(timezone.utc)
 
+        def _parse_dt(value):
+            try:
+                return datetime.fromisoformat(str(value).replace("Z", "+00:00")) if value else None
+            except Exception:
+                return None
+
+        def _recipients(raw):
+            import json as _json
+            if not raw:
+                return []
+            if isinstance(raw, str):
+                try:
+                    raw = _json.loads(raw)
+                except Exception:
+                    return [raw.lower().strip()] if "@" in raw else []
+            values = []
+            if isinstance(raw, list):
+                for item in raw:
+                    if isinstance(item, dict):
+                        email = str(item.get("email") or item.get("address") or item.get("emailAddress") or "").lower().strip()
+                        if email:
+                            values.append(email)
+                    elif isinstance(item, str):
+                        values.append(item.lower().strip())
+            return values
+
+        def _normalise_subject(value):
+            import re as _re
+            subject = str(value or "").lower().strip()
+            subject = _re.sub(r"^(re|fw|fwd)\s*:\s*", "", subject)
+            return _re.sub(r"\s+", " ", subject)
+
+        sent_result = self.supabase.table("outlook_emails").select(
+            "to_recipients, received_date, subject"
+        ).eq("user_id", user_id).eq("folder", "sentitems").gte(
+            "received_date", (now - timedelta(days=14)).isoformat()
+        ).limit(200).execute()
+        latest_sent_by_recipient = {}
+        latest_sent_by_recipient_subject = {}
+        for sent in (sent_result.data or []):
+            sent_at = _parse_dt(sent.get("received_date"))
+            if not sent_at:
+                continue
+            sent_subject = _normalise_subject(sent.get("subject"))
+            for recipient in _recipients(sent.get("to_recipients")):
+                current = latest_sent_by_recipient.get(recipient)
+                if current is None or sent_at > current:
+                    latest_sent_by_recipient[recipient] = sent_at
+                if sent_subject:
+                    key = (recipient, sent_subject)
+                    current_subject = latest_sent_by_recipient_subject.get(key)
+                    if current_subject is None or sent_at > current_subject:
+                        latest_sent_by_recipient_subject[key] = sent_at
+
         # ─── RESPONSE DELAY ──────────────────────────────────────
         try:
             cutoff = (now - timedelta(days=7)).isoformat()
             result = self.supabase.table("outlook_emails").select(
-                "from_address, received_date"
-            ).eq("user_id", user_id).gte(
+                "from_address, received_date, subject"
+            ).eq("user_id", user_id).eq("folder", "inbox").gte(
                 "received_date", cutoff
             ).order("received_date", desc=True).limit(200).execute()
 
@@ -344,10 +398,24 @@ class MergeEmissionLayer:
                         continue
                     sorted_dates = sorted(dates, reverse=True)
                     try:
-                        latest = datetime.fromisoformat(sorted_dates[0].replace("Z", "+00:00"))
-                        prev = datetime.fromisoformat(sorted_dates[1].replace("Z", "+00:00"))
+                        latest = _parse_dt(sorted_dates[0])
+                        prev = _parse_dt(sorted_dates[1])
+                        if not latest or not prev:
+                            continue
                         gap_hours = (latest - prev).total_seconds() / 3600
                     except (ValueError, TypeError, IndexError):
+                        continue
+
+                    latest_reply = latest_sent_by_recipient.get(addr)
+                    sent_subject_match = None
+                    try:
+                        latest_email = next((item for item in emails if item.get("from_address") == addr and item.get("received_date") == sorted_dates[0]), None)
+                        latest_subject = _normalise_subject((latest_email or {}).get("subject"))
+                        if latest_subject:
+                            sent_subject_match = latest_sent_by_recipient_subject.get((addr, latest_subject))
+                    except Exception:
+                        sent_subject_match = None
+                    if (latest_reply and latest_reply >= latest) or (sent_subject_match and sent_subject_match >= latest):
                         continue
 
                     if gap_hours > RESPONSE_DELAY_HOURS:
@@ -378,7 +446,7 @@ class MergeEmissionLayer:
             # Find contacts who were active 8-37 days ago but silent last 7 days
             active_result = self.supabase.table("outlook_emails").select(
                 "from_address"
-            ).eq("user_id", user_id).gte(
+            ).eq("user_id", user_id).eq("folder", "inbox").gte(
                 "received_date", old_cutoff
             ).lt("received_date", silence_cutoff).limit(100).execute()
 
@@ -386,9 +454,10 @@ class MergeEmissionLayer:
 
             recent_result = self.supabase.table("outlook_emails").select(
                 "from_address"
-            ).eq("user_id", user_id).gte("received_date", silence_cutoff).limit(200).execute()
+            ).eq("user_id", user_id).eq("folder", "inbox").gte("received_date", silence_cutoff).limit(200).execute()
 
             recent_contacts = set(e.get("from_address") for e in (recent_result.data or []) if e.get("from_address"))
+            recent_contacts.update({recipient for recipient, replied_at in latest_sent_by_recipient.items() if replied_at >= now - timedelta(days=THREAD_SILENCE_DAYS)})
 
             silent = active_contacts - recent_contacts
             if silent:

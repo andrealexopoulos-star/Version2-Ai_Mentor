@@ -175,6 +175,7 @@ export default function Integrations() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [mergeIntegrations, setMergeIntegrations] = useState({});
   const [integrationStatusRows, setIntegrationStatusRows] = useState([]);
+  const [canonicalTruth, setCanonicalTruth] = useState({});
   const [outlookStatus, setOutlookStatus] = useState({ connected: false, connected_email: null });
   const [gmailStatus, setGmailStatus] = useState({ connected: false, connected_email: null });
   const [disconnecting, setDisconnecting] = useState(null);
@@ -234,8 +235,11 @@ export default function Integrations() {
         apiClient.get('/user/integration-status'),
       ]);
       const directMap = res.status === 'fulfilled' ? (res.value.data?.integrations || {}) : {};
+      const directTruth = res.status === 'fulfilled' ? (res.value.data?.canonical_truth || {}) : {};
       const rows = fallbackRes.status === 'fulfilled' ? (fallbackRes.value.data?.integrations || []) : [];
+      const fallbackTruth = fallbackRes.status === 'fulfilled' ? (fallbackRes.value.data?.canonical_truth || {}) : {};
       setIntegrationStatusRows(rows);
+      setCanonicalTruth(Object.keys(directTruth).length ? directTruth : fallbackTruth);
       if (Object.keys(directMap).length > 0) {
         setMergeIntegrations(directMap);
         return;
@@ -258,6 +262,7 @@ export default function Integrations() {
         const fallbackRes = await apiClient.get('/user/integration-status');
         const rows = fallbackRes.data?.integrations || [];
         setIntegrationStatusRows(rows);
+        setCanonicalTruth(fallbackRes.data?.canonical_truth || {});
         const derivedMap = rows.reduce((acc, row) => {
           if (!row?.connected) return acc;
           const provider = String(row.integration_name || row.provider || '').trim().toLowerCase().replace(/\s+/g, '-');
@@ -311,7 +316,6 @@ export default function Integrations() {
   }, []);
 
   useEffect(() => {
-    if (!user?.id) return undefined;
     loadMergeIntegrations();
     loadOutlookStatus();
     loadGmailStatus();
@@ -484,18 +488,35 @@ export default function Integrations() {
     return 'Connected';
   };
 
+  const truthStateForIntegration = useCallback((integration) => {
+    const category = String(integration.category || '').toLowerCase();
+    if (category === 'crm') return canonicalTruth.crm_state || (isConnected(integration) ? 'live' : 'unverified');
+    if (category === 'financial' || category === 'ecommerce') return canonicalTruth.accounting_state || (isConnected(integration) ? 'live' : 'unverified');
+    if (category === 'email' || category === 'calendar') return canonicalTruth.email_state || (isConnected(integration) ? 'live' : 'unverified');
+    return isConnected(integration) ? 'live' : 'unverified';
+  }, [canonicalTruth, isConnected]);
+
+  const truthReasonForIntegration = useCallback((integration) => {
+    const row = integrationStatusRows.find((item) => categoryMatches(integration.category, item.category) && Boolean(item.connected));
+    return row?.truth_reason || '';
+  }, [integrationStatusRows]);
+
   // Detect stale Merge connections and prompt re-link
   const isMergeStale = useCallback((integration) => {
     if (!isConnected(integration)) return false;
     const key = Object.keys(mergeIntegrations).find(k =>
       k.toLowerCase().includes(integration.id) || k.toLowerCase().includes(integration.name.toLowerCase())
     );
-    if (!key) return false;
-    const meta = mergeIntegrations[key];
+    const meta = key ? mergeIntegrations[key] : null;
     // Flag as stale if last_sync is > 24 hours ago or sync_status indicates error
     if (meta?.sync_status === 'token_expired' || meta?.sync_status === 'error') return true;
+    const statusRow = integrationStatusRows.find((row) => {
+      const provider = String(row.integration_name || row.provider || '').toLowerCase();
+      return Boolean(row.connected) && categoryMatches(integration.category, row.category) && (provider === integration.name.toLowerCase() || provider.includes(integration.id));
+    });
+    if (statusRow?.truth_state === 'stale' || statusRow?.truth_state === 'error') return true;
     return false;
-  }, [mergeIntegrations, isConnected]);
+  }, [mergeIntegrations, integrationStatusRows, isConnected]);
 
   const filtered = ALL_INTEGRATIONS.filter(i => {
     if (selectedCategory === 'connected') return isConnected(i);
@@ -509,8 +530,14 @@ export default function Integrations() {
     gmailStatus.connected ? 1 : 0,
     outlookStatus.connected ? 1 : 0,
   ].reduce((sum, value) => sum + value, 0);
-  const isFreeTier = (user?.subscription_tier || 'free').toLowerCase() === 'free';
+  const isMasterAccount = user?.is_master_account === true || ['superadmin', 'super_admin', 'admin'].includes((user?.role || '').toLowerCase()) || (user?.email || '').toLowerCase() === 'andre@thestrategysquad.com.au';
+  const isFreeTier = !isMasterAccount && (user?.subscription_tier || 'free').toLowerCase() === 'free';
   const freeTierLimitReached = isFreeTier && connectedCount >= 1;
+  const blockedTruthCategories = [
+    { label: 'CRM', state: canonicalTruth.crm_state },
+    { label: 'Accounting', state: canonicalTruth.accounting_state },
+    { label: 'Email', state: canonicalTruth.email_state },
+  ].filter((item) => item.state && item.state !== 'live');
 
   return (
     <DashboardLayout>
@@ -584,6 +611,16 @@ export default function Integrations() {
 
         <div className="px-6 py-5 space-y-7">
 
+          {blockedTruthCategories.length > 0 && (
+            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(251,146,60,0.35)', background: 'rgba(251,146,60,0.08)' }} data-testid="integrations-truth-state-banner">
+              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Forensic source health</p>
+              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+                BIQc is currently treating these domains as non-live truth: {blockedTruthCategories.map((item) => `${item.label} (${item.state})`).join(', ')}.
+              </p>
+              <p className="mt-1 text-xs" style={{ color: '#FDE68A' }}>Reconnect or refresh these providers before relying on their guidance as current fact.</p>
+            </div>
+          )}
+
           {isFreeTier && (
             <div className="rounded-2xl border p-4" style={{ borderColor: freeTierLimitReached ? 'rgba(255,106,0,0.28)' : 'var(--biqc-border, #243140)', background: freeTierLimitReached ? 'rgba(255,106,0,0.08)' : 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-free-tier-banner">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -611,6 +648,7 @@ export default function Integrations() {
                     onConnect={handleConnect} onDisconnect={handleDisconnect}
                     canConnectMore={!freeTierLimitReached || isConnected(item)}
                     isStale={false}
+                    truthState={truthStateForIntegration(item)} truthReason={truthReasonForIntegration(item)}
                     badge="Supabase" badgeColor="#3B82F6" />
                 ))}
               </div>
@@ -639,6 +677,7 @@ export default function Integrations() {
                     onConnect={handleConnect} onDisconnect={handleDisconnect}
                     canConnectMore={!freeTierLimitReached || isConnected(integration)}
                     isStale={isMergeStale(integration)}
+                    truthState={truthStateForIntegration(integration)} truthReason={truthReasonForIntegration(integration)}
                     badge="Merge API" badgeColor="#FF6A00" />
                 ))}
               </div>
@@ -719,8 +758,13 @@ function SectionLabel({ icon: Icon, label, badge, badgeColor }) {
 }
 
 // ── Integration card ──────────────────────────────────────────────────────────
-function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, badgeColor, comingSoon, isStale = false, canConnectMore = true }) {
+function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, badgeColor, comingSoon, isStale = false, canConnectMore = true, truthState = 'unverified', truthReason = '' }) {
   const [hovered, setHovered] = useState(false);
+  const truthTone = truthState === 'live'
+    ? { text: '#10B981', border: 'rgba(16,185,129,0.25)', bg: 'rgba(16,185,129,0.08)' }
+    : truthState === 'stale'
+      ? { text: '#F59E0B', border: 'rgba(245,158,11,0.3)', bg: 'rgba(245,158,11,0.08)' }
+      : { text: '#F97316', border: 'rgba(249,115,22,0.3)', bg: 'rgba(249,115,22,0.08)' };
 
   return (
     <div
@@ -763,8 +807,19 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
           </div>
         </div>
 
+        {connected && (
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg self-start"
+            style={{ background: truthTone.bg, border: `1px solid ${truthTone.border}`, color: truthTone.text, fontFamily: fontFamily.mono }}
+            data-testid={`integration-truth-state-${integration.id}`}>
+            <span className="text-[10px] uppercase tracking-[0.12em]">{truthState}</span>
+          </div>
+        )}
+
         {/* Description */}
         <p className="text-xs leading-relaxed flex-1" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{integration.desc}</p>
+        {connected && truthReason && (
+          <p className="text-[11px] leading-relaxed" style={{ color: '#94A3B8', fontFamily: fontFamily.body }} data-testid={`integration-truth-reason-${integration.id}`}>{truthReason}</p>
+        )}
 
         {/* Action button */}
         {comingSoon ? (

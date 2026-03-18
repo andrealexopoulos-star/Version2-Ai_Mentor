@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta, date
 from typing import Any, Dict, List, Optional, Tuple
 
+from intelligence_live_truth import get_connector_truth_summary
 from intelligence_spine import emit_spine_event, log_model_execution
 from tier_resolver import get_brain_metric_limit, get_brain_plan_label, resolve_tier
 
@@ -318,6 +319,7 @@ class BusinessBrainEngine:
         self.selected_metric_keys = self._load_selected_metric_keys()
         self.kpi_thresholds = self._load_kpi_thresholds()
         self.business_core_ready = self._detect_business_core_schema()
+        self._connector_truth_cache: Optional[Dict[str, Dict[str, Any]]] = None
         self._sync_metric_catalog()
 
     def _load_kpi_preferences(self) -> Dict[str, Any]:
@@ -437,6 +439,127 @@ class BusinessBrainEngine:
             return f"{numeric:.1f} hours"
         return f"{numeric:,.0f}"
 
+    def _connector_truth(self) -> Dict[str, Dict[str, Any]]:
+        if self._connector_truth_cache is None:
+            self._connector_truth_cache = get_connector_truth_summary(self.sb, self.tenant_id)
+        return self._connector_truth_cache
+
+    def _concern_source_keys(self, concern_id: str) -> List[str]:
+        mapping = {
+            "cashflow_risk": ["accounting"],
+            "margin_compression": ["accounting"],
+            "pipeline_stagnation": ["crm"],
+            "revenue_leakage": ["crm"],
+            "client_response_risk": ["email"],
+            "concentration_risk": ["crm", "accounting"],
+            "operations_bottlenecks": ["operations"],
+        }
+        return mapping.get(concern_id, [])
+
+    def _metric_truth_state(self, metric_key: str, row: Optional[Dict[str, Any]], source_states: List[str]) -> Dict[str, Any]:
+        if not row:
+            return {"verified": False, "state": "missing", "reason": "Metric is not computed in the current evidence set."}
+
+        if any(state in {"error", "stale", "unverified"} for state in source_states):
+            return {"verified": False, "state": "source_not_live", "reason": "Required source is not currently live-verified."}
+
+        details = row.get("calculation_details") or {}
+        sample_size = int(_safe_float(details.get("sample_size"), 0.0))
+
+        if metric_key in {"lead_response_time", "average_sales_cycle_length", "accounts_receivable_aging", "accounts_payable_aging"} and sample_size <= 0:
+            return {"verified": False, "state": "insufficient_sample", "reason": "No auditable sample exists for this metric yet."}
+
+        if metric_key == "task_overdue_rate" and int(_safe_float(details.get("total_tasks"), 0.0)) <= 0:
+            return {"verified": False, "state": "no_task_sample", "reason": "No task-system sample is connected yet."}
+
+        if metric_key == "cash_runway_months":
+            monthly_burn = _safe_float(details.get("monthly_burn"), 0.0)
+            metric_value = _safe_float(row.get("value"), 0.0)
+            if monthly_burn <= 0 or metric_value >= 999.0:
+                return {"verified": False, "state": "sentinel_runway", "reason": "Runway is using a sentinel value because burn is not measurable."}
+
+        if metric_key == "operating_expense_ratio" and details.get("supplier_overdue_as_proxy"):
+            return {"verified": False, "state": "proxy_only", "reason": "Operating expense ratio is only a proxy and is not forensic-grade evidence by itself."}
+
+        if metric_key == "win_rate" and (int(_safe_float(details.get("won"), 0.0)) + int(_safe_float(details.get("lost"), 0.0))) <= 0:
+            return {"verified": False, "state": "insufficient_sample", "reason": "No closed-deal sample exists for win-rate truth."}
+
+        return {"verified": True, "state": "verified", "reason": "Metric is supported by current evidence."}
+
+    def _build_truth_context(self, concern_id: str, required: List[str], metrics: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        connector_truth = self._connector_truth()
+        source_keys = self._concern_source_keys(concern_id)
+        source_items: List[Dict[str, Any]] = []
+        source_states: List[str] = []
+        for key in source_keys:
+            item = dict((connector_truth.get(key) or {"category": key, "truth_state": "unverified", "truth_reason": f"{key.title()} truth is not verified."}))
+            source_items.append(item)
+            source_states.append(str(item.get("truth_state") or "unverified"))
+
+        metric_truth: Dict[str, Dict[str, Any]] = {}
+        verified_metric_names: List[str] = []
+        blocked_metric_names: List[str] = []
+        for signal_name in required:
+            truth = self._metric_truth_state(signal_name, metrics.get(signal_name), source_states)
+            metric_truth[signal_name] = truth
+            if truth.get("verified"):
+                verified_metric_names.append(signal_name)
+            else:
+                blocked_metric_names.append(signal_name)
+
+        availability = (len(verified_metric_names) / max(1, len(required))) if required else 1.0
+        truth_state = "verified"
+        if blocked_metric_names and not verified_metric_names:
+            truth_state = "blocked"
+        elif blocked_metric_names:
+            truth_state = "needs_verification"
+
+        if any(state in {"error", "stale", "unverified"} for state in source_states):
+            truth_state = "blocked" if not verified_metric_names else "needs_verification"
+
+        if source_items:
+            source_summary = "; ".join(
+                f"{item.get('category', 'source').title()}: {item.get('truth_reason')}"
+                for item in source_items
+            )
+        elif blocked_metric_names:
+            source_summary = "Required source evidence is incomplete for this concern."
+        else:
+            source_summary = "Required source evidence is verified."
+
+        return {
+            "truth_state": truth_state,
+            "availability": availability,
+            "source_truth": source_items,
+            "source_states": source_states,
+            "metric_truth": metric_truth,
+            "verified_metric_names": verified_metric_names,
+            "blocked_metric_names": blocked_metric_names,
+            "reason": source_summary,
+        }
+
+    def _build_integrity_alert(self, concern: Dict[str, Any], truth_context: Dict[str, Any]) -> Dict[str, Any]:
+        concern_id = str(concern.get("concern_id") or "unknown")
+        concern_name = str(concern.get("name") or concern_id.replace("_", " ").title())
+        source_items = truth_context.get("source_truth") or []
+        source_label = ", ".join(item.get("category", "source").title() for item in source_items) or "Data source"
+        latest_verified = next((item.get("last_verified_at") for item in source_items if item.get("last_verified_at")), None)
+        blocked_metrics = truth_context.get("blocked_metric_names") or []
+
+        return {
+            "id": f"truth-gap-{concern_id}",
+            "concern_id": concern_id,
+            "severity": "high" if source_items else "medium",
+            "title": f"{source_label} truth is blocking {concern_name.lower()} guidance",
+            "detail": truth_context.get("reason") or f"BIQc is withholding {concern_name.lower()} claims until live evidence is restored.",
+            "action": "Restore the affected integration in Integrations and rerun forensic verification before acting on this concern.",
+            "truth_state": truth_context.get("truth_state", "blocked"),
+            "blocked_metrics": blocked_metrics,
+            "last_verified_at": latest_verified,
+            "source_truth": source_items,
+            "concern_name": concern_name,
+        }
+
     def _latest_seen_timestamp(self, metrics: Dict[str, Dict[str, Any]], signal_names: List[str]) -> Optional[str]:
         latest_ts: Optional[datetime] = None
         latest_raw: Optional[str] = None
@@ -543,6 +666,7 @@ class BusinessBrainEngine:
         concern_id: str,
         metrics: Dict[str, Dict[str, Any]],
         threshold_hits: List[Dict[str, Any]],
+        truth_context: Dict[str, Any],
         availability: float,
         impact: float,
         urgency: float,
@@ -560,43 +684,100 @@ class BusinessBrainEngine:
         repeat_count = max(1, len([entry for entry in evidence if entry.get("metric_value") not in (None, 0, 0.0)]) + len(threshold_hits))
         last_seen = self._latest_seen_timestamp(metrics, [entry.get("metric_name") for entry in evidence])
         escalation_state = "critical" if threshold_hits and any(hit["threshold_state"] == "critical" for hit in threshold_hits) else "elevated" if impact >= 8 or urgency >= 8 else "monitoring"
+        source_truth_items = truth_context.get("source_truth") or []
+        source_truth_reason = truth_context.get("reason") or ""
+        metric_truth = truth_context.get("metric_truth") or {}
+
+        if source_truth_items:
+            source_summary = "Source truth: " + "; ".join(
+                f"{item.get('category', 'source').title()}={item.get('truth_state', 'unknown')}"
+                for item in source_truth_items
+            )
 
         if concern_id == "cashflow_risk":
-            issue_brief = f"{int(round(mv('overdue_ar_count')))} client invoices totalling {self._format_metric_value('overdue_ar_amount', mv('overdue_ar_amount'))} are overdue, while cash runway is {mv('cash_runway_months', 999.0):.1f} months."
-            why_now_brief = "Receivables pressure is already constraining near-term cash timing and owner decision room."
-            action_brief = "Escalate overdue collections today and review the next 30-day cash plan with a named owner."
-            if_ignored_brief = "Cash pressure is likely to spill into payroll timing, supplier flexibility, and delayed growth decisions."
-            decision_label = "Cash timing needs owner action in the next 48 hours"
+            if truth_context.get("truth_state") == "blocked":
+                issue_brief = f"Accounting truth is not live-verified. Current snapshot revenue is {self._format_metric_value('total_revenue', mv('total_revenue'))}, but receivables pressure, burn, and runway cannot be treated as current facts."
+                why_now_brief = source_truth_reason
+                action_brief = "Restore accounting verification before using BIQc cash guidance for owner decisions."
+                if_ignored_brief = "You may act on historical cash data that no longer reflects the live ledger state."
+                decision_label = "Accounting truth must be restored before cash decisions"
+            else:
+                issue_brief = f"{int(round(mv('overdue_ar_count')))} client invoices totalling {self._format_metric_value('overdue_ar_amount', mv('overdue_ar_amount'))} are overdue, while cash runway is {mv('cash_runway_months', 999.0):.1f} months."
+                why_now_brief = "Receivables pressure is already constraining near-term cash timing and owner decision room."
+                action_brief = "Escalate overdue collections today and review the next 30-day cash plan with a named owner."
+                if_ignored_brief = "Cash pressure is likely to spill into payroll timing, supplier flexibility, and delayed growth decisions."
+                decision_label = "Cash timing needs owner action in the next 48 hours"
         elif concern_id in {"pipeline_stagnation", "revenue_leakage"}:
-            issue_brief = f"{int(round(mv('number_of_opportunities')))} open opportunities worth {self._format_metric_value('pipeline_value', mv('pipeline_value'))} are moving slower than target, with an average cycle of {mv('average_sales_cycle_length'):.0f} days."
-            why_now_brief = "Pipeline velocity is below the level needed for a confident close this cycle."
-            action_brief = "Re-engage the highest-value stalled deals, reassign blocked owners, and tighten the follow-up cadence today."
-            if_ignored_brief = "Expected revenue timing is likely to slip into the next cycle and reduce forecast confidence."
-            decision_label = "Revenue conversion is drifting off target"
+            if truth_context.get("truth_state") == "blocked":
+                issue_brief = f"CRM truth is not live-verified. The latest snapshot shows {int(round(mv('number_of_opportunities')))} open opportunities worth {self._format_metric_value('pipeline_value', mv('pipeline_value'))}, but BIQc is withholding cycle-speed claims until CRM verification is restored."
+                why_now_brief = source_truth_reason
+                action_brief = "Reconnect CRM and rerun forensic verification before acting on pipeline-velocity guidance."
+                if_ignored_brief = "You may make revenue decisions against historical pipeline data instead of current deal truth."
+                decision_label = "CRM truth must be restored before pipeline decisions"
+            elif not metric_truth.get("average_sales_cycle_length", {}).get("verified"):
+                issue_brief = f"{int(round(mv('number_of_opportunities')))} open opportunities worth {self._format_metric_value('pipeline_value', mv('pipeline_value'))} are visible, but sales-cycle truth cannot be verified because no closed-deal sample is available."
+                why_now_brief = "Pipeline value is present, but BIQc is intentionally not asserting a cycle-length number without a real close sample."
+                action_brief = "Use the open-pipeline snapshot for triage, and restore enough closed-deal evidence to verify velocity."
+                if_ignored_brief = "Pipeline decisions may overstate certainty if they rely on unverified cycle-speed assumptions."
+                decision_label = "Pipeline value is visible, but velocity truth is incomplete"
+            else:
+                issue_brief = f"{int(round(mv('number_of_opportunities')))} open opportunities worth {self._format_metric_value('pipeline_value', mv('pipeline_value'))} are moving slower than target, with an average cycle of {mv('average_sales_cycle_length'):.0f} days."
+                why_now_brief = "Pipeline velocity is below the level needed for a confident close this cycle."
+                action_brief = "Re-engage the highest-value stalled deals, reassign blocked owners, and tighten the follow-up cadence today."
+                if_ignored_brief = "Expected revenue timing is likely to slip into the next cycle and reduce forecast confidence."
+                decision_label = "Revenue conversion is drifting off target"
         elif concern_id == "client_response_risk":
-            issue_brief = f"Lead response time has stretched to {self._format_metric_value('lead_response_time', mv('lead_response_time'))}, while churn signals are tracking at {self._format_metric_value('churn_rate', mv('churn_rate'))}."
-            why_now_brief = "Commercial responsiveness is weakening enough to affect retention and new conversion at the same time."
-            action_brief = "Triage priority conversations immediately and enforce a same-day first-response standard."
-            if_ignored_brief = "Customer confidence and renewal probability are likely to deteriorate further."
-            decision_label = "Customer response pressure needs triage this week"
+            if truth_context.get("truth_state") == "blocked":
+                issue_brief = "BIQc is not asserting a lead-response time because no auditable response-lag sample exists yet. Use Priority Inbox and Watchtower thread evidence instead of a zero-hour claim."
+                why_now_brief = source_truth_reason or "Email response truth needs a verified lag sample before BIQc will state a response-time metric."
+                action_brief = "Use verified priority-thread evidence for triage, then expand historical email telemetry for lag analysis."
+                if_ignored_brief = "You may understate communication risk if you treat an empty lag sample as proof of fast response."
+                decision_label = "Email lag truth needs verification"
+            else:
+                issue_brief = f"Lead response time has stretched to {self._format_metric_value('lead_response_time', mv('lead_response_time'))}, while churn signals are tracking at {self._format_metric_value('churn_rate', mv('churn_rate'))}."
+                why_now_brief = "Commercial responsiveness is weakening enough to affect retention and new conversion at the same time."
+                action_brief = "Triage priority conversations immediately and enforce a same-day first-response standard."
+                if_ignored_brief = "Customer confidence and renewal probability are likely to deteriorate further."
+                decision_label = "Customer response pressure needs triage this week"
         elif concern_id == "concentration_risk":
-            issue_brief = f"Customer revenue concentration remains elevated relative to total revenue, with average customer value at {self._format_metric_value('average_revenue_per_customer', mv('average_revenue_per_customer'))}."
-            why_now_brief = "A single account shift could materially change the current revenue outlook."
-            action_brief = "Build fallback coverage in pipeline and reduce dependency on the highest-concentration account."
-            if_ignored_brief = "One delayed or lost account could create an outsized revenue shock."
-            decision_label = "Commercial concentration needs active hedging"
+            if truth_context.get("truth_state") == "blocked":
+                issue_brief = "Revenue concentration cannot be verified as a live fact until CRM and accounting truth are both current."
+                why_now_brief = source_truth_reason
+                action_brief = "Restore both CRM and accounting verification before acting on concentration guidance."
+                if_ignored_brief = "You may hedge against a concentration risk that is no longer current, or miss one that has grown."
+                decision_label = "Cross-source revenue truth needs verification"
+            else:
+                issue_brief = f"Customer revenue concentration remains elevated relative to total revenue, with average customer value at {self._format_metric_value('average_revenue_per_customer', mv('average_revenue_per_customer'))}."
+                why_now_brief = "A single account shift could materially change the current revenue outlook."
+                action_brief = "Build fallback coverage in pipeline and reduce dependency on the highest-concentration account."
+                if_ignored_brief = "One delayed or lost account could create an outsized revenue shock."
+                decision_label = "Commercial concentration needs active hedging"
         elif concern_id == "margin_compression":
-            issue_brief = f"Operating expense pressure is running at {self._format_metric_value('operating_expense_ratio', mv('operating_expense_ratio'))} while revenue growth is {self._format_metric_value('revenue_growth_rate', mv('revenue_growth_rate'))}."
-            why_now_brief = "Cost discipline and growth quality are moving out of balance."
-            action_brief = "Review cost drivers and protect margin on the next active revenue decisions."
-            if_ignored_brief = "Margin erosion will reduce flexibility across hiring, delivery, and cash decisions."
-            decision_label = "Margin discipline is slipping"
+            if truth_context.get("truth_state") == "blocked":
+                issue_brief = f"Accounting truth is not sufficient for a margin-compression claim. Current snapshot revenue is {self._format_metric_value('total_revenue', mv('total_revenue'))}, but operating expense pressure and growth quality are not verifiable from the available evidence."
+                why_now_brief = source_truth_reason
+                action_brief = "Restore live accounting verification before using BIQc margin guidance."
+                if_ignored_brief = "You may act on placeholder or proxy numbers that are not forensic-grade cost truth."
+                decision_label = "Accounting truth must be restored before margin decisions"
+            else:
+                issue_brief = f"Operating expense pressure is running at {self._format_metric_value('operating_expense_ratio', mv('operating_expense_ratio'))} while revenue growth is {self._format_metric_value('revenue_growth_rate', mv('revenue_growth_rate'))}."
+                why_now_brief = "Cost discipline and growth quality are moving out of balance."
+                action_brief = "Review cost drivers and protect margin on the next active revenue decisions."
+                if_ignored_brief = "Margin erosion will reduce flexibility across hiring, delivery, and cash decisions."
+                decision_label = "Margin discipline is slipping"
         else:
-            issue_brief = f"Operational queue pressure is showing through a task overdue rate of {self._format_metric_value('task_overdue_rate', mv('task_overdue_rate'))}."
-            why_now_brief = "Execution delay is now repeating often enough to become a system issue, not a one-off miss."
-            action_brief = "Reset queue ownership, clear overdue work, and tighten the operating cadence this week."
-            if_ignored_brief = "Repeated delays are likely to spread into service quality, response times, and revenue timing."
-            decision_label = "Execution friction needs a system fix"
+            if truth_context.get("truth_state") == "blocked":
+                issue_brief = "No connected task-system sample is available, so BIQc is withholding an operational queue-pressure claim."
+                why_now_brief = source_truth_reason or "Operational truth needs a verified task sample before BIQc can score bottlenecks."
+                action_brief = "Connect or refresh the operational task source before relying on task-overdue guidance."
+                if_ignored_brief = "Execution issues may be hidden or overstated if BIQc reasons without a real task sample."
+                decision_label = "Operations truth needs a verified task sample"
+            else:
+                issue_brief = f"Operational queue pressure is showing through a task overdue rate of {self._format_metric_value('task_overdue_rate', mv('task_overdue_rate'))}."
+                why_now_brief = "Execution delay is now repeating often enough to become a system issue, not a one-off miss."
+                action_brief = "Reset queue ownership, clear overdue work, and tighten the operating cadence this week."
+                if_ignored_brief = "Repeated delays are likely to spread into service quality, response times, and revenue timing."
+                decision_label = "Execution friction needs a system fix"
 
         if threshold_hits:
             threshold_summary = ", ".join(f"{hit['metric_label']} ({hit['threshold_state']})" for hit in threshold_hits[:2])
@@ -1295,6 +1476,7 @@ class BusinessBrainEngine:
         concerns = self._effective_concerns()
         evaluations: List[Dict[str, Any]] = []
         event_ids: List[str] = []
+        integrity_alerts: List[Dict[str, Any]] = []
 
         def mv(name: str, default: float = 0.0) -> float:
             row = metrics.get(name) or {}
@@ -1303,6 +1485,7 @@ class BusinessBrainEngine:
         for concern in concerns:
             concern_id = concern.get("concern_id")
             required = concern.get("required_signals") or []
+            truth_context = self._build_truth_context(concern_id, required, metrics)
 
             if concern_id == "cashflow_risk":
                 overdue = mv("overdue_ar_amount")
@@ -1386,6 +1569,14 @@ class BusinessBrainEngine:
             formula = concern.get("effective_priority_formula") or {}
             priority_score = self._score(impact, urgency, confidence, effort, formula)
 
+            if truth_context.get("truth_state") == "blocked":
+                integrity_alerts.append(self._build_integrity_alert(concern, truth_context))
+                continue
+
+            if truth_context.get("truth_state") == "needs_verification":
+                confidence = min(confidence, 0.49)
+                priority_score = round(priority_score * 0.6, 4)
+
             evidence = []
             for signal_name in required:
                 m = metrics.get(signal_name)
@@ -1410,6 +1601,7 @@ class BusinessBrainEngine:
                 concern_id=concern_id,
                 metrics=metrics,
                 threshold_hits=threshold_hits,
+                truth_context=truth_context,
                 availability=availability,
                 impact=impact,
                 urgency=urgency,
@@ -1441,6 +1633,10 @@ class BusinessBrainEngine:
                 },
                 "recommended_action_id": self._recommended_action_for_concern(concern_id),
                 "threshold_hits": threshold_hits,
+                "truth_state": truth_context.get("truth_state", "verified"),
+                "conflict_eligible": truth_context.get("truth_state") == "verified",
+                "source_truth": truth_context.get("source_truth") or [],
+                "signal_availability": round(truth_context.get("availability", 0.0), 4),
                 **structured_brief,
                 "evaluated_at": datetime.now(timezone.utc).isoformat(),
             }
@@ -1519,6 +1715,10 @@ class BusinessBrainEngine:
                 },
                 "recommended_action_id": self._recommended_action_for_concern(concern_id),
                 "threshold_hits": threshold_hits,
+                "truth_state": truth_context.get("truth_state", "verified"),
+                "conflict_eligible": truth_context.get("truth_state") == "verified",
+                "source_truth": truth_context.get("source_truth") or [],
+                "signal_availability": round(truth_context.get("availability", 0.0), 4),
                 "explanation": explanation,
                 **structured_brief,
                 "source": {"event_id": event_id},
@@ -1551,6 +1751,13 @@ class BusinessBrainEngine:
             "concerns": evaluations,
             "model_execution_id": execution_id,
             "source_event_ids": event_ids,
+            "integrity_alerts": integrity_alerts,
+            "truth_summary": {
+                "verified_concerns": len(evaluations),
+                "blocked_concerns": len(integrity_alerts),
+                "connector_truth": self._connector_truth(),
+            },
+            "all_clear": not evaluations and not integrity_alerts,
         }
 
     def get_priorities(self, recompute_metrics: bool = False) -> Dict[str, Any]:
@@ -1589,6 +1796,10 @@ class BusinessBrainEngine:
                     "last_seen": item.get("last_seen"),
                     "escalation_state": item.get("escalation_state"),
                     "decision_label": item.get("decision_label"),
+                    "truth_state": item.get("truth_state"),
+                    "conflict_eligible": item.get("conflict_eligible", False),
+                    "source_truth": item.get("source_truth") or [],
+                    "signal_availability": item.get("signal_availability"),
                     "source": item["source"],
                     "time_window": item["time_window"],
                 })
@@ -1600,6 +1811,12 @@ class BusinessBrainEngine:
             # Custom/enterprise includes policy details.
             output["concerns"] = concerns
 
+        output["integrity_alerts"] = output.get("integrity_alerts") or []
+        output["truth_summary"] = output.get("truth_summary") or {
+            "verified_concerns": len(output["concerns"] or []),
+            "blocked_concerns": 0,
+            "connector_truth": self._connector_truth(),
+        }
         output["brain_policy"] = self.brain_policy()
         return output
 

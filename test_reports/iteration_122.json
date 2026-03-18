@@ -1,7 +1,7 @@
 {
   "summary": "Frontend testing on preview URL (biqc-hardened.preview.emergentagent.com) validating Soundboard UX, calibration/onboarding flow, signup flow, and session persistence. All major issues from previous iteration (121) appear to be RESOLVED in this environment.",
   "test_date": "2026-03-13",
-  "preview_url": "https://data-pipeline-test-7.preview.emergentagent.com",
+  "preview_url": "https://truth-engine-19.preview.emergentagent.com",
   "features_tested": [
     "Soundboard UX and functionality",
     "Mode toggle (Normal/Trinity)",

@@ -258,6 +258,8 @@ async def get_brain_priorities(
             "model_execution_id": result.get("model_execution_id"),
             "source_event_ids": result.get("source_event_ids") or [],
             "concerns": concerns,
+            "integrity_alerts": result.get("integrity_alerts") or [],
+            "truth_summary": result.get("truth_summary") or {},
             "confidence_score": avg_conf,
             "data_sources_count": source_count,
             "data_freshness": freshest,

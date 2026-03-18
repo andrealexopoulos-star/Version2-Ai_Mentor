@@ -15,17 +15,26 @@ export default function MarketScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [market, setMarket] = useState<any>(null);
   const [snapshot, setSnapshot] = useState<any>(null);
+  const [pressure, setPressure] = useState<any>(null);
+  const [freshness, setFreshness] = useState<any>(null);
+  const [watchtower, setWatchtower] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const [marketRes, snapRes] = await Promise.allSettled([
+      const [marketRes, snapRes, pressureRes, freshnessRes, watchtowerRes] = await Promise.allSettled([
         api.get('/cognition/market'),
         api.get('/snapshot/latest'),
+        api.get('/intelligence/pressure'),
+        api.get('/intelligence/freshness'),
+        api.get('/intelligence/watchtower'),
       ]);
       if (marketRes.status === 'fulfilled' && marketRes.value.data?.status !== 'MIGRATION_REQUIRED') {
         setMarket(marketRes.value.data);
       }
       if (snapRes.status === 'fulfilled') setSnapshot(snapRes.value.data?.cognitive);
+      if (pressureRes.status === 'fulfilled') setPressure(pressureRes.value.data);
+      if (freshnessRes.status === 'fulfilled') setFreshness(freshnessRes.value.data);
+      if (watchtowerRes.status === 'fulfilled') setWatchtower(watchtowerRes.value.data);
     } catch {} finally { setLoading(false); }
   }, []);
 
@@ -67,6 +76,18 @@ export default function MarketScreen() {
         </Card>
       )}
 
+      {(pressure?.pressures || freshness?.freshness) && (
+        <Card>
+          <SectionHeader title="Evidence Health" subtitle="Pressure + freshness from live BIQc sources" />
+          {pressure?.pressures && Object.entries(pressure.pressures).slice(0, 3).map(([domain, value]: any) => (
+            <Text key={domain} style={styles.bodyText}>{domain}: {value.level} pressure · {value.events_14d} signals</Text>
+          ))}
+          {freshness?.freshness && Object.entries(freshness.freshness).filter(([, value]: any) => value.status !== 'no_data').slice(0, 2).map(([domain, value]: any) => (
+            <Text key={domain} style={[styles.bodyText, { marginTop: 6 }]}>{domain}: {value.status} evidence</Text>
+          ))}
+        </Card>
+      )}
+
       {/* Market Position */}
       {positioning && (
         <Card>
@@ -100,6 +121,18 @@ export default function MarketScreen() {
                   {comp.threat_level}
                 </Text>
               )}
+            </View>
+          ))}
+        </Card>
+      )}
+
+      {watchtower?.events?.length > 0 && (
+        <Card>
+          <SectionHeader title="External Signals" subtitle="Latest market-facing watchtower events" />
+          {watchtower.events.slice(0, 3).map((event: any, i: number) => (
+            <View key={`${event.id || i}`} style={styles.signalItem}>
+              <View style={[styles.severityDot, { backgroundColor: event.severity === 'high' ? theme.colors.danger : event.severity === 'medium' ? theme.colors.warning : theme.colors.success }]} />
+              <Text style={styles.signalText}>{event.title || event.signal || 'External market signal'}</Text>
             </View>
           ))}
         </Card>

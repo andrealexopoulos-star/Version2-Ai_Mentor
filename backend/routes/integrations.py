@@ -675,6 +675,9 @@ async def get_connected_merge_integrations(current_user: dict = Depends(get_curr
                 "merge_account_id": item.get("merge_account_id"),
                 "account_token": item.get("account_token"),
                 "connected_email": item.get("connected_email"),
+                "truth_state": item.get("truth_state"),
+                "truth_reason": item.get("truth_reason"),
+                "last_verified_at": item.get("last_verified_at"),
             }
 
         observation_state = get_recent_observation_events(get_sb(), user_id, limit=1)
@@ -2844,6 +2847,7 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
     }
 
     status_map = {}
+    connector_truth = live_truth.get("connector_truth") or {}
     try:
         status_rows = sb.table("integration_status").select(
             "integration_name, provider, category, records_count, record_type, last_sync_at, error_message"
@@ -2870,6 +2874,9 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
             "record_type": (status_row or {}).get("record_type") or record_type_map.get(category, "records"),
             "last_sync_at": (status_row or {}).get("last_sync_at") or item.get("connected_at"),
             "error_message": (status_row or {}).get("error_message"),
+            "truth_state": item.get("truth_state") or (connector_truth.get(category) or {}).get("truth_state"),
+            "truth_reason": item.get("truth_reason") or (connector_truth.get(category) or {}).get("truth_reason"),
+            "last_verified_at": item.get("last_verified_at") or (connector_truth.get(category) or {}).get("last_verified_at"),
         })
 
     connected_categories = {normalize_category(i.get("category")) for i in integrations if i.get("connected")}
@@ -2885,6 +2892,9 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
                 "record_type": record_type_map.get(category),
                 "last_sync_at": None,
                 "error_message": None,
+                "truth_state": (connector_truth.get(category) or {}).get("truth_state"),
+                "truth_reason": (connector_truth.get(category) or {}).get("truth_reason"),
+                "last_verified_at": (connector_truth.get(category) or {}).get("last_verified_at"),
             })
 
     observation_state = get_recent_observation_events(sb, user_id, limit=1)

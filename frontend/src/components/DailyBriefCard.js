@@ -30,6 +30,11 @@ export const DailyBriefCard = () => {
             instability_changes: data.overnight_changes || [],
             alerts_count: data.alerts_triggered || 0,
             integration_health: data.integration_health_status || 'unknown',
+            truth_states: {
+              crm: data?.tab_data?.crm_state || data?.integrations?.crm_state || null,
+              accounting: data?.tab_data?.accounting_state || data?.integrations?.accounting_state || null,
+              email: data?.tab_data?.email_state || data?.integrations?.email_state || null,
+            },
           };
           if (briefData.priority_message || briefData.priority_domain) {
             setBrief(briefData);
@@ -49,6 +54,11 @@ export const DailyBriefCard = () => {
                 priority_message: highPriority?.title || cognitive.executive_memo?.substring(0, 120) || 'Review your business intelligence.',
                 suggested_action: highPriority?.recommendation || 'Open your SoundBoard for detailed analysis.',
                 alerts_count: rq.length,
+                truth_states: {
+                  crm: cognitive?.integrations?.crm_state || null,
+                  accounting: cognitive?.integrations?.accounting_state || null,
+                  email: cognitive?.integrations?.email_state || null,
+                },
               });
             }
           }
@@ -61,6 +71,8 @@ export const DailyBriefCard = () => {
   }, []);
 
   if (loading || !brief || dismissed) return null;
+
+  const degradedTruth = Object.entries(brief.truth_states || {}).filter(([, state]) => state && state !== 'live');
 
   const handleOpen = () => {
     trackEvent(EVENTS.DAILY_BRIEF_OPEN, { domain: brief.priority_domain });
@@ -118,7 +130,7 @@ export const DailyBriefCard = () => {
       </div>
 
       {/* Metadata row */}
-      {(brief.alerts_count > 0 || brief.priority_domain) && (
+      {(brief.alerts_count > 0 || brief.priority_domain || degradedTruth.length > 0) && (
         <div className="flex items-center gap-4 mt-4 pt-3" style={{ borderTop: '1px solid var(--biqc-border)' }}>
           {brief.priority_domain && (
             <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#FF6A0010', color: '#FF6A00', fontFamily: fontFamily.mono }}>
@@ -128,6 +140,11 @@ export const DailyBriefCard = () => {
           {brief.alerts_count > 0 && (
             <span className="flex items-center gap-1 text-xs" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
               <AlertTriangle className="w-3 h-3" /> {brief.alerts_count} alert{brief.alerts_count !== 1 ? 's' : ''}
+            </span>
+          )}
+          {degradedTruth.length > 0 && (
+            <span className="flex items-center gap-1 text-xs" style={{ color: '#FDE68A', fontFamily: fontFamily.mono }} data-testid="daily-brief-truth-state">
+              <AlertTriangle className="w-3 h-3" /> Truth gate: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}
             </span>
           )}
         </div>

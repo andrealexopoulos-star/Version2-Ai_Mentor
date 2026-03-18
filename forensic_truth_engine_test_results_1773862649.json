@@ -1,0 +1,92 @@
+{
+  "brain_priorities": {
+    "status": "FAIL",
+    "error": "Expected 200, got 502",
+    "response_body": "The preview environment is not responding. It may be starting up.\n"
+  },
+  "integrations_merge_connected": {
+    "status": "FAIL",
+    "response_time": 36.88614344596863,
+    "response_code": 200,
+    "states_found": {
+      "crm_state": {
+        "present": false,
+        "value": null
+      },
+      "accounting_state": {
+        "present": false,
+        "value": null
+      },
+      "email_state": {
+        "present": false,
+        "value": null
+      }
+    },
+    "all_required_states_present": false,
+    "required_states": [
+      "crm_state",
+      "accounting_state",
+      "email_state"
+    ],
+    "additional_keys": [
+      "integrations",
+      "canonical_truth"
+    ]
+  },
+  "outlook_status": {
+    "status": "PASS",
+    "response_time": 1.158313274383545,
+    "response_code": 200,
+    "reasonable_time": true,
+    "time_threshold": 10.0,
+    "has_token_metadata": false,
+    "token_fields": [],
+    "data_summary": {
+      "connected": true,
+      "email_count": null,
+      "sync_status": null,
+      "last_sync": null
+    }
+  },
+  "spot_check": {
+    "status": "PASS",
+    "both_endpoints_working": true,
+    "results": {
+      "email_priority_inbox": {
+        "status": "PASS",
+        "response_code": 200,
+        "response_time": 1.6254160404205322,
+        "working": true,
+        "data_summary": {
+          "has_data": true,
+          "keys": [
+            "user_id",
+            "analysis",
+            "emails_analyzed",
+            "analyzed_at",
+            "created_at"
+          ],
+          "type": "dict"
+        }
+      },
+      "intelligence_watchtower": {
+        "status": "PASS",
+        "response_code": 200,
+        "response_time": 1.4198293685913086,
+        "working": true,
+        "data_summary": {
+          "has_data": true,
+          "keys": [
+            "status",
+            "has_data",
+            "positions",
+            "events",
+            "count",
+            "computed_at"
+          ],
+          "type": "dict"
+        }
+      }
+    }
+  }
+}

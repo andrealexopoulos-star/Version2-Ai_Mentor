@@ -41,11 +41,11 @@ AI_MODEL_ADVANCED = "gpt-5.4-pro"
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 RATE_LIMIT_RULES = {
-    "/api/auth/supabase/login": {"window": 300, "limit": 5},
-    "/api/soundboard/chat": {"window": 300, "limit": 120},
-    "/api/boardroom/respond": {"window": 300, "limit": 20},
-    "/api/voice/war-room/start": {"window": 300, "limit": 10},
-    "/api/voice/war-room/respond": {"window": 300, "limit": 24},
+    "/api/auth/supabase/login": {"window": 300, "limit": 5, "detail": "Too many login attempts. Please wait a few minutes before trying again."},
+    "/api/soundboard/chat": {"window": 300, "limit": 120, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
+    "/api/boardroom/respond": {"window": 300, "limit": 20, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
+    "/api/voice/war-room/start": {"window": 300, "limit": 10, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
+    "/api/voice/war-room/respond": {"window": 300, "limit": 24, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
 }
 RATE_LIMIT_BUCKETS = defaultdict(deque)
 RATE_LIMIT_LOCK = Lock()
@@ -122,7 +122,7 @@ class RateLimitAPIMiddleware(BaseHTTPMiddleware):
                 retry_after = max(1, int(rule["window"] - (now - bucket[0])))
                 return JSONResponse(
                     {
-                        "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again.",
+                        "detail": rule.get("detail") or "Too many requests. Please wait a few minutes before trying again.",
                         "retry_after_seconds": retry_after,
                     },
                     status_code=429,

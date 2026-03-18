@@ -6,10 +6,12 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Speech from 'expo-speech';
 import { theme } from '../theme';
 import api from '../lib/api';
 
-type Message = { id: string; role: 'user' | 'assistant'; text: string; timestamp: number };
+type SuggestedAction = { label: string; action: string };
+type Message = { id: string; role: 'user' | 'assistant'; text: string; timestamp: number; suggestedActions?: SuggestedAction[] };
 
 export default function ChatScreen({ route }: any) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -18,6 +20,12 @@ export default function ChatScreen({ route }: any) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<any[]>([]);
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+    };
+  }, []);
 
   const hydrateConversation = useCallback(async (nextConversationId: string) => {
     const detail = await api.get(`/soundboard/conversations/${nextConversationId}`);
@@ -66,7 +74,7 @@ export default function ChatScreen({ route }: any) {
         conversation_id: conversationId,
       });
       const reply = res.data?.reply || res.data?.response || res.data?.message || 'No response received.';
-      const assistantMsg: Message = { id: `a-${Date.now()}`, role: 'assistant', text: reply, timestamp: Date.now() };
+      const assistantMsg: Message = { id: `a-${Date.now()}`, role: 'assistant', text: reply, timestamp: Date.now(), suggestedActions: res.data?.suggested_actions || [] };
       setMessages(prev => [...prev, assistantMsg]);
       if (res.data?.conversation_id) setConversationId(res.data.conversation_id);
       await loadConversations();
@@ -83,6 +91,15 @@ export default function ChatScreen({ route }: any) {
     <View style={[styles.msgRow, item.role === 'user' && styles.msgRowUser]}>
       <View style={[styles.msgBubble, item.role === 'user' ? styles.msgUser : styles.msgAssistant]}>
         <Text style={[styles.msgText, item.role === 'user' && { color: '#fff' }]}>{item.text}</Text>
+        {item.role === 'assistant' && item.suggestedActions && item.suggestedActions.length > 0 && (
+          <View style={styles.actionChipsWrap}>
+            {item.suggestedActions.slice(0, 3).map((action) => (
+              <TouchableOpacity key={action.action} style={styles.actionChip} activeOpacity={0.7}>
+                <Text style={styles.actionChipText}>{action.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
     </View>
   ), []);
@@ -115,6 +132,18 @@ export default function ChatScreen({ route }: any) {
       )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.historyRail}>
+        <TouchableOpacity
+          style={[styles.historyChip, styles.historyChipActive]}
+          onPress={() => {
+            setConversationId(null);
+            setMessages([]);
+            setInput('');
+            Speech.stop();
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.historyChipText}>+ New chat</Text>
+        </TouchableOpacity>
         {conversations.map((conversation) => (
           <TouchableOpacity
             key={conversation.id}
@@ -139,6 +168,18 @@ export default function ChatScreen({ route }: any) {
           onSubmitEditing={sendMessage}
           blurOnSubmit={false}
         />
+        <TouchableOpacity
+          style={styles.listenButton}
+          onPress={() => {
+            const latestAssistant = [...messages].reverse().find((message) => message.role === 'assistant');
+            if (latestAssistant?.text) {
+              Speech.speak(latestAssistant.text, { language: 'en-AU', rate: 0.95 });
+            }
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="volume-high-outline" size={18} color={theme.colors.textSecondary} />
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.sendButton, (!input.trim() || sending) && { opacity: 0.3 }]}
           onPress={sendMessage}
@@ -171,7 +212,11 @@ const styles = StyleSheet.create({
   msgUser: { backgroundColor: theme.colors.brand, borderBottomRightRadius: 4 },
   msgAssistant: { backgroundColor: theme.colors.bgCard, borderWidth: 1, borderColor: theme.colors.border, borderBottomLeftRadius: 4 },
   msgText: { fontFamily: theme.fonts.body, fontSize: 14, color: theme.colors.textSecondary, lineHeight: 21 },
+  actionChipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  actionChip: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: theme.radius.full, backgroundColor: theme.colors.bg, borderWidth: 1, borderColor: theme.colors.border },
+  actionChipText: { fontFamily: theme.fonts.mono, fontSize: 10, color: theme.colors.brand },
   inputBar: { flexDirection: 'row', alignItems: 'flex-end', padding: 12, paddingBottom: Platform.OS === 'ios' ? 28 : 12, backgroundColor: theme.colors.bgCard, borderTopWidth: 1, borderTopColor: theme.colors.border, gap: 8 },
   textInput: { flex: 1, minHeight: 40, maxHeight: 120, backgroundColor: theme.colors.bg, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.colors.border, paddingHorizontal: 14, paddingVertical: 10, fontFamily: theme.fonts.body, fontSize: 14, color: theme.colors.text },
+  listenButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.bg, borderWidth: 1, borderColor: theme.colors.border, justifyContent: 'center', alignItems: 'center' },
   sendButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.brand, justifyContent: 'center', alignItems: 'center' },
 });

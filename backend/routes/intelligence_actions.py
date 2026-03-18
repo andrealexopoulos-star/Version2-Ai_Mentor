@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 import logging
 
 from routes.deps import get_current_user, get_sb, OPENAI_KEY, AI_MODEL, logger
+from intelligence_live_truth import get_live_integration_truth
 from supabase_intelligence_helpers import get_business_profile_supabase
 from auth_supabase import get_user_by_id
 
@@ -223,19 +224,27 @@ async def get_intelligence_brief(current_user: dict = Depends(get_current_user))
     observation_count = len(observations.data or [])
     insight_count = len(insights.data or [])
     action_required = sum(1 for a in (actions.data or []) if a.get("status") == "action_required")
+    live_truth = get_live_integration_truth(get_sb(), user_id)
+    connector_truth = live_truth.get("connector_truth") or {}
+    blocked_sources = [
+        item for item in connector_truth.values()
+        if item.get("truth_state") in {"stale", "error", "unverified"}
+    ]
 
     # ATTENTION PROTECTION: suppress if nothing material
-    if action_count == 0 and observation_count == 0 and insight_count == 0:
+    if action_count == 0 and observation_count == 0 and insight_count == 0 and not blocked_sources:
         return {
             "suppressed": True,
             "reason": "No material changes detected. Your business intelligence is stable.",
             "actions": [],
             "observations": [],
             "insights": [],
+            "truth_summary": connector_truth,
         }
 
     return {
         "suppressed": False,
+        "truth_blocked": bool(blocked_sources),
         "summary": {
             "actions_pending": action_required,
             "observations_new": observation_count,
@@ -244,4 +253,6 @@ async def get_intelligence_brief(current_user: dict = Depends(get_current_user))
         "actions": actions.data or [],
         "observations": observations.data or [],
         "insights": insights.data or [],
+        "truth_summary": connector_truth,
+        "blocked_sources": blocked_sources,
     }
