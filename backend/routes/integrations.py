@@ -2902,6 +2902,7 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
             "truth_state": item.get("truth_state") or (connector_truth.get(category) or {}).get("truth_state"),
             "truth_reason": item.get("truth_reason") or (connector_truth.get(category) or {}).get("truth_reason"),
             "last_verified_at": item.get("last_verified_at") or (connector_truth.get(category) or {}).get("last_verified_at"),
+            "next_expected_update": item.get("next_expected_update") or (connector_truth.get(category) or {}).get("next_expected_update"),
         })
 
     connected_categories = {normalize_category(i.get("category")) for i in integrations if i.get("connected")}
@@ -2920,6 +2921,7 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
                 "truth_state": (connector_truth.get(category) or {}).get("truth_state"),
                 "truth_reason": (connector_truth.get(category) or {}).get("truth_reason"),
                 "last_verified_at": (connector_truth.get(category) or {}).get("last_verified_at"),
+                "next_expected_update": (connector_truth.get(category) or {}).get("next_expected_update"),
             })
 
     observation_state = get_recent_observation_events(sb, user_id, limit=1)
@@ -2933,6 +2935,61 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
         "integrations": integrations,
         "canonical_truth": canonical_truth,
         "total_connected": canonical_truth.get("total_connected", 0),
+    }
+
+
+@router.get("/integrations/webhook-health")
+async def get_merge_webhook_health(current_user: dict = Depends(get_current_user)):
+    """Operational health for Merge webhook ingestion and replay queue."""
+    user_id = current_user["id"]
+    sb = get_sb()
+
+    try:
+        recent = (
+            sb.schema("business_core")
+            .table("webhook_events")
+            .select("id,status,received_at,processed_at,last_error,next_retry_at,dead_letter_at")
+            .eq("tenant_id", user_id)
+            .order("received_at", desc=True)
+            .limit(200)
+            .execute()
+        )
+        rows = recent.data or []
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Unable to read webhook health: {exc}")
+
+    totals = {
+        "received": 0,
+        "validated": 0,
+        "queued": 0,
+        "processed": 0,
+        "failed": 0,
+        "dead_letter": 0,
+    }
+    for row in rows:
+        status = str(row.get("status") or "").lower()
+        if status in totals:
+            totals[status] += 1
+
+    latest_event_at = next((row.get("received_at") for row in rows if row.get("received_at")), None)
+    latest_processed_at = next((row.get("processed_at") for row in rows if row.get("processed_at")), None)
+    failed_samples = [
+        {
+            "id": row.get("id"),
+            "last_error": row.get("last_error"),
+            "next_retry_at": row.get("next_retry_at"),
+        }
+        for row in rows
+        if str(row.get("status") or "").lower() in {"failed", "dead_letter"}
+    ][:10]
+
+    return {
+        "tenant_id": user_id,
+        "webhook_enabled": os.environ.get("FEATURE_MERGE_WEBHOOK_ENABLED", "true").lower() in {"1", "true", "yes"},
+        "totals": totals,
+        "latest_event_at": latest_event_at,
+        "latest_processed_at": latest_processed_at,
+        "failed_samples": failed_samples,
     }
 
 

@@ -44,6 +44,12 @@ const mergeCanonicalStatus = (primary, fallback) => {
     total_connected: Math.max(fallbackTruth.total_connected || 0, primaryTruth.total_connected || 0, existing.filter(i => i.connected).length),
     live_signal_count: fallbackTruth.live_signal_count || primaryTruth.live_signal_count || 0,
     last_signal_at: fallbackTruth.last_signal_at || primaryTruth.last_signal_at || null,
+    crm_state: fallbackTruth.crm_state || primaryTruth.crm_state || 'unverified',
+    accounting_state: fallbackTruth.accounting_state || primaryTruth.accounting_state || 'unverified',
+    email_state: fallbackTruth.email_state || primaryTruth.email_state || 'unverified',
+    freshness: fallbackTruth.freshness || primaryTruth.freshness || {},
+    live_sync_target_minutes: fallbackTruth.live_sync_target_minutes || primaryTruth.live_sync_target_minutes || 15,
+    webhook_enabled: (fallbackTruth.webhook_enabled ?? primaryTruth.webhook_enabled) ?? false,
   };
   merged.total_connected = merged.canonical_truth.total_connected;
   return merged;

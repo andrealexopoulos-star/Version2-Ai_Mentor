@@ -54,9 +54,9 @@ const SEVERITY_STYLE = {
 };
 
 const DECISION_ACTIONS = {
-  resolve: { label: 'Mark as actioned', icon: CheckCircle2, endpoint: 'complete', style: { bg: '#10B98115', border: '#10B98140', text: '#6EE7B7' } },
-  delegate: { label: 'Assign owner + due date', icon: UserRoundPlus, endpoint: 'hand-off', style: { bg: '#3B82F615', border: '#3B82F640', text: '#93C5FD' } },
-  ignore: { label: 'Ignore this signal', icon: XCircle, endpoint: 'ignore', style: { bg: '#64748B15', border: '#64748B40', text: '#CBD5E1' } },
+  resolve: { label: 'Mark as done', icon: CheckCircle2, endpoint: 'complete', style: { bg: '#10B98115', border: '#10B98140', text: '#6EE7B7' } },
+  delegate: { label: 'Assign to someone', icon: UserRoundPlus, endpoint: 'hand-off', style: { bg: '#3B82F615', border: '#3B82F640', text: '#93C5FD' } },
+  ignore: { label: 'Ignore for now', icon: XCircle, endpoint: 'ignore', style: { bg: '#64748B15', border: '#64748B40', text: '#CBD5E1' } },
 };
 
 const ROLE_OPTIONS = [
@@ -66,9 +66,9 @@ const ROLE_OPTIONS = [
 ];
 
 const DECISION_SLOTS = [
-  { id: 'decide-now', title: 'Decide Now', intent: 'What needs owner action in the next 48 hours?', icon: ShieldAlert },
-  { id: 'monitor-this-week', title: 'Monitor This Week', intent: 'Which pressure is rising and needs active monitoring?', icon: Radar },
-  { id: 'build-next', title: 'Build Next', intent: 'What system fix prevents repeated pressure this month?', icon: Target },
+  { id: 'decide-now', title: 'Decide Now', intent: 'What needs your attention in the next 48 hours?', icon: ShieldAlert },
+  { id: 'monitor-this-week', title: 'Watch This Week', intent: 'What risk is growing and needs you to keep an eye on it?', icon: Radar },
+  { id: 'build-next', title: 'Fix Next', intent: 'What recurring problem can you solve with a process change?', icon: Target },
 ];
 
 const HIGH_URGENCY_SIGNAL_MATCH = /(overdue|response_delay|cash|invoice|compliance|churn|critical|payment)/;
@@ -146,12 +146,12 @@ const toSignal = (item = {}, fallbackSource = 'snapshot') => {
   const rawDetail = item.detail || item.description || item.impact || item.executive_summary || '';
   const rawAction = item.action || item.recommendation || item.suggested_action || '';
 
-  const title = isPlaceholderText(rawTitle) ? 'Signal requires owner review' : rawTitle;
+  const title = isPlaceholderText(rawTitle) ? 'This needs your review' : rawTitle;
   const detail = isPlaceholderText(rawDetail)
-    ? 'BIQc detected a priority signal, but source detail is low fidelity. Open full context and verify source records.'
+    ? 'BIQc flagged something that needs attention, but the details are limited. Open the full view to check the source data.'
     : rawDetail;
   const action = isPlaceholderText(rawAction)
-    ? 'Assign an owner and execute this cycle.'
+    ? 'Assign someone to handle this and follow up.'
     : rawAction;
   const signalType = String(item.signal || item.event || item.type || item.signal_name || title || 'business_signal').replace(/\s+/g, '_').toLowerCase();
   const domain = String(item.domain || 'general').toLowerCase();
@@ -545,9 +545,9 @@ const confidenceIntervalForSignal = (signal) => {
 
 const bucketHeadline = (slotId, signal) => {
   if (!signal) {
-    if (slotId === 'decide-now') return 'No imminent owner-critical signal from verified feeds.';
-    if (slotId === 'monitor-this-week') return 'No weekly pressure trend currently above threshold.';
-    return 'No repeated pattern currently requiring systems build action.';
+    if (slotId === 'decide-now') return 'Nothing needs your immediate attention right now.';
+    if (slotId === 'monitor-this-week') return 'No growing risks to keep an eye on this week.';
+    return 'No repeated problems that need a process fix this month.';
   }
 
   if (signal.summaryLabel && !isPlaceholderText(signal.summaryLabel)) {
@@ -559,12 +559,12 @@ const bucketHeadline = (slotId, signal) => {
   }
 
   if (slotId === 'decide-now') {
-    if (/(cash|invoice|payment|revenue)/.test(signal.domain)) return 'Imminent commercial impact in next 48 hours.';
-    if (/(compliance|risk|operations)/.test(signal.domain)) return 'Imminent execution/compliance impact in next 48 hours.';
-    return 'Imminent owner decision required in next 48 hours.';
+    if (/(cash|invoice|payment|revenue)/.test(signal.domain)) return 'Money issue that needs your attention in the next 48 hours.';
+    if (/(compliance|risk|operations)/.test(signal.domain)) return 'Operations or compliance issue — action needed within 48 hours.';
+    return 'Something needs your decision in the next 48 hours.';
   }
   if (slotId === 'monitor-this-week') {
-    return 'Rising pressure trend this week; active monitoring required.';
+    return 'A risk is building this week — keep an eye on it.';
   }
   return 'System pattern detected; this month’s build fix can prevent recurrence.';
 };
@@ -680,6 +680,7 @@ export default function AdvisorWatchtower() {
   const [watchtowerError, setWatchtowerError] = useState('');
   const [integrationContext, setIntegrationContext] = useState({
     mergeConnected: {},
+    canonicalTruth: {},
     crmDeals: [],
     accountingSummary: null,
     priorityInbox: null,
@@ -687,10 +688,10 @@ export default function AdvisorWatchtower() {
     calibrationStatus: null,
     executiveSurface: null,
     sourceHealth: {
-      crm: { provider: 'CRM', connected: false, live: false, status: 'pending', endpoint: '/integrations/crm/deals', error: '' },
-      accounting: { provider: 'Xero', connected: false, live: false, status: 'pending', endpoint: '/integrations/accounting/summary', error: '' },
-      email: { provider: 'Outlook', connected: false, live: false, status: 'pending', endpoint: '/email/priority-inbox', error: '' },
-      brain: { provider: 'BIQc Business Brain', connected: true, live: false, status: 'pending', endpoint: '/brain/priorities', error: '' },
+      crm: { provider: 'CRM', connected: false, live: false, status: 'pending', endpoint: '/integrations/crm/deals', error: '', freshness_state: null, last_synced_at: null, next_expected_update: null },
+      accounting: { provider: 'Xero', connected: false, live: false, status: 'pending', endpoint: '/integrations/accounting/summary', error: '', freshness_state: null, last_synced_at: null, next_expected_update: null },
+      email: { provider: 'Outlook', connected: false, live: false, status: 'pending', endpoint: '/email/priority-inbox', error: '', freshness_state: null, last_synced_at: null, next_expected_update: null },
+      brain: { provider: 'BIQc Business Brain', connected: true, live: false, status: 'pending', endpoint: '/brain/priorities', error: '', freshness_state: null, last_synced_at: null, next_expected_update: null },
     },
   });
   const [brainContext, setBrainContext] = useState({
@@ -858,6 +859,8 @@ export default function AdvisorWatchtower() {
       const [mergeRes, crmRes, accountingRes, outlookRes, priorityRes, calibrationRes] = requests;
 
       const mergeConnected = mergeRes.status === 'fulfilled' ? (mergeRes.value?.data?.integrations || {}) : {};
+      const canonicalTruth = mergeRes.status === 'fulfilled' ? (mergeRes.value?.data?.canonical_truth || {}) : {};
+      const freshnessMap = canonicalTruth?.freshness || {};
       const crmDeals = crmRes.status === 'fulfilled' ? (crmRes.value?.data?.results || []) : [];
       const accountingSummary = accountingRes.status === 'fulfilled' ? (accountingRes.value?.data || null) : null;
       const outlookStatus = outlookRes.status === 'fulfilled' ? (outlookRes.value?.data || null) : null;
@@ -931,6 +934,9 @@ export default function AdvisorWatchtower() {
           status: !crmConnected ? 'pending' : (crmError ? 'unavailable' : 'live'),
           endpoint: '/integrations/crm/deals',
           error: crmError || '',
+          freshness_state: freshnessMap?.crm?.state || null,
+          last_synced_at: freshnessMap?.crm?.last_synced_at || null,
+          next_expected_update: freshnessMap?.crm?.next_expected_update || null,
         },
         accounting: {
           provider: getProviderByCategory('accounting', 'Xero'),
@@ -939,6 +945,9 @@ export default function AdvisorWatchtower() {
           status: !accountingConnected ? 'pending' : (accountingError ? 'unavailable' : 'live'),
           endpoint: '/integrations/accounting/summary',
           error: accountingError || '',
+          freshness_state: freshnessMap?.accounting?.state || null,
+          last_synced_at: freshnessMap?.accounting?.last_synced_at || null,
+          next_expected_update: freshnessMap?.accounting?.next_expected_update || null,
         },
         email: {
           provider: getProviderByCategory('email', 'Outlook'),
@@ -947,6 +956,9 @@ export default function AdvisorWatchtower() {
           status: !emailConnected ? 'pending' : ((outlookError || priorityError) ? 'unavailable' : 'live'),
           endpoint: '/email/priority-inbox',
           error: outlookError || priorityError || '',
+          freshness_state: freshnessMap?.email?.state || null,
+          last_synced_at: freshnessMap?.email?.last_synced_at || null,
+          next_expected_update: freshnessMap?.email?.next_expected_update || null,
         },
         brain: {
           provider: 'BIQc Business Brain',
@@ -955,11 +967,15 @@ export default function AdvisorWatchtower() {
           status: brainRequestFailed || brainError ? 'unavailable' : 'live',
           endpoint: '/brain/priorities',
           error: brainError || '',
+          freshness_state: brainPayload?.data_freshness ? 'live' : null,
+          last_synced_at: brainPayload?.generated_at || null,
+          next_expected_update: null,
         },
       };
 
       setIntegrationContext({
         mergeConnected,
+        canonicalTruth,
         crmDeals,
         accountingSummary,
         priorityInbox,
@@ -1146,11 +1162,11 @@ export default function AdvisorWatchtower() {
       .filter((entry) => entry?.status === 'unavailable' && entry?.provider && entry?.provider !== 'BIQc Business Brain')
       .map((entry) => ({
         id: `source-health-${String(entry.provider).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-        title: `${entry.provider} truth is currently unavailable`,
-        detail: entry.error || `${entry.provider} could not be verified from the live connector.`,
-        action: 'Reconnect or refresh this integration before treating its signals as current truth.',
+        title: `${entry.provider} data is currently unavailable`,
+        detail: entry.error || `${entry.provider} couldn't be reached. The connection may need to be refreshed.`,
+        action: 'Go to Integrations, reconnect this tool, and then refresh this page.',
         truth_state: 'blocked',
-        last_verified_at: null,
+        last_verified_at: entry?.last_synced_at || null,
       }));
   }, [integrityAlerts, integrationContext.sourceHealth]);
 
@@ -1704,7 +1720,7 @@ export default function AdvisorWatchtower() {
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3" data-testid="advisor-page-header">
             <div className="space-y-1.5">
               <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-header-kicker">
-                Today · Executive Cognition
+                Today · Your Business Advisor
               </p>
               <div className="flex flex-wrap items-end gap-3" data-testid="advisor-header-title-row">
                 <h1 className="text-xl sm:text-2xl lg:text-[2rem]" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-header-title">
@@ -1720,12 +1736,12 @@ export default function AdvisorWatchtower() {
               </div>
               <p className="text-xs sm:text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
                 {brainLoading
-                  ? 'Business Brain is syncing live sources. Priority decisions will appear when this cycle completes.'
+                  ? 'Pulling your latest business data now. Your priorities will appear in a moment.'
                   : !brainLive
-                    ? 'Business Brain is currently unavailable. Priority decisions are paused until data feed recovers.'
+                    ? 'Your data connections need attention before BIQc can show priorities. Check your integrations below.'
                   : (brainContext.allClear
-                      ? 'Business Brain is live. No high-priority concerns are currently triggered.'
-                      : `Three decisions from BIQc Business Brain with ${connectedSources.join(', ')} evidence.`)}
+                      ? 'Everything looks good right now. No urgent issues need your attention.'
+                      : `Here are your top priorities based on ${connectedSources.join(', ')} data.`)}
               </p>
             </div>
 
@@ -1737,7 +1753,7 @@ export default function AdvisorWatchtower() {
               data-testid="advisor-refresh-button"
             >
               <RefreshCw className={`h-4 w-4 ${(snapshotRefreshing || overviewRefreshing) ? 'animate-spin' : ''}`} />
-              Refresh intelligence
+              Refresh
             </button>
           </div>
 
@@ -1773,7 +1789,7 @@ export default function AdvisorWatchtower() {
               style={{ borderColor: '#F59E0B60', background: '#F59E0B15', color: '#FDE68A' }}
               data-testid="advisor-critical-error"
             >
-              Live cognition feed is delayed right now. BIQc Business Brain decisions are temporarily unavailable.
+              Your business data feed is delayed right now. We're working on restoring your priority view — try refreshing in a few minutes.
             </div>
           )}
 
@@ -1783,7 +1799,7 @@ export default function AdvisorWatchtower() {
               style={{ borderColor: '#334155', background: '#111827', color: '#CBD5E1' }}
               data-testid="advisor-integration-context-warning"
             >
-              Supporting source checks are partially degraded right now, but BIQc Business Brain decisions will still render from the latest available intelligence.
+              Some of your connected tools are responding slowly, but your priorities are still showing based on the latest available data.
             </div>
           )}
 
@@ -1793,7 +1809,7 @@ export default function AdvisorWatchtower() {
               style={{ borderColor: '#F59E0B60', background: '#F59E0B15', color: '#FDE68A' }}
               data-testid="advisor-migration-warning"
             >
-              Cognition migration is required for full contract output. Business Brain remains the only priority decision source.
+              A system update is needed to unlock the full feature set. Your business priorities are still available.
             </div>
           )}
 
@@ -1889,13 +1905,13 @@ export default function AdvisorWatchtower() {
                     {brainUnavailable && !criticalError ? (
                       <div className="rounded-2xl border p-5" style={{ borderColor: '#F59E0B55', background: 'rgba(245,158,11,0.08)' }} data-testid="advisor-brain-unavailable-state">
                         <h3 className="text-lg" style={{ color: '#FDE68A', fontFamily: fontFamily.display }} data-testid="advisor-brain-unavailable-title">
-                          BIQc Business Brain is in delayed mode right now.
+                          Your priorities are temporarily delayed.
                         </h3>
                         <p className="mt-2 text-sm" style={{ color: '#F8D68A' }} data-testid="advisor-brain-unavailable-summary">
-                          {brainContext.error || 'The latest Business Brain decision cycle did not settle in this pass.'}
+                          {brainContext.error || 'BIQc couldn\'t finish analysing your latest data in this pass. This usually resolves with a refresh.'}
                         </p>
                         <p className="mt-2 text-sm" style={{ color: '#F8D68A' }} data-testid="advisor-brain-unavailable-next-step">
-                          Verified integration signals remain visible below. Refresh intelligence or review source health before making a high-stakes call.
+                          Your connected tool data is still visible below. Try refreshing, or check your integrations if this keeps happening.
                         </p>
                         <div className="mt-4 flex flex-wrap gap-3">
                           <button
@@ -1904,56 +1920,56 @@ export default function AdvisorWatchtower() {
                             style={{ borderColor: '#FDE68A55', color: '#FDE68A', fontFamily: fontFamily.mono }}
                             data-testid="advisor-brain-unavailable-refresh-button"
                           >
-                            Refresh intelligence <RefreshCw className="h-3.5 w-3.5" />
+                            Refresh now <RefreshCw className="h-3.5 w-3.5" />
                           </button>
                           <Link
-                            to={soundboardDiscussHref(`Business Brain delayed: ${brainContext.error || 'No concerns returned'}. Diagnose root cause and next actions.`)}
+                            to={soundboardDiscussHref(`My priorities aren't loading. Help me figure out what's wrong and what I should do next.`)}
                             className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
                             style={{ borderColor: '#FDE68A55', color: '#FDE68A', fontFamily: fontFamily.mono }}
                             data-testid="advisor-brain-unavailable-discuss-soundboard"
                           >
-                            Discuss with BIQc SoundBoard <ArrowRight className="h-3.5 w-3.5" />
+                            Ask BIQc for help <ArrowRight className="h-3.5 w-3.5" />
                           </Link>
                         </div>
                       </div>
                     ) : brainLoading ? (
                       <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-brain-loading-state">
                         <h3 className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-brain-loading-title">
-                          BIQc Business Brain is syncing live signals.
+                          Analysing your business data now...
                         </h3>
                         <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-brain-loading-summary">
-                          Connected feeds are active. Priority decisions will render as soon as this analysis cycle finishes.
+                          Your connected tools are active. Your priorities will appear as soon as the analysis finishes.
                         </p>
                         <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-brain-loading-next-step">
-                          Use Refresh intelligence if this state persists longer than a few minutes.
+                          If this takes more than a minute, try hitting Refresh.
                         </p>
                         <Link
-                          to={soundboardDiscussHref('Business Brain is syncing live signals. Explain what sources are still pending and what I should monitor while it completes.')}
+                          to={soundboardDiscussHref('BIQc is still loading. What should I focus on while I wait?')}
                           className="mt-4 inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
                           style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
                           data-testid="advisor-brain-loading-discuss-soundboard"
                         >
-                          Discuss with BIQc SoundBoard <ArrowRight className="h-3.5 w-3.5" />
+                          Ask BIQc while you wait <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       </div>
                     ) : noActiveDecisions ? (
                       <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-all-clear-state">
                         <h3 className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-all-clear-title">
-                          All clear right now — no high-priority decision signal detected.
+                          All clear — nothing urgent needs your attention right now.
                         </h3>
                         <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-all-clear-summary">
-                          Current live scan: {executiveSnapshot.openDeals} open deals, {executiveSnapshot.overdueCount} overdue invoices, {executiveSnapshot.highPriorityEmails} high-priority threads.
+                          Right now: {executiveSnapshot.openDeals} open deals, {executiveSnapshot.overdueCount} overdue invoices, {executiveSnapshot.highPriorityEmails} high-priority email threads.
                         </p>
                         <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-all-clear-next-step">
-                          Keep monitoring this week and sync integrations if you expected active risks.
+                          Check back later this week, or ask BIQc what proactive steps you could take.
                         </p>
                         <Link
-                          to={soundboardDiscussHref('No high-priority signal detected. What proactive actions should I take this week?')}
+                          to={soundboardDiscussHref('Nothing urgent right now. What should I proactively work on this week to grow or protect the business?')}
                           className="mt-4 inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
                           style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
                           data-testid="advisor-all-clear-discuss-soundboard"
                         >
-                          Discuss with BIQc SoundBoard <ArrowRight className="h-3.5 w-3.5" />
+                          Ask BIQc what to focus on <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       </div>
                     ) : (
@@ -2008,7 +2024,7 @@ export default function AdvisorWatchtower() {
                                   <SourceProvenanceBadge source={signal.source} signalType={signal.signalType} timestamp={signal.createdAt} testId={`advisor-provenance-${decision.id}`} />
                                 ) : (
                                   <p className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-provenance-${decision.id}`}>
-                                    Waiting for verified events from connected tools.
+                                    Waiting for data from your connected tools.
                                   </p>
                                 )}
 
@@ -2026,7 +2042,7 @@ export default function AdvisorWatchtower() {
                                   <div className="mt-4 rounded-xl border p-3 text-sm" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-signal-block-${decision.id}`}>
                                     <div className="mb-2 flex items-center gap-2">
                                       <strong style={{ color: 'var(--biqc-text)' }}>Signal</strong>
-                                      <InlineInfo description="What BIQc directly observed in connected systems or supporting evidence." testId={`advisor-decision-signal-info-${decision.id}`} />
+                                      <InlineInfo description="What BIQc found in your connected tools — the raw data behind this recommendation." testId={`advisor-decision-signal-info-${decision.id}`} />
                                     </div>
                                     {signal.sourceSummary ? <p className="text-sm">{signal.sourceSummary}</p> : null}
                                     {signal.factPoints?.length ? (
@@ -2041,7 +2057,7 @@ export default function AdvisorWatchtower() {
 
                                 <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
                                   <p data-testid={`advisor-decision-why-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Why now:</strong> {decision.whyNow}</p>
-                                  <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal ? (signal.actionBrief || signal.action) : 'Trigger sync or wait for next watchtower signal.'}</p>
+                                  <p data-testid={`advisor-decision-action-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>Action now:</strong> {signal ? (signal.actionBrief || signal.action) : 'Check your integrations or wait for the next data refresh.'}</p>
                                 </div>
 
                                 <div className="mt-4 flex flex-wrap gap-2" data-testid={`advisor-decision-primary-controls-${decision.id}`}>
@@ -2052,7 +2068,7 @@ export default function AdvisorWatchtower() {
                                     data-testid={`advisor-decision-open-soundboard-${decision.id}`}
                                     disabled={!signal}
                                   >
-                                    SoundBoard chat <ArrowRight className="h-3.5 w-3.5" />
+                                    Discuss this <ArrowRight className="h-3.5 w-3.5" />
                                   </button>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -2073,7 +2089,7 @@ export default function AdvisorWatchtower() {
                                         <UserRoundPlus className="h-4 w-4" /> Assign owner
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => handleCardMenuAction(decision, 'resolve')} data-testid={`advisor-decision-mark-actioned-${decision.id}`}>
-                                        <CheckCircle2 className="h-4 w-4" /> Mark as actioned
+                                        <CheckCircle2 className="h-4 w-4" /> Mark as done
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
@@ -2083,7 +2099,7 @@ export default function AdvisorWatchtower() {
                                   <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-projection-${decision.id}`}>
                                     <div className="mb-2 flex items-center gap-2">
                                       <strong data-testid={`advisor-decision-projection-title-${decision.id}`}>30/60/90 outlook</strong>
-                                      <InlineInfo description={projections.meaning || 'Projected risk over 30, 60, and 90 days if this is ignored versus actioned now.'} testId={`advisor-decision-projection-info-${decision.id}`} />
+                                      <InlineInfo description={projections.meaning || 'Estimated risk over the next 30, 60, and 90 days — comparing what happens if you act now vs. leave it.'} testId={`advisor-decision-projection-info-${decision.id}`} />
                                     </div>
                                     <p data-testid={`advisor-decision-projection-ignored-${decision.id}`}>If ignored → risk {projections.ignored[0]}% / {projections.ignored[1]}% / {projections.ignored[2]}%</p>
                                     <p data-testid={`advisor-decision-projection-actioned-${decision.id}`}>If actioned → risk {projections.actioned[0]}% / {projections.actioned[1]}% / {projections.actioned[2]}%</p>
@@ -2093,13 +2109,13 @@ export default function AdvisorWatchtower() {
                                 <div className="mt-3 rounded-xl border p-3 text-sm" style={{ borderColor: '#334155', background: '#0F172A', color: '#CBD5E1' }} data-testid={`advisor-decision-decision-block-${decision.id}`}>
                                   <div className="mb-2 flex items-center gap-2">
                                     <strong style={{ color: 'var(--biqc-text)' }}>Decision</strong>
-                                    <InlineInfo description="What BIQc believes the owner should conclude from the current signal pattern." testId={`advisor-decision-decision-info-${decision.id}`} />
+                                    <InlineInfo description="BIQc's recommendation based on the data — what you should do about this." testId={`advisor-decision-decision-info-${decision.id}`} />
                                   </div>
                                   <p data-testid={`advisor-decision-loop-decision-${decision.id}`}>{decision.headline}</p>
                                 </div>
 
                                 <div className="mt-4 space-y-2 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
-                                  <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal ? signal.ifIgnored : 'No immediate execution risk detected in this bucket.'}</p>
+                                  <p data-testid={`advisor-decision-if-ignored-${decision.id}`}><strong style={{ color: 'var(--biqc-text)' }}>If ignored:</strong> {signal ? signal.ifIgnored : 'No immediate risk if you skip this one for now.'}</p>
                                   <button
                                     onClick={() => handleCardMenuAction(decision, 'ignore')}
                                     className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border px-2.5 py-1 text-xs hover:bg-white/5"
@@ -2143,13 +2159,13 @@ export default function AdvisorWatchtower() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-xs uppercase tracking-[0.12em] text-[#FDBA74]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-truth-gate-label">
-                        Forensic Truth Gate
+                        Data Connection Issues
                       </p>
                       <h2 className="mt-2 text-base md:text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-truth-gate-title">
-                        BIQc blocked unverified source claims before they reached the decision surface.
+                        Some of your business data is out of date, so BIQc is holding back those recommendations until the data is fresh.
                       </h2>
                       <p className="mt-2 text-sm" style={{ color: '#FCD34D' }} data-testid="advisor-truth-gate-copy">
-                        Restore the affected integrations, then rerun verification to bring these domains back into live cognition.
+                        Check the integrations below and reconnect or resync the affected tools. Once the data is current, your full recommendations will return.
                       </p>
                     </div>
                     <Link
@@ -2158,7 +2174,7 @@ export default function AdvisorWatchtower() {
                       style={{ borderColor: '#FB923C66', color: '#FDE68A', fontFamily: fontFamily.mono }}
                       data-testid="advisor-truth-gate-open-integrations-button"
                     >
-                      Review integrations <ArrowRight className="h-3.5 w-3.5" />
+                      Check integrations <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -2184,6 +2200,11 @@ export default function AdvisorWatchtower() {
                             Last verified: {formatTime(alert.last_verified_at)}
                           </p>
                         )}
+                        {alert.next_expected_update && (
+                          <p className="mt-1 text-xs text-[#CBD5E1]" data-testid={`advisor-truth-gate-alert-next-update-${alert.id}`}>
+                            Expected next update: {formatTime(alert.next_expected_update)}
+                          </p>
+                        )}
                         <p className="mt-3 text-xs text-[#CBD5E1]" data-testid={`advisor-truth-gate-alert-action-${alert.id}`}>{alert.action}</p>
                       </article>
                     ))}
@@ -2194,7 +2215,7 @@ export default function AdvisorWatchtower() {
               <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-advanced-toggle-section">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-advanced-toggle-copy">
-                    Need deeper diagnostics (provider health, conflict resolver, signal inbox, full audit)?
+                    Want to see more detail? (connection health, data conflicts, all signals, full audit)
                   </p>
                   <button
                     onClick={() => setShowAdvancedSections((prev) => !prev)}
@@ -2202,7 +2223,7 @@ export default function AdvisorWatchtower() {
                     style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
                     data-testid="advisor-advanced-toggle-button"
                   >
-                    {showAdvancedSections ? 'Hide diagnostics' : 'Show diagnostics'}
+                    {showAdvancedSections ? 'Hide details' : 'Show details'}
                   </button>
                 </div>
               </section>
@@ -2259,10 +2280,10 @@ export default function AdvisorWatchtower() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-page-feedback-label">
-                      Single feedback loop
+                      Quick feedback
                     </p>
                     <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-page-feedback-copy">
-                      Is this advisor page helping you decide faster with confidence?
+                      Is this page helping you make better decisions?
                     </p>
                   </div>
                   <div className="flex items-center gap-2" data-testid="advisor-page-feedback-actions">
@@ -2419,7 +2440,7 @@ export default function AdvisorWatchtower() {
 
                   {openSignals.length === 0 && (
                     <div className="rounded-2xl border p-5 text-sm" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)' }} data-testid="advisor-signal-empty-state">
-                      All active signals are currently actioned. New decisions will appear automatically when fresh signals arrive.
+                      You've handled everything. New items will appear here automatically when fresh data comes in.
                     </div>
                   )}
                 </div>
@@ -2453,12 +2474,12 @@ export default function AdvisorWatchtower() {
                 <AlertDialogContent data-testid="advisor-card-action-confirm-dialog">
                   <AlertDialogHeader>
                     <AlertDialogTitle data-testid="advisor-card-action-confirm-title">
-                      {pendingMenuAction?.actionType === 'resolve' ? 'Mark this priority as actioned?' : 'Ignore this priority for now?'}
+                      {pendingMenuAction?.actionType === 'resolve' ? 'Mark this as done?' : 'Ignore this for now?'}
                     </AlertDialogTitle>
                     <AlertDialogDescription data-testid="advisor-card-action-confirm-description">
                       {pendingMenuAction?.actionType === 'resolve'
-                        ? 'BIQc will record the action and surface the next queued priority card.'
-                        : 'BIQc will remove this priority from the active queue and keep an audit trail of the ignore action.'}
+                        ? 'This will be marked as handled and the next priority will move up.'
+                        : 'This will be removed from your active priorities. You can always find it in the history.'}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

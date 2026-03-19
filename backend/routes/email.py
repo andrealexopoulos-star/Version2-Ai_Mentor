@@ -1485,6 +1485,130 @@ async def refresh_outlook_token_supabase(user_id: str, refresh_token: str) -> Di
 # Replaced by refresh_outlook_token_supabase() which uses Supabase
 # Original code preserved in git history if needed
 
+
+async def refresh_gmail_token_supabase(user_id: str, refresh_token: str) -> Dict[str, str]:
+    """
+    Refresh Gmail access token using Google's OAuth2 endpoint and persist to Supabase.
+
+    Args:
+        user_id: User UUID
+        refresh_token: Google refresh token
+
+    Returns:
+        Dict with new access_token and expires_at
+
+    Raises:
+        HTTPException if refresh fails
+    """
+    token_url = "https://oauth2.googleapis.com/token"
+
+    payload = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "client_secret": GOOGLE_CLIENT_SECRET,
+        "refresh_token": refresh_token,
+        "grant_type": "refresh_token",
+    }
+
+    logger.info(f"🔄 Refreshing Gmail token for user {user_id}")
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(token_url, data=payload)
+
+        if response.status_code != 200:
+            error_text = response.text
+            logger.error(f"❌ Gmail token refresh failed: {response.status_code} - {error_text}")
+            raise HTTPException(
+                status_code=401,
+                detail=f"Failed to refresh Gmail token: {error_text}",
+            )
+
+        token_data = response.json()
+
+    expires_in = token_data.get("expires_in", 3600)
+    new_expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).isoformat()
+    new_access_token = token_data["access_token"]
+
+    try:
+        get_sb().table("gmail_connections").update({
+            "access_token": new_access_token,
+            "token_expiry": new_expires_at,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }).eq("user_id", user_id).execute()
+
+        logger.info(f"✅ Gmail token persisted to gmail_connections, new expiry: {new_expires_at}")
+
+    except Exception as e:
+        logger.error(f"❌ Failed to persist refreshed Gmail token: {e}")
+
+    return {
+        "access_token": new_access_token,
+        "expires_at": new_expires_at,
+    }
+
+
+async def get_gmail_tokens(user_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Get Gmail tokens from gmail_connections table.
+    Automatically refreshes the access token when expired.
+    """
+    logger.info(f"🔍 Looking for Gmail tokens for user_id: {user_id}")
+
+    try:
+        response = get_sb().table("gmail_connections").select(
+            "email, access_token, refresh_token, token_expiry"
+        ).eq("user_id", user_id).execute()
+
+        if not response.data or len(response.data) == 0:
+            logger.warning(f"❌ No Gmail tokens found for user {user_id}")
+            return None
+
+        token_data = response.data[0]
+        access_token = token_data.get("access_token")
+        refresh_token = token_data.get("refresh_token")
+        token_expiry = token_data.get("token_expiry")
+        gmail_email = token_data.get("email")
+
+        if not access_token:
+            logger.warning(f"❌ Gmail access_token missing for user {user_id}")
+            return None
+
+        is_expired = False
+        if token_expiry:
+            try:
+                expiry_dt = dateutil_parser.isoparse(token_expiry)
+                if expiry_dt.tzinfo is None:
+                    expiry_dt = expiry_dt.replace(tzinfo=timezone.utc)
+                is_expired = expiry_dt <= datetime.now(timezone.utc) + timedelta(minutes=1)
+            except Exception as e:
+                logger.warning(f"Could not parse Gmail token_expiry: {e}")
+
+        if is_expired and refresh_token:
+            logger.info(f"🔄 Gmail token expired for user {user_id}, refreshing...")
+            try:
+                refreshed = await refresh_gmail_token_supabase(user_id, refresh_token)
+                access_token = refreshed["access_token"]
+                token_expiry = refreshed["expires_at"]
+                logger.info("✅ Gmail token refreshed successfully")
+            except Exception as e:
+                logger.error(f"❌ Gmail token refresh failed: {e}")
+                return None
+        elif is_expired:
+            logger.warning(f"❌ Gmail token expired and no refresh_token for user {user_id}")
+            return None
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_at": token_expiry,
+            "gmail_email": gmail_email,
+            "source": "gmail_connections",
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting Gmail tokens for user {user_id}: {e}")
+        return None
+
+
 @router.get("/outlook/status")
 async def outlook_connection_status(current_user: dict = Depends(get_current_user)):
     """

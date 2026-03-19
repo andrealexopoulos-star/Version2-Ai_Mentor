@@ -320,6 +320,7 @@ async def cognition_platform_audit(current_user: dict = Depends(get_current_user
         'market-signal-scorer',
         'calibration-engine',
         'business-brain-merge-ingest',
+        'merge-webhook-ingest',
         'business-brain-metrics-cron',
     ]
     with ThreadPoolExecutor(max_workers=10) as pool:
@@ -340,8 +341,18 @@ async def cognition_platform_audit(current_user: dict = Depends(get_current_user
         },
         {
             'webhook': 'merge',
-            'status': 'partial',
-            'detail': 'connector polling active; webhook-first ingestion not fully enabled',
+            'status': (
+                'working'
+                if bool(os.environ.get('MERGE_WEBHOOK_SECRET'))
+                and str(os.environ.get('FEATURE_MERGE_WEBHOOK_ENABLED', 'true')).lower() in {'1', 'true', 'yes'}
+                else 'partial'
+            ),
+            'detail': (
+                'Merge webhook ingress configured'
+                if bool(os.environ.get('MERGE_WEBHOOK_SECRET'))
+                and str(os.environ.get('FEATURE_MERGE_WEBHOOK_ENABLED', 'true')).lower() in {'1', 'true', 'yes'}
+                else 'MERGE_WEBHOOK_SECRET missing or FEATURE_MERGE_WEBHOOK_ENABLED is false'
+            ),
         },
     ]
 

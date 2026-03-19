@@ -458,33 +458,33 @@ class BusinessBrainEngine:
 
     def _metric_truth_state(self, metric_key: str, row: Optional[Dict[str, Any]], source_states: List[str]) -> Dict[str, Any]:
         if not row:
-            return {"verified": False, "state": "missing", "reason": "Metric is not computed in the current evidence set."}
+            return {"verified": False, "state": "missing", "reason": "This metric doesn't have enough data yet."}
 
         if any(state in {"error", "stale", "unverified"} for state in source_states):
-            return {"verified": False, "state": "source_not_live", "reason": "Required source is not currently live-verified."}
+            return {"verified": False, "state": "source_not_live", "reason": "The data source for this metric needs to be refreshed."}
 
         details = row.get("calculation_details") or {}
         sample_size = int(_safe_float(details.get("sample_size"), 0.0))
 
         if metric_key in {"lead_response_time", "average_sales_cycle_length", "accounts_receivable_aging", "accounts_payable_aging"} and sample_size <= 0:
-            return {"verified": False, "state": "insufficient_sample", "reason": "No auditable sample exists for this metric yet."}
+            return {"verified": False, "state": "insufficient_sample", "reason": "Not enough historical data to calculate this reliably yet."}
 
         if metric_key == "task_overdue_rate" and int(_safe_float(details.get("total_tasks"), 0.0)) <= 0:
-            return {"verified": False, "state": "no_task_sample", "reason": "No task-system sample is connected yet."}
+            return {"verified": False, "state": "no_task_sample", "reason": "No task management data is connected yet."}
 
         if metric_key == "cash_runway_months":
             monthly_burn = _safe_float(details.get("monthly_burn"), 0.0)
             metric_value = _safe_float(row.get("value"), 0.0)
             if monthly_burn <= 0 or metric_value >= 999.0:
-                return {"verified": False, "state": "sentinel_runway", "reason": "Runway is using a sentinel value because burn is not measurable."}
+                return {"verified": False, "state": "sentinel_runway", "reason": "Cash runway can't be calculated because monthly expenses aren't available yet."}
 
         if metric_key == "operating_expense_ratio" and details.get("supplier_overdue_as_proxy"):
-            return {"verified": False, "state": "proxy_only", "reason": "Operating expense ratio is only a proxy and is not forensic-grade evidence by itself."}
+            return {"verified": False, "state": "proxy_only", "reason": "This is an estimate based on limited data — not a confirmed figure."}
 
         if metric_key == "win_rate" and (int(_safe_float(details.get("won"), 0.0)) + int(_safe_float(details.get("lost"), 0.0))) <= 0:
-            return {"verified": False, "state": "insufficient_sample", "reason": "No closed-deal sample exists for win-rate truth."}
+            return {"verified": False, "state": "insufficient_sample", "reason": "No closed deals in the system yet to calculate win rate."}
 
-        return {"verified": True, "state": "verified", "reason": "Metric is supported by current evidence."}
+        return {"verified": True, "state": "verified", "reason": "This metric is backed by current, verified data."}
 
     def _build_truth_context(self, concern_id: str, required: List[str], metrics: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
         connector_truth = self._connector_truth()
@@ -523,9 +523,9 @@ class BusinessBrainEngine:
                 for item in source_items
             )
         elif blocked_metric_names:
-            source_summary = "Required source evidence is incomplete for this concern."
+            source_summary = "Some of the data needed for this recommendation is missing or incomplete."
         else:
-            source_summary = "Required source evidence is verified."
+            source_summary = "All required data is verified and up to date."
 
         return {
             "truth_state": truth_state,
@@ -544,18 +544,20 @@ class BusinessBrainEngine:
         source_items = truth_context.get("source_truth") or []
         source_label = ", ".join(item.get("category", "source").title() for item in source_items) or "Data source"
         latest_verified = next((item.get("last_verified_at") for item in source_items if item.get("last_verified_at")), None)
+        next_expected = next((item.get("next_expected_update") for item in source_items if item.get("next_expected_update")), None)
         blocked_metrics = truth_context.get("blocked_metric_names") or []
 
         return {
             "id": f"truth-gap-{concern_id}",
             "concern_id": concern_id,
             "severity": "high" if source_items else "medium",
-            "title": f"{source_label} truth is blocking {concern_name.lower()} guidance",
-            "detail": truth_context.get("reason") or f"BIQc is withholding {concern_name.lower()} claims until live evidence is restored.",
-            "action": "Restore the affected integration in Integrations and rerun forensic verification before acting on this concern.",
+            "title": f"{source_label} data is out of date — {concern_name.lower()} recommendations are paused",
+            "detail": truth_context.get("reason") or f"BIQc can't give you reliable {concern_name.lower()} advice until the data is refreshed.",
+            "action": "Go to Integrations, reconnect or resync the affected tool, then come back to see updated recommendations.",
             "truth_state": truth_context.get("truth_state", "blocked"),
             "blocked_metrics": blocked_metrics,
             "last_verified_at": latest_verified,
+            "next_expected_update": next_expected,
             "source_truth": source_items,
             "concern_name": concern_name,
         }
@@ -696,87 +698,87 @@ class BusinessBrainEngine:
 
         if concern_id == "cashflow_risk":
             if truth_context.get("truth_state") == "blocked":
-                issue_brief = f"Accounting truth is not live-verified. Current snapshot revenue is {self._format_metric_value('total_revenue', mv('total_revenue'))}, but receivables pressure, burn, and runway cannot be treated as current facts."
+                issue_brief = f"Your accounting data is out of date. Last known revenue was {self._format_metric_value('total_revenue', mv('total_revenue'))}, but we can't confirm your current cash position until the data is refreshed."
                 why_now_brief = source_truth_reason
-                action_brief = "Restore accounting verification before using BIQc cash guidance for owner decisions."
-                if_ignored_brief = "You may act on historical cash data that no longer reflects the live ledger state."
-                decision_label = "Accounting truth must be restored before cash decisions"
+                action_brief = "Reconnect your accounting tool (e.g. Xero, QuickBooks) so BIQc can give you accurate cash guidance."
+                if_ignored_brief = "You might make cash decisions based on old numbers that no longer match your bank or ledger."
+                decision_label = "Refresh your accounting data before making cash decisions"
             else:
-                issue_brief = f"{int(round(mv('overdue_ar_count')))} client invoices totalling {self._format_metric_value('overdue_ar_amount', mv('overdue_ar_amount'))} are overdue, while cash runway is {mv('cash_runway_months', 999.0):.1f} months."
-                why_now_brief = "Receivables pressure is already constraining near-term cash timing and owner decision room."
-                action_brief = "Escalate overdue collections today and review the next 30-day cash plan with a named owner."
-                if_ignored_brief = "Cash pressure is likely to spill into payroll timing, supplier flexibility, and delayed growth decisions."
-                decision_label = "Cash timing needs owner action in the next 48 hours"
+                issue_brief = f"{int(round(mv('overdue_ar_count')))} invoices totalling {self._format_metric_value('overdue_ar_amount', mv('overdue_ar_amount'))} are overdue. Your cash runway is {mv('cash_runway_months', 999.0):.1f} months."
+                why_now_brief = "Overdue invoices are squeezing your cash flow and limiting your options for the next few weeks."
+                action_brief = "Chase overdue invoices today and plan your next 30 days of cash flow with someone accountable."
+                if_ignored_brief = "Cash gets tighter — affecting payroll timing, supplier payments, and your ability to invest in growth."
+                decision_label = "Cash flow needs your attention in the next 48 hours"
         elif concern_id in {"pipeline_stagnation", "revenue_leakage"}:
             if truth_context.get("truth_state") == "blocked":
-                issue_brief = f"CRM truth is not live-verified. The latest snapshot shows {int(round(mv('number_of_opportunities')))} open opportunities worth {self._format_metric_value('pipeline_value', mv('pipeline_value'))}, but BIQc is withholding cycle-speed claims until CRM verification is restored."
+                issue_brief = f"Your CRM data is out of date. Last snapshot shows {int(round(mv('number_of_opportunities')))} open opportunities worth {self._format_metric_value('pipeline_value', mv('pipeline_value'))}, but BIQc can't confirm deal movement until the data is refreshed."
                 why_now_brief = source_truth_reason
-                action_brief = "Reconnect CRM and rerun forensic verification before acting on pipeline-velocity guidance."
-                if_ignored_brief = "You may make revenue decisions against historical pipeline data instead of current deal truth."
-                decision_label = "CRM truth must be restored before pipeline decisions"
+                action_brief = "Reconnect your CRM (e.g. HubSpot, Salesforce) so BIQc can track your pipeline accurately."
+                if_ignored_brief = "You might make revenue forecasts based on stale deal data instead of what's actually happening."
+                decision_label = "Refresh your CRM data before making pipeline decisions"
             elif not metric_truth.get("average_sales_cycle_length", {}).get("verified"):
-                issue_brief = f"{int(round(mv('number_of_opportunities')))} open opportunities worth {self._format_metric_value('pipeline_value', mv('pipeline_value'))} are visible, but sales-cycle truth cannot be verified because no closed-deal sample is available."
-                why_now_brief = "Pipeline value is present, but BIQc is intentionally not asserting a cycle-length number without a real close sample."
-                action_brief = "Use the open-pipeline snapshot for triage, and restore enough closed-deal evidence to verify velocity."
-                if_ignored_brief = "Pipeline decisions may overstate certainty if they rely on unverified cycle-speed assumptions."
-                decision_label = "Pipeline value is visible, but velocity truth is incomplete"
+                issue_brief = f"{int(round(mv('number_of_opportunities')))} open opportunities worth {self._format_metric_value('pipeline_value', mv('pipeline_value'))} are in your pipeline, but BIQc can't measure deal speed because there aren't enough closed deals to compare against."
+                why_now_brief = "Your pipeline value is real, but without closed-deal history, BIQc can't tell you if deals are moving fast enough."
+                action_brief = "Focus on the open pipeline for now. As more deals close, BIQc will automatically start measuring velocity."
+                if_ignored_brief = "You might overestimate how quickly pipeline will convert without real close-rate data."
+                decision_label = "Pipeline visible, but deal speed can't be measured yet"
             else:
-                issue_brief = f"{int(round(mv('number_of_opportunities')))} open opportunities worth {self._format_metric_value('pipeline_value', mv('pipeline_value'))} are moving slower than target, with an average cycle of {mv('average_sales_cycle_length'):.0f} days."
-                why_now_brief = "Pipeline velocity is below the level needed for a confident close this cycle."
-                action_brief = "Re-engage the highest-value stalled deals, reassign blocked owners, and tighten the follow-up cadence today."
-                if_ignored_brief = "Expected revenue timing is likely to slip into the next cycle and reduce forecast confidence."
-                decision_label = "Revenue conversion is drifting off target"
+                issue_brief = f"{int(round(mv('number_of_opportunities')))} open opportunities worth {self._format_metric_value('pipeline_value', mv('pipeline_value'))} are moving slower than expected — average deal takes {mv('average_sales_cycle_length'):.0f} days."
+                why_now_brief = "Deals are taking too long to close, which puts your revenue forecast at risk."
+                action_brief = "Follow up on your highest-value stalled deals today and tighten your sales follow-up process."
+                if_ignored_brief = "Expected revenue will likely slip to next month, making it harder to hit your targets."
+                decision_label = "Deals are stalling — revenue is at risk"
         elif concern_id == "client_response_risk":
             if truth_context.get("truth_state") == "blocked":
-                issue_brief = "BIQc is not asserting a lead-response time because no auditable response-lag sample exists yet. Use Priority Inbox and Watchtower thread evidence instead of a zero-hour claim."
-                why_now_brief = source_truth_reason or "Email response truth needs a verified lag sample before BIQc will state a response-time metric."
-                action_brief = "Use verified priority-thread evidence for triage, then expand historical email telemetry for lag analysis."
-                if_ignored_brief = "You may understate communication risk if you treat an empty lag sample as proof of fast response."
-                decision_label = "Email lag truth needs verification"
+                issue_brief = "BIQc doesn't have enough email data yet to measure your response times. Check your Priority Inbox for any urgent threads while the data builds up."
+                why_now_brief = source_truth_reason or "Your email connection needs to sync more data before BIQc can measure response speed."
+                action_brief = "Check your Priority Inbox for urgent threads. BIQc will start measuring response times automatically as more data syncs."
+                if_ignored_brief = "You might assume response times are fine when clients could actually be waiting too long."
+                decision_label = "Email response data still building up"
             else:
-                issue_brief = f"Lead response time has stretched to {self._format_metric_value('lead_response_time', mv('lead_response_time'))}, while churn signals are tracking at {self._format_metric_value('churn_rate', mv('churn_rate'))}."
-                why_now_brief = "Commercial responsiveness is weakening enough to affect retention and new conversion at the same time."
-                action_brief = "Triage priority conversations immediately and enforce a same-day first-response standard."
-                if_ignored_brief = "Customer confidence and renewal probability are likely to deteriorate further."
-                decision_label = "Customer response pressure needs triage this week"
+                issue_brief = f"Your average response time has grown to {self._format_metric_value('lead_response_time', mv('lead_response_time'))}, and churn risk is at {self._format_metric_value('churn_rate', mv('churn_rate'))}."
+                why_now_brief = "Slow responses are hurting both customer retention and new deal conversion at the same time."
+                action_brief = "Reply to priority conversations today and set a same-day first-response standard for your team."
+                if_ignored_brief = "Customers lose confidence, renewals drop, and new leads go cold."
+                decision_label = "Customer response times need fixing this week"
         elif concern_id == "concentration_risk":
             if truth_context.get("truth_state") == "blocked":
-                issue_brief = "Revenue concentration cannot be verified as a live fact until CRM and accounting truth are both current."
+                issue_brief = "BIQc can't verify your revenue concentration until both CRM and accounting data are current."
                 why_now_brief = source_truth_reason
-                action_brief = "Restore both CRM and accounting verification before acting on concentration guidance."
-                if_ignored_brief = "You may hedge against a concentration risk that is no longer current, or miss one that has grown."
-                decision_label = "Cross-source revenue truth needs verification"
+                action_brief = "Reconnect your CRM and accounting tools so BIQc can assess concentration risk."
+                if_ignored_brief = "You might be more dependent on a single client than you realise, or less than you fear."
+                decision_label = "Need fresh CRM + accounting data to assess concentration"
             else:
-                issue_brief = f"Customer revenue concentration remains elevated relative to total revenue, with average customer value at {self._format_metric_value('average_revenue_per_customer', mv('average_revenue_per_customer'))}."
-                why_now_brief = "A single account shift could materially change the current revenue outlook."
-                action_brief = "Build fallback coverage in pipeline and reduce dependency on the highest-concentration account."
-                if_ignored_brief = "One delayed or lost account could create an outsized revenue shock."
-                decision_label = "Commercial concentration needs active hedging"
+                issue_brief = f"Your revenue is heavily concentrated in a few accounts, with average customer value at {self._format_metric_value('average_revenue_per_customer', mv('average_revenue_per_customer'))}."
+                why_now_brief = "Losing even one key account could significantly impact your revenue."
+                action_brief = "Diversify your pipeline and reduce reliance on your biggest accounts."
+                if_ignored_brief = "One lost or delayed account could create a serious revenue gap."
+                decision_label = "Too much revenue depends on too few clients"
         elif concern_id == "margin_compression":
             if truth_context.get("truth_state") == "blocked":
-                issue_brief = f"Accounting truth is not sufficient for a margin-compression claim. Current snapshot revenue is {self._format_metric_value('total_revenue', mv('total_revenue'))}, but operating expense pressure and growth quality are not verifiable from the available evidence."
+                issue_brief = f"Your accounting data isn't fresh enough for BIQc to assess margins. Last known revenue was {self._format_metric_value('total_revenue', mv('total_revenue'))}, but costs and profitability can't be verified right now."
                 why_now_brief = source_truth_reason
-                action_brief = "Restore live accounting verification before using BIQc margin guidance."
-                if_ignored_brief = "You may act on placeholder or proxy numbers that are not forensic-grade cost truth."
-                decision_label = "Accounting truth must be restored before margin decisions"
+                action_brief = "Reconnect your accounting tool so BIQc can give you accurate margin advice."
+                if_ignored_brief = "You might be making pricing or hiring decisions without knowing your true profit margins."
+                decision_label = "Refresh accounting data before making margin decisions"
             else:
-                issue_brief = f"Operating expense pressure is running at {self._format_metric_value('operating_expense_ratio', mv('operating_expense_ratio'))} while revenue growth is {self._format_metric_value('revenue_growth_rate', mv('revenue_growth_rate'))}."
-                why_now_brief = "Cost discipline and growth quality are moving out of balance."
-                action_brief = "Review cost drivers and protect margin on the next active revenue decisions."
-                if_ignored_brief = "Margin erosion will reduce flexibility across hiring, delivery, and cash decisions."
-                decision_label = "Margin discipline is slipping"
+                issue_brief = f"Your costs are running at {self._format_metric_value('operating_expense_ratio', mv('operating_expense_ratio'))} of revenue while growth is at {self._format_metric_value('revenue_growth_rate', mv('revenue_growth_rate'))}."
+                why_now_brief = "Costs are growing faster than revenue — your margins are getting squeezed."
+                action_brief = "Review your biggest costs and protect margins on upcoming deals."
+                if_ignored_brief = "Shrinking margins limit your ability to hire, invest, and handle surprises."
+                decision_label = "Margins are getting squeezed"
         else:
             if truth_context.get("truth_state") == "blocked":
-                issue_brief = "No connected task-system sample is available, so BIQc is withholding an operational queue-pressure claim."
-                why_now_brief = source_truth_reason or "Operational truth needs a verified task sample before BIQc can score bottlenecks."
-                action_brief = "Connect or refresh the operational task source before relying on task-overdue guidance."
-                if_ignored_brief = "Execution issues may be hidden or overstated if BIQc reasons without a real task sample."
-                decision_label = "Operations truth needs a verified task sample"
+                issue_brief = "BIQc doesn't have access to your task or project management data yet, so it can't assess operational bottlenecks."
+                why_now_brief = source_truth_reason or "Connect your task management tool so BIQc can spot operational delays."
+                action_brief = "Connect your task management tool (e.g. Asana, Monday, Jira) in Integrations."
+                if_ignored_brief = "Operational issues might be growing without you seeing them until they affect clients or revenue."
+                decision_label = "Connect your task tool to see operations health"
             else:
-                issue_brief = f"Operational queue pressure is showing through a task overdue rate of {self._format_metric_value('task_overdue_rate', mv('task_overdue_rate'))}."
-                why_now_brief = "Execution delay is now repeating often enough to become a system issue, not a one-off miss."
-                action_brief = "Reset queue ownership, clear overdue work, and tighten the operating cadence this week."
-                if_ignored_brief = "Repeated delays are likely to spread into service quality, response times, and revenue timing."
+                issue_brief = f"Your task overdue rate is at {self._format_metric_value('task_overdue_rate', mv('task_overdue_rate'))} — work is falling behind."
+                why_now_brief = "This isn't a one-off miss — overdue work is becoming a pattern that affects delivery quality."
+                action_brief = "Clear the overdue backlog, reassign stuck tasks, and tighten your weekly check-in process."
+                if_ignored_brief = "Delivery delays will start affecting client satisfaction, response times, and revenue."
                 decision_label = "Execution friction needs a system fix"
 
         if threshold_hits:

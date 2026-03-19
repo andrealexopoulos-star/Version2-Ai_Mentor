@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import time
+from datetime import datetime, timezone
 from contextlib import suppress
 from typing import Any, Awaitable, Callable, Dict, Optional
 from urllib.parse import urlparse
@@ -41,6 +42,7 @@ JOB_TYPES = {
     "market-research",
     "file-generation",
     "integration-count-sync",
+    "merge-webhook-sync",
 }
 
 JobHandler = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
@@ -65,6 +67,7 @@ class BIQcRedisJobs:
             "market-research": self._handle_market_research,
             "file-generation": self._handle_file_generation,
             "integration-count-sync": self._handle_integration_count_sync,
+            "merge-webhook-sync": self._handle_merge_webhook_sync,
         }
 
     async def initialize(self) -> bool:
@@ -445,6 +448,73 @@ class BIQcRedisJobs:
 
         await _sync_category_counts(get_supabase_client(), user_id, category)
         return {"status": "processed", "category": category}
+
+    async def _handle_merge_webhook_sync(self, job: Dict[str, Any]) -> Dict[str, Any]:
+        payload = job.get("payload", {})
+        tenant_id = payload.get("tenant_id")
+        categories = payload.get("categories") or []
+        if not tenant_id:
+            return {"status": "skipped", "reason": "missing_tenant_id"}
+
+        import httpx
+
+        supabase_url = os.environ.get("SUPABASE_URL")
+        service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        if not supabase_url or not service_key:
+            return {"status": "skipped", "reason": "missing_supabase_env"}
+
+        ingest_url = f"{supabase_url.rstrip('/')}/functions/v1/business-brain-merge-ingest"
+        body = {
+            "tenant_id": tenant_id,
+            "categories": categories,
+            "trigger_source": "merge_webhook_queue",
+            "dry_run": False,
+        }
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                ingest_url,
+                json=body,
+                headers={
+                    "Authorization": f"Bearer {service_key}",
+                    "Content-Type": "application/json",
+                },
+            )
+            if resp.status_code >= 400:
+                raise RuntimeError(f"merge webhook sync failed ({resp.status_code}): {resp.text[:300]}")
+            ingest_result = resp.json()
+
+        try:
+            from supabase_client import get_supabase_admin
+            sb_admin = get_supabase_admin()
+            if categories:
+                sb_admin.schema("business_core").table("webhook_events").update({
+                    "status": "processed",
+                    "processed_at": datetime.now(timezone.utc).isoformat(),
+                    "last_error": None,
+                }).eq("tenant_id", tenant_id).in_("category", categories).in_("status", ["queued", "validated", "failed"]).execute()
+        except Exception as exc:
+            logger.warning("Webhook event status update after sync failed: %s", exc)
+
+        # Trigger fast surface refresh after ingestion settles.
+        await self.enqueue_job(
+            company_id=str(tenant_id),
+            job_type="advisor-analysis",
+            payload={"user_id": tenant_id, "trigger_source": "merge_webhook_sync"},
+            window_seconds=60,
+        )
+        await self.enqueue_job(
+            company_id=str(tenant_id),
+            job_type="watchtower-analysis",
+            payload={"user_id": tenant_id, "trigger_source": "merge_webhook_sync"},
+            window_seconds=60,
+        )
+
+        return {
+            "status": "processed",
+            "tenant_id": tenant_id,
+            "categories": categories,
+            "ingest_result": ingest_result,
+        }
 
 
 biqc_jobs = BIQcRedisJobs()

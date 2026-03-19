@@ -170,26 +170,34 @@ if OPENAI_API_KEY:
         @voice_router.post("/realtime/session")
         async def create_voice_session(request: Request):
             """Create realtime session WITH business context instructions."""
+            from fastapi.responses import JSONResponse
+            from supabase_client import init_supabase
+            import supabase_client
+
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                return JSONResponse(content={"error": "Missing or invalid Authorization header"}, status_code=401)
+            token = auth_header[7:]
+
+            try:
+                init_supabase()
+                supabase_admin = supabase_client.supabase_admin
+                user_resp = supabase_admin.auth.get_user(token)
+                if not user_resp or not user_resp.user:
+                    return JSONResponse(content={"error": "Invalid token"}, status_code=401)
+            except Exception:
+                return JSONResponse(content={"error": "Authentication failed"}, status_code=401)
+
+            user_id = user_resp.user.id
             instructions = "You are a Strategic Intelligence Advisor for an Australian business. Be direct, specific, and reference the user's business data. Never give generic advice."
             try:
-                auth_header = request.headers.get("Authorization", "")
-                if auth_header.startswith("Bearer "):
-                    token = auth_header[7:]
-                    from supabase_client import init_supabase
-                    import supabase_client
-                    init_supabase()
-                    admin = supabase_client.supabase_admin
-                    if admin:
-                        user_resp = admin.auth.get_user(token)
-                        if user_resp and user_resp.user:
-                            user_id = user_resp.user.id
-                            profile_result = admin.table('business_profiles').select(
-                                'business_name,industry,revenue_range,team_size,main_challenges,short_term_goals'
-                            ).eq('user_id', user_id).execute()
-                            profile = profile_result.data[0] if profile_result.data else None
-                        if profile:
-                            biz_name = profile.get('business_name', 'their business')
-                            instructions = f"""You are a Strategic Intelligence Advisor inside BIQc, speaking with the owner of {biz_name}.
+                profile_result = supabase_admin.table('business_profiles').select(
+                    'business_name,industry,revenue_range,team_size,main_challenges,short_term_goals'
+                ).eq('user_id', user_id).execute()
+                profile = profile_result.data[0] if profile_result.data else None
+                if profile:
+                    biz_name = profile.get('business_name', 'their business')
+                    instructions = f"""You are a Strategic Intelligence Advisor inside BIQc, speaking with the owner of {biz_name}.
 
 Business: {biz_name}
 Industry: {profile.get('industry', '')}
@@ -205,9 +213,8 @@ Rules:
 - Give concrete recommendations with timeframes.
 - Speak like a trusted senior advisor at a working dinner."""
             except Exception as e:
-                logger.debug(f"Voice session context: {e}")
+                logger.debug(f"Voice session context enrichment: {e}")
 
-            from fastapi.responses import JSONResponse
             result = await llm_realtime_session(voice="verse", instructions=instructions, api_key=OPENAI_API_KEY)
             return JSONResponse(content=result)
 
@@ -216,6 +223,23 @@ Rules:
             """Handles WebRTC negotiation via direct OpenAI API."""
             from core.llm_router import llm_realtime_negotiate
             from fastapi.responses import JSONResponse
+            from supabase_client import init_supabase
+            import supabase_client
+
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                return JSONResponse(content={"error": "Missing or invalid Authorization header"}, status_code=401)
+            token = auth_header[7:]
+
+            try:
+                init_supabase()
+                supabase_admin = supabase_client.supabase_admin
+                user_resp = supabase_admin.auth.get_user(token)
+                if not user_resp or not user_resp.user:
+                    return JSONResponse(content={"error": "Invalid token"}, status_code=401)
+            except Exception:
+                return JSONResponse(content={"error": "Authentication failed"}, status_code=401)
+
             sdp_offer = await request.body()
             sdp_answer = await llm_realtime_negotiate(sdp_offer.decode(), api_key=OPENAI_API_KEY)
             return JSONResponse(content={"sdp": sdp_answer})
