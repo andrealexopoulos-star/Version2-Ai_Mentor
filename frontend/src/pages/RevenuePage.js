@@ -249,6 +249,14 @@ const RevenuePage = () => {
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1.5" style={{ fontFamily: fontFamily.display }}>Revenue Engine</h1>
+            {(crmConnected || accountingConnected) && (
+              <LineageBadge
+                lineage={{ connected_sources: [crmConnected && (crmIntegration?.provider || 'CRM'), accountingConnected && (accountingIntegration?.provider || 'Accounting')].filter(Boolean) }}
+                data_freshness={[crmConnectedAt, accountingConnectedAt].filter(Boolean).length ? timeAgoShort([crmConnectedAt, accountingConnectedAt].sort().pop()) : undefined}
+                className="mb-2"
+                compact
+              />
+            )}
             <div className="flex flex-wrap items-center gap-2">
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
