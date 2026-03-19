@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 import { apiClient } from '../lib/api';
 import { ArrowRight, ArrowLeft, CheckCircle2, Eye, Lock, AlertTriangle, TrendingUp, Shield, Target } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
@@ -31,7 +32,7 @@ const ForensicCalibration = () => {
   const [existingResult, setExistingResult] = useState(null);
   const [loadingExisting, setLoadingExisting] = useState(true);
 
-  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
+  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
 
   // Check for existing calibration on mount
   useEffect(() => {
