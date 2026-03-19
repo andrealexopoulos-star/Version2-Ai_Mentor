@@ -9,6 +9,7 @@ env:
   FRONTEND_IMAGE: biqcregistry.azurecr.io/biqc-frontend
   BACKEND_IMAGE: biqcregistry.azurecr.io/biqc-backend
   IMAGE_TAG: ${{ github.sha }}
+  BACKEND_BASE_URL: https://biqc-api.azurewebsites.net
   AZURE_WEBAPP_FRONTEND: biqc-web
   AZURE_WEBAPP_BACKEND: biqc-api
   AZURE_RESOURCE_GROUP: biqc-production
@@ -38,6 +39,7 @@ jobs:
       - name: Run backend tests
         run: python -m pytest backend/tests/ --tb=short -q --no-header
         env:
+          REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL != '' && secrets.REACT_APP_BACKEND_URL || env.BACKEND_BASE_URL }}
           SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
