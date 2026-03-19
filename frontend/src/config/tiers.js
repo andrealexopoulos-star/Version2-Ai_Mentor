@@ -2,12 +2,12 @@ import { FREE_LAUNCH_ROUTES, PAID_LAUNCH_ROUTES } from './launchConfig';
 
 export const TIERS = {
   free: { id: 'free', label: 'Free', price: 0, color: '#64748B' },
-  starter: { id: 'starter', label: 'SMB Protect', price: 349, color: '#FF6A00' },
+  starter: { id: 'starter', label: 'BIQc Foundation', price: 349, color: '#FF6A00' },
   admin: { id: 'admin', label: 'Admin', price: null, color: '#7C3AED' },
 };
 
 export const STRIPE_PRICES = {
-  starter_monthly: process.env.REACT_APP_STRIPE_STARTER_PRICE_ID || 'price_smb_protect_349',
+  starter_monthly: process.env.REACT_APP_STRIPE_STARTER_PRICE_ID || 'price_biqc_foundation_349',
 };
 
 export const PATH_TIERS = {

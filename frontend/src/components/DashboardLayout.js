@@ -204,7 +204,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     { id: 'data-health', label: 'Data Health', path: '/data-health', icon: Activity, items: [] },
     { id: 'integrations', label: 'Email Integration', path: '/integrations', icon: Link2, items: [] },
     { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, items: [] },
-    { id: 'paid', label: 'SMB Protect', items: [
+    { id: 'paid', label: 'BIQc Foundation', items: [
       { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
       { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
       { icon: FileText, label: 'Reports', path: '/reports' },

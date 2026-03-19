@@ -33,7 +33,7 @@ const MORE_SECTIONS = [
     ],
   },
   {
-    label: 'SMB Protect',
+    label: 'Foundation',
     items: [
       { label: 'Exposure Scan', icon: Eye,           path: '/exposure-scan' },
       { label: 'Marketing Auto',icon: Megaphone,    path: '/marketing-automation' },

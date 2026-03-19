@@ -24,7 +24,7 @@ export const PRICING_TIERS = [
   },
   {
     id: 'starter',
-    name: 'SMB Protect',
+    name: 'BIQc Foundation',
     subtitle: 'Full launch tier',
     price: '$349',
     priceNum: 349,

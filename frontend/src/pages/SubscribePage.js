@@ -105,7 +105,7 @@ const SubscribePage = () => {
           <Lock className="w-6 h-6 text-[#FF6A00]" />
         </div>
         {featureLabel && <p className="text-xs text-[#FF6A00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
-        <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Upgrade to SMB Protect</h1>
+        <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Upgrade to BIQc Foundation</h1>
         <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#F4F7FA] capitalize">{currentTier}</strong></p>
       </div>
 

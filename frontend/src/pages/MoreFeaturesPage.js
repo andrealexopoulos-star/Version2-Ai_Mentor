@@ -46,7 +46,7 @@ export default function MoreFeaturesPage() {
             </div>
             <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(15,23,42,0.65)' }} data-testid="more-features-package-note">
               <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Current launch package</p>
-              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }}>Free + SMB Protect ($349/mo)</p>
+              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }}>Free + BIQc Foundation ($349/mo)</p>
             </div>
           </div>
         </section>

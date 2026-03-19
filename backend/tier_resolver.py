@@ -33,11 +33,11 @@ BRAIN_METRIC_LIMITS = {
 
 BRAIN_PLAN_LABELS = {
     'free': 'Free',
-    'starter': 'SMB Protect',
-    'professional': 'SMB Protect',
-    'enterprise': 'SMB Protect',
-    'custom': 'SMB Protect',
-    'super_admin': 'SMB Protect',
+    'starter': 'Foundation',
+    'professional': 'Foundation',
+    'enterprise': 'Foundation',
+    'custom': 'Foundation',
+    'super_admin': 'Foundation',
 }
 
 # ═══ ROUTE ACCESS MAP ═══
