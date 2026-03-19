@@ -5,6 +5,7 @@ import { LayoutDashboard, Bell, MoreHorizontal, X, Link2, Activity,
 import { fontFamily } from '../design-system/tokens';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 
 
 // ── Primary 5-tab bar ─────────────────────────────────────────────────────────
@@ -64,8 +65,7 @@ const MobileNav = () => {
   const location = useLocation();
   const { user } = useSupabaseAuth();
   const [moreOpen, setMoreOpen] = useState(false);
-  const isAndre = (user?.email || '').toLowerCase().trim() === 'andre@thestrategysquad.com.au';
-  const hasFoundationAccess = isAndre || resolveTier(user) !== 'free';
+  const hasFoundationAccess = isPrivilegedUser(user) || resolveTier(user) !== 'free';
 
   const moreSections = [
     {

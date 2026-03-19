@@ -1,10 +1,12 @@
 /**
  * BIQc Central Tier Resolver — Frontend
  * SINGLE SOURCE OF TRUTH for all frontend tier checks.
- * Mirrors backend tier_resolver.py exactly.
+ * Route access comes from routeAccessConfig.js only.
  */
+import { getRouteAccess } from '../config/routeAccessConfig';
 
-const SUPER_ADMIN_EMAIL = 'andre@thestrategysquad.com.au';
+const SUPER_ADMIN_EMAIL = (typeof process !== 'undefined' && process.env.REACT_APP_BIQC_MASTER_ADMIN_EMAIL)?.trim?.()?.toLowerCase?.()
+  || 'andre@thestrategysquad.com.au';
 
 // Only free, starter (BIQc Foundation), super_admin. Legacy DB values map to starter in resolveTier.
 const TIERS = ['free', 'starter', 'super_admin'];
@@ -16,57 +18,6 @@ function rankForTier(tier) {
   if (['foundation', 'growth', 'professional', 'enterprise', 'custom', 'pro'].includes(tier)) return LEGACY_PAID_RANK;
   return 0;
 }
-
-// Route → minimum tier
-const ROUTE_ACCESS = {
-  '/advisor': 'free',
-  '/market': 'free',
-  '/business-profile': 'free',
-  '/settings': 'free',
-  '/integrations': 'free',
-  '/connect-email': 'free',
-  '/data-health': 'free',
-  '/competitive-benchmark': 'free',
-  '/soundboard': 'free',
-  '/email-inbox': 'free',
-  '/calendar': 'free',
-  '/actions': 'free',
-  '/alerts': 'free',
-  '/calibration': 'free',
-  '/onboarding': 'free',
-  '/onboarding-decision': 'free',
-  '/profile-import': 'free',
-  '/biqc-legal': 'free',
-  '/more-features': 'free',
-  // PAID — single launch tier
-  '/exposure-scan': 'starter',
-  '/marketing-automation': 'starter',
-  '/reports': 'starter',
-  '/sop-generator': 'starter',
-  '/decisions': 'starter',
-  '/forensic-audit': 'starter',
-  '/revenue': 'starter',
-  '/operations': 'starter',
-  '/risk': 'starter',
-  '/compliance': 'starter',
-  '/audit-log': 'starter',
-  '/war-room': 'starter',
-  '/board-room': 'starter',
-  '/automations': 'starter',
-  '/analysis': 'starter',
-  '/diagnosis': 'starter',
-  '/documents': 'starter',
-  '/intelligence-baseline': 'starter',
-  '/intel-centre': 'starter',
-  '/watchtower': 'starter',
-  '/marketing-intelligence': 'starter',
-  '/market-analysis': 'starter',
-  '/ops-advisory': 'starter',
-  '/operator': 'starter',
-  // ADMIN
-  '/admin': 'super_admin',
-  '/auth-debug': 'super_admin',
-};
 
 // Market sub-features
 const MARKET_SUB_FEATURES = {
@@ -97,18 +48,15 @@ export function hasAccess(userTier, requiredTier) {
 
 export function checkRouteAccess(route, user) {
   const tier = resolveTier(user);
-  // Find matching route
-  let required = null;
-  for (const [pattern, reqTier] of Object.entries(ROUTE_ACCESS)) {
-    if (route === pattern || route.startsWith(pattern + '/')) {
-      required = reqTier;
-      break;
-    }
-  }
-  if (!required) return { allowed: true, tier };
+  const access = getRouteAccess(route);
+  if (!access) return { allowed: true, tier };
+  const required = access.minTier;
   if (hasAccess(tier, required)) return { allowed: true, tier };
   return { allowed: false, tier, requiredTier: required, redirect: `/subscribe?from=${encodeURIComponent(route)}` };
 }
+
+/** Get route config (minTier, featureKey, launchType) for path. */
+export { getRouteAccess } from '../config/routeAccessConfig';
 
 export function checkMarketSubFeature(feature, user) {
   const tier = resolveTier(user);

@@ -1,4 +1,5 @@
-import { FREE_LAUNCH_ROUTES, PAID_LAUNCH_ROUTES } from './launchConfig';
+import { getRouteAccess } from './routeAccessConfig';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 
 export const TIERS = {
   free: { id: 'free', label: 'Free', price: 0, color: '#64748B' },
@@ -10,36 +11,18 @@ export const STRIPE_PRICES = {
   starter_monthly: process.env.REACT_APP_STRIPE_STARTER_PRICE_ID || 'price_biqc_foundation_349',
 };
 
-export const PATH_TIERS = {
-  ...Object.fromEntries(FREE_LAUNCH_ROUTES.map((path) => [path, 'free'])),
-  ...Object.fromEntries(PAID_LAUNCH_ROUTES.map((path) => [path, 'starter'])),
-  '/revenue': 'starter',
-  '/operations': 'starter',
-  '/risk': 'starter',
-  '/compliance': 'starter',
-  '/audit-log': 'starter',
-  '/war-room': 'starter',
-  '/board-room': 'starter',
-  '/analysis': 'starter',
-  '/diagnosis': 'starter',
-  '/documents': 'starter',
-  '/intel-centre': 'starter',
-  '/watchtower': 'starter',
-  '/market-analysis': 'starter',
-  '/ops-advisory': 'starter',
-  '/marketing-intelligence': 'starter',
-  '/automations': 'starter',
-  '/biqc-legal': 'free',
-  '/more-features': 'free',
-  '/admin': 'admin',
-};
+/** Path → minTier; from routeAccessConfig. */
+export function getPathTier(path) {
+  return getRouteAccess(path)?.minTier ?? 'free';
+}
 
-const TIER_ORDER = ['free', 'starter', 'admin'];
+const TIER_ORDER = ['free', 'starter', 'super_admin', 'admin'];
 
+/** canAccess(userTier, path, userEmail) — privileged user bypass via isPrivilegedUser. */
 export function canAccess(userTier, path, userEmail = '') {
-  if ((userEmail || '').toLowerCase().trim() === 'andre@thestrategysquad.com.au') return true;
-  const required = PATH_TIERS[path] || 'free';
-  if (required === 'admin') return false;
+  if (userEmail && isPrivilegedUser({ email: userEmail })) return true;
+  const required = getRouteAccess(path)?.minTier ?? 'free';
+  if (required === 'admin' || required === 'super_admin') return false;
   const normalizedTier = ['starter', 'professional', 'enterprise', 'custom', 'growth', 'foundation'].includes(String(userTier || '').toLowerCase())
     ? 'starter'
     : 'free';
@@ -47,7 +30,7 @@ export function canAccess(userTier, path, userEmail = '') {
 }
 
 export function requiredTier(path) {
-  return PATH_TIERS[path] || 'free';
+  return getRouteAccess(path)?.minTier ?? 'free';
 }
 
 export const TIER_FEATURES = {

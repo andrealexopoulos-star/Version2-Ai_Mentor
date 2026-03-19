@@ -5,6 +5,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { FOUNDATION_FEATURES } from '../config/launchConfig';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 import { fontFamily } from '../design-system/tokens';
 
 export default function BIQcFoundationPage() {
@@ -13,8 +14,7 @@ export default function BIQcFoundationPage() {
   const { user } = useSupabaseAuth();
   const selectedKey = searchParams.get('feature');
   const tier = resolveTier(user);
-  const isAndre = (user?.email || '').toLowerCase().trim() === 'andre@thestrategysquad.com.au';
-  const hasFoundationAccess = isAndre || tier !== 'free';
+  const hasFoundationAccess = isPrivilegedUser(user) || tier !== 'free';
 
   const selectedFeature = useMemo(() => FOUNDATION_FEATURES.find((feature) => feature.key === selectedKey) || null, [selectedKey]);
 

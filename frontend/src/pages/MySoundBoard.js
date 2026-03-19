@@ -9,6 +9,7 @@ import VoiceChat from '../components/VoiceChat';
 import { fontFamily } from "../design-system/tokens";
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier, TIER_RANK } from '../lib/tierResolver';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 import { useLocation } from 'react-router-dom';
 import {
@@ -124,12 +125,12 @@ const MySoundBoard = () => {
   ];
 
   const resolvedTier = resolveTier(user);
-  const isAndre = user?.email === 'andre@thestrategysquad.com.au';
+  const privileged = isPrivilegedUser(user);
   const isPaidUser = (TIER_RANK[resolvedTier] ?? 0) >= 1;
-  const canUseTrinity = isAndre || isPaidUser;
+  const canUseTrinity = privileged || isPaidUser;
 
   const availableModes = BIQC_MODES.filter((mode) => {
-    if (isAndre) return true;
+    if (privileged) return true;
     if (mode.id === 'trinity') return canUseTrinity;
     return (TIER_RANK[resolvedTier] ?? 0) >= (TIER_RANK[mode.minTier] ?? 0);
   });
