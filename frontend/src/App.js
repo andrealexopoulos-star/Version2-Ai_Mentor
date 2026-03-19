@@ -38,7 +38,8 @@ import MoreFeaturesPage from './pages/MoreFeaturesPage';
 import BIQcLegalPage from './pages/BIQcLegalPage';
 import BIQcFoundationPage from './pages/BIQcFoundationPage';
 import { TermsPage as SiteTermsPage, PrivacyPage as SitePrivacyPage, DPAPage as SiteDPAPage, SecurityPage as SiteSecurityPage, TrustCentrePage as SiteTrustCentrePage } from './pages/website/TrustSubPages';
-import { resolveTier } from './lib/tierResolver';
+import { resolveTier, getRouteAccess } from './lib/tierResolver';
+import { isPrivilegedUser } from './lib/privilegedUser';
 
 // ── Core app pages ────────────────────────────────────────────────────────────
 import AdvisorWatchtower from './pages/AdvisorWatchtower';
@@ -107,7 +108,6 @@ import DecisionsPage from './pages/DecisionsPage';
 import OnboardingWizard from './pages/OnboardingWizard';
 import OnboardingDecision from './pages/OnboardingDecision';
 import UpgradePage from './pages/UpgradePage';
-import { FOUNDATION_ROUTE_MAP, WAITLIST_ROUTE_MAP } from './config/launchConfig';
 
 // ── Conditional imports (pages that may not exist) ────────────────────────────
 let CognitiveV2Mockup, LoadingPreview, CalibrationPreview, AuthDebug, GmailTest, OutlookTest, ProfileImport;
@@ -173,17 +173,17 @@ const LaunchRoute = ({ children, access = 'free', featureKey = null }) => {
   const location = useLocation();
   const { user, session, authState, loading } = useSupabaseAuth();
   const tier = resolveTier(user);
-  const isAndre = (user?.email || '').toLowerCase().trim() === 'andre@thestrategysquad.com.au';
-  const hasPaidAccess = isAndre || (user && tier !== 'free');
+  const privileged = isPrivilegedUser(user);
+  const hasPaidAccess = privileged || (user && tier !== 'free');
+  const routeConfig = getRouteAccess(location.pathname);
+  const key = featureKey || routeConfig?.featureKey || '';
 
   if (authState === AUTH_STATE.LOADING || loading) return <LoadingScreen />;
   if (!user && !session) return <Navigate to="/login-supabase" replace />;
   if (access === 'paid' && !hasPaidAccess) {
-    const key = featureKey || FOUNDATION_ROUTE_MAP[location.pathname]?.key || '';
     return <Navigate to={`/biqc-foundation${key ? `?feature=${encodeURIComponent(key)}` : ''}`} replace />;
   }
-  if (access === 'waitlist' && !isAndre) {
-    const key = featureKey || WAITLIST_ROUTE_MAP[location.pathname]?.key || '';
+  if (access === 'waitlist' && !privileged) {
     return <Navigate to={`/more-features${key ? `?feature=${encodeURIComponent(key)}` : ''}`} replace />;
   }
   return children;

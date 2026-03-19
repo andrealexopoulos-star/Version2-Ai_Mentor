@@ -7,6 +7,7 @@ import DataCoverageGate from './DataCoverageGate';
 import { CheckInAlerts } from './CheckInAlerts';
 import { fontFamily } from '../design-system/tokens';
 import { resolveTier, TIER_RANK } from '../lib/tierResolver';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
@@ -72,7 +73,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const { session, user } = useSupabaseAuth();
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || '';
   const resolvedTier = resolveTier(user);
-  const isAndre = user?.email === 'andre@thestrategysquad.com.au';
+  const privileged = isPrivilegedUser(user);
 
   const BIQC_MODES = [
     { id: 'auto', label: 'BIQc Auto', desc: 'Adaptive routing across BIQc cognition pathways', icon: '⚡', backend_mode: 'auto', minTier: 'free' },
@@ -94,9 +95,9 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   ];
 
   const isPaidUser = (TIER_RANK[resolvedTier] ?? 0) >= 1;
-  const canUseTrinity = isAndre || isPaidUser;
+  const canUseTrinity = privileged || isPaidUser;
   const availableModes = BIQC_MODES.filter((mode) => {
-    if (isAndre) return true;
+    if (privileged) return true;
     if (mode.id === 'trinity') return canUseTrinity;
     return (TIER_RANK[resolvedTier] ?? 0) >= (TIER_RANK[mode.minTier] ?? 0);
   });

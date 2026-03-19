@@ -7,6 +7,7 @@ import {
   TrendingUp, Megaphone, ChevronRight, Clock
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { apiClient } from '../lib/api';
 import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { getBackendUrl } from '../config/urls';
@@ -14,6 +15,7 @@ import { toast } from 'sonner';
 import { useMergeLink } from '@mergeapi/react-merge-link';
 import { fontFamily } from '../design-system/tokens';
 import { resolveTier } from '../lib/tierResolver';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 
 // ── Clearbit logo with dark fallback ─────────────────────────────────────────
 const Logo = ({ domain, name, size = 36 }) => {
@@ -184,6 +186,8 @@ export default function Integrations() {
   const [openingMerge, setOpeningMerge] = useState(null);
   const [mergeLinkToken, setMergeLinkToken] = useState('');
   const [pendingOpen, setPendingOpen] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageError, setPageError] = useState(null);
 
   // Merge Link hook — token starts as '' so SDK initialises cleanly
   const { open: openMergeLinkModal, isReady: mergeLinkReady } = useMergeLink({
@@ -254,6 +258,7 @@ export default function Integrations() {
   }, [session?.access_token]);
 
   const loadMergeIntegrations = useCallback(async () => {
+    setPageError(null);
     try {
       const statusPayload = await authedJsonGet('/user/integration-status');
       const rows = statusPayload?.integrations || [];
@@ -278,7 +283,7 @@ export default function Integrations() {
         return acc;
       }, {});
       setMergeIntegrations(derivedMap);
-    } catch {
+    } catch (e) {
       try {
         const directPayload = await authedJsonGet('/integrations/merge/connected');
         const directMap = directPayload?.integrations || {};
@@ -289,8 +294,10 @@ export default function Integrations() {
       } catch {
         setMergeIntegrations({});
         setIntegrationTruthReady(false);
+        setPageError(e?.message || 'Failed to load integration status');
       }
     }
+    setPageLoading(false);
   }, [authedJsonGet]);
 
   const loadOutlookStatus = useCallback(async () => {
@@ -328,6 +335,7 @@ export default function Integrations() {
 
   useEffect(() => {
     if (authState === 'LOADING' || (!user && !session)) return undefined;
+    setPageLoading(true);
     loadMergeIntegrations();
     loadOutlookStatus();
     loadGmailStatus();
@@ -548,7 +556,7 @@ export default function Integrations() {
     gmailStatus.connected ? 1 : 0,
     outlookStatus.connected ? 1 : 0,
   ].reduce((sum, value) => sum + value, 0);
-  const isMasterAccount = user?.is_master_account === true || ['superadmin', 'super_admin', 'admin'].includes((user?.role || '').toLowerCase()) || (user?.email || '').toLowerCase() === 'andre@thestrategysquad.com.au';
+  const isMasterAccount = user?.is_master_account === true || ['superadmin', 'super_admin', 'admin'].includes((user?.role || '').toLowerCase()) || isPrivilegedUser(user);
   const effectiveTier = resolveTier(user);
   const hasPaidLaunchAccess = isMasterAccount || effectiveTier !== 'free';
   const isFreeTier = !hasPaidLaunchAccess;
@@ -560,6 +568,25 @@ export default function Integrations() {
     { label: 'Email', state: canonicalTruth.email_state || Object.values(mergeIntegrations).find((item) => item?.category === 'email')?.truth_state },
   ].filter((item) => item.state && item.state !== 'live');
   const visibleCategories = isFreeTier ? CATEGORIES.filter((cat) => ['all', 'connected'].includes(cat.id)) : CATEGORIES;
+
+  if (pageLoading && !integrationTruthReady && !pageError) {
+    return (
+      <DashboardLayout>
+        <div className="p-6" style={{ minHeight: '40vh' }}>
+          <PageLoadingState message="Loading integrations…" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+  if (pageError) {
+    return (
+      <DashboardLayout>
+        <div className="p-6" style={{ minHeight: '40vh' }}>
+          <PageErrorState error={pageError} onRetry={() => { setPageLoading(true); loadMergeIntegrations(); }} moduleName="Integrations" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

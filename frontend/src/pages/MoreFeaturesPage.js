@@ -6,14 +6,14 @@ import { WAITLIST_FEATURES } from '../config/launchConfig';
 import { fontFamily } from '../design-system/tokens';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 
 export default function MoreFeaturesPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useSupabaseAuth();
   const highlighted = searchParams.get('feature');
-  const isAndre = (user?.email || '').toLowerCase().trim() === 'andre@thestrategysquad.com.au';
-  const hasPlatformOverride = isAndre || resolveTier(user) === 'super_admin';
+  const hasPlatformOverride = isPrivilegedUser(user) || resolveTier(user) === 'super_admin';
 
   const grouped = useMemo(() => {
     const map = new Map();
