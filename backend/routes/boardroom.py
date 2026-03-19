@@ -171,14 +171,14 @@ async def _build_email_truth_fallback(sb, user_id: str) -> Optional[str]:
         if high_priority:
             top = high_priority[0]
             return (
-                f"Board Room is in resilience mode, but BIQc still sees {len(high_priority)} high-priority email thread(s) needing attention. "
+                f"Boardroom is in resilience mode, but BIQc still sees {len(high_priority)} high-priority email thread(s) needing attention. "
                 f"Top thread: {top.get('subject') or 'priority email'} from {top.get('from') or 'a key contact'}. "
                 f"Why it matters: {top.get('reason') or 'commercial urgency remains active'}."
             )
         if medium_priority:
             top = medium_priority[0]
             return (
-                f"Board Room is in resilience mode. No unresolved high-priority reply gap is currently leading, but {len(medium_priority)} medium-priority email thread(s) still need review. "
+                f"Boardroom is in resilience mode. No unresolved high-priority reply gap is currently leading, but {len(medium_priority)} medium-priority email thread(s) still need review. "
                 f"Top example: {top.get('subject') or 'email thread'} from {top.get('from') or 'a contact'}."
             )
     except Exception:
@@ -201,8 +201,8 @@ def _build_cross_integration_truth_guard(sb, user_id: str) -> Optional[str]:
             for item in blocked
         )
         return (
-            f"Board Room truth gate is active. BIQc is withholding unsupported cross-system claims because these sources are not live-verified right now: {blocked_copy}. "
-            f"Restore source truth first, then rerun Board Room for full strategic synthesis."
+            f"Boardroom truth gate is active. BIQc is withholding unsupported cross-system claims because these sources are not live-verified right now: {blocked_copy}. "
+            f"Restore source truth first, then rerun Boardroom for full strategic synthesis."
         )
     except Exception:
         return None
@@ -477,12 +477,12 @@ async def boardroom_respond(request: Request, payload: BoardRoomRequest):
         if fallback_events:
             top = fallback_events[0]
             response = (
-                f"Board Room is in resilience mode, but the current highest-pressure signal is in {top.get('domain', 'business')}. "
+                f"Boardroom is in resilience mode, but the current highest-pressure signal is in {top.get('domain', 'business')}. "
                 f"Latest signal: {top.get('executive_summary') or top.get('signal_name') or 'live telemetry requires review'}. "
                 f"Action now: assign an owner and review the next 48-hour consequence window before drift compounds."
             )
         else:
-            response = "Board Room is temporarily degraded. Use the latest BIQc priorities and verify live source health before making a decision."
+            response = "Boardroom is temporarily degraded. Use the latest BIQc priorities and verify live source health before making a decision."
         return {"response": response, "escalations": []}
 
 
@@ -509,7 +509,7 @@ async def boardroom_diagnosis_proxy(request: Request, payload: BoardRoomDiagnosi
             "next_action": explainability["next_action"],
             "if_ignored": "You may act on stale or historically-only business data.",
             "why_visible": explainability["why_visible"],
-            "why_now": "Board Room diagnosis is intentionally constrained because core integration truth is not live-verified.",
+            "why_now": "Boardroom diagnosis is intentionally constrained because core integration truth is not live-verified.",
             "evidence_chain": explainability["evidence_chain"],
             "degraded": True,
         }
@@ -520,7 +520,7 @@ async def boardroom_diagnosis_proxy(request: Request, payload: BoardRoomDiagnosi
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_anon_key = os.environ.get("SUPABASE_ANON_KEY")
     if not auth_header or not supabase_url or not supabase_anon_key:
-        raise HTTPException(status_code=500, detail="Board Room diagnosis not configured")
+        raise HTTPException(status_code=500, detail="Boardroom diagnosis not configured")
 
     edge_url = f"{supabase_url}/functions/v1/boardroom-diagnosis"
     headers = {

@@ -51,7 +51,7 @@ const BoardRoom = ({ embeddedShell = false }) => {
   const degradedTruth = Object.entries(truthStateMap).filter(([, state]) => state && state !== 'live');
   const integrationLabels = Object.entries(integrationMap).filter(([, connected]) => connected).map(([key]) => key);
   const truthGateMessage = degradedTruth.length
-    ? `Forensic truth gate is active. BIQc is limiting Board Room synthesis to verified live signals while these domains recover: ${degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.`
+    ? `Forensic truth gate is active. BIQc is limiting Boardroom synthesis to verified live signals while these domains recover: ${degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.`
     : null;
   const primaryBrief = degradedTruth.length ? (topAlerts[0]?.detail || truthGateMessage) : (narrative?.primary_tension || topAlerts[0]?.detail);
   const hasBrief = Boolean(primaryBrief);
@@ -66,13 +66,13 @@ const BoardRoom = ({ embeddedShell = false }) => {
     },
     {
       title: 'Act next',
-      value: topAlerts[0]?.action || narrative?.strategic_direction || 'Use Board Room diagnosis to identify the best next move before this spreads.',
+      value: topAlerts[0]?.action || narrative?.strategic_direction || 'Use Boardroom diagnosis to identify the best next move before this spreads.',
     },
   ];
   const explainability = {
     whyVisible: integrationLabels.length
-      ? `Board Room is escalating this based on ${integrationLabels.length} connected system${integrationLabels.length === 1 ? '' : 's'} (${integrationLabels.join(', ')}).`
-      : 'Board Room is active, but richer diagnosis needs connected systems and live signals.',
+      ? `Boardroom is escalating this based on ${integrationLabels.length} connected system${integrationLabels.length === 1 ? '' : 's'} (${integrationLabels.join(', ')}).`
+      : 'Boardroom is active, but richer diagnosis needs connected systems and live signals.',
     whyNow: topAlerts[0]?.detail || truthGateMessage || narrative?.force_summary || 'Signal pressure is rising across your monitored domains.',
     nextAction: topAlerts[0]?.action || narrative?.strategic_direction || 'Run a diagnosis area and commit to one decision in this session.',
     ifIgnored: diagnosisResult?.if_ignored || 'Decision delay narrows options and increases second-order impact across delivery, cash, and customers.',
@@ -107,7 +107,7 @@ const BoardRoom = ({ embeddedShell = false }) => {
             ← Intelligence Platform
           </a>
           <div className="h-4 w-px" style={{ background: '#1E2D3D' }} />
-          <span className="text-sm font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Board Room</span>
+          <span className="text-sm font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Boardroom</span>
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{ background: st.bg, border: `1px solid ${st.border}` }}>
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
             <span className="text-[10px] font-semibold tracking-wide" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
@@ -235,7 +235,7 @@ const BoardRoom = ({ embeddedShell = false }) => {
           {activeDiagnosis && (
             <section data-testid="diagnosis-result">
               <button onClick={closeDiagnosis} className="flex items-center gap-2 text-xs font-medium mb-8 px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: '#64748B' }}>
-                <ArrowLeft className="w-3.5 h-3.5" /> Back to Board Room
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to Boardroom
               </button>
 
               {diagnosing && (

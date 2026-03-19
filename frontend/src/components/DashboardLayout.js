@@ -191,6 +191,9 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     });
   };
 
+  const isSA = user?.email === 'andre@thestrategysquad.com.au';
+  const hasFoundationMenuAccess = resolveTier(user) !== 'free' || isSA;
+
   const foundationItems = [
     { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
     { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
@@ -217,12 +220,11 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     { id: 'data-health', label: 'Data Health', path: '/data-health', icon: Activity, items: [] },
     { id: 'integrations', label: 'Email Integration', path: '/integrations', icon: Link2, items: [] },
     { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, items: [] },
-    { id: 'foundation', label: 'BIQc Foundation', path: '/biqc-foundation', icon: Shield, items: resolveTier(user) !== 'free' || isSA ? foundationItems : [] },
+    { id: 'foundation', label: 'BIQc Foundation', path: '/biqc-foundation', icon: Shield, items: hasFoundationMenuAccess ? foundationItems : [] },
     { id: 'more-features', label: 'More Features', path: '/more-features', icon: Workflow, items: [] },
   ];
 
   // Admin section — ONLY visible to andre@thestrategysquad.com.au (hardcoded)
-  const isSA = user?.email === 'andre@thestrategysquad.com.au';
   if (isSA) {
     navSections.push({
       id: 'admin', label: 'Admin', items: [
