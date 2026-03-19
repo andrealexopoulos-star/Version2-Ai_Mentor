@@ -906,7 +906,8 @@ class BusinessBrainEngine:
         try:
             self.sb.schema("business_core").table("source_runs").select("source_id").limit(1).execute()
             return True
-        except Exception:
+        except Exception as exc:
+            logger.warning(f"[brain] business_core schema not accessible for tenant {self.tenant_id[:8]}...: {exc}")
             return False
 
     def _t(self, table: str):
