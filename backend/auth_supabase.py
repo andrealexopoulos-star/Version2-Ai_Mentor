@@ -17,13 +17,11 @@ logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
 
-# Set via BIQC_MASTER_ADMIN_EMAIL in production; no hardcoded emails in repo
-MASTER_ADMIN_EMAIL = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "").strip().lower() or None
+# Master admin (superadmin role override); default andre@... for testing. Override with BIQC_MASTER_ADMIN_EMAIL.
+MASTER_ADMIN_EMAIL = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "andre@thestrategysquad.com.au").strip().lower()
 
 
 def _is_master_admin_email(email: str | None) -> bool:
-    if not MASTER_ADMIN_EMAIL:
-        return False
     return str(email or "").strip().lower() == MASTER_ADMIN_EMAIL
 
 
