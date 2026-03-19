@@ -40,7 +40,7 @@ export default function UpgradePage() {
           </div>
           <h1 className="mt-6 text-4xl sm:text-5xl" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Unlock BIQc Foundation</h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base" style={{ color: '#9FB0C3' }}>
-            One paid tier. One clear commercial offer. Everything in Free, plus the launch modules reserved for deeper operating control.
+            One paid tier. Everything in Free, plus the deeper operating modules for revenue, operations, marketing, Boardroom visibility, governance, and up to 5 integrations.
           </p>
         </div>
 

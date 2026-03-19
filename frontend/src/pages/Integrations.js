@@ -711,19 +711,19 @@ export default function Integrations() {
             <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-paid-upgrade-card">
               <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Paid launch modules</p>
               <h2 className="mt-3 text-xl" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Upgrade to unlock 5 integrations and the deeper operating modules.</h2>
-              <p className="mt-2 text-sm" style={{ color: '#94A3B8' }}>BIQc Foundation adds Exposure Scan, Marketing Auto, Reports, SOP Generator, Decision Tracker, and Ingestion Audit.</p>
+              <p className="mt-2 text-sm" style={{ color: '#94A3B8' }}>BIQc Foundation adds Exposure Scan, Marketing Auto, Reports, Revenue, Operations, Marketing Intelligence, Boardroom, SOP Generator, Decision Tracker, and Ingestion Audit.</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {['Exposure Scan', 'Marketing Auto', 'Reports', 'SOP Generator', 'Decision Tracker', 'Ingestion Audit'].map((item) => (
                   <span key={item} className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.08)', color: '#FFB37A', fontFamily: fontFamily.mono }}>{item}</span>
                 ))}
               </div>
               <button
-                onClick={() => navigate('/upgrade')}
+                onClick={() => navigate('/biqc-foundation')}
                 className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
                 style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
                 data-testid="integrations-upgrade-button"
               >
-                Upgrade to BIQc Foundation <ChevronRight className="w-4 h-4" />
+                View BIQc Foundation <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           ) : filtered.length > 0 ? (

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Bell, MoreHorizontal, X, Link2, Activity,
-  FileText, Settings, Radar, Target, Workflow, Inbox, MessageSquare, Calendar, Eye, Megaphone, ClipboardList, Shield } from 'lucide-react';
+  FileText, Settings, Radar, Target, Workflow, Inbox, MessageSquare, Calendar, Eye, Megaphone, ClipboardList, Shield, TrendingUp, BarChart3 } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { resolveTier } from '../lib/tierResolver';
 
 
 // ── Primary 5-tab bar ─────────────────────────────────────────────────────────
@@ -35,9 +37,14 @@ const MORE_SECTIONS = [
   {
     label: 'Foundation',
     items: [
+      { label: 'BIQc Foundation', icon: Shield,        path: '/biqc-foundation' },
       { label: 'Exposure Scan', icon: Eye,           path: '/exposure-scan' },
       { label: 'Marketing Auto',icon: Megaphone,    path: '/marketing-automation' },
       { label: 'Reports',       icon: FileText,     path: '/reports' },
+      { label: 'Revenue',       icon: TrendingUp,   path: '/revenue' },
+      { label: 'Operations',    icon: Activity,     path: '/operations' },
+      { label: 'Marketing Intel', icon: BarChart3,  path: '/marketing-intelligence' },
+      { label: 'Boardroom',     icon: MessageSquare, path: '/board-room' },
     ],
   },
   {
@@ -55,7 +62,54 @@ const MORE_SECTIONS = [
 const MobileNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useSupabaseAuth();
   const [moreOpen, setMoreOpen] = useState(false);
+  const isAndre = (user?.email || '').toLowerCase().trim() === 'andre@thestrategysquad.com.au';
+  const hasFoundationAccess = isAndre || resolveTier(user) !== 'free';
+
+  const moreSections = [
+    {
+      label: 'Free',
+      items: [
+        { label: 'Market & Position', icon: Radar, path: '/market' },
+        { label: 'Calendar', icon: Calendar, path: '/calendar' },
+        { label: 'Competitive Benchmark', icon: Target, path: '/competitive-benchmark' },
+      ],
+    },
+    {
+      label: 'Operate',
+      items: [
+        { label: 'Actions', icon: Bell, path: '/actions' },
+        { label: 'Data Health', icon: Activity, path: '/data-health' },
+        { label: 'Business DNA', icon: FileText, path: '/business-profile' },
+      ],
+    },
+    {
+      label: 'Foundation',
+      items: hasFoundationAccess
+        ? [
+            { label: 'BIQc Foundation', icon: Shield, path: '/biqc-foundation' },
+            { label: 'Exposure Scan', icon: Eye, path: '/exposure-scan' },
+            { label: 'Marketing Auto', icon: Megaphone, path: '/marketing-automation' },
+            { label: 'Reports', icon: FileText, path: '/reports' },
+            { label: 'Revenue', icon: TrendingUp, path: '/revenue' },
+            { label: 'Operations', icon: Activity, path: '/operations' },
+            { label: 'Marketing Intel', icon: BarChart3, path: '/marketing-intelligence' },
+            { label: 'Boardroom', icon: MessageSquare, path: '/board-room' },
+          ]
+        : [
+            { label: 'BIQc Foundation', icon: Shield, path: '/biqc-foundation' },
+          ],
+    },
+    {
+      label: 'More',
+      items: [
+        { label: 'Email Integration', icon: Link2, path: '/integrations' },
+        { label: 'Settings', icon: Settings, path: '/settings' },
+        { label: 'More Features', icon: Workflow, path: '/more-features' },
+      ],
+    },
+  ];
 
   const handleNav = (item) => {
     if (item.id === 'more') { setMoreOpen(prev => !prev); return; }
@@ -101,7 +155,7 @@ const MobileNav = () => {
 
             {/* Grouped sections */}
             <div className="px-3 py-2 space-y-4 overflow-y-auto max-h-[60vh]">
-              {MORE_SECTIONS.map(section => (
+              {moreSections.map(section => (
                 <div key={section.label}>
                   <p
                     className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-widest"

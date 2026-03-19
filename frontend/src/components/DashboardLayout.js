@@ -180,8 +180,8 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     } catch {}
   };
 
-  // Multi-expand sections — keep key navigation groups open by default
-  const [expandedSections, setExpandedSections] = useState(() => new Set(['paid']));
+  // Multi-expand sections — collapsed by default until a paid item is active.
+  const [expandedSections, setExpandedSections] = useState(() => new Set());
 
   const toggleSection = (sectionId) => {
     setExpandedSections(prev => {
@@ -190,6 +190,19 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       return next;
     });
   };
+
+  const foundationItems = [
+    { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
+    { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
+    { icon: FileText, label: 'Reports', path: '/reports' },
+    { icon: ClipboardList, label: 'Decision Tracker', path: '/decisions' },
+    { icon: BookOpen, label: 'SOP Generator', path: '/sop-generator' },
+    { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
+    { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
+    { icon: Activity, label: 'Operations', path: '/operations' },
+    { icon: BarChart3, label: 'Marketing Intelligence', path: '/marketing-intelligence' },
+    { icon: MessageSquare, label: 'Boardroom', path: '/board-room' },
+  ];
 
   const navSections = [
     { id: 'overview', label: 'BIQc Overview', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [] },
@@ -204,14 +217,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     { id: 'data-health', label: 'Data Health', path: '/data-health', icon: Activity, items: [] },
     { id: 'integrations', label: 'Email Integration', path: '/integrations', icon: Link2, items: [] },
     { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, items: [] },
-    { id: 'paid', label: 'BIQc Foundation', items: [
-      { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
-      { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
-      { icon: FileText, label: 'Reports', path: '/reports' },
-      { icon: ClipboardList, label: 'Decision Tracker', path: '/decisions' },
-      { icon: BookOpen, label: 'SOP Generator', path: '/sop-generator' },
-      { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
-    ]},
+    { id: 'foundation', label: 'BIQc Foundation', path: '/biqc-foundation', icon: Shield, items: resolveTier(user) !== 'free' || isSA ? foundationItems : [] },
     { id: 'more-features', label: 'More Features', path: '/more-features', icon: Workflow, items: [] },
   ];
 

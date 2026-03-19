@@ -98,7 +98,7 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
                     "recurring": {"interval": plan["interval"]},
                     "product_data": {
                         "name": plan["name"],
-                        "description": "AI operating layer for business visibility, decision support, execution control, and up to 5 integrations.",
+                        "description": "Paid operating tier for visibility, revenue and operations control, marketing intelligence, Boardroom context, governance workflows, and up to 5 integrations.",
                     },
                 },
                 "quantity": 1,

@@ -1886,25 +1886,35 @@ export default function AdvisorWatchtower() {
                   </div>
 
                   <div data-testid="advisor-priority-main-rail">
-                    {brainUnavailable ? (
-                      <div className="rounded-2xl border p-5" style={{ borderColor: '#EF444460', background: '#450A0A' }} data-testid="advisor-brain-unavailable-state">
-                        <h3 className="text-lg" style={{ color: '#FCA5A5', fontFamily: fontFamily.display }} data-testid="advisor-brain-unavailable-title">
-                          BIQc Business Brain data is currently unavailable.
+                    {brainUnavailable && !criticalError ? (
+                      <div className="rounded-2xl border p-5" style={{ borderColor: '#F59E0B55', background: 'rgba(245,158,11,0.08)' }} data-testid="advisor-brain-unavailable-state">
+                        <h3 className="text-lg" style={{ color: '#FDE68A', fontFamily: fontFamily.display }} data-testid="advisor-brain-unavailable-title">
+                          BIQc Business Brain is in delayed mode right now.
                         </h3>
-                        <p className="mt-2 text-sm" style={{ color: '#FECACA' }} data-testid="advisor-brain-unavailable-summary">
-                          {brainContext.error || 'Brain priorities did not load from /brain/priorities in this cycle.'}
+                        <p className="mt-2 text-sm" style={{ color: '#F8D68A' }} data-testid="advisor-brain-unavailable-summary">
+                          {brainContext.error || 'The latest Business Brain decision cycle did not settle in this pass.'}
                         </p>
-                        <p className="mt-2 text-sm" style={{ color: '#FECACA' }} data-testid="advisor-brain-unavailable-next-step">
-                          This state is not treated as all-clear. Use Refresh intelligence and verify integrations health before making decisions.
+                        <p className="mt-2 text-sm" style={{ color: '#F8D68A' }} data-testid="advisor-brain-unavailable-next-step">
+                          Verified integration signals remain visible below. Refresh intelligence or review source health before making a high-stakes call.
                         </p>
-                        <Link
-                          to={soundboardDiscussHref(`Business Brain unavailable: ${brainContext.error || 'No concerns returned'}. Diagnose root cause and next actions.`)}
-                          className="mt-4 inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                          style={{ borderColor: '#FCA5A5', color: '#FECACA', fontFamily: fontFamily.mono }}
-                          data-testid="advisor-brain-unavailable-discuss-soundboard"
-                        >
-                          Discuss with BIQc SoundBoard <ArrowRight className="h-3.5 w-3.5" />
-                        </Link>
+                        <div className="mt-4 flex flex-wrap gap-3">
+                          <button
+                            onClick={handleRefresh}
+                            className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                            style={{ borderColor: '#FDE68A55', color: '#FDE68A', fontFamily: fontFamily.mono }}
+                            data-testid="advisor-brain-unavailable-refresh-button"
+                          >
+                            Refresh intelligence <RefreshCw className="h-3.5 w-3.5" />
+                          </button>
+                          <Link
+                            to={soundboardDiscussHref(`Business Brain delayed: ${brainContext.error || 'No concerns returned'}. Diagnose root cause and next actions.`)}
+                            className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
+                            style={{ borderColor: '#FDE68A55', color: '#FDE68A', fontFamily: fontFamily.mono }}
+                            data-testid="advisor-brain-unavailable-discuss-soundboard"
+                          >
+                            Discuss with BIQc SoundBoard <ArrowRight className="h-3.5 w-3.5" />
+                          </Link>
+                        </div>
                       </div>
                     ) : brainLoading ? (
                       <div className="rounded-2xl border p-5" style={{ borderColor: '#334155', background: '#0F172A' }} data-testid="advisor-brain-loading-state">
