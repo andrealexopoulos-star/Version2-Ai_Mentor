@@ -49,8 +49,8 @@ RATE_LIMIT_RULES = {
 }
 RATE_LIMIT_BUCKETS = defaultdict(deque)
 RATE_LIMIT_LOCK = Lock()
-# Optional: env override for rate-limit bypass; avoid hardcoding production emails in repo
-MASTER_ADMIN_EMAIL = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "").strip().lower() or None
+# Master admin for rate-limit bypass; default andre@... for testing. Override with BIQC_MASTER_ADMIN_EMAIL.
+MASTER_ADMIN_EMAIL = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "andre@thestrategysquad.com.au").strip().lower()
 
 
 # ==================== MIDDLEWARE ====================
