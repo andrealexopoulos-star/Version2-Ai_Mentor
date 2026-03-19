@@ -166,6 +166,14 @@ const CalibrationAdvisor = () => {
         />
       )}
 
+      {cal.entry === "integration_connect" && (
+        <PostCMOIntegrationOverlay
+          firstName={cal.firstName}
+          onSkip={() => cal.setEntry('intelligence-first')}
+          onComplete={() => cal.setEntry('intelligence-first')}
+        />
+      )}
+
       {cal.transitioning && <DissolveTransition firstName={cal.firstName} />}
 
       {/* ═══ PHASE 5: Executive CMO Snapshot — "Here's What BIQc Found" ═══ */}

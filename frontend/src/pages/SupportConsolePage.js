@@ -5,8 +5,8 @@ import { Shield, CheckCircle2, Users, Key, UserX, Edit, Eye, AlertTriangle, Load
 import { fontFamily } from '../design-system/tokens';
 
 
-const TIER_COLORS = { free: '#64748B', starter: '#10B981', professional: '#3B82F6', growth: '#7C3AED', enterprise: '#7C3AED', super_admin: '#EF4444' };
-const TIER_LABELS = { free: 'Free', starter: 'Foundation $750', professional: 'Performance $1,950', growth: 'Growth $3,900', enterprise: 'Growth $3,900', super_admin: 'Super Admin' };
+const TIER_COLORS = { free: '#64748B', starter: '#FF6A00', professional: '#FF6A00', growth: '#FF6A00', enterprise: '#FF6A00', super_admin: '#EF4444' };
+const TIER_LABELS = { free: 'Free', starter: 'SMB Protect $349', professional: 'SMB Protect $349', growth: 'SMB Protect $349', enterprise: 'SMB Protect $349', super_admin: 'Super Admin' };
 
 const SupportConsolePage = () => {
   const [admin, setAdmin] = useState(null);
@@ -151,9 +151,9 @@ const SupportConsolePage = () => {
                             className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: (TIER_COLORS[u.subscription_tier] || '#64748B') + '15', color: TIER_COLORS[u.subscription_tier] || '#64748B', border: 'none', fontFamily: fontFamily.mono }}>
                             {[
                               { val: 'free', label: 'Free' },
-                              { val: 'starter', label: 'Foundation ($750)' },
-                              { val: 'professional', label: 'Performance ($1,950)' },
-                              { val: 'enterprise', label: 'Growth ($3,900)' },
+                              { val: 'starter', label: 'SMB Protect ($349)' },
+                              { val: 'professional', label: 'SMB Protect ($349)' },
+                              { val: 'enterprise', label: 'SMB Protect ($349)' },
                               { val: 'super_admin', label: 'Super Admin' },
                             ].map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
                           </select>
@@ -192,7 +192,7 @@ const SupportConsolePage = () => {
           <div className="rounded-xl overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
               <span className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>Enterprise Contact Requests ({contacts.length})</span>
-              <p className="text-[10px] text-[#64748B] mt-0.5">Users requesting access to Growth/Enterprise features. Route to HubSpot when configured.</p>
+              <p className="text-[10px] text-[#64748B] mt-0.5">Users requesting access to paid or waitlist modules. Route to sales follow-up when configured.</p>
             </div>
             {contacts.length === 0 && <p className="text-xs text-[#64748B] p-4">No contact requests yet.</p>}
             <div className="overflow-x-auto">

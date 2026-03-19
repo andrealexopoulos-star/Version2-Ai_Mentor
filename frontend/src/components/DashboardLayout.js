@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE, supabase } from '../context/SupabaseAuthContext';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
@@ -181,7 +181,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   };
 
   // Multi-expand sections — keep key navigation groups open by default
-  const [expandedSections, setExpandedSections] = useState(() => new Set(['execution', 'governance', 'legal']));
+  const [expandedSections, setExpandedSections] = useState(() => new Set(['paid']));
 
   const toggleSection = (sectionId) => {
     setExpandedSections(prev => {
@@ -192,46 +192,27 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   };
 
   const navSections = [
-    { id: 'overview', label: 'BIQc Overview', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [
-      { icon: MessageSquare, label: 'Boardroom', path: '/board-room' },
-      { icon: BookOpen, label: 'Intel Centre', path: '/intel-centre' },
-      { icon: Zap, label: 'Soundboard', path: '/soundboard' },
-      { icon: Target, label: 'War Room', path: '/war-room' },
-    ]},
-    { id: 'market', label: 'Market & Positioning', path: '/market', icon: Radar, items: [
-      { icon: Workflow, label: 'Automations', path: '/automations' },
-      { icon: Target, label: 'Competitive Benchmark', path: '/competitive-benchmark' },
+    { id: 'overview', label: 'BIQc Overview', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [] },
+    { id: 'soundboard', label: 'Soundboard', path: '/soundboard', icon: MessageSquare, items: [] },
+    { id: 'inbox', label: 'Priority Inbox', path: '/email-inbox', icon: Inbox, items: [] },
+    { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [] },
+    { id: 'market', label: 'Market & Position', path: '/market', icon: Radar, items: [] },
+    { id: 'benchmark', label: 'Competitive Benchmark', path: '/competitive-benchmark', icon: Target, items: [] },
+    { id: 'business-dna', label: 'Business DNA', path: '/business-profile', icon: BarChart3, items: [] },
+    { id: 'actions', label: 'Actions', path: '/actions', icon: Zap, items: [] },
+    { id: 'alerts', label: 'Alerts', path: '/alerts', icon: Bell, showBadge: true, items: [] },
+    { id: 'data-health', label: 'Data Health', path: '/data-health', icon: Activity, items: [] },
+    { id: 'integrations', label: 'Email Integration', path: '/integrations', icon: Link2, items: [] },
+    { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, items: [] },
+    { id: 'paid', label: 'SMB Protect', items: [
       { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
       { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
-      { icon: BarChart3, label: 'Marketing Intel', path: '/marketing-intelligence' },
-    ]},
-    { id: 'operations', label: 'Operations', path: '/operations', icon: Settings, items: [
-      { icon: Activity, label: 'Ops Advisory', path: '/ops-advisory' },
-      { icon: FileText, label: 'SOP Generator', path: '/sop-generator' },
-    ]},
-    { id: 'revenue', label: 'Revenue', path: '/revenue', icon: TrendingUp, items: [] },
-    { id: 'risk', label: 'Risk', path: '/risk', icon: AlertTriangle, items: [
-      { icon: BarChart3, label: 'Analysis', path: '/analysis' },
-      { icon: ClipboardList, label: 'Audit Log', path: '/audit-log' },
-      { icon: Shield, label: 'Compliance', path: '/compliance' },
-      { icon: Target, label: 'Decisions', path: '/decisions' },
-      { icon: Eye, label: 'Diagnosis', path: '/diagnosis' },
+      { icon: FileText, label: 'Reports', path: '/reports' },
+      { icon: ClipboardList, label: 'Decision Tracker', path: '/decisions' },
+      { icon: BookOpen, label: 'SOP Generator', path: '/sop-generator' },
       { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
     ]},
-    { id: 'execution', label: 'Execution', items: [
-      { icon: Zap, label: 'Actions', path: '/actions' },
-      { icon: Bell, label: 'Alerts', path: '/alerts' },
-      { icon: Calendar, label: 'Calendar', path: '/calendar' },
-      { icon: Inbox, label: 'Priority Inbox', path: '/email-inbox' },
-    ]},
-    { id: 'governance', label: 'Settings & Growth', items: [
-      { icon: BarChart3, label: 'Business DNA', path: '/business-profile' },
-      { icon: Activity, label: 'Data Health', path: '/data-health' },
-      { icon: FileText, label: 'Documents', path: '/documents' },
-      { icon: Link2, label: 'Integrations', path: '/integrations' },
-      { icon: FileText, label: 'Reports', path: '/reports' },
-      { icon: Settings, label: 'Settings', path: '/settings' },
-    ]},
+    { id: 'more-features', label: 'More Features', path: '/more-features', icon: Workflow, items: [] },
   ];
 
   // Admin section — ONLY visible to andre@thestrategysquad.com.au (hardcoded)
@@ -258,7 +239,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     }));
   }, [isCalibrated]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const isActive = useCallback((path) => location.pathname === path || location.pathname.startsWith(`${path}/`), [location.pathname]);
   const currentPageLabel = useMemo(() => {
     for (const section of visibleSections) {
       if (section.path && isActive(section.path)) return section.label;
@@ -267,7 +248,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       }
     }
     return 'Current page';
-  }, [visibleSections, location.pathname]);
+  }, [visibleSections, isActive]);
 
   useEffect(() => {
     setExpandedSections((prev) => {
@@ -277,10 +258,9 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
         if (sectionHasActiveItem) next.add(section.id);
       });
       if (isSA) next.add('admin');
-      next.add('legal');
       return next;
     });
-  }, [visibleSections, location.pathname, isSA]);
+  }, [visibleSections, isSA, isActive]);
   const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';
 const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
@@ -547,42 +527,22 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
             );
           })}
 
-          {/* BIQc Legal — collapsible section at bottom */}
-          {!sidebarCollapsed && (
-            <div className="mt-auto pt-2 pb-2" style={{ borderTop: '1px solid var(--biqc-border, #243140)' }}>
-              <button
-                onClick={() => toggleSection('legal')}
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors hover:bg-white/5 group"
-                style={{ color: 'var(--biqc-text-muted, #8B9DB5)' }}
-                aria-expanded={expandedSections.has('legal')}
-              >
-                <div className="flex items-center gap-2">
-                  <Scale className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ fontFamily: fontFamily.mono }}>BIQc Legal</span>
-                </div>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedSections.has('legal') ? 'rotate-180' : ''}`} />
-              </button>
-              {expandedSections.has('legal') && (
-                <div className="mt-1 space-y-0.5">
-                  {[
-                    { label: 'BIQc AI Learning Guarantee', path: '/trust/ai-learning-guarantee', icon: Zap },
-                    { label: 'Security & Infrastructure', path: '/trust/security', icon: Shield },
-                    { label: 'Trust Centre', path: '/trust/centre', icon: Gavel },
-                    { label: 'Data Processing Agreement', path: '/trust/dpa', icon: FileText },
-                    { label: 'Privacy Policy', path: '/trust/privacy', icon: FileText },
-                    { label: 'Terms & Conditions', path: '/terms', icon: Scale },
-                  ].map(({ label, path, icon: Icon }) => (
-                    <button key={path} onClick={() => navigate(path)}
-                      className="flex items-center gap-2 text-left text-[11px] px-3 py-1.5 rounded-lg w-full transition-colors hover:bg-white/5 hover:text-[#9FB0C3]"
-                      style={{ color: '#64748B', fontFamily: fontFamily.body }}>
-                      <Icon className="w-3 h-3 shrink-0" />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          <div className="mt-auto pt-2 pb-2" style={{ borderTop: '1px solid var(--biqc-border, #243140)' }}>
+            <button
+              onClick={() => { navigate('/biqc-legal'); closeAll(); }}
+              className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all hover:bg-white/5"
+              style={{
+                color: isActive('/biqc-legal') ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
+                background: isActive('/biqc-legal') ? '#FF6A0015' : 'transparent',
+                borderLeft: isActive('/biqc-legal') ? '2px solid #FF6A00' : '2px solid transparent',
+                fontFamily: fontFamily.body,
+              }}
+              data-testid="nav-biqc-legal"
+            >
+              <Scale className="w-4 h-4 shrink-0" style={{ color: isActive('/biqc-legal') ? '#FF6A00' : '#64748B' }} />
+              {!sidebarCollapsed && <span className="flex-1 text-left">BIQc Legal</span>}
+            </button>
+          </div>
         </nav>
       </aside>
 

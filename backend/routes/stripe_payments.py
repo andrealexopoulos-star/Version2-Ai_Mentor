@@ -1,36 +1,55 @@
-"""BIQc Stripe Subscription Routes — Updated for new tier pricing.
-
-Plans: Free ($0) | Foundation ($99/mo AUD) | Growth ($249/mo AUD) | Enterprise (custom)
-"""
+"""BIQc Stripe Subscription Routes — launch pricing."""
 import os
 import logging
-import stripe
 from datetime import datetime, timezone
+from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, Request, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 from routes.auth import get_current_user
 
+load_dotenv()
 STRIPE_KEY = os.environ.get("STRIPE_API_KEY", "")
-stripe.api_key = STRIPE_KEY
 
 PLANS = {
-    "foundation": {
-        "amount": 9900,          # $99.00 AUD
+    "starter": {
+        "amount": 34900,
         "currency": "aud",
-        "name": "BIQc Foundation",
-        "tier": "foundation",
+        "name": "BIQc SMB Protect",
+        "tier": "starter",
+        "interval": "month",
+    },
+    "foundation": {
+        "amount": 34900,
+        "currency": "aud",
+        "name": "BIQc SMB Protect",
+        "tier": "starter",
         "interval": "month",
     },
     "growth": {
-        "amount": 24900,         # $249.00 AUD
+        "amount": 34900,
         "currency": "aud",
-        "name": "BIQc Growth",
-        "tier": "growth",
+        "name": "BIQc SMB Protect",
+        "tier": "starter",
+        "interval": "month",
+    },
+    "professional": {
+        "amount": 34900,
+        "currency": "aud",
+        "name": "BIQc SMB Protect",
+        "tier": "starter",
+        "interval": "month",
+    },
+    "enterprise": {
+        "amount": 34900,
+        "currency": "aud",
+        "name": "BIQc SMB Protect",
+        "tier": "starter",
         "interval": "month",
     },
 }
@@ -49,7 +68,7 @@ class CheckoutRequest(BaseModel):
 
 @router.post("/stripe/create-checkout-session")
 @router.post("/payments/checkout")  # legacy route
-async def create_checkout(req: CheckoutRequest, current_user: dict = Depends(get_current_user)):
+async def create_checkout(req: CheckoutRequest, request: Request, current_user: dict = Depends(get_current_user)):
     """Create Stripe checkout session for a subscription plan."""
     plan_id = req.tier or req.package_id or ''
     if plan_id not in PLANS:
@@ -68,21 +87,13 @@ async def create_checkout(req: CheckoutRequest, current_user: dict = Depends(get
     cancel_url  = req.cancel_url  or f"{base}/upgrade"
 
     try:
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency": plan["currency"],
-                    "unit_amount": plan["amount"],
-                    "recurring": {"interval": plan["interval"]},
-                    "product_data": {"name": plan["name"], "description": f"BIQc {plan['name']} — Monthly subscription"},
-                },
-                "quantity": 1,
-            }],
-            mode="subscription",
+        host_url = str(request.base_url).rstrip('/')
+        stripe_checkout = StripeCheckout(api_key=STRIPE_KEY, webhook_url=f"{host_url}/api/webhook/stripe")
+        checkout_request = CheckoutSessionRequest(
+            amount=float(plan["amount"]) / 100.0,
+            currency=plan["currency"],
             success_url=success_url,
             cancel_url=cancel_url,
-            customer_email=user_email,
             metadata={
                 "user_id": user_id,
                 "user_email": user_email,
@@ -90,26 +101,25 @@ async def create_checkout(req: CheckoutRequest, current_user: dict = Depends(get
                 "source": "biqc_upgrade",
             },
         )
+        session = await stripe_checkout.create_checkout_session(checkout_request)
         logger.info(f"✅ Stripe checkout created for {user_email} → {plan['name']}")
-        return {"url": session.url, "session_id": session.id}
-
         try:
             from supabase_client import get_supabase_client
             sb = get_supabase_client()
             sb.table("payment_transactions").insert({
                 "user_id": user_id,
-                "session_id": session.id,
-                "amount": pkg["amount"] / 100,
-                "currency": pkg["currency"],
-                "package_id": req.package_id,
-                "tier": pkg["tier"],
+                "session_id": session.session_id,
+                "amount": plan["amount"] / 100,
+                "currency": plan["currency"],
+                "package_id": plan_id,
+                "tier": plan["tier"],
                 "payment_status": "initiated",
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }).execute()
         except Exception as e:
             logger.warning(f"Failed to store payment transaction: {e}")
 
-        return {"url": session.url, "session_id": session.id}
+        return {"url": session.url, "session_id": session.session_id}
 
     except Exception as e:
         logger.error(f"Checkout creation failed: {e}")
@@ -120,7 +130,8 @@ async def create_checkout(req: CheckoutRequest, current_user: dict = Depends(get
 async def get_payment_status(session_id: str, current_user: dict = Depends(get_current_user)):
     """Check payment status and update tier if paid."""
     try:
-        session = stripe.checkout.Session.retrieve(session_id)
+        stripe_checkout = StripeCheckout(api_key=STRIPE_KEY)
+        session = await stripe_checkout.get_checkout_status(session_id)
 
         if session.payment_status == "paid":
             try:
@@ -160,15 +171,13 @@ async def stripe_webhook(request: Request):
     """Handle Stripe webhook events."""
     try:
         body = await request.body()
-        event = stripe.Event.construct_from(
-            stripe.util.json.loads(body), stripe.api_key
-        )
+        stripe_checkout = StripeCheckout(api_key=STRIPE_KEY)
+        event = await stripe_checkout.handle_webhook(body, request.headers.get("Stripe-Signature"))
 
-        logger.info(f"Stripe webhook: {event.type}")
+        logger.info(f"Stripe webhook: {event.event_type}")
 
-        if event.type == "checkout.session.completed":
-            session = event.data.object
-            if session.payment_status == "paid":
+        if event.event_type == "checkout.session.completed":
+            if event.payment_status == "paid":
                 try:
                     from supabase_client import get_supabase_client
                     sb = get_supabase_client()
@@ -176,10 +185,10 @@ async def stripe_webhook(request: Request):
                     sb.table("payment_transactions").update({
                         "payment_status": "paid",
                         "paid_at": datetime.now(timezone.utc).isoformat(),
-                    }).eq("session_id", session.id).execute()
+                    }).eq("session_id", event.session_id).execute()
 
-                    tier = session.metadata.get("tier", "starter")
-                    user_id = session.metadata.get("user_id")
+                    tier = (event.metadata or {}).get("tier", "starter")
+                    user_id = (event.metadata or {}).get("user_id")
                     if user_id:
                         sb.table("business_profiles").update({
                             "subscription_tier": tier,

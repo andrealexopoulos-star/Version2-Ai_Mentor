@@ -7,48 +7,53 @@
 const SUPER_ADMIN_EMAIL = 'andre@thestrategysquad.com.au';
 
 const TIERS = ['free', 'starter', 'professional', 'enterprise', 'custom', 'super_admin'];
-export const TIER_RANK = { free: 0, starter: 1, professional: 2, enterprise: 3, custom: 4, super_admin: 99, growth: 3 }; // growth kept as legacy alias only
+export const TIER_RANK = { free: 0, starter: 1, professional: 1, enterprise: 1, custom: 1, foundation: 1, growth: 1, super_admin: 99 };
 
 // Route → minimum tier
 const ROUTE_ACCESS = {
   '/advisor': 'free',
   '/market': 'free',
   '/business-profile': 'free',
-  '/forensic-audit': 'free',
-  '/knowledge-base': 'free',
   '/settings': 'free',
   '/integrations': 'free',
   '/connect-email': 'free',
   '/data-health': 'free',
   '/competitive-benchmark': 'free',
+  '/soundboard': 'free',
+  '/email-inbox': 'free',
+  '/calendar': 'free',
+  '/actions': 'free',
+  '/alerts': 'free',
   '/calibration': 'free',
   '/onboarding': 'free',
   '/onboarding-decision': 'free',
   '/profile-import': 'free',
-  // PAID — Enterprise tier required (Growth & Enterprise plans)
-  '/revenue': 'enterprise',
-  '/operations': 'enterprise',
-  // PAID — Starter tier
+  '/biqc-legal': 'free',
+  '/more-features': 'free',
+  // PAID — single launch tier
+  '/exposure-scan': 'starter',
+  '/marketing-automation': 'starter',
+  '/reports': 'starter',
+  '/sop-generator': 'starter',
+  '/decisions': 'starter',
+  '/forensic-audit': 'starter',
+  '/revenue': 'starter',
+  '/operations': 'starter',
   '/risk': 'starter',
   '/compliance': 'starter',
-  '/reports': 'free',
   '/audit-log': 'starter',
-  '/soundboard': 'free',
   '/war-room': 'starter',
   '/board-room': 'starter',
-  '/sop-generator': 'starter',
-  '/alerts': 'free',
-  '/actions': 'free',
   '/automations': 'starter',
-  '/email-inbox': 'free',
-  '/calendar': 'free',
   '/analysis': 'starter',
   '/diagnosis': 'starter',
   '/documents': 'starter',
-  '/data-center': 'starter',
   '/intelligence-baseline': 'starter',
   '/intel-centre': 'starter',
   '/watchtower': 'starter',
+  '/marketing-intelligence': 'starter',
+  '/market-analysis': 'starter',
+  '/ops-advisory': 'starter',
   '/operator': 'starter',
   // ADMIN
   '/admin': 'super_admin',
@@ -72,6 +77,7 @@ export function resolveTier(user) {
   const role = (user.role || '').toLowerCase();
   if (role === 'superadmin' || role === 'super_admin' || role === 'admin') return 'super_admin';
   const dbTier = (user.subscription_tier || user.tier || 'free').toLowerCase();
+  if (['starter', 'professional', 'enterprise', 'custom', 'growth', 'foundation'].includes(dbTier)) return 'starter';
   return TIERS.includes(dbTier) ? dbTier : 'free';
 }
 

@@ -4,6 +4,11 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { checkRouteAccess } from '../lib/tierResolver';
 
 export default function TierGate({ children }) {
-  // All gates removed — full platform access for all users
+  const { user } = useSupabaseAuth();
+  const location = useLocation();
+  const access = checkRouteAccess(location.pathname, user);
+  if (!access.allowed) {
+    return <Navigate to={access.redirect || '/upgrade'} replace />;
+  }
   return children;
 }

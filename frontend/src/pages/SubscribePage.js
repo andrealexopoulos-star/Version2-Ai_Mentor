@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
@@ -9,14 +9,16 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const FEATURE_LABELS = {
-  '/revenue': 'Revenue Engine', '/operations': 'Operations Intelligence', '/risk': 'Risk & Workforce',
-  '/compliance': 'Compliance', '/reports': 'Intelligence Reports', '/audit-log': 'Governance Audit Log',
-  '/soundboard': 'Soundboard Chat', '/war-room': 'War Room', '/board-room': 'Board Room',
-  '/sop-generator': 'SOP Generator', '/market': 'Market Deep Analysis',
+  '/exposure-scan': 'Exposure Scan',
+  '/marketing-automation': 'Marketing Auto',
+  '/reports': 'Reports',
+  '/sop-generator': 'SOP Generator',
+  '/decisions': 'Decision Tracker',
+  '/forensic-audit': 'Ingestion Audit',
 };
 
 // Use canonical pricing — excludes 'free' and 'super_admin' from payment plans
-const PLANS = PRICING_TIERS.filter(t => t.id !== 'free' && t.id !== 'super_admin');
+const PLANS = PRICING_TIERS.filter(t => t.id === 'starter');
 
 const SubscribePage = () => {
   const { user } = useSupabaseAuth();
@@ -32,13 +34,7 @@ const SubscribePage = () => {
   const [loading, setLoading] = useState(null);
 
   // Poll payment status if returning from Stripe
-  useEffect(() => {
-    if (sessionId && status === 'success') {
-      pollPaymentStatus(sessionId, 0);
-    }
-  }, [sessionId, status]);
-
-  const pollPaymentStatus = async (sid, attempt) => {
+  const pollPaymentStatus = useCallback(async (sid, attempt) => {
     if (attempt >= 5) {
       setPaymentResult({ status: 'timeout', message: 'Payment verification timed out. Please refresh.' });
       return;
@@ -61,7 +57,13 @@ const SubscribePage = () => {
       setPaymentResult({ status: 'error', message: 'Error checking payment. Please refresh.' });
       setCheckingPayment(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (sessionId && status === 'success') {
+      pollPaymentStatus(sessionId, 0);
+    }
+  }, [sessionId, status, pollPaymentStatus]);
 
   const handleUpgrade = async (packageId) => {
     setLoading(packageId);
@@ -103,11 +105,11 @@ const SubscribePage = () => {
           <Lock className="w-6 h-6 text-[#FF6A00]" />
         </div>
         {featureLabel && <p className="text-xs text-[#FF6A00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
-        <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Upgrade Your Intelligence</h1>
+        <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Upgrade to SMB Protect</h1>
         <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#F4F7FA] capitalize">{currentTier}</strong></p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full mb-8">
+      <div className="grid grid-cols-1 gap-6 max-w-3xl w-full mb-8">
         {PLANS.map(plan => {
           const isCurrent = plan.id === currentTier;
           return (
@@ -134,8 +136,6 @@ const SubscribePage = () => {
               </div>
               {isCurrent ? (
                 <span className="block text-center text-xs text-[#64748B] py-2.5" style={{ fontFamily: fontFamily.mono }}>Current Plan</span>
-              ) : plan.id === 'free' ? (
-                <span className="block text-center text-xs text-[#64748B] py-2.5" style={{ fontFamily: fontFamily.mono }}>Free Forever</span>
               ) : (
                 <button onClick={() => handleUpgrade(plan.id)} disabled={loading === plan.id}
                   className="w-full py-2.5 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"

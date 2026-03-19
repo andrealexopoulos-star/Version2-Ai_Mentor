@@ -56,13 +56,36 @@ def _connected_integration_count(user_id: str) -> int:
     return count
 
 
-def _enforce_free_integration_limit(current_user: dict) -> None:
-    if resolve_tier(current_user) != 'free':
+def _launch_integration_limit(current_user: dict) -> Optional[int]:
+    tier = resolve_tier(current_user)
+    if tier == 'super_admin':
+        return None
+    if tier == 'free':
+        return 1
+    return 5
+
+
+def _enforce_launch_integration_limit(current_user: dict, *, merge_only: bool = False) -> None:
+    tier = resolve_tier(current_user)
+    if tier == 'super_admin':
         return
-    if _connected_integration_count(current_user["id"]) > 0:
+    if tier == 'free' and merge_only:
         raise HTTPException(
             status_code=403,
-            detail="Free tier includes 1 connected integration. Disconnect an existing connection or upgrade to add more.",
+            detail='Free tier supports email integration only. Upgrade to SMB Protect to connect CRM, accounting, and other systems.',
+        )
+
+    limit = _launch_integration_limit(current_user)
+    if limit is None:
+        return
+    if _connected_integration_count(current_user["id"]) >= limit:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                'Free tier includes 1 email integration only. Disconnect the current provider or upgrade to SMB Protect.'
+                if tier == 'free'
+                else 'SMB Protect includes up to 5 integrations. Disconnect an existing connection before adding another.'
+            ),
         )
 
 
@@ -234,7 +257,7 @@ async def create_merge_link_token(
     """Generate Merge.dev link token for workspace (P0: workspace-scoped)"""
     from workspace_helpers import get_or_create_user_account
 
-    _enforce_free_integration_limit(current_user)
+    _enforce_launch_integration_limit(current_user, merge_only=True)
     
     merge_api_key = os.environ.get("MERGE_API_KEY")
     
@@ -308,6 +331,8 @@ async def exchange_merge_account_token(
     """Exchange Merge public_token for account_token and persist (P0: workspace-scoped)"""
     from workspace_helpers import get_user_account
     
+    _enforce_launch_integration_limit(current_user, merge_only=True)
+
     merge_api_key = os.environ.get("MERGE_API_KEY")
     
     if not merge_api_key or merge_api_key in ("CONFIGURED_IN_AZURE", ""):

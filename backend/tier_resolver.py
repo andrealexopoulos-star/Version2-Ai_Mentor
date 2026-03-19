@@ -33,11 +33,11 @@ BRAIN_METRIC_LIMITS = {
 
 BRAIN_PLAN_LABELS = {
     'free': 'Free',
-    'starter': 'Foundation',
-    'professional': 'Performance',
+    'starter': 'SMB Protect',
+    'professional': 'SMB Protect',
     'enterprise': 'SMB Protect',
-    'custom': 'Custom',
-    'super_admin': 'Custom',
+    'custom': 'SMB Protect',
+    'super_admin': 'SMB Protect',
 }
 
 # ═══ ROUTE ACCESS MAP ═══
@@ -48,34 +48,37 @@ ROUTE_ACCESS = {
     '/advisor': 'free',              # BIQc Overview (Market tab only gated separately)
     '/market': 'free',               # Market tab (sub-gating inside)
     '/business-profile': 'free',     # Business DNA
-    '/forensic-audit': 'free',       # Ingestion audit (1/month limit)
-    '/knowledge-base': 'free',       # Public
     '/settings': 'free',             # Account settings
     '/integrations': 'free',         # Connect integrations
     '/connect-email': 'free',        # Email integration
     '/data-health': 'free',          # Data health check
     '/competitive-benchmark': 'free',
+    '/soundboard': 'free',
+    '/email-inbox': 'free',
+    '/calendar': 'free',
+    '/actions': 'free',
+    '/alerts': 'free',
     '/calibration': 'free',          # Onboarding calibration
     '/onboarding': 'free',
     '/onboarding-decision': 'free',
     '/profile-import': 'free',
+    '/biqc-legal': 'free',
+    '/more-features': 'free',
 
     # PAID TIER — requires starter or above
+    '/exposure-scan': 'starter',
+    '/marketing-automation': 'starter',
+    '/forensic-audit': 'starter',
     '/revenue': 'starter',
     '/operations': 'starter',
     '/risk': 'starter',
     '/compliance': 'starter',
     '/reports': 'starter',
     '/audit-log': 'starter',
-    '/soundboard': 'free',
     '/war-room': 'starter',
     '/board-room': 'starter',
     '/sop-generator': 'starter',
-    '/alerts': 'free',
-    '/actions': 'free',
     '/automations': 'starter',
-    '/email-inbox': 'free',
-    '/calendar': 'free',
     '/analysis': 'starter',
     '/diagnosis': 'starter',
     '/documents': 'starter',
@@ -84,6 +87,9 @@ ROUTE_ACCESS = {
     '/intel-centre': 'starter',
     '/watchtower': 'starter',
     '/operator': 'starter',
+    '/marketing-intelligence': 'starter',
+    '/market-analysis': 'starter',
+    '/ops-advisory': 'starter',
 
     # ADMIN — super admin only
     '/admin': 'super_admin',
@@ -107,7 +113,7 @@ API_ACCESS = {
     '/health': 'free',
     '/warmup': 'free',
     '/ingestion': 'free',           # Gated by counter, not tier
-    '/forensic': 'free',            # Gated by counter
+    '/forensic': 'starter',
     '/market-intelligence': 'free',
     '/brain/priorities': 'free',
     '/brain/metrics': 'free',
@@ -143,6 +149,9 @@ API_ACCESS = {
     '/notifications/alerts': 'free',
     '/outlook': 'free',
     '/workflows': 'free',
+    '/decisions': 'starter',
+    '/marketing-automation': 'starter',
+    '/exposure': 'starter',
 
     # ADMIN
     '/admin': 'super_admin',
@@ -172,6 +181,8 @@ def resolve_tier(user: dict) -> str:
 
     # Database tier
     db_tier = (user.get('subscription_tier') or 'free').lower().strip()
+    if db_tier in {'foundation', 'growth', 'starter', 'professional', 'enterprise', 'custom'}:
+        return 'starter'
     if db_tier in TIERS:
         return db_tier
 
@@ -180,7 +191,7 @@ def resolve_tier(user: dict) -> str:
 
 def tier_rank(tier: str) -> int:
     """Numeric rank for tier comparison."""
-    ranks = {'free': 0, 'starter': 1, 'professional': 2, 'enterprise': 3, 'custom': 4, 'super_admin': 99}
+    ranks = {'free': 0, 'starter': 1, 'professional': 1, 'enterprise': 1, 'custom': 1, 'super_admin': 99, 'growth': 1, 'foundation': 1}
     return ranks.get(tier, 0)
 
 
@@ -273,7 +284,7 @@ def get_usage_limits(tier: str) -> dict:
         return {'snapshots': 999, 'audits': 999}
     if tier == 'free':
         return {'snapshots': 3, 'audits': 1}
-    if tier == 'starter':
+    if tier in {'starter', 'professional', 'enterprise', 'custom'}:
         return {'snapshots': 20, 'audits': 10}
     return {'snapshots': 999, 'audits': 999}
 

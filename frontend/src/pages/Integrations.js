@@ -13,6 +13,7 @@ import { getBackendUrl } from '../config/urls';
 import { toast } from 'sonner';
 import { useMergeLink } from '@mergeapi/react-merge-link';
 import { fontFamily } from '../design-system/tokens';
+import { resolveTier } from '../lib/tierResolver';
 
 // ── Clearbit logo with dark fallback ─────────────────────────────────────────
 const Logo = ({ domain, name, size = 36 }) => {
@@ -168,7 +169,7 @@ const categoryMatches = (integrationCategory, rowCategory) => {
 };
 
 export default function Integrations() {
-  const { user } = useSupabaseAuth();
+  const { user, session, authState } = useSupabaseAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
@@ -176,6 +177,7 @@ export default function Integrations() {
   const [mergeIntegrations, setMergeIntegrations] = useState({});
   const [integrationStatusRows, setIntegrationStatusRows] = useState([]);
   const [canonicalTruth, setCanonicalTruth] = useState({});
+  const [integrationTruthReady, setIntegrationTruthReady] = useState(false);
   const [outlookStatus, setOutlookStatus] = useState({ connected: false, connected_email: null });
   const [gmailStatus, setGmailStatus] = useState({ connected: false, connected_email: null });
   const [disconnecting, setDisconnecting] = useState(null);
@@ -228,22 +230,38 @@ export default function Integrations() {
     }
   }, [pendingOpen, mergeLinkToken, mergeLinkReady, openMergeLinkModal]);
 
+  const authedJsonGet = useCallback(async (path) => {
+    const activeToken = session?.access_token || (await supabase.auth.getSession()).data.session?.access_token;
+    if (!activeToken) throw new Error('AUTH_NOT_READY');
+    const res = await fetch(`${getBackendUrl()}/api${path}${path.includes('?') ? '&' : '?'}_t=${Date.now()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${activeToken}`,
+        'Accept': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+      },
+    });
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error(`NON_JSON_${res.status}`);
+    }
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.detail || data?.message || `HTTP_${res.status}`);
+    }
+    return data;
+  }, [session?.access_token]);
+
   const loadMergeIntegrations = useCallback(async () => {
     try {
-      const [res, fallbackRes] = await Promise.allSettled([
-        apiClient.get('/integrations/merge/connected'),
-        apiClient.get('/user/integration-status'),
-      ]);
-      const directMap = res.status === 'fulfilled' ? (res.value.data?.integrations || {}) : {};
-      const directTruth = res.status === 'fulfilled' ? (res.value.data?.canonical_truth || {}) : {};
-      const rows = fallbackRes.status === 'fulfilled' ? (fallbackRes.value.data?.integrations || []) : [];
-      const fallbackTruth = fallbackRes.status === 'fulfilled' ? (fallbackRes.value.data?.canonical_truth || {}) : {};
+      const statusPayload = await authedJsonGet('/user/integration-status');
+      const rows = statusPayload?.integrations || [];
+      const statusTruth = statusPayload?.canonical_truth || {};
+      const hasTruthPayload = Boolean(rows.length || Object.keys(statusTruth).length);
       setIntegrationStatusRows(rows);
-      setCanonicalTruth(Object.keys(directTruth).length ? directTruth : fallbackTruth);
-      if (Object.keys(directMap).length > 0) {
-        setMergeIntegrations(directMap);
-        return;
-      }
+      setCanonicalTruth(statusTruth);
+      setIntegrationTruthReady(hasTruthPayload);
       const derivedMap = rows.reduce((acc, row) => {
         if (!row?.connected) return acc;
         const provider = String(row.integration_name || row.provider || '').trim().toLowerCase().replace(/\s+/g, '-');
@@ -253,34 +271,27 @@ export default function Integrations() {
           category,
           connected: true,
           connected_at: row.connected_at || row.last_sync_at || null,
+          truth_state: row.truth_state,
+          truth_reason: row.truth_reason,
+          last_verified_at: row.last_verified_at,
         };
         return acc;
       }, {});
       setMergeIntegrations(derivedMap);
     } catch {
       try {
-        const fallbackRes = await apiClient.get('/user/integration-status');
-        const rows = fallbackRes.data?.integrations || [];
-        setIntegrationStatusRows(rows);
-        setCanonicalTruth(fallbackRes.data?.canonical_truth || {});
-        const derivedMap = rows.reduce((acc, row) => {
-          if (!row?.connected) return acc;
-          const provider = String(row.integration_name || row.provider || '').trim().toLowerCase().replace(/\s+/g, '-');
-          const category = String(row.category || 'general').trim().toLowerCase();
-          acc[`${category}:${provider}`] = {
-            provider: row.integration_name || row.provider,
-            category,
-            connected: true,
-            connected_at: row.connected_at || row.last_sync_at || null,
-          };
-          return acc;
-        }, {});
-        setMergeIntegrations(derivedMap);
+        const directPayload = await authedJsonGet('/integrations/merge/connected');
+        const directMap = directPayload?.integrations || {};
+        const directTruth = directPayload?.canonical_truth || {};
+        setCanonicalTruth(directTruth);
+        setIntegrationTruthReady(Boolean(Object.keys(directMap).length || Object.keys(directTruth).length));
+        setMergeIntegrations(directMap);
       } catch {
         setMergeIntegrations({});
+        setIntegrationTruthReady(false);
       }
     }
-  }, []);
+  }, [authedJsonGet]);
 
   const loadOutlookStatus = useCallback(async () => {
     try {
@@ -316,6 +327,7 @@ export default function Integrations() {
   }, []);
 
   useEffect(() => {
+    if (authState === 'LOADING' || (!user && !session)) return undefined;
     loadMergeIntegrations();
     loadOutlookStatus();
     loadGmailStatus();
@@ -324,14 +336,20 @@ export default function Integrations() {
       loadOutlookStatus();
       loadGmailStatus();
     }, 3000);
+    const resilienceTimer = setTimeout(() => {
+      loadMergeIntegrations();
+    }, 9000);
     // Handle deep-link from Revenue/Operations pages: ?category=crm
     const urlCategory = searchParams.get('category');
     if (urlCategory && CATEGORIES.some(c => c.id === urlCategory)) {
       setSelectedCategory(urlCategory);
       setSearchParams({});
     }
-    return () => clearTimeout(retryTimer);
-  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      clearTimeout(retryTimer);
+      clearTimeout(resilienceTimer);
+    };
+  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus, user?.id, session?.access_token, authState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const outlookConnected = searchParams.get('outlook_connected');
@@ -531,13 +549,17 @@ export default function Integrations() {
     outlookStatus.connected ? 1 : 0,
   ].reduce((sum, value) => sum + value, 0);
   const isMasterAccount = user?.is_master_account === true || ['superadmin', 'super_admin', 'admin'].includes((user?.role || '').toLowerCase()) || (user?.email || '').toLowerCase() === 'andre@thestrategysquad.com.au';
-  const isFreeTier = !isMasterAccount && (user?.subscription_tier || 'free').toLowerCase() === 'free';
-  const freeTierLimitReached = isFreeTier && connectedCount >= 1;
+  const effectiveTier = resolveTier(user);
+  const hasPaidLaunchAccess = isMasterAccount || effectiveTier !== 'free';
+  const isFreeTier = !hasPaidLaunchAccess;
+  const launchIntegrationLimit = hasPaidLaunchAccess ? 5 : 1;
+  const freeTierLimitReached = connectedCount >= launchIntegrationLimit;
   const blockedTruthCategories = [
-    { label: 'CRM', state: canonicalTruth.crm_state },
-    { label: 'Accounting', state: canonicalTruth.accounting_state },
-    { label: 'Email', state: canonicalTruth.email_state },
+    { label: 'CRM', state: canonicalTruth.crm_state || Object.values(mergeIntegrations).find((item) => item?.category === 'crm')?.truth_state },
+    { label: 'Accounting', state: canonicalTruth.accounting_state || Object.values(mergeIntegrations).find((item) => item?.category === 'accounting')?.truth_state },
+    { label: 'Email', state: canonicalTruth.email_state || Object.values(mergeIntegrations).find((item) => item?.category === 'email')?.truth_state },
   ].filter((item) => item.state && item.state !== 'live');
+  const visibleCategories = isFreeTier ? CATEGORIES.filter((cat) => ['all', 'connected'].includes(cat.id)) : CATEGORIES;
 
   return (
     <DashboardLayout>
@@ -555,39 +577,47 @@ export default function Integrations() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-semibold tracking-[0.15em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Data Sources</span>
-                {connectedCount > 0 && (
+                {integrationTruthReady ? (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
                     {connectedCount} live
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)', fontFamily: fontFamily.mono }} data-testid="integrations-verifying-pill">
+                    Verifying
                   </span>
                 )}
               </div>
               <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Connected Intelligence</h1>
               <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>
-                {connectedCount > 0 ? `${connectedCount} systems feeding your intelligence engine` : 'Connect your business stack to activate AI intelligence'}
+                {integrationTruthReady
+                  ? (connectedCount > 0 ? `${connectedCount}/${launchIntegrationLimit} active integrations in your launch package` : (isFreeTier ? 'Connect one email provider to activate free-tier intelligence' : 'Connect up to 5 business systems to activate paid intelligence'))
+                  : 'Verifying live source truth across your connected systems'}
               </p>
             </div>
             {/* Search */}
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#4A5568' }} />
-              <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Search platforms..."
-                className="w-full pl-9 pr-8 py-2 rounded-lg text-sm outline-none"
-                style={{ background: 'var(--biqc-bg-card, #141C26)', border: '1px solid var(--biqc-border, #243140)', color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.body }}
-                data-testid="integrations-search" />
-              {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#4A5568' }}><X className="w-3.5 h-3.5" /></button>}
-            </div>
+            {!isFreeTier && (
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#4A5568' }} />
+                <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="Search platforms..."
+                  className="w-full pl-9 pr-8 py-2 rounded-lg text-sm outline-none"
+                  style={{ background: 'var(--biqc-bg-card, #141C26)', border: '1px solid var(--biqc-border, #243140)', color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.body }}
+                  data-testid="integrations-search" />
+                {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#4A5568' }}><X className="w-3.5 h-3.5" /></button>}
+              </div>
+            )}
           </div>
 
           {/* Category tabs */}
           {!searchTerm && (
             <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar" role="group" aria-label="Filter by category">
-              {CATEGORIES.map(cat => {
+              {visibleCategories.map(cat => {
                 const active = selectedCategory === cat.id;
                 const Icon = cat.icon;
                 const count = cat.id === 'all' 
                   ? ALL_INTEGRATIONS.length 
                   : cat.id === 'connected' 
-                  ? connectedCount
+                  ? (integrationTruthReady ? connectedCount : '…')
                   : ALL_INTEGRATIONS.filter(i => i.category === cat.id).length;
                 return (
                   <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
@@ -611,7 +641,15 @@ export default function Integrations() {
 
         <div className="px-6 py-5 space-y-7">
 
-          {blockedTruthCategories.length > 0 && (
+          {!integrationTruthReady && (
+            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.08)' }} data-testid="integrations-truth-verifying-banner">
+              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Forensic source health</p>
+              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>BIQc is verifying live connector truth before showing connected counts.</p>
+              <p className="mt-1 text-xs" style={{ color: '#FDE68A' }}>If this persists, refresh the page or reopen the affected integrations.</p>
+            </div>
+          )}
+
+          {integrationTruthReady && blockedTruthCategories.length > 0 && (
             <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(251,146,60,0.35)', background: 'rgba(251,146,60,0.08)' }} data-testid="integrations-truth-state-banner">
               <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Forensic source health</p>
               <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
@@ -626,10 +664,23 @@ export default function Integrations() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Free Tier Access</p>
-                  <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Free tier includes 1 connected integration.</p>
-                  <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>{freeTierLimitReached ? 'You have reached the free-tier limit. Disconnect the current source or upgrade to connect more.' : 'Choose the one system that matters most to your operating rhythm right now.'}</p>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Free tier includes email integration only.</p>
+                  <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>{freeTierLimitReached ? 'You have reached the free-tier email limit. Disconnect the current provider or upgrade to unlock up to 5 integrations.' : 'Connect Gmail or Outlook to activate Priority Inbox, calendar intelligence, and email truth.'}</p>
                 </div>
-                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.12)', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="integrations-free-tier-counter">{connectedCount}/1 connected</span>
+                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.12)', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="integrations-free-tier-counter">{connectedCount}/{launchIntegrationLimit} connected</span>
+              </div>
+            </div>
+          )}
+
+          {hasPaidLaunchAccess && (
+            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(255,106,0,0.22)', background: 'rgba(255,106,0,0.05)' }} data-testid="integrations-paid-tier-banner">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>SMB Protect</p>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Paid launch tier includes up to 5 integrations.</p>
+                  <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>Connect email plus the business systems that matter most to your operating rhythm.</p>
+                </div>
+                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.12)', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="integrations-paid-tier-counter">{connectedCount}/{launchIntegrationLimit} connected</span>
               </div>
             </div>
           )}
@@ -656,7 +707,26 @@ export default function Integrations() {
           )}
 
           {/* ── MAIN INTEGRATIONS GRID ── */}
-          {filtered.length > 0 ? (
+          {!hasPaidLaunchAccess ? (
+            <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-paid-upgrade-card">
+              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Paid launch modules</p>
+              <h2 className="mt-3 text-xl" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Upgrade to unlock 5 integrations and the deeper operating modules.</h2>
+              <p className="mt-2 text-sm" style={{ color: '#94A3B8' }}>SMB Protect adds Exposure Scan, Marketing Auto, Reports, SOP Generator, Decision Tracker, and Ingestion Audit.</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {['Exposure Scan', 'Marketing Auto', 'Reports', 'SOP Generator', 'Decision Tracker', 'Ingestion Audit'].map((item) => (
+                  <span key={item} className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.08)', color: '#FFB37A', fontFamily: fontFamily.mono }}>{item}</span>
+                ))}
+              </div>
+              <button
+                onClick={() => navigate('/upgrade')}
+                className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
+                data-testid="integrations-upgrade-button"
+              >
+                Upgrade to SMB Protect <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          ) : filtered.length > 0 ? (
             <div>
               {!searchTerm && (
                 <SectionLabel

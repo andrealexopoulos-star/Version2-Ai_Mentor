@@ -67,8 +67,18 @@ def _connected_integration_count_for_email(user_id: str) -> int:
     return count
 
 
-def _ensure_free_tier_email_slot(current_user: dict, provider: str) -> None:
-    if resolve_tier(current_user) != 'free':
+def _launch_integration_limit(current_user: dict):
+    tier = resolve_tier(current_user)
+    if tier == 'super_admin':
+        return None
+    if tier == 'free':
+        return 1
+    return 5
+
+
+def _ensure_launch_email_slot(current_user: dict, provider: str) -> None:
+    tier = resolve_tier(current_user)
+    if tier == 'super_admin':
         return
     try:
         existing_email = get_sb().table("email_connections").select("provider").eq("user_id", current_user["id"]).eq("provider", provider).eq("connected", True).limit(1).execute()
@@ -76,8 +86,10 @@ def _ensure_free_tier_email_slot(current_user: dict, provider: str) -> None:
             return
     except Exception:
         pass
-    if _connected_integration_count_for_email(current_user["id"]) > 0:
-        raise HTTPException(status_code=403, detail="Free tier includes 1 connected integration. Disconnect an existing connection or upgrade to add more.")
+    limit = _launch_integration_limit(current_user)
+    if limit is not None and _connected_integration_count_for_email(current_user["id"]) >= limit:
+        detail = 'Free tier includes email integration only. Disconnect your current provider or upgrade to SMB Protect.' if tier == 'free' else 'SMB Protect includes up to 5 integrations. Disconnect an existing integration before adding another.'
+        raise HTTPException(status_code=403, detail=detail)
 
 
 def _get_oauth_base_url() -> str:
@@ -386,7 +398,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
 
-    _ensure_free_tier_email_slot(current_user, 'outlook')
+    _ensure_launch_email_slot(current_user, 'outlook')
     
     user_id = current_user['id']
     
@@ -486,7 +498,7 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
 
-    _ensure_free_tier_email_slot(current_user, 'gmail')
+    _ensure_launch_email_slot(current_user, 'gmail')
     
     user_id = current_user['id']
     

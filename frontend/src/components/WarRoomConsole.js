@@ -126,18 +126,23 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
     accounting: c.integrations?.accounting_state ?? integrationStatus?.canonical_truth?.accounting_state,
     email: c.integrations?.email_state ?? integrationStatus?.canonical_truth?.email_state,
   }).filter(([, state]) => state && state !== 'live');
+  const truthGateMessage = degradedTruth.length
+    ? `Forensic truth gate is active. BIQc is limiting War Room synthesis to verified live signals while these domains recover: ${degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.`
+    : null;
   const explainability = {
     whyVisible: connectedSystems.length
       ? `War Room is grounded in ${connectedSystems.join(', ')} live systems and your latest strategic snapshot.`
       : 'War Room is ready, but stronger answers require connected CRM/accounting/email evidence.',
     whyNow: topAlerts.length
       ? topAlerts[0].detail
-      : 'Strategic state can shift quickly; this console helps interrogate emerging pressure early.',
+      : truthGateMessage || 'Strategic state can shift quickly; this console helps interrogate emerging pressure early.',
     nextAction: topAlerts[0]?.action || 'Ask one high-stakes question and commit to a decision owner + deadline.',
     ifIgnored: 'Unchallenged strategic drift can compress decision windows and increase execution cost over time.',
   };
   const warRoomBrief = topAlerts[0]?.detail
     ? `${topAlerts[0].detail}${topAlerts[0]?.action ? ` Next move: ${topAlerts[0].action}` : ''}`
+    : truthGateMessage
+      ? truthGateMessage
     : connectedSystems.length
       ? `BIQc can see ${connectedSystems.join(', ')} signals, but the live strategic synthesis is still being prepared. Use this console to interrogate the highest-priority issue now.`
       : 'Connect core systems to generate a live strategic brief.';
