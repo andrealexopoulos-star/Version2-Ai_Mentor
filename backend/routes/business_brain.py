@@ -234,10 +234,26 @@ async def get_brain_priorities(
     engine = BusinessBrainEngine(get_sb(), tenant_id, current_user)
     try:
         if not engine.business_core_ready:
-            raise HTTPException(
-                status_code=503,
-                detail="Canonical Business Brain is not active. Apply business_core migrations and deploy ingestion/metrics before calling /api/brain/priorities.",
-            )
+            fallback = await _build_transient_priorities_from_live_integrations(current_user)
+            concerns = [_enrich_concern_contract(item, "live_transient") for item in (fallback.get("concerns") or [])]
+            return {
+                "tenant_id": tenant_id,
+                "business_core_ready": False,
+                "mode": "live_transient",
+                "tier_mode": fallback.get("tier_mode", "free"),
+                "brain_policy": engine.brain_policy(),
+                "all_clear": bool(fallback.get("all_clear", not concerns)),
+                "model_execution_id": None,
+                "source_event_ids": [],
+                "concerns": concerns,
+                "integrity_alerts": [],
+                "truth_summary": {},
+                "confidence_score": 0.5,
+                "data_sources_count": 1,
+                "data_freshness": "live",
+                "lineage": {"engine": "business_brain", "mode": "live_transient"},
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+            }
         result = engine.get_priorities(recompute_metrics=recompute)
 
         concerns = [_enrich_concern_contract(item, result.get("mode", "business_core")) for item in (result.get("concerns") or [])]
