@@ -18,10 +18,10 @@ import os
 import requests
 from datetime import datetime
 
-# Configuration
-BASE_URL = "https://truth-engine-19.preview.emergentagent.com"
-EMAIL = "andre@thestrategysquad.com.au"
-PASSWORD = "MasterMind2025*"
+# Configuration — use env vars; never commit credentials
+BASE_URL = os.environ.get("BIQC_TEST_BASE_URL", "https://truth-engine-19.preview.emergentagent.com")
+EMAIL = os.environ.get("BIQC_TEST_EMAIL", "").strip()
+PASSWORD = os.environ.get("BIQC_TEST_PASSWORD", "").strip()
 
 # Global session and auth token
 session = requests.Session()
@@ -35,15 +35,19 @@ def log(message, level="INFO"):
 def authenticate():
     """Authenticate and get bearer token"""
     global auth_token, user_id
-    
+
+    if not EMAIL or not PASSWORD:
+        log("SKIP: Set BIQC_TEST_EMAIL and BIQC_TEST_PASSWORD to run authenticated tests.", "WARNING")
+        return False
+
     log("🔐 Authenticating with Supabase...")
     login_url = f"{BASE_URL}/api/auth/supabase/login"
-    
+
     login_data = {
         "email": EMAIL,
         "password": PASSWORD
     }
-    
+
     try:
         response = session.post(login_url, json=login_data, timeout=30)
         log(f"Login response status: {response.status_code}")
@@ -296,7 +300,7 @@ def run_all_tests():
     """Run all commercial restructure tests"""
     log("🚀 Starting BIQc Launch-Commercial Restructure Backend Tests")
     log(f"   Environment: {BASE_URL}")
-    log(f"   Credentials: {EMAIL}")
+    log(f"   Credentials: {'set via env' if EMAIL else 'not set (set BIQC_TEST_EMAIL/BIQC_TEST_PASSWORD)'}")
     
     results = {
         "authentication": False,

@@ -49,7 +49,8 @@ RATE_LIMIT_RULES = {
 }
 RATE_LIMIT_BUCKETS = defaultdict(deque)
 RATE_LIMIT_LOCK = Lock()
-MASTER_ADMIN_EMAIL = "andre@thestrategysquad.com.au"
+# Optional: env override for rate-limit bypass; avoid hardcoding production emails in repo
+MASTER_ADMIN_EMAIL = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "").strip().lower() or None
 
 
 # ==================== MIDDLEWARE ====================
@@ -63,6 +64,7 @@ class NoCacheAPIMiddleware(BaseHTTPMiddleware):
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
         response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
