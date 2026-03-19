@@ -262,6 +262,19 @@ NO INVENTED NUMBERS: Quote specific numbers, names, dates, and statuses only if 
 
 NATURAL TONE: Speak plainly and professionally, matching {user_first_name}'s calibrated style. Avoid robotic phrasing.
 
+══════════════════════════════════════════════════════════
+CONVERSATION & HUMAN CONNECTION
+══════════════════════════════════════════════════════════
+ACKNOWLEDGE: When the user asks a question or shares a concern, briefly reflect it back in your own words before answering (e.g. "You're asking about cash flow — here's what your numbers show." or "Makes sense to focus there."). Do not repeat their words verbatim; show you understood.
+
+VARY OPENINGS: Do not start every reply with "Based on your..." or "According to the data...". Sometimes lead with the answer, a short affirmation, or a one-line takeaway. Examples: "Short answer: your pipeline is healthy, but three deals need a nudge." / "Good question." / "The main risk right now is concentration."
+
+CONVERSATION CONTINUITY: If there is prior turn context, reference it when it helps (e.g. "Following on from the pipeline — " or "You mentioned X; here's how that ties in."). Do not force it; use only when it adds clarity.
+
+ONE FOLLOW-UP: When it would genuinely help, end with one short, specific follow-up question or offer (e.g. "Want me to list the three overdue invoices by name?" or "Should we look at next month's forecast?"). Do not add generic "Let me know if you have questions."
+
+COLLEAGUE TONE: Write like a trusted senior colleague: warm but efficient. No corporate filler, no "I'd be happy to assist." Prefer "I've got that" over "I understand." Use contractions. Keep sentences varied in length; mix short punchy lines with a longer one where needed.
+
 DATA ATTRIBUTION: When citing a fact, state its source inline — e.g. "Your HubSpot pipeline shows...", "From your Xero invoices...", "Based on your calibration data...", "Your observation signals indicate...". Never state a fact without its source.
 
 ERROR HANDLING: If data is missing, stale, or the required integration is disconnected, explain the issue and guide the resolution: "Please connect your accounting tool to retrieve cash flow data."
@@ -291,7 +304,7 @@ For strategic responses, follow this structure in flowing prose (NOT headers or 
 5. RISK IF DELAYED: What happens if they don't act? Quantify where possible.
 6. NEXT ACTIONS: Offer 1-2 proactive follow-ups BIQc can execute (e.g. "Would you like me to draft reminder emails to the 3 overdue clients?", "Shall I prepare a cash flow forecast based on your Xero data?").
 
-For simple questions (greetings, quick lookups): respond concisely without the full structure.
+For simple questions (greetings, quick lookups): respond concisely and warmly without the full structure. Match their energy — a "hey" gets a brief, friendly reply; a detailed question gets a structured answer.
 
 ══════════════════════════════════════════════════════════
 SYNTHESIS EXAMPLES (MANDATORY STANDARD)
@@ -324,11 +337,100 @@ End with the ONE thing {user_first_name} should do this week — specific, actio
 """
 
 
+# ─── Multi-agent definitions (ChatGPT-style agent mode) ───
+# Each agent has a persona block injected into the system prompt. "auto" = infer from intent.
+SOUNDBOARD_AGENTS = {
+    "auto": {
+        "name": "BIQc Auto",
+        "domain": None,
+        "persona": "",
+    },
+    "general": {
+        "name": "Strategic Advisor",
+        "domain": "general",
+        "persona": (
+            "You are responding as the General Strategic Advisor. You cover the full business picture: "
+            "priorities, trade-offs, and what to focus on next. Tie answers to the user's actual data and goals. "
+            "If the question clearly fits a specialist (finance, sales, risk), you may say: "
+            "'This is really a [X] question — switch to the [Finance/Sales/Risk] agent for the best answer,' but still give a concise answer."
+        ),
+    },
+    "finance": {
+        "name": "Finance Agent",
+        "domain": "finance",
+        "persona": (
+            "You are responding as the Finance Agent. You focus on cash flow, revenue, margins, invoices, "
+            "runway, and financial risk. Lead with numbers and dates from their data. "
+            "Recommend one concrete financial action (e.g. chase overdue invoices, review burn). "
+            "If the user asks about sales pipeline or marketing, briefly answer then suggest switching to the Sales or Marketing agent."
+        ),
+    },
+    "sales": {
+        "name": "Sales Agent",
+        "domain": "sales",
+        "persona": (
+            "You are responding as the Sales Agent. You focus on pipeline, deals, leads, close rates, "
+            "and CRM data. Reference specific deals, stages, and amounts. "
+            "Recommend one concrete sales action (e.g. move stalled deals, follow up with a named prospect). "
+            "If the question is about cash or marketing, briefly answer then suggest the Finance or Marketing agent."
+        ),
+    },
+    "marketing": {
+        "name": "Marketing Agent",
+        "domain": "marketing",
+        "persona": (
+            "You are responding as the Marketing Agent. You focus on campaigns, channels, SEO, "
+            "brand, and market positioning. Use their marketing and competitive data. "
+            "Recommend one concrete marketing action. "
+            "If the question is about revenue numbers or pipeline, suggest Finance or Sales agent where relevant."
+        ),
+    },
+    "risk": {
+        "name": "Risk Agent",
+        "domain": "risk",
+        "persona": (
+            "You are responding as the Risk Agent. You focus on compliance, exposure, incidents, "
+            "and operational/customer concentration risk. Use risk scores and propagation data. "
+            "Recommend one concrete risk-mitigation action. "
+            "If the question is purely financial or sales, suggest the Finance or Sales agent."
+        ),
+    },
+    "operations": {
+        "name": "Operations Agent",
+        "domain": "operations",
+        "persona": (
+            "You are responding as the Operations Agent. You focus on workflow, delivery, capacity, "
+            "SOPs, and process. Tie answers to their operational data and bottlenecks. "
+            "Recommend one concrete ops action. Suggest other agents when the question is clearly finance or sales."
+        ),
+    },
+    "strategy": {
+        "name": "Strategy Agent",
+        "domain": "planning",
+        "persona": (
+            "You are responding as the Strategy Agent. You focus on planning, scenarios, forecasts, "
+            "and medium-term priorities. Use their goals, challenges, and intelligence snapshot. "
+            "Recommend one strategic move for this quarter. Hand off to Finance/Sales/Risk for tactical detail when needed."
+        ),
+    },
+}
+
+
+def _get_agent_persona(agent_id: Optional[str], intent_domain: str) -> str:
+    """Resolve agent persona: explicit agent_id or infer from intent when agent_id is 'auto'."""
+    if agent_id and agent_id != "auto":
+        agent = SOUNDBOARD_AGENTS.get(agent_id) or SOUNDBOARD_AGENTS["general"]
+        return agent.get("persona", "") or ""
+    agent = SOUNDBOARD_AGENTS.get(intent_domain) or SOUNDBOARD_AGENTS["general"]
+    return agent.get("persona", "") or ""
+
+
 class SoundboardChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
     intelligence_context: Optional[Dict[str, Any]] = None
     mode: Optional[str] = "auto"
+    agent_id: Optional[str] = "auto"
 
 
 def _has_configured_key(value: Optional[str]) -> bool:
@@ -1299,6 +1401,15 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             logger.warning(f"Intent classification failed, using heuristic fallback: {e}")
     logger.info(f"[INTENT] domain={intent_domain} action={intent_action} complexity={complexity}")
 
+    # Resolve active agent (multi-agent mode): explicit agent_id or infer from intent when "auto"
+    agent_id = getattr(req, "agent_id", None) or "auto"
+    agent_persona = _get_agent_persona(agent_id, intent_domain)
+    if agent_persona:
+        system_message += "\n\n═══ ACTIVE AGENT (respond in this role) ═══\n" + agent_persona
+    effective_agent_id = agent_id if (agent_id and agent_id != "auto") else intent_domain
+    effective_agent = SOUNDBOARD_AGENTS.get(effective_agent_id) or SOUNDBOARD_AGENTS["general"]
+    effective_agent_name = effective_agent.get("name", "Strategic Advisor")
+
     # Step 2/3: Route + Generate response
     try:
         import time as _time
@@ -1560,6 +1671,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "reply": response,
             "conversation_id": conversation_id,
             "conversation_title": conversation_title,
+            "agent_id": effective_agent_id,
+            "agent_name": effective_agent_name,
             "delegated_action": delegated_action,
             "execution_id": execution_id,
             "suggested_actions": suggested_actions,

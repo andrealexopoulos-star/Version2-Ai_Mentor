@@ -50,9 +50,11 @@ export const PRICING_TIERS = [
   },
 ];
 
+/** Resolve plan id to display tier. Only free and starter (BIQc Foundation) exist; legacy DB values map to starter. */
 export const getTierByPlanId = (id) => {
   if (id === 'super_admin') return PRICING_TIERS[1];
-  if (['professional', 'enterprise', 'custom', 'growth', 'foundation'].includes(id)) return PRICING_TIERS[1];
+  if (id === 'starter') return PRICING_TIERS[1];
+  if (['foundation', 'growth', 'professional', 'enterprise', 'custom', 'pro'].includes(id)) return PRICING_TIERS[1];
   return PRICING_TIERS.find((tier) => tier.id === id) || PRICING_TIERS[0];
 };
 

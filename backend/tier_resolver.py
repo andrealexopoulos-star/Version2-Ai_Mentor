@@ -19,24 +19,18 @@ logger = logging.getLogger(__name__)
 # ═══ SUPER ADMIN — IMMUTABLE, EMAIL-BASED ═══
 SUPER_ADMIN_EMAIL = "andre@thestrategysquad.com.au"
 
-# ═══ TIER DEFINITIONS ═══
-TIERS = ['free', 'starter', 'professional', 'enterprise', 'custom', 'super_admin']
+# ═══ TIER DEFINITIONS — Only free, starter (BIQc Foundation), super_admin ═══
+TIERS = ['free', 'starter', 'super_admin']
 
 BRAIN_METRIC_LIMITS = {
     'free': 10,
-    'starter': 25,
-    'professional': 50,
-    'enterprise': 75,
-    'custom': 100,
+    'starter': 50,
     'super_admin': 100,
 }
 
 BRAIN_PLAN_LABELS = {
     'free': 'Free',
     'starter': 'Foundation',
-    'professional': 'Foundation',
-    'enterprise': 'Foundation',
-    'custom': 'Foundation',
     'super_admin': 'Foundation',
 }
 
@@ -190,9 +184,12 @@ def resolve_tier(user: dict) -> str:
 
 
 def tier_rank(tier: str) -> int:
-    """Numeric rank for tier comparison."""
-    ranks = {'free': 0, 'starter': 1, 'professional': 1, 'enterprise': 1, 'custom': 1, 'super_admin': 99, 'growth': 1, 'foundation': 1}
-    return ranks.get(tier, 0)
+    """Numeric rank for tier comparison. Only free (0), starter (1), super_admin (99). Legacy DB values map to starter rank."""
+    if tier == 'super_admin':
+        return 99
+    if tier in ('starter', 'foundation', 'growth', 'professional', 'enterprise', 'custom', 'pro'):
+        return 1
+    return 0
 
 
 def has_access(user_tier: str, required_tier: str) -> bool:
@@ -279,14 +276,14 @@ def filter_email_categories(user: dict) -> list:
 
 
 def get_usage_limits(tier: str) -> dict:
-    """Get monthly usage limits for tier."""
+    """Get monthly usage limits for tier. Only free, starter (BIQc Foundation), super_admin."""
     if tier == 'super_admin':
         return {'snapshots': 999, 'audits': 999}
     if tier == 'free':
         return {'snapshots': 3, 'audits': 1}
-    if tier in {'starter', 'professional', 'enterprise', 'custom'}:
+    if tier == 'starter':
         return {'snapshots': 20, 'audits': 10}
-    return {'snapshots': 999, 'audits': 999}
+    return {'snapshots': 3, 'audits': 1}
 
 
 def get_brain_metric_limit(user_or_tier) -> int:
@@ -295,6 +292,8 @@ def get_brain_metric_limit(user_or_tier) -> int:
         tier = resolve_tier(user_or_tier)
     else:
         tier = str(user_or_tier or 'free').lower().strip()
+        if tier not in BRAIN_METRIC_LIMITS and tier in {'foundation', 'growth', 'professional', 'enterprise', 'custom'}:
+            tier = 'starter'
     return BRAIN_METRIC_LIMITS.get(tier, BRAIN_METRIC_LIMITS['free'])
 
 
@@ -304,4 +303,6 @@ def get_brain_plan_label(user_or_tier) -> str:
         tier = resolve_tier(user_or_tier)
     else:
         tier = str(user_or_tier or 'free').lower().strip()
+        if tier not in BRAIN_PLAN_LABELS and tier in {'foundation', 'growth', 'professional', 'enterprise', 'custom'}:
+            tier = 'starter'
     return BRAIN_PLAN_LABELS.get(tier, 'Free')

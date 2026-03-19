@@ -2,7 +2,7 @@
 Iteration 140 - KPI Threshold Configuration and Tier-Aware Policy Tests
 
 Tests for:
-1. Tier-aware KPI policy mapping (free 10, starter 25, professional 50, enterprise 75, custom/super_admin 100)
+1. Tier-aware KPI policy mapping (free 10, single paid tier starter 50, super_admin 100)
 2. GET /api/brain/kpis returns plan_label, visible_metric_limit, threshold_config for metrics
 3. PUT /api/brain/kpis saves KPI thresholds and persists them
 4. GET /api/brain/metrics?include_coverage=true includes threshold_config metadata
@@ -23,16 +23,14 @@ class TestTierAwareKpiMapping:
     """Test tier_resolver.py has correct KPI limits per plan."""
     
     def test_brain_metric_limits_defined(self):
-        """Verify BRAIN_METRIC_LIMITS dict exists with expected values."""
+        """Verify BRAIN_METRIC_LIMITS: only free, starter (BIQc Foundation), super_admin."""
         import sys
         sys.path.insert(0, '/app/backend')
         from tier_resolver import BRAIN_METRIC_LIMITS, BRAIN_PLAN_LABELS
         
         expected_limits = {
             'free': 10,
-            'starter': 25,
-            'professional': 50,
-            'enterprise': 75,
+            'starter': 50,
             'super_admin': 100,
         }
         
@@ -41,7 +39,7 @@ class TestTierAwareKpiMapping:
             assert actual == expected_limit, f"Expected {tier} to have {expected_limit} KPIs, got {actual}"
     
     def test_brain_plan_labels_defined(self):
-        """Verify BRAIN_PLAN_LABELS has expected human-readable names."""
+        """Verify BRAIN_PLAN_LABELS: only Free, Foundation, super_admin."""
         import sys
         sys.path.insert(0, '/app/backend')
         from tier_resolver import BRAIN_PLAN_LABELS
@@ -49,9 +47,7 @@ class TestTierAwareKpiMapping:
         expected_labels = {
             'free': 'Free',
             'starter': 'Foundation',
-            'professional': 'Performance',
-            'enterprise': 'Growth',
-            'super_admin': 'Custom',
+            'super_admin': 'Foundation',
         }
         
         for tier, expected_label in expected_labels.items():
@@ -59,20 +55,19 @@ class TestTierAwareKpiMapping:
             assert actual == expected_label, f"Expected {tier} label to be '{expected_label}', got '{actual}'"
     
     def test_get_brain_metric_limit_function(self):
-        """Verify get_brain_metric_limit() resolves correctly."""
+        """Verify get_brain_metric_limit() resolves correctly for free, starter, super_admin; legacy tiers map to starter."""
         import sys
         sys.path.insert(0, '/app/backend')
         from tier_resolver import get_brain_metric_limit
         
         assert get_brain_metric_limit('free') == 10
-        assert get_brain_metric_limit('starter') == 25
-        assert get_brain_metric_limit('professional') == 50
-        assert get_brain_metric_limit('enterprise') == 75
+        assert get_brain_metric_limit('starter') == 50
         assert get_brain_metric_limit('super_admin') == 100
+        assert get_brain_metric_limit('foundation') == 50
+        assert get_brain_metric_limit('custom') == 50
         
-        # Test with dict (user object)
         assert get_brain_metric_limit({'subscription_tier': 'free'}) == 10
-        assert get_brain_metric_limit({'subscription_tier': 'enterprise'}) == 75
+        assert get_brain_metric_limit({'subscription_tier': 'starter'}) == 50
 
 
 # ============================================

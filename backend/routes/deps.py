@@ -59,30 +59,16 @@ AI_MODELS = {
 AI_MODEL = AI_MODELS["default"]
 AI_MODEL_ADVANCED = AI_MODELS["snapshot_primary"]
 
-# ─── Rate Limits per subscription tier ────────────────────────────────────────
+# ─── Rate Limits — FREE vs single PAID tier (starter) ─────────────────────────
 TIER_LIMITS = {
     "free": {
-        "soundboard_daily":    10,    # 10 AI queries/day
-        "snapshots_daily":     1,     # 1 intelligence snapshot/day
-        "sop_monthly":         2,     # 2 SOPs/month
-        "reports_monthly":     3,     # 3 reports/month
-        "trinity_daily":       0,     # Trinity not available
+        "soundboard_daily":    10,
+        "snapshots_daily":     1,
+        "sop_monthly":         2,
+        "reports_monthly":     3,
+        "trinity_daily":       0,
     },
-    "foundation": {
-        "soundboard_daily":    50,
-        "snapshots_daily":     10,
-        "sop_monthly":         5,
-        "reports_monthly":     10,
-        "trinity_daily":       5,
-    },
-    "growth": {
-        "soundboard_daily":    -1,    # Unlimited (-1)
-        "snapshots_daily":     -1,
-        "sop_monthly":         -1,
-        "reports_monthly":     -1,
-        "trinity_daily":       -1,
-    },
-    "custom": {
+    "starter": {
         "soundboard_daily":    -1,
         "snapshots_daily":     -1,
         "sop_monthly":         -1,
@@ -98,36 +84,19 @@ RATE_LIMIT_FEATURE_LABELS = {
     "war_room_ask": "War Room Ask",
 }
 
+# Single paid tier: generous limits for starter (BIQc Foundation)
 TIER_RATE_LIMIT_DEFAULTS = {
     "free": {
         "soundboard_daily": {"monthly_limit": 80, "burst_limit": 4, "burst_window_seconds": 300},
-        "trinity_daily": {"monthly_limit": 12, "burst_limit": 2, "burst_window_seconds": 300},
+        "trinity_daily": {"monthly_limit": 0, "burst_limit": 0, "burst_window_seconds": 300},
         "boardroom_diagnosis": {"monthly_limit": 20, "burst_limit": 3, "burst_window_seconds": 300},
         "war_room_ask": {"monthly_limit": 40, "burst_limit": 4, "burst_window_seconds": 300},
     },
     "starter": {
-        "soundboard_daily": {"monthly_limit": 240, "burst_limit": 8, "burst_window_seconds": 300},
-        "trinity_daily": {"monthly_limit": 40, "burst_limit": 4, "burst_window_seconds": 300},
-        "boardroom_diagnosis": {"monthly_limit": 80, "burst_limit": 6, "burst_window_seconds": 300},
-        "war_room_ask": {"monthly_limit": 180, "burst_limit": 8, "burst_window_seconds": 300},
-    },
-    "professional": {
-        "soundboard_daily": {"monthly_limit": 500, "burst_limit": 12, "burst_window_seconds": 300},
-        "trinity_daily": {"monthly_limit": 90, "burst_limit": 6, "burst_window_seconds": 300},
-        "boardroom_diagnosis": {"monthly_limit": 180, "burst_limit": 10, "burst_window_seconds": 300},
-        "war_room_ask": {"monthly_limit": 400, "burst_limit": 12, "burst_window_seconds": 300},
-    },
-    "growth": {
         "soundboard_daily": {"monthly_limit": 900, "burst_limit": 18, "burst_window_seconds": 300},
         "trinity_daily": {"monthly_limit": 180, "burst_limit": 10, "burst_window_seconds": 300},
         "boardroom_diagnosis": {"monthly_limit": 320, "burst_limit": 16, "burst_window_seconds": 300},
         "war_room_ask": {"monthly_limit": 700, "burst_limit": 18, "burst_window_seconds": 300},
-    },
-    "enterprise": {
-        "soundboard_daily": {"monthly_limit": 1600, "burst_limit": 28, "burst_window_seconds": 300},
-        "trinity_daily": {"monthly_limit": 320, "burst_limit": 16, "burst_window_seconds": 300},
-        "boardroom_diagnosis": {"monthly_limit": 600, "burst_limit": 24, "burst_window_seconds": 300},
-        "war_room_ask": {"monthly_limit": 1200, "burst_limit": 28, "burst_window_seconds": 300},
     },
     "super_admin": {
         feature: {"monthly_limit": -1, "burst_limit": -1, "burst_window_seconds": 300}
@@ -140,16 +109,13 @@ RATE_LIMIT_BURSTS_LOCK = Lock()
 
 
 def _normalize_subscription_tier(tier: str | None) -> str:
-    tier_value = (tier or "free").lower()
-    aliases = {
-        "foundation": "starter",
-        "growth": "growth",
-        "starter": "starter",
-        "professional": "professional",
-        "enterprise": "enterprise",
-        "superadmin": "super_admin",
-    }
-    return aliases.get(tier_value, tier_value if tier_value in TIER_RATE_LIMIT_DEFAULTS else "free")
+    """Normalize DB subscription_tier to free | starter | super_admin. Single paid tier = starter."""
+    tier_value = (tier or "free").lower().strip()
+    if tier_value in ("superadmin", "super_admin"):
+        return "super_admin"
+    if tier_value in ("foundation", "growth", "starter", "professional", "enterprise", "custom"):
+        return "starter"
+    return tier_value if tier_value in TIER_RATE_LIMIT_DEFAULTS else "free"
 
 
 def _merge_rate_limit_config(base_config, override_config):
