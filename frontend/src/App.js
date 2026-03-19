@@ -334,7 +334,7 @@ function AppRoutes() {
 }
 
 function App() {
-  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || 'no-google-client-id.local';
 
   useEffect(() => {
     document.documentElement.style.overflowY = 'scroll';

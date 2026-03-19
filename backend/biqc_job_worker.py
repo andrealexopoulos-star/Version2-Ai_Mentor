@@ -1,6 +1,8 @@
-"""Standalone BIQc Redis worker entrypoint.
+"""BIQc Redis worker — sole process that consumes the job queue.
 
-Optional process runner for environments that want a dedicated queue consumer.
+The API server (server.py) only initializes the Redis client for enqueueing;
+it does NOT start the worker. Run this module as a separate process to
+consume jobs from biqc-jobs:queue (e.g. via supervisor or a separate container).
 """
 
 from __future__ import annotations

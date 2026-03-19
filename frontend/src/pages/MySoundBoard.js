@@ -8,6 +8,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import VoiceChat from '../components/VoiceChat';
 import { fontFamily } from "../design-system/tokens";
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { resolveTier, TIER_RANK } from '../lib/tierResolver';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 import { useLocation } from 'react-router-dom';
 import {
@@ -84,7 +85,9 @@ const MySoundBoard = () => {
   const [scanUsage, setScanUsage] = useState(null);
   const [recordingScans, setRecordingScans] = useState({});
   const [showModeMenu, setShowModeMenu] = useState(false);
+  const [showAgentMenu, setShowAgentMenu] = useState(false);
   const [selectedMode, setSelectedMode] = useState('auto');
+  const [selectedAgent, setSelectedAgent] = useState('auto');
   const [advisorHandoff, setAdvisorHandoff] = useState(() => {
     try {
       const fromState = location.state?.advisorSoundboardContext;
@@ -98,23 +101,32 @@ const MySoundBoard = () => {
 
   const BIQC_MODES = [
     { id: 'auto', label: 'BIQc Auto', desc: 'Adaptive routing across BIQc cognition pathways', icon: '⚡', backend_mode: 'auto', minTier: 'free' },
-    { id: 'normal', label: 'Normal', desc: 'Default paid conversation mode', icon: '◉', backend_mode: 'normal', minTier: 'foundation' },
-    { id: 'thinking', label: 'Deep Thinking', desc: 'High-depth strategic reasoning mode', icon: '🧠', backend_mode: 'thinking', minTier: 'foundation' },
-    { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'foundation' },
-    { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'pro' },
+    { id: 'normal', label: 'Normal', desc: 'Default paid conversation mode', icon: '◉', backend_mode: 'normal', minTier: 'starter' },
+    { id: 'thinking', label: 'Deep Thinking', desc: 'High-depth strategic reasoning mode', icon: '🧠', backend_mode: 'thinking', minTier: 'starter' },
+    { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'starter' },
+    { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'starter' },
   ];
 
-  const userTier = (user?.subscription_tier || 'free');
+  const BIQC_AGENTS = [
+    { id: 'auto', label: 'Auto', shortDesc: 'Pick specialist by question', icon: '⚡' },
+    { id: 'general', label: 'Strategic Advisor', shortDesc: 'Full picture & priorities', icon: '◎' },
+    { id: 'finance', label: 'Finance', shortDesc: 'Cash, revenue, margins', icon: '💰' },
+    { id: 'sales', label: 'Sales', shortDesc: 'Pipeline & deals', icon: '📊' },
+    { id: 'marketing', label: 'Marketing', shortDesc: 'Campaigns & positioning', icon: '📣' },
+    { id: 'risk', label: 'Risk', shortDesc: 'Compliance & exposure', icon: '🛡️' },
+    { id: 'operations', label: 'Operations', shortDesc: 'Workflow & capacity', icon: '⚙️' },
+    { id: 'strategy', label: 'Strategy', shortDesc: 'Planning & scenarios', icon: '🎯' },
+  ];
+
+  const resolvedTier = resolveTier(user);
   const isAndre = user?.email === 'andre@thestrategysquad.com.au';
-  const tierRank = { free: 0, starter: 0, foundation: 1, growth: 2, custom: 3, pro: 2, enterprise: 3 };
-  const normalizedTier = String(userTier).toLowerCase();
-  const isPaidUser = (tierRank[normalizedTier] ?? 0) >= 1;
-  const canUseTrinity = isAndre || ['pro', 'enterprise', 'growth', 'custom'].includes(normalizedTier);
+  const isPaidUser = (TIER_RANK[resolvedTier] ?? 0) >= 1;
+  const canUseTrinity = isAndre || isPaidUser;
 
   const availableModes = BIQC_MODES.filter((mode) => {
     if (isAndre) return true;
     if (mode.id === 'trinity') return canUseTrinity;
-    return (tierRank[normalizedTier] ?? 0) >= (tierRank[mode.minTier] ?? 0);
+    return (TIER_RANK[resolvedTier] ?? 0) >= (TIER_RANK[mode.minTier] ?? 0);
   });
 
   useEffect(() => {
@@ -195,7 +207,10 @@ const MySoundBoard = () => {
       setConversations(convs);
       // Welcome message: show if user has NO prior conversations (server-side truth)
       if (convs.length === 0 && messages.length === 0) {
-        setMessages([{ role: 'assistant', content: `${firstName}, I'm your Strategic Intelligence Advisor. I've already analysed your business profile and live signals.\n\nI'll be direct — when your data shows something, I'll tell you exactly what it means and what to do about it. No generic advice, no hedging.\n\nWhat do you need to know right now?` }]);
+        const greeting = firstName
+          ? `${firstName}, I'm your Strategic Intelligence Advisor. I've got your business profile and live signals in front of me.\n\nI'll be direct: when your data shows something, I'll tell you what it means and what to do. No generic advice, no hedging.\n\nWhat do you want to look at first?`
+          : "I'm your Strategic Intelligence Advisor. I've already analysed your business profile and live signals.\n\nI'll be direct — when your data shows something, I'll tell you exactly what it means and what to do about it. No generic advice, no hedging.\n\nWhat do you need to know right now?";
+        setMessages([{ role: 'assistant', content: greeting }]);
       }
     } catch (error) {
       console.error('Failed to fetch conversations');
@@ -276,6 +291,7 @@ const MySoundBoard = () => {
         conversation_id: activeConversation,
         intelligence_context: intelligenceContext,
         mode: currentMode.backend_mode,
+        agent_id: selectedAgent || 'auto',
       });
       ({
         reply,
@@ -289,6 +305,7 @@ const MySoundBoard = () => {
         data_sources_count,
         data_freshness,
         lineage,
+        agent_name,
       } = response.data);
 
       const assistantMsg = {
@@ -296,6 +313,7 @@ const MySoundBoard = () => {
         content: reply,
         suggested_actions: suggested_actions || [],
         intent,
+        agent_name: agent_name || undefined,
         model_used,
         confidence_score,
         data_sources_count,
@@ -653,13 +671,13 @@ const MySoundBoard = () => {
                     <MessageSquare className="w-7 h-7" style={{ color: 'var(--accent-primary)' }} />
                   </div>
                   <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                    Ask anything about your business
+                    {firstName ? `${firstName}, what do you want to tackle?` : 'Ask anything about your business'}
                   </p>
                   <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-                    {advisorHandoff ? 'or choose a BIQc next move below' : 'or click a prompt to get started'}
+                    {advisorHandoff ? 'or choose a BIQc next move below' : 'pick a prompt or type your own'}
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center max-w-sm mx-auto">
-                    {(advisorHandoff ? buildAdvisorSuggestedOptions(advisorHandoff) : ['What should I focus on?', 'Summarise my risks', 'Show me my pipeline', 'How can I grow revenue?'].map((q) => ({ label: q, prompt: q }))).map((q) => (
+                    {(advisorHandoff ? buildAdvisorSuggestedOptions(advisorHandoff) : ["What's the one thing I should focus on?", 'Summarise my risks', 'Show me my pipeline', "How's my revenue looking?"].map((q) => ({ label: q, prompt: q }))).map((q) => (
                       <button key={q.label} onClick={() => sendMessage(q.prompt, advisorHandoff)}
                         className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: '1px solid var(--border-light)' }}>
@@ -691,6 +709,9 @@ const MySoundBoard = () => {
                             : '1px solid var(--border-light)'
                         }}
                       >
+                        {message.role === 'assistant' && message.agent_name && (
+                          <p className="text-[10px] font-medium mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>{message.agent_name}</p>
+                        )}
                         <p className="whitespace-pre-wrap text-sm leading-relaxed">
                           {message.content}
                         </p>
@@ -808,9 +829,10 @@ const MySoundBoard = () => {
                 </div>
               )}
               {/* Model selector (restored dropdown style, proprietary BIQc labels) */}
-              <div className="flex items-center gap-2 px-1 mb-2 relative" data-testid="soundboard-mode-toggle-wrapper">
+              <div className="flex flex-wrap items-center gap-2 px-1 mb-2 relative" data-testid="soundboard-mode-toggle-wrapper">
+                <div className="relative">
                 <button
-                  onClick={() => setShowModeMenu((v) => !v)}
+                  onClick={() => { setShowModeMenu((v) => !v); setShowAgentMenu(false); }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110"
                   style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
                   data-testid="soundboard-mode-selector"
@@ -847,17 +869,51 @@ const MySoundBoard = () => {
                     ))}
 
                     {!canUseTrinity && (
-                      <a href="/upgrade" className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 no-underline"
+                      <a href="/subscribe" className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 no-underline"
                         style={{ textDecoration: 'none' }} data-testid="soundboard-trinity-upgrade-link">
                         <span className="text-lg shrink-0 opacity-40">◈</span>
                         <div>
                           <p className="text-sm font-semibold" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>BIQc Trinity</p>
-                          <p className="text-[11px] mt-0.5" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>Available on Pro and Enterprise plans</p>
+                          <p className="text-[11px] mt-0.5" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>Available on the paid plan</p>
                         </div>
                       </a>
                     )}
                   </div>
                 )}
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => { setShowAgentMenu((v) => !v); setShowModeMenu(false); }}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+                    style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', color: '#3B82F6', fontFamily: fontFamily.mono }}
+                    data-testid="soundboard-agent-selector"
+                  >
+                    <span>{BIQC_AGENTS.find(a => a.id === selectedAgent)?.icon || '⚡'}</span>
+                    <span>{BIQC_AGENTS.find(a => a.id === selectedAgent)?.label || 'Auto'}</span>
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                  {showAgentMenu && (
+                    <div className="absolute bottom-full left-0 mb-2 w-56 rounded-xl overflow-hidden shadow-xl z-50"
+                      style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                      <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Agent</p>
+                      {BIQC_AGENTS.map((agent) => (
+                        <button
+                          key={agent.id}
+                          onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
+                          style={{ borderTop: '1px solid #1E2D3D' }}
+                          data-testid={`soundboard-agent-${agent.id}`}
+                        >
+                          <span className="text-sm shrink-0">{agent.icon}</span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#F4F7FA', fontFamily: fontFamily.body }}>{agent.label}</p>
+                            <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{agent.shortDesc}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div 

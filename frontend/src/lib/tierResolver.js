@@ -6,8 +6,16 @@
 
 const SUPER_ADMIN_EMAIL = 'andre@thestrategysquad.com.au';
 
-const TIERS = ['free', 'starter', 'professional', 'enterprise', 'custom', 'super_admin'];
-export const TIER_RANK = { free: 0, starter: 1, professional: 1, enterprise: 1, custom: 1, foundation: 1, growth: 1, super_admin: 99 };
+// Only free, starter (BIQc Foundation), super_admin. Legacy DB values map to starter in resolveTier.
+const TIERS = ['free', 'starter', 'super_admin'];
+export const TIER_RANK = { free: 0, starter: 1, super_admin: 99 };
+// Legacy tier names (no longer sold) still resolve to paid rank for hasAccess when DB returns them
+const LEGACY_PAID_RANK = 1;
+function rankForTier(tier) {
+  if (TIER_RANK[tier] !== undefined) return TIER_RANK[tier];
+  if (['foundation', 'growth', 'professional', 'enterprise', 'custom', 'pro'].includes(tier)) return LEGACY_PAID_RANK;
+  return 0;
+}
 
 // Route → minimum tier
 const ROUTE_ACCESS = {
@@ -77,12 +85,14 @@ export function resolveTier(user) {
   const role = (user.role || '').toLowerCase();
   if (role === 'superadmin' || role === 'super_admin' || role === 'admin') return 'super_admin';
   const dbTier = (user.subscription_tier || user.tier || 'free').toLowerCase();
-  if (['starter', 'professional', 'enterprise', 'custom', 'growth', 'foundation'].includes(dbTier)) return 'starter';
-  return TIERS.includes(dbTier) ? dbTier : 'free';
+  if (dbTier === 'starter') return 'starter';
+  if (dbTier === 'super_admin') return 'super_admin';
+  if (['foundation', 'growth', 'professional', 'enterprise', 'custom', 'pro'].includes(dbTier)) return 'starter';
+  return dbTier === 'free' ? 'free' : 'free';
 }
 
 export function hasAccess(userTier, requiredTier) {
-  return (TIER_RANK[userTier] || 0) >= (TIER_RANK[requiredTier] || 0);
+  return rankForTier(userTier) >= rankForTier(requiredTier);
 }
 
 export function checkRouteAccess(route, user) {

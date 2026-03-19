@@ -29,10 +29,13 @@ export const getAppBaseUrl = () => {
  */
 export const getBackendUrl = () => {
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
-  if (!backendUrl) {
-    throw new Error('REACT_APP_BACKEND_URL is required');
+  if (backendUrl) {
+    return backendUrl.replace(/\/$/, '');
   }
-  return backendUrl.replace(/\/$/, '');
+  if (typeof window !== 'undefined' && window.location?.hostname === 'localhost') {
+    return 'http://localhost:8000';
+  }
+  throw new Error('REACT_APP_BACKEND_URL is required');
 };
 
 /**
@@ -85,13 +88,13 @@ export const assertNotLegacyUrl = (url) => {
   }
 };
 
-// Export URL configuration object for convenience
+// Lazy so getBackendUrl() isn't called at module load (e.g. during build when window is undefined)
 export const URL_CONFIG = {
-  APP_BASE: getAppBaseUrl(),
-  BACKEND: getBackendUrl(),
-  API: getApiBaseUrl(),
-  OAUTH_REDIRECT: getOAuthRedirectUrl(),
-  SUPABASE: getSupabaseConfig()
+  get APP_BASE() { return getAppBaseUrl(); },
+  get BACKEND() { return getBackendUrl(); },
+  get API() { return getApiBaseUrl(); },
+  get OAUTH_REDIRECT() { return getOAuthRedirectUrl(); },
+  get SUPABASE() { return getSupabaseConfig(); },
 };
 
 export default URL_CONFIG;

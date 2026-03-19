@@ -4,12 +4,23 @@ import { getBackendUrl } from '../config/urls';
 
 export const API_BASE = `${getBackendUrl()}/api`;
 
+const devBypassAuth =
+  typeof process !== 'undefined' &&
+  process.env.NODE_ENV === 'development' &&
+  (process.env.REACT_APP_DEV_BYPASS_AUTH === '1' || process.env.REACT_APP_DEV_BYPASS_AUTH === 'true');
+const devBypassSecret =
+  (typeof process !== 'undefined' && process.env.REACT_APP_DEV_BYPASS_SECRET) || 'dev-bypass-local';
+
 export const apiClient = axios.create({
   baseURL: API_BASE,
   timeout: 30000,
 });
 
 apiClient.interceptors.request.use(async (config) => {
+  config.headers = config.headers || {};
+  if (devBypassAuth && devBypassSecret) {
+    config.headers['X-Dev-Bypass'] = devBypassSecret;
+  }
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.access_token) {
@@ -38,7 +49,7 @@ apiClient.interceptors.request.use(async (config) => {
     console.warn('Failed to get Supabase session:', error.message);
   }
   
-  config.headers = config.headers || {};
+  if (!config.headers) config.headers = {};
   config.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate';
   config.headers['Pragma'] = 'no-cache';
   config.headers['Expires'] = '0';

@@ -6,6 +6,7 @@ import { trackEvent, EVENTS } from '../lib/analytics';
 import DataCoverageGate from './DataCoverageGate';
 import { CheckInAlerts } from './CheckInAlerts';
 import { fontFamily } from '../design-system/tokens';
+import { resolveTier, TIER_RANK } from '../lib/tierResolver';
 
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
@@ -44,6 +45,9 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [loading, setLoading] = useState(false);
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [selectedMode, setSelectedMode] = useState('auto');
+  const [selectedAgent, setSelectedAgent] = useState('auto');
+  const [showAgentMenu, setShowAgentMenu] = useState(false);
+  const [lastAgentName, setLastAgentName] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
@@ -56,24 +60,34 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [recordingScans, setRecordingScans] = useState({});
   const { session, user } = useSupabaseAuth();
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || '';
-  const userTier = String(user?.subscription_tier || 'free').toLowerCase();
+  const resolvedTier = resolveTier(user);
   const isAndre = user?.email === 'andre@thestrategysquad.com.au';
 
   const BIQC_MODES = [
     { id: 'auto', label: 'BIQc Auto', desc: 'Adaptive routing across BIQc cognition pathways', icon: '⚡', backend_mode: 'auto', minTier: 'free' },
-    { id: 'normal', label: 'Normal', desc: 'Default paid conversation mode', icon: '◉', backend_mode: 'normal', minTier: 'foundation' },
-    { id: 'thinking', label: 'Deep Thinking', desc: 'High-depth strategic reasoning mode', icon: '🧠', backend_mode: 'thinking', minTier: 'foundation' },
-    { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'foundation' },
-    { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'pro' },
+    { id: 'normal', label: 'Normal', desc: 'Default paid conversation mode', icon: '◉', backend_mode: 'normal', minTier: 'starter' },
+    { id: 'thinking', label: 'Deep Thinking', desc: 'High-depth strategic reasoning mode', icon: '🧠', backend_mode: 'thinking', minTier: 'starter' },
+    { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'starter' },
+    { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'starter' },
   ];
 
-  const tierRank = { free: 0, starter: 0, foundation: 1, growth: 2, custom: 3, pro: 2, enterprise: 3 };
-  const isPaidUser = (tierRank[userTier] ?? 0) >= 1;
-  const canUseTrinity = isAndre || ['pro', 'enterprise', 'growth', 'custom'].includes(userTier);
+  const BIQC_AGENTS = [
+    { id: 'auto', label: 'Auto', shortDesc: 'Pick specialist by question', icon: '⚡' },
+    { id: 'general', label: 'Strategic Advisor', shortDesc: 'Full picture & priorities', icon: '◎' },
+    { id: 'finance', label: 'Finance', shortDesc: 'Cash, revenue, margins', icon: '💰' },
+    { id: 'sales', label: 'Sales', shortDesc: 'Pipeline & deals', icon: '📊' },
+    { id: 'marketing', label: 'Marketing', shortDesc: 'Campaigns & positioning', icon: '📣' },
+    { id: 'risk', label: 'Risk', shortDesc: 'Compliance & exposure', icon: '🛡️' },
+    { id: 'operations', label: 'Operations', shortDesc: 'Workflow & capacity', icon: '⚙️' },
+    { id: 'strategy', label: 'Strategy', shortDesc: 'Planning & scenarios', icon: '🎯' },
+  ];
+
+  const isPaidUser = (TIER_RANK[resolvedTier] ?? 0) >= 1;
+  const canUseTrinity = isAndre || isPaidUser;
   const availableModes = BIQC_MODES.filter((mode) => {
     if (isAndre) return true;
     if (mode.id === 'trinity') return canUseTrinity;
-    return (tierRank[userTier] ?? 0) >= (tierRank[mode.minTier] ?? 0);
+    return (TIER_RANK[resolvedTier] ?? 0) >= (TIER_RANK[mode.minTier] ?? 0);
   });
   const activeMode = availableModes.find((mode) => mode.id === selectedMode) || availableModes[0] || BIQC_MODES[0];
 
@@ -107,10 +121,10 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       setConversations(convs);
       // Welcome message: show if user has NO prior conversations (server truth, no localStorage)
       if (convs.length === 0) {
-        setMessages([{
-          role: 'assistant',
-          text: "Good to meet you. I'm your Strategic Intelligence Advisor — I have access to your business data and I'm here to help you make better decisions, faster.\n\nWhen the data tells me something clearly, I'll tell you directly. When I need more context, I'll ask you one specific question. No waffle, no hedging.\n\nWhat's on your mind right now?",
-        }]);
+        const greeting = firstName
+          ? `Hi ${firstName}. I'm your Strategic Intelligence Advisor — I've got your business data in front of me and I'm here to help you decide what to do next.\n\nI'll give you straight answers when the data supports them, and I'll ask one clear question when I need a bit more from you. No waffle.\n\nWhat do you want to look at first?`
+          : "Good to meet you. I'm your Strategic Intelligence Advisor — I have access to your business data and I'm here to help you make better decisions, faster.\n\nWhen the data tells me something clearly, I'll tell you directly. When I need more context, I'll ask you one specific question. No waffle, no hedging.\n\nWhat's on your mind right now?";
+        setMessages([{ role: 'assistant', text: greeting }]);
       }
     }).catch(() => {});
     fetchScanUsage();
@@ -176,10 +190,15 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         message: msgToSend,
         conversation_id: activeConvId,
         mode: activeMode?.backend_mode || 'auto',
+        agent_id: selectedAgent || 'auto',
       });
       if (res.data?.reply) {
         const assistantMsg = { role: 'assistant', text: res.data.reply };
         if (res.data?.file) assistantMsg.file = res.data.file;
+        if (res.data?.agent_name) {
+          assistantMsg.agent_name = res.data.agent_name;
+          setLastAgentName(res.data.agent_name);
+        }
         setMessages(prev => [...prev, assistantMsg]);
         if (res.data.conversation_id && !activeConvId) {
           setActiveConvId(res.data.conversation_id);
@@ -380,17 +399,17 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               <Zap className="w-6 h-6" style={{ color: '#FF6A00' }} />
             </div>
             <p className="text-base font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
-              {firstName ? `${firstName}, your advisor is ready.` : 'Your advisor is ready.'}
+              {firstName ? `Hey ${firstName}, I'm ready when you are.` : 'Your advisor is ready.'}
             </p>
             <p className="text-xs mb-6 max-w-[240px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
-              I've read your business data. Ask me anything specific — deals, cash flow, risks, competitors.
+              I've got your data. Ask me anything — deals, cash, risks, or what to focus on next.
             </p>
             <div className="flex flex-wrap gap-2 justify-center max-w-[300px]">
               {[
-                'What needs my attention this week?',
-                'Show me stalled deals',
-                'How is my cash flow?',
-                'What are my biggest risks?',
+                "What's the one thing I should focus on this week?",
+                'Show me my stalled deals',
+                "How's my cash flow looking?",
+                "What are my biggest risks right now?",
               ].map(q => (
                 <button key={q} onClick={() => setInput(q)}
                   className="text-[11px] px-3 py-2 rounded-lg transition-all hover:bg-[#FF6A00]/10 hover:border-[#FF6A00]/30"
@@ -413,6 +432,9 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 whiteSpace: 'pre-line',
                 borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
               }}>
+              {msg.role === 'assistant' && msg.agent_name && (
+                <p className="text-[9px] font-medium mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>{msg.agent_name}</p>
+              )}
               {msg.type === 'integration_prompt' && <Database className="w-3.5 h-3.5 text-[#F59E0B] inline mr-1.5 -mt-0.5" />}
               {msg.text}
               {msg.sources?.length > 0 && (
@@ -475,19 +497,19 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           </div>
         )}
 
-        <div className="mb-2 relative" data-testid="soundboard-panel-mode-wrapper">
-          <button
-            onClick={() => setShowModeMenu((v) => !v)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all hover:brightness-110"
-            style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
-            data-testid="soundboard-panel-mode-selector"
-          >
-            <span>{activeMode?.icon}</span>
-            <span>{activeMode?.label}</span>
-            <ChevronDown className="w-3 h-3" />
-          </button>
-
-          {showModeMenu && (
+        <div className="mb-2 flex flex-wrap items-center gap-2" data-testid="soundboard-panel-mode-wrapper">
+          <div className="relative">
+            <button
+              onClick={() => { setShowModeMenu((v) => !v); setShowAgentMenu(false); }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all hover:brightness-110"
+              style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+              data-testid="soundboard-panel-mode-selector"
+            >
+              <span>{activeMode?.icon}</span>
+              <span>{activeMode?.label}</span>
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {showModeMenu && (
             <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-xl z-50"
               style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
               {availableModes.map((mode, idx) => (
@@ -507,13 +529,47 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               ))}
 
               {!canUseTrinity && (
-                <a href="/upgrade" className="block px-3 py-2 text-[10px] no-underline"
+                <a href="/subscribe" className="block px-3 py-2 text-[10px] no-underline"
                   style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="soundboard-panel-trinity-upgrade-link">
-                  BIQc Trinity is available on Pro and Enterprise plans.
+                  BIQc Trinity is available on the paid plan.
                 </a>
               )}
             </div>
-          )}
+            )}
+          </div>
+          <div className="relative">
+            <button
+              onClick={() => { setShowAgentMenu((v) => !v); setShowModeMenu(false); }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all hover:brightness-110"
+              style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', color: '#3B82F6', fontFamily: fontFamily.mono }}
+              data-testid="soundboard-panel-agent-selector"
+            >
+              <span>{BIQC_AGENTS.find(a => a.id === selectedAgent)?.icon || '⚡'}</span>
+              <span>{BIQC_AGENTS.find(a => a.id === selectedAgent)?.label || 'Auto'}</span>
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {showAgentMenu && (
+            <div className="absolute bottom-full left-0 mb-2 w-56 rounded-xl overflow-hidden shadow-xl z-50"
+              style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+              <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Agent</p>
+              {BIQC_AGENTS.map((agent) => (
+                <button
+                  key={agent.id}
+                  onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
+                  style={{ borderTop: '1px solid #1E2D3D' }}
+                  data-testid={`soundboard-agent-${agent.id}`}
+                >
+                  <span className="text-sm shrink-0">{agent.icon}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#F4F7FA', fontFamily: fontFamily.body }}>{agent.label}</p>
+                    <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{agent.shortDesc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            )}
+          </div>
         </div>
 
         <div className="rounded-2xl flex items-end gap-1 p-1.5" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${attachedFile ? 'rgba(255,106,0,0.4)' : '#243140'}` }}>
@@ -530,7 +586,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             value={input}
             onChange={e => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-            placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "Ask anything..."}
+            placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "What's on your mind?"}
             rows={1}
             className="flex-1 px-2 py-2 text-sm outline-none resize-none bg-transparent"
             style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body, maxHeight: '120px' }}
