@@ -17,10 +17,13 @@ logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
 
-MASTER_ADMIN_EMAIL = "andre@thestrategysquad.com.au"
+# Set via BIQC_MASTER_ADMIN_EMAIL in production; no hardcoded emails in repo
+MASTER_ADMIN_EMAIL = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "").strip().lower() or None
 
 
 def _is_master_admin_email(email: str | None) -> bool:
+    if not MASTER_ADMIN_EMAIL:
+        return False
     return str(email or "").strip().lower() == MASTER_ADMIN_EMAIL
 
 

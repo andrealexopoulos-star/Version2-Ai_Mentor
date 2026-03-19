@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Production Forensic Testing for BIQc Platform
-Target: https://biqc.thestrategysquad.com  
-Credentials: andre@thestrategysquad.com.au / MasterMind2025*
+Target: https://biqc.thestrategysquad.com
+Credentials: Set via env BIQC_TEST_EMAIL and BIQC_TEST_PASSWORD (never commit real credentials).
 Scope: Backend + Frontend with priority on Advisor/Business Brain correctness
 
 Test Checklist:
@@ -16,15 +16,16 @@ Test Checklist:
 import asyncio
 import httpx
 import json
+import os
 import sys
 import traceback
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-# Production Configuration
-BASE_URL = "https://biqc.thestrategysquad.com"
-TEST_EMAIL = "andre@thestrategysquad.com.au"  
-TEST_PASSWORD = "MasterMind2025*"
+# Production Configuration — use env vars; never hardcode credentials
+BASE_URL = os.environ.get("BIQC_TEST_BASE_URL", "https://biqc.thestrategysquad.com")
+TEST_EMAIL = os.environ.get("BIQC_TEST_EMAIL", "").strip()
+TEST_PASSWORD = os.environ.get("BIQC_TEST_PASSWORD", "").strip()
 
 class BIQcForensicTester:
     def __init__(self):
@@ -55,7 +56,9 @@ class BIQcForensicTester:
         self.log("=" * 60)
         self.log("TEST 1: Authentication via /api/auth/supabase/login")
         self.log("=" * 60)
-        
+        if not TEST_EMAIL or not TEST_PASSWORD:
+            self.log("SKIP: Set BIQC_TEST_EMAIL and BIQC_TEST_PASSWORD to run auth tests.", "WARNING")
+            return {"success": False, "error": "Missing BIQC_TEST_EMAIL or BIQC_TEST_PASSWORD"}
         try:
             response = await self.client.post(
                 f"{BASE_URL}/api/auth/supabase/login",

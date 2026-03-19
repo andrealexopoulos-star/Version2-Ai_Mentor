@@ -17,7 +17,12 @@ import {
   Paperclip, FileText, Download, Zap, Eye, Clock
 } from 'lucide-react';
 
+const SOUNDBOARD_CHAT_TIMEOUT_MS = 120000;
+
 const getSoundboardErrorMessage = (error) => {
+  if (error?.code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('timeout')) {
+    return 'Reply timed out — try Normal mode or wait and retry (Trinity can take over a minute).';
+  }
   const detail = error?.response?.data?.detail;
   if (typeof detail === 'string' && detail.trim()) return detail;
   const reply = error?.response?.data?.reply;
@@ -286,13 +291,17 @@ const MySoundBoard = () => {
 
       let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage;
 
-      const response = await apiClient.post('/soundboard/chat', {
-        message: fullMessage,
-        conversation_id: activeConversation,
-        intelligence_context: intelligenceContext,
-        mode: currentMode.backend_mode,
-        agent_id: selectedAgent || 'auto',
-      });
+      const response = await apiClient.post(
+        '/soundboard/chat',
+        {
+          message: fullMessage,
+          conversation_id: activeConversation,
+          intelligence_context: intelligenceContext,
+          mode: currentMode.backend_mode,
+          agent_id: selectedAgent || 'auto',
+        },
+        { timeout: SOUNDBOARD_CHAT_TIMEOUT_MS },
+      );
       ({
         reply,
         conversation_id,
@@ -307,6 +316,17 @@ const MySoundBoard = () => {
         lineage,
         agent_name,
       } = response.data);
+
+      const replyTrimmed = typeof reply === 'string' ? reply.trim() : '';
+      if (!replyTrimmed) {
+        const hint =
+          response.data?.runtime_error ||
+          response.data?.provider_error ||
+          response.data?.detail ||
+          'Empty reply from server. Try Normal mode or retry.';
+        setMessages(prev => [...prev, { role: 'assistant', content: String(hint) }]);
+        return;
+      }
 
       const assistantMsg = {
         role: 'assistant',

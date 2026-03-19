@@ -17,7 +17,11 @@ logger = logging.getLogger("server")
 security = HTTPBearer(auto_error=False)
 
 # Dev-only: set DEV_BYPASS_AUTH=1 and optionally DEV_BYPASS_SECRET=your-secret; frontend sends X-Dev-Bypass: your-secret
-DEV_BYPASS_AUTH = os.environ.get("DEV_BYPASS_AUTH", "").strip().lower() in ("1", "true", "yes")
+# NEVER enable in production: ENVIRONMENT=production or PRODUCTION=1 forces bypass off
+_env = os.environ.get("ENVIRONMENT", "").strip().lower()
+_production = os.environ.get("PRODUCTION", "").strip().lower() in ("1", "true", "yes")
+_dev_bypass_requested = os.environ.get("DEV_BYPASS_AUTH", "").strip().lower() in ("1", "true", "yes")
+DEV_BYPASS_AUTH = _dev_bypass_requested and not (_env == "production" or _production)
 DEV_BYPASS_SECRET = os.environ.get("DEV_BYPASS_SECRET", "dev-bypass-local").strip()
 DEV_BYPASS_USER = {
     "id": "dev-bypass-user",
