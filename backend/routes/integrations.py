@@ -2938,6 +2938,123 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
     }
 
 
+@router.post("/integrations/merge/webhook")
+async def merge_webhook_receive(request: Request):
+    """
+    Receive Merge.dev webhook events. No auth — Merge validates via x-merge-signature.
+    Use this URL in Merge dashboard: https://biqc-api.azurewebsites.net/api/integrations/merge/webhook
+    """
+    import hashlib
+    import hmac as hmac_module
+
+    webhook_secret = os.environ.get("MERGE_WEBHOOK_SECRET")
+    if not webhook_secret:
+        logger.warning("[merge-webhook] MERGE_WEBHOOK_SECRET not configured")
+        return JSONResponse(content={"ok": False, "error": "Webhook not configured"}, status_code=503)
+
+    if str(os.environ.get("FEATURE_MERGE_WEBHOOK_ENABLED", "true")).lower() not in {"1", "true", "yes"}:
+        return JSONResponse(content={"ok": True, "accepted": False, "reason": "FEATURE_MERGE_WEBHOOK_ENABLED=false"}, status_code=202)
+
+    signature_header = request.headers.get("x-merge-signature") or request.headers.get("X-Merge-Signature") or ""
+    raw_body = await request.body()
+    raw_text = raw_body.decode("utf-8", errors="replace")
+
+    try:
+        expected_sig = hmac_module.new(
+            webhook_secret.encode(),
+            raw_text.encode(),
+            hashlib.sha256,
+        ).hexdigest()
+        provided = signature_header.replace("sha256=", "").replace("sha256 =", "").strip().lower()
+        if not hmac_module.compare_digest(expected_sig, provided):
+            return JSONResponse(content={"ok": False, "error": "Invalid webhook signature"}, status_code=401)
+    except Exception as e:
+        logger.warning(f"[merge-webhook] Signature validation failed: {e}")
+        return JSONResponse(content={"ok": False, "error": "Invalid signature"}, status_code=401)
+
+    try:
+        payload = json.loads(raw_text or "{}")
+    except json.JSONDecodeError:
+        return JSONResponse(content={"ok": False, "error": "Invalid JSON"}, status_code=400)
+
+    raw_events = (
+        payload.get("events")
+        if isinstance(payload.get("events"), list)
+        else payload.get("data")
+        if isinstance(payload.get("data"), list)
+        else [payload]
+    )
+
+    sb = get_sb()
+    received = 0
+    duplicate = 0
+    ignored = 0
+
+    for row in raw_events or []:
+        event = row if isinstance(row, dict) else {}
+        account_token = str(event.get("account_token") or payload.get("account_token") or "").strip()
+        provider = str(event.get("provider") or payload.get("provider") or "merge").lower()
+        event_type = str(event.get("event_type") or event.get("type") or payload.get("type") or "unknown")
+        event_id = str(event.get("id") or event.get("event_id") or str(uuid.uuid4()))
+        occurred_at = str(event.get("occurred_at") or event.get("timestamp") or payload.get("timestamp") or datetime.now(timezone.utc).isoformat())
+        entity = str(event.get("model") or event.get("entity") or event.get("object") or "unknown")
+        cat_raw = str(event.get("category") or event_type or entity).lower()
+        category = "crm" if any(x in cat_raw for x in ["crm", "opportunit", "deal"]) else \
+                   "accounting" if any(x in cat_raw for x in ["account", "invoice", "payment"]) else \
+                   "marketing" if any(x in cat_raw for x in ["market", "campaign"]) else \
+                   "calendar" if "calendar" in cat_raw else "unknown"
+
+        if not account_token or category == "unknown":
+            ignored += 1
+            continue
+
+        try:
+            int_resp = sb.table("integration_accounts").select("user_id").eq("account_token", account_token).limit(1).maybe_single().execute()
+            if int_resp.error or not int_resp.data or not int_resp.data.get("user_id"):
+                ignored += 1
+                continue
+            tenant_id = str(int_resp.data["user_id"])
+        except Exception:
+            ignored += 1
+            continue
+
+        dedupe_key = f"{event_id}|{tenant_id}|{category}|{entity}|{occurred_at}"[:500]
+
+        try:
+            ins = sb.schema("business_core").table("webhook_events").insert({
+                "tenant_id": tenant_id,
+                "provider": provider,
+                "category": category,
+                "event_type": event_type,
+                "event_id": event_id,
+                "entity_type": entity,
+                "event_timestamp": occurred_at,
+                "idempotency_key": dedupe_key,
+                "payload": event,
+                "status": "received",
+                "received_at": datetime.now(timezone.utc).isoformat(),
+            }).execute()
+            if ins.data:
+                received += 1
+            else:
+                ignored += 1
+        except Exception as e:
+            err_msg = str(e).lower()
+            if "duplicate" in err_msg or "unique" in err_msg:
+                duplicate += 1
+            else:
+                logger.warning(f"[merge-webhook] Insert failed: {e}")
+                ignored += 1
+
+    return JSONResponse(content={
+        "ok": True,
+        "received": received,
+        "duplicate": duplicate,
+        "ignored": ignored,
+        "events": raw_events,
+    }, status_code=200)
+
+
 @router.get("/integrations/webhook-health")
 async def get_merge_webhook_health(current_user: dict = Depends(get_current_user)):
     """Operational health for Merge webhook ingestion and replay queue."""
