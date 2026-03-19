@@ -1,135 +1,178 @@
 {
-  "project_name": "BIQc - Executive Intelligence Platform",
-  "design_philosophy": {
-    "theme_name": "Executive Intelligence",
-    "core_concept": "A blend of Swiss Precision (Inter) and Classical Authority (Cormorant Garamond). High-contrast, data-dense, yet typographically elegant.",
-    "emotional_archetype": "The Performance Pro",
-    "attributes": [
-      "Authoritative",
-      "Precision-engineered",
-      "High-bandwidth",
-      "Tactical"
-    ]
-  },
   "typography": {
     "font_families": {
-      "heading": "Cormorant Garamond, Georgia, serif",
-      "body": "Inter, sans-serif",
-      "mono": "JetBrains Mono, monospace"
+      "heading": "'Cormorant Garamond', Georgia, serif",
+      "body": "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      "mono": "'JetBrains Mono', 'Fira Code', 'Courier New', monospace"
     },
-    "usage_rules": {
-      "headings": "Use 'font-heading' for all H1-H3. Weights: 600 or 700. Tracking: tight (-0.02em).",
-      "body": "Use 'font-body' for all interface text. Weights: 400 (regular) or 500 (medium).",
-      "data": "Use 'font-mono' for all numbers, KPIs, and code snippets. Weight: 500.",
-      "overline": "Uppercase, tracking-widest (0.2em), font-body, text-xs, font-semibold, text-muted-foreground."
+    "scales": {
+      "h1": "text-4xl md:text-5xl lg:text-6xl tracking-tight leading-none font-light",
+      "h2": "text-3xl md:text-4xl tracking-tight font-light",
+      "h3": "text-2xl md:text-3xl tracking-normal font-normal",
+      "body_lg": "text-lg leading-relaxed",
+      "body": "text-base leading-relaxed text-muted-foreground",
+      "caption": "text-xs uppercase tracking-[0.2em] font-mono text-muted-foreground"
     }
   },
   "colors": {
     "palette": {
       "primary": "#FF6A00",
-      "primary_foreground": "#FFFFFF",
+      "primary_dark": "#E85D00",
       "background": "#0F1720",
       "card": "#141C26",
-      "card_hover": "#1A2332",
       "border": "#243140",
-      "text_primary": "#F4F7FA",
-      "text_secondary": "#9FB0C3",
-      "text_muted": "#8B9DB5",
+      "text": "#F4F7FA",
+      "text_muted": "#9FB0C3",
       "success": "#10B981",
       "warning": "#F59E0B",
       "danger": "#EF4444",
       "info": "#3B82F6"
     },
-    "usage": {
-      "gradients": "Avoid full-screen gradients. Use subtle 'glow' effects with 'shadow-[0_0_30px_-5px_rgba(255,106,0,0.15)]'.",
-      "borders": "1px solid border-color. Active states get 'border-primary'.",
-      "glass": "Use 'bg-black/40 backdrop-blur-xl border-white/10' for overlays and sticky headers."
+    "theme": "dark",
+    "contrast_rules": {
+      "text_on_primary": "#FFFFFF",
+      "text_on_background": "#F4F7FA",
+      "interactive_hover": "brightness-110",
+      "border_opacity": "0.1"
     }
   },
-  "layout_strategies": {
-    "dashboard_grid": {
-      "type": "High Density (Mode B)",
-      "classes": "grid grid-cols-1 md:grid-cols-12 gap-4",
-      "rules": "Every pixel must be utilized. Use 'h-full' on children. No jagged bottoms."
-    },
-    "marketing_grid": {
-      "type": "Tetris Grid (Mode A)",
-      "classes": "grid grid-cols-1 md:grid-cols-12 gap-8",
-      "rules": "Asymmetry. 60/40 splits. Large typography."
-    },
+  "layout_strategy": {
+    "grid_system": "grid-cols-1 md:grid-cols-12 gap-6",
     "spacing": {
-      "dashboard": "Compact. p-4 or p-6 for cards. gap-4 for grids.",
-      "marketing": "Generous. p-8 or p-12 for sections. gap-8 for grids."
+      "section_padding": "py-12 md:py-20",
+      "container_padding": "px-6 md:px-8",
+      "card_padding": "p-6 md:p-8"
+    },
+    "containers": {
+      "max_width": "max-w-7xl mx-auto",
+      "sidebar_width": "w-64",
+      "sidebar_collapsed_width": "w-16"
     }
   },
   "components": {
     "buttons": {
-      "primary": "bg-primary text-white hover:bg-primary/90 rounded-lg shadow-lg shadow-primary/20",
-      "secondary": "bg-card border border-border hover:bg-accent hover:text-white rounded-lg",
-      "ghost": "hover:bg-accent/10 hover:text-primary"
+      "primary": "bg-[#FF6A00] hover:bg-[#E85D00] text-white rounded-lg px-6 py-2.5 font-medium transition-all shadow-lg shadow-orange-500/20",
+      "secondary": "bg-transparent border border-[#243140] hover:border-[#FF6A00] text-[#F4F7FA] rounded-lg px-6 py-2.5 font-medium transition-all",
+      "ghost": "bg-transparent hover:bg-white/5 text-[#9FB0C3] hover:text-[#F4F7FA] rounded-lg px-4 py-2 transition-all"
     },
     "cards": {
-      "default": "bg-card border border-border rounded-xl shadow-sm hover:border-primary/50 transition-colors duration-300",
-      "glass": "bg-black/40 backdrop-blur-md border border-white/10 rounded-xl"
+      "base": "bg-[#141C26] border border-[#243140] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all",
+      "interactive": "cursor-pointer hover:border-[#FF6A00]/50 hover:bg-[#1A2332] transition-all duration-300",
+      "glass": "bg-[#141C26]/80 backdrop-blur-xl border border-white/10"
     },
     "inputs": {
-      "default": "bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
-    },
-    "existing_paths": {
-      "button": "/app/frontend/src/components/ui/button.tsx",
-      "card": "/app/frontend/src/components/ui/card.tsx",
-      "input": "/app/frontend/src/components/ui/input.tsx",
-      "badge": "/app/frontend/src/components/ui/badge.tsx",
-      "sonner": "/app/frontend/src/components/ui/sonner.tsx"
+      "base": "bg-[#0A1018] border border-[#243140] rounded-lg px-4 py-3 text-[#F4F7FA] placeholder-[#475569] focus:border-[#FF6A00] focus:ring-1 focus:ring-[#FF6A00] outline-none transition-all"
     }
   },
-  "page_specific_guidelines": {
-    "priority_inbox": {
-      "layout": "Command Center. Split pane: List on left (4 cols), Detail/Action on right (8 cols).",
-      "features": [
-        "Inverted Pyramid Hierarchy: Alerts > Key Messages > Routine.",
-        "AI Summary: Top section with type-writer effect summary.",
-        "Keyboard Shortcuts: Visible hints (e.g., 'Press J/K to navigate')."
-      ]
-    },
-    "calendar": {
-      "layout": "Integrated Timeline.",
-      "features": [
-        "Side-by-side Agenda: Calendar widget left, Agenda list right.",
-        "Smart Filtering: 'Show Conflicts Only', 'Deadlines'.",
-        "Visual Density: High. Use color strips for event types."
-      ]
-    },
-    "business_dna": {
-      "layout": "Spy-Scroll Settings.",
-      "features": [
-        "Sticky Sidebar: Navigation on left that highlights active section.",
-        "Form Density: Group related fields in cards.",
-        "Feedback: Auto-save indicators with checkmarks."
-      ]
-    },
-    "market_position": {
-      "layout": "Watchtower Grid.",
-      "features": [
-        "Comparative Charts: Radar/Spider charts for competency mapping.",
-        "Competitor Cards: Horizontal cards with logo, score, and 'Threat Level' badge."
-      ]
+  "navigation_structure": {
+    "sidebar": {
+      "biqc_legal": {
+        "position": "bottom",
+        "type": "link",
+        "path": "/biqc-legal",
+        "icon": "Scale",
+        "label": "BIQc Legal"
+      },
+      "biqc_foundation": {
+        "logic": "conditional",
+        "free_tier": {
+          "type": "link",
+          "path": "/biqc-foundation",
+          "label": "BIQc Foundation",
+          "icon": "Shield"
+        },
+        "paid_tier": {
+          "type": "dropdown",
+          "id": "paid",
+          "label": "BIQc Foundation",
+          "icon": "Shield",
+          "items": [
+            { "label": "Exposure Scan", "path": "/exposure-scan", "icon": "Eye" },
+            { "label": "Marketing Auto", "path": "/marketing-automation", "icon": "Megaphone" },
+            { "label": "Reports", "path": "/reports", "icon": "FileText" },
+            { "label": "Decision Tracker", "path": "/decisions", "icon": "ClipboardList" },
+            { "label": "SOP Generator", "path": "/sop-generator", "icon": "BookOpen" },
+            { "label": "Ingestion Audit", "path": "/forensic-audit", "icon": "Shield" },
+            { "label": "Revenue", "path": "/revenue", "icon": "TrendingUp" },
+            { "label": "Operations", "path": "/operations", "icon": "Activity" },
+            { "label": "Marketing Intel", "path": "/marketing-intelligence", "icon": "BarChart3" },
+            { "label": "Boardroom", "path": "/board-room", "icon": "LayoutDashboard" }
+          ]
+        }
+      },
+      "more_features": {
+        "type": "link",
+        "path": "/more-features",
+        "label": "More Features",
+        "icon": "Workflow"
+      }
     }
   },
-  "universal_rules": {
-    "accessibility": "Ensure 4.5:1 contrast for text. All interactive elements must have :focus-visible styles.",
-    "testing": "All interactive elements MUST have 'data-testid' attribute (kebab-case).",
-    "motion": "No 'transition: all'. Use specific properties. Duration: 200ms-300ms. Easing: ease-out.",
-    "icons": "Use 'lucide-react'. Stroke width: 1.5px for elegance, 2px for UI controls.",
-    "toasts": "Use 'sonner' for all notifications. Success = Green, Error = Red, Info = Blue."
+  "page_specifics": {
+    "biqc_foundation": {
+      "path": "/biqc-foundation",
+      "type": "marketing_detail",
+      "content": {
+        "title": "BIQc Foundation",
+        "subtitle": "The core operating system for intelligent business.",
+        "features_list": [
+          "Exposure Scan: Identify critical vulnerabilities in real-time.",
+          "Marketing Auto: Automate campaign tracking and performance analysis.",
+          "Reports: Generate executive-level summaries instantly.",
+          "Decision Tracker: Log and audit key strategic moves.",
+          "SOP Generator: Create standard operating procedures from observed workflows.",
+          "Ingestion Audit: Verify data integrity across all connected sources.",
+          "Revenue Engine: Pipeline pressure mapping and forecast guidance.",
+          "Operations Intelligence: Surface bottlenecks and delivery friction.",
+          "Marketing Intelligence: Channel insight and campaign pressure signals.",
+          "Boardroom: Executive synthesis and decision framing."
+        ]
+      }
+    },
+    "biqc_legal": {
+      "path": "/biqc-legal",
+      "tabs": [
+        "Overview",
+        "AI Learning Guarantee",
+        "Security",
+        "Trust Centre",
+        "DPA",
+        "Privacy",
+        "Terms",
+        "Enterprise Terms"
+      ]
+    },
+    "more_features": {
+      "path": "/more-features",
+      "removed_items": ["Revenue Engine", "Operations Intelligence", "Marketing Intelligence", "Board Room"],
+      "logic": "Waitlist items should show 'Open' button for Andre or authorized users instead of 'Join Waitlist'. Redirect unauthorized users to detail view with back arrow."
+    },
+    "advisor": {
+      "visual_fix": "Remove flickering red animations from Business Brain or Critical Alert elements. Ensure alerts are static and stable.",
+      "path": "/advisor"
+    }
   },
+  "access_control": {
+    "super_admin": "andre@thestrategysquad.com.au",
+    "rules": "Super admin must have unrestricted access to all pages (Paid, Waitlist, Admin). No waitlist redirects for super admin."
+  },
+  "universal_guidelines": [
+    "Do not use gradients for dark colors.",
+    "Avoid generic centered layouts.",
+    "Use glassmorphism with backdrop-blur-xl.",
+    "Ensure all interactive elements have data-testid attributes.",
+    "Use 'sonner' for toasts.",
+    "Do not use AI emoji characters.",
+    "Respect 'prefers-reduced-motion'."
+  ],
   "instructions_to_main_agent": [
-    "1. Read this file completely before starting.",
-    "2. Respect the 'Old Money Tech' font pairing: Cormorant (Headings) + Inter (Body).",
-    "3. Use the defined color variables from 'tailwind.config.js' (primary, background, etc.).",
-    "4. For the 'Priority Inbox', implement a split-view layout.",
-    "5. For 'Business DNA', ensure the form saves automatically and provides visual feedback.",
-    "6. Do not break existing functionality. Extend, don't replace, unless the UI is 'hyper basic'.",
-    "7. Ensure all new components are responsive (mobile-first)."
+    "1. Modify `DashboardLayout.js`: Implement the conditional logic for 'BIQc Foundation' sidebar item (Link for Free, Dropdown for Paid/Admin). Ensure 'BIQc Legal' is at the bottom.",
+    "2. Update `config/launchConfig.js`: Move Revenue, Operations, Marketing Intelligence, Boardroom from `WAITLIST_FEATURES` to `PAID_LAUNCH_ROUTES`. Add 'AI Learning Guarantee' and 'Trust Centre' to `LEGAL_TABS`.",
+    "3. Create `/app/frontend/src/pages/BIQcFoundationPage.js`: Implement the detailed feature list page.",
+    "4. Update `App.js`: Add route for `/biqc-foundation`. Update `LaunchRoute` to enforce paid access for the moved modules.",
+    "5. Update `BIQcLegalPage.js`: Ensure it renders all tabs defined in config.",
+    "6. Update `MoreFeaturesPage.js`: Reflect the removal of paid features. Fix the button logic for Andre (show 'Open').",
+    "7. Fix `AdvisorWatchtower.js`: Remove any `animate-pulse` or flickering classes from Business Brain alerts.",
+    "8. Ensure all removed/moved modules redirect to `/more-features` if accessed by unauthorized users (via `LaunchRoute` logic)."
   ]
 }
