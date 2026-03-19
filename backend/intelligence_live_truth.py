@@ -357,9 +357,7 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
             "next_expected_update": next_expected_update(truth_meta.get("last_verified_at")),
         })
 
-<<<<<<< Current (Your changes)
     def _category_state_from_integrations(category_key: str) -> Optional[str]:
-        """If any connected row in this category is live (e.g. after relink), surface live at canonical level."""
         for row in integrations:
             if normalize_category(row.get("category")) != category_key:
                 continue
@@ -373,7 +371,7 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
         if promoted == "live":
             return "live"
         return base
-=======
+
     freshness_map = {
         key: {
             "state": (connector_truth.get(key) or {}).get("truth_state", "unverified"),
@@ -383,7 +381,6 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
         }
         for key in ("crm", "accounting", "email", "calendar", "marketing")
     }
->>>>>>> Incoming (Background Agent changes)
 
     canonical_truth = {
         "crm_connected": any(normalize_category(i.get("category")) == "crm" and i.get("connected") for i in integrations),
