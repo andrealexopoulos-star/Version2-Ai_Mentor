@@ -105,19 +105,19 @@ class TestCustomTierResolverLogic:
         # custom does NOT have access to super_admin routes
         assert has_access('custom', 'super_admin') == False
     
-    def test_get_brain_metric_limit_custom(self):
-        """Verify custom tier gets 100 KPI monitors."""
+    def test_get_brain_metric_limit_legacy_maps_to_starter(self):
+        """Legacy tier names (e.g. custom) map to starter (BIQc Foundation) — single paid tier."""
         from tier_resolver import get_brain_metric_limit
         
-        assert get_brain_metric_limit('custom') == 100
-        assert get_brain_metric_limit({'subscription_tier': 'custom'}) == 100
+        assert get_brain_metric_limit('custom') == 50
+        assert get_brain_metric_limit({'subscription_tier': 'custom'}) == 50
     
-    def test_get_brain_plan_label_custom(self):
-        """Verify get_brain_plan_label returns 'Custom' for custom tier."""
+    def test_get_brain_plan_label_legacy_maps_to_foundation(self):
+        """Legacy tier names map to Foundation label — single paid tier."""
         from tier_resolver import get_brain_plan_label
         
-        assert get_brain_plan_label('custom') == 'Custom'
-        assert get_brain_plan_label({'subscription_tier': 'custom'}) == 'Custom'
+        assert get_brain_plan_label('custom') == 'Foundation'
+        assert get_brain_plan_label({'subscription_tier': 'custom'}) == 'Foundation'
 
 
 # ============================================

@@ -5,7 +5,20 @@ import { trackEvent, identifyUser, EVENTS } from '../lib/analytics';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
-const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+/** True when real Supabase project URL + anon key are set (required for OAuth and session). */
+export const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+/** Dev only: bypass login and act as a fake user when REACT_APP_DEV_BYPASS_AUTH=1 and NODE_ENV=development */
+const devBypassAuth =
+  typeof process !== 'undefined' &&
+  process.env.NODE_ENV === 'development' &&
+  (process.env.REACT_APP_DEV_BYPASS_AUTH === '1' || process.env.REACT_APP_DEV_BYPASS_AUTH === 'true');
+export const DEV_BYPASS_SECRET =
+  (typeof process !== 'undefined' && process.env.REACT_APP_DEV_BYPASS_SECRET) || 'dev-bypass-local';
+export const isDevBypassAuth = () => devBypassAuth;
+
+export const SUPABASE_SETUP_MESSAGE =
+  'Supabase is not configured. In the frontend folder, copy .env.example to .env and set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY from your Supabase project (Settings → API). Restart npm start, then sign in again.';
 
 export const AUTH_STATE = {
   LOADING: 'LOADING',
@@ -90,6 +103,17 @@ export const SupabaseAuthProvider = ({ children }) => {
             setLoading(false);
             setInitialized(true);
             setAuthHydrated(true);
+            if (devBypassAuth) {
+              setUser({
+                id: 'dev-bypass-user',
+                email: 'dev@local',
+                full_name: 'Dev User',
+                subscription_tier: 'starter',
+                role: 'user',
+              });
+              setSession({ user: { id: 'dev-bypass-user', email: 'dev@local' } });
+              setOnboardingStatus({ completed: true });
+            }
             setAuthState(AUTH_STATE.READY);
           }
           return;
@@ -252,6 +276,9 @@ export const SupabaseAuthProvider = ({ children }) => {
   };
 
   const signUp = async (email, password, metadata = {}) => {
+    if (!hasSupabaseConfig) {
+      throw new Error(SUPABASE_SETUP_MESSAGE);
+    }
     const { data, error } = await supabase.auth.signUp({
       email, password, options: { data: metadata }
     });
@@ -262,6 +289,9 @@ export const SupabaseAuthProvider = ({ children }) => {
   };
 
   const signIn = async (email, password) => {
+    if (!hasSupabaseConfig) {
+      throw new Error(SUPABASE_SETUP_MESSAGE);
+    }
     const response = await fetch(`${getBackendUrl()}/api/auth/supabase/login`, {
       method: 'POST',
       headers: {
@@ -292,6 +322,9 @@ export const SupabaseAuthProvider = ({ children }) => {
   };
 
   const signInWithOAuth = async (provider) => {
+    if (!hasSupabaseConfig) {
+      throw new Error(SUPABASE_SETUP_MESSAGE);
+    }
     const redirectUrl = `${window.location.origin}/auth/callback`;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -540,6 +573,7 @@ export const SupabaseAuthProvider = ({ children }) => {
     authHydrated,
     authState,
     onboardingStatus,
+    hasSupabaseConfig,
     markOnboardingComplete,
     deferOnboarding,
     clearBootstrapCache,

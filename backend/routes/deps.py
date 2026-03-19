@@ -14,7 +14,18 @@ from collections import defaultdict, deque
 from threading import Lock
 
 logger = logging.getLogger("server")
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
+
+# Dev-only: set DEV_BYPASS_AUTH=1 and optionally DEV_BYPASS_SECRET=your-secret; frontend sends X-Dev-Bypass: your-secret
+DEV_BYPASS_AUTH = os.environ.get("DEV_BYPASS_AUTH", "").strip().lower() in ("1", "true", "yes")
+DEV_BYPASS_SECRET = os.environ.get("DEV_BYPASS_SECRET", "dev-bypass-local").strip()
+DEV_BYPASS_USER = {
+    "id": "dev-bypass-user",
+    "email": "dev@local",
+    "role": "user",
+    "subscription_tier": "starter",
+    "full_name": "Dev User",
+}
 
 # ─── AI Model Configuration (your own API keys) ──────────────────────────────
 # Set OPENAI_API_KEY and GOOGLE_API_KEY in Azure App Service environment variables
@@ -257,8 +268,20 @@ def get_sb():
 
 # ─── Auth Dependencies ───
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """SUPABASE-ONLY Authentication. Checks suspended status."""
+async def get_current_user(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+):
+    """SUPABASE authentication, with optional dev bypass when DEV_BYPASS_AUTH=1."""
+    # Dev bypass: only when explicitly enabled and header matches secret
+    if DEV_BYPASS_AUTH:
+        bypass = request.headers.get("X-Dev-Bypass", "").strip()
+        if bypass and bypass == DEV_BYPASS_SECRET:
+            logger.info("[Auth] Dev bypass accepted")
+            return dict(DEV_BYPASS_USER)
+
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     token = credentials.credentials
     try:
         from auth_supabase import verify_supabase_token
@@ -267,9 +290,10 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             # Check if user is suspended
             try:
                 sb = get_sb()
-                row = sb.table("users").select("role").eq("id", user.get("id")).maybe_single().execute()
-                if row.data and row.data.get("role") == "suspended":
-                    raise HTTPException(status_code=403, detail="Account suspended. Contact support.")
+                if sb:
+                    row = sb.table("users").select("role").eq("id", user.get("id")).maybe_single().execute()
+                    if row.data and row.data.get("role") == "suspended":
+                        raise HTTPException(status_code=403, detail="Account suspended. Contact support.")
             except HTTPException:
                 raise
             except Exception:

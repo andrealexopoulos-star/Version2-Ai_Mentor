@@ -10,7 +10,7 @@ const DISPLAY = "'Cormorant Garamond', Georgia, serif";
 
 const LoginSupabase = () => {
   const navigate = useNavigate();
-  const { signIn, signInWithOAuth } = useSupabaseAuth();
+  const { signIn, signInWithOAuth, hasSupabaseConfig } = useSupabaseAuth();
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -81,6 +81,11 @@ const LoginSupabase = () => {
       try { sessionStorage.setItem('biqc_auth_recent_login', String(Date.now())); } catch {}
       navigate('/advisor', { replace: true });
     } catch (error) {
+      const rawMsg = error.message || '';
+      if (rawMsg.includes('Supabase is not configured')) {
+        setLoginError('Add REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY to frontend/.env, then restart npm start. See the yellow box above.');
+        return;
+      }
       const nextFailedAttempts = failedAttempts + 1;
       setFailedAttempts(nextFailedAttempts);
       if (nextFailedAttempts >= 3) {
@@ -88,7 +93,7 @@ const LoginSupabase = () => {
         setLockoutUntil(Date.now() + lockoutSeconds * 1000);
         setCooldownSeconds(lockoutSeconds);
       }
-      const msg = (error.message || '').toLowerCase();
+      const msg = rawMsg.toLowerCase();
       if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('not found') ||
           msg.includes('body stream') || msg.includes('json') || msg.includes('failed to fetch') ||
           msg.includes('unable to') || msg.includes('email') || msg.includes('password')) {
@@ -112,7 +117,12 @@ const LoginSupabase = () => {
         window.location.href = result.url;
       }
     } catch (error) {
-      toast.error(`${providerName} sign-in failed. Please try again.`);
+      const msg = error?.message || '';
+      if (msg.includes('Supabase is not configured')) {
+        toast.error('Configure Supabase in frontend/.env first (see yellow box above).');
+      } else {
+        toast.error(`${providerName} sign-in failed. Please try again.`);
+      }
       setOauthLoading(false);
     }
   };
@@ -140,9 +150,25 @@ const LoginSupabase = () => {
           <h1 className="text-2xl sm:text-3xl font-normal text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY, textShadow: '0 1px 6px rgba(0,0,0,0.4)', WebkitTextStroke: '0.3px #F4F7FA' }}>Welcome back</h1>
           <p className="text-sm text-[#9FB0C3] mb-8" style={{ fontFamily: fontFamily.body }}>Sign in to your sovereign intelligence platform.</p>
 
+          {!hasSupabaseConfig && (
+            <div
+              className="mb-6 rounded-xl border px-4 py-3 text-sm"
+              style={{ borderColor: '#F59E0B', background: 'rgba(245,158,11,0.12)', color: '#FDE68A', fontFamily: fontFamily.body }}
+              data-testid="login-supabase-config-missing"
+            >
+              <p className="font-semibold text-[#FBBF24] mb-1">Local setup required</p>
+              <p className="text-[#FDE68A]/90 leading-relaxed">
+                OAuth and email sign-in need your Supabase project. In <code className="text-xs bg-black/30 px-1 rounded">frontend/.env</code> set{' '}
+                <code className="text-xs bg-black/30 px-1 rounded">REACT_APP_SUPABASE_URL</code> and{' '}
+                <code className="text-xs bg-black/30 px-1 rounded">REACT_APP_SUPABASE_ANON_KEY</code> (Supabase Dashboard → Settings → API). Copy from{' '}
+                <code className="text-xs bg-black/30 px-1 rounded">.env.example</code>, then restart <code className="text-xs bg-black/30 px-1 rounded">npm start</code>.
+              </p>
+            </div>
+          )}
+
           {/* OAuth */}
           <div className="space-y-3 mb-6">
-            <button type="button" onClick={() => handleOAuthSignIn('google')} disabled={oauthLoading || loading}
+            <button type="button" onClick={() => handleOAuthSignIn('google')} disabled={!hasSupabaseConfig || oauthLoading || loading}
               className="w-full h-12 flex items-center justify-center gap-3 rounded-xl text-sm font-medium transition-all hover:bg-white/10 disabled:opacity-50"
               style={{ fontFamily: fontFamily.body, color: 'var(--biqc-text)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
               data-testid="login-google-btn">
@@ -153,7 +179,7 @@ const LoginSupabase = () => {
                 </>
               )}
             </button>
-            <button type="button" onClick={() => handleOAuthSignIn('azure')} disabled={oauthLoading || loading}
+            <button type="button" onClick={() => handleOAuthSignIn('azure')} disabled={!hasSupabaseConfig || oauthLoading || loading}
               className="w-full h-12 flex items-center justify-center gap-3 rounded-xl text-sm font-medium transition-all hover:bg-white/10 disabled:opacity-50"
               style={{ fontFamily: fontFamily.body, color: 'var(--biqc-text)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
               data-testid="login-microsoft-btn">
@@ -232,8 +258,8 @@ const LoginSupabase = () => {
             )}
 
             <div style={{ width: '100%' }}>
-                <button type="submit" disabled={loading || oauthLoading || (lockoutUntil && Date.now() < lockoutUntil)}
-                style={{ background: '#FF6A00', color: 'white', width: '100%', height: '48px', borderRadius: '12px', border: 'none', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(255,106,0,0.3)', opacity: loading || oauthLoading || (lockoutUntil && Date.now() < lockoutUntil) ? 0.5 : 1, WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+                <button type="submit" disabled={!hasSupabaseConfig || loading || oauthLoading || (lockoutUntil && Date.now() < lockoutUntil)}
+                style={{ background: '#FF6A00', color: 'white', width: '100%', height: '48px', borderRadius: '12px', border: 'none', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(255,106,0,0.3)', opacity: !hasSupabaseConfig || loading || oauthLoading || (lockoutUntil && Date.now() < lockoutUntil) ? 0.5 : 1, WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
                 aria-busy={loading}
                 data-testid="login-submit-btn">
                 {loading ? "Signing in..." : (lockoutUntil && Date.now() < lockoutUntil ? `Retry in ${Math.max(1, cooldownSeconds)}s` : "Sign in")}

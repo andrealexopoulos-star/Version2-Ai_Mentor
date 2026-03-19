@@ -16,9 +16,16 @@ ROOT_DIR = Path(__file__).resolve().parent
 load_dotenv(ROOT_DIR / '.env', override=False)
 logger = logging.getLogger(__name__)
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
+def _env(key: str, *alt_keys: str) -> str | None:
+    for k in (key,) + alt_keys:
+        v = (os.environ.get(k) or "").strip()
+        if v and v.lower() not in ("dummy", "placeholder", "xxx", "your-"):
+            return v
+    return None
+
+SUPABASE_URL = _env("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = _env("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_KEY")
+SUPABASE_ANON_KEY = _env("SUPABASE_ANON_KEY")
 
 
 def _assert_sdk_integrity(client: Client):
@@ -69,7 +76,11 @@ def init_supabase():
     global supabase_admin
     if supabase_admin is None:
         if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
-            logger.error("[Supabase] Missing env vars — cannot initialize")
+            logger.warning(
+                "[Supabase] Missing env vars — cannot initialize. "
+                "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_KEY) in backend/.env or environment. "
+                "Server will run without database; auth and data routes will fail."
+            )
             return None
         supabase_admin = get_supabase_admin()
         _assert_sdk_integrity(supabase_admin)
