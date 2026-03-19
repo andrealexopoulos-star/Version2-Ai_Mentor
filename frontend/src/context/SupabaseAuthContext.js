@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { createClient } from '@supabase/supabase-js';
 import { getBackendUrl } from '../config/urls';
 import { trackEvent, identifyUser, EVENTS } from '../lib/analytics';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
@@ -241,7 +242,7 @@ export const SupabaseAuthProvider = ({ children }) => {
           industry: existingSession.user.user_metadata?.industry || null,
           role: existingSession.user.user_metadata?.role || 'user',
           subscription_tier: 'free',
-          is_master_account: existingSession.user.email === 'andre@thestrategysquad.com.au'
+          is_master_account: isPrivilegedUser({ email: existingSession.user.email })
         });
       }
       setLoading(false);

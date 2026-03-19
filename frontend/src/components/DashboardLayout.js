@@ -21,6 +21,7 @@ import {
 import { ArrowLeft } from 'lucide-react';
 import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
 import { canAccess, requiredTier, TIERS } from '../config/tiers';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 import { fontFamily } from '../design-system/tokens';
 
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
@@ -191,7 +192,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     });
   };
 
-  const isSA = user?.email === 'andre@thestrategysquad.com.au';
+  const isSA = isPrivilegedUser(user);
   const hasFoundationMenuAccess = resolveTier(user) !== 'free' || isSA;
 
   const foundationItems = [
@@ -224,7 +225,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     { id: 'more-features', label: 'More Features', path: '/more-features', icon: Workflow, items: [] },
   ];
 
-  // Admin section — ONLY visible to andre@thestrategysquad.com.au (hardcoded)
+  // Admin section — visible to privileged user (REACT_APP_BIQC_MASTER_ADMIN_EMAIL)
   if (isSA) {
     navSections.push({
       id: 'admin', label: 'Admin', items: [
@@ -399,7 +400,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
               <DropdownMenuSeparator style={{ background: '#243140' }} />
               <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/pricing')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Zap className="w-4 h-4 mr-2" /> Upgrade Plan</DropdownMenuItem>
-              {(user?.role === 'admin' || user?.role === 'superadmin' || user?.email === 'andre@thestrategysquad.com.au') && (
+              {(user?.role === 'admin' || user?.role === 'superadmin' || isPrivilegedUser(user)) && (
                 <>
                   <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Shield className="w-4 h-4 mr-2" /> Super Admin</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/calibration')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Settings className="w-4 h-4 mr-2" /> Recalibrate</DropdownMenuItem>

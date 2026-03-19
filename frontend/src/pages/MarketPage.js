@@ -4,6 +4,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { CognitiveMesh } from '../components/LoadingSystems';
 import EngagementScanCard from '../components/EngagementScanCard';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 import { apiClient } from '../lib/api';
 import { containsCRMClaim } from '../constants/integrationTruth';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
@@ -62,7 +63,7 @@ const MarketPage = () => {
   const [cognitionMarket, setCognitionMarket] = useState(null);
   const { status: integrationStatus } = useIntegrationStatus();
 
-  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
+  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
 
   useEffect(() => {
     apiClient.get('/snapshot/latest').then(res => {

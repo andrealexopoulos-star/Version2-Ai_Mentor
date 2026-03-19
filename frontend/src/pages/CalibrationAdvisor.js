@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { useCalibrationState } from "../hooks/useCalibrationState";
 import { useSupabaseAuth } from "../context/SupabaseAuthContext";
+import { isPrivilegedUser } from "../lib/privilegedUser";
 import { useSearchParams } from "react-router-dom";
 import { apiClient } from "../lib/api";
 import {
@@ -32,7 +33,7 @@ const CalibrationAdvisor = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [skipping, setSkipping] = useState(false);
 
-  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.email === 'andre@thestrategysquad.com.au';
+  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
 
   // Handle OAuth return from email connect — resume at integration_connect step
   useEffect(() => {

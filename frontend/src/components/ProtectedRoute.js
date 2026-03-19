@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSupabaseAuth, AUTH_STATE } from "../context/SupabaseAuthContext";
 import { apiClient } from "../lib/api";
+import { isPrivilegedUser } from "../lib/privilegedUser";
 
 const ADMIN_ROLES = ['admin', 'superadmin'];
 
@@ -136,7 +137,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
         const res = await apiClient.get('/auth/supabase/me');
         const role = res.data?.user?.role;
         const email = res.data?.user?.email;
-        if (!cancelled) setIsAdmin(ADMIN_ROLES.includes(role) || email === 'andre@thestrategysquad.com.au');
+        if (!cancelled) setIsAdmin(ADMIN_ROLES.includes(role) || (user && isPrivilegedUser(user)));
       } catch {
         if (!cancelled) setIsAdmin(false);
       } finally {
