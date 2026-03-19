@@ -1,12 +1,13 @@
 """BIQc Stripe Subscription Routes — launch pricing."""
 import os
 import logging
+import json
+import stripe
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, Request, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -15,6 +16,7 @@ from routes.auth import get_current_user
 
 load_dotenv()
 STRIPE_KEY = os.environ.get("STRIPE_API_KEY", "")
+stripe.api_key = STRIPE_KEY
 
 PLANS = {
     "starter": {
@@ -87,13 +89,24 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
     cancel_url  = req.cancel_url  or f"{base}/upgrade"
 
     try:
-        host_url = str(request.base_url).rstrip('/')
-        stripe_checkout = StripeCheckout(api_key=STRIPE_KEY, webhook_url=f"{host_url}/api/webhook/stripe")
-        checkout_request = CheckoutSessionRequest(
-            amount=float(plan["amount"]) / 100.0,
-            currency=plan["currency"],
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": plan["currency"],
+                    "unit_amount": plan["amount"],
+                    "recurring": {"interval": plan["interval"]},
+                    "product_data": {
+                        "name": plan["name"],
+                        "description": "AI operating layer for business visibility, decision support, execution control, and up to 5 integrations.",
+                    },
+                },
+                "quantity": 1,
+            }],
+            mode="subscription",
             success_url=success_url,
             cancel_url=cancel_url,
+            customer_email=user_email,
             metadata={
                 "user_id": user_id,
                 "user_email": user_email,
@@ -101,14 +114,13 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
                 "source": "biqc_upgrade",
             },
         )
-        session = await stripe_checkout.create_checkout_session(checkout_request)
         logger.info(f"✅ Stripe checkout created for {user_email} → {plan['name']}")
         try:
             from supabase_client import get_supabase_client
             sb = get_supabase_client()
             sb.table("payment_transactions").insert({
                 "user_id": user_id,
-                "session_id": session.session_id,
+                "session_id": session.id,
                 "amount": plan["amount"] / 100,
                 "currency": plan["currency"],
                 "package_id": plan_id,
@@ -119,7 +131,7 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
         except Exception as e:
             logger.warning(f"Failed to store payment transaction: {e}")
 
-        return {"url": session.url, "session_id": session.session_id}
+        return {"url": session.url, "session_id": session.id}
 
     except Exception as e:
         logger.error(f"Checkout creation failed: {e}")
@@ -130,8 +142,7 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
 async def get_payment_status(session_id: str, current_user: dict = Depends(get_current_user)):
     """Check payment status and update tier if paid."""
     try:
-        stripe_checkout = StripeCheckout(api_key=STRIPE_KEY)
-        session = await stripe_checkout.get_checkout_status(session_id)
+        session = stripe.checkout.Session.retrieve(session_id)
 
         if session.payment_status == "paid":
             try:
@@ -171,13 +182,13 @@ async def stripe_webhook(request: Request):
     """Handle Stripe webhook events."""
     try:
         body = await request.body()
-        stripe_checkout = StripeCheckout(api_key=STRIPE_KEY)
-        event = await stripe_checkout.handle_webhook(body, request.headers.get("Stripe-Signature"))
+        event = stripe.Event.construct_from(json.loads(body), stripe.api_key)
 
-        logger.info(f"Stripe webhook: {event.event_type}")
+        logger.info(f"Stripe webhook: {event.type}")
 
-        if event.event_type == "checkout.session.completed":
-            if event.payment_status == "paid":
+        if event.type == "checkout.session.completed":
+            session = event.data.object
+            if session.payment_status == "paid":
                 try:
                     from supabase_client import get_supabase_client
                     sb = get_supabase_client()
@@ -185,10 +196,10 @@ async def stripe_webhook(request: Request):
                     sb.table("payment_transactions").update({
                         "payment_status": "paid",
                         "paid_at": datetime.now(timezone.utc).isoformat(),
-                    }).eq("session_id", event.session_id).execute()
+                    }).eq("session_id", session.id).execute()
 
-                    tier = (event.metadata or {}).get("tier", "starter")
-                    user_id = (event.metadata or {}).get("user_id")
+                    tier = (session.metadata or {}).get("tier", "starter")
+                    user_id = (session.metadata or {}).get("user_id")
                     if user_id:
                         sb.table("business_profiles").update({
                             "subscription_tier": tier,
