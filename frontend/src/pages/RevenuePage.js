@@ -13,6 +13,7 @@ import { fontFamily } from '../design-system/tokens';
 import { Link, useNavigate } from 'react-router-dom';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 import ActionOwnershipCard from '../components/ActionOwnershipCard';
+import LineageBadge from '../components/LineageBadge';
 import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 
 
