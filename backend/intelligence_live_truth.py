@@ -312,6 +312,26 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
                     ),
                 }
 
+        # After Merge relink, integration_accounts.updated_at moves forward but business_core.source_runs
+        # may still reflect an old ingest → UI stayed "stale" forever. If the connection row is newer than
+        # the last verified ingest for this category, treat as live while sync catches up.
+        if truth_meta.get("truth_state") in {"stale", "error"}:
+            row_updated = item.get("updated_at") or item.get("connected_at")
+            row_dt = parse_dt(row_updated)
+            ingest_dt = parse_dt(truth_meta.get("last_verified_at"))
+            if row_dt and (not ingest_dt or row_dt > ingest_dt):
+                truth_meta = {
+                    **truth_meta,
+                    "truth_state": "live",
+                    "truth_reason": (
+                        "Integration was recently reconnected. BIQc treats this source as current while "
+                        "Merge finishes syncing; you may see fresh counts within a few minutes."
+                    ),
+                    "last_verified_at": row_updated,
+                    "age_hours": age_hours(row_updated),
+                    "status": "relinked_pending_sync",
+                }
+
         integrations.append({
             **item,
             "truth_state": truth_meta.get("truth_state", "unverified"),
@@ -321,15 +341,31 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
             "source_run_status": truth_meta.get("status"),
         })
 
+    def _category_state_from_integrations(category_key: str) -> Optional[str]:
+        """If any connected row in this category is live (e.g. after relink), surface live at canonical level."""
+        for row in integrations:
+            if normalize_category(row.get("category")) != category_key:
+                continue
+            if row.get("connected") and row.get("truth_state") == "live":
+                return "live"
+        return None
+
+    def _effective_domain_state(category_key: str) -> str:
+        base = (connector_truth.get(category_key) or {}).get("truth_state", "unverified")
+        promoted = _category_state_from_integrations(category_key)
+        if promoted == "live":
+            return "live"
+        return base
+
     canonical_truth = {
         "crm_connected": any(normalize_category(i.get("category")) == "crm" and i.get("connected") for i in integrations),
         "accounting_connected": any(normalize_category(i.get("category")) == "accounting" and i.get("connected") for i in integrations),
         "email_connected": any(normalize_category(i.get("category")) == "email" and i.get("connected") for i in integrations),
         "hris_connected": any(normalize_category(i.get("category")) == "hris" and i.get("connected") for i in integrations),
         "total_connected": len([i for i in integrations if i.get("connected")]),
-        "crm_state": (connector_truth.get("crm") or {}).get("truth_state", "unverified"),
-        "accounting_state": (connector_truth.get("accounting") or {}).get("truth_state", "unverified"),
-        "email_state": (connector_truth.get("email") or {}).get("truth_state", "unverified"),
+        "crm_state": _effective_domain_state("crm"),
+        "accounting_state": _effective_domain_state("accounting"),
+        "email_state": _effective_domain_state("email"),
         "verified_live_count": len([item for item in integrations if item.get("truth_state") == "live"]),
     }
 

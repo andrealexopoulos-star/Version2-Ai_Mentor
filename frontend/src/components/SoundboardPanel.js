@@ -31,11 +31,22 @@ function isDataQuery(msg) {
 const SCAN_USAGE_CACHE_KEY = 'biqc_scan_usage_cache';
 const SCAN_USAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+const SOUNDBOARD_CHAT_TIMEOUT_MS = 120000;
+
 const getSoundboardErrorMessage = (error) => {
+  if (error?.code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('timeout')) {
+    return (
+      'The reply is taking too long (Trinity and Pro modes can exceed a minute). ' +
+      'Try **Normal** mode, or wait and send again. If this keeps happening, check backend logs and API keys.'
+    );
+  }
   const detail = error?.response?.data?.detail;
   if (typeof detail === 'string' && detail.trim()) return detail;
   const reply = error?.response?.data?.reply;
   if (typeof reply === 'string' && reply.trim()) return reply;
+  if (!error?.response && error?.message) {
+    return `Connection issue: ${error.message}. Check network and that the API is reachable.`;
+  }
   return 'Connection issue. Try again.';
 };
 
@@ -186,13 +197,18 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           return;
         }
       }
-      const res = await apiClient.post('/soundboard/chat', {
-        message: msgToSend,
-        conversation_id: activeConvId,
-        mode: activeMode?.backend_mode || 'auto',
-        agent_id: selectedAgent || 'auto',
-      });
-      if (res.data?.reply) {
+      const res = await apiClient.post(
+        '/soundboard/chat',
+        {
+          message: msgToSend,
+          conversation_id: activeConvId,
+          mode: activeMode?.backend_mode || 'auto',
+          agent_id: selectedAgent || 'auto',
+        },
+        { timeout: SOUNDBOARD_CHAT_TIMEOUT_MS },
+      );
+      const replyText = typeof res.data?.reply === 'string' ? res.data.reply.trim() : '';
+      if (replyText) {
         const assistantMsg = { role: 'assistant', text: res.data.reply };
         if (res.data?.file) assistantMsg.file = res.data.file;
         if (res.data?.agent_name) {
@@ -224,6 +240,13 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             setCoverageGate(null);
           }
         }
+      } else {
+        const hint =
+          res.data?.runtime_error ||
+          res.data?.provider_error ||
+          res.data?.detail ||
+          'The server returned an empty reply. Try Normal mode instead of Trinity, or try again in a moment.';
+        setMessages(prev => [...prev, { role: 'assistant', text: String(hint) }]);
       }
     } catch (error) {
       setMessages(prev => [...prev, { role: 'assistant', text: getSoundboardErrorMessage(error) }]);
