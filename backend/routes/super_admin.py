@@ -4,7 +4,8 @@ All actions audit-logged. All routes require super_admin role + feature flag.
 """
 import logging
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
+import httpx
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
@@ -207,8 +208,71 @@ class EnterpriseContactRequest(BaseModel):
     current_tier: Optional[str] = 'free'
 
 
+async def _notify_admin_enterprise_contact(req: EnterpriseContactRequest, submitter: dict) -> None:
+    """Send admin alert via Resend (httpx). Never raises; failures are logged only."""
+    try:
+        from core.config import BIQC_ADMIN_NOTIFICATION_EMAIL, RESEND_API_KEY, RESEND_FROM_EMAIL
+        if not RESEND_API_KEY:
+            logger.debug("RESEND_API_KEY not set; skipping enterprise contact admin email")
+            return
+        if not RESEND_FROM_EMAIL:
+            logger.warning("RESEND_FROM_EMAIL not set; skipping enterprise contact admin email")
+            return
+        is_waitlist = str(req.current_tier or "").strip().lower() == "waitlist"
+        feat = (req.feature_requested or "").strip()
+        if is_waitlist:
+            subject = f"New Waitlist Request: {feat}" if feat else "New Waitlist Request"
+        else:
+            subject = "New Contact Request"
+        lines = [
+            "A new enterprise contact or waitlist form was submitted.",
+            "",
+            f"Name: {req.name}",
+            f"Email: {req.email}",
+            f"Company: {req.business_name or '(not provided)'}",
+            f"Phone: {req.phone or '(not provided)'}",
+            f"Feature requested: {feat or '(none)'}",
+            f"Callback date: {req.callback_date}",
+            f"Callback time: {req.callback_time}",
+            f"Current tier / source: {req.current_tier or '(not provided)'}",
+            "",
+            "Description / message (waitlist business size may appear here):",
+            req.description or "(empty)",
+            "",
+            f"Submitter user id: {submitter.get('id') or '(unknown)'}",
+        ]
+        body = "\n".join(lines)
+        payload = {
+            "from": RESEND_FROM_EMAIL,
+            "to": [BIQC_ADMIN_NOTIFICATION_EMAIL],
+            "subject": subject,
+            "text": body,
+        }
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            r = await client.post(
+                "https://api.resend.com/emails",
+                json=payload,
+                headers={
+                    "Authorization": f"Bearer {RESEND_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+            )
+            if r.status_code >= 400:
+                logger.warning(
+                    "Resend API error for enterprise contact notify: %s %s",
+                    r.status_code,
+                    (r.text or "")[:500],
+                )
+    except Exception as e:
+        logger.warning("enterprise contact admin notification failed: %s", e, exc_info=True)
+
+
 @router.post("/enterprise/contact-request")
-async def enterprise_contact_request(req: EnterpriseContactRequest, current_user: dict = Depends(get_current_user)):
+async def enterprise_contact_request(
+    req: EnterpriseContactRequest,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+):
     """Store enterprise contact request. Will eventually be synced to HubSpot."""
     try:
         from supabase_client import get_supabase_client
@@ -228,6 +292,7 @@ async def enterprise_contact_request(req: EnterpriseContactRequest, current_user
             'status': 'pending',
             'created_at': now,
         }).execute()
+        background_tasks.add_task(_notify_admin_enterprise_contact, req, current_user)
     except Exception as e:
         logger.warning(f"enterprise_contact_requests table may not exist yet: {e}")
     return {'status': 'received', 'message': 'Request logged. Our team will be in touch within 1 business day.'}

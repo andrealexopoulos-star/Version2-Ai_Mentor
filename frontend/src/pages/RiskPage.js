@@ -18,6 +18,7 @@ import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 import ActionOwnershipCard from '../components/ActionOwnershipCard';
 import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
+import LineageBadge from '../components/LineageBadge';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -281,6 +282,17 @@ const RiskPage = () => {
     successMetric: `Composite risk ${compositeDisplay} · monitored categories ${monitoredCount}/${RISK_CATEGORIES.length}`,
   };
 
+  const toConfidencePct = (raw) => {
+    if (raw == null) return undefined;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return undefined;
+    return n > 0 && n <= 1 ? n * 100 : n;
+  };
+  const riskIntelLineage = unifiedRisk?.lineage ?? c?.lineage;
+  const riskIntelFreshness = unifiedRisk?.data_freshness ?? c?.data_freshness;
+  const riskIntelConfidence = toConfidencePct(unifiedRisk?.confidence_score ?? c?.confidence_score)
+    ?? toConfidencePct(typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level);
+
   const riskPrioritySignals = [
     runway != null ? {
       id: 'risk-financial-runway',
@@ -345,6 +357,10 @@ const RiskPage = () => {
           successMetric={actionOwnership.successMetric}
           testIdPrefix="risk-action-ownership"
         />
+
+        <div className="flex flex-wrap items-center gap-2" data-testid="risk-lineage-badge">
+          <LineageBadge lineage={riskIntelLineage} data_freshness={riskIntelFreshness} confidence_score={riskIntelConfidence} compact />
+        </div>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]" data-testid="risk-ux-main-grid">
           <div className="space-y-4" data-testid="risk-priority-column">
@@ -701,6 +717,9 @@ const RiskPage = () => {
                     <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Instability Indices</h3>
                   </div>
                   <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: fontFamily.mono }}>COGNITION CORE</span>
+                </div>
+                <div className="mb-3" data-testid="risk-lineage-badge-unified-panel">
+                  <LineageBadge lineage={riskIntelLineage} data_freshness={riskIntelFreshness} confidence_score={riskIntelConfidence} compact />
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                   {ACRONYMS.map(({ key: _, label, title, desc }) => {

@@ -5,6 +5,7 @@ import { apiClient } from '../lib/api';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import InsightExplainabilityStrip from './InsightExplainabilityStrip';
+import LineageBadge from './LineageBadge';
 
 const STATE_CONFIG = {
   STABLE:      { label: 'Stable',      color: '#10B981', bg: '#10B98110', border: '#10B98130', dot: '#10B981' },
@@ -25,6 +26,7 @@ const DIAGNOSIS_AREAS = [
   { id: 'market_position', label: 'Market Position', icon: '\u2691', color: '#0D9488', desc: 'Competitive landscape, positioning, opportunity decay.' },
 ];
 
+/* Shared util candidate: formatFreshnessTime is duplicated in WarRoomConsole.js — extract to e.g. frontend/src/lib/formatFreshnessTime.js when touching both next. */
 const formatFreshnessTime = (iso) => {
   if (!iso) return 'unknown';
   const parsed = new Date(iso);
@@ -32,13 +34,12 @@ const formatFreshnessTime = (iso) => {
   return parsed.toLocaleString();
 };
 
-const BoardRoom = ({ embeddedShell = false }) => {
+export function BoardRoomBody({ embeddedShell = false, cognitive: snapshot, briefingLoading = false }) {
   const [activeDiagnosis, setActiveDiagnosis] = useState(null);
   const [diagnosisResult, setDiagnosisResult] = useState(null);
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagError, setDiagError] = useState(null);
 
-  const { cognitive: snapshot, loading: briefingLoading } = useSnapshot();
   const { status: integrationStatus } = useIntegrationStatus();
   const narrative = snapshot ? { primary_tension: snapshot.executive_memo, force_summary: snapshot.system_state_interpretation, strategic_direction: snapshot.priority_compression?.primary_focus } : null;
   const st = STATE_CONFIG[snapshot?.system_state] || STATE_CONFIG.STABLE;
@@ -102,6 +103,14 @@ const BoardRoom = ({ embeddedShell = false }) => {
 
   const closeDiagnosis = () => { setActiveDiagnosis(null); setDiagnosisResult(null); setDiagError(null); };
   const activeArea = DIAGNOSIS_AREAS.find(a => a.id === activeDiagnosis);
+
+  const toConfidencePct = (raw) => {
+    if (raw == null) return undefined;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return undefined;
+    return n > 0 && n <= 1 ? n * 100 : n;
+  };
+  const boardroomIntelConfidence = toConfidencePct(typeof snapshot?.system_state === 'object' ? snapshot.system_state?.confidence : snapshot?.confidence_level);
 
   return (
     <div className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
@@ -200,6 +209,15 @@ const BoardRoom = ({ embeddedShell = false }) => {
                       ))}
                     </div>
 
+                    <div className="pt-1" data-testid="boardroom-lineage-badge">
+                      <LineageBadge
+                        lineage={integrationLabels.length ? { connected_sources: integrationLabels } : snapshot?.lineage}
+                        data_freshness={snapshot?.data_freshness ?? (snapshot?.generated_at ? formatFreshnessTime(snapshot.generated_at) : undefined)}
+                        confidence_score={boardroomIntelConfidence}
+                        compact
+                      />
+                    </div>
+
                     <InsightExplainabilityStrip
                       whyVisible={explainability.whyVisible}
                       whyNow={explainability.whyNow}
@@ -287,6 +305,14 @@ const BoardRoom = ({ embeddedShell = false }) => {
                       </div>
                     </div>
                     <p className="text-lg leading-relaxed break-words" style={{ color: '#1F2937', fontWeight: 500 }}>{diagnosisResult.headline}</p>
+                    <div className="mt-3" data-testid="boardroom-diagnosis-lineage-badge">
+                      <LineageBadge
+                        lineage={diagnosisResult.lineage || (diagnosisResult.data_sources_used?.length ? { connected_sources: diagnosisResult.data_sources_used } : undefined)}
+                        data_freshness={diagnosisResult.data_freshness}
+                        confidence_score={toConfidencePct(diagnosisResult.confidence_score) ?? toConfidencePct(diagnosisResult.confidence)}
+                        compact
+                      />
+                    </div>
                   </div>
 
                   {/* Narrative */}
@@ -350,6 +376,11 @@ const BoardRoom = ({ embeddedShell = false }) => {
       </div>
     </div>
   );
-};
+}
+
+function BoardRoom(props) {
+  const { cognitive, loading } = useSnapshot();
+  return <BoardRoomBody {...props} cognitive={cognitive} briefingLoading={loading} />;
+}
 
 export default BoardRoom;

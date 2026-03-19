@@ -3,7 +3,6 @@ import "@/mobile.css";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { SupabaseAuthProvider, useSupabaseAuth, AUTH_STATE } from "./context/SupabaseAuthContext";
 import ProtectedRoute, { LoadingScreen } from "./components/ProtectedRoute";
-import TierGate from "./components/TierGate";
 import { MobileDrawerProvider } from "./context/MobileDrawerContext";
 import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -169,21 +168,22 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
-const LaunchRoute = ({ children, access = 'free', featureKey = null }) => {
+const LaunchRoute = ({ children, access, featureKey = null }) => {
   const location = useLocation();
   const { user, session, authState, loading } = useSupabaseAuth();
   const tier = resolveTier(user);
   const privileged = isPrivilegedUser(user);
   const hasPaidAccess = privileged || (user && tier !== 'free');
   const routeConfig = getRouteAccess(location.pathname);
+  const effectiveAccess = access || routeConfig?.launchType || 'free';
   const key = featureKey || routeConfig?.featureKey || '';
 
   if (authState === AUTH_STATE.LOADING || loading) return <LoadingScreen />;
   if (!user && !session) return <Navigate to="/login-supabase" replace />;
-  if (access === 'paid' && !hasPaidAccess) {
+  if ((effectiveAccess === 'paid' || effectiveAccess === 'foundation') && !hasPaidAccess) {
     return <Navigate to={`/biqc-foundation${key ? `?feature=${encodeURIComponent(key)}` : ''}`} replace />;
   }
-  if (access === 'waitlist' && !privileged) {
+  if (effectiveAccess === 'waitlist' && !privileged) {
     return <Navigate to={`/more-features${key ? `?feature=${encodeURIComponent(key)}` : ''}`} replace />;
   }
   return children;

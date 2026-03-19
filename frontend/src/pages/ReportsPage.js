@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { supabase } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
-import { FileText, DollarSign, Plug, Loader2, Download, Shield, AlertTriangle } from 'lucide-react';
+import { FileText, DollarSign, Plug, Download, Shield, AlertTriangle } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
+import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 
 
 const Panel = ({ children, className = '' }) => (
@@ -96,39 +97,52 @@ const ForensicReportCard = () => {
 
 const ReportsPage = () => {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [integrations, setIntegrations] = useState([]);
   const [events, setEvents] = useState([]);
   const [generating, setGenerating] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { setLoading(false); return; }
-        const userId = session.user.id;
+  const loadReportsData = useCallback(async () => {
+    setLoadError(null);
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setLoading(false);
+        return;
+      }
+      const userId = session.user.id;
 
-        // Check workspace integrations
-        const { data: intData } = await supabase
-          .from('workspace_integrations')
+      const { data: intData, error: intErr } = await supabase
+        .from('workspace_integrations')
+        .select('*')
+        .eq('workspace_id', userId)
+        .eq('status', 'connected');
+      if (intErr) throw intErr;
+      setIntegrations(intData || []);
+
+      if (intData && intData.length > 0) {
+        const { data: evData, error: evErr } = await supabase
+          .from('governance_events')
           .select('*')
           .eq('workspace_id', userId)
-          .eq('status', 'connected');
-        setIntegrations(intData || []);
-
-        // Fetch governance events
-        if (intData && intData.length > 0) {
-          const { data: evData } = await supabase
-            .from('governance_events')
-            .select('*')
-            .eq('workspace_id', userId)
-            .order('signal_timestamp', { ascending: false })
-            .limit(50);
-          setEvents(evData || []);
-        }
-      } catch {} finally { setLoading(false); }
-    };
-    load();
+          .order('signal_timestamp', { ascending: false })
+          .limit(50);
+        if (evErr) throw evErr;
+        setEvents(evData || []);
+      } else {
+        setEvents([]);
+      }
+    } catch (e) {
+      setLoadError(e?.message || 'Unable to load reports data.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadReportsData();
+  }, [loadReportsData]);
 
   const hasAccounting = integrations.some(i => i.integration_type === 'accounting');
   const hasCRM = integrations.some(i => i.integration_type === 'crm');
@@ -195,14 +209,13 @@ const ReportsPage = () => {
         {/* ── FORENSIC REPORTS SECTION ── */}
         <ForensicReportCard />
 
-        {loading && (
-          <Panel className="text-center py-8">
-            <Loader2 className="w-6 h-6 text-[#FF6A00] mx-auto mb-3 animate-spin" />
-            <p className="text-sm text-[#9FB0C3]">Loading report data...</p>
-          </Panel>
+        {loading && <PageLoadingState message="Loading intelligence reports..." />}
+
+        {!loading && loadError && (
+          <PageErrorState error={loadError} onRetry={loadReportsData} moduleName="Reports" />
         )}
 
-        {!loading && !hasAnyIntegration && (
+        {!loading && !loadError && !hasAnyIntegration && (
           <Panel className="text-center py-12">
             <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
             <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>No integrations connected.</p>
@@ -216,7 +229,7 @@ const ReportsPage = () => {
           </Panel>
         )}
 
-        {!loading && hasAnyIntegration && (
+        {!loading && !loadError && hasAnyIntegration && (
           <>
             {/* Integration Status */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

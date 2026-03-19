@@ -23,9 +23,11 @@ from auth_supabase import get_user_by_id
 from supabase_intelligence_helpers import get_business_profile_supabase
 from intelligence_live_truth import (
     email_row_is_connected,
+    get_connector_truth_summary,
     get_live_integration_truth,
     get_recent_observation_events,
     build_watchtower_events,
+    merge_row_is_connected,
     normalize_category,
 )
 from supabase_drive_helpers import (
@@ -2938,6 +2940,129 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
     }
 
 
+@router.get("/integrations/connectors")
+async def get_all_connector_status(current_user: dict = Depends(get_current_user)):
+    """Integration Centre v1 — unified connector status for all integration types."""
+    user_id = current_user["id"]
+    sb = get_sb()
+    try:
+        connector_truth = get_connector_truth_summary(sb, user_id)
+    except Exception:
+        connector_truth = {}
+    connectors: List[Dict[str, Any]] = []
+
+    def append_merge_connector(category: str, eid: str, title: str, cat_label: str, default_provider: str):
+        row = None
+        try:
+            res = (
+                sb.table("integration_accounts")
+                .select("*")
+                .eq("user_id", user_id)
+                .eq("category", category)
+                .order("created_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            row = res.data[0] if res.data else None
+        except Exception:
+            row = None
+
+        truth = connector_truth.get(category) or {}
+        truth_err = str(truth.get("truth_state") or "").lower() == "error"
+        provider = default_provider
+        last_sync = None
+        connected = False
+        err_msg = None
+        sync_bad = False
+
+        if row:
+            provider = row.get("provider") or default_provider
+            connected = merge_row_is_connected(row)
+            st = str(row.get("sync_status") or row.get("status") or "").lower()
+            sync_bad = st in ("error", "token_expired", "failed", "expired", "inactive")
+            last_sync = truth.get("last_verified_at") or row.get("last_sync_at") or row.get("connected_at") or row.get("created_at")
+            if truth_err or sync_bad:
+                err_msg = truth.get("error_message") or row.get("error_message") or truth.get("truth_reason")
+        elif truth_err:
+            err_msg = truth.get("error_message") or truth.get("truth_reason")
+
+        if connected and not sync_bad and not truth_err:
+            err_msg = None
+
+        connectors.append({
+            "id": eid,
+            "name": title,
+            "category": cat_label,
+            "provider": provider,
+            "connected": connected,
+            "last_sync_at": last_sync if connected else None,
+            "error": err_msg,
+        })
+
+    append_merge_connector("crm", "crm", "CRM", "Sales", "HubSpot")
+    append_merge_connector("accounting", "accounting", "Accounting", "Finance", "Xero")
+
+    # Email (Supabase email_connections + optional truth)
+    row = None
+    try:
+        em = (
+            sb.table("email_connections")
+            .select("*")
+            .eq("user_id", user_id)
+            .order("connected_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        row = em.data[0] if em.data else None
+    except Exception:
+        row = None
+
+    email_truth = connector_truth.get("email") or {}
+    email_truth_err = str(email_truth.get("truth_state") or "").lower() == "error"
+    prov_key = None
+    display = "Gmail"
+    connected = False
+    last_sync = None
+    err_msg = None
+
+    if row:
+        prov_key = str(row.get("provider") or "gmail").lower()
+        display = {"gmail": "Gmail", "outlook": "Microsoft Outlook"}.get(prov_key, prov_key.replace("_", " ").title())
+        connected = email_row_is_connected(row)
+        st = str(row.get("sync_status") or row.get("status") or "").lower()
+        sync_bad = st == "error"
+        last_sync = (row.get("last_sync_at") or row.get("connected_at")) if connected else None
+        if sync_bad or email_truth_err:
+            err_msg = row.get("error_message") or email_truth.get("error_message") or email_truth.get("truth_reason")
+        if connected and not sync_bad and not email_truth_err:
+            err_msg = None
+    elif email_truth_err:
+        err_msg = email_truth.get("error_message") or email_truth.get("truth_reason")
+
+    connectors.append({
+        "id": "email",
+        "name": "Email",
+        "category": "Communication",
+        "provider": display,
+        "provider_key": prov_key,
+        "connected": connected,
+        "last_sync_at": last_sync,
+        "error": err_msg,
+    })
+
+    connectors.append({
+        "id": "marketing",
+        "name": "Marketing",
+        "category": "Marketing",
+        "provider": "Coming soon",
+        "connected": False,
+        "last_sync_at": None,
+        "error": None,
+    })
+
+    return {"connectors": connectors}
+
+
 @router.post("/integrations/merge/webhook")
 async def merge_webhook_receive(request: Request):
     """
@@ -3053,6 +3178,18 @@ async def merge_webhook_receive(request: Request):
         "ignored": ignored,
         "events": raw_events,
     }, status_code=200)
+
+
+@router.post("/merge/webhook")
+async def merge_webhook_alias(request: Request):
+    """Alias — forwards to canonical merge_webhook_receive."""
+    return await merge_webhook_receive(request)
+
+
+@router.post("/webhooks/merge")
+async def merge_webhook_alias_v2(request: Request):
+    """Alias — forwards to canonical merge_webhook_receive."""
+    return await merge_webhook_receive(request)
 
 
 @router.get("/integrations/webhook-health")

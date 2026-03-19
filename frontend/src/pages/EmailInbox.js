@@ -1,4 +1,3 @@
-import { CognitiveMesh } from '../components/LoadingSystems';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
@@ -12,6 +11,7 @@ import {
   TrendingUp, Target, Zap, MessageSquare, X
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 
 const EmailInbox = () => {
   const navigate = useNavigate();
@@ -22,6 +22,7 @@ const EmailInbox = () => {
   const [connectedEmail, setConnectedEmail] = useState(null);
   const [priorityAnalysis, setPriorityAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [inboxLoadError, setInboxLoadError] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [replySuggestions, setReplySuggestions] = useState(null);
@@ -133,6 +134,7 @@ const EmailInbox = () => {
   const fetchPriorityInbox = async (provider) => {
     try {
       setLoading(true);
+      setInboxLoadError(null);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { setLoading(false); return; }
 
@@ -153,11 +155,13 @@ const EmailInbox = () => {
 
       // 2. Prefer backend-backed inbox retrieval to avoid direct edge JWT issues in production.
       let latest = null;
+      let fetchErrMsg = null;
       try {
         const existing = await apiClient.get('/email/priority-inbox');
         latest = normalizePriorityPayload(existing.data, { from_cache: false });
       } catch (error) {
         console.error('Priority inbox existing fetch failed:', error?.response?.data || error.message);
+        fetchErrMsg = error?.response?.data?.detail || error?.message || 'Unable to load priority inbox.';
       }
 
       if (!latest) {
@@ -167,16 +171,21 @@ const EmailInbox = () => {
         } catch (error) {
           if (!cached?.length) {
             console.error('Priority inbox analysis failed:', error?.response?.data || error.message);
-            toast.error(error?.response?.data?.detail || 'Priority Inbox is temporarily unavailable.');
+            const detail = error?.response?.data?.detail || error?.message || 'Priority Inbox is temporarily unavailable.';
+            fetchErrMsg = fetchErrMsg || detail;
+            toast.error(detail);
           }
         }
       }
 
       if (latest) {
         setPriorityAnalysis(latest);
+      } else if (!cached?.length && fetchErrMsg) {
+        setInboxLoadError(fetchErrMsg);
       }
     } catch (error) {
       console.error('Priority inbox fetch error:', error);
+      setInboxLoadError(error?.message || 'Unable to load priority inbox.');
     } finally {
       setLoading(false);
     }
@@ -682,9 +691,7 @@ const EmailInbox = () => {
 
         {/* Connection Status - Show if no provider connected */}
         {checkingConnection ? (
-          <div className="flex items-center justify-center py-16">
-            <CognitiveMesh compact />
-          </div>
+          <PageLoadingState message="Checking email connection..." />
         ) : !activeProvider ? (
           <div 
             className="text-center py-16 rounded-2xl"
@@ -755,10 +762,13 @@ const EmailInbox = () => {
 
         {/* Loading State */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <CognitiveMesh compact />
-            <p style={{ color: 'var(--text-muted)' }}>Loading priority inbox...</p>
-          </div>
+          <PageLoadingState message="Loading priority inbox..." />
+        ) : inboxLoadError && !priorityAnalysis ? (
+          <PageErrorState
+            error={inboxLoadError}
+            onRetry={() => fetchPriorityInbox(activeProvider)}
+            moduleName="Priority Inbox"
+          />
         ) : !priorityAnalysis ? (
           /* Empty State */
           <div 
@@ -888,8 +898,7 @@ const EmailInbox = () => {
             className="p-8 rounded-2xl text-center"
             style={{ background: 'var(--bg-primary)' }}
           >
-            <CognitiveMesh compact />
-            <p style={{ color: 'var(--text-primary)' }}>Generating smart replies...</p>
+            <PageLoadingState message="Generating smart replies..." compact />
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
               Analyzing context and crafting responses
             </p>

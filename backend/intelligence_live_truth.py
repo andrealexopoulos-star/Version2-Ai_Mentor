@@ -426,15 +426,20 @@ def get_latest_snapshot_context(sb, user_id: str) -> Dict[str, Any]:
 def get_recent_observation_events(sb, user_id: str, limit: int = 25) -> Dict[str, Any]:
     try:
         result = sb.table("observation_events").select(
-            "id, signal_name, domain, severity, source, observed_at, payload, executive_summary", count="exact"
+            "id, signal_name, domain, severity, source, observed_at, payload, executive_summary, fingerprint", count="exact"
         ).eq("user_id", user_id).order("observed_at", desc=True).limit(limit).execute()
         events = []
+        seen = set()
         for row in (result.data or []):
             payload = parse_json_field(row.get("payload")) or {}
+            fp = row.get("fingerprint") or f"{row.get('signal_name', '')}|{row.get('source', '')}|{payload.get('entity_id', '')}"
+            if fp in seen:
+                continue
+            seen.add(fp)
             events.append({**row, "signal_payload": payload})
         return {
             "events": events,
-            "count": result.count or len(events),
+            "count": len(events),
             "last_signal_at": events[0].get("observed_at") if events else None,
         }
     except Exception as e:

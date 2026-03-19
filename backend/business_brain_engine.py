@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta, date
 from typing import Any, Dict, List, Optional, Tuple
 
-from intelligence_live_truth import get_connector_truth_summary
+from intelligence_live_truth import get_connector_truth_summary, get_live_integration_truth
 from intelligence_spine import emit_spine_event, log_model_execution
 from tier_resolver import get_brain_metric_limit, get_brain_plan_label, resolve_tier
 
@@ -441,7 +441,25 @@ class BusinessBrainEngine:
 
     def _connector_truth(self) -> Dict[str, Dict[str, Any]]:
         if self._connector_truth_cache is None:
-            self._connector_truth_cache = get_connector_truth_summary(self.sb, self.tenant_id)
+            try:
+                live_truth = get_live_integration_truth(self.sb, self.tenant_id)
+                per_item = {}
+                for item in live_truth.get("integrations", []):
+                    cat = (item.get("category") or "").lower()
+                    if cat and cat not in per_item:
+                        per_item[cat] = {
+                            "category": cat,
+                            "truth_state": item.get("truth_state", "unverified"),
+                            "truth_reason": item.get("truth_reason", ""),
+                            "last_verified_at": item.get("last_verified_at"),
+                            "age_hours": item.get("age_hours"),
+                            "status": item.get("status"),
+                        }
+                if not per_item:
+                    per_item = get_connector_truth_summary(self.sb, self.tenant_id)
+                self._connector_truth_cache = per_item
+            except Exception:
+                self._connector_truth_cache = get_connector_truth_summary(self.sb, self.tenant_id)
         return self._connector_truth_cache
 
     def _concern_source_keys(self, concern_id: str) -> List[str]:

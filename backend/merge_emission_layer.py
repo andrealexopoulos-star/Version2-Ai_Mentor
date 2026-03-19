@@ -645,10 +645,24 @@ class MergeEmissionLayer:
         }
 
     async def _persist_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
-        """Persist observation event. Uses INSERT (not upsert) for compatibility."""
+        """Persist observation event. Upserts on (user_id, fingerprint) when fingerprint is set (see add_observation_fingerprint.sql)."""
         try:
             # Remove fingerprint if table doesn't support it
             event_clean = {k: v for k, v in event.items() if v is not None}
+            fp = event_clean.get("fingerprint")
+            if fp and event_clean.get("user_id"):
+                # Omit id so conflict UPDATE does not replace an existing row's primary key
+                upsert_row = {k: v for k, v in event_clean.items() if k != "id"}
+                try:
+                    result = self.supabase.table("observation_events").upsert(
+                        upsert_row, on_conflict="user_id,fingerprint"
+                    ).execute()
+                    if result.data:
+                        logger.info(f"[emission] {event['signal_name']} emitted for {event.get('domain','?')}")
+                        return result.data[0]
+                    return event_clean
+                except Exception as up_e:
+                    logger.warning(f"[emission] upsert failed, insert fallback: {str(up_e)[:200]}")
             result = self.supabase.table("observation_events").insert(event_clean).execute()
             if result.data:
                 logger.info(f"[emission] {event['signal_name']} emitted for {event.get('domain','?')}")

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
+import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { useSnapshotProgress } from '../hooks/useSnapshotProgress';
 import { AUTH_STATE, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
@@ -1616,7 +1617,8 @@ export default function AdvisorWatchtower() {
   const executiveMemo = overview?.executive_memo || cognitive?.executive_memo || cognitive?.memo;
   const migrationRequired = overview?.status === 'MIGRATION_REQUIRED';
   const queuedBeyondThree = Math.max(openSignals.length - 3, 0);
-  const noActiveDecisions = decisions.every((decision) => !decision.signal);
+  const hasIntegrityAlerts = (brainContext?.integrityAlerts?.length || 0) > 0;
+  const noActiveDecisions = !hasIntegrityAlerts && decisions.every((decision) => !decision.signal);
   const brainHasRenderableContext = Boolean(
     (brainContext.concerns || []).length
     || (brainContext.integrityAlerts || []).length
@@ -1739,9 +1741,11 @@ export default function AdvisorWatchtower() {
                   ? 'Pulling your latest business data now. Your priorities will appear in a moment.'
                   : !brainLive
                     ? 'Your data connections need attention before BIQc can show priorities. Check your integrations below.'
-                  : (brainContext.allClear
-                      ? 'Everything looks good right now. No urgent issues need your attention.'
-                      : `Here are your top priorities based on ${connectedSources.join(', ')} data.`)}
+                  : (hasIntegrityAlerts && decisions.every((d) => !d.signal)
+                      ? 'Some data sources need verification before BIQc can surface all priorities. Check the data quality section below.'
+                      : (brainContext.allClear && !hasIntegrityAlerts
+                          ? 'Everything looks good right now. No urgent issues need your attention.'
+                          : `Here are your top priorities based on ${connectedSources.join(', ')} data.`))}
               </p>
             </div>
 
@@ -1784,12 +1788,12 @@ export default function AdvisorWatchtower() {
           </div>
 
           {criticalError && (
-            <div
-              className="mb-8 rounded-2xl border px-4 py-3 text-sm"
-              style={{ borderColor: '#F59E0B60', background: '#F59E0B15', color: '#FDE68A' }}
-              data-testid="advisor-critical-error"
-            >
-              Your business data feed is delayed right now. We're working on restoring your priority view — try refreshing in a few minutes.
+            <div className="mb-8" data-testid="advisor-critical-error">
+              <PageErrorState
+                error={dataErrorMessage}
+                onRetry={handleRefresh}
+                moduleName="Advisor"
+              />
             </div>
           )}
 
@@ -1814,10 +1818,8 @@ export default function AdvisorWatchtower() {
           )}
 
           {isLoading && (
-            <div className="space-y-4" data-testid="advisor-loading-state">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="h-28 animate-pulse rounded-2xl" style={{ background: '#111827', border: '1px solid #1F2937' }} data-testid={`advisor-loading-skeleton-${item}`} />
-              ))}
+            <div data-testid="advisor-loading-state">
+              <PageLoadingState message="Loading intelligence watchtower..." />
             </div>
           )}
 
