@@ -38,14 +38,14 @@ export default function UpgradePage() {
             <Lock className="h-4 w-4" style={{ color: '#FF6A00' }} />
             <span className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Upgrade required</span>
           </div>
-          <h1 className="mt-6 text-4xl sm:text-5xl" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Unlock SMB Protect</h1>
+          <h1 className="mt-6 text-4xl sm:text-5xl" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Unlock BIQc Foundation</h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base" style={{ color: '#9FB0C3' }}>
-            One paid tier. One clear commercial offer. Everything in Free, plus the launch modules reserved for deeper operating control.
+            One paid tier. Everything in Free, plus the deeper operating modules for revenue, operations, marketing, Boardroom visibility, governance, and up to 5 integrations.
           </p>
         </div>
 
         <div className="mx-auto max-w-2xl rounded-[28px] border p-8" style={{ background: 'rgba(20,28,38,0.95)', borderColor: 'rgba(255,106,0,0.24)' }}>
-          <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>SMB Protect</p>
+          <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>BIQc Foundation</p>
           <div className="mt-3 flex items-end gap-2">
             <span className="text-5xl" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>$349</span>
             <span className="pb-2 text-sm" style={{ color: '#64748B' }}>/month</span>
@@ -68,7 +68,7 @@ export default function UpgradePage() {
             style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
             data-testid="upgrade-starter"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Upgrade to SMB Protect'}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Upgrade to BIQc Foundation'}
             {!loading && <ArrowRight className="h-4 w-4" />}
           </button>
         </div>

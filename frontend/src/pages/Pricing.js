@@ -31,7 +31,7 @@ export default function Pricing() {
             One free launch tier.<br />One paid operating tier.
           </h1>
           <p className="mt-5 text-base md:text-lg" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
-            Launch fast with the core BIQc surfaces for free. Upgrade to SMB Protect when you need deeper operating control.
+            Launch fast with the core BIQc surfaces for free. Upgrade to BIQc Foundation when you need deeper operating control.
           </p>
         </div>
       </section>

@@ -61,10 +61,10 @@ const TUTORIALS = {
     ],
   },
   '/board-room': {
-    title: 'Board Room',
+    title: 'Boardroom',
     showIf: { minTier: 'starter' },
     steps: [
-      { title: 'Executive Overview', body: 'The Board Room gives you a high-level summary of your business health — the kind of view you\'d present to investors or a board of directors.' },
+      { title: 'Executive Overview', body: 'The Boardroom gives you a high-level summary of your business health — the kind of view you\'d present to investors or a board of directors.' },
       { title: 'Key Metrics', body: 'Track the metrics that matter most. Everything here is generated from your real business data, not generic templates.' },
     ],
   },

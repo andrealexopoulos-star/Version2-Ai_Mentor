@@ -36,6 +36,7 @@ import EnterpriseTerms from './pages/EnterpriseTerms';
 import LandingIntelligent from './pages/LandingIntelligent';
 import MoreFeaturesPage from './pages/MoreFeaturesPage';
 import BIQcLegalPage from './pages/BIQcLegalPage';
+import BIQcFoundationPage from './pages/BIQcFoundationPage';
 import { TermsPage as SiteTermsPage, PrivacyPage as SitePrivacyPage, DPAPage as SiteDPAPage, SecurityPage as SiteSecurityPage, TrustCentrePage as SiteTrustCentrePage } from './pages/website/TrustSubPages';
 import { resolveTier } from './lib/tierResolver';
 
@@ -106,7 +107,7 @@ import DecisionsPage from './pages/DecisionsPage';
 import OnboardingWizard from './pages/OnboardingWizard';
 import OnboardingDecision from './pages/OnboardingDecision';
 import UpgradePage from './pages/UpgradePage';
-import { WAITLIST_ROUTE_MAP } from './config/launchConfig';
+import { FOUNDATION_ROUTE_MAP, WAITLIST_ROUTE_MAP } from './config/launchConfig';
 
 // ── Conditional imports (pages that may not exist) ────────────────────────────
 let CognitiveV2Mockup, LoadingPreview, CalibrationPreview, AuthDebug, GmailTest, OutlookTest, ProfileImport;
@@ -178,7 +179,8 @@ const LaunchRoute = ({ children, access = 'free', featureKey = null }) => {
   if (authState === AUTH_STATE.LOADING || loading) return <LoadingScreen />;
   if (!user && !session) return <Navigate to="/login-supabase" replace />;
   if (access === 'paid' && !hasPaidAccess) {
-    return <Navigate to={`/upgrade?from=${encodeURIComponent(location.pathname)}`} replace />;
+    const key = featureKey || FOUNDATION_ROUTE_MAP[location.pathname]?.key || '';
+    return <Navigate to={`/biqc-foundation${key ? `?feature=${encodeURIComponent(key)}` : ''}`} replace />;
   }
   if (access === 'waitlist' && !isAndre) {
     const key = featureKey || WAITLIST_ROUTE_MAP[location.pathname]?.key || '';
@@ -264,6 +266,7 @@ function AppRoutes() {
         <Route path="/subscribe" element={<ProtectedRoute><SubscribePage /></ProtectedRoute>} />
         <Route path="/upgrade" element={<ProtectedRoute><UpgradePage /></ProtectedRoute>} />
         <Route path="/upgrade/success" element={<ProtectedRoute><UpgradePage success /></ProtectedRoute>} />
+        <Route path="/biqc-foundation" element={<ProtectedRoute><BIQcFoundationPage /></ProtectedRoute>} />
         <Route path="/more-features" element={<ProtectedRoute><MoreFeaturesPage /></ProtectedRoute>} />
         <Route path="/biqc-legal" element={<ProtectedRoute><BIQcLegalPage /></ProtectedRoute>} />
 
@@ -278,14 +281,14 @@ function AppRoutes() {
         <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
         <Route path="/forensic-audit" element={<ProtectedRoute><LaunchRoute access="paid"><ForensicAuditPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/exposure-scan" element={<ProtectedRoute><LaunchRoute access="paid"><DSEEPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/marketing-intelligence" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="marketing-intelligence"><MarketingIntelPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/marketing-intelligence" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="marketing-intelligence"><MarketingIntelPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
         <Route path="/competitive-benchmark" element={<ProtectedRoute><CompetitiveBenchmarkPage /></ProtectedRoute>} />
 
         {/* Paid routes */}
-        <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="revenue-engine"><RevenuePage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="operations-intelligence"><OperationsPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="revenue"><RevenuePage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="operations"><OperationsPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/risk" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="risk-workforce"><RiskPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="risk-workforce"><CompliancePage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><LaunchRoute access="paid"><ReportsPage /></LaunchRoute></ProtectedRoute>} />
@@ -296,7 +299,7 @@ function AppRoutes() {
         <Route path="/soundboard" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
         <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
         <Route path="/war-room" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="war-room"><WarRoomPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/board-room" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="board-room"><BoardRoomPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/board-room" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="boardroom"><BoardRoomPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/warroom" element={<Navigate to="/war-room" replace />} />
         <Route path="/boardroom" element={<Navigate to="/board-room" replace />} />
         <Route path="/sop-generator" element={<ProtectedRoute><LaunchRoute access="paid"><SOPGenerator /></LaunchRoute></ProtectedRoute>} />

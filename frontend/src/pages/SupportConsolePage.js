@@ -6,7 +6,7 @@ import { fontFamily } from '../design-system/tokens';
 
 
 const TIER_COLORS = { free: '#64748B', starter: '#FF6A00', professional: '#FF6A00', growth: '#FF6A00', enterprise: '#FF6A00', super_admin: '#EF4444' };
-const TIER_LABELS = { free: 'Free', starter: 'SMB Protect $349', professional: 'SMB Protect $349', growth: 'SMB Protect $349', enterprise: 'SMB Protect $349', super_admin: 'Super Admin' };
+const TIER_LABELS = { free: 'Free', starter: 'BIQc Foundation $349', professional: 'BIQc Foundation $349', growth: 'BIQc Foundation $349', enterprise: 'BIQc Foundation $349', super_admin: 'Super Admin' };
 
 const SupportConsolePage = () => {
   const [admin, setAdmin] = useState(null);
@@ -151,9 +151,9 @@ const SupportConsolePage = () => {
                             className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: (TIER_COLORS[u.subscription_tier] || '#64748B') + '15', color: TIER_COLORS[u.subscription_tier] || '#64748B', border: 'none', fontFamily: fontFamily.mono }}>
                             {[
                               { val: 'free', label: 'Free' },
-                              { val: 'starter', label: 'SMB Protect ($349)' },
-                              { val: 'professional', label: 'SMB Protect ($349)' },
-                              { val: 'enterprise', label: 'SMB Protect ($349)' },
+                              { val: 'starter', label: 'BIQc Foundation ($349)' },
+                              { val: 'professional', label: 'BIQc Foundation ($349)' },
+                              { val: 'enterprise', label: 'BIQc Foundation ($349)' },
                               { val: 'super_admin', label: 'Super Admin' },
                             ].map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
                           </select>

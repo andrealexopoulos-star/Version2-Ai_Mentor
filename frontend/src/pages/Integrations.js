@@ -676,8 +676,8 @@ export default function Integrations() {
             <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(255,106,0,0.22)', background: 'rgba(255,106,0,0.05)' }} data-testid="integrations-paid-tier-banner">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>SMB Protect</p>
-                  <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Paid launch tier includes up to 5 integrations.</p>
+                  <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>BIQc Foundation</p>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>BIQc Foundation includes up to 5 integrations.</p>
                   <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>Connect email plus the business systems that matter most to your operating rhythm.</p>
                 </div>
                 <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.12)', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="integrations-paid-tier-counter">{connectedCount}/{launchIntegrationLimit} connected</span>
@@ -711,19 +711,19 @@ export default function Integrations() {
             <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-paid-upgrade-card">
               <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Paid launch modules</p>
               <h2 className="mt-3 text-xl" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Upgrade to unlock 5 integrations and the deeper operating modules.</h2>
-              <p className="mt-2 text-sm" style={{ color: '#94A3B8' }}>SMB Protect adds Exposure Scan, Marketing Auto, Reports, SOP Generator, Decision Tracker, and Ingestion Audit.</p>
+              <p className="mt-2 text-sm" style={{ color: '#94A3B8' }}>BIQc Foundation adds Exposure Scan, Marketing Auto, Reports, Revenue, Operations, Marketing Intelligence, Boardroom, SOP Generator, Decision Tracker, and Ingestion Audit.</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {['Exposure Scan', 'Marketing Auto', 'Reports', 'SOP Generator', 'Decision Tracker', 'Ingestion Audit'].map((item) => (
                   <span key={item} className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.08)', color: '#FFB37A', fontFamily: fontFamily.mono }}>{item}</span>
                 ))}
               </div>
               <button
-                onClick={() => navigate('/upgrade')}
+                onClick={() => navigate('/biqc-foundation')}
                 className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
                 style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
                 data-testid="integrations-upgrade-button"
               >
-                Upgrade to SMB Protect <ChevronRight className="w-4 h-4" />
+                View BIQc Foundation <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           ) : filtered.length > 0 ? (

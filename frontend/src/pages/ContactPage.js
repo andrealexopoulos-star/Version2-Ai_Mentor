@@ -135,7 +135,7 @@ const ContactPage = () => {
                           'Revenue Engine',
                           'Operations Intelligence',
                           'Risk & Workforce',
-                          'Board Room',
+                          'Boardroom',
                           'War Room',
                           'Intel Centre',
                           'Analysis & Diagnosis Suite',
