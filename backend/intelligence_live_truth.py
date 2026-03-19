@@ -8,12 +8,14 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-STALE_SOURCE_HOURS = 12.0
+STALE_SOURCE_HOURS = 48.0
+STALE_WARNING_HOURS = 24.0
+LIVE_SYNC_TARGET_MINUTES = 15
 
 
 def parse_json_field(value: Any) -> Optional[Dict[str, Any]]:
@@ -71,6 +73,13 @@ def age_hours(value: Any) -> Optional[float]:
     return round(max(0.0, (datetime.now(timezone.utc) - parsed).total_seconds() / 3600.0), 2)
 
 
+def next_expected_update(value: Any, interval_minutes: int = LIVE_SYNC_TARGET_MINUTES) -> Optional[str]:
+    parsed = parse_dt(value)
+    if not parsed:
+        return None
+    return (parsed + timedelta(minutes=max(1, interval_minutes))).isoformat()
+
+
 def normalize_connector_type(raw_value: Any) -> str:
     text = str(raw_value or "").strip().lower()
     if any(token in text for token in ("accounting", "xero", "quickbooks", "netsuite", "sage")):
@@ -94,9 +103,10 @@ def get_connector_truth_summary(sb, user_id: str) -> Dict[str, Dict[str, Any]]:
             "truth_state": "unverified",
             "last_verified_at": None,
             "age_hours": None,
+            "next_expected_update": None,
             "status": "not_observed",
             "error_message": None,
-            "truth_reason": f"No verified {category} ingest has completed yet.",
+            "truth_reason": f"No verified {category} data has been synced yet. Connect your {category} tool in Integrations to get started.",
         }
         for category in categories
     }
@@ -128,19 +138,23 @@ def get_connector_truth_summary(sb, user_id: str) -> Dict[str, Dict[str, Any]]:
             if run_status in {"completed", "partial"}:
                 if current_age_hours is not None and current_age_hours > STALE_SOURCE_HOURS:
                     truth_state = "stale"
-                    truth_reason = f"Last verified {category} ingest is {current_age_hours:.1f}h old."
+                    truth_reason = f"Last verified {category} data sync is {current_age_hours:.1f}h old. Reconnect or resync to restore live data."
+                elif current_age_hours is not None and current_age_hours > STALE_WARNING_HOURS:
+                    truth_state = "live"
+                    truth_reason = f"{category.title()} data was last synced {current_age_hours:.1f}h ago. A fresh sync is recommended."
                 else:
                     truth_state = "live"
-                    truth_reason = f"{category.title()} ingest verified {current_age_hours:.1f}h ago." if current_age_hours is not None else f"{category.title()} ingest is verified."
+                    truth_reason = f"{category.title()} data is up to date (synced {current_age_hours:.1f}h ago)." if current_age_hours is not None else f"{category.title()} data is verified and current."
             else:
                 truth_state = "error"
-                truth_reason = str(row.get("error_message") or f"Latest {category} ingest failed.")
+                truth_reason = str(row.get("error_message") or f"Latest {category} data sync failed. Check the integration connection.")
 
             summary[category] = {
                 "category": category,
                 "truth_state": truth_state,
                 "last_verified_at": candidate_ts,
                 "age_hours": current_age_hours,
+                "next_expected_update": next_expected_update(candidate_ts),
                 "status": run_status,
                 "error_message": row.get("error_message"),
                 "truth_reason": truth_reason,
@@ -305,10 +319,11 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
                     "truth_state": "stale" if derived_age_hours > STALE_SOURCE_HOURS else "live",
                     "last_verified_at": connected_at,
                     "age_hours": derived_age_hours,
+                    "next_expected_update": next_expected_update(connected_at),
                     "status": "connection_only",
                     "error_message": None,
                     "truth_reason": (
-                        f"Connection confirmed {derived_age_hours:.1f}h ago; canonical source-run verification is still pending."
+                        f"Connected {derived_age_hours:.1f}h ago, but the first full data sync hasn't completed yet. This usually resolves automatically."
                     ),
                 }
 
@@ -339,8 +354,10 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
             "truth_reason": truth_meta.get("truth_reason"),
             "age_hours": truth_meta.get("age_hours"),
             "source_run_status": truth_meta.get("status"),
+            "next_expected_update": next_expected_update(truth_meta.get("last_verified_at")),
         })
 
+<<<<<<< Current (Your changes)
     def _category_state_from_integrations(category_key: str) -> Optional[str]:
         """If any connected row in this category is live (e.g. after relink), surface live at canonical level."""
         for row in integrations:
@@ -356,6 +373,17 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
         if promoted == "live":
             return "live"
         return base
+=======
+    freshness_map = {
+        key: {
+            "state": (connector_truth.get(key) or {}).get("truth_state", "unverified"),
+            "last_synced_at": (connector_truth.get(key) or {}).get("last_verified_at"),
+            "next_expected_update": next_expected_update((connector_truth.get(key) or {}).get("last_verified_at")),
+            "age_hours": (connector_truth.get(key) or {}).get("age_hours"),
+        }
+        for key in ("crm", "accounting", "email", "calendar", "marketing")
+    }
+>>>>>>> Incoming (Background Agent changes)
 
     canonical_truth = {
         "crm_connected": any(normalize_category(i.get("category")) == "crm" and i.get("connected") for i in integrations),
@@ -367,6 +395,9 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
         "accounting_state": _effective_domain_state("accounting"),
         "email_state": _effective_domain_state("email"),
         "verified_live_count": len([item for item in integrations if item.get("truth_state") == "live"]),
+        "freshness": freshness_map,
+        "live_sync_target_minutes": LIVE_SYNC_TARGET_MINUTES,
+        "webhook_enabled": True,
     }
 
     return {"integrations": integrations, "canonical_truth": canonical_truth, "connector_truth": connector_truth}

@@ -354,6 +354,10 @@ serve(async (req: Request) => {
     const body = (await req.json().catch(() => ({}))) as JsonMap;
     const tenantId = (body.tenant_id as string | undefined) || null;
     const dryRun = Boolean(body.dry_run);
+    const triggerSource = String(body.trigger_source || "manual").slice(0, 120);
+    const requestedCategories = Array.isArray(body.categories)
+      ? body.categories.map((value) => String(value || "").toLowerCase().trim()).filter(Boolean)
+      : [];
 
     let accountsQuery = sb.from("integration_accounts").select("id,user_id,provider,category,account_token,created_at");
     if (tenantId) {
@@ -365,7 +369,8 @@ serve(async (req: Request) => {
     const accounts = (accountsResp.data || []).filter((r) => {
       const category = `${r.category || ""}`.toLowerCase();
       const accountToken = `${r.account_token || ""}`.trim();
-      return ["crm", "accounting", "marketing"].includes(category) && accountToken.length > 0;
+      const categoryAllowed = requestedCategories.length === 0 || requestedCategories.includes(category);
+      return categoryAllowed && ["crm", "accounting", "marketing"].includes(category) && accountToken.length > 0;
     });
 
     const summaries: JsonMap[] = [];
@@ -392,7 +397,12 @@ serve(async (req: Request) => {
         connector_type: connectorType,
         connector_account_id: `${account.id}`,
         status: "started",
-        run_meta: { provider: account.provider, category: account.category, modified_after: modifiedAfter || null },
+        run_meta: {
+          provider: account.provider,
+          category: account.category,
+          modified_after: modifiedAfter || null,
+          trigger_source: triggerSource,
+        },
       };
 
       const runInsert = await sb.schema("business_core").from("source_runs").insert(sourceRun).select("source_id").single();
@@ -549,6 +559,7 @@ serve(async (req: Request) => {
             category: accountCategory,
             modified_after: modifiedAfter || null,
             dry_run: dryRun,
+            trigger_source: triggerSource,
             fetch_status: datasetStatus,
             counts,
           },
@@ -580,7 +591,13 @@ serve(async (req: Request) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, dry_run: dryRun, runs: summaries }), {
+    return new Response(JSON.stringify({
+      ok: true,
+      dry_run: dryRun,
+      trigger_source: triggerSource,
+      categories: requestedCategories,
+      runs: summaries,
+    }), {
       status: 200,
       headers: { ...CORS, "Content-Type": "application/json" },
     });

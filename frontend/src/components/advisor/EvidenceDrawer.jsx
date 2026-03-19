@@ -65,7 +65,7 @@ export const EvidenceDrawer = ({ open, decision, onClose }) => {
           </section>
 
           <section className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-evidence-drawer-why-now">
-            <h4 className="mb-1 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Why this decision surfaced</h4>
+            <h4 className="mb-1 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Why this came up</h4>
             <p>{decision.whyNow}</p>
           </section>
 

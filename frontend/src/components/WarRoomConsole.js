@@ -48,6 +48,13 @@ const getWarRoomReplyText = (data) => {
   return data.answer || data.response || data.error || summariseWarRoomAnalysis(data.analysis) || 'Unable to process.';
 };
 
+const formatFreshnessTime = (iso) => {
+  if (!iso) return 'unknown';
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return 'unknown';
+  return parsed.toLocaleString();
+};
+
 const WarRoomConsole = ({ embeddedShell = false }) => {
   const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
   const { status: integrationStatus } = useIntegrationStatus();
@@ -126,8 +133,9 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
     accounting: c.integrations?.accounting_state ?? integrationStatus?.canonical_truth?.accounting_state,
     email: c.integrations?.email_state ?? integrationStatus?.canonical_truth?.email_state,
   }).filter(([, state]) => state && state !== 'live');
+  const freshness = integrationStatus?.canonical_truth?.freshness || {};
   const truthGateMessage = degradedTruth.length
-    ? `Forensic truth gate is active. BIQc is limiting War Room synthesis to verified live signals while these domains recover: ${degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.`
+    ? `Some of your data is out of date. BIQc is only using verified data while these tools refresh: ${degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.`
     : null;
   const explainability = {
     whyVisible: connectedSystems.length
@@ -195,9 +203,12 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
               <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Good {displayTimeOfDay}, {displayName}.</h1>
               {degradedTruth.length > 0 && (
                 <div className="p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)' }} data-testid="warroom-truth-state-banner">
-                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Forensic truth state</span>
+                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Data freshness</span>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
-                    BIQc is currently treating these domains as non-live truth: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.
+                    Some data sources need refreshing: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.
+                  </p>
+                  <p className="text-xs leading-relaxed mt-2" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+                    Last sync — CRM: {formatFreshnessTime(freshness?.crm?.last_synced_at)}, Accounting: {formatFreshnessTime(freshness?.accounting?.last_synced_at)}, Email: {formatFreshnessTime(freshness?.email?.last_synced_at)}.
                   </p>
                 </div>
               )}

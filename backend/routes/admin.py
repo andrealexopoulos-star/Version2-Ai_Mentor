@@ -91,12 +91,7 @@ def _save_operator_profile(sb, user_id: str, operator_profile: Dict[str, Any]):
 
 
 @router.post("/admin/backfill-calibration")
-async def admin_backfill_calibration(request: Request):
-    try:
-        await get_current_user_from_request(request)
-    except Exception:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
+async def admin_backfill_calibration(admin: dict = Depends(get_super_admin)):
     sb = get_sb()
     backfilled = skipped = errors = 0
     now_iso = datetime.now(timezone.utc).isoformat()

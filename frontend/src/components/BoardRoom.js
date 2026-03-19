@@ -25,6 +25,13 @@ const DIAGNOSIS_AREAS = [
   { id: 'market_position', label: 'Market Position', icon: '\u2691', color: '#0D9488', desc: 'Competitive landscape, positioning, opportunity decay.' },
 ];
 
+const formatFreshnessTime = (iso) => {
+  if (!iso) return 'unknown';
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return 'unknown';
+  return parsed.toLocaleString();
+};
+
 const BoardRoom = ({ embeddedShell = false }) => {
   const [activeDiagnosis, setActiveDiagnosis] = useState(null);
   const [diagnosisResult, setDiagnosisResult] = useState(null);
@@ -49,9 +56,10 @@ const BoardRoom = ({ embeddedShell = false }) => {
     email: integrationStatus?.canonical_truth?.email_state || snapshot?.integrations?.email_state,
   };
   const degradedTruth = Object.entries(truthStateMap).filter(([, state]) => state && state !== 'live');
+  const freshness = integrationStatus?.canonical_truth?.freshness || {};
   const integrationLabels = Object.entries(integrationMap).filter(([, connected]) => connected).map(([key]) => key);
   const truthGateMessage = degradedTruth.length
-    ? `Forensic truth gate is active. BIQc is limiting Boardroom synthesis to verified live signals while these domains recover: ${degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.`
+    ? `Some of your data is out of date. BIQc is only using verified data while these tools refresh: ${degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.`
     : null;
   const primaryBrief = degradedTruth.length ? (topAlerts[0]?.detail || truthGateMessage) : (narrative?.primary_tension || topAlerts[0]?.detail);
   const hasBrief = Boolean(primaryBrief);
@@ -130,9 +138,12 @@ const BoardRoom = ({ embeddedShell = false }) => {
               <section data-testid="executive-zone">
                 {degradedTruth.length > 0 && (
                   <div className="mb-5 p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)' }} data-testid="boardroom-truth-state-banner">
-                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Forensic truth state</span>
+                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Data freshness</span>
                     <p className="text-xs leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
-                      BIQc is currently treating these domains as non-live truth: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.
+                      Some data sources need refreshing: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.
+                    </p>
+                    <p className="text-xs leading-relaxed mt-2" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+                      Last sync — CRM: {formatFreshnessTime(freshness?.crm?.last_synced_at)}, Accounting: {formatFreshnessTime(freshness?.accounting?.last_synced_at)}, Email: {formatFreshnessTime(freshness?.email?.last_synced_at)}.
                     </p>
                   </div>
                 )}

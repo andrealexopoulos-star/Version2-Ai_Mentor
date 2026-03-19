@@ -17,10 +17,38 @@ env:
   BACKEND_AUTH_PROBE_URL: https://biqc-api.azurewebsites.net/api/user/integration-status
 
 jobs:
+  # ─── TEST ───────────────────────────────────────────────────────────────
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Run backend tests
+        run: python -m pytest backend/tests/ --tb=short -q --no-header
+        env:
+          SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          JWT_SECRET_KEY: test-secret-key
+
   # ─── BUILD & PUSH FRONTEND ───────────────────────────────────────────────
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
+    needs: [test]
 
     steps:
       - name: Checkout code
@@ -55,6 +83,7 @@ jobs:
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
+    needs: [test]
 
     steps:
       - name: Checkout code

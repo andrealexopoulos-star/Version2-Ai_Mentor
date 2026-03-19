@@ -29,7 +29,13 @@ watchtower_store = init_watchtower_store(supabase_admin)
 
 DAILY_SCAN_INTERVAL = 86400
 EMISSION_INTERVAL = 900  # 15 minutes
+MERGE_INGEST_INTERVAL = 900  # 15 minutes baseline polling fallback
+WEBHOOK_POLL_INTERVAL = 60
+WORKER_LOOP_INTERVAL = 60
+MAX_WEBHOOK_RETRIES = 5
+WEBHOOK_RETRY_BASE_SECONDS = 30
 WEEKLY_SYNTHESIS_DAY = 0
+FEATURE_MERGE_WEBHOOK_ENABLED = os.environ.get("FEATURE_MERGE_WEBHOOK_ENABLED", "true").lower() in {"1", "true", "yes"}
 
 
 async def get_active_users_with_email():
@@ -119,53 +125,223 @@ async def weekly_synthesis():
         logger.error(f"Weekly synthesis error: {e}")
 
 
+async def trigger_merge_ingest():
+    """Trigger the Merge data ingest edge function to pull fresh CRM/accounting data."""
+    import httpx
+
+    edge_url = f"{os.environ.get('SUPABASE_URL')}/functions/v1/business-brain-merge-ingest"
+    service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+
+    if not edge_url or not service_key:
+        logger.warning("[MERGE_INGEST] Missing SUPABASE_URL or SERVICE_ROLE_KEY — skipping")
+        return
+
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            response = await client.post(
+                edge_url,
+                json={"trigger_source": "intelligence_automation_worker"},
+                headers={
+                    "Authorization": f"Bearer {service_key}",
+                    "Content-Type": "application/json",
+                },
+            )
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"[MERGE_INGEST] Data sync complete: {result.get('summaries', [])}")
+            else:
+                logger.warning(f"[MERGE_INGEST] Edge function returned {response.status_code}: {response.text[:200]}")
+    except Exception as e:
+        logger.error(f"[MERGE_INGEST] Failed to trigger data sync: {e}")
+
+
+def _next_retry_timestamp(attempts: int) -> str:
+    delay_seconds = min(1800, WEBHOOK_RETRY_BASE_SECONDS * (2 ** max(0, attempts - 1)))
+    return (datetime.now(timezone.utc) + timedelta(seconds=delay_seconds)).isoformat()
+
+
+async def process_merge_webhook_events() -> Dict[str, Any]:
+    """Drain queued Merge webhook events and enqueue selective sync jobs."""
+    if not FEATURE_MERGE_WEBHOOK_ENABLED:
+        return {"processed": 0, "queued_sync_jobs": 0, "feature_enabled": False}
+
+    rows_resp = (
+        supabase_admin.schema("business_core")
+        .table("webhook_events")
+        .select("id,tenant_id,category,status,attempts,next_retry_at,event_id")
+        .in_("status", ["received", "failed", "validated"])
+        .order("received_at", desc=False)
+        .limit(100)
+        .execute()
+    )
+    rows = rows_resp.data or []
+    if not rows:
+        return {"processed": 0, "queued_sync_jobs": 0, "feature_enabled": True}
+
+    from biqc_jobs import enqueue_job
+
+    now = datetime.now(timezone.utc)
+    grouped_categories: Dict[str, set] = {}
+    grouped_rows: Dict[str, list] = {}
+    processed = 0
+    queued_jobs = 0
+    failed = 0
+    dead_letter = 0
+
+    for row in rows:
+        next_retry_raw = row.get("next_retry_at")
+        if next_retry_raw:
+            try:
+                next_retry_dt = datetime.fromisoformat(str(next_retry_raw).replace("Z", "+00:00"))
+                if next_retry_dt > now:
+                    continue
+            except Exception:
+                pass
+
+        tenant_id = row.get("tenant_id")
+        category = str(row.get("category") or "").lower()
+        event_row_id = row.get("id")
+        attempts = int(row.get("attempts") or 0)
+        if not tenant_id or category not in {"crm", "accounting", "marketing", "calendar"}:
+            supabase_admin.schema("business_core").table("webhook_events").update({
+                "status": "processed",
+                "processed_at": now.isoformat(),
+                "last_error": "unsupported category or missing tenant",
+            }).eq("id", event_row_id).execute()
+            processed += 1
+            continue
+
+        tenant_key = str(tenant_id)
+        grouped_categories.setdefault(tenant_key, set()).add(category)
+        grouped_rows.setdefault(tenant_key, []).append({
+            "id": event_row_id,
+            "attempts": attempts,
+        })
+        supabase_admin.schema("business_core").table("webhook_events").update({
+            "status": "validated",
+            "attempts": attempts + 1,
+            "last_error": None,
+        }).eq("id", event_row_id).execute()
+        processed += 1
+
+    for tenant_id, tenant_rows in grouped_rows.items():
+        categories = sorted(list(grouped_categories.get(tenant_id) or []))
+        try:
+            enqueue_result = await enqueue_job(
+                job_type="merge-webhook-sync",
+                payload={
+                    "tenant_id": tenant_id,
+                    "categories": categories,
+                    "trigger_source": "merge_webhook_event",
+                },
+                company_id=f"{tenant_id}:merge:{'-'.join(categories)}",
+                window_seconds=60,
+            )
+            if enqueue_result.get("queued") or enqueue_result.get("duplicate"):
+                queued_jobs += 1
+                for row_meta in tenant_rows:
+                    supabase_admin.schema("business_core").table("webhook_events").update({
+                        "status": "queued",
+                        "processed_at": now.isoformat(),
+                        "last_error": None,
+                        "next_retry_at": None,
+                    }).eq("id", row_meta["id"]).execute()
+            else:
+                raise RuntimeError(enqueue_result.get("reason") or "queue enqueue rejected")
+        except Exception as exc:
+            failed += len(tenant_rows)
+            for row_meta in tenant_rows:
+                current_attempts = int(row_meta.get("attempts") or 0) + 1
+                if current_attempts >= MAX_WEBHOOK_RETRIES:
+                    dead_letter += 1
+                    supabase_admin.schema("business_core").table("webhook_events").update({
+                        "status": "dead_letter",
+                        "last_error": str(exc)[:500],
+                        "dead_letter_at": now.isoformat(),
+                        "processed_at": now.isoformat(),
+                    }).eq("id", row_meta["id"]).execute()
+                else:
+                    supabase_admin.schema("business_core").table("webhook_events").update({
+                        "status": "failed",
+                        "last_error": str(exc)[:500],
+                        "next_retry_at": _next_retry_timestamp(current_attempts),
+                    }).eq("id", row_meta["id"]).execute()
+
+    return {
+        "processed": processed,
+        "queued_sync_jobs": queued_jobs,
+        "failed": failed,
+        "dead_letter": dead_letter,
+        "feature_enabled": True,
+    }
+
+
 async def intelligence_loop():
     """Main automatic intelligence loop"""
     logger.info("Automatic Intelligence Worker Started")
     logger.info("Emission Cycle: Every 15 minutes")
+    logger.info("Merge Data Sync Fallback: Every 15 minutes")
+    logger.info("Merge Webhook Poll: Every 60 seconds")
     logger.info("Daily Scan: Every 24 hours")
     
     last_daily = datetime.min.replace(tzinfo=timezone.utc)
+    last_merge_ingest = datetime.min.replace(tzinfo=timezone.utc)
+    last_emission = datetime.min.replace(tzinfo=timezone.utc)
+    last_webhook_poll = datetime.min.replace(tzinfo=timezone.utc)
     
     while True:
         try:
             now = datetime.now(timezone.utc)
+
+            # ═══ WEBHOOK EVENT DRAIN (every 60s) ═══
+            if (now - last_webhook_poll).total_seconds() >= WEBHOOK_POLL_INTERVAL:
+                webhook_result = await process_merge_webhook_events()
+                if webhook_result.get("processed", 0) > 0:
+                    logger.info(f"[MERGE_WEBHOOK] processed={webhook_result.get('processed')} queued={webhook_result.get('queued_sync_jobs')} failed={webhook_result.get('failed')} dead_letter={webhook_result.get('dead_letter')}")
+                last_webhook_poll = now
+
+            # ═══ MERGE DATA INGEST (every 15m fallback) ═══
+            if (now - last_merge_ingest).total_seconds() >= MERGE_INGEST_INTERVAL:
+                logger.info(f"[MERGE_INGEST] Triggering data sync at {now.isoformat()}")
+                await trigger_merge_ingest()
+                last_merge_ingest = now
             
             # ═══ EMISSION CYCLE (every 15 min) ═══
-            logger.info(f"[EMISSION_SCHEDULER] Running emission cycle at {now.isoformat()}")
-            try:
-                from merge_client import MergeClient
-                from merge_emission_layer import MergeEmissionLayer
-                
-                merge_key = os.environ.get("MERGE_API_KEY")
-                if merge_key:
-                    merge = MergeClient(merge_api_key=merge_key)
-                    emission = MergeEmissionLayer(supabase_client=supabase_admin, merge_client=merge)
+            if (now - last_emission).total_seconds() >= EMISSION_INTERVAL:
+                logger.info(f"[EMISSION_SCHEDULER] Running emission cycle at {now.isoformat()}")
+                try:
+                    from merge_client import MergeClient
+                    from merge_emission_layer import MergeEmissionLayer
                     
-                    # Get all users with integration accounts
-                    accounts = supabase_admin.table("integration_accounts").select(
-                        "user_id, account_id"
-                    ).execute()
-                    
-                    seen = set()
-                    emitted_total = 0
-                    for acc in (accounts.data or []):
-                        key = (acc["user_id"], acc["account_id"])
-                        if key in seen:
-                            continue
-                        seen.add(key)
-                        try:
-                            result = await emission.run_emission(acc["user_id"], acc["account_id"])
-                            emitted_total += result.get("signals_emitted", 0)
-                            logger.info(f"[EMISSION_SCHEDULER] user={acc['user_id'][:8]}... signals={result.get('signals_emitted',0)}")
-                        except Exception as e:
-                            logger.error(f"[EMISSION_SCHEDULER] user={acc['user_id'][:8]}... error={e}")
-                    
-                    logger.info(f"[EMISSION_SCHEDULER] Complete: {emitted_total} signals emitted for {len(seen)} workspaces")
-                else:
-                    logger.warning("[EMISSION_SCHEDULER] MERGE_API_KEY not set — skipping")
-            except Exception as e:
-                logger.error(f"[EMISSION_SCHEDULER] Error: {e}")
+                    merge_key = os.environ.get("MERGE_API_KEY")
+                    if merge_key:
+                        merge = MergeClient(merge_api_key=merge_key)
+                        emission = MergeEmissionLayer(supabase_client=supabase_admin, merge_client=merge)
+                        
+                        accounts = supabase_admin.table("integration_accounts").select(
+                            "user_id, account_id"
+                        ).execute()
+                        
+                        seen = set()
+                        emitted_total = 0
+                        for acc in (accounts.data or []):
+                            key = (acc["user_id"], acc["account_id"])
+                            if key in seen:
+                                continue
+                            seen.add(key)
+                            try:
+                                result = await emission.run_emission(acc["user_id"], acc["account_id"])
+                                emitted_total += result.get("signals_emitted", 0)
+                                logger.info(f"[EMISSION_SCHEDULER] user={acc['user_id'][:8]}... signals={result.get('signals_emitted',0)}")
+                            except Exception as e:
+                                logger.error(f"[EMISSION_SCHEDULER] user={acc['user_id'][:8]}... error={e}")
+                        
+                        logger.info(f"[EMISSION_SCHEDULER] Complete: {emitted_total} signals emitted for {len(seen)} workspaces")
+                    else:
+                        logger.warning("[EMISSION_SCHEDULER] MERGE_API_KEY not set — skipping")
+                except Exception as e:
+                    logger.error(f"[EMISSION_SCHEDULER] Error: {e}")
+                last_emission = now
             
             # ═══ DAILY SCAN (once per 24h) ═══
             if (now - last_daily).total_seconds() >= DAILY_SCAN_INTERVAL:
@@ -177,7 +353,7 @@ async def intelligence_loop():
         except Exception as e:
             logger.error(f"Intelligence loop error: {e}")
         
-        await asyncio.sleep(EMISSION_INTERVAL)
+        await asyncio.sleep(WORKER_LOOP_INTERVAL)
 
 
 if __name__ == "__main__":

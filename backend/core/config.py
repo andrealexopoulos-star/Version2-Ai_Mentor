@@ -46,6 +46,8 @@ RATE_LIMIT_RULES = {
     "/api/boardroom/respond": {"window": 300, "limit": 20, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
     "/api/voice/war-room/start": {"window": 300, "limit": 10, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
     "/api/voice/war-room/respond": {"window": 300, "limit": 24, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
+    "/api/voice/realtime/session": {"window": 300, "limit": 8, "detail": "Too many voice session requests. Please wait a few minutes before trying again."},
+    "/api/voice/realtime/negotiate": {"window": 300, "limit": 16, "detail": "Too many voice negotiation requests. Please wait a few minutes before trying again."},
 }
 RATE_LIMIT_BUCKETS = defaultdict(deque)
 RATE_LIMIT_LOCK = Lock()

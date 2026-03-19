@@ -47,7 +47,7 @@ const DataCoverageGate = ({ guardrail, coveragePct = 0, missingFields = [], comp
           <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#EF4444]" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
-              More context needed before I can advise
+              I need a bit more information before I can help
             </p>
             <CoverageBar pct={coveragePct} />
             <p className="text-xs mt-2 mb-3" style={{ color: 'var(--biqc-text-2)' }}>

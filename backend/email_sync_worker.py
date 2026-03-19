@@ -214,6 +214,28 @@ async def trigger_biqc_intelligence(user_id: str):
         logger.error(f"[INTEL] Edge Function call failed for {user_id[:8]}...: {e}")
 
 
+async def _record_email_source_run(user_id: str, provider: str, synced_count: int):
+    """Record a source_runs entry so the truth gate knows email data is fresh."""
+    connector_type = f"email:{provider.lower()}"
+    status = "completed" if synced_count > 0 else "partial"
+    try:
+        supabase_admin.schema("business_core").table("source_runs").insert({
+            "tenant_id": user_id,
+            "connector_type": connector_type,
+            "status": status,
+            "ingested_at": datetime.now(timezone.utc).isoformat(),
+            "run_meta": {
+                "provider": provider,
+                "category": "email",
+                "synced_count": synced_count,
+                "trigger": "email_sync_worker",
+            },
+        }).execute()
+        logger.info(f"[SOURCE_RUN] Recorded email source_run for {user_id[:8]}... ({connector_type}, {status})")
+    except Exception as e:
+        logger.warning(f"[SOURCE_RUN] Failed to record email source_run: {e}")
+
+
 async def sync_account_emails(account: Dict[str, Any]):
     """Sync emails for a single connected account (provider-agnostic)"""
     try:
@@ -269,7 +291,8 @@ async def sync_account_emails(account: Dict[str, Any]):
         
         logger.info(f"✅ {provider.upper()} {account_email}: synced {synced_count} emails")
 
-        # TRIGGER: Close the 24-hour intelligence gap
+        await _record_email_source_run(user_id, provider, synced_count)
+
         if synced_count > 0:
             await trigger_biqc_intelligence(user_id)
         
