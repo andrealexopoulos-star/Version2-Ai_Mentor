@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import EnterpriseContactGate from '../components/EnterpriseContactGate';
@@ -12,6 +12,8 @@ import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 import ActionOwnershipCard from '../components/ActionOwnershipCard';
 import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
+import LineageBadge from '../components/LineageBadge';
+import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
@@ -20,42 +22,56 @@ const Panel = ({ children, className = '' }) => (
 const OperationsPage = () => {
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [syncProgress, setSyncProgress] = useState(0);
   const [unifiedOps, setUnifiedOps] = useState(null);
   const navigate = useNavigate();
   const { session, authState } = useSupabaseAuth();
   const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
 
-  useEffect(() => {
+  const loadOperationsData = useCallback(async () => {
     if (authState === AUTH_STATE.LOADING && !session?.access_token) return;
     if (!session?.access_token) {
       setLoading(false);
       return;
     }
-    const load = async () => {
-      setSyncProgress(20);
-      try {
-        setSyncProgress(50);
-        const [snapRes, unifiedRes, cognitionRes] = await Promise.allSettled([
-          apiClient.get('/snapshot/latest'),
-          apiClient.get('/unified/operations'),
-          apiClient.get('/cognition/operations'),
-        ]);
-        setSyncProgress(85);
-        if (snapRes.status === 'fulfilled' && snapRes.value.data?.cognitive) {
-          setSnapshot(snapRes.value.data.cognitive);
-        }
-        if (unifiedRes.status === 'fulfilled' && unifiedRes.value.data) {
-          setUnifiedOps(unifiedRes.value.data);
-        }
-        if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
-          setUnifiedOps(prev => ({ ...prev, ...cognitionRes.value.data }));
-        }
-        setSyncProgress(100);
-      } catch {} finally { setLoading(false); setSyncProgress(100); }
-    };
-    load();
+    setLoadError(null);
+    setLoading(true);
+    setSyncProgress(20);
+    try {
+      setSyncProgress(50);
+      const [snapRes, unifiedRes, cognitionRes] = await Promise.allSettled([
+        apiClient.get('/snapshot/latest'),
+        apiClient.get('/unified/operations'),
+        apiClient.get('/cognition/operations'),
+      ]);
+      setSyncProgress(85);
+      if (snapRes.status === 'fulfilled' && snapRes.value.data?.cognitive) {
+        setSnapshot(snapRes.value.data.cognitive);
+      }
+      if (unifiedRes.status === 'fulfilled' && unifiedRes.value.data) {
+        setUnifiedOps(unifiedRes.value.data);
+      }
+      if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
+        setUnifiedOps(prev => ({ ...prev, ...cognitionRes.value.data }));
+      }
+      setSyncProgress(100);
+      const allRejected = [snapRes, unifiedRes, cognitionRes].every((r) => r.status === 'rejected');
+      if (allRejected) {
+        const r = snapRes.status === 'rejected' ? snapRes.reason : unifiedRes.status === 'rejected' ? unifiedRes.reason : cognitionRes.reason;
+        setLoadError(r?.response?.data?.detail || r?.message || 'Unable to load operations data.');
+      }
+    } catch (e) {
+      setLoadError(e?.response?.data?.detail || e?.message || 'Unable to load operations data.');
+    } finally {
+      setLoading(false);
+      setSyncProgress(100);
+    }
   }, [session?.access_token, authState]);
+
+  useEffect(() => {
+    loadOperationsData();
+  }, [loadOperationsData]);
 
   const hasCRM = integrationStatus?.canonical_truth?.crm_connected;
   const hasAccounting = integrationStatus?.canonical_truth?.accounting_connected;
@@ -102,6 +118,16 @@ const OperationsPage = () => {
       ? 'Unresolved delivery drift typically compounds into missed commitments, rework, and client trust erosion.'
       : 'Without connected workflow data, operational risks remain undetected until outcomes deteriorate.',
   };
+
+  const toConfidencePct = (raw) => {
+    if (raw == null) return undefined;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return undefined;
+    return n > 0 && n <= 1 ? n * 100 : n;
+  };
+  const opsIntelLineage = unifiedOps?.lineage;
+  const opsIntelFreshness = unifiedOps?.data_freshness;
+  const opsIntelConfidence = toConfidencePct(unifiedOps?.confidence_score);
 
   const actionOwnership = {
     owner: exec.bottleneck ? 'Operations manager' : 'Delivery lead',
@@ -155,6 +181,15 @@ const OperationsPage = () => {
     <DashboardLayout>
       <EnterpriseContactGate featureName="Delivery & Operations">
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="operations-page">
+
+        {loading && session?.access_token && (
+          <PageLoadingState message="Loading delivery & operations..." />
+        )}
+        {!loading && loadError && session?.access_token && (
+          <PageErrorState error={loadError} onRetry={loadOperationsData} moduleName="Operations" />
+        )}
+        {!(loading && session?.access_token) && !(loadError && session?.access_token) && (
+        <>
 
         {/* Header — operations-specific copy + connection badges */}
         <div className="flex items-start justify-between flex-wrap gap-3">
@@ -213,6 +248,10 @@ const OperationsPage = () => {
           ifIgnored={explainability.ifIgnored}
           testIdPrefix="operations-explainability"
         />
+
+        <div className="flex flex-wrap items-center gap-2" data-testid="operations-lineage-badge">
+          <LineageBadge lineage={opsIntelLineage} data_freshness={opsIntelFreshness} confidence_score={opsIntelConfidence} compact />
+        </div>
 
         <ActionOwnershipCard
           title="Operations execution owner plan"
@@ -389,6 +428,9 @@ const OperationsPage = () => {
                   </div>
                   <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: fontFamily.mono }}>COGNITION CORE</span>
                 </div>
+                <div className="mb-3" data-testid="operations-lineage-badge-intel-panel">
+                  <LineageBadge lineage={opsIntelLineage} data_freshness={opsIntelFreshness} confidence_score={opsIntelConfidence} compact />
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { key: 'anomaly_density_score', label: 'ADS', title: 'Anomaly Density' },
@@ -458,6 +500,8 @@ const OperationsPage = () => {
                 )}
               </>
             )}
+        </>
+        )}
         </div>
       </EnterpriseContactGate>
     </DashboardLayout>

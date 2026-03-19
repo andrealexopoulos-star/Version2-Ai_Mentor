@@ -5,9 +5,11 @@ import { apiClient } from '../lib/api';
 import { Shield, CheckCircle2, AlertTriangle, FileText, BadgeCheck } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { EmptyStateCard, MetricCard, QuietActionLink, SectionLabel, SignalCard, SurfaceCard, SurfaceHeader } from '../components/intelligence/SurfacePrimitives';
+import LineageBadge from '../components/LineageBadge';
+import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 
 const CompliancePage = () => {
-  const { cognitive, loading } = useSnapshot();
+  const { cognitive, loading, error, refresh } = useSnapshot();
   const [profile, setProfile] = useState(null);
   const c = cognitive || {};
   const risk = c.risk || {};
@@ -41,6 +43,35 @@ const CompliancePage = () => {
     ? `${regulatory.length} live compliance obligation${regulatory.length === 1 ? '' : 's'} need review. BIQc is only surfacing real snapshot-backed items here.`
     : 'No active compliance obligations are flagged right now. This page stays quiet unless the live risk layer finds something real.';
 
+  const toConfidencePct = (raw) => {
+    if (raw == null) return undefined;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return undefined;
+    return n > 0 && n <= 1 ? n * 100 : n;
+  };
+  const complianceIntelConfidence = toConfidencePct(c?.confidence_score)
+    ?? toConfidencePct(typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level);
+
+  if (loading && !cognitive) {
+    return (
+      <DashboardLayout>
+        <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-10" style={{ fontFamily: fontFamily.body }} data-testid="compliance-page">
+          <PageLoadingState message="Loading compliance..." />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error && !cognitive) {
+    return (
+      <DashboardLayout>
+        <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-10" style={{ fontFamily: fontFamily.body }} data-testid="compliance-page">
+          <PageErrorState error={error} onRetry={refresh} moduleName="Compliance" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-10" style={{ fontFamily: fontFamily.body }} data-testid="compliance-page">
@@ -61,6 +92,10 @@ const CompliancePage = () => {
           <MetricCard label="Live obligations" value={String(regulatory.length)} caption="Snapshot-backed regulatory items" tone={regulatory.length > 0 ? '#F59E0B' : '#10B981'} testId="compliance-obligations-count" />
           <MetricCard label="Single points of failure" value={String(spofs.length)} caption="Dependencies with real supporting evidence" tone={spofs.length > 0 ? '#EF4444' : '#10B981'} testId="compliance-spof-count" />
           <MetricCard label="Alignment contradictions" value={String(contradictions.length)} caption="Strategic conflicts surfaced by cognition" tone={contradictions.length > 0 ? '#FF6A00' : '#10B981'} testId="compliance-contradictions-count" />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2" data-testid="compliance-lineage-badge">
+          <LineageBadge lineage={c?.lineage} data_freshness={c?.data_freshness ?? c?.computed_at} confidence_score={complianceIntelConfidence} compact />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" data-testid="compliance-main-grid">

@@ -4,9 +4,7 @@
  * Route access comes from routeAccessConfig.js only.
  */
 import { getRouteAccess } from '../config/routeAccessConfig';
-
-const SUPER_ADMIN_EMAIL = (typeof process !== 'undefined' && process.env.REACT_APP_BIQC_MASTER_ADMIN_EMAIL)?.trim?.()?.toLowerCase?.()
-  || 'andre@thestrategysquad.com.au';
+import { MASTER_ADMIN_EMAIL as SUPER_ADMIN_EMAIL, isPrivilegedUser } from './privilegedUser';
 
 // Only free, starter (BIQc Foundation), super_admin. Legacy DB values map to starter in resolveTier.
 const TIERS = ['free', 'starter', 'super_admin'];
@@ -48,6 +46,7 @@ export function hasAccess(userTier, requiredTier) {
 
 export function checkRouteAccess(route, user) {
   const tier = resolveTier(user);
+  if (user && isPrivilegedUser(user)) return { allowed: true, tier };
   const access = getRouteAccess(route);
   if (!access) return { allowed: true, tier };
   const required = access.minTier;

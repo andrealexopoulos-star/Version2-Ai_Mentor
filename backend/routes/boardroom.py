@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Dict, List, Optional
 from core.llm_router import llm_chat, llm_trinity_chat
 from routes.deps import get_current_user_from_request, get_sb, OPENAI_KEY, logger, check_rate_limit, AI_MODELS
-from intelligence_live_truth import get_connector_truth_summary
+from intelligence_live_truth import get_live_integration_truth
 from supabase_intelligence_helpers import get_priority_analysis_supabase
 import os
 import httpx
@@ -188,9 +188,14 @@ async def _build_email_truth_fallback(sb, user_id: str) -> Optional[str]:
 
 def _build_cross_integration_truth_guard(sb, user_id: str) -> Optional[str]:
     try:
-        connector_truth = get_connector_truth_summary(sb, user_id)
+        live_truth = get_live_integration_truth(sb, user_id)
+        connector_truth = {}
+        for item in live_truth.get("integrations", []):
+            cat = (item.get("category") or "").lower()
+            if cat:
+                connector_truth[cat] = item
         blocked = [
-            item for key, item in (connector_truth or {}).items()
+            item for key, item in connector_truth.items()
             if key in {"crm", "accounting", "email", "calendar"} and item.get("truth_state") in {"stale", "error", "unverified"}
         ]
         if not blocked:

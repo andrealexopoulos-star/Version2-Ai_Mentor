@@ -6,6 +6,7 @@ import { trackEvent, EVENTS } from '../lib/analytics';
 import DataCoverageGate from './DataCoverageGate';
 import { CheckInAlerts } from './CheckInAlerts';
 import { fontFamily } from '../design-system/tokens';
+import { isPrivilegedUser } from '../lib/privilegedUser';
 
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
@@ -57,7 +58,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const { session, user } = useSupabaseAuth();
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || '';
   const userTier = String(user?.subscription_tier || 'free').toLowerCase();
-  const isAndre = user?.email === 'andre@thestrategysquad.com.au';
+  const isAndre = isPrivilegedUser(user);
 
   const BIQC_MODES = [
     { id: 'auto', label: 'BIQc Auto', desc: 'Smart mode — BIQc picks the best approach for your question', icon: '⚡', backend_mode: 'auto', minTier: 'free' },

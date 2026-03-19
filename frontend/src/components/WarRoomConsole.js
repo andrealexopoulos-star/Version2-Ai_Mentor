@@ -6,6 +6,7 @@ import { apiClient } from '../lib/api';
 import { Send, RefreshCw } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import InsightExplainabilityStrip from './InsightExplainabilityStrip';
+import LineageBadge from './LineageBadge';
 
 const STATE_CFG = {
   STABLE:      { label: 'Stable', color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#10B981' },
@@ -48,6 +49,7 @@ const getWarRoomReplyText = (data) => {
   return data.answer || data.response || data.error || summariseWarRoomAnalysis(data.analysis) || 'Unable to process.';
 };
 
+/* Shared util candidate: formatFreshnessTime is duplicated in BoardRoom.js — extract to e.g. frontend/src/lib/formatFreshnessTime.js when touching both next. */
 const formatFreshnessTime = (iso) => {
   if (!iso) return 'unknown';
   const parsed = new Date(iso);
@@ -55,8 +57,18 @@ const formatFreshnessTime = (iso) => {
   return parsed.toLocaleString();
 };
 
-const WarRoomConsole = ({ embeddedShell = false }) => {
-  const { cognitive, sources, owner, timeOfDay, loading, error, cacheAge, refreshing, refresh } = useSnapshot();
+export function WarRoomConsoleBody({
+  embeddedShell = false,
+  cognitive,
+  sources,
+  owner,
+  timeOfDay,
+  loading,
+  error,
+  cacheAge,
+  refreshing,
+  refresh,
+}) {
   const { status: integrationStatus } = useIntegrationStatus();
   const { user } = useSupabaseAuth();
   const [question, setQuestion] = useState('');
@@ -76,6 +88,8 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
     const h = new Date().getHours();
     return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
   })();
+
+  var c = cognitive || {};
 
   const askQuestion = async () => {
     if (!question.trim() || asking) return;
@@ -110,6 +124,9 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
             ifIgnored: data.if_ignored,
           },
           evidenceChain: data.evidence_chain,
+          lineage: data.lineage,
+          data_freshness: data.data_freshness,
+          confidence_score: data.confidence_score,
         }]);
       });
     } catch (e) {
@@ -120,7 +137,6 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
 
   useEffect(function() { if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' }); }, [conversation, asking]);
 
-  var c = cognitive || {};
   var st = STATE_CFG[c.system_state] || STATE_CFG.STABLE;
   const topAlerts = (c.top_alerts || []).slice(0, 3);
   const connectedSystems = Object.entries({
@@ -154,6 +170,14 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
     : connectedSystems.length
       ? `BIQc can see ${connectedSystems.join(', ')} signals, but the live strategic synthesis is still being prepared. Use this console to interrogate the highest-priority issue now.`
       : 'Connect core systems to generate a live strategic brief.';
+
+  const toConfidencePct = (raw) => {
+    if (raw == null) return undefined;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return undefined;
+    return n > 0 && n <= 1 ? n * 100 : n;
+  };
+  const warRoomIntelConfidence = toConfidencePct(typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level);
 
   return (
     <div className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
@@ -216,12 +240,28 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
               {c.executive_memo && (
                 <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
                   <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
+                  <div className="mb-3" data-testid="war-room-lineage-badge-brief">
+                    <LineageBadge
+                      lineage={connectedSystems.length ? { connected_sources: connectedSystems } : c.lineage}
+                      data_freshness={c.data_freshness ?? (c.generated_at ? formatFreshnessTime(c.generated_at) : undefined)}
+                      confidence_score={warRoomIntelConfidence}
+                      compact
+                    />
+                  </div>
                   <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>{c.executive_memo}</p>
                 </div>
               )}
               {!c.executive_memo && (
                 <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
                   <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
+                  <div className="mb-3" data-testid="war-room-lineage-badge-fallback-brief">
+                    <LineageBadge
+                      lineage={connectedSystems.length ? { connected_sources: connectedSystems } : c.lineage}
+                      data_freshness={c.data_freshness ?? (c.generated_at ? formatFreshnessTime(c.generated_at) : undefined)}
+                      confidence_score={warRoomIntelConfidence}
+                      compact
+                    />
+                  </div>
                   <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
                     {warRoomBrief}
                   </p>
@@ -276,6 +316,22 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
                       ? { background: 'rgba(255,106,0,0.12)', color: '#F4F7FA', border: '1px solid rgba(255,106,0,0.2)' }
                       : { background: 'rgba(255,255,255,0.04)', border: '1px solid var(--biqc-border,#1E2D3D)', color: 'var(--biqc-text,#F4F7FA)' }}>
                     <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>
+                    {msg.role === 'advisor' && (msg.lineage || msg.data_freshness || msg.confidence_score != null) && (
+                      <div className="mt-3" data-testid={`war-room-reply-lineage-${i}`}>
+                        <LineageBadge
+                          lineage={msg.lineage}
+                          data_freshness={msg.data_freshness}
+                          confidence_score={(() => {
+                            const cs = msg.confidence_score;
+                            if (cs == null) return undefined;
+                            const n = Number(cs);
+                            if (!Number.isFinite(n)) return undefined;
+                            return n > 0 && n <= 1 ? n * 100 : n;
+                          })()}
+                          compact
+                        />
+                      </div>
+                    )}
                     {msg.role === 'advisor' && msg.degraded && (
                       <div className="mt-3 inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
                         style={{ background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.25)', fontFamily: fontFamily.mono }}
@@ -329,6 +385,11 @@ const WarRoomConsole = ({ embeddedShell = false }) => {
       )}
     </div>
   );
-};
+}
+
+function WarRoomConsole(props) {
+  const snapshot = useSnapshot();
+  return <WarRoomConsoleBody {...props} {...snapshot} />;
+}
 
 export default WarRoomConsole;

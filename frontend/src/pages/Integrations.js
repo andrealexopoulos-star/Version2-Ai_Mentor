@@ -4,7 +4,7 @@ import {
   Search, CheckCircle2, LogOut, RefreshCw, Loader2, Zap,
   Users, DollarSign, Briefcase, UserPlus, Ticket, HardDrive,
   BookOpen, Mail, LayoutGrid, X, Plug, Calendar,
-  TrendingUp, Megaphone, ChevronRight, Clock
+  TrendingUp, Megaphone, ChevronRight, Clock, Database, Calculator
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
@@ -170,6 +170,20 @@ const categoryMatches = (integrationCategory, rowCategory) => {
   return (CATEGORY_ALIASES[normalizedIntegration] || [normalizedIntegration]).includes(normalizedRow);
 };
 
+const CENTRE_ICONS = { crm: Database, accounting: Calculator, email: Mail, marketing: Megaphone };
+
+function formatRelativeTime(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const sec = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (sec < 45) return 'just now';
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
+  if (sec < 604800) return `${Math.floor(sec / 86400)}d ago`;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 export default function Integrations() {
   const { user, session, authState } = useSupabaseAuth();
   const navigate = useNavigate();
@@ -188,6 +202,8 @@ export default function Integrations() {
   const [pendingOpen, setPendingOpen] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
+  const [centreConnectors, setCentreConnectors] = useState([]);
+  const [centreLoading, setCentreLoading] = useState(true);
 
   // Merge Link hook — token starts as '' so SDK initialises cleanly
   const { open: openMergeLinkModal, isReady: mergeLinkReady } = useMergeLink({
@@ -206,6 +222,7 @@ export default function Integrations() {
         if (response.ok) {
           toast.success(`${provider} connected successfully!`);
           await loadMergeIntegrations();
+          await loadConnectorCentre();
         } else {
           const err = await response.json().catch(() => ({}));
           toast.error(`Failed to connect ${provider}: ${err.detail || 'Server error'}`);
@@ -307,6 +324,18 @@ export default function Integrations() {
     } catch {}
   }, []);
 
+  const loadConnectorCentre = useCallback(async () => {
+    setCentreLoading(true);
+    try {
+      const data = await authedJsonGet('/integrations/connectors');
+      setCentreConnectors(Array.isArray(data?.connectors) ? data.connectors : []);
+    } catch {
+      setCentreConnectors([]);
+    } finally {
+      setCentreLoading(false);
+    }
+  }, [authedJsonGet]);
+
   const loadGmailStatus = useCallback(async () => {
     try {
       // Primary: use backend API — validates token expiry properly
@@ -339,13 +368,16 @@ export default function Integrations() {
     loadMergeIntegrations();
     loadOutlookStatus();
     loadGmailStatus();
+    loadConnectorCentre();
     const retryTimer = setTimeout(() => {
       loadMergeIntegrations();
       loadOutlookStatus();
       loadGmailStatus();
+      loadConnectorCentre();
     }, 3000);
     const resilienceTimer = setTimeout(() => {
       loadMergeIntegrations();
+      loadConnectorCentre();
     }, 9000);
     // Handle deep-link from Revenue/Operations pages: ?category=crm
     const urlCategory = searchParams.get('category');
@@ -357,7 +389,7 @@ export default function Integrations() {
       clearTimeout(retryTimer);
       clearTimeout(resilienceTimer);
     };
-  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus, user?.id, session?.access_token, authState]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus, loadConnectorCentre, user?.id, session?.access_token, authState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const outlookConnected = searchParams.get('outlook_connected');
@@ -442,6 +474,28 @@ export default function Integrations() {
       return;
     }
   }, [openMergeLink]);
+
+  const handleCentreConnect = useCallback(async (c) => {
+    if (c.id === 'crm') {
+      await openMergeLink('integration-centre-crm', MERGE_CATEGORY_MAP.crm || ['crm'], null);
+      return;
+    }
+    if (c.id === 'accounting') {
+      await openMergeLink('integration-centre-acc', MERGE_CATEGORY_MAP.financial || ['accounting'], null);
+      return;
+    }
+    if (c.id === 'email') {
+      const gmailItem = EMAIL_CALENDAR.find((e) => e.type === 'gmail');
+      const outlookItem = EMAIL_CALENDAR.find((e) => e.type === 'outlook');
+      if (c.provider_key === 'outlook') await handleConnect(outlookItem);
+      else if (c.provider_key === 'gmail') await handleConnect(gmailItem);
+      else await handleConnect(gmailItem);
+      return;
+    }
+    if (c.id === 'marketing') {
+      await handleConnect({ ...MARKETING_PLATFORMS[0], name: 'Marketing', type: 'coming_soon' });
+    }
+  }, [openMergeLink, handleConnect]);
 
   const handleDisconnect = useCallback(async (integration) => {
     if (!window.confirm(`Disconnect ${integration.name}? This will stop data collection.`)) return;
@@ -667,6 +721,98 @@ export default function Integrations() {
         </div>
 
         <div className="px-6 py-5 space-y-7">
+
+          {/* ── INTEGRATION CENTRE v1 (Phase 1.3) ── */}
+          <div className="rounded-2xl border p-4 sm:p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integration-centre-section">
+            <SectionLabel icon={LayoutGrid} label="Integration Centre" badge="Unified status" badgeColor="#FF6A00" />
+            <p className="mt-2 text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
+              Snapshot of CRM, accounting, email, and marketing connectors. Use Connect to add or refresh a source.
+            </p>
+            {centreLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+                {[0, 1, 2, 3].map((k) => (
+                  <div key={k} className="rounded-xl h-36 animate-pulse" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--biqc-border, #1E2D3D)' }} />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+                {centreConnectors.map((c, idx) => {
+                  const Icon = CENTRE_ICONS[c.id] || Plug;
+                  const hasErr = Boolean(c.error);
+                  const paidMergeLocked = isFreeTier && (c.id === 'crm' || c.id === 'accounting');
+                  const showReconnect = c.connected || hasErr;
+                  const badgeLabel = hasErr ? 'Error' : c.connected ? 'Connected' : 'Not connected';
+                  const badgeStyle = hasErr
+                    ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171', border: '1px solid rgba(239,68,68,0.28)' }
+                    : c.connected
+                      ? { bg: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.22)' }
+                      : { bg: 'rgba(100,116,139,0.12)', color: '#94A3B8', border: '1px solid rgba(100,116,139,0.2)' };
+                  const rel = formatRelativeTime(c.last_sync_at);
+                  const emailBlocked = c.id === 'email' && !c.connected && freeTierLimitReached;
+                  const btnDisabled = !!openingMerge || paidMergeLocked || emailBlocked;
+                  const isOpeningThis =
+                    (c.id === 'crm' && openingMerge === 'integration-centre-crm')
+                    || (c.id === 'accounting' && openingMerge === 'integration-centre-acc');
+                  return (
+                    <div
+                      key={c.id || idx}
+                      className="int-card flex flex-col rounded-xl p-4 gap-3"
+                      style={{
+                        background: c.connected && !hasErr ? 'rgba(16,185,129,0.04)' : 'var(--biqc-bg-elevated, #0F141C)',
+                        border: `1px solid ${hasErr ? 'rgba(239,68,68,0.25)' : c.connected ? 'rgba(16,185,129,0.2)' : 'var(--biqc-border, #1E2D3D)'}`,
+                        animationDelay: `${idx * 40}ms`,
+                      }}
+                      data-testid={`integration-centre-card-${c.id}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)' }}>
+                          <Icon className="w-5 h-5" style={{ color: '#FF6A00' }} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold truncate" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>{c.name}</p>
+                          <p className="text-[11px] truncate mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{c.provider}</p>
+                          <span
+                            className="inline-flex mt-2 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide"
+                            style={{ background: badgeStyle.bg, color: badgeStyle.color, border: badgeStyle.border, fontFamily: fontFamily.mono }}
+                          >
+                            {badgeLabel}
+                          </span>
+                        </div>
+                      </div>
+                      {c.connected && rel && !hasErr && (
+                        <p className="text-[11px] flex items-center gap-1" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
+                          <Clock className="w-3 h-3 flex-shrink-0" />
+                          Last sync {rel}
+                        </p>
+                      )}
+                      {hasErr && c.error && (
+                        <p className="text-[11px] leading-snug" style={{ color: '#F87171', fontFamily: fontFamily.body }}>{c.error}</p>
+                      )}
+                      {paidMergeLocked && (
+                        <p className="text-[10px]" style={{ color: '#94A3B8' }}>Upgrade to BIQc Foundation to connect CRM and accounting.</p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleCentreConnect(c)}
+                        disabled={btnDisabled}
+                        className="mt-auto w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                        style={{
+                          background: btnDisabled ? 'rgba(71,85,105,0.22)' : 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(200,210,220,0.04) 100%)',
+                          border: btnDisabled ? '1px solid #334155' : '1px solid #FF6A00',
+                          color: btnDisabled ? '#94A3B8' : '#E8F0F8',
+                          fontFamily: fontFamily.body,
+                        }}
+                        data-testid={`integration-centre-action-${c.id}`}
+                      >
+                        {isOpeningThis ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plug className="w-3 h-3" />}
+                        {c.id === 'marketing' && !c.connected ? 'Connect' : showReconnect ? 'Reconnect' : 'Connect'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {!integrationTruthReady && (
             <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.08)' }} data-testid="integrations-truth-verifying-banner">

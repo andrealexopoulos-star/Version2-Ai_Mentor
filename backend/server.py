@@ -136,6 +136,13 @@ async def api_health():
     return {"status": "ok"}
 
 
+@app.post("/integrations/merge/webhook")
+async def merge_webhook_root_fallback(request: Request):
+    """Root-level fallback for Merge webhook — no /api prefix."""
+    from routes.integrations import merge_webhook_receive
+    return await merge_webhook_receive(request)
+
+
 @app.on_event("startup")
 async def startup_core_runtime():
     _initialize_core_runtime()

@@ -497,6 +497,15 @@ async def advisor_intelligence(current_user: dict = Depends(get_current_user)):
                 if isinstance(item, dict):
                     all_alerts.append({**item, 'category': cat_name.replace('_risks', '')})
 
+    seen_event_ids = set()
+    deduped_alerts = []
+    for alert in all_alerts:
+        event_id = alert.get("event_id") or alert.get("id") or f"{alert.get('signal_name', '')}|{alert.get('source', '')}|{alert.get('entity', '')}"
+        if event_id not in seen_event_ids:
+            seen_event_ids.add(event_id)
+            deduped_alerts.append(alert)
+    all_alerts = deduped_alerts
+
     all_alerts.sort(key=lambda x: {'high': 0, 'medium': 1, 'low': 2}.get(x.get('severity', 'low'), 3))
 
     response = {

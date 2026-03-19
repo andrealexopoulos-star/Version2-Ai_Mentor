@@ -1,5 +1,5 @@
 import { getRouteAccess } from './routeAccessConfig';
-import { isPrivilegedUser } from '../lib/privilegedUser';
+import { checkRouteAccess } from '../lib/tierResolver';
 
 export const TIERS = {
   free: { id: 'free', label: 'Free', price: 0, color: '#64748B' },
@@ -16,17 +16,11 @@ export function getPathTier(path) {
   return getRouteAccess(path)?.minTier ?? 'free';
 }
 
-const TIER_ORDER = ['free', 'starter', 'super_admin', 'admin'];
-
-/** canAccess(userTier, path, userEmail) — privileged user bypass via isPrivilegedUser. */
-export function canAccess(userTier, path, userEmail = '') {
-  if (userEmail && isPrivilegedUser({ email: userEmail })) return true;
-  const required = getRouteAccess(path)?.minTier ?? 'free';
-  if (required === 'admin' || required === 'super_admin') return false;
-  const normalizedTier = ['starter', 'professional', 'enterprise', 'custom', 'growth', 'foundation'].includes(String(userTier || '').toLowerCase())
-    ? 'starter'
-    : 'free';
-  return TIER_ORDER.indexOf(normalizedTier) >= TIER_ORDER.indexOf(required);
+/** canAccess(userTier, path, userEmail) — delegates to tierResolver (privileged bypass there). */
+export function canAccess(userTier, path, userEmail) {
+  const user = { tier: userTier, email: userEmail };
+  const access = checkRouteAccess(path, user);
+  return access?.allowed !== false;
 }
 
 export function requiredTier(path) {

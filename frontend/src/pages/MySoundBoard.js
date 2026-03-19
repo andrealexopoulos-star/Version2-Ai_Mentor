@@ -1,16 +1,17 @@
-import { CognitiveMesh } from '../components/LoadingSystems';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
+import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import VoiceChat from '../components/VoiceChat';
 import { fontFamily } from "../design-system/tokens";
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier, TIER_RANK } from '../lib/tierResolver';
 import { isPrivilegedUser } from '../lib/privilegedUser';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
+import LineageBadge from '../components/LineageBadge';
 import { useLocation } from 'react-router-dom';
 import {
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
@@ -85,6 +86,7 @@ const MySoundBoard = () => {
   });
   const [loading, setLoading] = useState(false);
   const [loadingConversations, setLoadingConversations] = useState(true);
+  const [conversationsError, setConversationsError] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [showVoiceChat, setShowVoiceChat] = useState(false);
@@ -208,6 +210,7 @@ const MySoundBoard = () => {
   const fetchConversations = async () => {
     try {
       setLoadingConversations(true);
+      setConversationsError(null);
       const response = await apiClient.get('/soundboard/conversations');
       const convs = response.data.conversations || [];
       setConversations(convs);
@@ -220,6 +223,7 @@ const MySoundBoard = () => {
       }
     } catch (error) {
       console.error('Failed to fetch conversations');
+      setConversationsError(getSoundboardErrorMessage(error));
     } finally {
       setLoadingConversations(false);
     }
@@ -472,8 +476,8 @@ const MySoundBoard = () => {
             {/* Conversations List */}
             <div className="flex-1 overflow-y-auto px-2 pb-4">
               {loadingConversations ? (
-                <div className="flex items-center justify-center py-8">
-                  <CognitiveMesh compact />
+                <div className="px-2 py-4">
+                  <PageLoadingState message="Loading conversations..." compact />
                 </div>
               ) : conversations.length === 0 ? (
                 <div className="text-center py-8 px-4">
@@ -671,6 +675,16 @@ const MySoundBoard = () => {
             </button>
           </div>
 
+          {!loadingConversations && conversationsError ? (
+            <div className="flex flex-1 items-center justify-center p-6 min-h-0">
+              <PageErrorState
+                error={conversationsError}
+                onRetry={fetchConversations}
+                moduleName="Soundboard"
+              />
+            </div>
+          ) : (
+          <>
           {/* Messages */}
           <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
             <div className="max-w-3xl mx-auto px-6 py-6">
@@ -682,6 +696,21 @@ const MySoundBoard = () => {
                 testIdPrefix="soundboard-explainability"
                 className="mb-5"
               />
+
+              {messages.length > 0 && latestAssistantMessage && (latestAssistantMessage.lineage || latestAssistantMessage.data_freshness || latestAssistantMessage.confidence_score != null) && (
+                <div className="mb-4" data-testid="soundboard-session-lineage">
+                  <LineageBadge
+                    lineage={latestAssistantMessage.lineage}
+                    data_freshness={latestAssistantMessage.data_freshness}
+                    confidence_score={typeof latestAssistantMessage.confidence_score === 'number'
+                      ? (latestAssistantMessage.confidence_score > 0 && latestAssistantMessage.confidence_score <= 1
+                        ? latestAssistantMessage.confidence_score * 100
+                        : latestAssistantMessage.confidence_score)
+                      : undefined}
+                    compact
+                  />
+                </div>
+              )}
 
               {messages.length === 0 ? (
                 <div className="text-center py-12 px-4">
@@ -975,6 +1004,8 @@ const MySoundBoard = () => {
               </p>
             </div>
           </div>
+          </>
+          )}
         </div>
       </div>
       

@@ -54,6 +54,15 @@ RATE_LIMIT_LOCK = Lock()
 # Master admin for rate-limit bypass; default andre@... for testing. Override with BIQC_MASTER_ADMIN_EMAIL.
 MASTER_ADMIN_EMAIL = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "andre@thestrategysquad.com.au").strip().lower()
 
+# Admin inbox for operational alerts (waitlist / contact form, etc.)
+BIQC_ADMIN_NOTIFICATION_EMAIL = (
+    os.environ.get("BIQC_ADMIN_NOTIFICATION_EMAIL") or "andre@thestrategysquad.com.au"
+).strip()
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+RESEND_FROM_EMAIL = (
+    os.environ.get("RESEND_FROM_EMAIL") or os.environ.get("BIQC_RESEND_FROM_EMAIL") or ""
+).strip()
+
 
 # ==================== MIDDLEWARE ====================
 

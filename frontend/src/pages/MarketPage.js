@@ -16,6 +16,7 @@ import {
   MessageSquare, FileText, Layers, Crosshair, Filter, BarChart3, Plug, Activity
 } from 'lucide-react';
 import { EmptyStateCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
+import LineageBadge from '../components/LineageBadge';
 
 
 const Panel = ({ children, className = '', ...props }) => (
@@ -184,6 +185,17 @@ const MarketPage = () => {
     : null;
   const hasLiveMarketContext = Boolean(snapshot || cognitionMarket || watchtowerAvailable || pressureAvailable || freshnessAvailable);
 
+  const toConfidencePct = (raw) => {
+    if (raw == null) return undefined;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return undefined;
+    return n > 0 && n <= 1 ? n * 100 : n;
+  };
+  const marketIntelLineage = cognitionMarket?.lineage ?? c?.lineage;
+  const marketIntelFreshness = cognitionMarket?.data_freshness ?? c?.data_freshness;
+  const marketIntelConfidence = toConfidencePct(cognitionMarket?.confidence_score ?? c?.confidence_score)
+    ?? toConfidencePct(typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level);
+
   const sendToChat = (msg) => setActionMessage(msg);
 
   // Deep Market Modeling data extraction
@@ -264,6 +276,9 @@ const MarketPage = () => {
                 <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid="market-freshness-status">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Evidence freshness</p>
                   <p className="mt-2 text-sm text-[#CBD5E1]">{freshnessAvailable ? `Freshness scoring is live: ${freshnessSummary || 'recent evidence is now available.'}` : (freshnessMessage || 'Evidence freshness is not available yet.')}</p>
+                  <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--biqc-border)' }} data-testid="market-lineage-badge-evidence">
+                    <LineageBadge lineage={marketIntelLineage} data_freshness={marketIntelFreshness} confidence_score={marketIntelConfidence} compact />
+                  </div>
                 </div>
                 <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid="market-channel-separation-note">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Internal channel context</p>
@@ -333,6 +348,9 @@ const MarketPage = () => {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-[#FF6A00]" /><h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Executive Brief</h2></div>
                 <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: fontFamily.mono }}>MARKET INTELLIGENCE</span>
+              </div>
+              <div className="mb-2" data-testid="market-lineage-badge-brief">
+                <LineageBadge lineage={marketIntelLineage} data_freshness={marketIntelFreshness} confidence_score={marketIntelConfidence} compact />
               </div>
               <p className="text-xs text-[#9FB0C3] leading-relaxed">{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
               <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--biqc-border)' }}>
