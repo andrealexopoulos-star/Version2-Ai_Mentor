@@ -26,6 +26,7 @@ const businessTypes = [
 
 const businessModels = ['B2B', 'B2C', 'B2B2C', 'Hybrid'];
 const pricingModels = ['Hourly', 'Project-based', 'Retainer', 'Subscription', 'One-time purchase', 'Usage-based', 'Tiered'];
+const sectionResizeStyle = { resize: 'horizontal', overflow: 'auto', minWidth: '320px', maxWidth: '100%' };
 
 const BusinessProfile = () => {
   const { user } = useSupabaseAuth();
@@ -246,7 +247,7 @@ const BusinessProfile = () => {
 
             {/* MARKET TAB */}
             <TabsContent value="market">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle>Market & Customers</CardTitle>
                   <CardDescription>Understanding your market helps us tailor recommendations</CardDescription>
@@ -325,7 +326,7 @@ const BusinessProfile = () => {
 
             {/* PRODUCT TAB */}
             <TabsContent value="product">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle>Products & Services</CardTitle>
                   <CardDescription>What you offer and why customers choose you</CardDescription>
@@ -398,7 +399,7 @@ const BusinessProfile = () => {
 
             {/* TEAM TAB */}
             <TabsContent value="team">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle>Team & Leadership</CardTitle>
                   <CardDescription>Your people and organizational structure</CardDescription>
@@ -474,7 +475,7 @@ const BusinessProfile = () => {
 
             {/* STRATEGY TAB */}
             <TabsContent value="strategy">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle>Strategy & Vision</CardTitle>
                   <CardDescription>Where you're going and how you'll get there — used to personalise your AI agent's recommendations</CardDescription>
