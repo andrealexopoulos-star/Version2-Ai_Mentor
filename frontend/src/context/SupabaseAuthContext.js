@@ -480,12 +480,14 @@ export const SupabaseAuthProvider = ({ children }) => {
             }
           } else {
             console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status}`);
-            // Non-auth server error — fail-open to prevent blocking user
-            calibrationComplete = true;
+            // Fail-closed for calibration truth:
+            // when status cannot be verified, route to calibration instead of
+            // incorrectly marking users as READY.
+            calibrationComplete = false;
           }
         } catch (e) {
-          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → fail-open to READY`);
-          calibrationComplete = true;
+          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → fail-closed to NEEDS_CALIBRATION`);
+          calibrationComplete = false;
         }
 
         if (cancelled) return;
