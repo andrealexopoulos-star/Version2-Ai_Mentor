@@ -1,3 +1,5 @@
+<<<<<<< Current (Your changes)
+=======
 // ═══════════════════════════════════════════════════════════════
 // CALIBRATION BUSINESS DNA — Enhanced Supabase Edge Function
 //
@@ -169,6 +171,16 @@ OUTPUT MUST BE THIS EXACT JSON:
   "contact_phone": null,
   "social_media_links": { "linkedin": null, "facebook": null, "instagram": null, "twitter": null },
   "certifications": null,
+  "competitor_analysis": null,
+  "market_position": null,
+  "executive_summary": null,
+  "seo_analysis": null,
+  "paid_media_analysis": null,
+  "social_media_analysis": null,
+  "website_health": null,
+  "swot": null,
+  "competitor_swot": null,
+  "cmo_priority_actions": null,
   "sources": {}
 }
 
@@ -360,6 +372,17 @@ serve(async (req) => {
 
     // STEP 4: Write to business_profiles
     const profileUpdate: Record<string, any> = {};
+    if (extracted.social_media_links && typeof extracted.social_media_links === "object") {
+      profileUpdate.social_handles = extracted.social_media_links;
+    }
+    if (extracted.competitor_analysis) {
+      profileUpdate.competitor_scan_result = typeof extracted.competitor_analysis === "string"
+        ? extracted.competitor_analysis
+        : JSON.stringify(extracted.competitor_analysis);
+    }
+    if (extracted.market_position) {
+      profileUpdate.market_position = extracted.market_position;
+    }
     const fieldMap: Record<string, string> = {
       business_name: "business_name", industry: "industry", business_stage: "business_stage",
       business_type: "business_type", location: "location", website: "website",
@@ -409,3 +432,4 @@ serve(async (req) => {
     });
   }
 });
+>>>>>>> Incoming (Background Agent changes)
