@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { supabase } from '../context/SupabaseAuthContext';
+import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { FileText, DollarSign, Plug, Download, Shield, AlertTriangle } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
-
-
+import { EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
 const Panel = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
@@ -96,6 +95,7 @@ const ForensicReportCard = () => {
 };
 
 const ReportsPage = () => {
+  const { user } = useSupabaseAuth();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [integrations, setIntegrations] = useState([]);
@@ -143,6 +143,12 @@ const ReportsPage = () => {
   useEffect(() => {
     loadReportsData();
   }, [loadReportsData]);
+
+  useEffect(() => {
+    if (loading || loadError) return;
+    trackOnceForUser(EVENTS.ACTIVATION_FIRST_REPORT, user?.id, { has_integrations: integrations.length > 0 });
+    trackActivationStep('first_report_view', { has_integrations: integrations.length > 0 });
+  }, [loading, loadError, integrations.length, user?.id]);
 
   const hasAccounting = integrations.some(i => i.integration_type === 'accounting');
   const hasCRM = integrations.some(i => i.integration_type === 'crm');

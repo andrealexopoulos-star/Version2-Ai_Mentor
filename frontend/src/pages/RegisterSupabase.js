@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Eye, EyeOff, Shield, Lock, Zap, Activity } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
+import { EVENTS, trackActivationStep, trackEvent } from '../lib/analytics';
 
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
 
@@ -43,6 +44,8 @@ const RegisterSupabase = () => {
       await signUp(formData.email, formData.password, {
         full_name: formData.full_name, company_name: formData.company_name, industry: formData.industry, role: 'user'
       });
+      trackEvent(EVENTS.ACTIVATION_SIGNUP_COMPLETE, { method: 'email' });
+      trackActivationStep('signup_complete', { method: 'email' });
       toast.success('Account created! Please check your email to confirm.');
       navigate('/login-supabase');
     } catch (error) {
@@ -72,6 +75,7 @@ const RegisterSupabase = () => {
   const handleOAuthSignIn = async (provider) => {
     const providerName = provider === 'google' ? 'Google' : 'Microsoft';
     setOauthLoading(true);
+    trackActivationStep('signup_oauth_started', { provider });
     try {
       const result = await signInWithOAuth(provider);
       if (result?.url) { window.location.href = result.url; }

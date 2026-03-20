@@ -23,6 +23,7 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, AlertCircle, Lock, Plug, ArrowRight, MessageSquare } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
+import { getUpgradeContext } from '../lib/upgradeContext';
 
 // ── Stage config ──────────────────────────────────────────────
 const STAGE_CONFIG = {
@@ -140,25 +141,28 @@ export const StageProgressBar = ({ stage = 'analyzing', progress = null, started
 };
 
 // ── Tier gate ─────────────────────────────────────────────────
-const TierGateBanner = ({ feature = 'this feature' }) => (
-  <div className="rounded-xl p-6 text-center" style={{ background: '#FF6A0006', border: '1px solid #FF6A0025' }} data-testid="tier-gate-banner">
-    <Lock className="w-8 h-8 mx-auto mb-3" style={{ color: '#FF6A00' }} />
-    <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
-      Upgrade to unlock {feature}
-    </p>
-    <p className="text-xs mb-4" style={{ color: 'var(--biqc-text-2)' }}>
-      This feature is included in the Professional plan.
-    </p>
-    <a
-      href="/pricing"
-      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-      style={{ background: '#FF6A00' }}
-      data-testid="tier-gate-upgrade-btn"
-    >
-      View Pricing <ArrowRight className="w-4 h-4" />
-    </a>
-  </div>
-);
+const TierGateBanner = ({ feature = 'this feature' }) => {
+  const ctx = getUpgradeContext(String(feature || '').toLowerCase());
+  return (
+    <div className="rounded-xl p-6 text-center" style={{ background: '#FF6A0006', border: '1px solid #FF6A0025' }} data-testid="tier-gate-banner">
+      <Lock className="w-8 h-8 mx-auto mb-3" style={{ color: '#FF6A00' }} />
+      <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
+        Unlock {ctx.title}: {ctx.benefit}
+      </p>
+      <p className="text-xs mb-4" style={{ color: 'var(--biqc-text-2)' }}>
+        Included in BIQc Foundation.
+      </p>
+      <a
+        href={ctx.href}
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+        style={{ background: '#FF6A00' }}
+        data-testid="tier-gate-upgrade-btn"
+      >
+        {ctx.cta} <ArrowRight className="w-4 h-4" />
+      </a>
+    </div>
+  );
+};
 
 // ── Integration gate ──────────────────────────────────────────
 const IntegrationGateBanner = ({ category = 'crm' }) => {

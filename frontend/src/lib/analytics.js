@@ -128,6 +128,10 @@ export const EVENTS = {
   AI_RESPONSE_BLOCKED: 'ai_response_blocked',
   AI_RESPONSE_DEGRADED: 'ai_response_degraded',
   AI_RESPONSE_FULL: 'ai_response_full',
+  ACTIVATION_SIGNUP_COMPLETE: 'activation_signup_complete',
+  ACTIVATION_CALIBRATION_COMPLETE: 'activation_calibration_complete',
+  ACTIVATION_FIRST_SOUNDBOARD_USE: 'activation_first_soundboard_use',
+  ACTIVATION_FIRST_REPORT: 'activation_first_report',
 };
 
 /**
@@ -140,4 +144,20 @@ export function trackSnapshotEvent(type, payload = {}) {
     module: payload.module || 'executive_snapshot',
     ...payload,
   });
+}
+
+export function trackActivationStep(step, metadata = {}) {
+  trackEvent('activation_funnel_step', { step, ...metadata });
+}
+
+export function trackOnceForUser(eventName, userId, metadata = {}) {
+  if (!userId) return;
+  try {
+    const key = `biqc_analytics_once_${userId}_${eventName}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+    trackEvent(eventName, metadata);
+  } catch {
+    trackEvent(eventName, metadata);
+  }
 }

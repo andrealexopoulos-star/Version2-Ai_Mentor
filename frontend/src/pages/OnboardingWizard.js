@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
+import { trackActivationStep } from '../lib/analytics';
 
 const STEPS = [
   { id: 'welcome', label: 'Welcome', icon: Zap },
@@ -192,8 +193,9 @@ const OnboardingWizard = () => {
       await apiClient.put('/business-profile', formData);
       await apiClient.post('/onboarding/complete');
       markOnboardingComplete();
-      toast.success('Profile completed! Now connect your business tools.');
-      navigate('/integrations', { replace: true, state: { fromOnboarding: true } });
+      trackActivationStep('onboarding_complete', { entrypoint: 'onboarding_wizard' });
+      toast.success('Profile completed! Start your first Soundboard briefing.');
+      navigate('/soundboard', { replace: true, state: { fromOnboarding: true, firstValuePath: true } });
     } catch (error) {
       toast.error('Failed to complete setup');
       console.error('Onboarding completion error:', error);

@@ -81,6 +81,13 @@ const ALL_INTEGRATIONS = [
   { id: 'notion',      name: 'Notion',               domain: 'notion.so',         cat: 'storage',    benefit: 'Index your workspace wiki and SOPs for operational intelligence.' },
 ];
 
+const COMING_SOON_INTEGRATIONS = [
+  { id: 'meta-ads', name: 'Meta Ads', domain: 'meta.com', cat: 'marketing', benefit: 'Connect paid social signals to campaign and revenue intelligence.' },
+  { id: 'linkedin-ads', name: 'LinkedIn Ads', domain: 'linkedin.com', cat: 'marketing', benefit: 'Track B2B acquisition pressure and channel contribution.' },
+  { id: 'google-ads', name: 'Google Ads', domain: 'google.com', cat: 'marketing', benefit: 'Unify paid search performance with pipeline outcomes.' },
+  { id: 'intercom', name: 'Intercom', domain: 'intercom.com', cat: 'support', benefit: 'Link customer conversation quality to retention risk.' },
+];
+
 // ── Tooltip component ─────────────────────────────────────────────────────────
 const Tooltip = ({ text }) => {
   const [show, setShow] = useState(false);
@@ -111,7 +118,7 @@ const Tooltip = ({ text }) => {
 };
 
 // ── Integration card ──────────────────────────────────────────────────────────
-const IntegrationCard = ({ integration, index }) => (
+const IntegrationCard = ({ integration, index, comingSoon = false }) => (
   <div
     className="rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 hover:-translate-y-1 group"
     style={{
@@ -134,15 +141,26 @@ const IntegrationCard = ({ integration, index }) => (
     <p className="text-xs leading-relaxed flex-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
       {integration.benefit}
     </p>
-    <Link to={`/register-supabase?integration=${integration.id}`}
-      className="w-full py-2.5 rounded-xl text-xs font-semibold text-center transition-all"
-      style={{ border: '1px solid rgba(255,106,0,0.35)', color: '#FF6A00', background: 'transparent', fontFamily: fontFamily.body }}
-      onMouseEnter={e => { e.currentTarget.style.background = '#FF6A00'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#FF6A00'; }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#FF6A00'; e.currentTarget.style.borderColor = 'rgba(255,106,0,0.35)'; }}
-      data-testid={`integration-card-${integration.id}`}
-    >
-      Connect
-    </Link>
+    {comingSoon ? (
+      <button
+        type="button"
+        className="w-full py-2.5 rounded-xl text-xs font-semibold text-center transition-all"
+        style={{ border: '1px solid rgba(148,163,184,0.35)', color: '#94A3B8', background: 'transparent', fontFamily: fontFamily.body }}
+        data-testid={`integration-card-coming-soon-${integration.id}`}
+      >
+        Coming soon
+      </button>
+    ) : (
+      <Link to={`/register-supabase?integration=${integration.id}`}
+        className="w-full py-2.5 rounded-xl text-xs font-semibold text-center transition-all"
+        style={{ border: '1px solid rgba(255,106,0,0.35)', color: '#FF6A00', background: 'transparent', fontFamily: fontFamily.body }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#FF6A00'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#FF6A00'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#FF6A00'; e.currentTarget.style.borderColor = 'rgba(255,106,0,0.35)'; }}
+        data-testid={`integration-card-${integration.id}`}
+      >
+        Connect
+      </Link>
+    )}
   </div>
 );
 
@@ -237,12 +255,34 @@ const IntegrationsPage = () => {
             </div>
           )}
 
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.14em]" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }}>
+              Available integrations
+            </h2>
+          </div>
+
           {/* Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((integration, i) => (
               <IntegrationCard key={integration.id} integration={integration} index={i} />
             ))}
           </div>
+
+          {!activeFilter || activeFilter === 'all' ? (
+            <div className="mt-10" data-testid="integrations-coming-soon-section">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.14em]" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }}>
+                Coming soon
+              </h2>
+              <p className="mt-2 text-xs" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+                Planned connectors currently in rollout.
+              </p>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {COMING_SOON_INTEGRATIONS.map((integration, i) => (
+                  <IntegrationCard key={integration.id} integration={integration} index={i} comingSoon />
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {/* Custom API callout */}
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

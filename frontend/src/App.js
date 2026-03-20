@@ -356,6 +356,7 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <BrowserRouter>
+        <a href="#main-content" className="skip-link">Skip to main content</a>
         <SupabaseAuthProvider>
           <MobileDrawerProvider>
             <InstallPrompt />

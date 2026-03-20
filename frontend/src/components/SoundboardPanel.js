@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, Database, CheckCircle2, XCircle, Plus, Trash2, Download, FileText, Zap, Eye } from 'lucide-react';
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
-import { trackEvent, EVENTS } from '../lib/analytics';
+import { trackEvent, EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
 import DataCoverageGate from './DataCoverageGate';
 import { CheckInAlerts } from './CheckInAlerts';
 import { fontFamily } from '../design-system/tokens';
@@ -235,6 +235,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     if (!fullMessage.trim()) return;
     setMessages(prev => [...prev, { role: 'user', text: displayText }]);
     trackEvent(EVENTS.SOUNDBOARD_QUERY, { message_length: fullMessage.length, has_attachment: !!attachedFile });
+    trackOnceForUser(EVENTS.ACTIVATION_FIRST_SOUNDBOARD_USE, user?.id, { entrypoint: 'soundboard_panel' });
+    trackActivationStep('first_soundboard_use', { entrypoint: 'soundboard_panel' });
     await executeMessage(displayText, fullMessage);
   };
 
@@ -508,9 +510,9 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               ))}
 
               {!canUseTrinity && (
-                <a href="/upgrade" className="block px-3 py-2 text-[10px] no-underline"
+                <a href="/biqc-foundation" className="block px-3 py-2 text-[10px] no-underline"
                   style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="soundboard-panel-trinity-upgrade-link">
-                  BIQc Trinity is available on Pro and Enterprise plans.
+                  Unlock BIQc Trinity: get consensus intelligence across BIQc pathways.
                 </a>
               )}
             </div>
