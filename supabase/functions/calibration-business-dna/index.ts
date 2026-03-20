@@ -1,5 +1,3 @@
-<<<<<<< Current (Your changes)
-=======
 // ═══════════════════════════════════════════════════════════════
 // CALIBRATION BUSINESS DNA — Enhanced Supabase Edge Function
 //
@@ -432,4 +430,3 @@ serve(async (req) => {
     });
   }
 });
->>>>>>> Incoming (Background Agent changes)
