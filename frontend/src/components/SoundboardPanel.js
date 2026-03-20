@@ -7,6 +7,7 @@ import DataCoverageGate from './DataCoverageGate';
 import { CheckInAlerts } from './CheckInAlerts';
 import { fontFamily } from '../design-system/tokens';
 import { isPrivilegedUser } from '../lib/privilegedUser';
+import VoiceChat from './VoiceChat';
 
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
@@ -21,6 +22,9 @@ const DATA_QUERY_PATTERNS = [
   /^how many (deals|leads|contacts|invoices|clients)/i,
   /^(list|give me|pull up) (my |our )?(deals|invoices|pipeline|leads|contacts)/i,
   /^what('s| is) (my |our )?(pipeline value|revenue figure|total spend)/i,
+  /analy[sz]e.*\b(inbox|sent|deleted|trash)\b/i,
+  /cross[- ]integration analytics/i,
+  /(merge|integration).*(insights|analytics|analysis)/i,
 ];
 function isDataQuery(msg) {
   const lower = msg.trim().toLowerCase();
@@ -46,6 +50,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [selectedMode, setSelectedMode] = useState('auto');
   const [showHistory, setShowHistory] = useState(false);
+  const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
   const [attachedFile, setAttachedFile] = useState(null);
@@ -525,7 +530,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#FF6A00' : '#64748B' }} />
           </button>
           <button className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0" data-testid="sb-video"
-            onClick={() => setMessages(prev => [...prev, { role: 'assistant', text: 'Video consultation will be available in the Pro plan. Stay tuned.' }])}>
+            onClick={() => setShowVoiceChat(true)}>
             <Video className="w-4 h-4 text-[#64748B]" />
           </button>
           <textarea
@@ -550,6 +555,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           BIQc uses connected data only. No fabrication.
         </p>
       </div>
+      {showVoiceChat && (
+        <VoiceChat
+          onClose={() => setShowVoiceChat(false)}
+          onSwitchToText={() => setShowVoiceChat(false)}
+        />
+      )}
     </div>
   );
 };
