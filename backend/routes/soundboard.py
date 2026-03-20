@@ -440,6 +440,12 @@ def _has_configured_key(value: Optional[str]) -> bool:
 def _infer_intent_heuristic(message: str) -> tuple[str, str, str]:
     text = (message or "").lower()
     domain = "general"
+    mailbox_requested = any(word in text for word in ("inbox", "sent items", "sent", "deleted", "trash"))
+    integration_analytics_requested = (
+        "merge" in text
+        or ("integration" in text and any(word in text for word in ("analytics", "analysis", "insight", "trend", "breakdown", "compare")))
+        or "cross-integration" in text
+    )
     if any(word in text for word in ("invoice", "cash", "margin", "profit", "revenue", "xero", "budget", "burn")):
         domain = "finance"
     elif any(word in text for word in ("deal", "pipeline", "lead", "hubspot", "close rate", "prospect")):
@@ -453,6 +459,10 @@ def _infer_intent_heuristic(message: str) -> tuple[str, str, str]:
     elif any(word in text for word in ("team", "staff", "hiring", "people", "culture", "workforce")):
         domain = "hr"
     elif any(word in text for word in ("plan", "strategy", "forecast", "next quarter", "scenario")):
+        domain = "planning"
+    elif mailbox_requested:
+        domain = "operations"
+    elif integration_analytics_requested:
         domain = "planning"
 
     action = "recommend"
@@ -470,6 +480,10 @@ def _infer_intent_heuristic(message: str) -> tuple[str, str, str]:
         action = "diagnose"
     elif any(word in text for word in ("summarise", "summarize", "recap")):
         action = "summarise"
+    if mailbox_requested and action == "recommend":
+        action = "diagnose"
+    if integration_analytics_requested and action == "recommend":
+        action = "compare"
 
     complexity = "medium"
     if len(text) < 50 or any(word in text for word in ("hi", "hello", "thanks", "invoice?", "quick")):
@@ -478,6 +492,29 @@ def _infer_intent_heuristic(message: str) -> tuple[str, str, str]:
         complexity = "high"
 
     return domain, action, complexity
+
+
+def _coerce_request_scope(req: SoundboardChatRequest, message: str) -> Dict[str, Any]:
+    text = (message or "").lower()
+    intelligence_ctx = req.intelligence_context or {}
+    raw_scope = intelligence_ctx.get("request_scope") if isinstance(intelligence_ctx, dict) else {}
+    mailbox_raw = raw_scope.get("mailbox_scope") if isinstance(raw_scope, dict) else {}
+    mailbox_scope = {
+        "inbox": bool((mailbox_raw or {}).get("inbox")) or "inbox" in text,
+        "sent": bool((mailbox_raw or {}).get("sent")) or "sent items" in text or " sent " in f" {text} ",
+        "deleted": bool((mailbox_raw or {}).get("deleted")) or "deleted" in text or "trash" in text,
+    }
+    wants_integration_analytics = bool((raw_scope or {}).get("wants_integration_analytics"))
+    if not wants_integration_analytics:
+        wants_integration_analytics = (
+            "merge" in text
+            or "cross-integration" in text
+            or ("integration" in text and any(token in text for token in ("analytics", "analysis", "insight", "trend", "breakdown", "compare")))
+        )
+    return {
+        "mailbox_scope": mailbox_scope,
+        "wants_integration_analytics": wants_integration_analytics,
+    }
 
 
 def _resolve_model_route(mode: str, intent_domain: str, intent_action: str, complexity: str, has_openai: bool, has_google: bool) -> tuple[str, List[str], str, str]:
@@ -1216,6 +1253,25 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     if sanitised['blocked']:
         return {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
     clean_message = sanitised['text']
+    request_scope = _coerce_request_scope(req, clean_message)
+    mailbox_scope = request_scope.get("mailbox_scope", {})
+    mailbox_requested = any(mailbox_scope.values())
+    wants_integration_analytics = bool(request_scope.get("wants_integration_analytics"))
+
+    # Scope-aware intent override for inbox/sent/deleted and merge analytics prompts.
+    if mailbox_requested:
+        intent_domain = "operations"
+        if intent_action in ("recommend", "summarise"):
+            intent_action = "diagnose"
+        if complexity == "low":
+            complexity = "medium"
+    if wants_integration_analytics:
+        if intent_domain == "general":
+            intent_domain = "planning"
+        if intent_action in ("recommend", "summarise"):
+            intent_action = "compare"
+        if complexity != "high":
+            complexity = "high"
 
     # ═══ PERSONALIZATION GUARDRAIL: Block generic advice ═══
     if guardrail_status == "BLOCKED":
@@ -1241,6 +1297,27 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     # P1: Response contract enforcement
     contract_injection = "\n\n═══ RESPONSE CONTRACT (MANDATORY) ═══\nEvery strategic response MUST include:\n1) SITUATION: What is happening? Use specific numbers or entity names from the data above.\n2) DECISION: One clear recommendation.\n3) THIS WEEK: One concrete action with who/what/by-when.\n4) RISK IF DELAYED: What happens if they don't act? Quantify.\nDo NOT output generic strategy. Every sentence must reference THIS business.\nDATA ATTRIBUTION: When referencing a fact, state its source inline — e.g. 'Based on your calibration data...' or 'Your HubSpot pipeline shows...' or 'From your Xero invoices...'. Never state a fact without its source.\n"
+    if mailbox_requested or wants_integration_analytics:
+        scope_notes = []
+        if mailbox_requested:
+            selected_folders = [folder for folder, enabled in mailbox_scope.items() if enabled]
+            scope_notes.append(
+                "Mailbox focus requested. Analyse directional patterns across folders and provide practical owner actions."
+            )
+            scope_notes.append(
+                f"Requested mailbox folders: {', '.join(selected_folders)}."
+            )
+            scope_notes.append(
+                "When folder-level metrics are unavailable, state that explicitly and fall back to available email telemetry."
+            )
+        if wants_integration_analytics:
+            scope_notes.append(
+                "Cross-integration analytics requested. Compare at least two connected systems and surface one contradiction + one reinforcing signal."
+            )
+            scope_notes.append(
+                "Include trend or directional insight, then one execution recommendation tied to owner + timing."
+            )
+        contract_injection += "\n[SCOPE DIRECTIVE]\n" + "\n".join(f"- {line}" for line in scope_notes) + "\n"
 
     guardrail_injection = ""
     if guardrail_status == "DEGRADED":
@@ -1442,7 +1519,15 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 raise HTTPException(status_code=503, detail=str(e))
 
             logger.info(f"[MODEL_ROUTE] {mode_label}: {provider}/{model_candidates[0]} — {routing_reason}")
-            contract_injection += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_candidates[0]})\n"
+            scope_context = []
+            if mailbox_requested:
+                scope_context.append(
+                    "mailbox=" + ",".join([k for k, v in mailbox_scope.items() if v])
+                )
+            if wants_integration_analytics:
+                scope_context.append("merge_analytics=true")
+            scope_suffix = f" | Scope: {';'.join(scope_context)}" if scope_context else ""
+            system_message += f"\n\n[QUERY CONTEXT] Domain: {intent_domain.upper()} | Mode: {mode_label} ({provider}/{model_candidates[0]}){scope_suffix}\n"
 
             reasoning_mode = mode == "thinking" or intent_action in ("forecast", "diagnose") or complexity == "high"
             if provider == "openai":
@@ -1664,6 +1749,12 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             suggested_actions.append({"label": "Generate risk report PDF", "action": "generate_risk_report"})
         elif intent_domain == "hr":
             suggested_actions.append({"label": "Generate SOP for this process", "action": "generate_sop"})
+        if mailbox_requested:
+            suggested_actions.append({"label": "Summarise Inbox/Sent/Deleted deltas", "action": "summarise_mailbox_deltas"})
+            suggested_actions.append({"label": "Create owner response triage list", "action": "generate_response_triage"})
+        if wants_integration_analytics:
+            suggested_actions.append({"label": "Run cross-integration variance check", "action": "cross_integration_variance"})
+            suggested_actions.append({"label": "Generate Merge analytics memo", "action": "merge_analytics_memo"})
 
         execution_id = str(uuid.uuid4())[:8] if suggested_actions else None
 
@@ -1677,6 +1768,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "execution_id": execution_id,
             "suggested_actions": suggested_actions,
             "intent": {"domain": intent_domain, "action": intent_action},
+            "request_scope": request_scope,
             "model_used": response_model,
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
@@ -1884,6 +1976,7 @@ def _build_cognitive_context(req: SoundboardChatRequest, core_context: dict) -> 
     intelligence_ctx = req.intelligence_context or {}
     thresholds = intelligence_ctx.get("thresholds", {})
     integrations = intelligence_ctx.get("integrations", {})
+    request_scope = intelligence_ctx.get("request_scope", {})
 
     threshold_met = any([
         thresholds.get("timeConsistency"),
@@ -1907,6 +2000,13 @@ def _build_cognitive_context(req: SoundboardChatRequest, core_context: dict) -> 
     connected = [k for k, v in integrations.items() if v]
     if connected:
         parts.append(f"\nConnected sources: {', '.join(connected)}")
+    if isinstance(request_scope, dict):
+        mailbox_scope = request_scope.get("mailbox_scope", {}) or {}
+        selected_mailboxes = [k for k, enabled in mailbox_scope.items() if enabled]
+        if selected_mailboxes:
+            parts.append(f"Mailbox scope requested: {', '.join(selected_mailboxes)}")
+        if request_scope.get("wants_integration_analytics"):
+            parts.append("Cross-integration analytics requested for this turn.")
 
     r = core_context.get("reality", {})
     for key, label in [("business_type", "Business type"), ("time_scarcity", "Time availability"), ("cashflow_sensitivity", "Cashflow sensitivity")]:
