@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 const SOUNDBOARD_CHAT_TIMEOUT_MS = 120000;
-const SOUNDBOARD_LAYOUT_KEY = 'biqc_soundboard_layout_v1';
+const SOUNDBOARD_LAYOUT_KEY = 'biqc_soundboard_layout_v2';
 
 const deriveRequestScope = (message = '') => {
   const text = String(message || '').toLowerCase();
@@ -167,19 +167,21 @@ const MySoundBoard = () => {
   const fileRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
 
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(SOUNDBOARD_LAYOUT_KEY) || '{}');
-      if (typeof saved.sidebarWidth === 'number') setSidebarWidth(Math.min(420, Math.max(240, saved.sidebarWidth)));
-      if (typeof saved.chatColumnMaxWidth === 'number') setChatColumnMaxWidth(Math.min(1200, Math.max(620, saved.chatColumnMaxWidth)));
-    } catch {}
-  }, []);
+  const layoutStorageKey = user?.id ? `${SOUNDBOARD_LAYOUT_KEY}_${user.id}` : SOUNDBOARD_LAYOUT_KEY;
 
   useEffect(() => {
     try {
-      localStorage.setItem(SOUNDBOARD_LAYOUT_KEY, JSON.stringify({ sidebarWidth, chatColumnMaxWidth }));
+      const saved = JSON.parse(localStorage.getItem(layoutStorageKey) || '{}');
+      if (typeof saved.sidebarWidth === 'number') setSidebarWidth(Math.min(420, Math.max(240, saved.sidebarWidth)));
+      if (typeof saved.chatColumnMaxWidth === 'number') setChatColumnMaxWidth(Math.min(1200, Math.max(620, saved.chatColumnMaxWidth)));
     } catch {}
-  }, [sidebarWidth, chatColumnMaxWidth]);
+  }, [layoutStorageKey]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(layoutStorageKey, JSON.stringify({ sidebarWidth, chatColumnMaxWidth }));
+    } catch {}
+  }, [layoutStorageKey, sidebarWidth, chatColumnMaxWidth]);
 
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode) || BIQC_MODES[0];
