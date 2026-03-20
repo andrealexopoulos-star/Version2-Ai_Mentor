@@ -95,6 +95,38 @@ def normalize_connector_type(raw_value: Any) -> str:
     return "unknown"
 
 
+def _resolve_user_account_id(sb, user_id: str) -> Optional[str]:
+    try:
+        user_row = sb.table("users").select("account_id").eq("id", user_id).maybe_single().execute()
+        data = user_row.data if user_row else None
+        account_id = (data or {}).get("account_id")
+        return str(account_id) if account_id else None
+    except Exception:
+        return None
+
+
+def _select_fresher_connector_truth(primary: Dict[str, Any], secondary: Dict[str, Any]) -> Dict[str, Any]:
+    if not primary:
+        return secondary or {}
+    if not secondary:
+        return primary
+
+    primary_state = str(primary.get("truth_state") or "unverified")
+    secondary_state = str(secondary.get("truth_state") or "unverified")
+    rank = {"live": 3, "stale": 2, "error": 1, "unverified": 0}
+
+    if rank.get(secondary_state, 0) > rank.get(primary_state, 0):
+        return secondary
+    if rank.get(secondary_state, 0) < rank.get(primary_state, 0):
+        return primary
+
+    primary_ts = parse_dt(primary.get("last_verified_at"))
+    secondary_ts = parse_dt(secondary.get("last_verified_at"))
+    if secondary_ts and (not primary_ts or secondary_ts > primary_ts):
+        return secondary
+    return primary
+
+
 def get_connector_truth_summary(sb, user_id: str) -> Dict[str, Dict[str, Any]]:
     categories = ("crm", "accounting", "email", "calendar", "marketing")
     summary: Dict[str, Dict[str, Any]] = {
@@ -213,7 +245,15 @@ def email_row_is_connected(row: Dict[str, Any]) -> bool:
 def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
     integrations: List[Dict[str, Any]] = []
     dedupe: Dict[str, Dict[str, Any]] = {}
+    account_id = _resolve_user_account_id(sb, user_id)
     connector_truth = get_connector_truth_summary(sb, user_id)
+    if account_id and account_id != user_id:
+        account_truth = get_connector_truth_summary(sb, account_id)
+        for key in ("crm", "accounting", "email", "calendar", "marketing"):
+            connector_truth[key] = _select_fresher_connector_truth(
+                connector_truth.get(key) or {},
+                (account_truth or {}).get(key) or {},
+            )
 
     def upsert_integration(item: Dict[str, Any]):
         category = normalize_category(item.get("category"), item.get("provider"), item.get("integration_slug"))
@@ -230,9 +270,22 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
         if incoming_connected_at >= existing_connected_at:
             dedupe[key] = {**existing, **item}
 
+    merge_rows: List[Dict[str, Any]] = []
     try:
-        merge_result = sb.table("integration_accounts").select("*").eq("user_id", user_id).execute()
-        for row in (merge_result.data or []):
+        merge_by_user = sb.table("integration_accounts").select("*").eq("user_id", user_id).execute()
+        merge_rows.extend(merge_by_user.data or [])
+    except Exception as e:
+        logger.warning(f"[live-truth] merge integration lookup by user failed: {e}")
+
+    if account_id:
+        try:
+            merge_by_account = sb.table("integration_accounts").select("*").eq("account_id", account_id).execute()
+            merge_rows.extend(merge_by_account.data or [])
+        except Exception as e:
+            logger.warning(f"[live-truth] merge integration lookup by account failed: {e}")
+
+    try:
+        for row in merge_rows:
             category = normalize_category(row.get("category"), row.get("provider"), row.get("integration_slug"))
             if not merge_row_is_connected(row):
                 continue
@@ -250,7 +303,7 @@ def get_live_integration_truth(sb, user_id: str) -> Dict[str, Any]:
                 "integration_slug": row.get("integration_slug"),
             })
     except Exception as e:
-        logger.warning(f"[live-truth] merge integration lookup failed: {e}")
+        logger.warning(f"[live-truth] merge integration normalization failed: {e}")
 
     try:
         email_result = sb.table("email_connections").select("*").eq("user_id", user_id).execute()

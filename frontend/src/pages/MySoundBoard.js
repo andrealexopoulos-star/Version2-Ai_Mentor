@@ -21,6 +21,19 @@ import {
 } from 'lucide-react';
 
 const SOUNDBOARD_CHAT_TIMEOUT_MS = 120000;
+const SOUNDBOARD_LAYOUT_KEY = 'biqc_soundboard_layout_v2';
+
+const deriveRequestScope = (message = '') => {
+  const text = String(message || '').toLowerCase();
+  return {
+    mailbox_scope: {
+      inbox: /\binbox\b/.test(text),
+      sent: /\bsent\b/.test(text) || /\bsent items\b/.test(text),
+      deleted: /\bdeleted\b/.test(text) || /\btrash\b/.test(text),
+    },
+    wants_integration_analytics: /(merge|integration|insight|analytics|trend|breakdown|compare)/.test(text),
+  };
+};
 
 const getSoundboardErrorMessage = (error) => {
   if (error?.code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('timeout')) {
@@ -95,6 +108,8 @@ const MySoundBoard = () => {
   const [recordingScans, setRecordingScans] = useState({});
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [showAgentMenu, setShowAgentMenu] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(288);
+  const [chatColumnMaxWidth, setChatColumnMaxWidth] = useState(768);
   const [selectedMode, setSelectedMode] = useState('auto');
   const [selectedAgent, setSelectedAgent] = useState('auto');
   const [advisorHandoff, setAdvisorHandoff] = useState(() => {
@@ -151,6 +166,22 @@ const MySoundBoard = () => {
   const inputRef = useRef(null);
   const fileRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
+
+  const layoutStorageKey = user?.id ? `${SOUNDBOARD_LAYOUT_KEY}_${user.id}` : SOUNDBOARD_LAYOUT_KEY;
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(layoutStorageKey) || '{}');
+      if (typeof saved.sidebarWidth === 'number') setSidebarWidth(Math.min(420, Math.max(240, saved.sidebarWidth)));
+      if (typeof saved.chatColumnMaxWidth === 'number') setChatColumnMaxWidth(Math.min(1200, Math.max(620, saved.chatColumnMaxWidth)));
+    } catch {}
+  }, [layoutStorageKey]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(layoutStorageKey, JSON.stringify({ sidebarWidth, chatColumnMaxWidth }));
+    } catch {}
+  }, [layoutStorageKey, sidebarWidth, chatColumnMaxWidth]);
 
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode) || BIQC_MODES[0];
@@ -290,6 +321,7 @@ const MySoundBoard = () => {
     try {
       const currentMode = BIQC_MODES.find(m => m.id === selectedMode) || BIQC_MODES[0];
       const advisorContext = contextOverride || advisorHandoff || null;
+      const requestScope = deriveRequestScope(fullMessage);
       const intelligenceContext = advisorContext ? {
         advisor_handoff: {
           title: advisorContext.title,
@@ -303,7 +335,9 @@ const MySoundBoard = () => {
         },
         integrations: advisorContext.integrations || {},
         thresholds: advisorContext.thresholds || {},
+        request_scope: requestScope,
       } : {};
+      if (!advisorContext) intelligenceContext.request_scope = requestScope;
 
       let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage;
 
@@ -466,13 +500,13 @@ const MySoundBoard = () => {
             ${activeDrawer === 'nav' ? 'lg:translate-x-0 md:hidden' : 'lg:translate-x-0'}
             fixed lg:relative 
             left-0 top-0 
-            w-72 h-full 
+            h-full 
             transition-transform duration-300 
             flex-shrink-0 border-r overflow-hidden z-50 lg:z-auto
           `}
           style={{ borderColor: 'var(--border-light)', background: 'var(--bg-secondary)' }}
         >
-          <div className="w-72 h-full flex flex-col">
+          <div className="h-full flex flex-col" style={{ width: `${sidebarWidth}px` }}>
             {/* New Chat Button */}
             <div className="p-4">
               <Button
@@ -580,7 +614,7 @@ const MySoundBoard = () => {
             background: 'var(--bg-card)', 
             border: '1px solid var(--border-light)',
             borderLeft: 'none',
-            left: isChatOpen ? '288px' : '0'
+            left: isChatOpen ? `${sidebarWidth}px` : '0'
           }}
         >
           {isChatOpen ? (
@@ -627,6 +661,14 @@ const MySoundBoard = () => {
 
             {/* Top Action Buttons — Calibration + Forensic Market Exposure */}
             <div className="hidden md:flex items-center gap-2 shrink-0">
+              <label className="hidden lg:flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: fontFamily.mono }}>
+                Nav
+                <input type="range" min="240" max="420" step="8" value={sidebarWidth} onChange={(e) => setSidebarWidth(Number(e.target.value))} />
+              </label>
+              <label className="hidden lg:flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: fontFamily.mono }}>
+                Memo/Chat
+                <input type="range" min="620" max="1200" step="10" value={chatColumnMaxWidth} onChange={(e) => setChatColumnMaxWidth(Number(e.target.value))} />
+              </label>
               {scanUsage && !scanUsage.calibration_complete && (
                 <a href="/calibration"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110"
@@ -698,7 +740,7 @@ const MySoundBoard = () => {
           <>
           {/* Messages */}
           <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
-            <div className="max-w-3xl mx-auto px-6 py-6">
+            <div className="mx-auto px-6 py-6" style={{ maxWidth: `${chatColumnMaxWidth}px` }}>
               <InsightExplainabilityStrip
                 whyVisible={soundboardExplainability.whyVisible}
                 whyNow={soundboardExplainability.whyNow}
@@ -738,7 +780,7 @@ const MySoundBoard = () => {
                     {advisorHandoff ? 'or choose a BIQc next move below' : 'pick a prompt or type your own'}
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center max-w-sm mx-auto">
-                    {(advisorHandoff ? buildAdvisorSuggestedOptions(advisorHandoff) : ["What's the one thing I should focus on?", 'Summarise my risks', 'Show me my pipeline', "How's my revenue looking?"].map((q) => ({ label: q, prompt: q }))).map((q) => (
+                    {(advisorHandoff ? buildAdvisorSuggestedOptions(advisorHandoff) : ["What's the one thing I should focus on?", 'Summarise my risks', 'Show me my pipeline', "How's my revenue looking?", 'Analyse Inbox vs Sent vs Deleted for risk signals', 'Give me cross-integration analytics from Merge data'].map((q) => ({ label: q, prompt: q }))).map((q) => (
                       <button key={q.label} onClick={() => sendMessage(q.prompt, advisorHandoff)}
                         className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: '1px solid var(--border-light)' }}>
@@ -876,7 +918,7 @@ const MySoundBoard = () => {
             className="border-t px-6 py-4"
             style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}
           >
-            <div className="max-w-3xl mx-auto">
+            <div className="mx-auto" style={{ maxWidth: `${chatColumnMaxWidth}px` }}>
               {/* File attachment preview */}
               {attachedFile && (
                 <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(255,106,0,0.3)' }}>

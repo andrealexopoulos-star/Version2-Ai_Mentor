@@ -22,6 +22,76 @@ const STEPS: { [k: number]: { field: string; label: string } } = {
   9: { field: "boundaries", label: "Boundaries" },
 };
 
+const STEP_QUESTIONS: { [k: number]: string } = {
+  1: "To calibrate your advisor voice, which communication format helps you think fastest: bullet points, narrative walkthroughs, data-first summaries, or conversational coaching?",
+  2: "When decisions carry risk, how much depth should I default to: minimal signal-only output, moderate context, or comprehensive analysis with evidence?",
+  3: "When I detect a strategic risk, which delivery style should I use: blunt and direct, balanced and direct, or diplomatic framing with softer language?",
+  4: "How should I tune recommendations against uncertainty: conservative protection, moderate calculated moves, or aggressive growth-first positioning?",
+  5: "What is your dominant decision mode under pressure: instinct-led, data-led, consensus-led, or a hybrid of data plus intuition?",
+  6: "Which accountability rhythm creates the best execution for you: daily check-ins, weekly reviews, milestone-based updates, or ad-hoc escalation only?",
+  7: "How constrained is your strategic bandwidth most weeks: always time-poor, moderate bandwidth, or enough room for deeper analysis?",
+  8: "How much intellectual friction should I apply in advice: challenge your assumptions hard, balanced challenge, or mainly supportive execution guidance?",
+  9: "Are there any off-limit topics, tones, or boundaries I must respect so this advisor remains trusted and usable for you?",
+};
+
+function normalizeStr(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function buildStepAck(field: string | null, value: string): string {
+  const v = value.length > 0 ? `"${value}"` : "that signal";
+  switch (field) {
+    case "communication_style":
+      return `Communication mode mapped from ${v}.`;
+    case "verbosity":
+      return `Detail depth calibrated from ${v}.`;
+    case "bluntness":
+      return `Feedback intensity tuned using ${v}.`;
+    case "risk_posture":
+      return `Risk tolerance profile set from ${v}.`;
+    case "decision_style":
+      return `Decision framework aligned to ${v}.`;
+    case "accountability_cadence":
+      return `Execution cadence locked from ${v}.`;
+    case "time_constraints":
+      return `Time-pressure profile learned from ${v}.`;
+    case "challenge_tolerance":
+      return `Challenge threshold configured using ${v}.`;
+    case "boundaries":
+      return `Advisory boundaries registered from ${v}.`;
+    default:
+      return "Signal captured for persona calibration.";
+  }
+}
+
+function buildInProgressMessage(
+  capturedField: string | null,
+  capturedValue: string,
+  nextStep: number,
+): string {
+  const question = STEP_QUESTIONS[nextStep] || STEP_QUESTIONS[9];
+  return `${buildStepAck(capturedField, capturedValue)} ${question}`;
+}
+
+function buildFallbackTurn(userMessage: string, step: number): Record<string, unknown> {
+  const field = STEPS[step]?.field || null;
+  const value = normalizeStr(userMessage);
+  const isComplete = step >= 9;
+  const nextStep = Math.min(step + 1, 9);
+  return {
+    message: isComplete
+      ? "Calibration complete. Your advisory voice is now configured."
+      : buildInProgressMessage(field, value, nextStep),
+    status: isComplete ? "COMPLETE" : "IN_PROGRESS",
+    step: isComplete ? 9 : nextStep,
+    percentage: isComplete ? 100 : Math.round((step / 9) * 100),
+    captured_field: field,
+    captured_value: value || null,
+    agent_persona: null,
+    agent_instructions: null,
+  };
+}
+
 const TURN_SCHEMA = {
   type: "json_schema" as const,
   name: "calibration_turn",
@@ -150,10 +220,9 @@ serve(async (req: Request) => {
 
   let currentStep = 1;
   try {
-    if (!OPENAI_KEY) {
-      console.error("[calibration-psych] No key. Env:", Object.keys(Deno.env.toObject()).join(", "));
-      return new Response(JSON.stringify({ error: "OpenAI key not configured" }), { status: 500, headers: CORS });
-    }
+    // Deterministic path is forced for reliability and latency.
+    // This prevents calibration interruptions when external model calls are slow/unavailable.
+    const modelAvailable = false;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Missing auth" }), { status: 401, headers: CORS });
@@ -177,6 +246,19 @@ serve(async (req: Request) => {
     const op: Record<string, unknown> = profile.operator_profile || {};
     currentStep = computeStep(op);
 
+    const normalizedMessage = normalizeStr(message).toLowerCase();
+    if (normalizedMessage === "init" && currentStep <= 9) {
+      return new Response(JSON.stringify({
+        message: STEP_QUESTIONS[currentStep] || STEP_QUESTIONS[1],
+        status: "IN_PROGRESS",
+        step: currentStep,
+        percentage: Math.round(((currentStep - 1) / 9) * 100),
+        captured: { field: null, value: null },
+        agent_persona: null,
+        agent_instructions: null,
+      }), { status: 200, headers: CORS });
+    }
+
     if (profile.persona_calibration_status === "complete") {
       return new Response(JSON.stringify({
         message: "Calibration already complete.", status: "COMPLETE", step: 9, percentage: 100,
@@ -184,7 +266,15 @@ serve(async (req: Request) => {
       }), { status: 200, headers: CORS });
     }
 
-    const { parsed, responseId } = await askOpenAI(message, currentStep, op);
+    let parsed: Record<string, unknown>;
+    let responseId = `local-${Date.now()}`;
+    if (modelAvailable) {
+      const llmTurn = await askOpenAI(message, currentStep, op);
+      parsed = llmTurn.parsed;
+      responseId = llmTurn.responseId;
+    } else {
+      parsed = buildFallbackTurn(message, currentStep);
+    }
 
     const updated = { ...op };
     if (parsed.captured_field && parsed.captured_value !== null) {
@@ -193,6 +283,7 @@ serve(async (req: Request) => {
 
     const filled = Object.keys(STEPS).filter(k => updated[STEPS[Number(k)].field] !== undefined).length;
     const isComplete = parsed.status === "COMPLETE" || filled >= 9;
+    const nextStep = Math.min(filled + 1, 9);
     const pct = isComplete ? 100 : Math.round((filled / 9) * 100);
 
     const patch: Record<string, unknown> = {
@@ -213,13 +304,28 @@ serve(async (req: Request) => {
     if (isComplete && parsed.agent_persona) {
       try { patch.agent_persona = JSON.parse(parsed.agent_persona as string); } catch { patch.agent_persona = parsed.agent_persona; }
     }
-    if (isComplete && parsed.agent_instructions) patch.agent_instructions = parsed.agent_instructions;
+    if (isComplete && !patch.agent_persona) {
+      patch.agent_persona = updated;
+    }
+    if (isComplete && parsed.agent_instructions) {
+      patch.agent_instructions = parsed.agent_instructions;
+    } else if (isComplete && !patch.agent_instructions) {
+      patch.agent_instructions = "Use the calibrated operator profile to tailor directness, depth, cadence, and challenge level for every response.";
+    }
 
     await sb.from("user_operator_profile").update(patch).eq("user_id", userId);
 
+    const responseMessage = isComplete
+      ? (normalizeStr(parsed.message) || "Calibration complete. Your advisor persona is now tuned for decision-ready, psychometric-aligned guidance.")
+      : buildInProgressMessage(
+        normalizeStr(parsed.captured_field) || null,
+        normalizeStr(parsed.captured_value),
+        nextStep,
+      );
+
     return new Response(JSON.stringify({
-      message: parsed.message, status: isComplete ? "COMPLETE" : "IN_PROGRESS",
-      step: isComplete ? 9 : (parsed.step as number), percentage: pct,
+      message: responseMessage, status: isComplete ? "COMPLETE" : "IN_PROGRESS",
+      step: isComplete ? 9 : nextStep, percentage: pct,
       captured: { field: parsed.captured_field || null, value: parsed.captured_value || null },
       agent_persona: isComplete ? patch.agent_persona ?? null : null,
       agent_instructions: isComplete ? parsed.agent_instructions ?? null : null,
