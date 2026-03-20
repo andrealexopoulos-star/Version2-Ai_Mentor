@@ -115,6 +115,21 @@ export const useCalibrationState = () => {
     }
   }, [loading, user, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // When users navigate back to the calibration entry screen, clear any prior
+  // scan artifacts so stale business data cannot bleed into a new run.
+  useEffect(() => {
+    if (entry !== "welcome") return;
+    setWowSummary(null);
+    setIdentitySignals(null);
+    setIdentityConfirmed(false);
+    setIdentityConfidence(null);
+    setEditedFields({});
+    setEditingKey(null);
+    setError(null);
+    setTransitioning(false);
+    setIntelligenceData(null);
+  }, [entry]);
+
   const callEdge = async (payload) => {
     const token = session?.access_token;
     if (!token) throw new Error("No session");
@@ -250,6 +265,11 @@ export const useCalibrationState = () => {
     if (isSubmitting || !websiteUrl.trim()) return;
     let url = websiteUrl.trim();
     if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = `https://${url}`;
+    setWowSummary(null);
+    setIdentitySignals(null);
+    setIdentityConfirmed(false);
+    setIdentityConfidence(null);
+    setEditedFields({});
     setError(null); setIsSubmitting(true); setEntry("analyzing");
     try {
       // Clear potentially contaminated intelligence fields before new calibration scan

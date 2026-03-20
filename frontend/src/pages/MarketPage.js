@@ -767,7 +767,7 @@ const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, na
           <div className="flex gap-3 mt-1">
             <span className="text-[11px]" style={{ color: hasCRM ? '#10B981' : '#F59E0B', fontFamily: "'JetBrains Mono', monospace" }}>{hasCRM ? 'CRM connected' : 'CRM not connected'}</span>
             <span className="text-[11px]" style={{ color: pipeline ? '#10B981' : '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>{pipeline ? `$${Math.round(pipeline / 1000)}K pipeline` : 'No pipeline data'}</span>
-            <span className="text-[11px]" style={{ color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>{channelsData?.summary?.connected || 0}/{channelsData?.summary?.total || 6} channels</span>
+            <span className="text-[11px]" style={{ color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>{channelsData?.summary?.connected || 0}/{channelsData?.summary?.total || 0} channels</span>
           </div>
         </div>
       </div>
@@ -775,14 +775,7 @@ const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, na
     </button>
     {gapsOpen && (
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-        {(channelsData?.channels || [
-          { key: 'crm', name: 'CRM', color: '#FF6A00', status: 'not_connected', available: true },
-          { key: 'google_ads', name: 'Google Ads', color: '#4285F4', status: 'not_connected', available: false },
-          { key: 'meta_ads', name: 'Meta Ads', color: '#1877F2', status: 'not_connected', available: false },
-          { key: 'linkedin', name: 'LinkedIn', color: '#0A66C2', status: 'not_connected', available: false },
-          { key: 'analytics', name: 'Analytics', color: '#E37400', status: 'not_connected', available: false },
-          { key: 'email_platform', name: 'Email', color: '#FFE01B', status: 'not_connected', available: false },
-        ]).map(ch => (
+        {(channelsData?.channels || []).map(ch => (
           <div key={ch.key} className="p-3 rounded-lg flex items-center gap-3" style={{ background: 'var(--biqc-bg)', border: `1px solid ${ch.status === 'connected' ? '#10B98130' : '#243140'}` }}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-xs" style={{ background: ch.color }}>{ch.name[0]}</div>
             <span className="text-sm text-[#F4F7FA] flex-1">{ch.name}</span>
@@ -795,6 +788,11 @@ const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, na
             )}
           </div>
         ))}
+        {(channelsData?.channels || []).length === 0 && (
+          <div className="md:col-span-3 p-4 rounded-lg text-xs" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: '#94A3B8' }}>
+            No channel inventory is available yet. Connect integrations to populate this panel with verified live sources.
+          </div>
+        )}
       </div>
     )}
   </div>
