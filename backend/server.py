@@ -3,7 +3,9 @@ BIQc Strategic Advisor — Application Orchestrator.
 Pure routing hub: init → middleware → services → routers. No business logic.
 """
 from fastapi import FastAPI, APIRouter, Depends, Request
+from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer
+from fastapi.staticfiles import StaticFiles
 import os
 import logging
 from contextlib import suppress
