@@ -8,6 +8,36 @@ import {
 } from 'lucide-react';
 
 const AI_ADVISOR_IMAGE = "/advisor-avatar.png";
+const ADVISORY_MEMO_KEY = 'biqc_advisory_memos';
+const MAX_MEMOS = 20;
+
+const extractActionItems = (items) => {
+  const lines = (items || [])
+    .map((entry) => String(entry?.text || '').trim())
+    .filter(Boolean);
+  const actionLines = lines
+    .filter((line) => /(?:\bmust\b|\bshould\b|\baction\b|\bnext\b|\bowner\b|\bby\b|\bdeadline\b|\bdecide\b|\bexecute\b)/i.test(line))
+    .slice(0, 5);
+  return actionLines.length ? actionLines : lines.slice(0, 3);
+};
+
+const buildMemoFromTranscript = (transcriptItems, durationSec) => {
+  const actionItems = extractActionItems(transcriptItems);
+  const summary = transcriptItems
+    .slice(-6)
+    .map((entry) => `${entry.role === 'agent' ? 'Chairman' : 'Owner'}: ${entry.text}`)
+    .join(' ')
+    .slice(0, 900);
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    created_at: new Date().toISOString(),
+    title: 'Advisory Board Chairman Memo',
+    duration_seconds: durationSec || 0,
+    summary: summary || 'Session captured. Review transcript and assign owners.',
+    action_items: actionItems,
+    transcript: transcriptItems,
+  };
+};
 
 const VoiceChat = ({ onClose, onSwitchToText }) => {
   const [isConnected, setIsConnected] = useState(false);
@@ -192,7 +222,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
       // Add initial greeting to transcript
       setTranscript([{
         role: 'agent',
-        text: "Hello! I'm your Strategy Advisor. What business challenge would you like to discuss today?",
+        text: 'Good to see you. I am your Advisory Board Chairman for this session. Give me the decision we need to tighten this week.',
         time: new Date()
       }]);
       
@@ -227,6 +257,15 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
 
   // End call
   const endCall = () => {
+    if (transcript.length > 0) {
+      const memo = buildMemoFromTranscript(transcript, callDuration);
+      try {
+        const existing = JSON.parse(localStorage.getItem(ADVISORY_MEMO_KEY) || '[]');
+        const next = [memo, ...(Array.isArray(existing) ? existing : [])].slice(0, MAX_MEMOS);
+        localStorage.setItem(ADVISORY_MEMO_KEY, JSON.stringify(next));
+      } catch {}
+    }
+
     // Close peer connection
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
@@ -366,7 +405,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
             
             {/* Name tag */}
             <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg">
-              <p className="text-white font-medium text-center text-sm sm:text-base">Strategy Advisor</p>
+              <p className="text-white font-medium text-center text-sm sm:text-base">Advisory Board Chairman</p>
               <p className="text-white/60 text-xs text-center">MySoundBoard</p>
             </div>
             
@@ -425,8 +464,8 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-white/20 mx-auto mb-4 sm:mb-6">
                   <img src={AI_ADVISOR_IMAGE} alt="Advisor" className="w-full h-full object-cover grayscale" />
                 </div>
-                <h2 className="text-white text-xl sm:text-2xl font-semibold mb-2">Ready to talk?</h2>
-                <p className="text-white/60 text-sm sm:text-base mb-4 sm:mb-6">Start a voice session with your Strategy Advisor</p>
+                <h2 className="text-white text-xl sm:text-2xl font-semibold mb-2">Chairman session ready</h2>
+                <p className="text-white/60 text-sm sm:text-base mb-4 sm:mb-6">Start a strategic advisory call and capture board-level notes</p>
                 <Button 
                   onClick={startCall}
                   className="bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-full text-base sm:text-lg"
@@ -489,7 +528,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
               {transcript.map((item, idx) => (
                 <div key={idx} className={`${item.role === 'agent' ? 'text-blue-300' : 'text-green-300'}`}>
                   <p className="text-xs text-white/40 mb-1">
-                    {item.role === 'agent' ? 'Advisor' : 'You'}
+                    {item.role === 'agent' ? 'Chairman' : 'You'}
                   </p>
                   <p className="text-xs sm:text-sm text-white/80">{item.text}</p>
                 </div>
@@ -565,7 +604,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
         {/* Helper text */}
         <p className="text-center text-white/40 text-xs mt-2 sm:mt-3">
           {isConnected 
-            ? isMuted ? 'You are muted' : 'Speak naturally - your advisor is listening'
+            ? isMuted ? 'You are muted' : 'Speak naturally - your chairman is listening'
             : 'Click "Start Call" to begin your voice session'
           }
         </p>

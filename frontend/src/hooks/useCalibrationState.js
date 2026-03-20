@@ -115,6 +115,21 @@ export const useCalibrationState = () => {
     }
   }, [loading, user, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // When users navigate back to the calibration entry screen, clear any prior
+  // scan artifacts so stale business data cannot bleed into a new run.
+  useEffect(() => {
+    if (entry !== "welcome") return;
+    setWowSummary(null);
+    setIdentitySignals(null);
+    setIdentityConfirmed(false);
+    setIdentityConfidence(null);
+    setEditedFields({});
+    setEditingKey(null);
+    setError(null);
+    setTransitioning(false);
+    setIntelligenceData(null);
+  }, [entry]);
+
   const callEdge = async (payload) => {
     const token = session?.access_token;
     if (!token) throw new Error("No session");
@@ -250,6 +265,11 @@ export const useCalibrationState = () => {
     if (isSubmitting || !websiteUrl.trim()) return;
     let url = websiteUrl.trim();
     if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = `https://${url}`;
+    setWowSummary(null);
+    setIdentitySignals(null);
+    setIdentityConfirmed(false);
+    setIdentityConfidence(null);
+    setEditedFields({});
     setError(null); setIsSubmitting(true); setEntry("analyzing");
     try {
       // Clear potentially contaminated intelligence fields before new calibration scan
@@ -341,6 +361,14 @@ export const useCalibrationState = () => {
             social_media_links: deepEnrichment.social_handles || exRaw.social_media_links || {},
             trust_signals: deepEnrichment.trust_signals || exRaw.trust_signals || [],
             executive_summary: deepEnrichment.executive_summary || exRaw.executive_summary || '',
+            cmo_executive_brief: deepEnrichment.cmo_executive_brief || exRaw.cmo_executive_brief || '',
+            seo_analysis: deepEnrichment.seo_analysis || exRaw.seo_analysis || null,
+            paid_media_analysis: deepEnrichment.paid_media_analysis || exRaw.paid_media_analysis || null,
+            social_media_analysis: deepEnrichment.social_media_analysis || exRaw.social_media_analysis || null,
+            website_health: deepEnrichment.website_health || exRaw.website_health || null,
+            swot: deepEnrichment.swot || exRaw.swot || null,
+            competitor_swot: deepEnrichment.competitor_swot || exRaw.competitor_swot || [],
+            cmo_priority_actions: deepEnrichment.cmo_priority_actions || exRaw.cmo_priority_actions || [],
             deep_scan_sources: deepEnrichment.sources || null,
           } : {}),
         };
@@ -556,10 +584,42 @@ export const useCalibrationState = () => {
 
       try {
         const wowToSave = { ...(wowSummary || {}), ...editedFields };
+        const full = wowToSave._full || {};
+        const cmoBundle = {
+          executive_brief: full.cmo_executive_brief || full.executive_summary || '',
+          website_health: full.website_health || null,
+          seo_analysis: full.seo_analysis || null,
+          paid_media_analysis: full.paid_media_analysis || null,
+          social_media_analysis: full.social_media_analysis || null,
+          swot: full.swot || null,
+          competitor_swot: full.competitor_swot || [],
+          priority_actions: full.cmo_priority_actions || [],
+          competitors: Array.isArray(full.competitors) ? full.competitors : [],
+          deep_scan_sources: full.deep_scan_sources || full._deep_sources || null,
+        };
         await apiClient.put('/business-profile', {
           business_name: wowToSave.business_name || '',
-          mission_statement: wowToSave.what_you_do || '',
-          target_market: wowToSave.who_you_serve || '',
+          mission_statement: wowToSave.what_you_do || full.main_products_services || '',
+          target_market: wowToSave.who_you_serve || full.target_market || '',
+          industry: full.industry || '',
+          website: websiteUrl || full._website || '',
+          location: full.location || '',
+          abn: wowToSave.abn || full.abn || '',
+          main_products_services: full.main_products_services || wowToSave.what_you_do || '',
+          unique_value_proposition: full.unique_value_proposition || wowToSave.what_sets_you_apart || '',
+          competitive_advantages: full.competitive_advantages || '',
+          market_position: full.market_position || '',
+          business_model: full.business_model || '',
+          pricing_model: full.pricing_model || '',
+          sales_cycle_length: full.sales_cycle_length || '',
+          customer_count: full.customer_count || '',
+          revenue_range: full.revenue_range || '',
+          geographic_focus: full.geographic_focus || '',
+          growth_strategy: full.growth_strategy || wowToSave.growth_opportunity || '',
+          main_challenges: full.main_challenges || wowToSave.biggest_challenges || '',
+          social_handles: full.social_media_links || {},
+          executive_summary: full.executive_summary || full.cmo_executive_brief || '',
+          competitor_scan_result: JSON.stringify(cmoBundle),
         });
       } catch {}
 

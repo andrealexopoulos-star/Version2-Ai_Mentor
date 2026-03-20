@@ -7,12 +7,19 @@ import { fontFamily } from '../design-system/tokens';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', resize: 'horizontal', overflow: 'auto', minWidth: '280px', maxWidth: '100%' }}>{children}</div>
 );
 
 const CALIB_REPORT_KEY = 'biqc_calibration_report_date';
 const SCAN_REPORT_KEY = 'biqc_scan_report_date';
+const ADVISORY_MEMO_KEY = 'biqc_advisory_memos';
 const REPORT_CYCLE_MS = 30 * 24 * 60 * 60 * 1000;
+
+const formatDuration = (seconds = 0) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+};
 
 const ForensicReportCard = () => {
   const calibDate = (() => { try { return parseInt(localStorage.getItem(CALIB_REPORT_KEY) || '0', 10); } catch { return 0; } })();
@@ -101,6 +108,7 @@ const ReportsPage = () => {
   const [integrations, setIntegrations] = useState([]);
   const [events, setEvents] = useState([]);
   const [generating, setGenerating] = useState(false);
+  const [advisoryMemos, setAdvisoryMemos] = useState([]);
 
   const loadReportsData = useCallback(async () => {
     setLoadError(null);
@@ -143,6 +151,15 @@ const ReportsPage = () => {
   useEffect(() => {
     loadReportsData();
   }, [loadReportsData]);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(ADVISORY_MEMO_KEY) || '[]');
+      setAdvisoryMemos(Array.isArray(stored) ? stored : []);
+    } catch {
+      setAdvisoryMemos([]);
+    }
+  }, []);
 
   useEffect(() => {
     if (loading || loadError) return;
@@ -214,6 +231,33 @@ const ReportsPage = () => {
 
         {/* ── FORENSIC REPORTS SECTION ── */}
         <ForensicReportCard />
+
+        {advisoryMemos.length > 0 && (
+          <Panel>
+            <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Advisory Board Memos</h3>
+            <p className="text-xs text-[#64748B] mb-3">Recorded from video advisory sessions. Includes summary and owner action cues.</p>
+            <div className="space-y-2">
+              {advisoryMemos.slice(0, 5).map((memo) => (
+                <div key={memo.id} className="rounded-lg p-3" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <p className="text-xs font-semibold text-[#F4F7FA]">{memo.title || 'Advisory Memo'}</p>
+                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                      {formatDuration(memo.duration_seconds || 0)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#9FB0C3] mb-2">{memo.summary}</p>
+                  {Array.isArray(memo.action_items) && memo.action_items.length > 0 && (
+                    <div className="space-y-1">
+                      {memo.action_items.slice(0, 3).map((item, idx) => (
+                        <p key={`${memo.id}-${idx}`} className="text-[11px] text-[#F4F7FA]">- {item}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Panel>
+        )}
 
         {loading && <PageLoadingState message="Loading intelligence reports..." />}
 

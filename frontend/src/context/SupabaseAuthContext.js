@@ -54,7 +54,40 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 8000) => {
   }
 };
 
-const getStoredSessionCandidate = () => {
+const clearClientAuthCachesForFreshLogin = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem('biqc-auth');
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('sb-')) localStorage.removeItem(key);
+    }
+  } catch {}
+  try {
+    for (const key of Object.keys(sessionStorage)) {
+      if (key.startsWith('biqc_auth_bootstrap_')) sessionStorage.removeItem(key);
+    }
+    sessionStorage.removeItem('biqc_auth_recent_login');
+    sessionStorage.removeItem('biqc_soundboard_handoff');
+    sessionStorage.removeItem('biqc_soundboard_prefill');
+    sessionStorage.removeItem('biqc_scan_usage_cache');
+  } catch {}
+};
+
+const clearSessionCachesForOtherUsers = (activeUserId) => {
+  if (typeof window === 'undefined') return;
+  try {
+    for (const key of Object.keys(sessionStorage)) {
+      if (key.startsWith('biqc_auth_bootstrap_') && key !== `biqc_auth_bootstrap_${activeUserId}`) {
+        sessionStorage.removeItem(key);
+      }
+    }
+    sessionStorage.removeItem('biqc_soundboard_handoff');
+    sessionStorage.removeItem('biqc_soundboard_prefill');
+    sessionStorage.removeItem('biqc_scan_usage_cache');
+  } catch {}
+};
+
+const getStoredSessionCandidate = (expectedUserId = null) => {
   if (typeof window === 'undefined') return null;
   const extractSession = (parsed) => {
     if (!parsed) return null;
@@ -65,14 +98,17 @@ const getStoredSessionCandidate = () => {
 
   try {
     const primary = extractSession(JSON.parse(localStorage.getItem('biqc-auth') || 'null'));
-    if (primary) return primary;
+    if (primary) {
+      if (!expectedUserId || primary?.user?.id === expectedUserId) return primary;
+    }
   } catch {}
 
   try {
     for (const key of Object.keys(localStorage)) {
       if (!key.startsWith('sb-')) continue;
       const parsed = extractSession(JSON.parse(localStorage.getItem(key) || 'null'));
-      if (parsed) return parsed;
+      if (!parsed) continue;
+      if (!expectedUserId || parsed?.user?.id === expectedUserId) return parsed;
     }
   } catch {}
 
@@ -186,6 +222,7 @@ export const SupabaseAuthProvider = ({ children }) => {
           const isNewLogin = lastBootstrapUserId.current !== session.user.id;
           if (isNewLogin) {
             setAuthState(AUTH_STATE.LOADING);
+            clearSessionCachesForOtherUsers(session.user.id);
             trackEvent(EVENTS.USER_LOGIN, { method: 'supabase' });
             identifyUser(session.user.id, { email: session.user.email });
           }
@@ -293,6 +330,7 @@ export const SupabaseAuthProvider = ({ children }) => {
     if (!hasSupabaseConfig) {
       throw new Error(SUPABASE_SETUP_MESSAGE);
     }
+    clearClientAuthCachesForFreshLogin();
     const response = await fetch(`${getBackendUrl()}/api/auth/supabase/login`, {
       method: 'POST',
       headers: {
@@ -326,6 +364,7 @@ export const SupabaseAuthProvider = ({ children }) => {
     if (!hasSupabaseConfig) {
       throw new Error(SUPABASE_SETUP_MESSAGE);
     }
+    clearClientAuthCachesForFreshLogin();
     const redirectUrl = `${window.location.origin}/auth/callback`;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -480,13 +519,11 @@ export const SupabaseAuthProvider = ({ children }) => {
             }
           } else {
             console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status}`);
-            // Fail-closed for calibration truth:
-            // when status cannot be verified, route to calibration instead of
-            // incorrectly marking users as READY.
+            // Safer default for onboarding: if status cannot be verified, force calibration path.
             calibrationComplete = false;
           }
         } catch (e) {
-          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → fail-closed to NEEDS_CALIBRATION`);
+          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → force NEEDS_CALIBRATION`);
           calibrationComplete = false;
         }
 

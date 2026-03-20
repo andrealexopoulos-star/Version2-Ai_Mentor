@@ -7,6 +7,7 @@ import DataCoverageGate from './DataCoverageGate';
 import { CheckInAlerts } from './CheckInAlerts';
 import { fontFamily } from '../design-system/tokens';
 import { isPrivilegedUser } from '../lib/privilegedUser';
+import VoiceChat from './VoiceChat';
 
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
@@ -21,6 +22,9 @@ const DATA_QUERY_PATTERNS = [
   /^how many (deals|leads|contacts|invoices|clients)/i,
   /^(list|give me|pull up) (my |our )?(deals|invoices|pipeline|leads|contacts)/i,
   /^what('s| is) (my |our )?(pipeline value|revenue figure|total spend)/i,
+  /analy[sz]e.*\b(inbox|sent|deleted|trash)\b/i,
+  /cross[- ]integration analytics/i,
+  /(merge|integration).*(insights|analytics|analysis)/i,
 ];
 function isDataQuery(msg) {
   const lower = msg.trim().toLowerCase();
@@ -44,8 +48,11 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModeMenu, setShowModeMenu] = useState(false);
+  const [showAgentMenu, setShowAgentMenu] = useState(false);
   const [selectedMode, setSelectedMode] = useState('auto');
+  const [selectedAgent, setSelectedAgent] = useState('auto');
   const [showHistory, setShowHistory] = useState(false);
+  const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
   const [attachedFile, setAttachedFile] = useState(null);
@@ -67,6 +74,16 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'foundation' },
     { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'pro' },
   ];
+  const BIQC_AGENTS = [
+    { id: 'auto', label: 'Auto', shortDesc: 'Pick specialist by question', icon: '⚡' },
+    { id: 'general', label: 'Strategic Advisor', shortDesc: 'Full picture & priorities', icon: '◎' },
+    { id: 'finance', label: 'Finance', shortDesc: 'Cash, revenue, margins', icon: '💰' },
+    { id: 'sales', label: 'Sales', shortDesc: 'Pipeline & deals', icon: '📊' },
+    { id: 'marketing', label: 'Marketing', shortDesc: 'Campaigns & positioning', icon: '📣' },
+    { id: 'risk', label: 'Risk', shortDesc: 'Compliance & exposure', icon: '🛡️' },
+    { id: 'operations', label: 'Operations', shortDesc: 'Workflow & capacity', icon: '⚙️' },
+    { id: 'strategy', label: 'Strategy', shortDesc: 'Planning & scenarios', icon: '🎯' },
+  ];
 
   const tierRank = { free: 0, starter: 0, foundation: 1, growth: 2, custom: 3, pro: 2, enterprise: 3 };
   const isPaidUser = (tierRank[userTier] ?? 0) >= 1;
@@ -77,6 +94,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     return (tierRank[userTier] ?? 0) >= (tierRank[mode.minTier] ?? 0);
   });
   const activeMode = availableModes.find((mode) => mode.id === selectedMode) || availableModes[0] || BIQC_MODES[0];
+  const activeAgent = BIQC_AGENTS.find((agent) => agent.id === selectedAgent) || BIQC_AGENTS[0];
 
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
@@ -177,9 +195,11 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         message: msgToSend,
         conversation_id: activeConvId,
         mode: activeMode?.backend_mode || 'auto',
+        agent_id: selectedAgent || 'auto',
       });
       if (res.data?.reply) {
         const assistantMsg = { role: 'assistant', text: res.data.reply };
+        if (res.data?.agent_name) assistantMsg.agent_name = res.data.agent_name;
         if (res.data?.file) assistantMsg.file = res.data.file;
         setMessages(prev => [...prev, assistantMsg]);
         if (res.data.conversation_id && !activeConvId) {
@@ -416,6 +436,11 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 whiteSpace: 'pre-line',
                 borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
               }}>
+              {msg.role === 'assistant' && msg.agent_name && (
+                <p className="text-[10px] font-medium mb-1" style={{ color: '#60A5FA', fontFamily: fontFamily.mono }}>
+                  {msg.agent_name}
+                </p>
+              )}
               {msg.type === 'integration_prompt' && <Database className="w-3.5 h-3.5 text-[#F59E0B] inline mr-1.5 -mt-0.5" />}
               {msg.text}
               {msg.sources?.length > 0 && (
@@ -478,45 +503,86 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           </div>
         )}
 
-        <div className="mb-2 relative" data-testid="soundboard-panel-mode-wrapper">
-          <button
-            onClick={() => setShowModeMenu((v) => !v)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all hover:brightness-110"
-            style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
-            data-testid="soundboard-panel-mode-selector"
-          >
-            <span>{activeMode?.icon}</span>
-            <span>{activeMode?.label}</span>
-            <ChevronDown className="w-3 h-3" />
-          </button>
+        <div className="mb-2 relative flex items-center gap-2" data-testid="soundboard-panel-mode-wrapper">
+          <div className="relative">
+            <button
+              onClick={() => { setShowModeMenu((v) => !v); setShowAgentMenu(false); }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all hover:brightness-110"
+              style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+              data-testid="soundboard-panel-mode-selector"
+            >
+              <span>{activeMode?.icon}</span>
+              <span>{activeMode?.label}</span>
+              <ChevronDown className="w-3 h-3" />
+            </button>
 
-          {showModeMenu && (
-            <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-xl z-50"
-              style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
-              {availableModes.map((mode, idx) => (
-                <button
-                  key={mode.id}
-                  onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
-                  className="w-full flex items-start gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
-                  style={{ borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none' }}
-                  data-testid={`soundboard-panel-mode-option-${mode.id}`}
-                >
-                  <span className="text-sm shrink-0">{mode.icon}</span>
-                  <div>
-                    <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>{mode.label}</p>
-                    <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
-                  </div>
-                </button>
-              ))}
+            {showModeMenu && (
+              <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-xl z-50"
+                style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                {availableModes.map((mode, idx) => (
+                  <button
+                    key={mode.id}
+                    onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
+                    className="w-full flex items-start gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
+                    style={{ borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none' }}
+                    data-testid={`soundboard-panel-mode-option-${mode.id}`}
+                  >
+                    <span className="text-sm shrink-0">{mode.icon}</span>
+                    <div>
+                      <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>{mode.label}</p>
+                      <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
+                    </div>
+                  </button>
+                ))}
 
-              {!canUseTrinity && (
-                <a href="/biqc-foundation" className="block px-3 py-2 text-[10px] no-underline"
-                  style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="soundboard-panel-trinity-upgrade-link">
-                  Unlock BIQc Trinity: get consensus intelligence across BIQc pathways.
-                </a>
-              )}
-            </div>
-          )}
+                {!canUseTrinity && (
+                  <a href="/biqc-foundation" className="block px-3 py-2 text-[10px] no-underline"
+                    style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="soundboard-panel-trinity-upgrade-link">
+                    Unlock BIQc Trinity: get consensus intelligence across BIQc pathways.
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={() => { setShowAgentMenu((v) => !v); setShowModeMenu(false); }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+              style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', color: '#3B82F6', fontFamily: fontFamily.mono }}
+              data-testid="soundboard-panel-agent-selector"
+            >
+              <span>{activeAgent.icon}</span>
+              <span>{activeAgent.label}</span>
+              <ChevronDown className="w-3 h-3" />
+            </button>
+
+            {showAgentMenu && (
+              <div className="absolute bottom-full left-0 mb-2 w-60 rounded-xl overflow-hidden shadow-xl z-50"
+                style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Agent persona</p>
+                {BIQC_AGENTS.map((agent) => (
+                  <button
+                    key={agent.id}
+                    onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
+                    style={{ borderTop: '1px solid #1E2D3D' }}
+                    data-testid={`soundboard-panel-agent-option-${agent.id}`}
+                  >
+                    <span className="text-sm shrink-0">{agent.icon}</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#F4F7FA', fontFamily: fontFamily.body }}>
+                        {agent.label}
+                      </p>
+                      <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
+                        {agent.shortDesc}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="rounded-2xl flex items-end gap-1 p-1.5" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${attachedFile ? 'rgba(255,106,0,0.4)' : '#243140'}` }}>
@@ -525,7 +591,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#FF6A00' : '#64748B' }} />
           </button>
           <button className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0" data-testid="sb-video"
-            onClick={() => setMessages(prev => [...prev, { role: 'assistant', text: 'Video consultation will be available in the Pro plan. Stay tuned.' }])}>
+            onClick={() => setShowVoiceChat(true)}>
             <Video className="w-4 h-4 text-[#64748B]" />
           </button>
           <textarea
@@ -550,6 +616,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           BIQc uses connected data only. No fabrication.
         </p>
       </div>
+      {showVoiceChat && (
+        <VoiceChat
+          onClose={() => setShowVoiceChat(false)}
+          onSwitchToText={() => setShowVoiceChat(false)}
+        />
+      )}
     </div>
   );
 };

@@ -26,6 +26,7 @@ const businessTypes = [
 
 const businessModels = ['B2B', 'B2C', 'B2B2C', 'Hybrid'];
 const pricingModels = ['Hourly', 'Project-based', 'Retainer', 'Subscription', 'One-time purchase', 'Usage-based', 'Tiered'];
+const sectionResizeStyle = { resize: 'horizontal', overflow: 'auto', minWidth: '320px', maxWidth: '100%' };
 
 const BusinessProfile = () => {
   const { user } = useSupabaseAuth();
@@ -246,7 +247,7 @@ const BusinessProfile = () => {
 
             {/* MARKET TAB */}
             <TabsContent value="market">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle>Market & Customers</CardTitle>
                   <CardDescription>Understanding your market helps us tailor recommendations</CardDescription>
@@ -270,6 +271,17 @@ const BusinessProfile = () => {
                       onChange={(e) => updateProfile('ideal_customer_profile', e.target.value)}
                       placeholder="Describe your perfect customer - who are they, what do they need, why do they buy from you?"
                       rows={4}
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Market Position</Label>
+                    <Textarea
+                      value={profile.market_position || ''}
+                      onChange={(e) => updateProfile('market_position', e.target.value)}
+                      placeholder="How your business is currently positioned in the market..."
+                      rows={3}
                       className="mt-2"
                     />
                   </div>
@@ -325,7 +337,7 @@ const BusinessProfile = () => {
 
             {/* PRODUCT TAB */}
             <TabsContent value="product">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle>Products & Services</CardTitle>
                   <CardDescription>What you offer and why customers choose you</CardDescription>
@@ -398,7 +410,7 @@ const BusinessProfile = () => {
 
             {/* TEAM TAB */}
             <TabsContent value="team">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle>Team & Leadership</CardTitle>
                   <CardDescription>Your people and organizational structure</CardDescription>
@@ -474,7 +486,7 @@ const BusinessProfile = () => {
 
             {/* STRATEGY TAB */}
             <TabsContent value="strategy">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle>Strategy & Vision</CardTitle>
                   <CardDescription>Where you're going and how you'll get there — used to personalise your AI agent's recommendations</CardDescription>
@@ -585,6 +597,17 @@ const BusinessProfile = () => {
                       onChange={(e) => updateProfile('growth_strategy', e.target.value)}
                       placeholder="How do you plan to grow? New markets, products, partnerships?"
                       rows={3}
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Competitor Intelligence & SWOT Notes</Label>
+                    <Textarea
+                      value={profile.competitor_scan_result || ''}
+                      onChange={(e) => updateProfile('competitor_scan_result', e.target.value)}
+                      placeholder="Stored competitor analysis, SWOT, and channel diagnostics from calibration scan..."
+                      rows={6}
                       className="mt-2"
                     />
                   </div>

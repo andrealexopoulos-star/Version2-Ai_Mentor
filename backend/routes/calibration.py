@@ -240,6 +240,198 @@ def _extract_sentence_with_keywords(text: str, keywords: List[str]) -> str:
     return ""
 
 
+def _build_seo_analysis(raw_html: str, page_text: str, page_title: str, meta_description: str) -> Dict[str, Any]:
+    html = raw_html or ""
+    text = page_text or ""
+    title = page_title or ""
+    meta = meta_description or ""
+    lowered = f"{html}\n{text}".lower()
+
+    title_len = len(title.strip())
+    meta_len = len(meta.strip())
+    has_h1 = bool(re.search(r"<h1[^>]*>.*?</h1>", html, re.IGNORECASE | re.DOTALL))
+    has_schema = "application/ld+json" in lowered
+    has_alt = " alt=" in lowered
+    has_canonical = bool(re.search(r'rel=["\']canonical["\']', html, re.IGNORECASE))
+    has_robots_noindex = "noindex" in lowered and "robots" in lowered
+
+    score = 0
+    if 30 <= title_len <= 65:
+        score += 20
+    elif title_len > 0:
+        score += 10
+    if 80 <= meta_len <= 165:
+        score += 20
+    elif meta_len > 0:
+        score += 10
+    if has_h1:
+        score += 15
+    if has_schema:
+        score += 15
+    if has_alt:
+        score += 10
+    if has_canonical:
+        score += 10
+    if not has_robots_noindex:
+        score += 10
+    score = min(score, 100)
+
+    gaps: List[str] = []
+    if not (30 <= title_len <= 65):
+        gaps.append("Title length is outside best-practice range (30-65 chars).")
+    if not (80 <= meta_len <= 165):
+        gaps.append("Meta description missing or outside 80-165 chars.")
+    if not has_h1:
+        gaps.append("No clear H1 heading detected.")
+    if not has_schema:
+        gaps.append("No structured data (JSON-LD) detected.")
+    if not has_canonical:
+        gaps.append("No canonical link detected.")
+
+    strengths: List[str] = []
+    if has_h1:
+        strengths.append("Primary H1 heading detected.")
+    if has_schema:
+        strengths.append("Structured data markup detected.")
+    if has_canonical:
+        strengths.append("Canonical tag detected.")
+    if has_alt:
+        strengths.append("Image alt attributes detected.")
+
+    return {
+        "score": score,
+        "status": "strong" if score >= 75 else "moderate" if score >= 45 else "weak",
+        "strengths": strengths,
+        "gaps": gaps,
+        "priority_actions": [
+            "Rewrite homepage title and meta description for target keywords.",
+            "Add/validate one H1 per page and structured data for org/services.",
+            "Publish cluster pages around key services + buyer intent terms.",
+        ],
+    }
+
+
+def _build_paid_media_analysis(text: str) -> Dict[str, Any]:
+    lowered = (text or "").lower()
+    paid_tokens = ["google ads", "ppc", "facebook ads", "meta ads", "sponsored", "ad campaign", "remarketing"]
+    found = [t for t in paid_tokens if t in lowered]
+    return {
+        "signals_detected": found,
+        "maturity": "active" if found else "unknown_or_low_visibility",
+        "assessment": (
+            "Paid media signals are visible in public footprint."
+            if found else
+            "No reliable paid media signals were detected publicly; this usually means low spend, hidden strategy, or limited landing-page architecture."
+        ),
+        "priority_actions": [
+            "Build campaign-specific landing pages tied to one service and one audience.",
+            "Set conversion tracking and cost-per-qualified-lead targets before scaling.",
+            "Run branded vs non-branded split to isolate true demand generation.",
+        ],
+    }
+
+
+def _build_social_media_analysis(handles: Dict[str, str], text: str) -> Dict[str, Any]:
+    handles = handles or {}
+    active_channels = [k for k, v in handles.items() if v]
+    lowered = (text or "").lower()
+    content_tokens = ["case study", "insight", "webinar", "podcast", "newsletter", "video", "testimonial"]
+    content_signals = [t for t in content_tokens if t in lowered]
+    return {
+        "active_channels": active_channels,
+        "channel_count": len(active_channels),
+        "content_signals_detected": content_signals,
+        "assessment": (
+            f"Social footprint detected across {', '.join(active_channels)}."
+            if active_channels else
+            "No strong social profile footprint detected from public signals."
+        ),
+        "priority_actions": [
+            "Pick one primary channel aligned to ICP and publish weekly proof-led content.",
+            "Repurpose one case study into 4-6 social assets with a direct CTA.",
+            "Standardize profile messaging to match website UVP and offer.",
+        ],
+    }
+
+
+def _build_swot(enrichment: Dict[str, Any], seo: Dict[str, Any], social: Dict[str, Any], paid: Dict[str, Any]) -> Dict[str, List[str]]:
+    uvp = enrichment.get("unique_value_proposition") or "Clear differentiation not yet explicit."
+    advantages = enrichment.get("competitive_advantages") or "Competitive edge not strongly articulated."
+    target_market = enrichment.get("target_market") or "Target market definition is limited."
+    competitors = enrichment.get("competitors") or []
+    strengths = [
+        uvp[:180],
+        advantages[:180],
+        f"Brand presence score indicates {seo.get('status', 'mixed')} SEO foundations.",
+    ]
+    weaknesses = [
+        *(seo.get("gaps") or [])[:2],
+        "Paid media operating model is not clearly evidenced in public footprint."
+        if not paid.get("signals_detected") else "Paid media maturity requires tighter measurement discipline.",
+        "Social proof and conversion architecture can be strengthened." if social.get("channel_count", 0) < 2 else "Multi-channel social presence exists but conversion messaging should be unified.",
+    ]
+    opportunities = [
+        f"Own category language around {target_market} with high-intent service pages.",
+        "Launch proof-led funnel: case study -> diagnostic CTA -> booked strategy call.",
+        "Convert competitor gaps into offer positioning and ROI messaging.",
+    ]
+    threats = [
+        f"Competitive pressure from {', '.join(competitors[:3])}." if competitors else "Competitive pressure from better-optimized category players.",
+        "Weak SERP/paid visibility can compress inbound pipeline quality.",
+        "Message inconsistency across web/social can reduce conversion trust.",
+    ]
+    return {
+        "strengths": strengths[:3],
+        "weaknesses": weaknesses[:4],
+        "opportunities": opportunities[:3],
+        "threats": threats[:3],
+    }
+
+
+def _build_competitor_swot(competitors: List[str], target_market: str, uvp: str) -> List[Dict[str, Any]]:
+    snapshots = []
+    for name in (competitors or [])[:5]:
+        snapshots.append({
+            "name": name,
+            "strengths": ["Likely category visibility and demand capture in current market."],
+            "weaknesses": ["Differentiation depth unknown from public signals."],
+            "opportunities_against_them": [
+                f"Out-position with sharper UVP for {target_market or 'core buyers'}.",
+                f"Use evidence-led messaging to contrast against generic market claims."
+            ],
+            "threat_level": "medium",
+        })
+    if not snapshots:
+        snapshots.append({
+            "name": "Category competitors (unresolved)",
+            "strengths": ["Potentially stronger existing awareness."],
+            "weaknesses": ["Unverified proposition and trust signal depth."],
+            "opportunities_against_them": [
+                "Run targeted competitor SERP and messaging benchmark.",
+                "Differentiate on measurable outcomes and proof assets.",
+            ],
+            "threat_level": "medium",
+        })
+    return snapshots
+
+
+def _build_cmo_priority_actions(swot: Dict[str, List[str]], seo: Dict[str, Any], paid: Dict[str, Any], social: Dict[str, Any]) -> List[str]:
+    actions = [
+        "Rebuild homepage hero + service pages around one quantified value promise and one CTA.",
+        "Execute SEO technical quick wins (title/meta/H1/schema/canonical) in the next 7 days.",
+        "Create 3 proof assets (case study, testimonial, before/after outcome) and reuse across site + social.",
+        "Launch or tighten paid funnel measurement: CPL, MQL quality, and conversion-to-sale by channel.",
+        "Run monthly competitor benchmark across SEO visibility, offer messaging, and social proof depth.",
+    ]
+    if seo.get("status") == "weak":
+        actions.insert(0, "Prioritize SEO foundation fixes before scaling paid spend.")
+    if social.get("channel_count", 0) == 0:
+        actions.append("Establish one primary social channel and publish weekly authority content.")
+    if not paid.get("signals_detected"):
+        actions.append("Pilot one tightly scoped paid campaign with conversion tracking before scale.")
+    return actions[:7]
+
+
 # ─── Constants ───
 
 QUESTIONS_TEXT = {
@@ -724,7 +916,8 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 f"URL: {url}\n"
                 "Return JSON keys: business_name, description, industry, main_products_services, target_market, "
                 "unique_value_proposition, competitive_advantages, competitors, competitor_analysis, market_position, "
-                "abn, social_handles, trust_signals, executive_summary, confidence.\n"
+                "abn, social_handles, trust_signals, executive_summary, confidence, "
+                "cmo_executive_brief, seo_analysis, paid_media_analysis, social_media_analysis, website_health, swot, competitor_swot, cmo_priority_actions.\n"
                 "If unknown, return empty string. competitors must be array of names.\n\n"
                 f"DATA:\n{combined_text[:18000]}"
             )
@@ -758,6 +951,14 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "trust_signals": [],
                 "executive_summary": "",
                 "confidence": "medium",
+                "cmo_executive_brief": "",
+                "seo_analysis": {},
+                "paid_media_analysis": {},
+                "social_media_analysis": {},
+                "website_health": {},
+                "swot": {},
+                "competitor_swot": [],
+                "cmo_priority_actions": [],
                 "sources": {
                     "company": company_search.get("results") or [],
                     "competitors": competitor_search.get("results") or [],
@@ -773,6 +974,10 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         enrichment["competitors"] = parsed.get("competitors")
                     if isinstance(parsed.get("trust_signals"), list):
                         enrichment["trust_signals"] = parsed.get("trust_signals")
+                    if isinstance(parsed.get("competitor_swot"), list):
+                        enrichment["competitor_swot"] = parsed.get("competitor_swot")
+                    if isinstance(parsed.get("cmo_priority_actions"), list):
+                        enrichment["cmo_priority_actions"] = parsed.get("cmo_priority_actions")
             except Exception:
                 logger.warning("[enrichment/website] Could not parse AI JSON synthesis; using deterministic fallback")
 
@@ -823,6 +1028,43 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     f"{enrichment.get('business_name') or 'Business'} appears positioned in {enrichment.get('industry') or 'its sector'} with "
                     f"focus on {enrichment.get('main_products_services') or 'core services'}. "
                     f"Top competitor pressure: {enrichment.get('competitor_analysis') or 'to be validated through market signals'}."
+                )
+
+            seo_analysis = _build_seo_analysis(raw_html, page_text, page_title, meta_description)
+            paid_media_analysis = _build_paid_media_analysis(combined_text)
+            social_media_analysis = _build_social_media_analysis(enrichment.get("social_handles") or {}, combined_text)
+            swot = _build_swot(enrichment, seo_analysis, social_media_analysis, paid_media_analysis)
+            competitor_swot = _build_competitor_swot(
+                enrichment.get("competitors") or [],
+                enrichment.get("target_market") or "",
+                enrichment.get("unique_value_proposition") or "",
+            )
+            cmo_priority_actions = _build_cmo_priority_actions(swot, seo_analysis, paid_media_analysis, social_media_analysis)
+
+            # Deterministic baseline to guarantee rich CMO output even if AI returns sparse payloads.
+            if not isinstance(enrichment.get("seo_analysis"), dict) or not enrichment.get("seo_analysis"):
+                enrichment["seo_analysis"] = seo_analysis
+            if not isinstance(enrichment.get("paid_media_analysis"), dict) or not enrichment.get("paid_media_analysis"):
+                enrichment["paid_media_analysis"] = paid_media_analysis
+            if not isinstance(enrichment.get("social_media_analysis"), dict) or not enrichment.get("social_media_analysis"):
+                enrichment["social_media_analysis"] = social_media_analysis
+            if not isinstance(enrichment.get("website_health"), dict) or not enrichment.get("website_health"):
+                enrichment["website_health"] = {
+                    "score": round((seo_analysis.get("score", 0) * 0.5) + (15 * min(1, len(enrichment.get("trust_signals") or []))) + (10 * min(1, len(enrichment.get("social_handles") or {})))),
+                    "status": "strong" if seo_analysis.get("score", 0) >= 75 else "moderate" if seo_analysis.get("score", 0) >= 45 else "weak",
+                    "summary": "Website condition assessed from technical SEO, trust signals, and social footprint.",
+                }
+            if not isinstance(enrichment.get("swot"), dict) or not enrichment.get("swot"):
+                enrichment["swot"] = swot
+            if not isinstance(enrichment.get("competitor_swot"), list) or not enrichment.get("competitor_swot"):
+                enrichment["competitor_swot"] = competitor_swot
+            if not isinstance(enrichment.get("cmo_priority_actions"), list) or not enrichment.get("cmo_priority_actions"):
+                enrichment["cmo_priority_actions"] = cmo_priority_actions
+            if not enrichment.get("cmo_executive_brief"):
+                enrichment["cmo_executive_brief"] = (
+                    f"{enrichment.get('business_name') or 'Business'} has a {enrichment.get('website_health', {}).get('status', 'mixed')} digital foundation. "
+                    f"Primary opportunity is to tighten positioning for {enrichment.get('target_market') or 'its core market'}, "
+                    f"improve discoverability via SEO, and operationalize proof-led acquisition across owned and paid channels."
                 )
 
             return {

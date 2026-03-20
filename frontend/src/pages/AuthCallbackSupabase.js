@@ -40,6 +40,10 @@ const AuthCallbackSupabase = () => {
         ]);
 
         let hasConnectedTools = false;
+        const anyProbeSucceeded =
+          (mergeRes.status === 'fulfilled' && mergeRes.value.ok) ||
+          (outlookRes.status === 'fulfilled' && outlookRes.value.ok) ||
+          (gmailRes.status === 'fulfilled' && gmailRes.value.ok);
 
         if (mergeRes.status === 'fulfilled' && mergeRes.value.ok) {
           const mergeData = await mergeRes.value.json();
@@ -57,13 +61,15 @@ const AuthCallbackSupabase = () => {
           hasConnectedTools = hasConnectedTools || (Boolean(gmailData?.connected) && !Boolean(gmailData?.needs_reconnect));
         }
 
-        if (hasConnectedTools) {
+        if (!anyProbeSucceeded) {
+          navigate('/integrations?onboarding=1&source=auth-callback-probe-failed', { replace: true });
+        } else if (hasConnectedTools) {
           navigate('/advisor', { replace: true });
         } else {
           navigate('/integrations?onboarding=1&source=auth-callback', { replace: true });
         }
       } catch {
-        navigate('/advisor', { replace: true });
+        navigate('/integrations?onboarding=1&source=auth-callback-error', { replace: true });
       }
     };
 

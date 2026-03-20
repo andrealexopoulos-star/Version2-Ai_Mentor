@@ -19,6 +19,7 @@ import { invalidateTutorialCache } from '../components/TutorialOverlay';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const sectionResizeStyle = { resize: 'horizontal', overflow: 'auto', minWidth: '320px', maxWidth: '100%' };
 
 const Settings = () => {
   const { user } = useSupabaseAuth();
@@ -203,7 +204,7 @@ const Settings = () => {
           </div>
 
           {/* Agent Calibration Status — reads from persona_calibration_status ONLY */}
-          <Card className="mb-6">
+          <Card className="mb-6" style={sectionResizeStyle}>
             <CardContent className="py-4 px-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -271,7 +272,7 @@ const Settings = () => {
 
             {/* ACCOUNT TAB */}
             <TabsContent value="account">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle>Account Information</CardTitle>
                   <CardDescription>Your personal and business details</CardDescription>
@@ -345,6 +346,16 @@ const Settings = () => {
                         <div>
                           <Label>Years Operating</Label>
                           <Input value={profile.years_operating || ''} onChange={(e) => updateProfile('years_operating', e.target.value)} placeholder="e.g., 2-5 years" className="mt-1" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                          <Label>Market Position</Label>
+                          <Input value={profile.market_position || ''} onChange={(e) => updateProfile('market_position', e.target.value)} placeholder="How your business is positioned in the current market" className="mt-1" />
+                        </div>
+                        <div>
+                          <Label>Competitor Intelligence Snapshot</Label>
+                          <Input value={profile.competitor_scan_result || ''} onChange={(e) => updateProfile('competitor_scan_result', e.target.value)} placeholder="Competitor SWOT / SEO / paid / social analysis summary" className="mt-1" />
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -461,7 +472,7 @@ const Settings = () => {
 
             {/* PREFERENCES TAB */}
             <TabsContent value="preferences">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle>AI Intelligence Preferences</CardTitle>
                   <CardDescription>Customize how your AI intelligence system communicates and provides guidance</CardDescription>
@@ -631,7 +642,7 @@ const Settings = () => {
 
             {/* TOOLS TAB */}
             <TabsContent value="tools">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle>Tools & Systems</CardTitle>
                   <CardDescription>Tools and platforms you use to run your business</CardDescription>
@@ -755,7 +766,7 @@ const Settings = () => {
 
             {/* BILLING TAB */}
             <TabsContent value="billing">
-              <Card>
+              <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CreditCard className="w-5 h-5" style={{ color: '#FF6A00' }} />
