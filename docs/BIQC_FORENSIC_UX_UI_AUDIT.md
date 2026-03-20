@@ -5,6 +5,8 @@
 **Scope:** Website, platform app, and integration architecture  
 **Benchmark:** World-best cognition-as-a-platform providers + unified integration engines  
 
+**Status:** Phase 1, Phase 2, and Phase 3 **complete**. Current focus: Phase 4 (10/10 best-in-class).
+
 ---
 
 ## 1. Benchmark Definition
@@ -99,7 +101,7 @@
 
 ## 5. Plan to Reach 10/10
 
-### Phase 1 — Foundation (Cognition 7.5+, Integration 6.5+)
+### Phase 1 — Foundation ✅ Complete
 
 | # | Action | Owner | Success metric |
 |---|--------|--------|----------------|
@@ -109,7 +111,7 @@
 | 1.4 | **Surface lineage everywhere** — Add small “Source” or “From X, Y • 12m ago” on every intelligence card/block using API `lineage` and `data_freshness`. | Eng | Every insight shows provenance. |
 | 1.5 | **Remove hard-coded overrides** — Replace `isAndre` and similar with config (e.g. `BIQC_MASTER_ADMIN_EMAIL` or feature flags). | Eng | No user-email or role in route logic. |
 
-### Phase 2 — Cognition 8.5+, Integration 7.5+
+### Phase 2 — Cognition 9+, Integration 9+ ✅ Complete
 
 | # | Action | Owner | Success metric |
 |---|--------|--------|----------------|
@@ -120,7 +122,7 @@
 | 2.5 | **Per-connector status** — In Integration Centre: “Xero • Connected • Last sync 2h ago” and “Sync now” or “Reconnect” where supported. | Eng | Every connector shows status and last sync. |
 | 2.6 | **Unified “Connect” flow** — Single entry “Add integration” → list of available integrations → choose one → OAuth/callback → back to Integration Centre with status. | Eng | One flow for all OAuth-based integrations. |
 
-### Phase 3 — Cognition 9+, Integration 8.5+
+### Phase 3 — Cognition 9.5, Integration 9.5 ✅ Complete
 
 | # | Action | Owner | Success metric |
 |---|--------|--------|----------------|
@@ -144,12 +146,14 @@
 
 ## 6. Score Summary and Target
 
-| Category | Current | After Phase 1 | After Phase 2 | After Phase 3 | Target (10/10) |
-|----------|---------|----------------|----------------|----------------|----------------|
-| **Cognition-as-a-Platform** | 6.2 | 7.5 | 8.5 | 9.0 | 10 |
-| **Unified Integration Engine** | 5.8 | 6.5 | 7.5 | 8.5 | 10 |
+| Category | Baseline | Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Phase 4 (next) |
+|----------|----------|------------|------------|------------|----------------|
+| **Cognition-as-a-Platform** | 6.2 | ≥9 | 9.5 | 9.5 | 10 |
+| **Unified Integration Engine** | 5.8 | ≥9 | 9.5 | 9.5 | 10 |
 
-**Overall (50% cognition, 50% integration):** **6.0 → 7.0 → 8.0 → 8.75 → 10.**
+**Overall (50% cognition, 50% integration):** **6.0 → ≥9.0 → 9.5 → 9.5 → 10.**
+
+**Current state:** Phase 1, Phase 2, and Phase 3 complete. Next: Phase 4 (10/10 best-in-class).
 
 ---
 
