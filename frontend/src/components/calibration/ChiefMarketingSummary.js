@@ -122,6 +122,14 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
   const audit = buildCommunicationAudit(full);
   const geo = buildGeographicPresence(full);
   const competitors = buildCompetitorInsights(full);
+  const cmoExecutiveBrief = full.cmo_executive_brief || full.executive_summary || '';
+  const websiteHealth = full.website_health || {};
+  const seoAnalysis = full.seo_analysis || {};
+  const paidAnalysis = full.paid_media_analysis || {};
+  const socialAnalysis = full.social_media_analysis || {};
+  const swot = full.swot || {};
+  const competitorSwot = Array.isArray(full.competitor_swot) ? full.competitor_swot : [];
+  const cmoPriorityActions = Array.isArray(full.cmo_priority_actions) ? full.cmo_priority_actions : [];
 
   // Business summary paragraphs
   const bizName = full.business_name || wowSummary?.business_name || 'This business';
@@ -225,6 +233,56 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           </div>
         </div>
 
+        {/* ── SECTION 2B: EXECUTIVE BRIEF ── */}
+        {cmoExecutiveBrief && (
+          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #3B82F640', animation: 'cmsFade 0.9s ease-out' }} data-testid="executive-brief">
+            <div className="flex items-center gap-2 mb-2">
+              <Star className="w-4 h-4" style={{ color: '#3B82F6' }} />
+              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Executive Brief</h2>
+            </div>
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+              {cmoExecutiveBrief}
+            </p>
+          </div>
+        )}
+
+        {/* ── SECTION 2C: CHANNEL & WEBSITE DIAGNOSTICS ── */}
+        <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 0.95s ease-out' }} data-testid="channel-diagnostics">
+          <div className="flex items-center gap-2 mb-3">
+            <Globe className="w-4 h-4" style={{ color: '#06B6D4' }} />
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Website, SEO, Paid & Social Diagnostics</h2>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Website Condition</p>
+              <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                {(websiteHealth.summary || `Status: ${websiteHealth.status || 'unknown'} · Score: ${websiteHealth.score ?? 'n/a'}`)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>SEO</p>
+              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                Score {seoAnalysis.score ?? 'n/a'} · Status {seoAnalysis.status || 'unknown'}
+              </p>
+              {Array.isArray(seoAnalysis.gaps) && seoAnalysis.gaps.length > 0 && (
+                <p className="text-xs text-[#64748B] mt-1" style={{ fontFamily: fontFamily.body }}>{seoAnalysis.gaps.slice(0, 2).join(' ')}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Paid Media</p>
+              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                {paidAnalysis.assessment || 'No paid media diagnostics available.'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Social Marketing</p>
+              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                {socialAnalysis.assessment || 'No social diagnostics available.'}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* ── SECTION 3: UI/UX COMMUNICATION AUDIT ── */}
         <div style={{ animation: 'cmsFade 1.0s ease-out' }} data-testid="communication-audit">
           <div className="flex items-center gap-2 mb-3">
@@ -317,16 +375,45 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   {competitors.location ? ` · Primary market: ${competitors.location}` : ''}
                 </p>
               )}
-              <div className="mt-3 p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
-                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                  <strong style={{ color: '#3B82F6' }}>Note:</strong> Detailed competitor scoring (0–10 on Content, SEO, Paid, Website Quality, Reviews) requires integration with the Exposure Scan. Run Forensic Market Exposure from SoundBoard or the Reports section.
-                </p>
-              </div>
+              {competitorSwot.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {competitorSwot.slice(0, 3).map((c, idx) => (
+                    <div key={idx} className="p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+                      <p className="text-xs font-semibold mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.body }}>{c.name || `Competitor ${idx + 1}`}</p>
+                      {Array.isArray(c.opportunities_against_them) && c.opportunities_against_them.length > 0 && (
+                        <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                          Opportunity: {c.opportunities_against_them[0]}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           ) : (
             <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No competitor data detected from publicly available sources. BIQc does not assume or fabricate competitor information — run an Exposure Scan to unlock this analysis.</p>
           )}
         </div>
+
+        {/* ── SECTION 5B: SWOT ── */}
+        {swot && Object.keys(swot).length > 0 && (
+          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.5s ease-out' }} data-testid="swot-analysis">
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="w-4 h-4" style={{ color: '#8B5CF6' }} />
+              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SWOT Analysis</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {['strengths', 'weaknesses', 'opportunities', 'threats'].map((key) => (
+                <div key={key} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{key}</p>
+                  <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+                    {Array.isArray(swot[key]) && swot[key].length > 0 ? swot[key][0] : 'No verified data yet.'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── SECTION 6: STRATEGIC RECOMMENDATIONS ── */}
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #10B98120', animation: 'cmsFade 1.6s ease-out' }} data-testid="recommendations">
@@ -372,6 +459,12 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Core digital presence signals are in place. Focus on conversion rate optimisation and competitor differentiation.</p>
               </div>
             )}
+            {cmoPriorityActions.slice(0, 3).map((action, idx) => (
+              <div key={`cmo-${idx}`} className="flex items-start gap-3">
+                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#10B981]" />
+                <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{action}</p>
+              </div>
+            ))}
           </div>
         </div>
 

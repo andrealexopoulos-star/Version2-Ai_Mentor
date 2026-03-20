@@ -348,6 +348,16 @@ const Settings = () => {
                           <Input value={profile.years_operating || ''} onChange={(e) => updateProfile('years_operating', e.target.value)} placeholder="e.g., 2-5 years" className="mt-1" />
                         </div>
                       </div>
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                          <Label>Market Position</Label>
+                          <Input value={profile.market_position || ''} onChange={(e) => updateProfile('market_position', e.target.value)} placeholder="How your business is positioned in the current market" className="mt-1" />
+                        </div>
+                        <div>
+                          <Label>Competitor Intelligence Snapshot</Label>
+                          <Input value={profile.competitor_scan_result || ''} onChange={(e) => updateProfile('competitor_scan_result', e.target.value)} placeholder="Competitor SWOT / SEO / paid / social analysis summary" className="mt-1" />
+                        </div>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <Label>Business Stage</Label>

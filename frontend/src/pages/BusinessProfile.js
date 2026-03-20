@@ -275,6 +275,17 @@ const BusinessProfile = () => {
                     />
                   </div>
 
+                  <div>
+                    <Label>Market Position</Label>
+                    <Textarea
+                      value={profile.market_position || ''}
+                      onChange={(e) => updateProfile('market_position', e.target.value)}
+                      placeholder="How your business is currently positioned in the market..."
+                      rows={3}
+                      className="mt-2"
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <Label>Business Model</Label>
@@ -586,6 +597,17 @@ const BusinessProfile = () => {
                       onChange={(e) => updateProfile('growth_strategy', e.target.value)}
                       placeholder="How do you plan to grow? New markets, products, partnerships?"
                       rows={3}
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Competitor Intelligence & SWOT Notes</Label>
+                    <Textarea
+                      value={profile.competitor_scan_result || ''}
+                      onChange={(e) => updateProfile('competitor_scan_result', e.target.value)}
+                      placeholder="Stored competitor analysis, SWOT, and channel diagnostics from calibration scan..."
+                      rows={6}
                       className="mt-2"
                     />
                   </div>
