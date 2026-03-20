@@ -6,25 +6,6 @@ import { isPrivilegedUser } from "../lib/privilegedUser";
 
 const ADMIN_ROLES = ['admin', 'superadmin'];
 
-/**
- * Synchronously check sessionStorage for cached auth state.
- * This prevents the calibration loop for completed users on page refresh.
- */
-const getCachedAuthState = (userId) => {
-  if (!userId) return null;
-  try {
-    const cached = sessionStorage.getItem(`biqc_auth_bootstrap_${userId}`);
-    if (cached) {
-      const { state, ts } = JSON.parse(cached);
-      const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-      if (Date.now() - ts < CACHE_TTL) {
-        return state;
-      }
-    }
-  } catch {}
-  return null;
-};
-
 const getRecentLoginTimestamp = () => {
   try {
     const raw = sessionStorage.getItem('biqc_auth_recent_login');
@@ -152,23 +133,9 @@ export default function ProtectedRoute({ children, adminOnly }) {
   // Still loading — but if we have a user/session, show content (don't block navigation)
   if (authState === AUTH_STATE.LOADING) {
     if (user || session) {
-      // CALIBRATION LOOP FIX: Check sessionStorage cache synchronously to determine
-      // if user is READY before bootstrap completes. This prevents completed users
-      // from getting stuck on /calibration loading screen.
-      const userId = user?.id || session?.user?.id;
-      const cachedState = getCachedAuthState(userId);
-      
-      if (isCalibrationRoute) {
-        // If cached state shows READY, redirect immediately
-        // If cached state shows NEEDS_CALIBRATION, allow calibration page
-        // If no cache (new user or expired), redirect to /advisor as safe default
-        // (NEEDS_CALIBRATION users will be redirected back after bootstrap)
-        if (cachedState === AUTH_STATE.NEEDS_CALIBRATION) {
-          return children; // Allow calibration page
-        }
-        // For READY or no cache, redirect to /advisor
-        return <Navigate to="/advisor" replace />;
-      }
+      // During bootstrap, never hard-redirect away from /calibration.
+      // Redirecting here can block fresh users from reaching the calibration funnel.
+      if (isCalibrationRoute) return children;
       // We have a session — render children while bootstrap completes in background
       // This prevents the loading screen from flashing on every page navigation
     } else {
@@ -201,9 +168,10 @@ export default function ProtectedRoute({ children, adminOnly }) {
 
   // READY or has session → enforce gates
   if (authState === AUTH_STATE.READY || user || session) {
-    if (isCalibrationRoute) {
-      return <Navigate to="/advisor" replace />;
-    }
+    // Allow /calibration for READY users so explicit recalibration is always possible.
+    // Redirecting calibrated users away from this route prevents recovery when
+    // calibration state falls out of sync and blocks the new-user onboarding funnel.
+    if (isCalibrationRoute) return children;
 
     // Admin pages bypass onboarding/calibration checks entirely
     const ADMIN_PATHS = ['/admin', '/support-admin', '/observability', '/admin/prompt-lab'];
