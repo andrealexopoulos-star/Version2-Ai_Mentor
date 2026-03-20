@@ -4,6 +4,7 @@ import { useSupabaseAuth } from "../context/SupabaseAuthContext";
 import { apiClient } from "../lib/api";
 import { REVEAL_PHASES } from "../components/calibration/ExecutiveReveal";
 import { parseIdentitySignals } from "../components/calibration/ForensicIdentityCard";
+import { EVENTS, trackActivationStep, trackOnceForUser } from "../lib/analytics";
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -131,6 +132,8 @@ export const useCalibrationState = () => {
   };
 
   const triggerComplete = () => {
+    trackOnceForUser(EVENTS.ACTIVATION_CALIBRATION_COMPLETE, session?.user?.id, { source: 'calibration' });
+    trackActivationStep('calibration_complete', { source: 'calibration' });
     // Clear stale auth bootstrap cache so the next page load re-checks calibration status
     // from the server instead of reading the cached NEEDS_CALIBRATION state.
     try { clearBootstrapCache(); } catch {}

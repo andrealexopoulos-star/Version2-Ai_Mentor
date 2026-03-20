@@ -169,8 +169,9 @@ const WebsiteFooter = () => (
 
 const WebsiteLayout = ({ children }) => (
   <div className="min-h-screen" style={{ background: '#0F1720', color: '#F4F7FA' }}>
+    <a href="#main-content" className="skip-link">Skip to main content</a>
     <WebsiteNav />
-    <main className="pt-16">{children}</main>
+    <main id="main-content" className="pt-16">{children}</main>
     <WebsiteFooter />
   </div>
 );

@@ -1,5 +1,25 @@
 /* Additional App-specific styles */
 
+.skip-link {
+    position: absolute;
+    left: 12px;
+    top: -48px;
+    z-index: 2000;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #FF6A00;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+    top: 10px;
+}
+
 /* Landing page hero */
 .hero-section {
     min-height: 100vh;

@@ -34,6 +34,13 @@ body {
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
   img, video, iframe { max-width: 100%; height: auto; }
+  main, section, article { max-width: 100%; overflow-x: hidden; }
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
   /* ── Touch targets: 44px minimum on interactive elements ── */
   button, [role="button"], a { min-height: 44px; touch-action: manipulation; }

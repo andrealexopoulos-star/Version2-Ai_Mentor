@@ -13,6 +13,7 @@ import { isPrivilegedUser } from '../lib/privilegedUser';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 import LineageBadge from '../components/LineageBadge';
 import { useLocation } from 'react-router-dom';
+import { EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
 import {
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
   Loader2, ChevronLeft, ChevronRight, MoreVertical, Video, Phone,
@@ -196,6 +197,14 @@ const MySoundBoard = () => {
   }, [location.state]);
 
   useEffect(() => {
+    if (!location.state?.firstValuePath || messages.length > 0) return;
+    setMessages([{
+      role: 'assistant',
+      content: `Welcome ${firstName}. This is your first-value path. Ask one question about what matters most this week, and BIQc will turn it into a concrete next action.`,
+    }]);
+  }, [location.state, messages.length, firstName]);
+
+  useEffect(() => {
     if (!advisorHandoff || messages.length > 0) return;
     setMessages([buildAdvisorAssistantMessage(advisorHandoff)]);
   }, [advisorHandoff, messages.length]);
@@ -274,6 +283,8 @@ const MySoundBoard = () => {
 
     if (!fullMessage.trim()) return;
     setMessages(prev => [...prev, { role: 'user', content: displayContent }]);
+    trackOnceForUser(EVENTS.ACTIVATION_FIRST_SOUNDBOARD_USE, user?.id, { entrypoint: 'mysoundboard' });
+    trackActivationStep('first_soundboard_use', { entrypoint: 'mysoundboard' });
     setLoading(true);
 
     try {
