@@ -109,6 +109,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const [notifications, setNotifications] = useState({ total: 0, high: 0 });
   const [showNotifications, setShowNotifications] = useState(false);
   const [notificationsList, setNotificationsList] = useState([]);
+  const hideEmbeddedSoundboard = location.pathname === '/soundboard' || location.pathname.startsWith('/soundboard/');
 
   useEffect(() => { localStorage.setItem('sidebar-collapsed', sidebarCollapsed); }, [sidebarCollapsed]);
 
@@ -581,14 +582,16 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
           </div>
         </main>
 
-        {/* Desktop Soundboard Panel — always visible on lg+ */}
-        <aside className="hidden lg:flex w-[380px] shrink-0 flex-col" style={{ background: 'var(--biqc-bg-input, #0A1018)', borderLeft: '1px solid var(--biqc-border, #243140)', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
-          <SoundboardPanel actionMessage={actionMessage} onActionConsumed={onActionConsumed} />
-        </aside>
+        {/* Desktop Soundboard Panel — hidden on dedicated /soundboard route */}
+        {!hideEmbeddedSoundboard && (
+          <aside className="hidden lg:flex w-[380px] shrink-0 flex-col" style={{ background: 'var(--biqc-bg-input, #0A1018)', borderLeft: '1px solid var(--biqc-border, #243140)', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
+            <SoundboardPanel actionMessage={actionMessage} onActionConsumed={onActionConsumed} />
+          </aside>
+        )}
       </div>
 
       {/* Mobile Soundboard FAB + Overlay */}
-      <div className="lg:hidden">
+      {!hideEmbeddedSoundboard && <div className="lg:hidden">
         {!sbOpen ? (
           <button onClick={() => setSbOpen(true)}
             className="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
@@ -610,7 +613,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
             </div>
           </>
         )}
-      </div>
+      </div>}
 
       {/* Mobile Bottom Navigation */}
       <MobileNav />
