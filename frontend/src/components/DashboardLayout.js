@@ -16,7 +16,7 @@ import {
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
   TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
   ClipboardList, MessageSquare, Lock, Eye, Megaphone, FlaskConical,
-  BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar
+  BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox
 } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
 import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
@@ -212,6 +212,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const navSections = [
     { id: 'overview', label: 'BIQc Overview', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [] },
     { id: 'soundboard', label: 'Soundboard', path: '/soundboard', icon: MessageSquare, items: [] },
+    { id: 'priority-inbox', label: 'Email Priority Inbox', path: '/email-inbox', icon: Inbox, items: [] },
     { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [] },
     { id: 'market', label: 'Market & Position', path: '/market', icon: Radar, items: [] },
     { id: 'benchmark', label: 'Competitive Benchmark', path: '/competitive-benchmark', icon: Target, items: [] },
