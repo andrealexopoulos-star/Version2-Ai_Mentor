@@ -25,6 +25,9 @@ import { isPrivilegedUser } from '../lib/privilegedUser';
 import { fontFamily } from '../design-system/tokens';
 
 const DISPLAY = fontFamily.display;
+const SIDEBAR_WIDTH_STORAGE_KEY = 'biqc_sidebar_width';
+const SOUNDBOARD_WIDTH_STORAGE_KEY = 'biqc_soundboard_width';
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 // Business Verification Score Badge — shows identity confidence + data coverage
 const VerificationBadge = ({ navigate }) => {
@@ -106,12 +109,31 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   };
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true');
+  const [sidebarWidthPx, setSidebarWidthPx] = useState(() => {
+    const stored = Number(localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY));
+    return Number.isFinite(stored) ? clamp(stored, 220, 420) : 256;
+  });
+  const [soundboardWidthPx, setSoundboardWidthPx] = useState(() => {
+    const stored = Number(localStorage.getItem(SOUNDBOARD_WIDTH_STORAGE_KEY));
+    return Number.isFinite(stored) ? clamp(stored, 320, 560) : 380;
+  });
+  const [isDesktopViewport, setIsDesktopViewport] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : false));
+  const [activeResizeTarget, setActiveResizeTarget] = useState(null);
   const [notifications, setNotifications] = useState({ total: 0, high: 0 });
   const [showNotifications, setShowNotifications] = useState(false);
   const [notificationsList, setNotificationsList] = useState([]);
   const hideEmbeddedSoundboard = location.pathname === '/soundboard' || location.pathname.startsWith('/soundboard/');
 
   useEffect(() => { localStorage.setItem('sidebar-collapsed', sidebarCollapsed); }, [sidebarCollapsed]);
+  useEffect(() => { localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(sidebarWidthPx)); }, [sidebarWidthPx]);
+  useEffect(() => { localStorage.setItem(SOUNDBOARD_WIDTH_STORAGE_KEY, String(soundboardWidthPx)); }, [soundboardWidthPx]);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktopViewport(window.innerWidth >= 1024);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Mobile scroll lock
   useEffect(() => {
@@ -133,6 +155,34 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isNavOpen, closeAll]);
+
+  useEffect(() => {
+    if (!activeResizeTarget) return undefined;
+
+    const handleMouseMove = (e) => {
+      if (activeResizeTarget === 'sidebar' && !sidebarCollapsed) {
+        setSidebarWidthPx(clamp(e.clientX, 220, 420));
+        return;
+      }
+      if (activeResizeTarget === 'soundboard') {
+        const nextWidth = window.innerWidth - e.clientX;
+        setSoundboardWidthPx(clamp(nextWidth, 320, 560));
+      }
+    };
+
+    const handleMouseUp = () => setActiveResizeTarget(null);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [activeResizeTarget, sidebarCollapsed]);
 
   // Theme management — dark (default) or light, persisted to localStorage
   const [isDark, setIsDark] = useState(() => {
@@ -271,8 +321,16 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       return next;
     });
   }, [visibleSections, isSA, isActive]);
-  const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';
-const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
+  const activeSidebarWidth = sidebarCollapsed ? 64 : sidebarWidthPx;
+  const startSidebarResize = (event) => {
+    if (sidebarCollapsed) return;
+    event.preventDefault();
+    setActiveResizeTarget('sidebar');
+  };
+  const startSoundboardResize = (event) => {
+    event.preventDefault();
+    setActiveResizeTarget('soundboard');
+  };
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: 'var(--biqc-bg, #0F1720)', color: 'var(--biqc-text, #F4F7FA)' }}>
@@ -415,8 +473,8 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
       </header>
 
       {/* ═══ SIDEBAR ═══ */}
-      <aside className={`fixed left-0 transition-all duration-300 ${sidebarWidth} ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-14 h-[calc(100vh-3.5rem)]`}
-        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, #0A1018)', borderRight: '1px solid var(--biqc-border, #243140)' }}
+      <aside className={`fixed left-0 transition-all duration-300 ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-14 h-[calc(100vh-3.5rem)]`}
+        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, #0A1018)', borderRight: '1px solid var(--biqc-border, #243140)', width: `${activeSidebarWidth}px` }}
         role="navigation" aria-label="Main navigation">
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -425,6 +483,15 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
           aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           {sidebarCollapsed ? <ChevronRight className="w-4 h-4" style={{ color: 'var(--biqc-text-muted)' }} /> : <ChevronRight className="w-4 h-4 rotate-180" style={{ color: 'var(--biqc-text-muted)' }} />}
         </button>
+        {!sidebarCollapsed && (
+          <div
+            className="hidden lg:block absolute top-0 right-0 h-full w-1 cursor-col-resize hover:bg-white/10"
+            onMouseDown={startSidebarResize}
+            role="separator"
+            aria-label="Resize navigation panel"
+            data-testid="sidebar-resize-handle"
+          />
+        )}
 
         <nav
           ref={(el) => {
@@ -563,7 +630,7 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
       {isNavOpen && <div className="fixed inset-0 bg-black/50 lg:hidden" onClick={closeAll} aria-hidden="true" style={{ zIndex: 998 }} />}
 
       {/* ═══ MAIN CONTENT + DESKTOP SOUNDBOARD PANEL ═══ */}
-      <div className={`${sidebarMargin} pt-14 pb-[76px] lg:pb-0 transition-all duration-300 flex`} style={{ minHeight: '100dvh' }}>
+      <div className="pt-14 pb-[76px] lg:pb-0 transition-all duration-300 flex" style={{ minHeight: '100dvh', marginLeft: isDesktopViewport ? `${activeSidebarWidth}px` : undefined }}>
         <main id="main-content" className="flex-1" style={{ background: 'var(--biqc-bg, #0F1720)', overflowY: 'visible' }}>
           <div className="px-4 py-4 md:px-6 md:py-6">
             <div className="mb-4 flex items-center justify-between gap-3" data-testid="page-navigation-row">
@@ -585,7 +652,14 @@ const sidebarMargin = sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64';
 
         {/* Desktop Soundboard Panel — hidden on dedicated /soundboard route */}
         {!hideEmbeddedSoundboard && (
-          <aside className="hidden lg:flex w-[380px] shrink-0 flex-col" style={{ background: 'var(--biqc-bg-input, #0A1018)', borderLeft: '1px solid var(--biqc-border, #243140)', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
+          <aside className="hidden lg:flex shrink-0 flex-col relative" style={{ width: `${soundboardWidthPx}px`, background: 'var(--biqc-bg-input, #0A1018)', borderLeft: '1px solid var(--biqc-border, #243140)', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
+            <div
+              className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-white/10"
+              onMouseDown={startSoundboardResize}
+              role="separator"
+              aria-label="Resize soundboard panel"
+              data-testid="soundboard-resize-handle"
+            />
             <SoundboardPanel actionMessage={actionMessage} onActionConsumed={onActionConsumed} />
           </aside>
         )}
