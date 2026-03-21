@@ -21,6 +21,14 @@ import {
 
 const SOUNDBOARD_CHAT_TIMEOUT_MS = 120000;
 const SOUNDBOARD_LAYOUT_KEY = 'biqc_soundboard_layout_v2';
+const BOARDROOM_LOADING_STEPS = [
+  'Thinking through strategic priorities...',
+  'Reviewing CRM opportunities and stage movement...',
+  'Checking accounting patterns, cash timing, and overdue risk...',
+  'Scanning communication signals from inbox and sent activity...',
+  'Comparing operations pressure against capacity signals...',
+  'Aligning Boardroom perspectives into one clear recommendation...',
+];
 
 const deriveRequestScope = (message = '') => {
   const text = String(message || '').toLowerCase();
@@ -146,14 +154,6 @@ const MySoundBoard = () => {
     { id: 'strategy', label: 'Strategy', shortDesc: 'Planning & scenarios', icon: '🎯' },
   ];
   const BOARDROOM_ROLES = ['CEO', 'CFO', 'COO', 'CTO', 'HR', 'CCO'];
-  const BOARDROOM_NARRATION = [
-    'CEO: framing decision window from current risk/revenue trajectory',
-    'CFO: validating Xero/accounting cash pressure and margin signals',
-    'COO: checking delivery bottlenecks and operational load',
-    'CTO: scanning system reliability and implementation constraints',
-    'HR: assessing team capacity and execution risk',
-    'CCO: consolidating customer and market signals for urgency',
-  ];
 
   const resolvedTier = resolveTier(user);
   const privileged = isPrivilegedUser(user);
@@ -199,18 +199,8 @@ const MySoundBoard = () => {
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode) || BIQC_MODES[0];
   const showBoardroomViz = selectedAgent === 'boardroom';
-  const [boardroomNarrationStep, setBoardroomNarrationStep] = useState(0);
-
-  useEffect(() => {
-    if (!loading || !showBoardroomViz) {
-      setBoardroomNarrationStep(0);
-      return;
-    }
-    const timer = setInterval(() => {
-      setBoardroomNarrationStep((prev) => (prev + 1) % BOARDROOM_NARRATION.length);
-    }, 1300);
-    return () => clearInterval(timer);
-  }, [loading, showBoardroomViz]);
+  const [boardroomNarrationIndex, setBoardroomNarrationIndex] = useState(0);
+  const [boardroomProgress, setBoardroomProgress] = useState(12);
   const fetchScanUsage = useCallback(async (forceRefresh = false) => {
     try {
       const CACHE_KEY = 'biqc_scan_usage_cache';
@@ -261,6 +251,29 @@ const MySoundBoard = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (!loading || !showBoardroomViz) {
+      setBoardroomNarrationIndex(0);
+      setBoardroomProgress(12);
+      return undefined;
+    }
+
+    const narrationTimer = setInterval(() => {
+      setBoardroomNarrationIndex((prev) => (prev + 1) % BOARDROOM_LOADING_STEPS.length);
+    }, 1400);
+    const progressTimer = setInterval(() => {
+      setBoardroomProgress((prev) => {
+        if (prev >= 92) return 28;
+        return Math.min(92, prev + 11);
+      });
+    }, 900);
+
+    return () => {
+      clearInterval(narrationTimer);
+      clearInterval(progressTimer);
+    };
+  }, [loading, showBoardroomViz]);
 
   const fetchConversations = async () => {
     try {
@@ -354,7 +367,7 @@ const MySoundBoard = () => {
       } : {};
       if (!advisorContext) intelligenceContext.request_scope = requestScope;
 
-      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage;
+      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage, agent_name;
 
       const response = await apiClient.post(
         '/soundboard/chat',
@@ -428,7 +441,13 @@ const MySoundBoard = () => {
     } catch (error) {
       const errorMessage = getSoundboardErrorMessage(error);
       toast.error(errorMessage);
-      setMessages(prev => [...prev, { role: 'assistant', content: errorMessage }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `I hit a send error: ${errorMessage}\n\nPlease retry. If this repeats, switch to Normal mode and try again.`,
+        },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -909,31 +928,37 @@ const MySoundBoard = () => {
                             <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                           </div>
                           <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                            {showBoardroomViz ? 'Boardroom is assessing priorities...' : 'Thinking...'}
+                            {showBoardroomViz ? BOARDROOM_LOADING_STEPS[boardroomNarrationIndex] : 'Thinking...'}
                           </span>
                         </div>
                         {showBoardroomViz && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {BOARDROOM_ROLES.map((role, i) => (
-                              <span
-                                key={role}
-                                className="text-[9px] px-1.5 py-0.5 rounded animate-pulse"
+                          <div className="mt-2 space-y-2">
+                            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(30, 41, 59, 0.8)' }}>
+                              <div
+                                className="h-full rounded-full transition-all duration-700"
                                 style={{
-                                  background: 'rgba(59,130,246,0.12)',
-                                  color: '#93C5FD',
-                                  fontFamily: fontFamily.mono,
-                                  animationDelay: `${i * 120}ms`,
+                                  width: `${boardroomProgress}%`,
+                                  background: 'linear-gradient(90deg, #3B82F6 0%, #10B981 100%)',
                                 }}
-                              >
-                                {role}
-                              </span>
-                            ))}
+                              />
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {BOARDROOM_ROLES.map((role, i) => (
+                                <span
+                                  key={role}
+                                  className="text-[9px] px-1.5 py-0.5 rounded animate-pulse"
+                                  style={{
+                                    background: 'rgba(59,130,246,0.12)',
+                                    color: '#93C5FD',
+                                    fontFamily: fontFamily.mono,
+                                    animationDelay: `${i * 120}ms`,
+                                  }}
+                                >
+                                  {role}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        )}
-                        {showBoardroomViz && (
-                          <p className="mt-2 text-[10px]" style={{ color: '#93C5FD', fontFamily: fontFamily.mono }}>
-                            {BOARDROOM_NARRATION[boardroomNarrationStep]}
-                          </p>
                         )}
                       </div>
                     </div>
@@ -1081,12 +1106,6 @@ const MySoundBoard = () => {
                       </span>
                     ))}
                   </div>
-                  {loading && (
-                    <div className="mt-2 text-[11px] rounded-lg px-2.5 py-2"
-                      style={{ background: 'rgba(15,23,42,0.75)', color: '#BFDBFE', border: '1px solid rgba(59,130,246,0.2)', fontFamily: fontFamily.mono }}>
-                      {BOARDROOM_NARRATION[boardroomNarrationStep]}
-                    </div>
-                  )}
                 </div>
               )}
 
