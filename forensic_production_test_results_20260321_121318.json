@@ -1,0 +1,14 @@
+{
+  "auth": {
+    "success": false,
+    "error": "HTTP 401",
+    "details": "{\"detail\":\"Invalid email or password\"}"
+  },
+  "brain_apis": {
+    "success": false
+  },
+  "data_lineage": {
+    "success": false
+  },
+  "overall_success": false
+}

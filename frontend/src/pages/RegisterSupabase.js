@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { apiClient } from '../lib/api';
 import { Input } from '../components/ui/input';
+import RecaptchaGate from '../components/RecaptchaGate';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Eye, EyeOff, Shield, Lock, Zap, Activity } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { EVENTS, trackActivationStep, trackEvent } from '../lib/analytics';
 
-const DISPLAY = "'Cormorant Garamond', Georgia, serif";
+const DISPLAY = fontFamily.display;
 
 // Friendly label mapping for integration names
 const INTEGRATION_LABELS = {
@@ -27,6 +29,8 @@ const RegisterSupabase = () => {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const recaptchaEnabled = Boolean(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', full_name: '', company_name: '', industry: ''
   });
@@ -41,6 +45,10 @@ const RegisterSupabase = () => {
     if (formData.password !== formData.confirmPassword) { toast.error('Passwords do not match'); return; }
     setLoading(true);
     try {
+      if (recaptchaEnabled) {
+        if (!captchaToken) { toast.error('Please complete the captcha verification.'); return; }
+        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken, action: 'register' });
+      }
       await signUp(formData.email, formData.password, {
         full_name: formData.full_name, company_name: formData.company_name, industry: formData.industry, role: 'user'
       });
@@ -74,9 +82,16 @@ const RegisterSupabase = () => {
 
   const handleOAuthSignIn = async (provider) => {
     const providerName = provider === 'google' ? 'Google' : 'Microsoft';
+    if (recaptchaEnabled && !captchaToken) {
+      toast.error('Please complete the captcha verification first.');
+      return;
+    }
     setOauthLoading(true);
     trackActivationStep('signup_oauth_started', { provider });
     try {
+      if (recaptchaEnabled) {
+        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken, action: `oauth_${provider}` });
+      }
       const result = await signInWithOAuth(provider);
       if (result?.url) { window.location.href = result.url; }
     } catch (error) {
@@ -86,6 +101,7 @@ const RegisterSupabase = () => {
       } else {
         toast.error(`${providerName} signup failed. Please try again.`);
       }
+    } finally {
       setOauthLoading(false);
     }
   };
@@ -113,7 +129,7 @@ const RegisterSupabase = () => {
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-normal text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY, textShadow: '0 1px 6px rgba(0,0,0,0.4)', WebkitTextStroke: '0.3px #F4F7FA' }}>Get started</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY }}>Get started</h1>
           <p className="text-sm text-[#9FB0C3] mb-4" style={{ fontFamily: fontFamily.body }}>Create your account to access sovereign intelligence.</p>
 
           {!hasSupabaseConfig && (
@@ -210,6 +226,9 @@ const RegisterSupabase = () => {
               data-testid="register-submit-btn">
               {loading ? "Creating account..." : "Create account"}
             </button>
+            {recaptchaEnabled && (
+              <RecaptchaGate onTokenChange={setCaptchaToken} testId="register-recaptcha" />
+            )}
           </form>
 
           <div className="mt-6 text-center">

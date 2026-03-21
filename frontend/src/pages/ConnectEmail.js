@@ -242,10 +242,10 @@ const ConnectEmail = () => {
           {/* Header */}
           <div>
             <h1 className="text-2xl sm:text-3xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              Connect Email Account
+              Connectors
             </h1>
             <p className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
-              Connect your email to enable Priority Inbox and AI-powered email intelligence
+              Connect Outlook or Gmail to activate email and calendar intelligence
             </p>
           </div>
 
@@ -446,7 +446,7 @@ const ConnectEmail = () => {
                   <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--accent-primary)' }} />
                   <div>
                     <h4 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                      Email Connection Information
+                      Connector Information
                     </h4>
                     <ul className="text-sm space-y-1" style={{ color: 'var(--text-secondary)' }}>
                       <li>• Your email data is processed securely via Supabase Edge Functions</li>

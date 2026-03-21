@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { apiClient } from '../lib/api';
 import { Input } from '../components/ui/input';
+import RecaptchaGate from '../components/RecaptchaGate';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Eye, EyeOff, Shield, Lock, Activity, Zap } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 
-const DISPLAY = "'Cormorant Garamond', Georgia, serif";
+const DISPLAY = fontFamily.display;
 
 const LoginSupabase = () => {
   const navigate = useNavigate();
@@ -19,6 +21,8 @@ const LoginSupabase = () => {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutUntil, setLockoutUntil] = useState(0);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const recaptchaEnabled = Boolean(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
 
   useEffect(() => {
     if (!lockoutUntil) return undefined;
@@ -73,6 +77,13 @@ const LoginSupabase = () => {
     }
     setLoading(true);
     try {
+      if (recaptchaEnabled) {
+        if (!captchaToken) {
+          setLoginError('Please complete the captcha verification.');
+          return;
+        }
+        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken, action: 'login' });
+      }
       const authResult = await signIn(formData.email, formData.password);
       setFailedAttempts(0);
       setLockoutUntil(0);
@@ -110,8 +121,15 @@ const LoginSupabase = () => {
 
   const handleOAuthSignIn = async (provider) => {
     const providerName = provider === 'google' ? 'Google' : 'Microsoft';
+    if (recaptchaEnabled && !captchaToken) {
+      toast.error('Please complete the captcha verification first.');
+      return;
+    }
     setOauthLoading(true);
     try {
+      if (recaptchaEnabled) {
+        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken, action: `oauth_${provider}` });
+      }
       const result = await signInWithOAuth(provider);
       if (result?.url) {
         window.location.href = result.url;
@@ -123,6 +141,7 @@ const LoginSupabase = () => {
       } else {
         toast.error(`${providerName} sign-in failed. Please try again.`);
       }
+    } finally {
       setOauthLoading(false);
     }
   };
@@ -147,7 +166,7 @@ const LoginSupabase = () => {
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-normal text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY, textShadow: '0 1px 6px rgba(0,0,0,0.4)', WebkitTextStroke: '0.3px #F4F7FA' }}>Welcome back</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY }}>Welcome back</h1>
           <p className="text-sm text-[#9FB0C3] mb-8" style={{ fontFamily: fontFamily.body }}>Sign in to your sovereign intelligence platform.</p>
 
           {!hasSupabaseConfig && (
@@ -190,15 +209,6 @@ const LoginSupabase = () => {
                 </>
               )}
             </button>
-          </div>
-
-          <div
-            className="mb-6 rounded-xl border px-3 py-2 text-xs"
-            style={{ borderColor: '#334155', background: '#0F172A', color: '#94A3B8', fontFamily: fontFamily.mono }}
-            data-testid="login-oauth-tester-note"
-          >
-            Google OAuth may be restricted to approved test users while verification is pending.
-            If access is blocked, use Microsoft or email/password sign-in.
           </div>
 
           {/* Divider */}
@@ -255,6 +265,10 @@ const LoginSupabase = () => {
                 <span className="text-base leading-none mt-0.5">⚠</span>
                 <span>{loginError}</span>
               </div>
+            )}
+
+            {recaptchaEnabled && (
+              <RecaptchaGate onTokenChange={setCaptchaToken} testId="login-recaptcha" />
             )}
 
             <div style={{ width: '100%' }}>

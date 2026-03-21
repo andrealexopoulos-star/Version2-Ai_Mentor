@@ -4,19 +4,18 @@
  * No inline font sizes. No arbitrary padding. No hardcoded radius.
  *
  * TYPOGRAPHY DECISION (Unified — Mar 2026):
- *  Headings  → Cormorant Garamond (premium, editorial intelligence feel)
- *  Body/UI   → Inter (clean, readable, modern SaaS)
- *  Data/Code → JetBrains Mono (monospace for numbers and labels)
+ *  Headings/UI/Data → Inter
+ *  Single-family typography lowers visual switching cost and improves readability.
  *
  *  displayING = alias for display (used by marketing site pages)
  */
 
 // ═══ TYPOGRAPHY ═══
 export const fontFamily = {
-  display:    "'Cormorant Garamond', Georgia, serif",
-  displayING: "'Cormorant Garamond', Georgia, serif",  // alias for marketing site
+  display:    "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  displayING: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",  // alias for marketing site
   body:       "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  mono:       "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
+  mono:       "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 };
 
 export const fontSize = {

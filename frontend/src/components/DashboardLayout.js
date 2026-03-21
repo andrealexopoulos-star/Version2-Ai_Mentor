@@ -24,7 +24,7 @@ import { canAccess, requiredTier, TIERS } from '../config/tiers';
 import { isPrivilegedUser } from '../lib/privilegedUser';
 import { fontFamily } from '../design-system/tokens';
 
-const DISPLAY = "'Cormorant Garamond', Georgia, serif";
+const DISPLAY = fontFamily.display;
 
 // Business Verification Score Badge — shows identity confidence + data coverage
 const VerificationBadge = ({ navigate }) => {
@@ -219,7 +219,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     { id: 'actions', label: 'Actions', path: '/actions', icon: Zap, items: [] },
     { id: 'alerts', label: 'Alerts', path: '/alerts', icon: Bell, showBadge: true, items: [] },
     { id: 'data-health', label: 'Data Health', path: '/data-health', icon: Activity, items: [] },
-    { id: 'integrations', label: 'Email Integration', path: '/integrations', icon: Link2, items: [] },
+    { id: 'integrations', label: 'Connectors', path: '/integrations', icon: Link2, items: [] },
     { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, items: [] },
     { id: 'foundation', label: 'BIQc Foundation', path: '/biqc-foundation', icon: Shield, items: hasFoundationMenuAccess ? foundationItems : [] },
     { id: 'more-features', label: 'More Features', path: '/more-features', icon: Workflow, items: [] },

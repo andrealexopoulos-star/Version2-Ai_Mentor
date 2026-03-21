@@ -12,6 +12,17 @@ from routes.deps import get_current_user, get_sb, logger
 router = APIRouter()
 
 
+def normalize_page_key(key: str) -> str:
+    raw = (key or "").strip()
+    if not raw:
+        return raw
+    if raw.startswith("/"):
+        raw = raw.split("?", 1)[0].split("#", 1)[0]
+        if len(raw) > 1 and raw.endswith("/"):
+            raw = raw[:-1]
+    return raw
+
+
 class MarkTutorialRequest(BaseModel):
     page_key: str
 
@@ -32,7 +43,11 @@ async def get_tutorial_status(current_user: dict = Depends(get_current_user)):
             .select("page_key, completed_at") \
             .eq("user_id", user_id) \
             .execute()
-        completed = {row["page_key"]: row["completed_at"] for row in (result.data or [])}
+        completed = {
+            normalize_page_key(row["page_key"]): row["completed_at"]
+            for row in (result.data or [])
+            if row.get("page_key")
+        }
 
         # Fetch disabled flag from users table
         user_row = get_sb().table("users") \
@@ -55,10 +70,13 @@ async def mark_tutorial_complete(
 ):
     """Mark a tutorial page_key as completed for this user."""
     user_id = current_user["id"]
+    page_key = normalize_page_key(req.page_key)
+    if not page_key:
+        raise HTTPException(status_code=400, detail="page_key is required")
     try:
         get_sb().table("tutorial_progress").upsert({
             "user_id": user_id,
-            "page_key": req.page_key,
+            "page_key": page_key,
             "completed_at": datetime.now(timezone.utc).isoformat(),
         }, on_conflict="user_id,page_key").execute()
         return {"ok": True}

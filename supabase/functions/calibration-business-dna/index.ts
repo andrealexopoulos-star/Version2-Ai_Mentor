@@ -31,6 +31,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function normalizeWebsiteUrl(input: string): string {
+  const raw = (input || "").trim();
+  if (!raw) return "";
+  const candidate = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    const u = new URL(candidate);
+    u.hash = "";
+    return u.toString().replace(/\/$/, "");
+  } catch {
+    return "";
+  }
+}
+
 async function scrapeWebsite(url: string): Promise<string> {
   if (!FIRECRAWL_API_KEY) return "";
   try {
@@ -49,6 +62,17 @@ async function scrapeWebsite(url: string): Promise<string> {
   return "";
 }
 
+async function scrapeWebsiteWithKeyPages(baseUrl: string): Promise<string> {
+  if (!FIRECRAWL_API_KEY || !baseUrl) return "";
+  const origin = new URL(baseUrl).origin;
+  const keyPaths = ["", "/contact", "/about", "/about-us", "/services"];
+  const pageUrls = keyPaths.map((p) => `${origin}${p}`);
+  const pages = await Promise.all(pageUrls.map((u) => scrapeWebsite(u)));
+  const merged = pages
+    .map((content, idx) => content ? `--- PAGE: ${pageUrls[idx]} ---\n${content}` : "")
+    .filter(Boolean)
+    .join("\n\n");
+  return merged.substring(0, 24000);
 function buildScanUrls(baseUrl: string): string[] {
   const normalized = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`;
   const root = normalized.replace(/\/+$/, "");
@@ -246,7 +270,12 @@ serve(async (req) => {
     let perplexityContent = "";
 
     if (websiteUrl) {
-      const url = websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`;
+      const url = normalizeWebsiteUrl(websiteUrl);
+      if (!url) {
+        return new Response(JSON.stringify({ error: "Invalid website_url" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const domain = url.replace(/https?:\/\//, "").replace(/\/.*/, "");
 
       // ═══ PRIMARY: Perplexity deep search (multiple targeted queries in parallel) ═══
@@ -292,6 +321,10 @@ serve(async (req) => {
       // ═══ SECONDARY: Firecrawl site scrape (supplemental — only if available) ═══
       // Used for raw page content that Perplexity might miss (footer ABN, contact details)
       if (FIRECRAWL_API_KEY) {
+        const crawledContent = await scrapeWebsiteWithKeyPages(url);
+        if (crawledContent) {
+          websiteContent = crawledContent;
+          sources.push(`scraped: ${url}`);
         const scanUrls = buildScanUrls(url);
         const scrapedChunks = await Promise.all(scanUrls.map((scanUrl) => scrapeWebsite(scanUrl)));
         const combined = scrapedChunks

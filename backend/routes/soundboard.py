@@ -413,6 +413,17 @@ SOUNDBOARD_AGENTS = {
             "Recommend one strategic move for this quarter. Hand off to Finance/Sales/Risk for tactical detail when needed."
         ),
     },
+    "boardroom": {
+        "name": "Boardroom Council",
+        "domain": "general",
+        "persona": (
+            "You are responding as the Boardroom Council: CEO, CFO, COO, CTO, HR, and CCO speaking as one coordinated team. "
+            "Each answer must synthesize cross-functional viewpoints using available integrations and evidence. "
+            "Prioritize the most decision-critical data for THIS specific user question, not generic dashboards. "
+            "When relevant, show a short 'Boardroom Priority Stack' with 3-5 ranked signals and why each matters now. "
+            "If data is missing, explicitly identify which integration/source would close the gap fastest."
+        ),
+    },
 }
 
 
