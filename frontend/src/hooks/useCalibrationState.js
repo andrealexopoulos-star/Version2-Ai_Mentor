@@ -538,6 +538,27 @@ export const useCalibrationState = () => {
             setWowSummary(wow);
 
             const signals = parseIdentitySignals(ex, url);
+            const edgeSignals = auditData.identity_signals || ex._identity_signals || {};
+            if (edgeSignals.abn_candidates?.length > 0 && !signals.abn) {
+              signals.abn = edgeSignals.abn_candidates[0];
+            }
+            if (edgeSignals.phone_numbers?.length > 0 && signals.phones?.length === 0) {
+              signals.phones = edgeSignals.phone_numbers;
+            }
+            if (edgeSignals.email_addresses?.length > 0 && signals.emails?.length === 0) {
+              signals.emails = edgeSignals.email_addresses;
+            }
+            if (edgeSignals.address_candidates?.length > 0 && !signals.address) {
+              signals.address = edgeSignals.address_candidates[0];
+            }
+            if (edgeSignals.geographic_mentions?.length > 0 && !signals.geo) {
+              signals.geo = edgeSignals.geographic_mentions.join(', ');
+            }
+            if (edgeSignals.social_media_links && (!signals.socials || signals.socials.length === 0)) {
+              signals.socials = Object.entries(edgeSignals.social_media_links)
+                .filter(([, socialUrl]) => socialUrl)
+                .map(([platform, socialUrl]) => ({ platform, url: socialUrl }));
+            }
             // Merge user hints into signals
             if (hints?.businessName || hints?.legalName) signals.businessName = hints.businessName || hints.legalName || signals.businessName;
             if (hints?.address || hints?.suburb) signals.address = hints.address || hints.suburb || signals.address;

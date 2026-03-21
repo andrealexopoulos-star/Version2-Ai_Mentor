@@ -20,7 +20,11 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || "";
-const PERPLEXITY_KEY = Deno.env.get("Perplexity_API") || "";
+const PERPLEXITY_KEY =
+  Deno.env.get("PERPLEXITY_API_KEY") ||
+  Deno.env.get("PERPLEXITY_API") ||
+  Deno.env.get("Perplexity_API") ||
+  "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,6 +47,13 @@ async function scrapeWebsite(url: string): Promise<string> {
     }
   } catch (e) { console.error("[scrape]", e); }
   return "";
+}
+
+function buildScanUrls(baseUrl: string): string[] {
+  const normalized = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`;
+  const root = normalized.replace(/\/+$/, "");
+  const seeds = ["", "/about", "/about-us", "/contact", "/services"];
+  return [...new Set(seeds.map((path) => `${root}${path}`))];
 }
 
 // Perplexity deep search — primary intelligence source
@@ -91,16 +102,19 @@ function extractIdentitySignals(allContent: string, websiteUrl: string) {
 
   // Social media URLs
   const socialPatterns: Record<string, RegExp> = {
-    linkedin: /https?:\/\/(?:www\.)?linkedin\.com\/(?:company|in)\/[^\s"')<,]+/gi,
-    facebook: /https?:\/\/(?:www\.)?facebook\.com\/[^\s"')<,]+/gi,
-    instagram: /https?:\/\/(?:www\.)?instagram\.com\/[^\s"')<,]+/gi,
-    twitter: /https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[^\s"')<,]+/gi,
-    youtube: /https?:\/\/(?:www\.)?youtube\.com\/(?:channel|c|@)[^\s"')<,]+/gi,
+    linkedin: /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/(?:company|in)\/[^\s"')<,]+/gi,
+    facebook: /(?:https?:\/\/)?(?:www\.)?facebook\.com\/[^\s"')<,]+/gi,
+    instagram: /(?:https?:\/\/)?(?:www\.)?instagram\.com\/[^\s"')<,]+/gi,
+    twitter: /(?:https?:\/\/)?(?:www\.)?(?:twitter|x)\.com\/[^\s"')<,]+/gi,
+    youtube: /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:channel|c|@)[^\s"')<,]+/gi,
   };
   signals.social_media_links = {};
   for (const [platform, pattern] of Object.entries(socialPatterns)) {
     const matches = allContent.match(pattern);
-    if (matches?.length) signals.social_media_links[platform] = matches[0];
+    if (matches?.length) {
+      const first = matches[0].startsWith("http") ? matches[0] : `https://${matches[0]}`;
+      signals.social_media_links[platform] = first;
+    }
   }
 
   // Physical address (Australian format)
@@ -278,10 +292,15 @@ serve(async (req) => {
       // ═══ SECONDARY: Firecrawl site scrape (supplemental — only if available) ═══
       // Used for raw page content that Perplexity might miss (footer ABN, contact details)
       if (FIRECRAWL_API_KEY) {
-        const mainContent = await scrapeWebsite(url);
-        if (mainContent) {
-          websiteContent = mainContent;
-          sources.push(`scraped: ${url}`);
+        const scanUrls = buildScanUrls(url);
+        const scrapedChunks = await Promise.all(scanUrls.map((scanUrl) => scrapeWebsite(scanUrl)));
+        const combined = scrapedChunks
+          .map((chunk, i) => (chunk ? `--- ${scanUrls[i]} ---\n${chunk}` : ""))
+          .filter(Boolean)
+          .join("\n\n");
+        if (combined) {
+          websiteContent = combined.substring(0, 12000);
+          sources.push(`scraped_pages: ${scanUrls.length}`);
         }
       }
     }
