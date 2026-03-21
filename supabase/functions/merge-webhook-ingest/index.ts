@@ -5,7 +5,7 @@ type JsonMap = Record<string, unknown>;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-merge-signature",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-merge-signature, x-merge-webhook-signature",
 };
 
 function hexToBytes(hex: string): Uint8Array {
@@ -39,6 +39,16 @@ function safeEqualHex(a: string, b: string): boolean {
     diff |= left[i] ^ right[i];
   }
   return diff === 0;
+}
+
+function normalizeBase64Url(input: string): string {
+  return String(input || "")
+    .trim()
+    .replace(/^sha256=/i, "")
+    .replace(/"/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
 }
 
 function normalizeCategory(raw: unknown): string {
@@ -75,11 +85,29 @@ serve(async (req: Request) => {
       throw new Error("Missing required secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, MERGE_WEBHOOK_SECRET");
     }
 
-    const signatureHeader = req.headers.get("x-merge-signature") || req.headers.get("X-Merge-Signature") || "";
+    const signatureHeader =
+      req.headers.get("x-merge-signature") ||
+      req.headers.get("X-Merge-Signature") ||
+      req.headers.get("x-merge-webhook-signature") ||
+      req.headers.get("X-Merge-Webhook-Signature") ||
+      "";
     const rawBody = await req.text();
     const expectedSignature = await hmacSha256Hex(webhookSecret, rawBody);
     const providedSignature = signatureHeader.replace(/^sha256=/i, "").trim();
-    if (!safeEqualHex(providedSignature, expectedSignature)) {
+    const expectedBytes = await crypto.subtle.sign(
+      "HMAC",
+      await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(webhookSecret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"],
+      ),
+      new TextEncoder().encode(rawBody),
+    );
+    const expectedB64Url = normalizeBase64Url(btoa(String.fromCharCode(...new Uint8Array(expectedBytes))));
+    const providedB64Url = normalizeBase64Url(signatureHeader);
+    if (!safeEqualHex(providedSignature, expectedSignature) && expectedB64Url !== providedB64Url) {
       return new Response(JSON.stringify({ ok: false, error: "Invalid webhook signature" }), {
         status: 401,
         headers: { ...CORS, "Content-Type": "application/json" },

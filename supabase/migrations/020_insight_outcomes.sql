@@ -16,7 +16,8 @@ create table if not exists public.insight_outcomes (
 
   user_id uuid not null,
 
-  snapshot_id uuid references public.intelligence_snapshots(id) on delete cascade,
+  -- Keep nullable and attach FK only when parent table exists (fresh DBs may not have it yet)
+  snapshot_id uuid,
 
   prediction_type text not null, -- risk | growth | alignment | financial
 
@@ -55,9 +56,27 @@ create index if not exists idx_insight_outcomes_snapshot on public.insight_outco
 create index if not exists idx_insight_outcomes_status on public.insight_outcomes(evaluation_status);
 create index if not exists idx_insight_outcomes_type on public.insight_outcomes(prediction_type);
 
--- 3. Add snapshot_confidence to intelligence_snapshots (feedback loop anchor)
-alter table public.intelligence_snapshots
-add column if not exists snapshot_confidence numeric;
+-- 3. Conditionally link to intelligence_snapshots when available
+do $$
+begin
+  if to_regclass('public.intelligence_snapshots') is not null then
+    -- Add FK only once
+    if not exists (
+      select 1
+      from pg_constraint
+      where conname = 'insight_outcomes_snapshot_id_fkey'
+        and conrelid = 'public.insight_outcomes'::regclass
+    ) then
+      alter table public.insight_outcomes
+        add constraint insight_outcomes_snapshot_id_fkey
+        foreign key (snapshot_id) references public.intelligence_snapshots(id) on delete cascade;
+    end if;
+
+    -- Add feedback-loop column only when parent table exists
+    alter table public.intelligence_snapshots
+      add column if not exists snapshot_confidence numeric;
+  end if;
+end $$;
 
 -- 4. RLS policies
 alter table public.insight_outcomes enable row level security;

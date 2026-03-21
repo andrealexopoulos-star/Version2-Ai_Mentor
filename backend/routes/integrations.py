@@ -3068,12 +3068,12 @@ async def get_all_connector_status(current_user: dict = Depends(get_current_user
 async def merge_webhook_receive(request: Request):
     """
     Receive Merge.dev webhook events. No auth — Merge validates via x-merge-signature.
-    Use this URL in Merge dashboard: https://biqc-api.azurewebsites.net/api/integrations/merge/webhook
+    Use this URL in Merge dashboard: https://biqc.ai/api/integrations/merge/webhook
     """
     import hashlib
     import hmac as hmac_module
 
-    webhook_secret = os.environ.get("MERGE_WEBHOOK_SECRET")
+    webhook_secret = (os.environ.get("MERGE_WEBHOOK_SECRET") or "").strip()
     if not webhook_secret:
         logger.warning("[merge-webhook] MERGE_WEBHOOK_SECRET not configured")
         return JSONResponse(content={"ok": False, "error": "Webhook not configured"}, status_code=503)
@@ -3085,6 +3085,7 @@ async def merge_webhook_receive(request: Request):
         request.headers.get("x-merge-signature")
         or request.headers.get("X-Merge-Signature")
         or request.headers.get("x-merge-webhook-signature")
+        or request.headers.get("X-Merge-Webhook-Signature")
         or ""
     )
     raw_body = await request.body()
@@ -3098,12 +3099,16 @@ async def merge_webhook_receive(request: Request):
         ).digest()
         expected_hex = digest_bytes.hex().lower()
         expected_b64 = base64.b64encode(digest_bytes).decode("utf-8").strip()
+        # Merge webhooks use base64url encoding for signatures.
+        expected_b64url = base64.urlsafe_b64encode(digest_bytes).decode("utf-8").strip().rstrip("=")
 
-        provided = signature_header.replace("sha256=", "").replace("sha256 =", "").strip().lower()
-        provided_b64 = signature_header.replace("sha256=", "").replace("sha256 =", "").strip()
+        provided = signature_header.replace("sha256=", "").replace("sha256 =", "").strip().strip('"').lower()
+        provided_b64 = signature_header.replace("sha256=", "").replace("sha256 =", "").strip().strip('"')
+        provided_b64url = provided_b64.replace("+", "-").replace("/", "_").rstrip("=")
         if not (
             hmac_module.compare_digest(expected_hex, provided)
             or hmac_module.compare_digest(expected_b64, provided_b64)
+            or hmac_module.compare_digest(expected_b64url, provided_b64url)
         ):
             return JSONResponse(content={"ok": False, "error": "Invalid webhook signature"}, status_code=401)
     except Exception as e:

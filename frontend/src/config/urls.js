@@ -28,14 +28,19 @@ export const getAppBaseUrl = () => {
  * wrong server. window.location.origin is ALWAYS correct.
  */
 export const getBackendUrl = () => {
+  // In deployed environments, always prefer the current origin (/api reverse-proxy)
+  // to avoid stale build-time backend URLs causing 401/404 mismatches.
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    if (window.location.hostname !== 'localhost') {
+      return window.location.origin.replace(/\/$/, '');
+    }
+  }
+
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
-  if (backendUrl) {
-    return backendUrl.replace(/\/$/, '');
-  }
-  if (typeof window !== 'undefined' && window.location?.hostname === 'localhost') {
-    return 'http://localhost:8000';
-  }
-  throw new Error('REACT_APP_BACKEND_URL is required');
+  if (backendUrl) return backendUrl.replace(/\/$/, '');
+
+  if (typeof window !== 'undefined' && window.location?.hostname === 'localhost') return 'http://localhost:8000';
+  throw new Error('Unable to resolve backend URL');
 };
 
 /**

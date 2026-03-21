@@ -39,84 +39,6 @@ const Logo = ({ domain, name, size = 36 }) => {
   );
 };
 
-const CONNECTOR_SHOWCASE = [
-  { id: 'outlook', name: 'Outlook', subtitle: 'Search and send messages and emails in Outlook', state: 'connected', slug: 'microsoftoutlook', color: '0078D4', domain: 'microsoft.com' },
-  { id: 'google-drive', name: 'Google Drive', subtitle: 'Get in-depth answers from your Google Drive content', state: 'connected', slug: 'googledrive', color: '34A853', domain: 'google.com' },
-  { id: 'gmail-calendar', name: 'Gmail with Calendar', subtitle: 'Search, create, and manage your emails and calendar events', state: 'connected', slug: 'gmail', color: 'EA4335', domain: 'gmail.com' },
-  { id: 'onedrive', name: 'OneDrive', subtitle: 'Get in-depth answers from your OneDrive content', state: 'connected', slug: 'microsoftonedrive', color: '0078D4', domain: 'microsoft.com' },
-  { id: 'sharepoint', name: 'Sharepoint', subtitle: 'Get in-depth answers from your SharePoint content', state: 'connected', slug: 'microsoftsharepoint', color: '0078D4', domain: 'microsoft.com' },
-  { id: 'dropbox', name: 'Dropbox', subtitle: 'Get in-depth answers from your Dropbox content', state: 'available', slug: 'dropbox', color: '0061FF', domain: 'dropbox.com' },
-  { id: 'box', name: 'Box', subtitle: 'Get in-depth answers from your Box content', state: 'available', slug: 'box', color: '0061D5', domain: 'box.com' },
-  { id: 'notion', name: 'Notion', subtitle: 'Search and create content on your Notion pages', state: 'available', slug: 'notion', color: 'FFFFFF', domain: 'notion.so' },
-  { id: 'linear', name: 'Linear', subtitle: 'Plan and track projects, issues, and team workflows', state: 'available', slug: 'linear', color: '5E6AD2', domain: 'linear.app' },
-  { id: 'github', name: 'GitHub', subtitle: 'Search and manage your GitHub repositories', state: 'available', slug: 'github', color: 'FFFFFF', domain: 'github.com' },
-  { id: 'asana', name: 'Asana', subtitle: 'Plan and track projects, tasks, and team workflows', state: 'available', slug: 'asana', color: 'F06A6A', domain: 'asana.com' },
-  { id: 'slack', name: 'Slack', subtitle: 'Search and post messages across your Slack workspace', state: 'available', slug: 'slack', color: '4A154B', domain: 'slack.com' },
-  { id: 'jira', name: 'Jira', subtitle: 'Plan and track projects, tasks, and team workflows', state: 'available', slug: 'jira', color: '0052CC', domain: 'atlassian.com' },
-  { id: 'confluence', name: 'Confluence', subtitle: 'Search and create content on your Confluence pages', state: 'available', slug: 'confluence', color: '172B4D', domain: 'atlassian.com' },
-  { id: 'microsoft-teams', name: 'Microsoft Teams', subtitle: 'Search and send messages in Microsoft Teams', state: 'available', slug: 'microsoftteams', color: '6264A7', domain: 'microsoft.com' },
-  { id: 'investment-portfolio', name: 'Investment Portfolio', subtitle: 'View your connected brokerage investment holdings', state: 'available', domain: 'morningstar.com' },
-  { id: 'hubspot', name: 'HubSpot', subtitle: 'Retrieve, create, and update CRM objects', state: 'available', slug: 'hubspot', color: 'FF7A59', domain: 'hubspot.com' },
-  { id: 'monday', name: 'Monday.com', subtitle: 'Manage boards, items, and groups', state: 'available', slug: 'mondaydotcom', color: 'FF3D57', domain: 'monday.com' },
-  { id: 'stytch', name: 'Stytch', subtitle: 'Authenticate and secure users with Stytch', state: 'available', slug: 'stytch', color: '0F172A', domain: 'stytch.com' },
-  { id: 'jam', name: 'Jam', subtitle: 'Access bug recordings with video, console logs, and network', state: 'available', domain: 'jam.dev' },
-  { id: 'vercel', name: 'Vercel', subtitle: 'Manage teams, projects, and deployments', state: 'available', slug: 'vercel', color: 'FFFFFF', domain: 'vercel.com' },
-  { id: 'klaviyo', name: 'Klaviyo', subtitle: 'Manage profiles and campaigns from Klaviyo', state: 'available', slug: 'klaviyo', color: '00935B', domain: 'klaviyo.com' },
-  { id: 'hugging-face', name: 'Hugging Face', subtitle: 'Search and monitor models, datasets, and spaces', state: 'available', slug: 'huggingface', color: 'FFD21E', domain: 'huggingface.co' },
-  { id: 'cloudinary', name: 'Cloudinary', subtitle: 'Organize, retrieve, and deliver images and videos', state: 'available', slug: 'cloudinary', color: '3448C5', domain: 'cloudinary.com' },
-  { id: 'ticket-tailor', name: 'Ticket Tailor', subtitle: 'Connect to your Ticket Tailor data', state: 'available', slug: 'tickettailor', color: '111111', domain: 'tickettailor.com' },
-  { id: 'sentry', name: 'Sentry', subtitle: 'Monitor issues, errors, and performance', state: 'available', slug: 'sentry', color: '5A45FF', domain: 'sentry.io' },
-  { id: 'circleback', name: 'Circleback', subtitle: 'Connect to Circleback', state: 'available', domain: 'circleback.ai' },
-  { id: 'wordpress', name: 'WordPress.com', subtitle: 'Create and publish content on WordPress', state: 'available', slug: 'wordpress', color: '21759B', domain: 'wordpress.com' },
-  { id: 'bitly', name: 'Bitly', subtitle: 'Shorten and manage links with Bitly', state: 'available', slug: 'bitly', color: 'EE6123', domain: 'bitly.com' },
-  { id: 'honeycomb', name: 'Honeycomb', subtitle: 'Query and analyze observability data', state: 'available', slug: 'honeycomb', color: 'F59E0B', domain: 'honeycomb.io' },
-  { id: 'fireflies', name: 'Fireflies', subtitle: 'Transcribe and summarize meetings automatically', state: 'available', domain: 'fireflies.ai' },
-  { id: 'jotform', name: 'Jotform', subtitle: 'Create and manage forms and submissions', state: 'available', slug: 'jotform', color: 'FF6100', domain: 'jotform.com' },
-  { id: 'biorender', name: 'BioRender', subtitle: 'Create professional scientific figures', state: 'available', domain: 'biorender.com' },
-  { id: 'snowflake', name: 'Snowflake', subtitle: 'Run analytics in your Snowflake account', state: 'available', slug: 'snowflake', color: '29B5E8', domain: 'snowflake.com' },
-  { id: 'datadog', name: 'Datadog', subtitle: 'Monitor cloud services and infrastructure', state: 'available', slug: 'datadog', color: '632CA6', domain: 'datadoghq.com' },
-  { id: 'single', name: 'Single', subtitle: 'Sync creator and commerce data', state: 'available', domain: 'single.xyz' },
-  { id: 'wix', name: 'Wix', subtitle: 'Create and launch websites and stores', state: 'available', slug: 'wix', color: 'FFFFFF', domain: 'wix.com' },
-  { id: 'motherduck', name: 'MotherDuck', subtitle: 'Hybrid data warehouse in your browser', state: 'available', slug: 'motherduck', color: 'F6A21A', domain: 'motherduck.com' },
-  { id: 'square', name: 'Square', subtitle: 'Manage sales, inventory, and customer data', state: 'available', slug: 'square', color: 'FFFFFF', domain: 'squareup.com' },
-  { id: 'pinecone', name: 'Pinecone Sandbox', subtitle: 'Vector database sandbox for testing', state: 'available', slug: 'pinecone', color: '14B8A6', domain: 'pinecone.io' },
-  { id: 'apify', name: 'Apify', subtitle: 'Build web scrapers and automations', state: 'available', slug: 'apify', color: '14B8A6', domain: 'apify.com' },
-  { id: 'coda', name: 'Coda', subtitle: 'Create docs and workflows in Coda', state: 'available', slug: 'coda', color: 'EE5A29', domain: 'coda.io' },
-];
-
-const ConnectorLogo = ({ name, slug, color, domain }) => {
-  const [mode, setMode] = useState(slug ? 'simple' : (domain ? 'clearbit' : 'text'));
-  const simpleSrc = slug ? `https://cdn.simpleicons.org/${slug}${color ? `/${String(color).replace('#', '')}` : ''}` : '';
-  const clearbitSrc = domain ? `https://logo.clearbit.com/${domain}` : '';
-
-  if (mode === 'text') {
-    return (
-      <div
-        className="h-9 w-9 rounded-md flex items-center justify-center text-[10px] font-semibold"
-        style={{ background: 'rgba(100,116,139,0.18)', border: '1px solid rgba(100,116,139,0.32)', color: '#CBD5E1', fontFamily: fontFamily.body }}
-      >
-        {String(name || '').slice(0, 2).toUpperCase()}
-      </div>
-    );
-  }
-
-  const src = mode === 'simple' ? simpleSrc : clearbitSrc;
-  return (
-    <div className="h-9 w-9 rounded-md flex items-center justify-center bg-white overflow-hidden" style={{ border: '1px solid rgba(148,163,184,0.24)' }}>
-      <img
-        src={src}
-        alt={name}
-        loading="lazy"
-        style={{ width: 24, height: 24, objectFit: 'contain' }}
-        onError={() => {
-          if (mode === 'simple' && clearbitSrc) setMode('clearbit');
-          else setMode('text');
-        }}
-      />
-    </div>
-  );
-};
-
 // ── Categories ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
   { id: 'all',        label: 'All',            icon: LayoutGrid },
@@ -271,6 +193,7 @@ export default function Integrations() {
   const [mergeIntegrations, setMergeIntegrations] = useState({});
   const [integrationStatusRows, setIntegrationStatusRows] = useState([]);
   const [canonicalTruth, setCanonicalTruth] = useState({});
+  const [verificationGapCount, setVerificationGapCount] = useState(0);
   const [integrationTruthReady, setIntegrationTruthReady] = useState(false);
   const [outlookStatus, setOutlookStatus] = useState({ connected: false, connected_email: null });
   const [gmailStatus, setGmailStatus] = useState({ connected: false, connected_email: null });
@@ -282,7 +205,6 @@ export default function Integrations() {
   const [pageError, setPageError] = useState(null);
   const [centreConnectors, setCentreConnectors] = useState([]);
   const [centreLoading, setCentreLoading] = useState(true);
-  const [connectorViewFilter, setConnectorViewFilter] = useState('all');
 
   // Merge Link hook — token starts as '' so SDK initialises cleanly
   const { open: openMergeLinkModal, isReady: mergeLinkReady } = useMergeLink({
@@ -359,10 +281,13 @@ export default function Integrations() {
       const statusPayload = await authedJsonGet('/user/integration-status');
       const rows = statusPayload?.integrations || [];
       const statusTruth = statusPayload?.canonical_truth || {};
-      const hasTruthPayload = Boolean(rows.length || Object.keys(statusTruth).length);
+      const verifiedRows = rows.filter((row) => Boolean(row?.connected));
+      const truthConnected = Number(statusTruth.total_connected || 0);
+      const verifiedConnected = verifiedRows.length;
       setIntegrationStatusRows(rows);
       setCanonicalTruth(statusTruth);
-      setIntegrationTruthReady(hasTruthPayload);
+      setVerificationGapCount(Math.max(0, truthConnected - verifiedConnected));
+      setIntegrationTruthReady(Boolean(rows.length));
       const derivedMap = rows.reduce((acc, row) => {
         if (!row?.connected) return acc;
         const provider = String(row.integration_name || row.provider || '').trim().toLowerCase().replace(/\s+/g, '-');
@@ -384,11 +309,29 @@ export default function Integrations() {
         const directPayload = await authedJsonGet('/integrations/merge/connected');
         const directMap = directPayload?.integrations || {};
         const directTruth = directPayload?.canonical_truth || {};
+        const rows = Object.values(directMap).map((item) => ({
+          integration_name: item?.provider || item?.integration_name || 'Unknown',
+          category: item?.category || 'general',
+          connected: Boolean(item?.connected),
+          provider: item?.provider || item?.integration_name || 'Unknown',
+          connected_at: item?.connected_at || null,
+          last_sync_at: item?.last_sync_at || item?.connected_at || null,
+          truth_state: item?.truth_state,
+          truth_reason: item?.truth_reason,
+          last_verified_at: item?.last_verified_at || item?.connected_at || null,
+        }));
+        const verifiedRows = rows.filter((row) => Boolean(row.connected));
+        const truthConnected = Number(directTruth.total_connected || 0);
+        const verifiedConnected = verifiedRows.length;
+        setIntegrationStatusRows(rows);
         setCanonicalTruth(directTruth);
-        setIntegrationTruthReady(Boolean(Object.keys(directMap).length || Object.keys(directTruth).length));
+        setVerificationGapCount(Math.max(0, truthConnected - verifiedConnected));
+        setIntegrationTruthReady(Boolean(rows.length));
         setMergeIntegrations(directMap);
       } catch {
         setMergeIntegrations({});
+        setIntegrationStatusRows([]);
+        setVerificationGapCount(0);
         setIntegrationTruthReady(false);
         setPageError(e?.message || 'Failed to load integration status');
       }
@@ -626,15 +569,11 @@ export default function Integrations() {
     if (integration.type === 'outlook' || integration.type === 'outlook_cal') return outlookStatus.connected;
     if (integration.type === 'gmail' || integration.type === 'gcal') return gmailStatus.connected;
     if (integration.type === 'coming_soon') return false;
-    const directMatch = Object.keys(mergeIntegrations).some(k =>
-      k.toLowerCase() === integration.id || k.toLowerCase() === integration.name.toLowerCase() || k.toLowerCase().includes(integration.id)
-    );
-    if (directMatch) return true;
     return integrationStatusRows.some((row) => {
       const provider = String(row.integration_name || row.provider || '').toLowerCase();
       return Boolean(row.connected) && categoryMatches(integration.category, row.category) && (provider === integration.name.toLowerCase() || provider.includes(integration.id));
     });
-  }, [outlookStatus, gmailStatus, mergeIntegrations, integrationStatusRows]);
+  }, [outlookStatus, gmailStatus, integrationStatusRows]);
 
   const getConnectedLabel = (integration) => {
     if (integration.type === 'outlook') return outlookStatus.connected_email || 'Connected';
@@ -648,11 +587,12 @@ export default function Integrations() {
   };
 
   const truthStateForIntegration = useCallback((integration) => {
+    if (!isConnected(integration)) return 'unverified';
     const category = String(integration.category || '').toLowerCase();
-    if (category === 'crm') return canonicalTruth.crm_state || (isConnected(integration) ? 'live' : 'unverified');
-    if (category === 'financial' || category === 'ecommerce') return canonicalTruth.accounting_state || (isConnected(integration) ? 'live' : 'unverified');
-    if (category === 'email' || category === 'calendar') return canonicalTruth.email_state || (isConnected(integration) ? 'live' : 'unverified');
-    return isConnected(integration) ? 'live' : 'unverified';
+    if (category === 'crm') return canonicalTruth.crm_state || 'live';
+    if (category === 'financial' || category === 'ecommerce') return canonicalTruth.accounting_state || 'live';
+    if (category === 'email' || category === 'calendar') return canonicalTruth.email_state || 'live';
+    return 'live';
   }, [canonicalTruth, isConnected]);
 
   const truthReasonForIntegration = useCallback((integration) => {
@@ -683,12 +623,8 @@ export default function Integrations() {
     const matchSearch = !searchTerm || i.name.toLowerCase().includes(searchTerm.toLowerCase()) || i.desc.toLowerCase().includes(searchTerm.toLowerCase());
     return matchCat && matchSearch;
   });
-  const showcaseFiltered = CONNECTOR_SHOWCASE.filter((item) => (
-    connectorViewFilter === 'all' ? true : item.state === connectorViewFilter
-  ));
-
   const connectedCount = [
-    Math.max(Object.keys(mergeIntegrations).length, integrationStatusRows.filter((row) => row.connected && row.category !== 'email').length),
+    integrationStatusRows.filter((row) => row.connected && row.category !== 'email').length,
     gmailStatus.connected ? 1 : 0,
     outlookStatus.connected ? 1 : 0,
   ].reduce((sum, value) => sum + value, 0);
@@ -699,9 +635,9 @@ export default function Integrations() {
   const launchIntegrationLimit = hasPaidLaunchAccess ? 5 : 1;
   const freeTierLimitReached = connectedCount >= launchIntegrationLimit;
   const blockedTruthCategories = [
-    { label: 'CRM', state: canonicalTruth.crm_state || Object.values(mergeIntegrations).find((item) => item?.category === 'crm')?.truth_state },
-    { label: 'Accounting', state: canonicalTruth.accounting_state || Object.values(mergeIntegrations).find((item) => item?.category === 'accounting')?.truth_state },
-    { label: 'Email', state: canonicalTruth.email_state || Object.values(mergeIntegrations).find((item) => item?.category === 'email')?.truth_state },
+    { label: 'CRM', state: canonicalTruth.crm_state },
+    { label: 'Accounting', state: canonicalTruth.accounting_state },
+    { label: 'Email', state: canonicalTruth.email_state },
   ].filter((item) => item.state && item.state !== 'live');
   const visibleCategories = isFreeTier ? CATEGORIES.filter((cat) => ['all', 'connected'].includes(cat.id)) : CATEGORIES;
 
@@ -804,69 +740,6 @@ export default function Integrations() {
 
         <div className="px-6 py-5 space-y-7">
 
-          {/* ── CONNECTORS SHOWCASE ── */}
-          <div
-            className="rounded-2xl border p-4 sm:p-5"
-            style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }}
-            data-testid="connectors-showcase-section"
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-base font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.body }}>Connectors</h2>
-                <p className="mt-1 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
-                  Unified connector catalogue matching your preferred low-cognitive-load layout.
-                </p>
-              </div>
-              <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(100,116,139,0.28)' }}>
-                {['all', 'connected', 'available'].map((state) => {
-                  const active = connectorViewFilter === state;
-                  return (
-                    <button
-                      key={state}
-                      type="button"
-                      onClick={() => setConnectorViewFilter(state)}
-                      className="px-3 py-1.5 rounded-lg text-[11px] font-semibold capitalize transition-colors"
-                      style={{
-                        background: active ? 'rgba(148,163,184,0.2)' : 'transparent',
-                        color: active ? '#E2E8F0' : '#94A3B8',
-                        border: `1px solid ${active ? 'rgba(148,163,184,0.32)' : 'transparent'}`,
-                        fontFamily: fontFamily.body,
-                      }}
-                      data-testid={`connectors-showcase-filter-${state}`}
-                    >
-                      {state}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-2">
-              {showcaseFiltered.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-xl px-3 py-2.5 flex items-start gap-3"
-                  style={{ background: 'rgba(2,6,23,0.44)', border: '1px solid rgba(71,85,105,0.44)' }}
-                  data-testid={`connectors-showcase-card-${item.id}`}
-                >
-                  <ConnectorLogo name={item.name} slug={item.slug} color={item.color} domain={item.domain} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold truncate" style={{ color: '#E2E8F0', fontFamily: fontFamily.body }}>{item.name}</p>
-                      {item.state === 'connected' && (
-                        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md"
-                          style={{ background: 'rgba(16,185,129,0.14)', color: '#34D399', border: '1px solid rgba(16,185,129,0.26)', fontFamily: fontFamily.body }}>
-                          <CheckCircle2 className="w-2.5 h-2.5" /> Connected
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] leading-relaxed mt-0.5" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>{item.subtitle}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* ── INTEGRATION CENTRE v1 (Phase 1.3) ── */}
           <div className="rounded-2xl border p-4 sm:p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integration-centre-section">
             <SectionLabel icon={LayoutGrid} label="Connector Centre" badge="Unified status" badgeColor="#94A3B8" />
@@ -964,6 +837,15 @@ export default function Integrations() {
               <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Forensic source health</p>
               <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>BIQc is verifying live connector truth before showing connected counts.</p>
               <p className="mt-1 text-xs" style={{ color: '#FDE68A' }}>If this persists, refresh the page or reopen the affected integrations.</p>
+            </div>
+          )}
+
+          {verificationGapCount > 0 && (
+            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.08)' }} data-testid="integrations-truth-gap-banner">
+              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Verification in progress</p>
+              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+                {verificationGapCount} integration{verificationGapCount !== 1 ? 's' : ''} reported by truth counters are not provider-verified yet, so BIQc is not displaying them as connected.
+              </p>
             </div>
           )}
 
