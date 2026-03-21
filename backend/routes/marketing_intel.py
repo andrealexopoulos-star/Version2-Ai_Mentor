@@ -28,8 +28,11 @@ async def execute_marketing_benchmark_job(payload: dict) -> dict:
     req = BenchmarkRequest(competitors=list(payload.get("competitors") or []))
     current_user = payload.get("current_user") or {"id": payload.get("user_id")}
     """Run marketing benchmark against competitors."""
-    if not _get_cached_flag('marketing_benchmarks_enabled'):
-        return {'status': 'feature_disabled', 'message': 'Marketing benchmarks not yet enabled'}
+    flag_enabled = _get_cached_flag('marketing_benchmarks_enabled')
+    if not flag_enabled:
+        logger.warning(
+            "marketing_benchmarks_enabled=false — executing benchmark in compatibility mode"
+        )
 
     from routes.dsee import resolve_domain, classify_structure, _serper, _get_review_data, _check_authority
     from routes.sdd import compute_service_density, compute_geographic_density, compute_citation_density
@@ -133,6 +136,7 @@ async def execute_marketing_benchmark_job(payload: dict) -> dict:
 
     return {
         'status': 'complete',
+        'feature_flag_enabled': flag_enabled,
         'scores': subject_scores,
         'overall': overall,
         'radar': radar,
@@ -143,6 +147,19 @@ async def execute_marketing_benchmark_job(payload: dict) -> dict:
 
 @router.post("/marketing/benchmark")
 async def run_benchmark(req: BenchmarkRequest, current_user: dict = Depends(get_current_user)):
+    # Prefer synchronous execution so the UI receives immediate benchmark results.
+    # If synchronous execution fails, gracefully fall back to queued background mode.
+    try:
+        return await execute_marketing_benchmark_job({
+            'competitors': req.competitors,
+            'user_id': current_user.get('id'),
+            'current_user': {'id': current_user.get('id')},
+        })
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning("Synchronous benchmark execution failed; falling back to queue: %s", exc)
+
     queued = await enqueue_job(
         "market-research",
         {
@@ -164,11 +181,7 @@ async def run_benchmark(req: BenchmarkRequest, current_user: dict = Depends(get_
             'task': 'marketing-benchmark',
         }
 
-    return await execute_marketing_benchmark_job({
-        'competitors': req.competitors,
-        'user_id': current_user.get('id'),
-        'current_user': {'id': current_user.get('id')},
-    })
+    return {'status': 'error', 'message': 'Unable to queue benchmark job'}
 
 
 @router.get("/marketing/benchmark/latest")
@@ -185,3 +198,62 @@ async def get_latest_benchmark(current_user: dict = Depends(get_current_user)):
         return result.data if result.data else {'status': 'no_benchmark'}
     except Exception:
         return {'status': 'no_benchmark'}
+
+
+def _format_legacy_scores_payload(benchmark: dict) -> dict:
+    if not benchmark or benchmark.get('status') == 'no_benchmark':
+        return {'status': 'no_benchmark', 'scores': None}
+
+    scores = benchmark.get('scores') or {}
+    overall = scores.get('overall')
+    return {
+        'status': 'ok',
+        'scores': scores,
+        'overall_score': round(float(overall) * 100) if overall is not None else None,
+        'competitors': benchmark.get('competitors') or [],
+        'summary': benchmark.get('summary'),
+        'updated_at': benchmark.get('updated_at') or benchmark.get('created_at'),
+    }
+
+
+@router.get("/competitive-benchmark/scores")
+async def get_competitive_benchmark_scores(current_user: dict = Depends(get_current_user)):
+    """Backward-compatible endpoint used by older clients/tests."""
+    latest = await get_latest_benchmark(current_user)
+    return _format_legacy_scores_payload(latest)
+
+
+@router.post("/competitive-benchmark/refresh")
+async def refresh_competitive_benchmark(current_user: dict = Depends(get_current_user)):
+    """Backward-compatible refresh endpoint.
+
+    Reuses last known competitor domains (if any) and forces a fresh benchmark run.
+    """
+    latest = await get_latest_benchmark(current_user)
+    competitors = []
+    if isinstance(latest, dict):
+        for c in latest.get('competitors') or []:
+            if isinstance(c, dict):
+                domain = c.get('domain') or c.get('name')
+            else:
+                domain = c
+            if domain:
+                competitors.append(str(domain))
+
+    # Deduplicate and cap competitor list.
+    deduped = []
+    for comp in competitors:
+        norm = comp.strip()
+        if norm and norm not in deduped:
+            deduped.append(norm)
+    req = BenchmarkRequest(competitors=deduped[:5])
+
+    result = await run_benchmark(req, current_user)
+    if result.get('status') in {'complete', 'queued'}:
+        # Try to return latest stable score payload when available.
+        refreshed = await get_latest_benchmark(current_user)
+        payload = _format_legacy_scores_payload(refreshed)
+        if payload.get('status') == 'ok':
+            payload['refresh_status'] = result.get('status')
+            return payload
+    return _format_legacy_scores_payload(result if isinstance(result, dict) else {})

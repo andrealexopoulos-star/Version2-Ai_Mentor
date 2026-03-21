@@ -73,6 +73,11 @@ async function scrapeWebsiteWithKeyPages(baseUrl: string): Promise<string> {
     .filter(Boolean)
     .join("\n\n");
   return merged.substring(0, 24000);
+function buildScanUrls(baseUrl: string): string[] {
+  const normalized = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`;
+  const root = normalized.replace(/\/+$/, "");
+  const seeds = ["", "/about", "/about-us", "/contact", "/services"];
+  return [...new Set(seeds.map((path) => `${root}${path}`))];
 }
 
 // Perplexity deep search — primary intelligence source
@@ -121,16 +126,19 @@ function extractIdentitySignals(allContent: string, websiteUrl: string) {
 
   // Social media URLs
   const socialPatterns: Record<string, RegExp> = {
-    linkedin: /https?:\/\/(?:www\.)?linkedin\.com\/(?:company|in)\/[^\s"')<,]+/gi,
-    facebook: /https?:\/\/(?:www\.)?facebook\.com\/[^\s"')<,]+/gi,
-    instagram: /https?:\/\/(?:www\.)?instagram\.com\/[^\s"')<,]+/gi,
-    twitter: /https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[^\s"')<,]+/gi,
-    youtube: /https?:\/\/(?:www\.)?youtube\.com\/(?:channel|c|@)[^\s"')<,]+/gi,
+    linkedin: /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/(?:company|in)\/[^\s"')<,]+/gi,
+    facebook: /(?:https?:\/\/)?(?:www\.)?facebook\.com\/[^\s"')<,]+/gi,
+    instagram: /(?:https?:\/\/)?(?:www\.)?instagram\.com\/[^\s"')<,]+/gi,
+    twitter: /(?:https?:\/\/)?(?:www\.)?(?:twitter|x)\.com\/[^\s"')<,]+/gi,
+    youtube: /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:channel|c|@)[^\s"')<,]+/gi,
   };
   signals.social_media_links = {};
   for (const [platform, pattern] of Object.entries(socialPatterns)) {
     const matches = allContent.match(pattern);
-    if (matches?.length) signals.social_media_links[platform] = matches[0];
+    if (matches?.length) {
+      const first = matches[0].startsWith("http") ? matches[0] : `https://${matches[0]}`;
+      signals.social_media_links[platform] = first;
+    }
   }
 
   // Physical address (Australian format)
@@ -317,6 +325,15 @@ serve(async (req) => {
         if (crawledContent) {
           websiteContent = crawledContent;
           sources.push(`scraped: ${url}`);
+        const scanUrls = buildScanUrls(url);
+        const scrapedChunks = await Promise.all(scanUrls.map((scanUrl) => scrapeWebsite(scanUrl)));
+        const combined = scrapedChunks
+          .map((chunk, i) => (chunk ? `--- ${scanUrls[i]} ---\n${chunk}` : ""))
+          .filter(Boolean)
+          .join("\n\n");
+        if (combined) {
+          websiteContent = combined.substring(0, 12000);
+          sources.push(`scraped_pages: ${scanUrls.length}`);
         }
       }
     }
