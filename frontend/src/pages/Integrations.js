@@ -39,7 +39,6 @@ const Logo = ({ domain, name, size = 36 }) => {
   );
 };
 
-
 // ── Categories ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
   { id: 'all',        label: 'All',            icon: LayoutGrid },
@@ -172,6 +171,16 @@ const categoryMatches = (integrationCategory, rowCategory) => {
 };
 
 const CENTRE_ICONS = { crm: Database, accounting: Calculator, email: Mail, marketing: Megaphone };
+const normalizeIntegrationKey = (value) => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '');
+const INTEGRATION_PROVIDER_ALIASES = {
+  quickbooks: ['quickbooks', 'quickbooksonline'],
+  'ms-dynamics': ['dynamics365', 'microsoftdynamics365', 'msdynamics'],
+  'zoho-crm': ['zohocrm', 'zoho'],
+  'zoho-books': ['zohobooks', 'zoho'],
+  'zendesk-sell': ['zendesksell'],
+  'sage-hr': ['sagehr'],
+  'azure-devops': ['azuredevops'],
+};
 
 function formatRelativeTime(iso) {
   if (!iso) return null;
@@ -185,6 +194,43 @@ function formatRelativeTime(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+const getVerifiedConnectedCount = (rows = []) => {
+  const unique = new Set();
+  rows.forEach((row) => {
+    if (!row?.connected) return;
+    const category = String(row.category || '').toLowerCase();
+    if (category === 'email') return;
+    const providerKey = normalizeIntegrationKey(
+      row.integration_slug || row.provider_key || row.integration_name || row.provider
+    );
+    if (!providerKey) return;
+    unique.add(`${category}:${providerKey}`);
+  });
+  return unique.size;
+};
+
+const rowMatchesIntegration = (row, integration) => {
+  if (!row?.connected) return false;
+  if (!categoryMatches(integration.category, row.category)) return false;
+
+  const integrationKeys = new Set([
+    normalizeIntegrationKey(integration.id),
+    normalizeIntegrationKey(integration.name),
+    ...(INTEGRATION_PROVIDER_ALIASES[integration.id] || []).map(normalizeIntegrationKey),
+  ]);
+
+  const rowKeys = [
+    row.integration_slug,
+    row.provider_key,
+    row.integration_name,
+    row.provider,
+  ]
+    .map(normalizeIntegrationKey)
+    .filter(Boolean);
+
+  return rowKeys.some((key) => integrationKeys.has(key));
+};
+
 export default function Integrations() {
   const { user, session, authState } = useSupabaseAuth();
   const navigate = useNavigate();
@@ -194,6 +240,7 @@ export default function Integrations() {
   const [mergeIntegrations, setMergeIntegrations] = useState({});
   const [integrationStatusRows, setIntegrationStatusRows] = useState([]);
   const [canonicalTruth, setCanonicalTruth] = useState({});
+  const [verificationGapCount, setVerificationGapCount] = useState(0);
   const [integrationTruthReady, setIntegrationTruthReady] = useState(false);
   const [outlookStatus, setOutlookStatus] = useState({ connected: false, connected_email: null });
   const [gmailStatus, setGmailStatus] = useState({ connected: false, connected_email: null });
@@ -281,10 +328,12 @@ export default function Integrations() {
       const statusPayload = await authedJsonGet('/user/integration-status');
       const rows = statusPayload?.integrations || [];
       const statusTruth = statusPayload?.canonical_truth || {};
-      const hasTruthPayload = Boolean(rows.length || Object.keys(statusTruth).length);
+      const truthConnected = Number(statusTruth.total_connected || 0);
+      const verifiedConnected = getVerifiedConnectedCount(rows);
       setIntegrationStatusRows(rows);
       setCanonicalTruth(statusTruth);
-      setIntegrationTruthReady(hasTruthPayload);
+      setVerificationGapCount(Math.max(0, truthConnected - verifiedConnected));
+      setIntegrationTruthReady(Boolean(rows.length));
       const derivedMap = rows.reduce((acc, row) => {
         if (!row?.connected) return acc;
         const provider = String(row.integration_name || row.provider || '').trim().toLowerCase().replace(/\s+/g, '-');
@@ -306,11 +355,30 @@ export default function Integrations() {
         const directPayload = await authedJsonGet('/integrations/merge/connected');
         const directMap = directPayload?.integrations || {};
         const directTruth = directPayload?.canonical_truth || {};
+        const rows = Object.values(directMap).map((item) => ({
+          integration_name: item?.provider || item?.integration_name || 'Unknown',
+          category: item?.category || 'general',
+          connected: Boolean(item?.connected),
+          provider: item?.provider || item?.integration_name || 'Unknown',
+          provider_key: item?.provider_key || null,
+          integration_slug: item?.integration_slug || item?.provider_key || null,
+          connected_at: item?.connected_at || null,
+          last_sync_at: item?.last_sync_at || item?.connected_at || null,
+          truth_state: item?.truth_state,
+          truth_reason: item?.truth_reason,
+          last_verified_at: item?.last_verified_at || item?.connected_at || null,
+        }));
+        const truthConnected = Number(directTruth.total_connected || 0);
+        const verifiedConnected = getVerifiedConnectedCount(rows);
+        setIntegrationStatusRows(rows);
         setCanonicalTruth(directTruth);
-        setIntegrationTruthReady(Boolean(Object.keys(directMap).length || Object.keys(directTruth).length));
+        setVerificationGapCount(Math.max(0, truthConnected - verifiedConnected));
+        setIntegrationTruthReady(Boolean(rows.length));
         setMergeIntegrations(directMap);
       } catch {
         setMergeIntegrations({});
+        setIntegrationStatusRows([]);
+        setVerificationGapCount(0);
         setIntegrationTruthReady(false);
         setPageError(e?.message || 'Failed to load integration status');
       }
@@ -548,47 +616,28 @@ export default function Integrations() {
     if (integration.type === 'outlook' || integration.type === 'outlook_cal') return outlookStatus.connected;
     if (integration.type === 'gmail' || integration.type === 'gcal') return gmailStatus.connected;
     if (integration.type === 'coming_soon') return false;
-    // Canonical truth is authoritative for domain-level connection state.
-    if (integration.category === 'financial' || integration.category === 'ecommerce') {
-      if (typeof canonicalTruth?.accounting_connected === 'boolean') return canonicalTruth.accounting_connected;
-    }
-    if (integration.category === 'crm' && typeof canonicalTruth?.crm_connected === 'boolean') {
-      return canonicalTruth.crm_connected;
-    }
-    if ((integration.category === 'email' || integration.category === 'calendar') && typeof canonicalTruth?.email_connected === 'boolean') {
-      return canonicalTruth.email_connected;
-    }
-    const directMatch = Object.keys(mergeIntegrations).some(k =>
-      k.toLowerCase() === integration.id || k.toLowerCase() === integration.name.toLowerCase() || k.toLowerCase().includes(integration.id)
-    );
-    if (directMatch) return true;
-    return integrationStatusRows.some((row) => {
-      const provider = String(row.integration_name || row.provider || '').toLowerCase();
-      return Boolean(row.connected) && categoryMatches(integration.category, row.category) && (provider === integration.name.toLowerCase() || provider.includes(integration.id));
-    });
-  }, [outlookStatus, gmailStatus, mergeIntegrations, integrationStatusRows, canonicalTruth]);
+    return integrationStatusRows.some((row) => rowMatchesIntegration(row, integration));
+  }, [outlookStatus, gmailStatus, integrationStatusRows]);
 
   const getConnectedLabel = (integration) => {
     if (integration.type === 'outlook') return outlookStatus.connected_email || 'Connected';
     if (integration.type === 'gmail') return gmailStatus.connected_email || 'Connected';
-    const statusRow = integrationStatusRows.find((row) => {
-      const provider = String(row.integration_name || row.provider || '').toLowerCase();
-      return Boolean(row.connected) && categoryMatches(integration.category, row.category) && (provider === integration.name.toLowerCase() || provider.includes(integration.id));
-    });
+    const statusRow = integrationStatusRows.find((row) => rowMatchesIntegration(row, integration));
     if (statusRow) return 'Connected';
     return 'Connected';
   };
 
   const truthStateForIntegration = useCallback((integration) => {
+    if (!isConnected(integration)) return 'unverified';
     const category = String(integration.category || '').toLowerCase();
-    if (category === 'crm') return canonicalTruth.crm_state || (isConnected(integration) ? 'live' : 'unverified');
-    if (category === 'financial' || category === 'ecommerce') return canonicalTruth.accounting_state || (isConnected(integration) ? 'live' : 'unverified');
-    if (category === 'email' || category === 'calendar') return canonicalTruth.email_state || (isConnected(integration) ? 'live' : 'unverified');
-    return isConnected(integration) ? 'live' : 'unverified';
+    if (category === 'crm') return canonicalTruth.crm_state || 'live';
+    if (category === 'financial' || category === 'ecommerce') return canonicalTruth.accounting_state || 'live';
+    if (category === 'email' || category === 'calendar') return canonicalTruth.email_state || 'live';
+    return 'live';
   }, [canonicalTruth, isConnected]);
 
   const truthReasonForIntegration = useCallback((integration) => {
-    const row = integrationStatusRows.find((item) => categoryMatches(integration.category, item.category) && Boolean(item.connected));
+    const row = integrationStatusRows.find((item) => rowMatchesIntegration(item, integration));
     return row?.truth_reason || '';
   }, [integrationStatusRows]);
 
@@ -601,10 +650,7 @@ export default function Integrations() {
     const meta = key ? mergeIntegrations[key] : null;
     // Flag as stale if last_sync is > 24 hours ago or sync_status indicates error
     if (meta?.sync_status === 'token_expired' || meta?.sync_status === 'error') return true;
-    const statusRow = integrationStatusRows.find((row) => {
-      const provider = String(row.integration_name || row.provider || '').toLowerCase();
-      return Boolean(row.connected) && categoryMatches(integration.category, row.category) && (provider === integration.name.toLowerCase() || provider.includes(integration.id));
-    });
+    const statusRow = integrationStatusRows.find((row) => rowMatchesIntegration(row, integration));
     if (statusRow?.truth_state === 'stale' || statusRow?.truth_state === 'error') return true;
     return false;
   }, [mergeIntegrations, integrationStatusRows, isConnected]);
@@ -615,9 +661,8 @@ export default function Integrations() {
     const matchSearch = !searchTerm || i.name.toLowerCase().includes(searchTerm.toLowerCase()) || i.desc.toLowerCase().includes(searchTerm.toLowerCase());
     return matchCat && matchSearch;
   });
-
   const connectedCount = [
-    Math.max(Object.keys(mergeIntegrations).length, integrationStatusRows.filter((row) => row.connected && row.category !== 'email').length),
+    getVerifiedConnectedCount(integrationStatusRows),
     gmailStatus.connected ? 1 : 0,
     outlookStatus.connected ? 1 : 0,
   ].reduce((sum, value) => sum + value, 0);
@@ -628,9 +673,9 @@ export default function Integrations() {
   const launchIntegrationLimit = hasPaidLaunchAccess ? 5 : 1;
   const freeTierLimitReached = connectedCount >= launchIntegrationLimit;
   const blockedTruthCategories = [
-    { label: 'CRM', state: canonicalTruth.crm_state || Object.values(mergeIntegrations).find((item) => item?.category === 'crm')?.truth_state },
-    { label: 'Accounting', state: canonicalTruth.accounting_state || Object.values(mergeIntegrations).find((item) => item?.category === 'accounting')?.truth_state },
-    { label: 'Email', state: canonicalTruth.email_state || Object.values(mergeIntegrations).find((item) => item?.category === 'email')?.truth_state },
+    { label: 'CRM', state: canonicalTruth.crm_state },
+    { label: 'Accounting', state: canonicalTruth.accounting_state },
+    { label: 'Email', state: canonicalTruth.email_state },
   ].filter((item) => item.state && item.state !== 'live');
   const visibleCategories = isFreeTier ? CATEGORIES.filter((cat) => ['all', 'connected'].includes(cat.id)) : CATEGORIES;
 
@@ -733,103 +778,114 @@ export default function Integrations() {
 
         <div className="px-6 py-5 space-y-7">
 
-          {/* ── INTEGRATION CENTRE v1 (Phase 1.3) ── */}
-          <div className="rounded-2xl border p-4 sm:p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integration-centre-section">
-            <SectionLabel icon={LayoutGrid} label="Connector Centre" badge="Unified status" badgeColor="#94A3B8" />
-            <p className="mt-2 text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
-              Snapshot of CRM, accounting, email, and marketing connectors. Use Connect to add or refresh a source.
-            </p>
-            {centreLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-                {[0, 1, 2, 3].map((k) => (
-                  <div key={k} className="rounded-xl h-36 animate-pulse" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--biqc-border, #1E2D3D)' }} />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-                {centreConnectors.map((c, idx) => {
-                  const Icon = CENTRE_ICONS[c.id] || Plug;
-                  const hasErr = Boolean(c.error);
-                  const paidMergeLocked = isFreeTier && (c.id === 'crm' || c.id === 'accounting');
-                  const showReconnect = c.connected || hasErr;
-                  const badgeLabel = hasErr ? 'Error' : c.connected ? 'Connected' : 'Not connected';
-                  const badgeStyle = hasErr
-                    ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171', border: '1px solid rgba(239,68,68,0.28)' }
-                    : c.connected
-                      ? { bg: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.22)' }
-                      : { bg: 'rgba(100,116,139,0.12)', color: '#94A3B8', border: '1px solid rgba(100,116,139,0.2)' };
-                  const rel = formatRelativeTime(c.last_sync_at);
-                  const emailBlocked = c.id === 'email' && !c.connected && freeTierLimitReached;
-                  const btnDisabled = !!openingMerge || paidMergeLocked || emailBlocked;
-                  const isOpeningThis =
-                    (c.id === 'crm' && openingMerge === 'integration-centre-crm')
-                    || (c.id === 'accounting' && openingMerge === 'integration-centre-acc');
-                  return (
-                    <div
-                      key={c.id || idx}
-                      className="int-card flex flex-col rounded-xl p-4 gap-3"
-                      style={{
-                        background: c.connected && !hasErr ? 'rgba(16,185,129,0.04)' : 'var(--biqc-bg-elevated, #0F141C)',
-                        border: `1px solid ${hasErr ? 'rgba(239,68,68,0.25)' : c.connected ? 'rgba(16,185,129,0.2)' : 'var(--biqc-border, #1E2D3D)'}`,
-                        animationDelay: `${idx * 40}ms`,
-                      }}
-                      data-testid={`integration-centre-card-${c.id}`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.28)' }}>
-                          <Icon className="w-5 h-5" style={{ color: '#94A3B8' }} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold truncate" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>{c.name}</p>
-                          <p className="text-[11px] truncate mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{c.provider}</p>
-                          <span
-                            className="inline-flex mt-2 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide"
-                            style={{ background: badgeStyle.bg, color: badgeStyle.color, border: badgeStyle.border, fontFamily: fontFamily.mono }}
-                          >
-                            {badgeLabel}
-                          </span>
-                        </div>
-                      </div>
-                      {c.connected && rel && !hasErr && (
-                        <p className="text-[11px] flex items-center gap-1" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
-                          <Clock className="w-3 h-3 flex-shrink-0" />
-                          Last sync {rel}
-                        </p>
-                      )}
-                      {hasErr && c.error && (
-                        <p className="text-[11px] leading-snug" style={{ color: '#F87171', fontFamily: fontFamily.body }}>{c.error}</p>
-                      )}
-                      {paidMergeLocked && (
-                        <p className="text-[10px]" style={{ color: '#94A3B8' }}>Upgrade to BIQc Foundation to connect CRM and accounting.</p>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleCentreConnect(c)}
-                        disabled={btnDisabled}
-                        className="mt-auto w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+          {/* ── CONNECTOR CENTRE (Connected tab only to avoid duplicated discovery sections) ── */}
+          {!searchTerm && selectedCategory === 'connected' && (
+            <div className="rounded-2xl border p-4 sm:p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integration-centre-section">
+              <SectionLabel icon={LayoutGrid} label="Connector Centre" badge="Unified status" badgeColor="#94A3B8" />
+              <p className="mt-2 text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
+                Snapshot of CRM, accounting, email, and marketing connectors. Use Connect to add or refresh a source.
+              </p>
+              {centreLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+                  {[0, 1, 2, 3].map((k) => (
+                    <div key={k} className="rounded-xl h-36 animate-pulse" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--biqc-border, #1E2D3D)' }} />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+                  {centreConnectors.map((c, idx) => {
+                    const Icon = CENTRE_ICONS[c.id] || Plug;
+                    const hasErr = Boolean(c.error);
+                    const paidMergeLocked = isFreeTier && (c.id === 'crm' || c.id === 'accounting');
+                    const showReconnect = c.connected || hasErr;
+                    const badgeLabel = hasErr ? 'Error' : c.connected ? 'Connected' : 'Not connected';
+                    const badgeStyle = hasErr
+                      ? { bg: 'rgba(239,68,68,0.12)', color: '#F87171', border: '1px solid rgba(239,68,68,0.28)' }
+                      : c.connected
+                        ? { bg: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.22)' }
+                        : { bg: 'rgba(100,116,139,0.12)', color: '#94A3B8', border: '1px solid rgba(100,116,139,0.2)' };
+                    const rel = formatRelativeTime(c.last_sync_at);
+                    const emailBlocked = c.id === 'email' && !c.connected && freeTierLimitReached;
+                    const btnDisabled = !!openingMerge || paidMergeLocked || emailBlocked;
+                    const isOpeningThis =
+                      (c.id === 'crm' && openingMerge === 'integration-centre-crm')
+                      || (c.id === 'accounting' && openingMerge === 'integration-centre-acc');
+                    return (
+                      <div
+                        key={c.id || idx}
+                        className="int-card flex flex-col rounded-xl p-4 gap-3"
                         style={{
-                          background: btnDisabled ? 'rgba(71,85,105,0.22)' : 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(200,210,220,0.04) 100%)',
-                          border: btnDisabled ? '1px solid #334155' : '1px solid #64748B',
-                          color: btnDisabled ? '#94A3B8' : '#E8F0F8',
-                          fontFamily: fontFamily.body,
+                          background: c.connected && !hasErr ? 'rgba(16,185,129,0.04)' : 'var(--biqc-bg-elevated, #0F141C)',
+                          border: `1px solid ${hasErr ? 'rgba(239,68,68,0.25)' : c.connected ? 'rgba(16,185,129,0.2)' : 'var(--biqc-border, #1E2D3D)'}`,
+                          animationDelay: `${idx * 40}ms`,
                         }}
-                        data-testid={`integration-centre-action-${c.id}`}
+                        data-testid={`integration-centre-card-${c.id}`}
                       >
-                        {isOpeningThis ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plug className="w-3 h-3" />}
-                        {c.id === 'marketing' && !c.connected ? 'Connect' : showReconnect ? 'Reconnect' : 'Connect'}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.28)' }}>
+                            <Icon className="w-5 h-5" style={{ color: '#94A3B8' }} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold truncate" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>{c.name}</p>
+                            <p className="text-[11px] truncate mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{c.provider}</p>
+                            <span
+                              className="inline-flex mt-2 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide"
+                              style={{ background: badgeStyle.bg, color: badgeStyle.color, border: badgeStyle.border, fontFamily: fontFamily.mono }}
+                            >
+                              {badgeLabel}
+                            </span>
+                          </div>
+                        </div>
+                        {c.connected && rel && !hasErr && (
+                          <p className="text-[11px] flex items-center gap-1" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
+                            <Clock className="w-3 h-3 flex-shrink-0" />
+                            Last sync {rel}
+                          </p>
+                        )}
+                        {hasErr && c.error && (
+                          <p className="text-[11px] leading-snug" style={{ color: '#F87171', fontFamily: fontFamily.body }}>{c.error}</p>
+                        )}
+                        {paidMergeLocked && (
+                          <p className="text-[10px]" style={{ color: '#94A3B8' }}>Upgrade to BIQc Foundation to connect CRM and accounting.</p>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleCentreConnect(c)}
+                          disabled={btnDisabled}
+                          className="mt-auto w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                          style={{
+                            background: btnDisabled ? 'rgba(71,85,105,0.22)' : 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(200,210,220,0.04) 100%)',
+                            border: btnDisabled ? '1px solid #334155' : '1px solid #64748B',
+                            color: btnDisabled ? '#94A3B8' : '#E8F0F8',
+                            fontFamily: fontFamily.body,
+                          }}
+                          data-testid={`integration-centre-action-${c.id}`}
+                        >
+                          {isOpeningThis ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plug className="w-3 h-3" />}
+                          {c.id === 'marketing' && !c.connected ? 'Connect' : showReconnect ? 'Reconnect' : 'Connect'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {!integrationTruthReady && (
             <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.08)' }} data-testid="integrations-truth-verifying-banner">
               <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Forensic source health</p>
               <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>BIQc is verifying live connector truth before showing connected counts.</p>
               <p className="mt-1 text-xs" style={{ color: '#FDE68A' }}>If this persists, refresh the page or reopen the affected integrations.</p>
+            </div>
+          )}
+
+          {verificationGapCount > 0 && (
+            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.08)' }} data-testid="integrations-truth-gap-banner">
+              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Verification in progress</p>
+              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+                {verificationGapCount} integration{verificationGapCount !== 1 ? 's' : ''} reported by truth counters are not provider-verified yet, so BIQc is not displaying them as connected.
+              </p>
             </div>
           )}
 
@@ -869,8 +925,8 @@ export default function Integrations() {
             </div>
           )}
 
-          {/* ── EMAIL & CALENDAR — visible on All and Connected tabs ── */}
-          {!searchTerm && (selectedCategory === 'all' || selectedCategory === 'connected') && (
+          {/* ── EMAIL & CALENDAR — visible on All tab ── */}
+          {!searchTerm && selectedCategory === 'all' && (
             <div>
               <SectionLabel icon={Mail} label="Email & Calendar" badge="Supabase OAuth" badgeColor="#3B82F6" />
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
