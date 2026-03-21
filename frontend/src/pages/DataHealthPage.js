@@ -54,10 +54,16 @@ const DataHealthPage = () => {
   const fetchData = async () => {
     try {
       const [connRes, readRes] = await Promise.allSettled([
-        apiClient.get('/integrations/merge/connected'),
+        apiClient.get('/user/integration-status'),
         apiClient.get('/intelligence/data-readiness'),
       ]);
-      if (connRes.status === 'fulfilled') setConnected(connRes.value.data);
+      if (connRes.status === 'fulfilled') {
+        setConnected(connRes.value.data);
+      } else {
+        // Fallback keeps backward compatibility if canonical endpoint is unavailable
+        const fallback = await apiClient.get('/integrations/merge/connected');
+        setConnected(fallback.data);
+      }
       if (readRes.status === 'fulfilled') setReadiness(readRes.value.data);
     } catch {} finally { setLoading(false); }
   };
@@ -76,19 +82,39 @@ const DataHealthPage = () => {
     } finally { setSyncing(false); }
   };
 
-  // Build systems list from live data only — NO hardcoded fallbacks
+  // Build systems list from canonical status first, then fallback payload shapes.
   const systems = [];
-  if (connected?.integrations) {
+  const integrationRows = Array.isArray(connected?.integrations)
+    ? connected.integrations.filter((row) => Boolean(row?.connected))
+    : [];
+  if (integrationRows.length > 0) {
+    integrationRows.forEach((row) => {
+      const provider = String(row.integration_name || row.provider || row.category || 'integration');
+      const key = provider.toLowerCase();
+      systems.push({
+        name: provider.charAt(0).toUpperCase() + provider.slice(1),
+        type: row.category === 'accounting' ? 'Accounting'
+          : row.category === 'crm' ? 'CRM'
+          : row.category === 'email' ? 'Email'
+          : row.category === 'calendar' ? 'Calendar'
+          : row.category === 'hris' ? 'HR'
+          : 'Integration',
+        color: SYSTEM_COLORS[key] || SYSTEM_COLORS.default,
+        connectedAt: row.connected_at || null,
+        lastSync: row.last_sync_at || row.connected_at || null,
+      });
+    });
+  } else if (connected?.integrations && !Array.isArray(connected.integrations)) {
     Object.entries(connected.integrations).forEach(([name, isConn]) => {
-      if (!isConn) return; // Only show connected systems
+      if (!isConn) return;
       const key = name.toLowerCase();
       systems.push({
         name: name.charAt(0).toUpperCase() + name.slice(1),
-        type: key.includes('xero') || key.includes('myob') || key.includes('quickbooks') ? 'Accounting'
-          : key.includes('hub') || key.includes('salesforce') || key.includes('pipedrive') ? 'CRM'
-          : key.includes('outlook') || key.includes('gmail') ? 'Email'
+        type: key.includes('xero') || key.includes('myob') || key.includes('quickbooks') || key.includes('accounting') ? 'Accounting'
+          : key.includes('hub') || key.includes('salesforce') || key.includes('pipedrive') || key.includes('crm') ? 'CRM'
+          : key.includes('outlook') || key.includes('gmail') || key.includes('email') ? 'Email'
           : key.includes('calendar') ? 'Calendar'
-          : key.includes('bamboo') || key.includes('gusto') || key.includes('employment') ? 'HR'
+          : key.includes('bamboo') || key.includes('gusto') || key.includes('employment') || key.includes('hr') ? 'HR'
           : 'Integration',
         color: SYSTEM_COLORS[key] || SYSTEM_COLORS.default,
         connectedAt: connected.integrations_meta?.[key]?.connected_at,
@@ -96,13 +122,12 @@ const DataHealthPage = () => {
       });
     });
   }
-  // Email integrations from readiness
-  if (readiness?.email?.outlook && !systems.some(s => s.name.toLowerCase().includes('outlook'))) {
-    systems.push({ name: 'Outlook', type: 'Email', color: '#0078D4', connectedAt: null, lastSync: null });
-  }
-  if (readiness?.email?.gmail && !systems.some(s => s.name.toLowerCase().includes('gmail'))) {
-    systems.push({ name: 'Gmail', type: 'Email', color: '#EF4444', connectedAt: null, lastSync: null });
-  }
+
+  const truth = connected?.canonical_truth || integrationStatus?.canonical_truth || {};
+  const providerEvidenceCount = systems.length;
+  const truthConnectedCount = Number(truth.total_connected || 0);
+  const hasTruthMismatch = truthConnectedCount > providerEvidenceCount;
+  const missingEvidenceCount = hasTruthMismatch ? (truthConnectedCount - providerEvidenceCount) : 0;
 
   const connectedCount = systems.length;
   const hasAnyData = connectedCount > 0;
@@ -115,9 +140,15 @@ const DataHealthPage = () => {
 
   // Which required sources are missing?
   const connected_categories = [
-    ...(connected?.integrations ? Object.keys(connected.integrations).filter(k => connected.integrations[k]) : []),
-    ...(readiness?.email?.outlook || readiness?.email?.gmail ? ['email'] : []),
-  ].map(k => k.toLowerCase());
+    ...integrationRows.flatMap((row) => [String(row.category || '').toLowerCase(), String(row.integration_name || row.provider || '').toLowerCase()]),
+    ...(
+      (connected?.integrations && !Array.isArray(connected.integrations))
+        ? Object.entries(connected.integrations)
+            .filter(([, isConn]) => Boolean(isConn))
+            .map(([name]) => String(name).toLowerCase())
+        : []
+    ),
+  ].filter(Boolean);
 
   const missingSources = MISSING_SOURCES.filter(src => {
     if (src.key === 'email') return !connected_categories.some(c => c.includes('outlook') || c.includes('gmail') || c.includes('email'));
@@ -182,6 +213,23 @@ const DataHealthPage = () => {
             )}
           </div>
         </Panel>
+
+        {hasTruthMismatch && (
+          <Panel className="border-amber-500/40">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-400" />
+              <div>
+                <p className="text-sm font-semibold text-amber-300" style={{ fontFamily: fontFamily.display }}>
+                  Verification in progress
+                </p>
+                <p className="text-xs text-[#9FB0C3] mt-1">
+                  We detected {truthConnectedCount} connected source(s), but only {providerEvidenceCount} are provider-verified right now.
+                  {` ${missingEvidenceCount} source(s) will not be shown as connected until verification finishes.`}
+                </p>
+              </div>
+            </div>
+          </Panel>
+        )}
 
         {/* Connected Systems with sync status */}
         {systems.length > 0 && (
