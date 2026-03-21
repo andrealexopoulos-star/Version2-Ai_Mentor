@@ -129,7 +129,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       if (convs.length === 0) {
         setMessages([{
           role: 'assistant',
-          text: "Hey — I'm your BIQc business advisor. I can see your connected business data (CRM, accounting, email) and I'm here to help you make smarter decisions, faster.\n\nI'll be straight with you: when the data is clear, I'll tell you exactly what's happening. When I need more info, I'll ask one clear question.\n\nWhat's on your mind?",
+          text: "Hey — I'm your BIQc business advisor. Ask a concrete business question and I'll respond with what BIQc can verify from your current context.\n\nIf any source is missing or stale, I'll call that out clearly and guide the next step.\n\nWhat's on your mind?",
         }]);
       }
     }).catch(() => {});
