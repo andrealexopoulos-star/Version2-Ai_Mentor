@@ -44,6 +44,17 @@ CREATE POLICY "read_industry_codes" ON ic_industry_codes FOR SELECT USING (true)
 -- (free-text industry remains for backward compat)
 DO $$
 BEGIN
+    IF to_regclass('public.business_profiles') IS NULL THEN
+        CREATE TABLE IF NOT EXISTS public.business_profiles (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+            business_name TEXT,
+            industry TEXT,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+    END IF;
+
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'business_profiles' AND column_name = 'industry_code') THEN
         ALTER TABLE business_profiles ADD COLUMN industry_code TEXT;
     END IF;
