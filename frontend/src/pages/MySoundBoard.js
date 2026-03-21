@@ -195,8 +195,6 @@ const MySoundBoard = () => {
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode) || BIQC_MODES[0];
   const showBoardroomViz = selectedAgent === 'boardroom';
-<<<<<<< Current (Your changes)
-=======
   const [boardroomNarrationStep, setBoardroomNarrationStep] = useState(0);
 
   useEffect(() => {
@@ -209,8 +207,6 @@ const MySoundBoard = () => {
     }, 1300);
     return () => clearInterval(timer);
   }, [loading, showBoardroomViz]);
-
->>>>>>> Incoming (Background Agent changes)
   const fetchScanUsage = useCallback(async (forceRefresh = false) => {
     try {
       const CACHE_KEY = 'biqc_scan_usage_cache';
