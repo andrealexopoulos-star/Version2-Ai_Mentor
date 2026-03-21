@@ -458,18 +458,7 @@ const ConnectEmail = () => {
                 </div>
               </div>
 
-              {/* Quick Action */}
-              {(outlookStatus.connected || gmailStatus.connected) && (
-                <div className="flex items-center justify-center gap-4 pt-4">
-                  <Button
-                    onClick={handleViewInbox}
-                    className="btn-primary"
-                  >
-                    <Inbox className="w-4 h-4 mr-2" />
-                    Go to Priority Inbox
-                  </Button>
-                </div>
-              )}
+              {/* Bottom quick action removed to avoid duplicated connected CTA cards */}
             </>
           )}
         </div>
