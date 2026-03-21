@@ -133,6 +133,7 @@ const MySoundBoard = () => {
 
   const BIQC_AGENTS = [
     { id: 'auto', label: 'Auto', shortDesc: 'Pick specialist by question', icon: '⚡' },
+    { id: 'boardroom', label: 'Boardroom', shortDesc: 'CEO/CFO/COO/CTO/HR/CCO council', icon: '🏛️' },
     { id: 'general', label: 'Strategic Advisor', shortDesc: 'Full picture & priorities', icon: '◎' },
     { id: 'finance', label: 'Finance', shortDesc: 'Cash, revenue, margins', icon: '💰' },
     { id: 'sales', label: 'Sales', shortDesc: 'Pipeline & deals', icon: '📊' },
@@ -141,6 +142,7 @@ const MySoundBoard = () => {
     { id: 'operations', label: 'Operations', shortDesc: 'Workflow & capacity', icon: '⚙️' },
     { id: 'strategy', label: 'Strategy', shortDesc: 'Planning & scenarios', icon: '🎯' },
   ];
+  const BOARDROOM_ROLES = ['CEO', 'CFO', 'COO', 'CTO', 'HR', 'CCO'];
 
   const resolvedTier = resolveTier(user);
   const privileged = isPrivilegedUser(user);
@@ -185,6 +187,7 @@ const MySoundBoard = () => {
 
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode) || BIQC_MODES[0];
+  const showBoardroomViz = selectedAgent === 'boardroom';
   const soundboardExplainability = {
     whyVisible: `Soundboard is in ${activeMode?.label || 'BIQc Auto'} mode and is grounded in your live BIQc context for this workspace.`,
     whyNow: latestAssistantMessage?.intent?.domain
@@ -901,8 +904,28 @@ const MySoundBoard = () => {
                             <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }} />
                             <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                           </div>
-                          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Thinking...</span>
+                          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                            {showBoardroomViz ? 'Boardroom is assessing priorities...' : 'Thinking...'}
+                          </span>
                         </div>
+                        {showBoardroomViz && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {BOARDROOM_ROLES.map((role, i) => (
+                              <span
+                                key={role}
+                                className="text-[9px] px-1.5 py-0.5 rounded animate-pulse"
+                                style={{
+                                  background: 'rgba(59,130,246,0.12)',
+                                  color: '#93C5FD',
+                                  fontFamily: fontFamily.mono,
+                                  animationDelay: `${i * 120}ms`,
+                                }}
+                              >
+                                {role}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1018,6 +1041,39 @@ const MySoundBoard = () => {
                   )}
                 </div>
               </div>
+              {showBoardroomViz && (
+                <div
+                  className="mb-2 rounded-xl px-3 py-2"
+                  style={{ background: 'rgba(2, 6, 23, 0.8)', border: '1px solid rgba(59,130,246,0.35)' }}
+                  data-testid="soundboard-boardroom-visualizer"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: '#93C5FD', fontFamily: fontFamily.mono }}>
+                      Boardroom Council Active
+                    </p>
+                    <p className="text-[9px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
+                      Cross-integration priority synthesis
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {BOARDROOM_ROLES.map((role, i) => (
+                      <span
+                        key={role}
+                        className="px-2 py-1 rounded-lg text-[10px] animate-pulse"
+                        style={{
+                          background: 'rgba(30, 41, 59, 0.9)',
+                          color: '#E2E8F0',
+                          border: '1px solid rgba(148, 163, 184, 0.35)',
+                          fontFamily: fontFamily.mono,
+                          animationDelay: `${i * 120}ms`,
+                        }}
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div 
                 className="flex items-end gap-3 p-3 rounded-xl"

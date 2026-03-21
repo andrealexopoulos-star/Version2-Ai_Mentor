@@ -76,6 +76,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   ];
   const BIQC_AGENTS = [
     { id: 'auto', label: 'Auto', shortDesc: 'Pick specialist by question', icon: '⚡' },
+    { id: 'boardroom', label: 'Boardroom', shortDesc: 'CEO/CFO/COO/CTO/HR/CCO council', icon: '🏛️' },
     { id: 'general', label: 'Strategic Advisor', shortDesc: 'Full picture & priorities', icon: '◎' },
     { id: 'finance', label: 'Finance', shortDesc: 'Cash, revenue, margins', icon: '💰' },
     { id: 'sales', label: 'Sales', shortDesc: 'Pipeline & deals', icon: '📊' },
