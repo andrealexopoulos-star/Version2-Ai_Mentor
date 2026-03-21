@@ -12,6 +12,7 @@ import uuid
 import json
 import asyncio
 import logging
+import base64
 
 import httpx
 from routes.deps import (
@@ -3080,18 +3081,30 @@ async def merge_webhook_receive(request: Request):
     if str(os.environ.get("FEATURE_MERGE_WEBHOOK_ENABLED", "true")).lower() not in {"1", "true", "yes"}:
         return JSONResponse(content={"ok": True, "accepted": False, "reason": "FEATURE_MERGE_WEBHOOK_ENABLED=false"}, status_code=202)
 
-    signature_header = request.headers.get("x-merge-signature") or request.headers.get("X-Merge-Signature") or ""
+    signature_header = (
+        request.headers.get("x-merge-signature")
+        or request.headers.get("X-Merge-Signature")
+        or request.headers.get("x-merge-webhook-signature")
+        or ""
+    )
     raw_body = await request.body()
     raw_text = raw_body.decode("utf-8", errors="replace")
 
     try:
-        expected_sig = hmac_module.new(
+        digest_bytes = hmac_module.new(
             webhook_secret.encode(),
-            raw_text.encode(),
+            raw_body,
             hashlib.sha256,
-        ).hexdigest()
+        ).digest()
+        expected_hex = digest_bytes.hex().lower()
+        expected_b64 = base64.b64encode(digest_bytes).decode("utf-8").strip()
+
         provided = signature_header.replace("sha256=", "").replace("sha256 =", "").strip().lower()
-        if not hmac_module.compare_digest(expected_sig, provided):
+        provided_b64 = signature_header.replace("sha256=", "").replace("sha256 =", "").strip()
+        if not (
+            hmac_module.compare_digest(expected_hex, provided)
+            or hmac_module.compare_digest(expected_b64, provided_b64)
+        ):
             return JSONResponse(content={"ok": False, "error": "Invalid webhook signature"}, status_code=401)
     except Exception as e:
         logger.warning(f"[merge-webhook] Signature validation failed: {e}")

@@ -5,6 +5,14 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { hasAccess, resolveTier } from '../lib/tierResolver';
 
 const STORAGE_KEY = 'biqc_tutorials_seen';
+const normalizePageKey = (key) => {
+  const raw = String(key || '').trim();
+  if (!raw) return raw;
+  if (!raw.startsWith('/')) return raw;
+  const noQuery = raw.split('?')[0].split('#')[0];
+  if (noQuery.length > 1 && noQuery.endsWith('/')) return noQuery.slice(0, -1);
+  return noQuery;
+};
 
 // ─── Local storage helpers (fallback + cache) ───
 const getLocal = () => {
@@ -13,7 +21,7 @@ const getLocal = () => {
 };
 const setLocal = (key, val) => {
   const seen = getLocal();
-  seen[key] = val;
+  seen[normalizePageKey(key)] = val;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(seen));
 };
 
@@ -25,11 +33,17 @@ const loadServerState = async () => {
   if (_cacheLoaded) return _serverCache;
   try {
     const res = await apiClient.get('/tutorials/status');
-    _serverCache = res.data;
+    const completedRaw = res.data?.completed || {};
+    const completed = {};
+    Object.entries(completedRaw).forEach(([k, v]) => {
+      completed[normalizePageKey(k)] = v;
+    });
+    _serverCache = { ...res.data, completed };
     _cacheLoaded = true;
   } catch {
-    _serverCache = { completed: {}, tutorials_disabled: false };
-    _cacheLoaded = true;
+    // Do not lock a failed fetch into cache; allow retry.
+    _serverCache = null;
+    _cacheLoaded = false;
   }
   return _serverCache;
 };
@@ -100,14 +114,14 @@ const TUTORIALS = {
     ],
   },
   '/integrations': {
-    title: 'Integrations',
+    title: 'Connectors',
     steps: [
       { title: 'Connect Your Tools', body: 'Integrations let you connect your CRM, accounting, email, and other business tools to BIQc.' },
       { title: 'Automatic Intelligence', body: 'Once connected, BIQc automatically pulls signals from your tools and surfaces them in your intelligence feed.' },
     ],
   },
   '/connect-email': {
-    title: 'Email Connection',
+    title: 'Connectors',
     steps: [
       { title: 'Connect Your Email', body: 'Link your Outlook or Gmail so BIQc can detect communication patterns, flag urgent items, and surface email-based business signals.' },
       { title: 'Privacy First', body: 'BIQc only reads metadata and key topics — it never stores full email content. All data is processed within Australian sovereignty.' },
@@ -250,12 +264,13 @@ export const useTutorial = (pageKey) => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [ready, setReady] = useState(false);
   const { user, authState } = useSupabaseAuth();
-  const tutorial = TUTORIALS[pageKey];
+  const normalizedPageKey = normalizePageKey(pageKey);
+  const tutorial = TUTORIALS[normalizedPageKey];
   const dismissedLocallyRef = useRef(false);
 
   // On mount: load server state (cached per session), decide whether to show
   useEffect(() => {
-    if (!tutorial || !pageKey) return;
+    if (!tutorial || !normalizedPageKey) return;
     if (!shouldShowTutorial(tutorial, user, authState)) return;
 
     let cancelled = false;
@@ -263,16 +278,18 @@ export const useTutorial = (pageKey) => {
       const state = await loadServerState();
       if (cancelled) return;
 
+      if (!state) return;
+
       // Disabled globally for this user
       if (state.tutorials_disabled) return;
 
       // Already completed server-side
-      if (state.completed?.[pageKey]) return;
+      if (state.completed?.[normalizedPageKey]) return;
 
       // Fallback: check localStorage (backward compat + "dismiss for now")
       const local = getLocal();
-      if (local[pageKey] === 'permanent') return;
-      if (local[pageKey] === 'dismissed') return; // dismissed for now — don't re-show in same session
+      if (local[normalizedPageKey] === 'permanent') return;
+      if (local[normalizedPageKey] === 'dismissed') return;
 
       const timer = setTimeout(() => {
         if (!cancelled) setShowTutorial(true);
@@ -282,29 +299,33 @@ export const useTutorial = (pageKey) => {
 
     check();
     return () => { cancelled = true; };
-  }, [pageKey, tutorial, user, authState]);
+  }, [normalizedPageKey, tutorial, user, authState]);
 
   // "Got it" — persists to server + localStorage permanently
   const closeTutorial = useCallback(async () => {
     setShowTutorial(false);
-    setLocal(pageKey, 'permanent');
+    setLocal(normalizedPageKey, 'permanent');
     // Update session cache immediately
     if (_serverCache) {
-      _serverCache.completed = { ..._serverCache.completed, [pageKey]: new Date().toISOString() };
+      _serverCache.completed = { ..._serverCache.completed, [normalizedPageKey]: new Date().toISOString() };
     }
     try {
-      await apiClient.post('/tutorials/mark', { page_key: pageKey });
+      await apiClient.post('/tutorials/mark', { page_key: normalizedPageKey });
     } catch {
       // localStorage fallback already written — not fatal
     }
-  }, [pageKey]);
+  }, [normalizedPageKey]);
 
-  // "Learn later" — dismisses for this session only, not persisted to server
+  // Any dismissal is treated as "seen once": do not re-show automatically.
   const dismissForNow = useCallback(() => {
     setShowTutorial(false);
     dismissedLocallyRef.current = true;
-    setLocal(pageKey, 'dismissed');
-  }, [pageKey]);
+    setLocal(normalizedPageKey, 'permanent');
+    if (_serverCache) {
+      _serverCache.completed = { ..._serverCache.completed, [normalizedPageKey]: new Date().toISOString() };
+    }
+    apiClient.post('/tutorials/mark', { page_key: normalizedPageKey }).catch(() => {});
+  }, [normalizedPageKey]);
 
   const openTutorial = useCallback(() => {
     setShowTutorial(true);

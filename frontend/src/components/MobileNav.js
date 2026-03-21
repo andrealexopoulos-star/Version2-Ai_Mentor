@@ -53,7 +53,7 @@ const MORE_SECTIONS = [
     items: [
       { label: 'Decision Tracker', icon: ClipboardList, path: '/decisions' },
       { label: 'Ingestion Audit',  icon: Shield,        path: '/forensic-audit' },
-      { label: 'Email Integration',icon: Link2,         path: '/integrations' },
+      { label: 'Connectors',       icon: Link2,         path: '/integrations' },
       { label: 'Settings',         icon: Settings,      path: '/settings' },
       { label: 'More Features',    icon: Workflow,      path: '/more-features' },
     ],
@@ -104,7 +104,7 @@ const MobileNav = () => {
     {
       label: 'More',
       items: [
-        { label: 'Email Integration', icon: Link2, path: '/integrations' },
+        { label: 'Connectors', icon: Link2, path: '/integrations' },
         { label: 'Settings', icon: Settings, path: '/settings' },
         { label: 'More Features', icon: Workflow, path: '/more-features' },
       ],
@@ -172,8 +172,8 @@ const MobileNav = () => {
                           onClick={() => { setMoreOpen(false); navigate(item.path); }}
                           className="flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all min-h-[64px]"
                           style={{
-                            background: active ? 'rgba(255,106,0,0.1)' : 'transparent',
-                            color: active ? '#FF6A00' : 'var(--biqc-text-2, #9FB0C3)',
+                            background: active ? 'rgba(148,163,184,0.14)' : 'transparent',
+                            color: active ? '#E2E8F0' : 'var(--biqc-text-2, #9FB0C3)',
                           }}
                           aria-current={active ? 'page' : undefined}
                           data-testid={`more-${item.label.toLowerCase().replace(/[\s&]/g, '-')}`}
@@ -213,7 +213,7 @@ const MobileNav = () => {
                 key={item.id}
                 onClick={() => handleNav(item)}
                 className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors"
-                style={{ color: active ? '#FF6A00' : (isMore && moreOpen ? '#FF6A00' : 'var(--biqc-text-muted, #8B9DB5)') }}
+                style={{ color: active ? '#94A3B8' : (isMore && moreOpen ? '#94A3B8' : 'var(--biqc-text-muted, #8B9DB5)') }}
                 aria-label={item.label}
                 aria-current={active ? 'page' : undefined}
                 data-testid={`mobile-nav-${item.id}`}
@@ -221,7 +221,7 @@ const MobileNav = () => {
                 <item.icon className="w-5 h-5" />
                 <span className="text-[11px] font-medium" style={{ fontFamily: fontFamily.mono }}>{item.label}</span>
                 {active && (
-                  <div className="w-4 h-0.5 rounded-full mt-0.5" style={{ background: '#FF6A00' }} />
+                  <div className="w-4 h-0.5 rounded-full mt-0.5" style={{ background: '#94A3B8' }} />
                 )}
               </button>
             );

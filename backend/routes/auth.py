@@ -1,6 +1,11 @@
 """Auth Routes — Supabase signup, login, OAuth, me, check-profile."""
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from typing import Optional
+import os
+import json
+import urllib.parse
+import urllib.request
 from routes.deps import get_current_user, get_sb, logger
 from supabase_client import safe_query_single
 from auth_supabase import (
@@ -41,6 +46,56 @@ async def supabase_login(request: SignInRequest):
     New Supabase-based login endpoint
     """
     return await signin_with_email(request)
+
+
+class RecaptchaVerifyRequest(BaseModel):
+    token: str
+    action: Optional[str] = None
+
+
+@router.post("/auth/recaptcha/verify")
+async def verify_recaptcha(request: RecaptchaVerifyRequest):
+    """Verify Google reCAPTCHA token server-side."""
+    secret = os.environ.get("RECAPTCHA_SECRET_KEY") or os.environ.get("RECAPTCHA_SECRET") or ""
+    if not secret:
+        return {"ok": True, "skipped": True, "reason": "recaptcha_secret_not_configured"}
+
+    token = (request.token or "").strip()
+    if not token:
+        raise HTTPException(status_code=400, detail="Missing captcha token")
+
+    payload = urllib.parse.urlencode({
+        "secret": secret,
+        "response": token,
+    }).encode("utf-8")
+
+    try:
+        req = urllib.request.Request(
+            "https://www.google.com/recaptcha/api/siteverify",
+            data=payload,
+            method="POST",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            body = resp.read().decode("utf-8")
+        data = json.loads(body)
+    except Exception as exc:
+        logger.warning(f"[recaptcha] verification request failed: {exc}")
+        raise HTTPException(status_code=502, detail="Captcha verification unavailable")
+
+    if not data.get("success"):
+        raise HTTPException(status_code=400, detail="Captcha verification failed")
+
+    returned_action = (data.get("action") or "").strip()
+    expected_action = (request.action or "").strip()
+    if expected_action and returned_action and returned_action != expected_action:
+        raise HTTPException(status_code=400, detail="Captcha action mismatch")
+
+    score = data.get("score")
+    if isinstance(score, (int, float)) and score < 0.3:
+        raise HTTPException(status_code=400, detail="Captcha score too low")
+
+    return {"ok": True, "score": score, "action": returned_action or None}
 
 @router.get("/auth/supabase/oauth/{provider}")
 async def supabase_oauth(provider: str, redirect_to: Optional[str] = None):

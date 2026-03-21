@@ -39,6 +39,84 @@ const Logo = ({ domain, name, size = 36 }) => {
   );
 };
 
+const CONNECTOR_SHOWCASE = [
+  { id: 'outlook', name: 'Outlook', subtitle: 'Search and send messages and emails in Outlook', state: 'connected', slug: 'microsoftoutlook', color: '0078D4', domain: 'microsoft.com' },
+  { id: 'google-drive', name: 'Google Drive', subtitle: 'Get in-depth answers from your Google Drive content', state: 'connected', slug: 'googledrive', color: '34A853', domain: 'google.com' },
+  { id: 'gmail-calendar', name: 'Gmail with Calendar', subtitle: 'Search, create, and manage your emails and calendar events', state: 'connected', slug: 'gmail', color: 'EA4335', domain: 'gmail.com' },
+  { id: 'onedrive', name: 'OneDrive', subtitle: 'Get in-depth answers from your OneDrive content', state: 'connected', slug: 'microsoftonedrive', color: '0078D4', domain: 'microsoft.com' },
+  { id: 'sharepoint', name: 'Sharepoint', subtitle: 'Get in-depth answers from your SharePoint content', state: 'connected', slug: 'microsoftsharepoint', color: '0078D4', domain: 'microsoft.com' },
+  { id: 'dropbox', name: 'Dropbox', subtitle: 'Get in-depth answers from your Dropbox content', state: 'available', slug: 'dropbox', color: '0061FF', domain: 'dropbox.com' },
+  { id: 'box', name: 'Box', subtitle: 'Get in-depth answers from your Box content', state: 'available', slug: 'box', color: '0061D5', domain: 'box.com' },
+  { id: 'notion', name: 'Notion', subtitle: 'Search and create content on your Notion pages', state: 'available', slug: 'notion', color: 'FFFFFF', domain: 'notion.so' },
+  { id: 'linear', name: 'Linear', subtitle: 'Plan and track projects, issues, and team workflows', state: 'available', slug: 'linear', color: '5E6AD2', domain: 'linear.app' },
+  { id: 'github', name: 'GitHub', subtitle: 'Search and manage your GitHub repositories', state: 'available', slug: 'github', color: 'FFFFFF', domain: 'github.com' },
+  { id: 'asana', name: 'Asana', subtitle: 'Plan and track projects, tasks, and team workflows', state: 'available', slug: 'asana', color: 'F06A6A', domain: 'asana.com' },
+  { id: 'slack', name: 'Slack', subtitle: 'Search and post messages across your Slack workspace', state: 'available', slug: 'slack', color: '4A154B', domain: 'slack.com' },
+  { id: 'jira', name: 'Jira', subtitle: 'Plan and track projects, tasks, and team workflows', state: 'available', slug: 'jira', color: '0052CC', domain: 'atlassian.com' },
+  { id: 'confluence', name: 'Confluence', subtitle: 'Search and create content on your Confluence pages', state: 'available', slug: 'confluence', color: '172B4D', domain: 'atlassian.com' },
+  { id: 'microsoft-teams', name: 'Microsoft Teams', subtitle: 'Search and send messages in Microsoft Teams', state: 'available', slug: 'microsoftteams', color: '6264A7', domain: 'microsoft.com' },
+  { id: 'investment-portfolio', name: 'Investment Portfolio', subtitle: 'View your connected brokerage investment holdings', state: 'available', domain: 'morningstar.com' },
+  { id: 'hubspot', name: 'HubSpot', subtitle: 'Retrieve, create, and update CRM objects', state: 'available', slug: 'hubspot', color: 'FF7A59', domain: 'hubspot.com' },
+  { id: 'monday', name: 'Monday.com', subtitle: 'Manage boards, items, and groups', state: 'available', slug: 'mondaydotcom', color: 'FF3D57', domain: 'monday.com' },
+  { id: 'stytch', name: 'Stytch', subtitle: 'Authenticate and secure users with Stytch', state: 'available', slug: 'stytch', color: '0F172A', domain: 'stytch.com' },
+  { id: 'jam', name: 'Jam', subtitle: 'Access bug recordings with video, console logs, and network', state: 'available', domain: 'jam.dev' },
+  { id: 'vercel', name: 'Vercel', subtitle: 'Manage teams, projects, and deployments', state: 'available', slug: 'vercel', color: 'FFFFFF', domain: 'vercel.com' },
+  { id: 'klaviyo', name: 'Klaviyo', subtitle: 'Manage profiles and campaigns from Klaviyo', state: 'available', slug: 'klaviyo', color: '00935B', domain: 'klaviyo.com' },
+  { id: 'hugging-face', name: 'Hugging Face', subtitle: 'Search and monitor models, datasets, and spaces', state: 'available', slug: 'huggingface', color: 'FFD21E', domain: 'huggingface.co' },
+  { id: 'cloudinary', name: 'Cloudinary', subtitle: 'Organize, retrieve, and deliver images and videos', state: 'available', slug: 'cloudinary', color: '3448C5', domain: 'cloudinary.com' },
+  { id: 'ticket-tailor', name: 'Ticket Tailor', subtitle: 'Connect to your Ticket Tailor data', state: 'available', slug: 'tickettailor', color: '111111', domain: 'tickettailor.com' },
+  { id: 'sentry', name: 'Sentry', subtitle: 'Monitor issues, errors, and performance', state: 'available', slug: 'sentry', color: '5A45FF', domain: 'sentry.io' },
+  { id: 'circleback', name: 'Circleback', subtitle: 'Connect to Circleback', state: 'available', domain: 'circleback.ai' },
+  { id: 'wordpress', name: 'WordPress.com', subtitle: 'Create and publish content on WordPress', state: 'available', slug: 'wordpress', color: '21759B', domain: 'wordpress.com' },
+  { id: 'bitly', name: 'Bitly', subtitle: 'Shorten and manage links with Bitly', state: 'available', slug: 'bitly', color: 'EE6123', domain: 'bitly.com' },
+  { id: 'honeycomb', name: 'Honeycomb', subtitle: 'Query and analyze observability data', state: 'available', slug: 'honeycomb', color: 'F59E0B', domain: 'honeycomb.io' },
+  { id: 'fireflies', name: 'Fireflies', subtitle: 'Transcribe and summarize meetings automatically', state: 'available', domain: 'fireflies.ai' },
+  { id: 'jotform', name: 'Jotform', subtitle: 'Create and manage forms and submissions', state: 'available', slug: 'jotform', color: 'FF6100', domain: 'jotform.com' },
+  { id: 'biorender', name: 'BioRender', subtitle: 'Create professional scientific figures', state: 'available', domain: 'biorender.com' },
+  { id: 'snowflake', name: 'Snowflake', subtitle: 'Run analytics in your Snowflake account', state: 'available', slug: 'snowflake', color: '29B5E8', domain: 'snowflake.com' },
+  { id: 'datadog', name: 'Datadog', subtitle: 'Monitor cloud services and infrastructure', state: 'available', slug: 'datadog', color: '632CA6', domain: 'datadoghq.com' },
+  { id: 'single', name: 'Single', subtitle: 'Sync creator and commerce data', state: 'available', domain: 'single.xyz' },
+  { id: 'wix', name: 'Wix', subtitle: 'Create and launch websites and stores', state: 'available', slug: 'wix', color: 'FFFFFF', domain: 'wix.com' },
+  { id: 'motherduck', name: 'MotherDuck', subtitle: 'Hybrid data warehouse in your browser', state: 'available', slug: 'motherduck', color: 'F6A21A', domain: 'motherduck.com' },
+  { id: 'square', name: 'Square', subtitle: 'Manage sales, inventory, and customer data', state: 'available', slug: 'square', color: 'FFFFFF', domain: 'squareup.com' },
+  { id: 'pinecone', name: 'Pinecone Sandbox', subtitle: 'Vector database sandbox for testing', state: 'available', slug: 'pinecone', color: '14B8A6', domain: 'pinecone.io' },
+  { id: 'apify', name: 'Apify', subtitle: 'Build web scrapers and automations', state: 'available', slug: 'apify', color: '14B8A6', domain: 'apify.com' },
+  { id: 'coda', name: 'Coda', subtitle: 'Create docs and workflows in Coda', state: 'available', slug: 'coda', color: 'EE5A29', domain: 'coda.io' },
+];
+
+const ConnectorLogo = ({ name, slug, color, domain }) => {
+  const [mode, setMode] = useState(slug ? 'simple' : (domain ? 'clearbit' : 'text'));
+  const simpleSrc = slug ? `https://cdn.simpleicons.org/${slug}${color ? `/${String(color).replace('#', '')}` : ''}` : '';
+  const clearbitSrc = domain ? `https://logo.clearbit.com/${domain}` : '';
+
+  if (mode === 'text') {
+    return (
+      <div
+        className="h-9 w-9 rounded-md flex items-center justify-center text-[10px] font-semibold"
+        style={{ background: 'rgba(100,116,139,0.18)', border: '1px solid rgba(100,116,139,0.32)', color: '#CBD5E1', fontFamily: fontFamily.body }}
+      >
+        {String(name || '').slice(0, 2).toUpperCase()}
+      </div>
+    );
+  }
+
+  const src = mode === 'simple' ? simpleSrc : clearbitSrc;
+  return (
+    <div className="h-9 w-9 rounded-md flex items-center justify-center bg-white overflow-hidden" style={{ border: '1px solid rgba(148,163,184,0.24)' }}>
+      <img
+        src={src}
+        alt={name}
+        loading="lazy"
+        style={{ width: 24, height: 24, objectFit: 'contain' }}
+        onError={() => {
+          if (mode === 'simple' && clearbitSrc) setMode('clearbit');
+          else setMode('text');
+        }}
+      />
+    </div>
+  );
+};
+
 // ── Categories ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
   { id: 'all',        label: 'All',            icon: LayoutGrid },
@@ -204,6 +282,7 @@ export default function Integrations() {
   const [pageError, setPageError] = useState(null);
   const [centreConnectors, setCentreConnectors] = useState([]);
   const [centreLoading, setCentreLoading] = useState(true);
+  const [connectorViewFilter, setConnectorViewFilter] = useState('all');
 
   // Merge Link hook — token starts as '' so SDK initialises cleanly
   const { open: openMergeLinkModal, isReady: mergeLinkReady } = useMergeLink({
@@ -604,6 +683,9 @@ export default function Integrations() {
     const matchSearch = !searchTerm || i.name.toLowerCase().includes(searchTerm.toLowerCase()) || i.desc.toLowerCase().includes(searchTerm.toLowerCase());
     return matchCat && matchSearch;
   });
+  const showcaseFiltered = CONNECTOR_SHOWCASE.filter((item) => (
+    connectorViewFilter === 'all' ? true : item.state === connectorViewFilter
+  ));
 
   const connectedCount = [
     Math.max(Object.keys(mergeIntegrations).length, integrationStatusRows.filter((row) => row.connected && row.category !== 'email').length),
@@ -657,7 +739,7 @@ export default function Integrations() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-semibold tracking-[0.15em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Data Sources</span>
+                <span className="text-[10px] font-semibold tracking-[0.15em] uppercase" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>Connectors</span>
                 {integrationTruthReady ? (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
                     {connectedCount} live
@@ -668,10 +750,10 @@ export default function Integrations() {
                   </span>
                 )}
               </div>
-              <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Connected Intelligence</h1>
+              <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Connectors</h1>
               <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>
                 {integrationTruthReady
-                  ? (connectedCount > 0 ? `${connectedCount}/${launchIntegrationLimit} active integrations in your launch package` : (isFreeTier ? 'Connect one email provider to activate free-tier intelligence' : 'Connect up to 5 business systems to activate paid intelligence'))
+                  ? (connectedCount > 0 ? `${connectedCount}/${launchIntegrationLimit} active connectors in your launch package` : (isFreeTier ? 'Connect one email provider to activate free-tier intelligence' : 'Connect up to 5 business systems to activate paid intelligence'))
                   : 'Verifying live source truth across your connected systems'}
               </p>
             </div>
@@ -704,15 +786,15 @@ export default function Integrations() {
                   <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
                     style={{
-                      background: active ? 'rgba(255,106,0,0.12)' : 'transparent',
-                      color: active ? '#FF6A00' : '#64748B',
-                      border: `1px solid ${active ? 'rgba(255,106,0,0.3)' : 'transparent'}`,
+                      background: active ? 'rgba(148,163,184,0.16)' : 'transparent',
+                      color: active ? '#E2E8F0' : '#64748B',
+                      border: `1px solid ${active ? 'rgba(148,163,184,0.32)' : 'transparent'}`,
                       fontFamily: fontFamily.mono,
                     }}
                     data-testid={`cat-${cat.id}`}>
                     <Icon className="w-3 h-3" />
                     {cat.label}
-                    <span style={{ color: active ? '#FF6A00' : '#2D3E50' }}>{count}</span>
+                    <span style={{ color: active ? '#E2E8F0' : '#2D3E50' }}>{count}</span>
                   </button>
                 );
               })}
@@ -722,9 +804,72 @@ export default function Integrations() {
 
         <div className="px-6 py-5 space-y-7">
 
+          {/* ── CONNECTORS SHOWCASE ── */}
+          <div
+            className="rounded-2xl border p-4 sm:p-5"
+            style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }}
+            data-testid="connectors-showcase-section"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-base font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.body }}>Connectors</h2>
+                <p className="mt-1 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
+                  Unified connector catalogue matching your preferred low-cognitive-load layout.
+                </p>
+              </div>
+              <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(100,116,139,0.28)' }}>
+                {['all', 'connected', 'available'].map((state) => {
+                  const active = connectorViewFilter === state;
+                  return (
+                    <button
+                      key={state}
+                      type="button"
+                      onClick={() => setConnectorViewFilter(state)}
+                      className="px-3 py-1.5 rounded-lg text-[11px] font-semibold capitalize transition-colors"
+                      style={{
+                        background: active ? 'rgba(148,163,184,0.2)' : 'transparent',
+                        color: active ? '#E2E8F0' : '#94A3B8',
+                        border: `1px solid ${active ? 'rgba(148,163,184,0.32)' : 'transparent'}`,
+                        fontFamily: fontFamily.body,
+                      }}
+                      data-testid={`connectors-showcase-filter-${state}`}
+                    >
+                      {state}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-2">
+              {showcaseFiltered.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-xl px-3 py-2.5 flex items-start gap-3"
+                  style={{ background: 'rgba(2,6,23,0.44)', border: '1px solid rgba(71,85,105,0.44)' }}
+                  data-testid={`connectors-showcase-card-${item.id}`}
+                >
+                  <ConnectorLogo name={item.name} slug={item.slug} color={item.color} domain={item.domain} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold truncate" style={{ color: '#E2E8F0', fontFamily: fontFamily.body }}>{item.name}</p>
+                      {item.state === 'connected' && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md"
+                          style={{ background: 'rgba(16,185,129,0.14)', color: '#34D399', border: '1px solid rgba(16,185,129,0.26)', fontFamily: fontFamily.body }}>
+                          <CheckCircle2 className="w-2.5 h-2.5" /> Connected
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] leading-relaxed mt-0.5" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>{item.subtitle}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* ── INTEGRATION CENTRE v1 (Phase 1.3) ── */}
           <div className="rounded-2xl border p-4 sm:p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integration-centre-section">
-            <SectionLabel icon={LayoutGrid} label="Integration Centre" badge="Unified status" badgeColor="#FF6A00" />
+            <SectionLabel icon={LayoutGrid} label="Connector Centre" badge="Unified status" badgeColor="#94A3B8" />
             <p className="mt-2 text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
               Snapshot of CRM, accounting, email, and marketing connectors. Use Connect to add or refresh a source.
             </p>
@@ -765,8 +910,8 @@ export default function Integrations() {
                       data-testid={`integration-centre-card-${c.id}`}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)' }}>
-                          <Icon className="w-5 h-5" style={{ color: '#FF6A00' }} />
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg" style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.28)' }}>
+                          <Icon className="w-5 h-5" style={{ color: '#94A3B8' }} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold truncate" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>{c.name}</p>
@@ -798,7 +943,7 @@ export default function Integrations() {
                         className="mt-auto w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
                         style={{
                           background: btnDisabled ? 'rgba(71,85,105,0.22)' : 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(200,210,220,0.04) 100%)',
-                          border: btnDisabled ? '1px solid #334155' : '1px solid #FF6A00',
+                          border: btnDisabled ? '1px solid #334155' : '1px solid #64748B',
                           color: btnDisabled ? '#94A3B8' : '#E8F0F8',
                           fontFamily: fontFamily.body,
                         }}
@@ -824,7 +969,7 @@ export default function Integrations() {
 
           {integrationTruthReady && blockedTruthCategories.length > 0 && (
             <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(251,146,60,0.35)', background: 'rgba(251,146,60,0.08)' }} data-testid="integrations-truth-state-banner">
-              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Forensic source health</p>
+              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Forensic source health</p>
               <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
                 BIQc is currently treating these domains as non-live truth: {blockedTruthCategories.map((item) => `${item.label} (${item.state})`).join(', ')}.
               </p>
@@ -833,27 +978,27 @@ export default function Integrations() {
           )}
 
           {isFreeTier && (
-            <div className="rounded-2xl border p-4" style={{ borderColor: freeTierLimitReached ? 'rgba(255,106,0,0.28)' : 'var(--biqc-border, #243140)', background: freeTierLimitReached ? 'rgba(255,106,0,0.08)' : 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-free-tier-banner">
+            <div className="rounded-2xl border p-4" style={{ borderColor: freeTierLimitReached ? 'rgba(148,163,184,0.28)' : 'var(--biqc-border, #243140)', background: freeTierLimitReached ? 'rgba(148,163,184,0.08)' : 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-free-tier-banner">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Free Tier Access</p>
+                  <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Free Tier Access</p>
                   <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Free tier includes email integration only.</p>
                   <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>{freeTierLimitReached ? 'You have reached the free-tier email limit. Disconnect the current provider or upgrade to unlock up to 5 integrations.' : 'Connect Gmail or Outlook to activate Priority Inbox, calendar intelligence, and email truth.'}</p>
                 </div>
-                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.12)', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="integrations-free-tier-counter">{connectedCount}/{launchIntegrationLimit} connected</span>
+                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(148,163,184,0.16)', color: '#E2E8F0', fontFamily: fontFamily.mono }} data-testid="integrations-free-tier-counter">{connectedCount}/{launchIntegrationLimit} connected</span>
               </div>
             </div>
           )}
 
           {hasPaidLaunchAccess && (
-            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(255,106,0,0.22)', background: 'rgba(255,106,0,0.05)' }} data-testid="integrations-paid-tier-banner">
+            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(148,163,184,0.22)', background: 'rgba(148,163,184,0.06)' }} data-testid="integrations-paid-tier-banner">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>BIQc Foundation</p>
+                  <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>BIQc Foundation</p>
                   <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>BIQc Foundation includes up to 5 integrations.</p>
                   <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>Connect email plus the business systems that matter most to your operating rhythm.</p>
                 </div>
-                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.12)', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="integrations-paid-tier-counter">{connectedCount}/{launchIntegrationLimit} connected</span>
+                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(148,163,184,0.16)', color: '#E2E8F0', fontFamily: fontFamily.mono }} data-testid="integrations-paid-tier-counter">{connectedCount}/{launchIntegrationLimit} connected</span>
               </div>
             </div>
           )}
@@ -882,18 +1027,18 @@ export default function Integrations() {
           {/* ── MAIN INTEGRATIONS GRID ── */}
           {!hasPaidLaunchAccess ? (
             <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-paid-upgrade-card">
-              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Paid launch modules</p>
+              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Paid launch modules</p>
               <h2 className="mt-3 text-xl" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Upgrade to unlock 5 integrations and the deeper operating modules.</h2>
               <p className="mt-2 text-sm" style={{ color: '#94A3B8' }}>BIQc Foundation adds Exposure Scan, Marketing Auto, Reports, Revenue, Operations, Marketing Intelligence, Boardroom, SOP Generator, Decision Tracker, and Ingestion Audit.</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {['Exposure Scan', 'Marketing Auto', 'Reports', 'SOP Generator', 'Decision Tracker', 'Ingestion Audit'].map((item) => (
-                  <span key={item} className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(255,106,0,0.08)', color: '#FFB37A', fontFamily: fontFamily.mono }}>{item}</span>
+                  <span key={item} className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(148,163,184,0.12)', color: '#CBD5E1', fontFamily: fontFamily.mono }}>{item}</span>
                 ))}
               </div>
               <button
                 onClick={() => navigate('/biqc-foundation')}
                 className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-                style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
+                style={{ background: '#475569', fontFamily: fontFamily.body }}
                 data-testid="integrations-upgrade-button"
               >
                 View BIQc Foundation <ChevronRight className="w-4 h-4" />
@@ -906,7 +1051,7 @@ export default function Integrations() {
                   icon={Plug}
                   label={selectedCategory === 'all' ? 'All Platforms' : CATEGORIES.find(c => c.id === selectedCategory)?.label}
                   badge={`${filtered.length} available · 220+ via Merge`}
-                  badgeColor="#FF6A00"
+                  badgeColor="#94A3B8"
                 />
               )}
               {searchTerm && (
@@ -921,7 +1066,7 @@ export default function Integrations() {
                     canConnectMore={!freeTierLimitReached || isConnected(integration)}
                     isStale={isMergeStale(integration)}
                     truthState={truthStateForIntegration(integration)} truthReason={truthReasonForIntegration(integration)}
-                    badge="Merge API" badgeColor="#FF6A00" />
+                    badge="Merge API" badgeColor="#94A3B8" />
                 ))}
               </div>
 
@@ -931,9 +1076,9 @@ export default function Integrations() {
                   onClick={() => openMergeLink('browse-all', ['accounting', 'crm', 'hris', 'ats', 'ticketing', 'file_storage'])}
                   disabled={!!openingMerge}
                   className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all"
-                  style={{ border: '1px dashed rgba(255,106,0,0.25)', color: '#FF6A00', background: 'rgba(255,106,0,0.04)', fontFamily: fontFamily.body }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,106,0,0.5)'; e.currentTarget.style.background = 'rgba(255,106,0,0.08)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,106,0,0.25)'; e.currentTarget.style.background = 'rgba(255,106,0,0.04)'; }}
+                  style={{ border: '1px dashed rgba(148,163,184,0.36)', color: '#CBD5E1', background: 'rgba(148,163,184,0.08)', fontFamily: fontFamily.body }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(148,163,184,0.6)'; e.currentTarget.style.background = 'rgba(148,163,184,0.16)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(148,163,184,0.36)'; e.currentTarget.style.background = 'rgba(148,163,184,0.08)'; }}
                   data-testid="browse-all-platforms">
                   {openingMerge === 'browse-all' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                   {openingMerge === 'browse-all' ? 'Opening...' : "Can't find yours? Browse all 220+ platforms"}
@@ -946,7 +1091,7 @@ export default function Integrations() {
               <Search className="w-8 h-8 mx-auto mb-3" style={{ color: '#243140' }} />
               <p className="text-sm mb-1" style={{ color: '#64748B' }}>No platforms found for "{searchTerm}"</p>
               <button onClick={() => openMergeLink('browse-all', ['accounting', 'crm', 'hris', 'ats', 'ticketing', 'file_storage'])}
-                className="text-xs mt-3 underline" style={{ color: '#FF6A00' }}>
+                className="text-xs mt-3 underline" style={{ color: '#CBD5E1' }}>
                 Browse all 220+ platforms
               </button>
             </div>
@@ -988,7 +1133,7 @@ function SectionLabel({ icon: Icon, label, badge, badgeColor }) {
   return (
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-2">
-        <Icon className="w-3.5 h-3.5" style={{ color: badgeColor || '#FF6A00' }} />
+        <Icon className="w-3.5 h-3.5" style={{ color: badgeColor || '#94A3B8' }} />
         <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--biqc-text-muted, #8B9DB5)', fontFamily: fontFamily.mono }}>{label}</span>
       </div>
       {badge && (
@@ -1014,7 +1159,7 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
       className="int-card relative flex flex-col rounded-xl overflow-hidden transition-all duration-200"
       style={{
         background: connected ? 'rgba(16,185,129,0.04)' : 'var(--biqc-bg-card, #141C26)',
-        border: `1px solid ${connected ? 'rgba(16,185,129,0.2)' : hovered && !comingSoon ? 'rgba(255,106,0,0.3)' : 'var(--biqc-border, #1E2D3D)'}`,
+        border: `1px solid ${connected ? 'rgba(16,185,129,0.2)' : hovered && !comingSoon ? 'rgba(148,163,184,0.36)' : 'var(--biqc-border, #1E2D3D)'}`,
         boxShadow: connected ? '0 0 20px rgba(16,185,129,0.06)' : 'none',
         animationDelay: `${index * 30}ms`,
         opacity: comingSoon ? 0.7 : 1,
@@ -1100,28 +1245,28 @@ function IntCard({ integration, index, connected, connectedLabel, disconnecting,
               background: !canConnectMore
                 ? 'rgba(71,85,105,0.22)'
                 : openingMerge
-                ? 'rgba(255,106,0,0.15)'
-                : 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(200,210,220,0.04) 100%)',
-              border: !canConnectMore ? '1px solid #334155' : '1px solid #FF6A00',
-              color: !canConnectMore ? '#94A3B8' : (openingMerge ? '#FF6A00' : '#E8F0F8'),
+                ? 'rgba(148,163,184,0.18)'
+                : 'rgba(148,163,184,0.12)',
+              border: !canConnectMore ? '1px solid #334155' : '1px solid #64748B',
+              color: !canConnectMore ? '#94A3B8' : '#E2E8F0',
               fontFamily: fontFamily.body,
               boxShadow: hovered && !openingMerge
-                ? '0 0 12px rgba(255,106,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)'
+                ? '0 0 10px rgba(148,163,184,0.22), inset 0 1px 0 rgba(255,255,255,0.08)'
                 : 'inset 0 1px 0 rgba(255,255,255,0.08)',
-              textShadow: '0 1px 2px rgba(0,0,0,0.4)',
-              backdropFilter: 'blur(4px)',
+              textShadow: 'none',
+              backdropFilter: 'none',
             }}
             onMouseEnter={e => {
               if (!openingMerge) {
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,106,0,0.18) 0%, rgba(200,160,100,0.12) 100%)';
+                e.currentTarget.style.background = 'rgba(148,163,184,0.2)';
                 e.currentTarget.style.color = '#FFFFFF';
-                e.currentTarget.style.boxShadow = '0 0 16px rgba(255,106,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)';
+                e.currentTarget.style.boxShadow = '0 0 12px rgba(148,163,184,0.28), inset 0 1px 0 rgba(255,255,255,0.12)';
               }
             }}
             onMouseLeave={e => {
               if (!openingMerge) {
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(200,210,220,0.04) 100%)';
-                e.currentTarget.style.color = '#E8F0F8';
+                e.currentTarget.style.background = 'rgba(148,163,184,0.12)';
+                e.currentTarget.style.color = '#E2E8F0';
                 e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.08)';
               }
             }}
