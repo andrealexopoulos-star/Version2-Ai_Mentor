@@ -41,6 +41,17 @@ CREATE TABLE IF NOT EXISTS report_exports (
 -- 4. Business DNA Provenance — Add source tracking to business_profiles
 DO $$
 BEGIN
+    IF to_regclass('public.business_profiles') IS NULL THEN
+        CREATE TABLE IF NOT EXISTS public.business_profiles (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+            business_name TEXT,
+            industry TEXT,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+    END IF;
+
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'business_profiles' AND column_name = 'source_map') THEN
         ALTER TABLE business_profiles ADD COLUMN source_map JSONB;
     END IF;

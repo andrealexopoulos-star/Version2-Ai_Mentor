@@ -10,7 +10,6 @@ import { fontFamily } from "../design-system/tokens";
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier, TIER_RANK } from '../lib/tierResolver';
 import { isPrivilegedUser } from '../lib/privilegedUser';
-import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 import LineageBadge from '../components/LineageBadge';
 import { useLocation } from 'react-router-dom';
 import { EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
@@ -188,17 +187,6 @@ const MySoundBoard = () => {
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode) || BIQC_MODES[0];
   const showBoardroomViz = selectedAgent === 'boardroom';
-  const soundboardExplainability = {
-    whyVisible: `Soundboard is in ${activeMode?.label || 'BIQc Auto'} mode and is grounded in your live BIQc context for this workspace.`,
-    whyNow: latestAssistantMessage?.intent?.domain
-      ? `Current thread focus: ${latestAssistantMessage.intent.domain}. BIQc has detected this as the dominant decision context.`
-      : 'Use this workspace to interrogate the highest-priority issue before it compounds.',
-    nextAction: latestAssistantMessage?.suggested_actions?.[0]?.label
-      ? `Start with: ${latestAssistantMessage.suggested_actions[0].label}`
-      : 'Ask one concrete question with a time horizon (today / this week / this month) for sharper decisions.',
-    ifIgnored: 'Unresolved uncertainty can delay execution and widen the gap between signal detection and action.',
-  };
-
   const fetchScanUsage = useCallback(async (forceRefresh = false) => {
     try {
       const CACHE_KEY = 'biqc_scan_usage_cache';
@@ -744,15 +732,6 @@ const MySoundBoard = () => {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
             <div className="mx-auto px-6 py-6" style={{ maxWidth: `${chatColumnMaxWidth}px` }}>
-              <InsightExplainabilityStrip
-                whyVisible={soundboardExplainability.whyVisible}
-                whyNow={soundboardExplainability.whyNow}
-                nextAction={soundboardExplainability.nextAction}
-                ifIgnored={soundboardExplainability.ifIgnored}
-                testIdPrefix="soundboard-explainability"
-                className="mb-5"
-              />
-
               {messages.length > 0 && latestAssistantMessage && (latestAssistantMessage.lineage || latestAssistantMessage.data_freshness || latestAssistantMessage.confidence_score != null) && (
                 <div className="mb-4" data-testid="soundboard-session-lineage">
                   <LineageBadge
