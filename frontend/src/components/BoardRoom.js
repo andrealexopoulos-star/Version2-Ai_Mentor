@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { apiClient } from '../lib/api';
@@ -26,6 +26,20 @@ const DIAGNOSIS_AREAS = [
   { id: 'market_position', label: 'Market Position', icon: '\u2691', color: '#0D9488', desc: 'Competitive landscape, positioning, opportunity decay.' },
 ];
 
+const BRIEFING_LOADING_STEPS = [
+  'Checking CRM momentum and pipeline pressure...',
+  'Reviewing accounting movement and cash stability...',
+  'Scanning email and calendar load for execution drag...',
+  'Reconciling cross-domain signal conflicts...',
+];
+
+const DIAGNOSIS_LOADING_STEPS = [
+  'Pulling live telemetry for this diagnosis area...',
+  'Comparing current state against baseline patterns...',
+  'Stress-testing near-term outcome paths...',
+  'Drafting an action-focused recommendation...',
+];
+
 /* Shared util candidate: formatFreshnessTime is duplicated in WarRoomConsole.js — extract to e.g. frontend/src/lib/formatFreshnessTime.js when touching both next. */
 const formatFreshnessTime = (iso) => {
   if (!iso) return 'unknown';
@@ -39,6 +53,30 @@ export function BoardRoomBody({ embeddedShell = false, cognitive: snapshot, brie
   const [diagnosisResult, setDiagnosisResult] = useState(null);
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagError, setDiagError] = useState(null);
+  const [briefingStepIndex, setBriefingStepIndex] = useState(0);
+  const [diagnosisStepIndex, setDiagnosisStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (!briefingLoading) {
+      setBriefingStepIndex(0);
+      return undefined;
+    }
+    const intervalId = window.setInterval(() => {
+      setBriefingStepIndex((prev) => (prev + 1) % BRIEFING_LOADING_STEPS.length);
+    }, 1800);
+    return () => window.clearInterval(intervalId);
+  }, [briefingLoading]);
+
+  useEffect(() => {
+    if (!diagnosing) {
+      setDiagnosisStepIndex(0);
+      return undefined;
+    }
+    const intervalId = window.setInterval(() => {
+      setDiagnosisStepIndex((prev) => (prev + 1) % DIAGNOSIS_LOADING_STEPS.length);
+    }, 1600);
+    return () => window.clearInterval(intervalId);
+  }, [diagnosing]);
 
   const { status: integrationStatus } = useIntegrationStatus();
   const narrative = snapshot ? { primary_tension: snapshot.executive_memo, force_summary: snapshot.system_state_interpretation, strategic_direction: snapshot.priority_compression?.primary_focus } : null;
@@ -157,8 +195,14 @@ export function BoardRoomBody({ embeddedShell = false, cognitive: snapshot, brie
                   </div>
                 )}
                 {briefingLoading ? (
-                  <div className="flex items-center justify-center py-16">
-                    <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "monospace" }}>thinking...</span>
+                  <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
+                    <span className="text-xs" style={{ color: '#FF6A00', fontFamily: 'monospace' }}>Boardroom is thinking...</span>
+                    <p className="text-sm font-medium" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+                      {BRIEFING_LOADING_STEPS[briefingStepIndex]}
+                    </p>
+                    <p className="text-[11px]" style={{ color: '#64748B' }}>
+                      Building your executive brief from live CRM, accounting, and email evidence.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-5">
@@ -269,9 +313,9 @@ export function BoardRoomBody({ embeddedShell = false, cognitive: snapshot, brie
 
               {diagnosing && (
                 <div className="flex flex-col items-center justify-center py-24">
-                  <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "monospace" }}>thinking...</span>
+                  <span className="text-xs" style={{ color: '#FF6A00', fontFamily: 'monospace' }}>thinking...</span>
                   <p className="text-sm font-medium" style={{ color: '#243140' }}>Analysing {activeArea?.label}...</p>
-                  <p className="text-[11px] mt-1.5" style={{ color: '#64748B' }}>Reading your CRM, financials, and email signals</p>
+                  <p className="text-[11px] mt-1.5" style={{ color: '#64748B' }}>{DIAGNOSIS_LOADING_STEPS[diagnosisStepIndex]}</p>
                 </div>
               )}
 

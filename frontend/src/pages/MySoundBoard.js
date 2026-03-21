@@ -38,10 +38,14 @@ const getSoundboardErrorMessage = (error) => {
   if (error?.code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('timeout')) {
     return 'Reply timed out — try Normal mode or wait and retry (Trinity can take over a minute).';
   }
+  if (String(error?.message || '').includes('API returned HTML instead of JSON')) {
+    return 'Soundboard request was routed incorrectly (HTML returned instead of API JSON). Refresh and try again.';
+  }
   const detail = error?.response?.data?.detail;
   if (typeof detail === 'string' && detail.trim()) return detail;
   const reply = error?.response?.data?.reply;
   if (typeof reply === 'string' && reply.trim()) return reply;
+  if (typeof error?.message === 'string' && error.message.trim()) return error.message;
   return 'Failed to send message';
 };
 
@@ -422,8 +426,9 @@ const MySoundBoard = () => {
         setAdvisorHandoff(advisorContext);
       }
     } catch (error) {
-      toast.error(getSoundboardErrorMessage(error));
-      setMessages(prev => [...prev, { role: 'assistant', content: `Message failed to send: ${getSoundboardErrorMessage(error)}` }]);
+      const errorMessage = getSoundboardErrorMessage(error);
+      toast.error(errorMessage);
+      setMessages(prev => [...prev, { role: 'assistant', content: errorMessage }]);
     } finally {
       setLoading(false);
     }
