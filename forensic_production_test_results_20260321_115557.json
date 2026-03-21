@@ -1,0 +1,13 @@
+{
+  "auth": {
+    "success": false,
+    "error": "Missing BIQC_TEST_EMAIL or BIQC_TEST_PASSWORD"
+  },
+  "brain_apis": {
+    "success": false
+  },
+  "data_lineage": {
+    "success": false
+  },
+  "overall_success": true
+}
