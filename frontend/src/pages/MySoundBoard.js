@@ -142,6 +142,14 @@ const MySoundBoard = () => {
     { id: 'strategy', label: 'Strategy', shortDesc: 'Planning & scenarios', icon: '🎯' },
   ];
   const BOARDROOM_ROLES = ['CEO', 'CFO', 'COO', 'CTO', 'HR', 'CCO'];
+  const BOARDROOM_NARRATION = [
+    'CEO: framing decision window from current risk/revenue trajectory',
+    'CFO: validating Xero/accounting cash pressure and margin signals',
+    'COO: checking delivery bottlenecks and operational load',
+    'CTO: scanning system reliability and implementation constraints',
+    'HR: assessing team capacity and execution risk',
+    'CCO: consolidating customer and market signals for urgency',
+  ];
 
   const resolvedTier = resolveTier(user);
   const privileged = isPrivilegedUser(user);
@@ -187,6 +195,22 @@ const MySoundBoard = () => {
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode) || BIQC_MODES[0];
   const showBoardroomViz = selectedAgent === 'boardroom';
+<<<<<<< Current (Your changes)
+=======
+  const [boardroomNarrationStep, setBoardroomNarrationStep] = useState(0);
+
+  useEffect(() => {
+    if (!loading || !showBoardroomViz) {
+      setBoardroomNarrationStep(0);
+      return;
+    }
+    const timer = setInterval(() => {
+      setBoardroomNarrationStep((prev) => (prev + 1) % BOARDROOM_NARRATION.length);
+    }, 1300);
+    return () => clearInterval(timer);
+  }, [loading, showBoardroomViz]);
+
+>>>>>>> Incoming (Background Agent changes)
   const fetchScanUsage = useCallback(async (forceRefresh = false) => {
     try {
       const CACHE_KEY = 'biqc_scan_usage_cache';
@@ -403,7 +427,7 @@ const MySoundBoard = () => {
       }
     } catch (error) {
       toast.error(getSoundboardErrorMessage(error));
-      setMessages(prev => prev.slice(0, -1));
+      setMessages(prev => [...prev, { role: 'assistant', content: `Message failed to send: ${getSoundboardErrorMessage(error)}` }]);
     } finally {
       setLoading(false);
     }
@@ -905,6 +929,11 @@ const MySoundBoard = () => {
                             ))}
                           </div>
                         )}
+                        {showBoardroomViz && (
+                          <p className="mt-2 text-[10px]" style={{ color: '#93C5FD', fontFamily: fontFamily.mono }}>
+                            {BOARDROOM_NARRATION[boardroomNarrationStep]}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1051,6 +1080,12 @@ const MySoundBoard = () => {
                       </span>
                     ))}
                   </div>
+                  {loading && (
+                    <div className="mt-2 text-[11px] rounded-lg px-2.5 py-2"
+                      style={{ background: 'rgba(15,23,42,0.75)', color: '#BFDBFE', border: '1px solid rgba(59,130,246,0.2)', fontFamily: fontFamily.mono }}>
+                      {BOARDROOM_NARRATION[boardroomNarrationStep]}
+                    </div>
+                  )}
                 </div>
               )}
 
