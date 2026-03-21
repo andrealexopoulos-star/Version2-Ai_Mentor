@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   Search, CheckCircle2, LogOut, RefreshCw, Loader2, Zap,
   Users, DollarSign, Briefcase, UserPlus, Ticket, HardDrive,
@@ -186,7 +186,6 @@ function formatRelativeTime(iso) {
 
 export default function Integrations() {
   const { user, session, authState } = useSupabaseAuth();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -907,26 +906,7 @@ export default function Integrations() {
           )}
 
           {/* ── MAIN INTEGRATIONS GRID ── */}
-          {!hasPaidLaunchAccess ? (
-            <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-paid-upgrade-card">
-              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Paid launch modules</p>
-              <h2 className="mt-3 text-xl" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Upgrade to unlock 5 integrations and the deeper operating modules.</h2>
-              <p className="mt-2 text-sm" style={{ color: '#94A3B8' }}>BIQc Foundation adds Exposure Scan, Marketing Auto, Reports, Revenue, Operations, Marketing Intelligence, Boardroom, SOP Generator, Decision Tracker, and Ingestion Audit.</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {['Exposure Scan', 'Marketing Auto', 'Reports', 'SOP Generator', 'Decision Tracker', 'Ingestion Audit'].map((item) => (
-                  <span key={item} className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(148,163,184,0.12)', color: '#CBD5E1', fontFamily: fontFamily.mono }}>{item}</span>
-                ))}
-              </div>
-              <button
-                onClick={() => navigate('/biqc-foundation')}
-                className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-                style={{ background: '#475569', fontFamily: fontFamily.body }}
-                data-testid="integrations-upgrade-button"
-              >
-                View BIQc Foundation <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          ) : filtered.length > 0 ? (
+          {hasPaidLaunchAccess && filtered.length > 0 ? (
             <div>
               {!searchTerm && (
                 <SectionLabel
@@ -968,7 +948,7 @@ export default function Integrations() {
                 </button>
               )}
             </div>
-          ) : searchTerm ? (
+          ) : hasPaidLaunchAccess && searchTerm ? (
             <div className="py-16 text-center">
               <Search className="w-8 h-8 mx-auto mb-3" style={{ color: '#243140' }} />
               <p className="text-sm mb-1" style={{ color: '#64748B' }}>No platforms found for "{searchTerm}"</p>
