@@ -111,4 +111,9 @@ async def warmup_edge_functions():
             except Exception:
                 results[fn] = "unreachable"
 
-    return {"status": "ok", "functions": results, "timestamp": datetime.now(timezone.utc).isoformat()}
+    return {
+        "status": "healthy",
+        "legacy_status": "ok",
+        "functions": results,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }

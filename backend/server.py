@@ -127,7 +127,7 @@ from routes.deps import get_current_user as _deps_get_current_user
 
 @app.get("/health")
 async def root_health():
-    return {"status": "ok"}
+    return {"status": "healthy", "legacy_status": "ok"}
 
 @api_router.get("/")
 async def api_root():
@@ -135,7 +135,7 @@ async def api_root():
 
 @api_router.get("/health")
 async def api_health():
-    return {"status": "ok"}
+    return {"status": "healthy", "legacy_status": "ok"}
 
 
 @app.post("/integrations/merge/webhook")
