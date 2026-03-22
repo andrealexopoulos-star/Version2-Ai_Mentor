@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../context/SupabaseAuthContext';
+import { getBackendUrl } from '../config/urls';
 
 /**
  * AuthCallbackSupabase — handles both PKCE and implicit OAuth flows.
@@ -20,10 +21,12 @@ const AuthCallbackSupabase = () => {
 
   useEffect(() => {
     let mounted = true;
+    let authSubscription = null;
+    let safetyTimeout = null;
+    let loginRedirectTimeout = null;
 
     const routeAfterAuth = async (session) => {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      if (!backendUrl || !session?.access_token) {
+      if (!session?.access_token) {
         navigate('/advisor', { replace: true });
         return;
       }
@@ -33,6 +36,7 @@ const AuthCallbackSupabase = () => {
       };
 
       try {
+        const backendUrl = getBackendUrl();
         const [mergeRes, outlookRes, gmailRes] = await Promise.allSettled([
           fetch(`${backendUrl}/api/integrations/merge/connected`, { headers }),
           fetch(`${backendUrl}/api/outlook/status`, { headers }),
@@ -84,7 +88,7 @@ const AuthCallbackSupabase = () => {
           console.error('[AuthCallback] OAuth error:', oauthError, oauthErrorDesc);
           if (mounted) {
             setStatus(`Sign in failed: ${oauthErrorDesc || oauthError}`);
-            setTimeout(() => navigate('/login-supabase', { replace: true }), 2500);
+            loginRedirectTimeout = setTimeout(() => navigate('/login-supabase', { replace: true }), 2500);
           }
           return;
         }
@@ -112,35 +116,38 @@ const AuthCallbackSupabase = () => {
 
         // Session not yet available — wait for onAuthStateChange (covers edge cases / timing)
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (!mounted) { subscription.unsubscribe(); return; }
+          if (!mounted) { return; }
           if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
             subscription.unsubscribe();
+            authSubscription = null;
             routeAfterAuth(session);
           }
         });
+        authSubscription = subscription;
 
         // Safety timeout — if nothing fires in 5 s, send to login
-        const timeout = setTimeout(() => {
-          subscription.unsubscribe();
+        safetyTimeout = setTimeout(() => {
+          authSubscription?.unsubscribe();
+          authSubscription = null;
           if (mounted) navigate('/login-supabase', { replace: true });
         }, 5000);
-
-        return () => {
-          clearTimeout(timeout);
-          subscription.unsubscribe();
-        };
 
       } catch (e) {
         console.error('[AuthCallback] Unexpected error:', e.message);
         if (mounted) {
           setStatus(`Error: ${e.message}`);
-          setTimeout(() => navigate('/login-supabase', { replace: true }), 2500);
+          loginRedirectTimeout = setTimeout(() => navigate('/login-supabase', { replace: true }), 2500);
         }
       }
     };
 
     handleCallback();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      if (safetyTimeout) clearTimeout(safetyTimeout);
+      if (loginRedirectTimeout) clearTimeout(loginRedirectTimeout);
+      authSubscription?.unsubscribe();
+    };
   }, [navigate]);
 
   return (

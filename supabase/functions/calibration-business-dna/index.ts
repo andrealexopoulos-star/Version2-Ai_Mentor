@@ -58,6 +58,50 @@ async function scrapeWebsite(url: string): Promise<string> {
   return "";
 }
 
+function stripHtmlTags(input: string): string {
+  return (input || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function fetchWebsiteHtml(url: string): Promise<string> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    const res = await fetch(url, {
+      method: "GET",
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; BIQcBot/1.0; +https://biqc.ai)",
+        "Accept": "text/html,application/xhtml+xml",
+      },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return "";
+    const html = await res.text();
+    if (!html || html.length < 200) return "";
+
+    const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "").trim();
+    const siteName = (html.match(/<meta[^>]+property=["']og:site_name["'][^>]+content=["']([^"']+)["']/i)?.[1] || "").trim();
+    const description = (html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)?.[1] || "").trim();
+    const bodyText = stripHtmlTags(html).slice(0, 12000);
+
+    return [
+      title ? `TITLE: ${title}` : "",
+      siteName ? `OG_SITE_NAME: ${siteName}` : "",
+      description ? `META_DESCRIPTION: ${description}` : "",
+      bodyText ? `BODY_TEXT: ${bodyText}` : "",
+    ].filter(Boolean).join("\n");
+  } catch {
+    return "";
+  }
+}
+
 async function scrapeWebsiteWithKeyPages(baseUrl: string): Promise<string> {
   if (!FIRECRAWL_API_KEY || !baseUrl) return "";
   const origin = new URL(baseUrl).origin;
@@ -102,6 +146,15 @@ async function deepSearch(query: string, maxTokens = 800): Promise<string> {
 // Deterministic identity signal extraction (no AI needed)
 function extractIdentitySignals(allContent: string, websiteUrl: string) {
   const signals: Record<string, any> = {};
+
+  // Business name candidates from common title/meta patterns.
+  const titleCandidates = [
+    ...((allContent.match(/TITLE:\s*([^\n|•\-]{3,120})/gi) || []).map((m) => m.replace(/^TITLE:\s*/i, "").trim())),
+    ...((allContent.match(/OG_SITE_NAME:\s*([^\n]{3,120})/gi) || []).map((m) => m.replace(/^OG_SITE_NAME:\s*/i, "").trim())),
+  ]
+    .map((v) => v.replace(/\s*\|\s*.*$/, "").replace(/\s*-\s*.*$/, "").trim())
+    .filter(Boolean);
+  signals.business_name_candidates = [...new Set(titleCandidates)].slice(0, 3);
 
   // ABN: XX XXX XXX XXX (11 digits)
   const abnPattern = /\b(\d{2}\s?\d{3}\s?\d{3}\s?\d{3})\b/g;
@@ -335,6 +388,20 @@ serve(async (req) => {
           sources.push(`scraped_pages: ${scanUrls.length}`);
         }
       }
+
+      // ═══ FALLBACK: direct HTML fetch (works even without Firecrawl) ═══
+      if (!websiteContent) {
+        const fallbackUrls = buildScanUrls(url);
+        const htmlChunks = await Promise.all(fallbackUrls.map((scanUrl) => fetchWebsiteHtml(scanUrl)));
+        const mergedHtml = htmlChunks
+          .map((chunk, i) => (chunk ? `--- HTML PAGE: ${fallbackUrls[i]} ---\n${chunk}` : ""))
+          .filter(Boolean)
+          .join("\n\n");
+        if (mergedHtml) {
+          websiteContent = mergedHtml.substring(0, 12000);
+          sources.push(`html_fallback_pages: ${fallbackUrls.length}`);
+        }
+      }
     }
 
     // If only business description provided (no URL)
@@ -401,6 +468,9 @@ serve(async (req) => {
     // STEP 3: Merge deterministic signals into AI extraction (deterministic wins for identity)
     if (identitySignals.abn_candidates?.length > 0 && (!extracted.abn || extracted.abn === "Not available from current data")) {
       extracted.abn = identitySignals.abn_candidates[0];
+    }
+    if (identitySignals.business_name_candidates?.length > 0 && (!extracted.business_name || extracted.business_name === "Not available from current data")) {
+      extracted.business_name = identitySignals.business_name_candidates[0];
     }
     if (identitySignals.phone_numbers?.length > 0 && (!extracted.contact_phone || extracted.contact_phone === "Not available from current data")) {
       extracted.contact_phone = identitySignals.phone_numbers[0];

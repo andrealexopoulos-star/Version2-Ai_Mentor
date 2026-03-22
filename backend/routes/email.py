@@ -92,16 +92,37 @@ def _ensure_launch_email_slot(current_user: dict, provider: str) -> None:
         raise HTTPException(status_code=403, detail=detail)
 
 
-def _get_oauth_base_url() -> str:
-    """Get the custom domain base URL for OAuth redirects.
-    In some internal preview environments, env vars resolve to *.emergent.host which OAuth providers reject.
-    This function strips internal preview domains and returns the public custom domain."""
-    url = os.environ.get('FRONTEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8001'))
-    if '.emergent.host' in url:
-        url = url.replace('.emergent.host', '.com')
-    if 'preview.emergentagent.com' in url:
-        url = os.environ.get('BACKEND_URL', 'http://localhost:8001')
-    return url
+def _normalize_oauth_public_url(url: str, fallback: str) -> str:
+    """Normalize public URLs used in OAuth redirects."""
+    cleaned = (url or fallback).rstrip("/")
+    if '.emergent.host' in cleaned:
+        cleaned = cleaned.replace('.emergent.host', '.com')
+    if 'preview.emergentagent.com' in cleaned:
+        cleaned = os.environ.get('BACKEND_URL', fallback).rstrip("/")
+    return cleaned
+
+
+def _get_oauth_callback_base_url() -> str:
+    """Public backend base used by providers for OAuth callback redirect_uri."""
+    fallback = 'http://localhost:8001'
+    explicit = os.environ.get('OAUTH_REDIRECT_BASE_URL')
+    if explicit:
+        return _normalize_oauth_public_url(explicit, fallback)
+    backend_url = os.environ.get('BACKEND_URL')
+    if backend_url:
+        return _normalize_oauth_public_url(backend_url, fallback)
+    frontend_url = os.environ.get('FRONTEND_URL')
+    return _normalize_oauth_public_url(frontend_url, fallback)
+
+
+def _get_frontend_base_url() -> str:
+    """Public frontend base used for post-auth browser redirects."""
+    fallback = 'http://localhost:8001'
+    frontend_url = os.environ.get('FRONTEND_URL')
+    if frontend_url:
+        return _normalize_oauth_public_url(frontend_url, fallback)
+    backend_url = os.environ.get('BACKEND_URL')
+    return _normalize_oauth_public_url(backend_url, fallback)
 
 
 # OAuth config from environment
@@ -402,16 +423,9 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     
     user_id = current_user['id']
     
-    # CRITICAL: Force custom domain for OAuth redirect URI
-    # In some preview environments, domains resolve to *.emergent.host internally
-    # But Azure/Google only accept the custom domain
-    base_url = _get_oauth_base_url()
-    # Strip internal preview host — always use the custom domain
-    if '.emergent.host' in base_url:
-        base_url = base_url.replace('.emergent.host', '.com')
-    if 'preview.emergentagent.com' in base_url:
-        base_url = os.environ.get('BACKEND_URL', 'http://localhost:8001')
-    redirect_uri = f"{base_url}/api/auth/outlook/callback"
+    callback_base_url = _get_oauth_callback_base_url()
+    frontend_base_url = _get_frontend_base_url()
+    redirect_uri = f"{callback_base_url}/api/auth/outlook/callback"
     logger.info(f"📧 Outlook OAuth redirect_uri: {redirect_uri}")
     
     # URL encode parameters to prevent malformed URLs
@@ -419,8 +433,8 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     encoded_redirect = quote(redirect_uri, safe='')
     encoded_scope = quote(scope, safe='')
     
-    # Store the base_url in state so callback can reconstruct the exact same redirect_uri
-    state_data = f"outlook_auth_{user_id}_return_{returnTo}_base_{base_url}"
+    # Keep frontend base in state so callback redirects to the same user-facing host.
+    state_data = f"outlook_auth_{user_id}_return_{returnTo}_base_{frontend_base_url}"
     signature = hmac.new(
         JWT_SECRET.encode(),
         state_data.encode(),
@@ -502,13 +516,8 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     
     user_id = current_user['id']
     
-    # CRITICAL: Force custom domain for OAuth redirect URI
-    base_url = _get_oauth_base_url()
-    if '.emergent.host' in base_url:
-        base_url = base_url.replace('.emergent.host', '.com')
-    if 'preview.emergentagent.com' in base_url:
-        base_url = os.environ.get('BACKEND_URL', 'http://localhost:8001')
-    redirect_uri = f"{base_url}/api/auth/gmail/callback"
+    callback_base_url = _get_oauth_callback_base_url()
+    redirect_uri = f"{callback_base_url}/api/auth/gmail/callback"
     logger.info(f"📧 Gmail OAuth redirect_uri: {redirect_uri}")
     
     # Gmail scopes - readonly access only
@@ -559,7 +568,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
     import hashlib
     import hmac
     
-    frontend_url = _get_oauth_base_url()
+    frontend_url = _get_frontend_base_url()
     
     # Handle OAuth errors
     if error:
@@ -609,7 +618,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
     # Exchange code for tokens
     token_url = "https://oauth2.googleapis.com/token"
     
-    redirect_uri = f"{_get_oauth_base_url()}/api/auth/gmail/callback"
+    redirect_uri = f"{_get_oauth_callback_base_url()}/api/auth/gmail/callback"
     
     payload = {
         "client_id": GOOGLE_CLIENT_ID,
@@ -772,7 +781,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     import hashlib
     import hmac
     
-    frontend_url = _get_oauth_base_url()
+    frontend_url = _get_frontend_base_url()
     
     # Handle OAuth errors
     if error:
@@ -834,7 +843,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     token_url = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
     
     # redirect_uri MUST match what was sent in the login request
-    redirect_uri = f"{_get_oauth_base_url()}/api/auth/outlook/callback"
+    redirect_uri = f"{_get_oauth_callback_base_url()}/api/auth/outlook/callback"
     
     payload = {
         "client_id": AZURE_CLIENT_ID,

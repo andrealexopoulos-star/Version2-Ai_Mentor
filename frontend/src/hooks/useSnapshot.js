@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
+import { getBackendUrl } from '../config/urls';
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -56,7 +57,7 @@ export function useSnapshot() {
 
     // FAST PATH: Try backend snapshot first (1-2s DB read)
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+      const backendUrl = getBackendUrl();
       const snapRes = await fetch(`${backendUrl}/api/snapshot/latest`, {
         headers: { 'Authorization': `Bearer ${session.access_token}`, 'Accept': 'application/json' },
       });
