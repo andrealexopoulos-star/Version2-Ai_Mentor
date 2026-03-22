@@ -227,7 +227,7 @@ const EmailInbox = () => {
       high_priority: bucket('high'),
       medium_priority: bucket('medium'),
       low_priority: bucket('low'),
-      strategic_insights: '',
+      strategic_insights: latest?.strategic_insights || '',
       analyzed_at: latest?.analyzed_at,
     };
   };
@@ -272,7 +272,12 @@ const EmailInbox = () => {
     try {
       setAnalyzing(true);
       toast.info('Analyzing your inbox with AI... This may take a moment.');
-      
+      const analyzed = await apiClient.post('/email/analyze-priority');
+      const normalized = normalizePriorityPayload(analyzed.data, { from_cache: false, analyzed_at: new Date().toISOString() });
+      if (normalized) {
+        setPriorityAnalysis(normalized);
+      }
+      // Refresh provider-cached rows after an explicit analysis run.
       await fetchPriorityInbox(activeProvider);
       toast.success(`${activeProvider === 'gmail' ? 'Gmail' : 'Outlook'} inbox analyzed! Your emails are now prioritized.`);
     } catch (error) {
