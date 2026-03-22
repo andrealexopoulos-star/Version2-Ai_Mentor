@@ -20,15 +20,7 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || "";
-const PERPLEXITY_API_KEY =
-  Deno.env.get("PERPLEXITY_API_KEY") ||
-  Deno.env.get("PERPLEXITY_API") ||
-  Deno.env.get("Perplexity_API") ||
-  "";
-
-if (!Deno.env.get("PERPLEXITY_API_KEY") && (Deno.env.get("PERPLEXITY_API") || Deno.env.get("Perplexity_API"))) {
-  console.warn("[calibration-business-dna] Using legacy Perplexity env var. Please migrate to PERPLEXITY_API_KEY.");
-}
+const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -77,6 +69,8 @@ async function scrapeWebsiteWithKeyPages(baseUrl: string): Promise<string> {
     .filter(Boolean)
     .join("\n\n");
   return merged.substring(0, 24000);
+}
+
 function buildScanUrls(baseUrl: string): string[] {
   const normalized = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`;
   const root = normalized.replace(/\/+$/, "");
@@ -329,6 +323,7 @@ serve(async (req) => {
         if (crawledContent) {
           websiteContent = crawledContent;
           sources.push(`scraped: ${url}`);
+        }
         const scanUrls = buildScanUrls(url);
         const scrapedChunks = await Promise.all(scanUrls.map((scanUrl) => scrapeWebsite(scanUrl)));
         const combined = scrapedChunks
