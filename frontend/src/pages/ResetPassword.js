@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
 import { ArrowLeft, Mail, CheckCircle2, KeyRound } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
+import { getAppBaseUrl } from '../config/urls';
 
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
 
@@ -19,7 +20,7 @@ const ResetPassword = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`,
+        redirectTo: `${getAppBaseUrl()}/update-password`,
       });
       if (error) throw error;
       setSent(true);

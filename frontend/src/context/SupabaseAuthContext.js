@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { getBackendUrl } from '../config/urls';
+import { getBackendUrl, getOAuthRedirectUrl } from '../config/urls';
 import { trackEvent, identifyUser, EVENTS } from '../lib/analytics';
 import { isPrivilegedUser } from '../lib/privilegedUser';
 
@@ -365,7 +365,7 @@ export const SupabaseAuthProvider = ({ children }) => {
       throw new Error(SUPABASE_SETUP_MESSAGE);
     }
     clearClientAuthCachesForFreshLogin();
-    const redirectUrl = `${window.location.origin}/auth/callback`;
+    const redirectUrl = getOAuthRedirectUrl();
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
