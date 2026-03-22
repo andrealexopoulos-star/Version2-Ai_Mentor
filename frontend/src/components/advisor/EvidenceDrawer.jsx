@@ -4,6 +4,41 @@ import { Link } from 'react-router-dom';
 import { SourceProvenanceBadge } from './SourceProvenanceBadge';
 import { fontFamily } from '../../design-system/tokens';
 
+/** Convert raw evidence (metric_name, metric_value, JSON) to SMB-friendly plain language. */
+function humanizeEvidence(item) {
+  if (typeof item === 'string') return item;
+  const m = item?.metric_name || item?.name || item?.subject || item?.summary || item?.reason;
+  if (!m && typeof item === 'object') {
+    const val = item?.metric_value ?? item?.value;
+    const conf = item?.metric_confidence ?? item?.confidence;
+    if (val !== undefined) {
+      const fmt = typeof val === 'number' ? (Number.isInteger(val) ? val : val.toLocaleString(undefined, { maximumFractionDigits: 1 })) : String(val);
+      const confStr = conf != null ? ` (${Math.round((conf || 0) * 100)}% confidence)` : '';
+      const label = item?.metric_name || item?.label || 'Value';
+      const labelFriendly = String(label).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      return `${labelFriendly}: ${fmt}${confStr}`;
+    }
+  }
+  if (m) {
+    const val = item?.metric_value ?? item?.value;
+    const conf = item?.metric_confidence ?? item?.confidence;
+    if (val !== undefined) {
+      const fmt = typeof val === 'number' ? (Number.isInteger(val) ? val : val.toLocaleString(undefined, { maximumFractionDigits: 1 })) : String(val);
+      const confStr = conf != null ? ` — ${Math.round((conf || 0) * 100)}% confidence` : '';
+      const labelFriendly = String(m).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      return `${labelFriendly}: ${fmt}${confStr}`;
+    }
+    return String(m);
+  }
+  try {
+    const s = JSON.stringify(item);
+    if (s.length > 150) return `${s.slice(0, 120)}…`;
+    return s;
+  } catch {
+    return 'Evidence item';
+  }
+}
+
 const SOURCE_ROUTE = {
   CRM: '/revenue',
   Accounting: '/revenue',
@@ -59,9 +94,6 @@ export const EvidenceDrawer = ({ open, decision, onClose }) => {
             <p data-testid="advisor-evidence-drawer-chain-signal"><strong>Signal:</strong> {signal.detail}</p>
             <p data-testid="advisor-evidence-drawer-chain-decision"><strong>Decision:</strong> {decision.headline || decision.whyNow}</p>
             <p data-testid="advisor-evidence-drawer-chain-action"><strong>Action:</strong> {signal.action}</p>
-            <p className="mt-1 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-evidence-drawer-thread-id">
-              Evidence thread key: {signal.dedupeKey || signal.id}
-            </p>
           </section>
 
           <section className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-evidence-drawer-why-now">
@@ -81,15 +113,17 @@ export const EvidenceDrawer = ({ open, decision, onClose }) => {
 
           {evidenceRefs.length > 0 && (
             <section className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-evidence-drawer-refs">
-              <h4 className="mb-2 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Evidence examples</h4>
-              <ul className="list-disc space-y-1 pl-5 text-xs" data-testid="advisor-evidence-drawer-refs-list">
-                {evidenceRefs.slice(0, 5).map((item, index) => (
-                  <li key={`${signal.id}-ref-${index}`} data-testid={`advisor-evidence-drawer-ref-${index}`}>
-                    {typeof item === 'string'
-                      ? item
-                      : (item.name || item.subject || item.summary || item.reason || JSON.stringify(item).slice(0, 120))}
-                  </li>
-                ))}
+              <h4 className="mb-2 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Supporting evidence</h4>
+              <p className="mb-3 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>Plain-language summary of what BIQc found in your data.</p>
+              <ul className="list-disc space-y-2 pl-5 text-sm" data-testid="advisor-evidence-drawer-refs-list">
+                {evidenceRefs.slice(0, 5).map((item, index) => {
+                  const human = humanizeEvidence(item);
+                  return (
+                    <li key={`${signal.id}-ref-${index}`} data-testid={`advisor-evidence-drawer-ref-${index}`} style={{ color: 'var(--biqc-text-2)' }}>
+                      {human}
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}
@@ -110,7 +144,7 @@ export const EvidenceDrawer = ({ open, decision, onClose }) => {
             style={{ borderColor: '#334155', color: '#CBD5E1', fontFamily: fontFamily.mono }}
             data-testid="advisor-evidence-drawer-open-soundboard"
           >
-            Ask BIQc for supporting traces <ArrowUpRight className="h-3.5 w-3.5" />
+            Ask BIQc for supporting evidence <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </aside>

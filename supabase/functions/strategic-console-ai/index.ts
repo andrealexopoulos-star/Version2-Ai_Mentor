@@ -8,7 +8,7 @@
 // Deploy: supabase functions deploy strategic-console-ai
 //
 // Secrets: OPENAI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
-//          MERGE_API_KEY, Perplexity_API
+//          MERGE_API_KEY, PERPLEXITY_API_KEY
 // ═══════════════════════════════════════════════════════════════
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -18,6 +18,15 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
+const PERPLEXITY_API_KEY =
+  Deno.env.get("PERPLEXITY_API_KEY") ||
+  Deno.env.get("PERPLEXITY_API") ||
+  Deno.env.get("Perplexity_API") ||
+  "";
+
+if (!Deno.env.get("PERPLEXITY_API_KEY") && (Deno.env.get("PERPLEXITY_API") || Deno.env.get("Perplexity_API"))) {
+  console.warn("[strategic-console-ai] Using legacy Perplexity env var. Please migrate to PERPLEXITY_API_KEY.");
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,12 +47,11 @@ async function fetchMerge(token: string, endpoint: string, limit = 20) {
 
 // ─── Perplexity (replaces Firecrawl) ───
 async function searchMarket(query: string): Promise<string> {
-  const PERPLEXITY_KEY = Deno.env.get("Perplexity_API") || "";
-  if (!PERPLEXITY_KEY) return "";
+  if (!PERPLEXITY_API_KEY) return "";
   try {
     const res = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
-      headers: { "Authorization": `Bearer ${PERPLEXITY_KEY}`, "Content-Type": "application/json" },
+      headers: { "Authorization": `Bearer ${PERPLEXITY_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({ model: "sonar", messages: [{ role: "user", content: query }], max_tokens: 400 }),
     });
     if (res.ok) {

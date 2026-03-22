@@ -22,7 +22,15 @@ const LoginSupabase = () => {
   const [lockoutUntil, setLockoutUntil] = useState(0);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [captchaToken, setCaptchaToken] = useState('');
+  const [fallbackChallenge, setFallbackChallenge] = useState(null);
+  const [fallbackAnswer, setFallbackAnswer] = useState('');
   const recaptchaEnabled = Boolean(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
+
+  const buildFallbackChallenge = () => {
+    const left = Math.floor(Math.random() * 8) + 2;
+    const right = Math.floor(Math.random() * 8) + 2;
+    return { prompt: `${left} + ${right}`, result: left + right };
+  };
 
   useEffect(() => {
     if (!lockoutUntil) return undefined;
@@ -64,6 +72,17 @@ const LoginSupabase = () => {
     resetLocalAuth();
   }, []);
 
+  useEffect(() => {
+    if (recaptchaEnabled) return;
+    if (failedAttempts >= 3 && !fallbackChallenge) {
+      setFallbackChallenge(buildFallbackChallenge());
+    }
+    if (failedAttempts < 3) {
+      setFallbackChallenge(null);
+      setFallbackAnswer('');
+    }
+  }, [failedAttempts, fallbackChallenge, recaptchaEnabled]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoginError('');
@@ -74,6 +93,19 @@ const LoginSupabase = () => {
     if (!formData.email || !formData.password) {
       setLoginError('Please enter both email and password');
       return;
+    }
+    if (!recaptchaEnabled && failedAttempts >= 3) {
+      if (!fallbackChallenge) {
+        setFallbackChallenge(buildFallbackChallenge());
+        setLoginError('Please complete the verification challenge.');
+        return;
+      }
+      if (Number(fallbackAnswer) !== Number(fallbackChallenge.result)) {
+        setLoginError('Verification answer is incorrect. Please try again.');
+        setFallbackChallenge(buildFallbackChallenge());
+        setFallbackAnswer('');
+        return;
+      }
     }
     setLoading(true);
     try {
@@ -88,6 +120,8 @@ const LoginSupabase = () => {
       setFailedAttempts(0);
       setLockoutUntil(0);
       setCooldownSeconds(0);
+      setFallbackChallenge(null);
+      setFallbackAnswer('');
       toast.success('Welcome back!');
       try { sessionStorage.setItem('biqc_auth_recent_login', String(Date.now())); } catch {}
       navigate('/advisor', { replace: true });
@@ -269,6 +303,22 @@ const LoginSupabase = () => {
 
             {recaptchaEnabled && (
               <RecaptchaGate onTokenChange={setCaptchaToken} testId="login-recaptcha" />
+            )}
+            {!recaptchaEnabled && failedAttempts >= 3 && fallbackChallenge && (
+              <div className="rounded-xl border px-3 py-3" style={{ borderColor: '#334155', background: 'rgba(15,23,42,0.5)' }} data-testid="login-fallback-captcha">
+                <p className="text-xs mb-2" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
+                  Verification required: solve {fallbackChallenge.prompt}
+                </p>
+                <Input
+                  type="number"
+                  value={fallbackAnswer}
+                  onChange={(e) => setFallbackAnswer(e.target.value)}
+                  placeholder="Your answer"
+                  className="h-10 text-sm rounded-lg"
+                  style={{ fontFamily: fontFamily.body, background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
+                  data-testid="login-fallback-captcha-input"
+                />
+              </div>
             )}
 
             <div style={{ width: '100%' }}>
