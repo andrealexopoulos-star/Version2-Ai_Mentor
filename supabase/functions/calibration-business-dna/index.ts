@@ -20,11 +20,15 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || "";
-const PERPLEXITY_KEY =
+const PERPLEXITY_API_KEY =
   Deno.env.get("PERPLEXITY_API_KEY") ||
   Deno.env.get("PERPLEXITY_API") ||
   Deno.env.get("Perplexity_API") ||
   "";
+
+if (!Deno.env.get("PERPLEXITY_API_KEY") && (Deno.env.get("PERPLEXITY_API") || Deno.env.get("Perplexity_API"))) {
+  console.warn("[calibration-business-dna] Using legacy Perplexity env var. Please migrate to PERPLEXITY_API_KEY.");
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -82,11 +86,11 @@ function buildScanUrls(baseUrl: string): string[] {
 
 // Perplexity deep search — primary intelligence source
 async function deepSearch(query: string, maxTokens = 800): Promise<string> {
-  if (!PERPLEXITY_KEY) return "";
+  if (!PERPLEXITY_API_KEY) return "";
   try {
     const res = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
-      headers: { "Authorization": `Bearer ${PERPLEXITY_KEY}`, "Content-Type": "application/json" },
+      headers: { "Authorization": `Bearer ${PERPLEXITY_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "sonar-pro",
         messages: [{ role: "user", content: query }],

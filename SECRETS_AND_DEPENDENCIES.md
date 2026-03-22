@@ -114,7 +114,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 ### Used by calibration-psych
 # (Uses a separate key named "Calibration-Psych" in Supabase secrets)
 Calibration-Psych=
-Perplexity_API=
+PERPLEXITY_API_KEY=
 
 
 ## ═══════════════════════════════════════
