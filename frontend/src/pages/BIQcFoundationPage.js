@@ -28,10 +28,25 @@ export default function BIQcFoundationPage() {
                 <Shield className="h-3.5 w-3.5" style={{ color: '#FF6A00' }} />
                 <span className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>BIQc Foundation</span>
               </div>
-              <h1 className="mt-4 text-4xl sm:text-5xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>The paid operating layer for decision confidence.</h1>
+              <h1 className="mt-4 text-4xl sm:text-5xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>The Intelligence layer for decicion confidence.</h1>
               <p className="mt-4 max-w-2xl text-sm sm:text-base" style={{ color: 'var(--biqc-text-2)' }}>
                 BIQc Foundation extends the free launch with deeper operating control across revenue, operations, marketing intelligence, Boardroom synthesis, governance, and up to 5 integrations.
               </p>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {[
+                  'Sovereign AU hosted',
+                  'Evidence-traced outputs',
+                  'Unified Integration Engine',
+                ].map((trustPoint) => (
+                  <span
+                    key={trustPoint}
+                    className="rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.12em]"
+                    style={{ borderColor: 'var(--biqc-border)', color: '#94A3B8', fontFamily: fontFamily.mono, background: 'rgba(15,23,42,0.38)' }}
+                  >
+                    {trustPoint}
+                  </span>
+                ))}
+              </div>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(15,23,42,0.42)' }}>
                   <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Price</p>
@@ -135,7 +150,7 @@ export default function BIQcFoundationPage() {
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {FOUNDATION_FEATURES.map((feature) => (
-              <article key={feature.key} className="rounded-[24px] border p-5" style={{ borderColor: selectedKey === feature.key ? 'rgba(255,106,0,0.45)' : 'var(--biqc-border)', background: selectedKey === feature.key ? 'rgba(255,106,0,0.05)' : 'var(--biqc-bg-card)' }} data-testid={`biqc-foundation-card-${feature.key}`}>
+              <article key={feature.key} className="rounded-[24px] border p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_44px_rgba(5,10,20,0.32)]" style={{ borderColor: selectedKey === feature.key ? 'rgba(255,106,0,0.45)' : 'var(--biqc-border)', background: selectedKey === feature.key ? 'rgba(255,106,0,0.05)' : 'var(--biqc-bg-card)' }} data-testid={`biqc-foundation-card-${feature.key}`}>
                 <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{feature.title}</p>
                 <p className="mt-3 text-sm leading-7" style={{ color: 'var(--biqc-text-2)' }}>{feature.summary}</p>
                 <div className="mt-4 space-y-2">
