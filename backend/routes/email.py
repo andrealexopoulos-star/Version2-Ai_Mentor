@@ -34,6 +34,7 @@ from supabase_email_helpers import (
     delete_user_calendar_events_supabase,
     get_user_calendar_events_supabase,
     find_email_by_id_supabase,
+    find_email_by_graph_message_id_supabase,
     delete_user_sync_jobs_supabase,
 )
 from supabase_intelligence_helpers import (
@@ -1804,7 +1805,7 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
 @router.get("/outlook/calendar/events")
 async def get_calendar_events(
     days_ahead: int = 14,
-    days_back: int = 7,
+    days_back: int = 0,
     current_user: dict = Depends(get_current_user)
 ):
     """Get calendar events for AI context - SUPABASE VERSION"""
@@ -1909,7 +1910,7 @@ async def get_calendar_events(
 async def sync_calendar(current_user: dict = Depends(get_current_user)):
     """Sync calendar and generate AI insights"""
     # First fetch events
-    events_response = await get_calendar_events(days_ahead=30, days_back=7, current_user=current_user)
+    events_response = await get_calendar_events(days_ahead=30, days_back=0, current_user=current_user)
     events = events_response.get("events", [])
     
     # Generate calendar intelligence
@@ -2157,8 +2158,10 @@ async def suggest_email_reply(email_id: str, current_user: dict = Depends(get_cu
     user_id = current_user["id"]
     
     try:
-        # 1. Get the email from outlook_emails
+        # 1. Get the email from outlook_emails by internal id, then fallback to provider message id.
         email = await find_email_by_id_supabase(get_sb(), email_id)
+        if not email:
+            email = await find_email_by_graph_message_id_supabase(get_sb(), user_id, email_id)
         
         if not email or email.get("user_id") != user_id:
             raise HTTPException(status_code=404, detail="Email not found")
@@ -2199,8 +2202,16 @@ async def suggest_email_reply(email_id: str, current_user: dict = Depends(get_cu
             
             # Extract reasoning if found
             if priority_context:
-                why_reasoning = priority_context.get("why", "")
-                action_intent = priority_context.get("action", "")
+                why_reasoning = (
+                    priority_context.get("why")
+                    or priority_context.get("reason")
+                    or ""
+                )
+                action_intent = (
+                    priority_context.get("action")
+                    or priority_context.get("suggested_action")
+                    or ""
+                )
         
         # 4. Get business profile for context
         profile = await get_business_profile_supabase(get_sb(), user_id)

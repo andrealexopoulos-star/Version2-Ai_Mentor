@@ -37,6 +37,21 @@ const CalendarView = () => {
     };
   });
 
+  const toLocalDateTimeValue = (isoString) => {
+    if (!isoString) return '';
+    const dt = new Date(isoString);
+    if (Number.isNaN(dt.getTime())) return '';
+    const pad = (v) => String(v).padStart(2, '0');
+    return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  };
+
+  const fromLocalDateTimeValue = (localValue) => {
+    if (!localValue) return null;
+    const dt = new Date(localValue);
+    if (Number.isNaN(dt.getTime())) return null;
+    return dt.toISOString();
+  };
+
   useEffect(() => {
     syncCalendar(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -45,7 +60,7 @@ const CalendarView = () => {
     try {
       setLoading(true);
       const [eventsRes, intelRes] = await Promise.all([
-        apiClient.get('/outlook/calendar/events').catch(() => ({ data: { events: [] } })),
+        apiClient.get('/outlook/calendar/events?days_back=0&days_ahead=30').catch(() => ({ data: { events: [] } })),
         apiClient.get('/outlook/intelligence').catch(() => ({ data: {} }))
       ]);
       setEvents(eventsRes.data?.events || []);
@@ -101,7 +116,13 @@ const CalendarView = () => {
   };
 
   const groupedEvents = groupEventsByDate(events);
-  const sortedDateKeys = Object.keys(groupedEvents).sort((a, b) => new Date(a) - new Date(b));
+  const now = new Date();
+  const upcomingEvents = events.filter((event) => {
+    const end = new Date(event.end || event.start);
+    return !Number.isNaN(end.getTime()) && end >= now;
+  });
+  const groupedUpcomingEvents = groupEventsByDate(upcomingEvents);
+  const sortedDateKeys = Object.keys(groupedUpcomingEvents).sort((a, b) => new Date(a) - new Date(b));
   const today = new Date().toISOString().split('T')[0];
   const intelligenceSummary = calendarIntel?.summary
     || calendarIntel?.insight
@@ -158,8 +179,12 @@ const CalendarView = () => {
                     Start
                     <input
                       type="datetime-local"
-                      value={advisorDraft.startAt ? advisorDraft.startAt.slice(0, 16) : ''}
-                      onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, startAt: new Date(event.target.value).toISOString() }))}
+                      value={toLocalDateTimeValue(advisorDraft.startAt)}
+                      onChange={(event) => {
+                        const next = fromLocalDateTimeValue(event.target.value);
+                        if (!next) return;
+                        setAdvisorDraft((prev) => ({ ...prev, startAt: next }));
+                      }}
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
                       style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
                       data-testid="calendar-advisor-draft-start"
@@ -169,8 +194,12 @@ const CalendarView = () => {
                     End
                     <input
                       type="datetime-local"
-                      value={advisorDraft.endAt ? advisorDraft.endAt.slice(0, 16) : ''}
-                      onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, endAt: new Date(event.target.value).toISOString() }))}
+                      value={toLocalDateTimeValue(advisorDraft.endAt)}
+                      onChange={(event) => {
+                        const next = fromLocalDateTimeValue(event.target.value);
+                        if (!next) return;
+                        setAdvisorDraft((prev) => ({ ...prev, endAt: next }));
+                      }}
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
                       style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
                       data-testid="calendar-advisor-draft-end"
@@ -240,10 +269,10 @@ const CalendarView = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {events.length}
+                  {upcomingEvents.length}
                 </p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Upcoming Events
+                  Upcoming Events (30 days)
                 </p>
               </div>
             </div>
@@ -262,7 +291,7 @@ const CalendarView = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {events.filter(e => e.attendees?.length > 0).length}
+                  {upcomingEvents.filter(e => e.attendees?.length > 0).length}
                 </p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   With Attendees
@@ -284,7 +313,7 @@ const CalendarView = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {groupedEvents[today]?.length || 0}
+                  {groupedUpcomingEvents[today]?.length || 0}
                 </p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   Today's Meetings
@@ -300,7 +329,7 @@ const CalendarView = () => {
             <CognitiveMesh compact />
             <p style={{ color: 'var(--text-muted)' }}>Loading calendar...</p>
           </div>
-        ) : events.length === 0 ? (
+        ) : upcomingEvents.length === 0 ? (
           <div 
             className="text-center py-16 rounded-2xl"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
@@ -326,7 +355,7 @@ const CalendarView = () => {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(300px,0.75fr)]" data-testid="calendar-command-grid">
             <div className="space-y-6">
               {sortedDateKeys.map((date) => {
-                const dateEvents = groupedEvents[date] || [];
+                const dateEvents = groupedUpcomingEvents[date] || [];
                 return (
                 <div key={date}>
                   <h3 
@@ -415,10 +444,10 @@ const CalendarView = () => {
               </div>
               <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
                 <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Today at a glance</p>
-                <div className="mt-3 space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  <div className="flex items-center justify-between"><span>Meetings today</span><strong style={{ color: 'var(--text-primary)' }}>{groupedEvents[today]?.length || 0}</strong></div>
-                  <div className="flex items-center justify-between"><span>Important events</span><strong style={{ color: 'var(--text-primary)' }}>{events.filter((event) => event.importance === 'high').length}</strong></div>
-                  <div className="flex items-center justify-between"><span>Events with attendees</span><strong style={{ color: 'var(--text-primary)' }}>{events.filter((event) => event.attendees?.length > 0).length}</strong></div>
+                  <div className="mt-3 space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <div className="flex items-center justify-between"><span>Meetings today</span><strong style={{ color: 'var(--text-primary)' }}>{groupedUpcomingEvents[today]?.length || 0}</strong></div>
+                  <div className="flex items-center justify-between"><span>Important events</span><strong style={{ color: 'var(--text-primary)' }}>{upcomingEvents.filter((event) => event.importance === 'high').length}</strong></div>
+                  <div className="flex items-center justify-between"><span>Events with attendees</span><strong style={{ color: 'var(--text-primary)' }}>{upcomingEvents.filter((event) => event.attendees?.length > 0).length}</strong></div>
                 </div>
               </div>
               {intelligenceSummary && (

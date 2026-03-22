@@ -99,14 +99,14 @@ export const useCalibrationState = () => {
       setRevealPhase(p => {
         if (p >= REVEAL_PHASES.length - 1) {
           clearInterval(interval);
-          setTimeout(() => { window.location.href = '/market'; }, 1200);
+          setTimeout(() => { navigate('/market', { replace: true }); }, 1200);
           return p;
         }
         return p + 1;
       });
     }, 1800);
     return () => clearInterval(interval);
-  }, [completing]);
+  }, [completing, navigate]);
 
   useEffect(() => {
     if (!loading && user && session && !initCalled.current) {
@@ -242,7 +242,7 @@ export const useCalibrationState = () => {
       if (d.status === 'COMPLETE') {
         // Clear cache so /market page load fetches fresh COMPLETE status
         try { clearBootstrapCache(); } catch {}
-        window.location.href = '/market'; return;
+        navigate('/market', { replace: true }); return;
       }
       if (d.status === 'IN_PROGRESS' && d.calibration_step > 1) {
         autoSave(9, "COMPLETE");
