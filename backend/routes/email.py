@@ -188,6 +188,9 @@ def _normalize_priority_response(priority_analysis: Dict[str, Any], recent_email
                 enriched.append({
                     **item,
                     "email_id": email.get("id"),
+                    "graph_message_id": email.get("graph_message_id"),
+                    "thread_id": email.get("thread_id"),
+                    "web_link": email.get("web_link"),
                     "from": email.get("from_name") or email.get("from_address"),
                     "subject": email.get("subject"),
                     "received": email.get("received_date"),
@@ -209,7 +212,10 @@ def _safe_parse_dt(value: Optional[str]) -> Optional[datetime]:
     if not value:
         return None
     try:
-        return dateutil_parser.isoparse(str(value))
+        parsed = dateutil_parser.isoparse(str(value))
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed
     except Exception:
         return None
 
@@ -1788,12 +1794,17 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
         # Delete all sync jobs from Supabase
         deleted_jobs = await delete_user_sync_jobs_supabase(get_sb(), user_id)
         logger.info(f"Deleted {deleted_jobs} sync jobs for user {user_id}")
+
+        # Delete mirrored calendar events to prevent stale entries after reconnect.
+        deleted_calendar_events = await delete_user_calendar_events_supabase(get_sb(), user_id)
+        logger.info(f"Deleted {deleted_calendar_events} calendar events for user {user_id}")
         
         return {
             "success": True,
             "message": "Microsoft Outlook disconnected successfully",
             "deleted_emails": deleted_emails,
-            "deleted_jobs": deleted_jobs
+            "deleted_jobs": deleted_jobs,
+            "deleted_calendar_events": deleted_calendar_events,
         }
     except Exception as e:
         logger.error(f"Error disconnecting Outlook: {e}")
@@ -1805,7 +1816,7 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
 @router.get("/outlook/calendar/events")
 async def get_calendar_events(
     days_ahead: int = 14,
-    days_back: int = 7,
+    days_back: int = 0,
     current_user: dict = Depends(get_current_user)
 ):
     """Get calendar events for AI context - SUPABASE VERSION"""
@@ -1832,7 +1843,10 @@ async def get_calendar_events(
         except Exception:
             pass
 
-    headers = {"Authorization": f"Bearer {access_token}"}
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Prefer": 'outlook.timezone="UTC"',
+    }
     
     # Calculate date range
     start_date = (datetime.now(timezone.utc) - timedelta(days=days_back)).isoformat()
@@ -1859,10 +1873,22 @@ async def get_calendar_events(
             raise HTTPException(status_code=400, detail=f"Failed to fetch calendar: {response.text}")
         
         events_data = response.json()
+        all_events = list(events_data.get("value", []))
+
+        next_link = events_data.get("@odata.nextLink")
+        page_count = 1
+        while next_link and page_count < 5:
+            page_count += 1
+            page_response = await client.get(next_link, headers=headers)
+            if page_response.status_code != 200:
+                break
+            page_data = page_response.json()
+            all_events.extend(page_data.get("value", []))
+            next_link = page_data.get("@odata.nextLink")
     
     # Store events in Supabase
     supabase_events = []
-    for event in events_data.get("value", []):
+    for event in all_events:
         supabase_events.append({
             "user_id": current_user["id"],
             "graph_event_id": event.get("id"),
@@ -1885,7 +1911,7 @@ async def get_calendar_events(
     
     # Return simplified format for frontend
     events = []
-    for event in events_data.get("value", []):
+    for event in all_events:
         events.append({
             "id": event.get("id"),
             "subject": event.get("subject"),
@@ -1910,12 +1936,17 @@ async def get_calendar_events(
 async def sync_calendar(current_user: dict = Depends(get_current_user)):
     """Sync calendar and generate AI insights"""
     # First fetch events
-    events_response = await get_calendar_events(days_ahead=30, days_back=7, current_user=current_user)
+    events_response = await get_calendar_events(days_ahead=30, days_back=0, current_user=current_user)
     events = events_response.get("events", [])
     
     # Generate calendar intelligence
     if events:
-        upcoming_meetings = len([e for e in events if e.get("start") and datetime.fromisoformat(e["start"].replace("Z", "+00:00")) > datetime.now(timezone.utc)])
+        now_utc = datetime.now(timezone.utc)
+        upcoming_meetings = 0
+        for event in events:
+            start_dt = _safe_parse_dt(event.get("start"))
+            if start_dt and start_dt > now_utc:
+                upcoming_meetings += 1
         meeting_load = "heavy" if upcoming_meetings > 20 else "moderate" if upcoming_meetings > 10 else "light"
         
         # Analyze meeting patterns
@@ -2316,6 +2347,8 @@ Return ONLY valid JSON in this exact format:
             ) else "subject_from" if priority_context else "none",
             "original_subject": email.get("subject", ""),
             "from": email.get("from_name") or email.get("from_address") or "",
+            "web_link": email.get("web_link") or "",
+            "thread_id": email.get("thread_id") or "",
         }
         
     except HTTPException:
