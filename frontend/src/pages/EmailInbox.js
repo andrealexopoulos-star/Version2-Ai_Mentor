@@ -408,6 +408,20 @@ const EmailInbox = () => {
                 </button>
               ))}
             </div>
+            {email.web_link && (
+              <Button
+                size="sm"
+                type="button"
+                variant="outline"
+                style={{ padding: '4px 10px' }}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  window.open(email.web_link, '_blank', 'noopener,noreferrer');
+                }}
+              >
+                Open
+              </Button>
+            )}
             <Button size="sm" type="button" className="text-xs"
               style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', padding: '4px 10px' }}
               onClick={(e) => { e.stopPropagation(); fetchReplySuggestions(email.email_id); }}>
