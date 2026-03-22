@@ -38,8 +38,6 @@ const CalendarView = () => {
   });
 
   useEffect(() => {
-    fetchCalendarData();
-    // Auto-sync on mount to ensure fresh Outlook events
     syncCalendar(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -51,6 +49,7 @@ const CalendarView = () => {
         apiClient.get('/outlook/intelligence').catch(() => ({ data: {} }))
       ]);
       setEvents(eventsRes.data?.events || []);
+      setCalendarIntel(intelRes.data || null);
     } catch (error) {
       console.error('Failed to fetch calendar data');
     } finally {
@@ -73,6 +72,7 @@ const CalendarView = () => {
           toast.error('Failed to sync calendar: ' + (error.response?.data?.detail || error.message));
         }
       }
+      await fetchCalendarData();
     } finally {
       setSyncing(false);
     }
@@ -101,7 +101,13 @@ const CalendarView = () => {
   };
 
   const groupedEvents = groupEventsByDate(events);
+  const sortedDateKeys = Object.keys(groupedEvents).sort((a, b) => new Date(a) - new Date(b));
   const today = new Date().toISOString().split('T')[0];
+  const intelligenceSummary = calendarIntel?.summary
+    || calendarIntel?.insight
+    || calendarIntel?.insights
+    || calendarIntel?.brief
+    || null;
 
   const createDraftEvent = async () => {
     if (!advisorDraft) return;
@@ -319,20 +325,23 @@ const CalendarView = () => {
         ) : (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(300px,0.75fr)]" data-testid="calendar-command-grid">
             <div className="space-y-6">
-              {Object.entries(groupedEvents).map(([date, dateEvents]) => (
+              {sortedDateKeys.map((date) => {
+                const dateEvents = groupedEvents[date] || [];
+                return (
                 <div key={date}>
                   <h3 
-                    className="text-sm font-semibold mb-3 px-1"
+                    className="text-sm font-semibold mb-3 px-1 flex items-center gap-2"
                     style={{ 
                       color: date === today ? 'var(--accent-primary)' : 'var(--text-muted)'
                     }}
                   >
-                    {date === today ? '📅 Today' : formatDate(dateEvents[0]?.start)}
+                    <CalendarIcon className="w-3.5 h-3.5" />
+                    {date === today ? 'Today' : formatDate(dateEvents[0]?.start)}
                   </h3>
                   <div className="space-y-3">
                     {dateEvents.map((event, idx) => (
                       <div 
-                        key={idx}
+                        key={event.id || `${date}-${idx}`}
                         className="p-4 rounded-xl border transition-all hover:shadow-md"
                         style={{ 
                           background: 'var(--bg-card)', 
@@ -351,7 +360,7 @@ const CalendarView = () => {
                                 {formatTime(event.start)} - {formatTime(event.end)}
                               </span>
                               {event.importance === 'high' && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600">
+                                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.18)', color: '#F87171' }}>
                                   Important
                                 </span>
                               )}
@@ -395,7 +404,8 @@ const CalendarView = () => {
                     ))}
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
             <div className="space-y-4" data-testid="calendar-side-panel">
               <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
@@ -411,6 +421,14 @@ const CalendarView = () => {
                   <div className="flex items-center justify-between"><span>Events with attendees</span><strong style={{ color: 'var(--text-primary)' }}>{events.filter((event) => event.attendees?.length > 0).length}</strong></div>
                 </div>
               </div>
+              {intelligenceSummary && (
+                <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }} data-testid="calendar-intelligence-summary">
+                  <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Calendar intelligence</p>
+                  <p className="mt-3 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
+                    {typeof intelligenceSummary === 'string' ? intelligenceSummary : JSON.stringify(intelligenceSummary)}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

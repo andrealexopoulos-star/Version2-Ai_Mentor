@@ -78,7 +78,20 @@ const EmailInbox = () => {
         return;
       }
       
-      const connection = rows[0];
+      const connectedRows = rows.filter((row) => row?.connected !== false);
+      if (!connectedRows.length) {
+        setGmailConnected(false);
+        setOutlookConnected(false);
+        setActiveProvider(null);
+        setConnectedEmail(null);
+        setLoading(false);
+        setCheckingConnection(false);
+        return;
+      }
+
+      const connection = connectedRows.find((row) => row.provider === 'outlook')
+        || connectedRows.find((row) => row.provider === 'gmail')
+        || connectedRows[0];
       // console.log('Email connection found:', connection);
       
       // Set state and fetch inbox
@@ -87,13 +100,11 @@ const EmailInbox = () => {
         setGmailConnected(false);
         setActiveProvider('outlook');
         setConnectedEmail(connection.connected_email);
-        fetchPriorityInbox('outlook');
       } else if (connection.provider === 'gmail') {
         setGmailConnected(true);
         setOutlookConnected(false);
         setActiveProvider('gmail');
         setConnectedEmail(connection.connected_email);
-        fetchPriorityInbox('gmail');
       }
       
     } catch (error) {
@@ -133,6 +144,7 @@ const EmailInbox = () => {
 
   const fetchPriorityInbox = async (provider) => {
     try {
+      if (!provider) return;
       setLoading(true);
       setInboxLoadError(null);
       const { data: { session } } = await supabase.auth.getSession();
@@ -226,10 +238,14 @@ const EmailInbox = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      await supabase.from('priority_inbox')
+      const { error } = await supabase.from('priority_inbox')
         .update({ user_override: newLevel })
         .eq('user_id', session.user.id)
         .eq('email_id', emailId);
+      if (error) {
+        toast.error(error.message || 'Failed to reclassify email');
+        return;
+      }
       // Optimistically update UI
       setPriorityAnalysis(prev => {
         if (!prev) return prev;
@@ -367,8 +383,12 @@ const EmailInbox = () => {
               {LEVELS.filter(l => l !== effectivePriority).map(l => (
                 <button
                   key={l}
+                  type="button"
                   disabled={reclassifying === email.email_id}
-                  onClick={() => reclassifyEmail(email.email_id, l)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    reclassifyEmail(email.email_id, l);
+                  }}
                   className="text-[10px] px-2 py-0.5 rounded-md transition-all"
                   style={{
                     background: 'transparent',
@@ -381,7 +401,7 @@ const EmailInbox = () => {
                 </button>
               ))}
             </div>
-            <Button size="sm" className="text-xs"
+            <Button size="sm" type="button" className="text-xs"
               style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', padding: '4px 10px' }}
               onClick={(e) => { e.stopPropagation(); fetchReplySuggestions(email.email_id); }}>
               <Sparkles className="w-3 h-3 mr-1" />
@@ -441,7 +461,7 @@ const EmailInbox = () => {
         {isExpanded && count > 0 && (
           <div className="mt-3 space-y-3 pl-2">
             {emails.map((email, idx) => (
-              <EmailCard key={idx} email={email} priority={priority} />
+              <EmailCard key={email?.email_id || `${priority}-${idx}`} email={email} priority={priority} />
             ))}
           </div>
         )}
@@ -468,11 +488,21 @@ const EmailInbox = () => {
                   {hasNewFormat ? 'BIQC Suggested Reply' : 'AI Reply Suggestions'}
                 </h2>
                 {replySuggestions.priority_level && (
-                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium mb-2 ${
-                    replySuggestions.priority_level === 'high' ? 'bg-red-100 text-red-700' :
-                    replySuggestions.priority_level === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-green-100 text-green-700'
-                  }`}>
+                  <span
+                    className="inline-block px-2 py-0.5 rounded text-xs font-medium mb-2"
+                    style={{
+                      background: replySuggestions.priority_level === 'high'
+                        ? 'rgba(239,68,68,0.18)'
+                        : replySuggestions.priority_level === 'medium'
+                          ? 'rgba(245,158,11,0.18)'
+                          : 'rgba(16,185,129,0.18)',
+                      color: replySuggestions.priority_level === 'high'
+                        ? '#F87171'
+                        : replySuggestions.priority_level === 'medium'
+                          ? '#FBBF24'
+                          : '#34D399',
+                    }}
+                  >
                     {replySuggestions.priority_level.toUpperCase()} PRIORITY
                   </span>
                 )}
@@ -492,7 +522,8 @@ const EmailInbox = () => {
                   setReplySuggestions(null);
                   setSelectedEmail(null);
                 }}
-                className="p-2 rounded-lg hover:bg-gray-100"
+                className="p-2 rounded-lg"
+                style={{ background: 'transparent', border: '1px solid rgba(148,163,184,0.24)' }}
               >
                 <X className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
               </button>
