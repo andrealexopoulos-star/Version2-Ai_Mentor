@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { supabase, useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { Input } from '../components/ui/input';
 import RecaptchaGate from '../components/RecaptchaGate';
@@ -12,7 +12,7 @@ const DISPLAY = fontFamily.display;
 
 const LoginSupabase = () => {
   const navigate = useNavigate();
-  const { signIn, signInWithOAuth, hasSupabaseConfig } = useSupabaseAuth();
+  const { signIn, signInWithOAuth, hasSupabaseConfig, authState } = useSupabaseAuth();
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -124,7 +124,7 @@ const LoginSupabase = () => {
       setFallbackAnswer('');
       toast.success('Welcome back!');
       try { sessionStorage.setItem('biqc_auth_recent_login', String(Date.now())); } catch {}
-      navigate('/advisor', { replace: true });
+      navigate(authState === AUTH_STATE.NEEDS_CALIBRATION ? '/calibration' : '/advisor', { replace: true });
     } catch (error) {
       const rawMsg = error.message || '';
       if (rawMsg.includes('Supabase is not configured')) {

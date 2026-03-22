@@ -209,7 +209,10 @@ def _safe_parse_dt(value: Optional[str]) -> Optional[datetime]:
     if not value:
         return None
     try:
-        return dateutil_parser.isoparse(str(value))
+        parsed = dateutil_parser.isoparse(str(value))
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed
     except Exception:
         return None
 
@@ -1788,12 +1791,17 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
         # Delete all sync jobs from Supabase
         deleted_jobs = await delete_user_sync_jobs_supabase(get_sb(), user_id)
         logger.info(f"Deleted {deleted_jobs} sync jobs for user {user_id}")
+
+        # Delete mirrored calendar events so stale history cannot appear after disconnect.
+        deleted_calendar_events = await delete_user_calendar_events_supabase(get_sb(), user_id)
+        logger.info(f"Deleted {deleted_calendar_events} calendar events for user {user_id}")
         
         return {
             "success": True,
             "message": "Microsoft Outlook disconnected successfully",
             "deleted_emails": deleted_emails,
-            "deleted_jobs": deleted_jobs
+            "deleted_jobs": deleted_jobs,
+            "deleted_calendar_events": deleted_calendar_events,
         }
     except Exception as e:
         logger.error(f"Error disconnecting Outlook: {e}")
@@ -1832,7 +1840,10 @@ async def get_calendar_events(
         except Exception:
             pass
 
-    headers = {"Authorization": f"Bearer {access_token}"}
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Prefer": 'outlook.timezone="UTC"',
+    }
     
     # Calculate date range
     start_date = (datetime.now(timezone.utc) - timedelta(days=days_back)).isoformat()
@@ -1915,7 +1926,12 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
     
     # Generate calendar intelligence
     if events:
-        upcoming_meetings = len([e for e in events if e.get("start") and datetime.fromisoformat(e["start"].replace("Z", "+00:00")) > datetime.now(timezone.utc)])
+        now_utc = datetime.now(timezone.utc)
+        upcoming_meetings = 0
+        for event in events:
+            start_dt = _safe_parse_dt(event.get("start"))
+            if start_dt and start_dt > now_utc:
+                upcoming_meetings += 1
         meeting_load = "heavy" if upcoming_meetings > 20 else "moderate" if upcoming_meetings > 10 else "light"
         
         # Analyze meeting patterns
