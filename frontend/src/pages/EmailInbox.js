@@ -206,6 +206,7 @@ const EmailInbox = () => {
   // Normalize edge function email fields to UI-expected format
   const normalizeEmailFields = (e) => ({
     email_id:        e.email_id || e.id,
+    graph_message_id: e.graph_message_id || null,
     from:            e.from_address || e.from || 'Unknown',
     subject:         e.subject || '(no subject)',
     snippet:         e.snippet || '',
@@ -213,6 +214,7 @@ const EmailInbox = () => {
     reason:          e.reason || '',
     suggested_action: e.suggested_action || '',
     thread_id:       e.thread_id,
+    web_link:        e.web_link || null,
     priority_level:  e.priority_level || e.priority,
     user_override:   e.user_override || null,
   });
@@ -567,14 +569,25 @@ const EmailInbox = () => {
                         Suggested Reply
                       </span>
                     </div>
-                    <Button
-                      size="sm"
-                      className="btn-primary"
-                      onClick={() => copyToClipboard(replySuggestions.suggested_reply)}
-                    >
-                      <Copy className="w-3 h-3 mr-1" />
-                      Copy
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {replySuggestions.web_link && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(replySuggestions.web_link, '_blank', 'noopener,noreferrer')}
+                        >
+                          Open Email
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        className="btn-primary"
+                        onClick={() => copyToClipboard(replySuggestions.suggested_reply)}
+                      >
+                        <Copy className="w-3 h-3 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
                   </div>
                   
                   <div 

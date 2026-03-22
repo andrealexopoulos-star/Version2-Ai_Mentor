@@ -17,6 +17,7 @@ const CalendarView = () => {
   const [calendarIntel, setCalendarIntel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [draftSaving, setDraftSaving] = useState(false);
   const [advisorDraft, setAdvisorDraft] = useState(() => {
     let initial = location.state?.advisorFollowUp || null;
@@ -65,14 +66,15 @@ const CalendarView = () => {
   const fetchCalendarData = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const [eventsRes, intelRes] = await Promise.all([
-        apiClient.get('/outlook/calendar/events?days_back=0&days_ahead=30').catch(() => ({ data: { events: [] } })),
-        apiClient.get('/outlook/intelligence').catch(() => ({ data: {} }))
+        apiClient.get('/outlook/calendar/events?days_back=0&days_ahead=30'),
+        apiClient.get('/outlook/intelligence').catch(() => ({ data: {} })),
       ]);
       setEvents(eventsRes.data?.events || []);
       setCalendarIntel(intelRes.data || null);
     } catch (error) {
-      console.error('Failed to fetch calendar data');
+      setLoadError(error?.response?.data?.detail || error?.message || 'Failed to fetch calendar data');
     } finally {
       setLoading(false);
     }
@@ -334,6 +336,22 @@ const CalendarView = () => {
           <div className="flex flex-col items-center justify-center py-16">
             <CognitiveMesh compact />
             <p style={{ color: 'var(--text-muted)' }}>Loading calendar...</p>
+          </div>
+        ) : loadError && upcomingEvents.length === 0 ? (
+          <div
+            className="text-center py-16 rounded-2xl"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+          >
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              Calendar unavailable right now
+            </h3>
+            <p className="mb-6 max-w-md mx-auto text-sm" style={{ color: 'var(--text-muted)' }}>
+              {loadError}
+            </p>
+            <Button onClick={() => fetchCalendarData()} disabled={syncing} className="btn-primary">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
           </div>
         ) : upcomingEvents.length === 0 ? (
           <div 

@@ -1870,10 +1870,21 @@ async def get_calendar_events(
             raise HTTPException(status_code=400, detail=f"Failed to fetch calendar: {response.text}")
         
         events_data = response.json()
+        all_events = list(events_data.get("value", []))
+        next_link = events_data.get("@odata.nextLink")
+        page_count = 1
+        while next_link and page_count < 5:
+            page_count += 1
+            page_response = await client.get(next_link, headers=headers)
+            if page_response.status_code != 200:
+                break
+            page_data = page_response.json()
+            all_events.extend(page_data.get("value", []))
+            next_link = page_data.get("@odata.nextLink")
     
     # Store events in Supabase
     supabase_events = []
-    for event in events_data.get("value", []):
+    for event in all_events:
         supabase_events.append({
             "user_id": current_user["id"],
             "graph_event_id": event.get("id"),
@@ -1896,7 +1907,7 @@ async def get_calendar_events(
     
     # Return simplified format for frontend
     events = []
-    for event in events_data.get("value", []):
+    for event in all_events:
         events.append({
             "id": event.get("id"),
             "subject": event.get("subject"),
@@ -2332,6 +2343,8 @@ Return ONLY valid JSON in this exact format:
             ) else "subject_from" if priority_context else "none",
             "original_subject": email.get("subject", ""),
             "from": email.get("from_name") or email.get("from_address") or "",
+            "web_link": email.get("web_link") or "",
+            "thread_id": email.get("thread_id") or "",
         }
         
     except HTTPException:
