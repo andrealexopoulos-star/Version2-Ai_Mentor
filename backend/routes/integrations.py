@@ -2,7 +2,7 @@
 Integrations Routes — Merge.dev, CRM, Google Drive, Intelligence cold-read/ingest/watchtower.
 Extracted from server.py.
 """
-from fastapi import APIRouter, Depends, HTTPException, Request, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, Form, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
@@ -118,6 +118,11 @@ class DecisionFeedbackRequest(BaseModel):
     decision_key: str
     helpful: bool
     reason: Optional[str] = None
+
+
+class CustomConnectorRequest(BaseModel):
+    name: str
+    details: str
 
 
 def _normalize_provider(provider: Optional[str]) -> str:
@@ -3062,6 +3067,130 @@ async def get_all_connector_status(current_user: dict = Depends(get_current_user
     })
 
     return {"connectors": connectors}
+
+
+@router.get("/integrations/merge/catalog")
+async def get_merge_integration_catalog(
+    current_user: dict = Depends(get_current_user),
+    search: Optional[str] = Query(default=None),
+):
+    """Fetch full Merge integration metadata for connector search."""
+    merge_api_key = os.environ.get("MERGE_API_KEY")
+    if not merge_api_key or merge_api_key in ("CONFIGURED_IN_AZURE", ""):
+        return {"integrations": [], "count": 0, "source": "merge_unconfigured"}
+
+    q = str(search or "").strip().lower()
+    integrations: List[Dict[str, Any]] = []
+    seen = set()
+    next_url = "https://api.merge.dev/api/integrations"
+    page_safety = 0
+
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            while next_url and page_safety < 25:
+                page_safety += 1
+                resp = await client.get(
+                    next_url,
+                    headers={"Authorization": f"Bearer {merge_api_key}"},
+                )
+                if resp.status_code >= 400:
+                    logger.warning("[merge-catalog] Merge API error: %s %s", resp.status_code, (resp.text or "")[:300])
+                    break
+                payload = resp.json() if resp.content else {}
+                rows = payload.get("results") if isinstance(payload, dict) else payload
+                rows = rows if isinstance(rows, list) else []
+
+                for row in rows:
+                    if not isinstance(row, dict):
+                        continue
+                    name = str(row.get("name") or "").strip()
+                    if not name:
+                        continue
+                    categories = row.get("categories") or []
+                    if isinstance(categories, str):
+                        categories = [categories]
+                    categories = [str(c).strip().lower() for c in categories if c]
+                    slug = str(row.get("slug") or row.get("id") or "").strip().lower()
+                    if not slug:
+                        slug = "".join(ch for ch in name.lower() if ch.isalnum() or ch in {"-", "_", " "}).replace(" ", "-")
+                    key = slug or name.lower()
+                    if key in seen:
+                        continue
+                    seen.add(key)
+
+                    if q and q not in name.lower() and q not in slug:
+                        continue
+
+                    integrations.append({
+                        "id": slug,
+                        "name": name,
+                        "categories": categories,
+                        "logo": row.get("image") or row.get("logo") or row.get("square_image"),
+                        "description": row.get("description") or row.get("summary"),
+                    })
+
+                raw_next = payload.get("next") if isinstance(payload, dict) else None
+                if raw_next and isinstance(raw_next, str):
+                    if raw_next.startswith("http://") or raw_next.startswith("https://"):
+                        next_url = raw_next
+                    elif raw_next.startswith("/"):
+                        next_url = f"https://api.merge.dev{raw_next}"
+                    else:
+                        next_url = f"https://api.merge.dev/api/{raw_next.lstrip('/')}"
+                else:
+                    next_url = None
+    except Exception as exc:
+        logger.warning("[merge-catalog] Failed to fetch Merge catalog: %s", exc)
+
+    return {"integrations": integrations, "count": len(integrations), "source": "merge_live"}
+
+
+@router.post("/integrations/custom-connector-request")
+async def submit_custom_connector_request(
+    payload: CustomConnectorRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Capture a custom connector request without affecting integration flow."""
+    name = str(payload.name or "").strip()
+    details = str(payload.details or "").strip()
+    if not name or not details:
+        raise HTTPException(status_code=400, detail="Name and details are required.")
+
+    user_id = str(current_user.get("id") or "")
+    user_email = str(current_user.get("email") or "")
+    sb = get_sb()
+    request_row = {
+        "user_id": user_id,
+        "user_email": user_email,
+        "requester_name": name[:200],
+        "details": details[:8000],
+        "status": "submitted",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    # Best-effort persistence so the UI remains functional even if table migration is pending.
+    stored = False
+    for schema_name, table_name in (
+        ("business_core", "custom_connector_requests"),
+        (None, "custom_connector_requests"),
+    ):
+        try:
+            target = sb.schema(schema_name).table(table_name) if schema_name else sb.table(table_name)
+            target.insert(request_row).execute()
+            stored = True
+            break
+        except Exception:
+            continue
+
+    logger.info(
+        "[custom-connector] request received user_id=%s email=%s name=%s stored=%s",
+        user_id,
+        user_email,
+        name[:120],
+        stored,
+    )
+
+    return {"ok": True, "stored": stored}
 
 
 @router.post("/integrations/merge/webhook")

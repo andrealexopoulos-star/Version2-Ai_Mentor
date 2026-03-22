@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, CheckCircle2, LogOut, RefreshCw, Loader2, Zap,
   Users, DollarSign, Briefcase, UserPlus, Ticket, HardDrive,
-  BookOpen, Mail, LayoutGrid, X, Plug,
+  BookOpen, Mail, LayoutGrid, X, Plug, Plus,
   TrendingUp, Megaphone, ChevronRight, Clock
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
@@ -52,6 +52,36 @@ const CATEGORIES = [
   { id: 'storage',    label: 'File Storage',   icon: HardDrive  },
   { id: 'knowledge',  label: 'Knowledge',      icon: BookOpen   },
 ];
+
+const CONNECTOR_TABS = [
+  { id: 'all', label: 'All' },
+  { id: 'connected', label: 'Connected' },
+  { id: 'available', label: 'Available' },
+];
+
+const CONNECTOR_CATEGORY_FILTERS = [
+  { id: 'all', label: 'All categories' },
+  { id: 'email', label: 'Email' },
+  { id: 'calendar', label: 'Calendar' },
+  { id: 'crm', label: 'CRM' },
+  { id: 'financial', label: 'Financial' },
+  { id: 'ecommerce', label: 'E-Commerce' },
+  { id: 'hris', label: 'HR & Payroll' },
+  { id: 'ats', label: 'ATS' },
+  { id: 'ticketing', label: 'Ticketing' },
+  { id: 'storage', label: 'File Storage' },
+  { id: 'knowledge', label: 'Knowledge' },
+  { id: 'marketing', label: 'Marketing' },
+];
+
+const mapMergeCategoryToUiCategory = (mergeCategory) => {
+  const normalized = String(mergeCategory || '').toLowerCase().trim();
+  if (normalized === 'accounting') return 'financial';
+  if (normalized === 'file_storage') return 'storage';
+  if (normalized === 'knowledge_base') return 'knowledge';
+  if (normalized === 'marketing_automation') return 'marketing';
+  return normalized || 'crm';
+};
 
 // ── Integration registry ──────────────────────────────────────────────────────
 const EMAIL_CALENDAR = [
@@ -224,10 +254,10 @@ export default function Integrations() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedTab, setSelectedTab] = useState('all');
   const [mergeIntegrations, setMergeIntegrations] = useState({});
   const [integrationStatusRows, setIntegrationStatusRows] = useState([]);
   const [canonicalTruth, setCanonicalTruth] = useState({});
-  const [verificationGapCount, setVerificationGapCount] = useState(0);
   const [integrationTruthReady, setIntegrationTruthReady] = useState(false);
   const [outlookStatus, setOutlookStatus] = useState({ connected: false, connected_email: null });
   const [gmailStatus, setGmailStatus] = useState({ connected: false, connected_email: null });
@@ -237,6 +267,7 @@ export default function Integrations() {
   const [pendingOpen, setPendingOpen] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
+  const [mergeCatalog, setMergeCatalog] = useState([]);
 
   // Merge Link hook — token starts as '' so SDK initialises cleanly
   const { open: openMergeLinkModal, isReady: mergeLinkReady } = useMergeLink({
@@ -312,11 +343,8 @@ export default function Integrations() {
       const statusPayload = await authedJsonGet('/user/integration-status');
       const rows = statusPayload?.integrations || [];
       const statusTruth = statusPayload?.canonical_truth || {};
-      const truthConnected = Number(statusTruth.total_connected || 0);
-      const verifiedConnected = getVerifiedConnectedCount(rows);
       setIntegrationStatusRows(rows);
       setCanonicalTruth(statusTruth);
-      setVerificationGapCount(Math.max(0, truthConnected - verifiedConnected));
       setIntegrationTruthReady(Boolean(rows.length));
       const derivedMap = rows.reduce((acc, row) => {
         if (!row?.connected) return acc;
@@ -352,17 +380,13 @@ export default function Integrations() {
           truth_reason: item?.truth_reason,
           last_verified_at: item?.last_verified_at || item?.connected_at || null,
         }));
-        const truthConnected = Number(directTruth.total_connected || 0);
-        const verifiedConnected = getVerifiedConnectedCount(rows);
         setIntegrationStatusRows(rows);
         setCanonicalTruth(directTruth);
-        setVerificationGapCount(Math.max(0, truthConnected - verifiedConnected));
         setIntegrationTruthReady(Boolean(rows.length));
         setMergeIntegrations(directMap);
       } catch {
         setMergeIntegrations({});
         setIntegrationStatusRows([]);
-        setVerificationGapCount(0);
         setIntegrationTruthReady(false);
         setPageError(e?.message || 'Failed to load integration status');
       }
@@ -377,6 +401,15 @@ export default function Integrations() {
     } catch {}
   }, []);
 
+  const loadMergeCatalog = useCallback(async () => {
+    try {
+      const data = await authedJsonGet('/integrations/merge/catalog');
+      const rows = Array.isArray(data?.integrations) ? data.integrations : [];
+      setMergeCatalog(rows);
+    } catch {
+      setMergeCatalog([]);
+    }
+  }, [authedJsonGet]);
   const loadGmailStatus = useCallback(async () => {
     try {
       // Primary: use backend API — validates token expiry properly
@@ -409,10 +442,12 @@ export default function Integrations() {
     loadMergeIntegrations();
     loadOutlookStatus();
     loadGmailStatus();
+    loadMergeCatalog();
     const retryTimer = setTimeout(() => {
       loadMergeIntegrations();
       loadOutlookStatus();
       loadGmailStatus();
+      loadMergeCatalog();
     }, 3000);
     const resilienceTimer = setTimeout(() => {
       loadMergeIntegrations();
@@ -420,14 +455,19 @@ export default function Integrations() {
     // Handle deep-link from Revenue/Operations pages: ?category=crm
     const urlCategory = searchParams.get('category');
     if (urlCategory && CATEGORIES.some(c => c.id === urlCategory)) {
-      setSelectedCategory(urlCategory);
+      if (urlCategory === 'connected') {
+        setSelectedTab('connected');
+        setSelectedCategory('all');
+      } else {
+        setSelectedCategory(urlCategory);
+      }
       setSearchParams({});
     }
     return () => {
       clearTimeout(retryTimer);
       clearTimeout(resilienceTimer);
     };
-  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus, user?.id, session?.access_token, authState]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadMergeIntegrations, loadOutlookStatus, loadGmailStatus, loadMergeCatalog, user?.id, session?.access_token, authState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const outlookConnected = searchParams.get('outlook_connected');
@@ -504,6 +544,13 @@ export default function Integrations() {
     }
     if (integration.type === 'merge') {
       const cats = MERGE_CATEGORY_MAP[integration.category] || ['crm'];
+      await openMergeLink(integration.id, cats, integration.name);
+      return;
+    }
+    if (integration.type === 'merge_catalog') {
+      const cats = Array.isArray(integration.mergeCategories) && integration.mergeCategories.length
+        ? integration.mergeCategories
+        : (MERGE_CATEGORY_MAP[integration.category] || ['crm']);
       await openMergeLink(integration.id, cats, integration.name);
       return;
     }
@@ -602,11 +649,31 @@ export default function Integrations() {
     return false;
   }, [mergeIntegrations, integrationStatusRows, isConnected]);
 
-  const filtered = ALL_INTEGRATIONS.filter(i => {
-    if (selectedCategory === 'connected') return isConnected(i);
-    const matchCat = selectedCategory === 'all' || i.category === selectedCategory;
-    const matchSearch = !searchTerm || i.name.toLowerCase().includes(searchTerm.toLowerCase()) || i.desc.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchCat && matchSearch;
+  const curatedIds = new Set([...EMAIL_CALENDAR, ...ALL_INTEGRATIONS, ...MARKETING_PLATFORMS].map((i) => i.id));
+  const mergeSearchCatalog = (searchTerm ? mergeCatalog : [])
+    .map((row) => {
+      const mergeCategories = Array.isArray(row?.categories) ? row.categories : [];
+      const primaryCategory = mapMergeCategoryToUiCategory(mergeCategories[0] || 'crm');
+      return {
+        id: String(row?.id || '').trim().toLowerCase(),
+        name: row?.name || 'Unknown provider',
+        domain: 'merge.dev',
+        category: primaryCategory,
+        desc: row?.description || `Connect ${row?.name || 'provider'} via Merge`,
+        type: 'merge_catalog',
+        mergeCategories,
+      };
+    })
+    .filter((item) => item.id && !curatedIds.has(item.id));
+  const connectorPool = [...EMAIL_CALENDAR, ...ALL_INTEGRATIONS, ...MARKETING_PLATFORMS, ...mergeSearchCatalog];
+  const filtered = connectorPool.filter((integration) => {
+    const connected = isConnected(integration);
+    if (selectedTab === 'connected' && !connected) return false;
+    if (selectedTab === 'available' && connected) return false;
+    if (selectedCategory !== 'all' && integration.category !== selectedCategory) return false;
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase();
+    return integration.name.toLowerCase().includes(q) || integration.desc.toLowerCase().includes(q);
   });
   const connectedCount = [
     getVerifiedConnectedCount(integrationStatusRows),
@@ -616,16 +683,8 @@ export default function Integrations() {
   const isMasterAccount = user?.is_master_account === true || ['superadmin', 'super_admin', 'admin'].includes((user?.role || '').toLowerCase()) || isPrivilegedUser(user);
   const effectiveTier = resolveTier(user);
   const hasPaidLaunchAccess = isMasterAccount || effectiveTier !== 'free';
-  const isFreeTier = !hasPaidLaunchAccess;
   const launchIntegrationLimit = hasPaidLaunchAccess ? 5 : 1;
   const freeTierLimitReached = connectedCount >= launchIntegrationLimit;
-  const blockedTruthCategories = [
-    { label: 'CRM', state: canonicalTruth.crm_state },
-    { label: 'Accounting', state: canonicalTruth.accounting_state },
-    { label: 'Email', state: canonicalTruth.email_state },
-  ].filter((item) => item.state && item.state !== 'live');
-  const visibleCategories = isFreeTier ? CATEGORIES.filter((cat) => ['all', 'connected'].includes(cat.id)) : CATEGORIES;
-
   if (pageLoading && !integrationTruthReady && !pageError) {
     return (
       <DashboardLayout>
@@ -653,403 +712,241 @@ export default function Integrations() {
         .int-card:hover .connect-btn { opacity: 1 !important; }
       `}</style>
 
-      <div style={{ background: 'var(--biqc-bg, #070E18)', minHeight: '100%', fontFamily: fontFamily.body }}>
+      <div style={{ background: '#050A14', minHeight: '100%', fontFamily: fontFamily.body }}>
+        <div className="max-w-[1140px] mx-auto px-4 sm:px-6 py-8">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <h1 className="text-[36px] leading-[1.05] font-semibold tracking-[-0.01em]" style={{ color: '#F8FAFC', fontFamily: fontFamily.display }}>Connectors</h1>
+                <p className="mt-2 text-[14px]" style={{ color: '#94A3B8' }}>
+                  Connect your tools to BIQc to search across them and take action. Your permissions are always respected.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/contact?source=custom_connector&label=Custom%20Connector')}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3.5 text-[13px] font-semibold"
+                style={{ border: '1px solid #2B3545', color: '#E5E7EB', background: '#0B1220' }}
+                data-testid="custom-connector-button"
+              >
+                <Plus className="w-4 h-4" />
+                Add custom connector
+              </button>
+            </div>
 
-        {/* ── HEADER ── */}
-        <div className="px-6 pt-6 pb-4" style={{ borderBottom: '1px solid var(--biqc-border, #1E2D3D)' }}>
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-semibold tracking-[0.15em] uppercase" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>Connectors</span>
-                {integrationTruthReady ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
-                    {connectedCount} live
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)', fontFamily: fontFamily.mono }} data-testid="integrations-verifying-pill">
-                    Verifying
-                  </span>
+            <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-[1fr_210px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#64748B' }} />
+                <input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search all connectors"
+                  className="w-full rounded-lg py-2.5 pl-9 pr-9 text-[13px] outline-none"
+                  style={{ background: '#0B1220', border: '1px solid #1E293B', color: '#F4F7FA' }}
+                  data-testid="integrations-search"
+                />
+                {searchTerm && (
+                  <button type="button" onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#64748B' }}>
+                    <X className="w-4 h-4" />
+                  </button>
                 )}
               </div>
-              <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Connectors</h1>
-              <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>
-                {integrationTruthReady
-                  ? (connectedCount > 0 ? `${connectedCount}/${launchIntegrationLimit} active connectors in your launch package` : (isFreeTier ? 'Connect one email provider to activate free-tier intelligence' : 'Connect up to 5 business systems to activate paid intelligence'))
-                  : 'Verifying live source truth across your connected systems'}
-              </p>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full rounded-lg px-3 py-2.5 text-[13px] outline-none"
+                style={{ background: '#0B1220', border: '1px solid #1E293B', color: '#E2E8F0' }}
+                data-testid="integrations-category-filter"
+              >
+                {CONNECTOR_CATEGORY_FILTERS.map((item) => (
+                  <option key={item.id} value={item.id}>{item.label}</option>
+                ))}
+              </select>
             </div>
-            {/* Search */}
-            {!isFreeTier && (
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#4A5568' }} />
-                <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                  placeholder="Search platforms..."
-                  className="w-full pl-9 pr-8 py-2 rounded-lg text-sm outline-none"
-                  style={{ background: 'var(--biqc-bg-card, #141C26)', border: '1px solid var(--biqc-border, #243140)', color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.body }}
-                  data-testid="integrations-search" />
-                {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#4A5568' }}><X className="w-3.5 h-3.5" /></button>}
-              </div>
-            )}
-          </div>
 
-          {/* Category tabs */}
-          {!searchTerm && (
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar" role="group" aria-label="Filter by category">
-              {visibleCategories.map(cat => {
-                const active = selectedCategory === cat.id;
-                const Icon = cat.icon;
-                const count = cat.id === 'all' 
-                  ? ALL_INTEGRATIONS.length 
-                  : cat.id === 'connected' 
-                  ? (integrationTruthReady ? connectedCount : '…')
-                  : ALL_INTEGRATIONS.filter(i => i.category === cat.id).length;
+            <div className="flex flex-wrap items-center gap-2">
+              {CONNECTOR_TABS.map((tab) => {
+                const active = selectedTab === tab.id;
                 return (
-                  <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all"
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setSelectedTab(tab.id)}
+                    className="rounded-full px-3 py-1.5 text-[11px] font-semibold"
                     style={{
-                      background: active ? 'rgba(148,163,184,0.16)' : 'transparent',
-                      color: active ? '#E2E8F0' : '#64748B',
-                      border: `1px solid ${active ? 'rgba(148,163,184,0.32)' : 'transparent'}`,
-                      fontFamily: fontFamily.mono,
+                      border: active ? '1px solid #334155' : '1px solid #1E293B',
+                      background: active ? '#111827' : '#0B1220',
+                      color: active ? '#F8FAFC' : '#94A3B8',
                     }}
-                    data-testid={`cat-${cat.id}`}>
-                    <Icon className="w-3 h-3" />
-                    {cat.label}
-                    <span style={{ color: active ? '#E2E8F0' : '#2D3E50' }}>{count}</span>
+                    data-testid={`cat-${tab.id}`}
+                  >
+                    {tab.label}
                   </button>
                 );
               })}
+              <span className="ml-auto text-[11px]" style={{ color: '#64748B' }}>
+                {connectedCount} connected
+              </span>
             </div>
-          )}
-        </div>
-
-        <div className="px-6 py-5 space-y-7">
-
-          {!integrationTruthReady && (
-            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.08)' }} data-testid="integrations-truth-verifying-banner">
-              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Forensic source health</p>
-              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>BIQc is verifying live connector truth before showing connected counts.</p>
-              <p className="mt-1 text-xs" style={{ color: '#FDE68A' }}>If this persists, refresh the page or reopen the affected integrations.</p>
-            </div>
-          )}
-
-          {verificationGapCount > 0 && (
-            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.08)' }} data-testid="integrations-truth-gap-banner">
-              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Verification in progress</p>
-              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
-                {verificationGapCount} integration{verificationGapCount !== 1 ? 's' : ''} reported by truth counters are not provider-verified yet, so BIQc is not displaying them as connected.
+            {searchTerm && (
+              <p className="text-[11px]" style={{ color: '#64748B' }}>
+                Search includes BIQc connectors plus the live Merge integration catalog.
               </p>
-            </div>
-          )}
-
-          {integrationTruthReady && blockedTruthCategories.length > 0 && (
-            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(251,146,60,0.35)', background: 'rgba(251,146,60,0.08)' }} data-testid="integrations-truth-state-banner">
-              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Forensic source health</p>
-              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
-                BIQc is currently treating these domains as non-live truth: {blockedTruthCategories.map((item) => `${item.label} (${item.state})`).join(', ')}.
-              </p>
-              <p className="mt-1 text-xs" style={{ color: '#FDE68A' }}>Reconnect or refresh these providers before relying on their guidance as current fact.</p>
-            </div>
-          )}
-
-          {isFreeTier && (
-            <div className="rounded-2xl border p-4" style={{ borderColor: freeTierLimitReached ? 'rgba(148,163,184,0.28)' : 'var(--biqc-border, #243140)', background: freeTierLimitReached ? 'rgba(148,163,184,0.08)' : 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-free-tier-banner">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Free Tier Access</p>
-                  <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Free tier includes email integration only.</p>
-                  <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>{freeTierLimitReached ? 'You have reached the free-tier email limit. Disconnect the current provider or upgrade to unlock up to 5 integrations.' : 'Connect Gmail or Outlook to activate Priority Inbox, calendar intelligence, and email truth.'}</p>
-                </div>
-                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(148,163,184,0.16)', color: '#E2E8F0', fontFamily: fontFamily.mono }} data-testid="integrations-free-tier-counter">{connectedCount}/{launchIntegrationLimit} connected</span>
-              </div>
-            </div>
-          )}
-
-          {hasPaidLaunchAccess && (
-            <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(148,163,184,0.22)', background: 'rgba(148,163,184,0.06)' }} data-testid="integrations-paid-tier-banner">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>BIQc Foundation</p>
-                  <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>BIQc Foundation includes up to 5 integrations.</p>
-                  <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>Connect email plus the business systems that matter most to your operating rhythm.</p>
-                </div>
-                <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(148,163,184,0.16)', color: '#E2E8F0', fontFamily: fontFamily.mono }} data-testid="integrations-paid-tier-counter">{connectedCount}/{launchIntegrationLimit} connected</span>
-              </div>
-            </div>
-          )}
-
-          {/* ── EMAIL & CALENDAR — visible on All and Connected tabs ── */}
-          {!searchTerm && (selectedCategory === 'all' || selectedCategory === 'connected') && (
-            <div>
-              <SectionLabel icon={Mail} label="Email & Calendar" badge="Supabase OAuth" badgeColor="#3B82F6" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
-                {EMAIL_CALENDAR
-                  .filter(item => selectedCategory !== 'connected' || isConnected(item))
-                  .map((item, i) => (
-                  <IntCard key={item.id} integration={item} index={i}
-                    connected={isConnected(item)} connectedLabel={getConnectedLabel(item)}
-                    disconnecting={disconnecting === item.id} openingMerge={openingMerge === item.id}
-                    onConnect={handleConnect} onDisconnect={handleDisconnect}
-                    canConnectMore={!freeTierLimitReached || isConnected(item)}
-                    isStale={false}
-                    truthState={truthStateForIntegration(item)} truthReason={truthReasonForIntegration(item)}
-                    badge="Supabase" badgeColor="#3B82F6" />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── MAIN INTEGRATIONS GRID ── */}
-          {!hasPaidLaunchAccess ? (
-            <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border, #243140)', background: 'var(--biqc-bg-card, #141C26)' }} data-testid="integrations-paid-upgrade-card">
-              <p className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Paid launch modules</p>
-              <h2 className="mt-3 text-xl" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Upgrade to unlock 5 integrations and the deeper operating modules.</h2>
-              <p className="mt-2 text-sm" style={{ color: '#94A3B8' }}>BIQc Foundation adds Exposure Scan, Marketing Auto, Reports, Revenue, Operations, Marketing Intelligence, Boardroom, SOP Generator, Decision Tracker, and Ingestion Audit.</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {['Exposure Scan', 'Marketing Auto', 'Reports', 'SOP Generator', 'Decision Tracker', 'Ingestion Audit'].map((item) => (
-                  <span key={item} className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'rgba(148,163,184,0.12)', color: '#CBD5E1', fontFamily: fontFamily.mono }}>{item}</span>
-                ))}
-              </div>
-              <button
-                onClick={() => navigate('/biqc-foundation')}
-                className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-                style={{ background: '#475569', fontFamily: fontFamily.body }}
-                data-testid="integrations-upgrade-button"
-              >
-                View BIQc Foundation <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          ) : filtered.length > 0 ? (
-            <div>
-              {!searchTerm && (
-                <SectionLabel
-                  icon={Plug}
-                  label={selectedCategory === 'all' ? 'All Platforms' : CATEGORIES.find(c => c.id === selectedCategory)?.label}
-                  badge={`${filtered.length} available · 220+ via Merge`}
-                  badgeColor="#94A3B8"
-                />
-              )}
-              {searchTerm && (
-                <p className="text-xs mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{filtered.length} result{filtered.length !== 1 ? 's' : ''} for "{searchTerm}"</p>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-3">
-                {filtered.map((integration, i) => (
-                  <IntCard key={integration.id} integration={integration} index={i}
-                    connected={isConnected(integration)} connectedLabel={getConnectedLabel(integration)}
-                    disconnecting={disconnecting === integration.id} openingMerge={openingMerge === integration.id}
-                    onConnect={handleConnect} onDisconnect={handleDisconnect}
-                    canConnectMore={!freeTierLimitReached || isConnected(integration)}
-                    isStale={isMergeStale(integration)}
-                    truthState={truthStateForIntegration(integration)} truthReason={truthReasonForIntegration(integration)}
-                    badge="Merge API" badgeColor="#94A3B8" />
-                ))}
-              </div>
-
-              {/* Browse all CTA */}
-              {!searchTerm && (
-                <button
-                  onClick={() => openMergeLink('browse-all', ['accounting', 'crm', 'hris', 'ats', 'ticketing', 'file_storage'])}
-                  disabled={!!openingMerge}
-                  className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all"
-                  style={{ border: '1px dashed rgba(148,163,184,0.36)', color: '#CBD5E1', background: 'rgba(148,163,184,0.08)', fontFamily: fontFamily.body }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(148,163,184,0.6)'; e.currentTarget.style.background = 'rgba(148,163,184,0.16)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(148,163,184,0.36)'; e.currentTarget.style.background = 'rgba(148,163,184,0.08)'; }}
-                  data-testid="browse-all-platforms">
-                  {openingMerge === 'browse-all' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                  {openingMerge === 'browse-all' ? 'Opening...' : "Can't find yours? Browse all 220+ platforms"}
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          ) : searchTerm ? (
-            <div className="py-16 text-center">
-              <Search className="w-8 h-8 mx-auto mb-3" style={{ color: '#243140' }} />
-              <p className="text-sm mb-1" style={{ color: '#64748B' }}>No platforms found for "{searchTerm}"</p>
-              <button onClick={() => openMergeLink('browse-all', ['accounting', 'crm', 'hris', 'ats', 'ticketing', 'file_storage'])}
-                className="text-xs mt-3 underline" style={{ color: '#CBD5E1' }}>
-                Browse all 220+ platforms
-              </button>
-            </div>
-          ) : null}
-
-          {/* ── MARKETING PLATFORMS — Coming Soon ── */}
-          {!searchTerm && selectedCategory === 'all' && (
-            <div>
-              <SectionLabel icon={Megaphone} label="Marketing & Advertising" badge="Coming Soon" badgeColor="#F59E0B" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
-                {MARKETING_PLATFORMS.map((item, i) => (
-                  <IntCard key={item.id} integration={item} index={i}
-                    connected={false} connectedLabel={null}
-                    disconnecting={false} openingMerge={false}
-                    onConnect={handleConnect} onDisconnect={handleDisconnect}
-                    canConnectMore={!freeTierLimitReached}
-                    badge="Coming Soon" badgeColor="#F59E0B" comingSoon />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── FOOTER NOTE ── */}
-          <div className="flex items-center justify-center gap-3 py-3" style={{ borderTop: '1px solid var(--biqc-border, #1E2D3D)' }}>
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#10B981' }} />
-            <p className="text-[11px]" style={{ color: '#2D3E50', fontFamily: fontFamily.mono }}>
-              All connections encrypted · Australian hosted · Revoke anytime
-            </p>
+            )}
           </div>
 
+          {filtered.length > 0 ? (
+            <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 mt-4">
+              {filtered.map((integration, i) => (
+                // Free tier can connect one email provider only; paid tiers can connect all supported providers.
+                <IntCard
+                  key={integration.id}
+                  integration={integration}
+                  index={i}
+                  connected={isConnected(integration)}
+                  connectedLabel={getConnectedLabel(integration)}
+                  disconnecting={disconnecting === integration.id}
+                  openingMerge={openingMerge === integration.id}
+                  onConnect={handleConnect}
+                  onDisconnect={handleDisconnect}
+                  canConnectMore={
+                    (
+                      hasPaidLaunchAccess
+                      || ['gmail', 'outlook', 'gcal', 'outlook_cal'].includes(integration.type)
+                    ) && (!freeTierLimitReached || isConnected(integration))
+                  }
+                  isStale={isMergeStale(integration)}
+                  truthState={truthStateForIntegration(integration)}
+                  truthReason={truthReasonForIntegration(integration)}
+                  badge={integration.type === 'coming_soon' ? 'Coming soon' : integration.type === 'gmail' || integration.type === 'outlook' || integration.type === 'gcal' || integration.type === 'outlook_cal' ? 'OAuth' : 'Merge'}
+                  comingSoon={integration.type === 'coming_soon'}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="py-20 text-center">
+              <Search className="w-8 h-8 mx-auto mb-3" style={{ color: '#243140' }} />
+              <p className="text-sm mb-1" style={{ color: '#64748B' }}>No connectors found for this filter.</p>
+            </div>
+          )}
+
+          <button
+            onClick={() => openMergeLink('browse-all', ['accounting', 'crm', 'hris', 'ats', 'ticketing', 'file_storage'])}
+            disabled={!!openingMerge}
+            className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-[13px] font-medium transition-all"
+            style={{ border: '1px dashed #334155', color: '#CBD5E1', background: '#0B1220', fontFamily: fontFamily.body }}
+            data-testid="browse-all-platforms"
+          >
+            {openingMerge === 'browse-all' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+            {openingMerge === 'browse-all' ? 'Opening...' : "Can't find yours? Browse all 220+ platforms"}
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
+
     </DashboardLayout>
   );
 }
 
-// ── Section label component ───────────────────────────────────────────────────
-function SectionLabel({ icon: Icon, label, badge, badgeColor }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2">
-        <Icon className="w-3.5 h-3.5" style={{ color: badgeColor || '#94A3B8' }} />
-        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--biqc-text-muted, #8B9DB5)', fontFamily: fontFamily.mono }}>{label}</span>
-      </div>
-      {badge && (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: `${badgeColor}15`, color: badgeColor, border: `1px solid ${badgeColor}30`, fontFamily: fontFamily.mono }}>
-          {badge}
-        </span>
-      )}
-    </div>
-  );
-}
-
 // ── Integration card ──────────────────────────────────────────────────────────
-function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, badgeColor, comingSoon, isStale = false, canConnectMore = true, truthState = 'unverified', truthReason = '' }) {
-  const [hovered, setHovered] = useState(false);
-  const truthTone = truthState === 'live'
-    ? { text: '#10B981', border: 'rgba(16,185,129,0.25)', bg: 'rgba(16,185,129,0.08)' }
-    : truthState === 'stale'
-      ? { text: '#F59E0B', border: 'rgba(245,158,11,0.3)', bg: 'rgba(245,158,11,0.08)' }
-      : { text: '#F97316', border: 'rgba(249,115,22,0.3)', bg: 'rgba(249,115,22,0.08)' };
+function IntCard({ integration, index, connected, connectedLabel, disconnecting, openingMerge, onConnect, onDisconnect, badge, comingSoon, isStale = false, canConnectMore = true, truthState = 'unverified', truthReason = '' }) {
+  const statusTone = connected
+    ? { text: '#34D399', bg: 'rgba(16,185,129,0.14)' }
+    : comingSoon
+      ? { text: '#F59E0B', bg: 'rgba(245,158,11,0.14)' }
+      : { text: '#94A3B8', bg: 'rgba(148,163,184,0.14)' };
+
+  const actionLabel = comingSoon
+    ? 'Notify me'
+    : connected
+      ? (isStale ? 'Re-link' : 'Disconnect')
+      : (!canConnectMore ? 'Free limit reached' : 'Connect');
 
   return (
     <div
-      className="int-card relative flex flex-col rounded-xl overflow-hidden transition-all duration-200"
+      className="int-card rounded-xl border px-3.5 py-3 transition-colors"
       style={{
-        background: connected ? 'rgba(16,185,129,0.04)' : 'var(--biqc-bg-card, #141C26)',
-        border: `1px solid ${connected ? 'rgba(16,185,129,0.2)' : hovered && !comingSoon ? 'rgba(148,163,184,0.36)' : 'var(--biqc-border, #1E2D3D)'}`,
-        boxShadow: connected ? '0 0 20px rgba(16,185,129,0.06)' : 'none',
+        background: '#0B1220',
+        borderColor: connected ? 'rgba(52,211,153,0.35)' : '#1E293B',
         animationDelay: `${index * 30}ms`,
         opacity: comingSoon ? 0.7 : 1,
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       data-testid={`integration-card-${integration.id}`}
     >
-      {/* Connected indicator */}
-      {connected && (
-        <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: 'linear-gradient(90deg, #10B981, transparent)' }} />
-      )}
-
-      <div className="p-4 flex flex-col gap-3 flex-1">
-        {/* Header row */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <Logo domain={integration.domain} name={integration.name} size={34} />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate leading-tight" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>{integration.name}</p>
-              {connected ? (
-                <div className="flex items-center gap-1 mt-0.5">
-                  <CheckCircle2 className="w-2.5 h-2.5 flex-shrink-0" style={{ color: '#10B981' }} />
-                  <span className="text-[10px] truncate" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>{connectedLabel}</span>
-                </div>
-              ) : (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium"
-                  style={{ color: badgeColor, background: `${badgeColor}12`, fontFamily: fontFamily.mono }}>
-                  {comingSoon ? 'Soon' : badge}
-                </span>
-              )}
+      <div className="flex items-start gap-2.5">
+        <Logo domain={integration.domain} name={integration.name} size={36} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-[14px] font-semibold truncate leading-tight" style={{ color: '#F8FAFC', fontFamily: fontFamily.display }}>{integration.name}</p>
+              <p
+                className="text-[12px] mt-1 leading-[1.35]"
+                style={{
+                  color: '#94A3B8',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}
+              >
+                {integration.desc}
+              </p>
             </div>
+            <span
+              className="inline-flex items-center rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-wide shrink-0"
+              style={{ color: statusTone.text, background: statusTone.bg }}
+            >
+              {connected ? 'Connected' : (comingSoon ? 'Soon' : badge)}
+            </span>
           </div>
+
+          <div className="mt-2.5 flex items-center justify-between gap-2">
+            <span className="text-[10.5px]" style={{ color: connected ? '#34D399' : '#64748B' }}>
+              {connected ? connectedLabel : (truthReason || '')}
+            </span>
+            <button
+              onClick={() => {
+                if (comingSoon) onConnect(integration);
+                else if (connected) {
+                  if (isStale) onConnect(integration);
+                  else onDisconnect(integration);
+                } else {
+                  onConnect(integration);
+                }
+              }}
+              disabled={disconnecting || openingMerge || (!connected && !comingSoon && !canConnectMore)}
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold"
+              style={{
+                background: '#111827',
+                border: '1px solid #334155',
+                color: (!connected && !comingSoon && !canConnectMore) ? '#64748B' : '#E2E8F0',
+              }}
+              data-testid={
+                connected
+                  ? `disconnect-${integration.id}`
+                  : comingSoon
+                    ? `notify-${integration.id}`
+                    : `connect-${integration.id}`
+              }
+            >
+              {(disconnecting || openingMerge) ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : connected ? (
+                isStale ? <RefreshCw className="w-3 h-3" /> : <LogOut className="w-3 h-3" />
+              ) : comingSoon ? (
+                <Clock className="w-3 h-3" />
+              ) : (
+                <Plug className="w-3 h-3" />
+              )}
+              {disconnecting || openingMerge ? 'Working...' : actionLabel}
+            </button>
+          </div>
+          {connected && (
+            <span className="inline-block mt-1.5 text-[10px] uppercase tracking-wide" style={{ color: truthState === 'live' ? '#34D399' : '#F59E0B' }} data-testid={`integration-truth-state-${integration.id}`}>
+              Source {truthState}
+            </span>
+          )}
         </div>
-
-        {connected && (
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg self-start"
-            style={{ background: truthTone.bg, border: `1px solid ${truthTone.border}`, color: truthTone.text, fontFamily: fontFamily.mono }}
-            data-testid={`integration-truth-state-${integration.id}`}>
-            <span className="text-[10px] uppercase tracking-[0.12em]">{truthState}</span>
-          </div>
-        )}
-
-        {/* Description */}
-        <p className="text-xs leading-relaxed flex-1" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{integration.desc}</p>
-        {connected && truthReason && (
-          <p className="text-[11px] leading-relaxed" style={{ color: '#94A3B8', fontFamily: fontFamily.body }} data-testid={`integration-truth-reason-${integration.id}`}>{truthReason}</p>
-        )}
-
-        {/* Action button */}
-        {comingSoon ? (
-          <button
-            onClick={() => onConnect(integration)}
-            className="w-full py-2 rounded-lg text-xs font-medium transition-all"
-            style={{ background: 'transparent', border: '1px solid rgba(245,158,11,0.2)', color: '#F59E0B', fontFamily: fontFamily.body }}
-            data-testid={`notify-${integration.id}`}>
-            <Clock className="w-3 h-3 inline mr-1.5" />
-            Notify Me
-          </button>
-        ) : connected ? (
-          <button
-            onClick={() => isStale ? onConnect(integration) : onDisconnect(integration)}
-            disabled={disconnecting}
-            className="w-full py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5"
-            style={{
-              background: 'transparent',
-              border: `1px solid ${isStale ? 'rgba(245,158,11,0.35)' : 'rgba(239,68,68,0.25)'}`,
-              color: isStale ? '#F59E0B' : '#EF4444',
-              fontFamily: fontFamily.body,
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = isStale ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            data-testid={`disconnect-${integration.id}`}>
-            {disconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : isStale ? <RefreshCw className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
-            {disconnecting ? 'Working...' : isStale ? 'Re-link Required' : 'Disconnect'}
-          </button>
-        ) : (
-          <button
-            onClick={() => onConnect(integration)}
-            disabled={openingMerge || !canConnectMore}
-            className="w-full py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
-            style={{
-              background: !canConnectMore
-                ? 'rgba(71,85,105,0.22)'
-                : openingMerge
-                ? 'rgba(148,163,184,0.18)'
-                : 'rgba(148,163,184,0.12)',
-              border: !canConnectMore ? '1px solid #334155' : '1px solid #64748B',
-              color: !canConnectMore ? '#94A3B8' : '#E2E8F0',
-              fontFamily: fontFamily.body,
-              boxShadow: hovered && !openingMerge
-                ? '0 0 10px rgba(148,163,184,0.22), inset 0 1px 0 rgba(255,255,255,0.08)'
-                : 'inset 0 1px 0 rgba(255,255,255,0.08)',
-              textShadow: 'none',
-              backdropFilter: 'none',
-            }}
-            onMouseEnter={e => {
-              if (!openingMerge) {
-                e.currentTarget.style.background = 'rgba(148,163,184,0.2)';
-                e.currentTarget.style.color = '#FFFFFF';
-                e.currentTarget.style.boxShadow = '0 0 12px rgba(148,163,184,0.28), inset 0 1px 0 rgba(255,255,255,0.12)';
-              }
-            }}
-            onMouseLeave={e => {
-              if (!openingMerge) {
-                e.currentTarget.style.background = 'rgba(148,163,184,0.12)';
-                e.currentTarget.style.color = '#E2E8F0';
-                e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.08)';
-              }
-            }}
-            data-testid={`connect-${integration.id}`}>
-            {openingMerge ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plug className="w-3 h-3" />}
-            {openingMerge ? 'Opening...' : (!canConnectMore ? 'Free limit reached' : 'Connect')}
-          </button>
-        )}
       </div>
     </div>
   );
