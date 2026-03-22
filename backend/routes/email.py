@@ -2202,7 +2202,11 @@ async def suggest_email_reply(email_id: str, current_user: dict = Depends(get_cu
                 items = analysis.get(level, [])
                 for item in items:
                     # Match by graph_message_id (preferred)
-                    if email_graph_id and item.get("id") == email_graph_id:
+                    if email_graph_id and (
+                        item.get("id") == email_graph_id
+                        or item.get("email_id") == email_graph_id
+                        or item.get("graph_message_id") == email_graph_id
+                    ):
                         priority_context = item
                         priority_level = level.replace("_priority", "")
                         break
@@ -2321,7 +2325,13 @@ Return ONLY valid JSON in this exact format:
             "advisor_rationale": result.get("advisor_rationale", ""),
             "email_id": email_id,
             "priority_level": priority_level,
-            "matched_by": "graph_id" if priority_context and priority_context.get("id") == email.get("graph_message_id") else "subject_from" if priority_context else "none"
+            "matched_by": "graph_id" if priority_context and (
+                priority_context.get("id") == email.get("graph_message_id")
+                or priority_context.get("email_id") == email.get("graph_message_id")
+                or priority_context.get("graph_message_id") == email.get("graph_message_id")
+            ) else "subject_from" if priority_context else "none",
+            "original_subject": email.get("subject", ""),
+            "from": email.get("from_name") or email.get("from_address") or "",
         }
         
     except HTTPException:

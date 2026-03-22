@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar as CalendarIcon, RefreshCw, Users, Clock, 
-  MapPin, Loader2, Video, TrendingUp, AlertCircle
+  MapPin, TrendingUp
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 
@@ -41,17 +41,23 @@ const CalendarView = () => {
     if (!isoString) return '';
     const dt = new Date(isoString);
     if (Number.isNaN(dt.getTime())) return '';
-    const pad = (v) => String(v).padStart(2, '0');
+    const pad = (value) => String(value).padStart(2, '0');
     return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
   };
 
-  const fromLocalDateTimeValue = (localValue) => {
-    if (!localValue) return null;
-    const dt = new Date(localValue);
+  const fromLocalDateTimeValue = (value) => {
+    if (!value) return null;
+    const dt = new Date(value);
     if (Number.isNaN(dt.getTime())) return null;
     return dt.toISOString();
   };
 
+  const toLocalDateKey = (dateInput) => {
+    const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    if (Number.isNaN(date.getTime())) return 'unknown';
+    const pad = (value) => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  };
   useEffect(() => {
     syncCalendar(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -108,22 +114,22 @@ const CalendarView = () => {
   const groupEventsByDate = (events) => {
     const grouped = {};
     events.forEach(event => {
-      const date = event.start ? event.start.split('T')[0] : 'unknown';
+      const date = toLocalDateKey(event.start);
       if (!grouped[date]) grouped[date] = [];
       grouped[date].push(event);
     });
     return grouped;
   };
 
-  const groupedEvents = groupEventsByDate(events);
   const now = new Date();
   const upcomingEvents = events.filter((event) => {
     const end = new Date(event.end || event.start);
     return !Number.isNaN(end.getTime()) && end >= now;
   });
-  const groupedUpcomingEvents = groupEventsByDate(upcomingEvents);
-  const sortedDateKeys = Object.keys(groupedUpcomingEvents).sort((a, b) => new Date(a) - new Date(b));
-  const today = new Date().toISOString().split('T')[0];
+
+  const groupedEvents = groupEventsByDate(upcomingEvents);
+  const sortedDateKeys = Object.keys(groupedEvents).sort((a, b) => new Date(a) - new Date(b));
+  const today = toLocalDateKey(new Date());
   const intelligenceSummary = calendarIntel?.summary
     || calendarIntel?.insight
     || calendarIntel?.insights
@@ -313,7 +319,7 @@ const CalendarView = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {groupedUpcomingEvents[today]?.length || 0}
+                  {groupedEvents[today]?.length || 0}
                 </p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   Today's Meetings
@@ -355,7 +361,7 @@ const CalendarView = () => {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(300px,0.75fr)]" data-testid="calendar-command-grid">
             <div className="space-y-6">
               {sortedDateKeys.map((date) => {
-                const dateEvents = groupedUpcomingEvents[date] || [];
+                const dateEvents = groupedEvents[date] || [];
                 return (
                 <div key={date}>
                   <h3 
@@ -444,8 +450,8 @@ const CalendarView = () => {
               </div>
               <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
                 <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Today at a glance</p>
-                  <div className="mt-3 space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  <div className="flex items-center justify-between"><span>Meetings today</span><strong style={{ color: 'var(--text-primary)' }}>{groupedUpcomingEvents[today]?.length || 0}</strong></div>
+                <div className="mt-3 space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <div className="flex items-center justify-between"><span>Meetings today</span><strong style={{ color: 'var(--text-primary)' }}>{groupedEvents[today]?.length || 0}</strong></div>
                   <div className="flex items-center justify-between"><span>Important events</span><strong style={{ color: 'var(--text-primary)' }}>{upcomingEvents.filter((event) => event.importance === 'high').length}</strong></div>
                   <div className="flex items-center justify-between"><span>Events with attendees</span><strong style={{ color: 'var(--text-primary)' }}>{upcomingEvents.filter((event) => event.attendees?.length > 0).length}</strong></div>
                 </div>

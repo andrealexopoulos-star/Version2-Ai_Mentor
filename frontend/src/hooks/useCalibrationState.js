@@ -596,7 +596,7 @@ export const useCalibrationState = () => {
       }
       setWowSummary(updated);
     }
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 800));
     setIsSubmitting(true);
     try {
       const payload = { step: 2, confirmed_summary: true };

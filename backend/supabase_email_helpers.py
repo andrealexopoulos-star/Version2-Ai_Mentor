@@ -88,7 +88,7 @@ async def find_email_by_graph_message_id_supabase(
     user_id: str,
     graph_message_id: str,
 ) -> Optional[Dict[str, Any]]:
-    """Find a user's email by provider message ID."""
+    """Find a specific email by provider message id for a user."""
     try:
         result = (
             supabase_client

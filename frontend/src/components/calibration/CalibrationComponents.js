@@ -120,14 +120,18 @@ const PrivacyModal = ({ onClose }) => (
  *  Phase 1: Intro with Privacy link + Continue button
  *  Phase 2: Website URL scan form
  */
-export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmit, onManualFallback, isSubmitting, error }) => {
-  const [phase, setPhase] = useState('intro'); // intro | scan
+export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmit, onManualFallback, isSubmitting, error, initialPhase = 'intro' }) => {
+  const [phase, setPhase] = useState(initialPhase); // intro | scan
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [handles, setHandles] = useState({ linkedin: '', twitter: '', instagram: '', facebook: '' });
   const [savingHandles, setSavingHandles] = useState(false);
   const [handlesSaved, setHandlesSaved] = useState(false);
 
   const hasAnyHandle = Object.values(handles).some(v => v.trim());
+
+  useEffect(() => {
+    setPhase(initialPhase === 'scan' ? 'scan' : 'intro');
+  }, [initialPhase]);
 
   const saveHandles = async () => {
     if (!hasAnyHandle) return;
