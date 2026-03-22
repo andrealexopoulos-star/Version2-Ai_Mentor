@@ -1971,7 +1971,9 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
     return {
         "status": "synced",
         "events_synced": len(events),
-        "message": f"Calendar synced: {len(events)} events"
+        "message": f"Calendar synced: {len(events)} events",
+        "synced_at": datetime.now(timezone.utc).isoformat(),
+        "date_range": events_response.get("date_range"),
     }
 
 
