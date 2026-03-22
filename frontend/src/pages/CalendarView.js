@@ -18,6 +18,7 @@ const CalendarView = () => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [calendarMeta, setCalendarMeta] = useState(null);
   const [draftSaving, setDraftSaving] = useState(false);
   const [advisorDraft, setAdvisorDraft] = useState(() => {
     let initial = location.state?.advisorFollowUp || null;
@@ -72,6 +73,11 @@ const CalendarView = () => {
         apiClient.get('/outlook/intelligence').catch(() => ({ data: {} })),
       ]);
       setEvents(eventsRes.data?.events || []);
+      setCalendarMeta({
+        total: eventsRes.data?.total ?? 0,
+        dateRange: eventsRes.data?.date_range || null,
+        fetchedAt: new Date().toISOString(),
+      });
       setCalendarIntel(intelRes.data || null);
     } catch (error) {
       setLoadError(error?.response?.data?.detail || error?.message || 'Failed to fetch calendar data');
@@ -86,6 +92,14 @@ const CalendarView = () => {
       if (!silent) toast.info('Syncing calendar...');
       const response = await apiClient.post('/outlook/calendar/sync');
       if (!silent) toast.success(`Calendar synced: ${response.data.events_synced} events`);
+      if (response?.data?.synced_at || response?.data?.date_range) {
+        setCalendarMeta((prev) => ({
+          ...(prev || {}),
+          total: response.data.events_synced ?? prev?.total ?? 0,
+          dateRange: response.data.date_range || prev?.dateRange || null,
+          syncedAt: response.data.synced_at || prev?.syncedAt || null,
+        }));
+      }
       await fetchCalendarData();
     } catch (error) {
       if (!silent) {
@@ -474,6 +488,23 @@ const CalendarView = () => {
                   <div className="flex items-center justify-between"><span>Events with attendees</span><strong style={{ color: 'var(--text-primary)' }}>{upcomingEvents.filter((event) => event.attendees?.length > 0).length}</strong></div>
                 </div>
               </div>
+              {calendarMeta && (
+                <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
+                  <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Data freshness</p>
+                  <div className="mt-3 space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="flex items-center justify-between"><span>Events fetched</span><strong style={{ color: 'var(--text-primary)' }}>{calendarMeta.total ?? 0}</strong></div>
+                    <div className="flex items-center justify-between"><span>Last sync</span><strong style={{ color: 'var(--text-primary)' }}>{calendarMeta.syncedAt ? new Date(calendarMeta.syncedAt).toLocaleString('en-AU') : (calendarMeta.fetchedAt ? new Date(calendarMeta.fetchedAt).toLocaleString('en-AU') : 'Unknown')}</strong></div>
+                    {calendarMeta.dateRange?.start && calendarMeta.dateRange?.end && (
+                      <div className="flex items-start justify-between gap-4">
+                        <span>Window</span>
+                        <strong style={{ color: 'var(--text-primary)', textAlign: 'right' }}>
+                          {new Date(calendarMeta.dateRange.start).toLocaleDateString('en-AU')} - {new Date(calendarMeta.dateRange.end).toLocaleDateString('en-AU')}
+                        </strong>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               {intelligenceSummary && (
                 <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }} data-testid="calendar-intelligence-summary">
                   <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Calendar intelligence</p>

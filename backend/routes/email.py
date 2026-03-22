@@ -188,6 +188,9 @@ def _normalize_priority_response(priority_analysis: Dict[str, Any], recent_email
                 enriched.append({
                     **item,
                     "email_id": email.get("id"),
+                    "graph_message_id": email.get("graph_message_id"),
+                    "thread_id": email.get("thread_id"),
+                    "web_link": email.get("web_link"),
                     "from": email.get("from_name") or email.get("from_address"),
                     "subject": email.get("subject"),
                     "received": email.get("received_date"),
@@ -1792,7 +1795,7 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
         deleted_jobs = await delete_user_sync_jobs_supabase(get_sb(), user_id)
         logger.info(f"Deleted {deleted_jobs} sync jobs for user {user_id}")
 
-        # Delete mirrored calendar events so stale history cannot appear after disconnect.
+        # Delete mirrored calendar events to prevent stale entries after reconnect.
         deleted_calendar_events = await delete_user_calendar_events_supabase(get_sb(), user_id)
         logger.info(f"Deleted {deleted_calendar_events} calendar events for user {user_id}")
         
@@ -1967,7 +1970,9 @@ async def sync_calendar(current_user: dict = Depends(get_current_user)):
     return {
         "status": "synced",
         "events_synced": len(events),
-        "message": f"Calendar synced: {len(events)} events"
+        "message": f"Calendar synced: {len(events)} events",
+        "synced_at": datetime.now(timezone.utc).isoformat(),
+        "date_range": events_response.get("date_range"),
     }
 
 

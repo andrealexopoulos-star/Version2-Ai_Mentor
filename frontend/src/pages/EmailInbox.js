@@ -29,6 +29,8 @@ const EmailInbox = () => {
   const [loadingReplies, setLoadingReplies] = useState(false);
   const [expandedSection, setExpandedSection] = useState('high');
   const [reclassifying, setReclassifying] = useState(null); // email_id being reclassified
+  const [taskingEmail, setTaskingEmail] = useState(null);
+  const [dismissingEmail, setDismissingEmail] = useState(null);
 
   useEffect(() => {
     checkConnections();
@@ -270,6 +272,62 @@ const EmailInbox = () => {
     setReclassifying(null);
   };
 
+  const createEmailTask = async (email) => {
+    if (!email?.email_id || !activeProvider) return;
+    setTaskingEmail(email.email_id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { error } = await supabase.from('email_tasks').insert({
+        user_id: session.user.id,
+        provider: activeProvider,
+        email_id: email.email_id,
+        task_text: email.suggested_action || `Respond to: ${email.subject || 'Email'}`,
+        status: 'pending',
+      });
+      if (error) throw error;
+      toast.success('Task created from email');
+    } catch (error) {
+      toast.error(error?.message || 'Failed to create task');
+    } finally {
+      setTaskingEmail(null);
+    }
+  };
+
+  const dismissEmail = async (email) => {
+    if (!email?.email_id || !activeProvider) return;
+    setDismissingEmail(email.email_id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { error } = await supabase.from('priority_inbox')
+        .update({ user_override: 'low' })
+        .eq('user_id', session.user.id)
+        .eq('provider', activeProvider)
+        .eq('email_id', email.email_id);
+      if (error) throw error;
+      setPriorityAnalysis(prev => {
+        if (!prev) return prev;
+        const allEmails = [
+          ...(prev.high_priority || []),
+          ...(prev.medium_priority || []),
+          ...(prev.low_priority || []),
+        ].map(item => item.email_id === email.email_id ? { ...item, user_override: 'low' } : item);
+        return {
+          ...prev,
+          high_priority: allEmails.filter(item => (item.user_override || item.priority_level) === 'high'),
+          medium_priority: allEmails.filter(item => (item.user_override || item.priority_level) === 'medium'),
+          low_priority: allEmails.filter(item => (item.user_override || item.priority_level) === 'low'),
+        };
+      });
+      toast.success('Dismissed to low priority');
+    } catch (error) {
+      toast.error(error?.message || 'Failed to dismiss email');
+    } finally {
+      setDismissingEmail(null);
+    }
+  };
+
   const runPriorityAnalysis = async () => {
     try {
       setAnalyzing(true);
@@ -422,6 +480,32 @@ const EmailInbox = () => {
                 Open
               </Button>
             )}
+            <Button
+              size="sm"
+              type="button"
+              variant="outline"
+              disabled={taskingEmail === email.email_id}
+              style={{ padding: '4px 10px' }}
+              onClick={(event) => {
+                event.stopPropagation();
+                createEmailTask(email);
+              }}
+            >
+              {taskingEmail === email.email_id ? 'Task…' : 'Task'}
+            </Button>
+            <Button
+              size="sm"
+              type="button"
+              variant="outline"
+              disabled={dismissingEmail === email.email_id}
+              style={{ padding: '4px 10px' }}
+              onClick={(event) => {
+                event.stopPropagation();
+                dismissEmail(email);
+              }}
+            >
+              {dismissingEmail === email.email_id ? '…' : 'Dismiss'}
+            </Button>
             <Button size="sm" type="button" className="text-xs"
               style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', padding: '4px 10px' }}
               onClick={(e) => { e.stopPropagation(); fetchReplySuggestions(email.email_id); }}>
