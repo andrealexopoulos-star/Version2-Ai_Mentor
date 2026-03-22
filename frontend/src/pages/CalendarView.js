@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar as CalendarIcon, RefreshCw, Users, Clock, 
-  MapPin, Loader2, Video, TrendingUp, AlertCircle
+  MapPin, TrendingUp
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 
@@ -37,6 +37,28 @@ const CalendarView = () => {
     };
   });
 
+  const toLocalDateTimeValue = (isoString) => {
+    if (!isoString) return '';
+    const dt = new Date(isoString);
+    if (Number.isNaN(dt.getTime())) return '';
+    const pad = (value) => String(value).padStart(2, '0');
+    return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  };
+
+  const fromLocalDateTimeValue = (value) => {
+    if (!value) return null;
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return null;
+    return dt.toISOString();
+  };
+
+  const toLocalDateKey = (dateInput) => {
+    const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    if (Number.isNaN(date.getTime())) return 'unknown';
+    const pad = (value) => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  };
+
   useEffect(() => {
     syncCalendar(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -45,7 +67,7 @@ const CalendarView = () => {
     try {
       setLoading(true);
       const [eventsRes, intelRes] = await Promise.all([
-        apiClient.get('/outlook/calendar/events').catch(() => ({ data: { events: [] } })),
+        apiClient.get('/outlook/calendar/events?days_back=0&days_ahead=30').catch(() => ({ data: { events: [] } })),
         apiClient.get('/outlook/intelligence').catch(() => ({ data: {} }))
       ]);
       setEvents(eventsRes.data?.events || []);
@@ -93,16 +115,22 @@ const CalendarView = () => {
   const groupEventsByDate = (events) => {
     const grouped = {};
     events.forEach(event => {
-      const date = event.start ? event.start.split('T')[0] : 'unknown';
+      const date = toLocalDateKey(event.start);
       if (!grouped[date]) grouped[date] = [];
       grouped[date].push(event);
     });
     return grouped;
   };
 
-  const groupedEvents = groupEventsByDate(events);
+  const now = new Date();
+  const upcomingEvents = events.filter((event) => {
+    const end = new Date(event.end || event.start);
+    return !Number.isNaN(end.getTime()) && end >= now;
+  });
+
+  const groupedEvents = groupEventsByDate(upcomingEvents);
   const sortedDateKeys = Object.keys(groupedEvents).sort((a, b) => new Date(a) - new Date(b));
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateKey(new Date());
   const intelligenceSummary = calendarIntel?.summary
     || calendarIntel?.insight
     || calendarIntel?.insights
@@ -158,8 +186,12 @@ const CalendarView = () => {
                     Start
                     <input
                       type="datetime-local"
-                      value={advisorDraft.startAt ? advisorDraft.startAt.slice(0, 16) : ''}
-                      onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, startAt: new Date(event.target.value).toISOString() }))}
+                      value={toLocalDateTimeValue(advisorDraft.startAt)}
+                      onChange={(event) => {
+                        const next = fromLocalDateTimeValue(event.target.value);
+                        if (!next) return;
+                        setAdvisorDraft((prev) => ({ ...prev, startAt: next }));
+                      }}
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
                       style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
                       data-testid="calendar-advisor-draft-start"
@@ -169,8 +201,12 @@ const CalendarView = () => {
                     End
                     <input
                       type="datetime-local"
-                      value={advisorDraft.endAt ? advisorDraft.endAt.slice(0, 16) : ''}
-                      onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, endAt: new Date(event.target.value).toISOString() }))}
+                      value={toLocalDateTimeValue(advisorDraft.endAt)}
+                      onChange={(event) => {
+                        const next = fromLocalDateTimeValue(event.target.value);
+                        if (!next) return;
+                        setAdvisorDraft((prev) => ({ ...prev, endAt: next }));
+                      }}
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
                       style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
                       data-testid="calendar-advisor-draft-end"
@@ -240,10 +276,10 @@ const CalendarView = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {events.length}
+                  {upcomingEvents.length}
                 </p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Upcoming Events
+                  Upcoming Events (30 days)
                 </p>
               </div>
             </div>
@@ -262,7 +298,7 @@ const CalendarView = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {events.filter(e => e.attendees?.length > 0).length}
+                  {upcomingEvents.filter(e => e.attendees?.length > 0).length}
                 </p>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   With Attendees
@@ -300,7 +336,7 @@ const CalendarView = () => {
             <CognitiveMesh compact />
             <p style={{ color: 'var(--text-muted)' }}>Loading calendar...</p>
           </div>
-        ) : events.length === 0 ? (
+        ) : upcomingEvents.length === 0 ? (
           <div 
             className="text-center py-16 rounded-2xl"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
@@ -417,8 +453,8 @@ const CalendarView = () => {
                 <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Today at a glance</p>
                 <div className="mt-3 space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <div className="flex items-center justify-between"><span>Meetings today</span><strong style={{ color: 'var(--text-primary)' }}>{groupedEvents[today]?.length || 0}</strong></div>
-                  <div className="flex items-center justify-between"><span>Important events</span><strong style={{ color: 'var(--text-primary)' }}>{events.filter((event) => event.importance === 'high').length}</strong></div>
-                  <div className="flex items-center justify-between"><span>Events with attendees</span><strong style={{ color: 'var(--text-primary)' }}>{events.filter((event) => event.attendees?.length > 0).length}</strong></div>
+                  <div className="flex items-center justify-between"><span>Important events</span><strong style={{ color: 'var(--text-primary)' }}>{upcomingEvents.filter((event) => event.importance === 'high').length}</strong></div>
+                  <div className="flex items-center justify-between"><span>Events with attendees</span><strong style={{ color: 'var(--text-primary)' }}>{upcomingEvents.filter((event) => event.attendees?.length > 0).length}</strong></div>
                 </div>
               </div>
               {intelligenceSummary && (

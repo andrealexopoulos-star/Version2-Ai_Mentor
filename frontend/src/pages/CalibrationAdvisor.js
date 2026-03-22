@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import { useCalibrationState } from "../hooks/useCalibrationState";
 import { useSupabaseAuth } from "../context/SupabaseAuthContext";
 import { isPrivilegedUser } from "../lib/privilegedUser";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { apiClient } from "../lib/api";
 import {
   CalibrationLoading, WelcomeHandshake, ManualSummaryFallback,
@@ -22,7 +22,6 @@ import { ExecutiveCMOSnapshot, ForensicCalibrationUI } from "../components/calib
 import { SkipForward, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
-const CREAM = '#0F1720';
 const CHARCOAL = '#F4F7FA';
 const MUTED = '#9FB0C3';
 const CARD_BORDER = '#243140';
@@ -30,6 +29,7 @@ const CARD_BORDER = '#243140';
 const CalibrationAdvisor = () => {
   const cal = useCalibrationState();
   const { user, clearBootstrapCache } = useSupabaseAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [skipping, setSkipping] = useState(false);
 
@@ -54,7 +54,7 @@ const CalibrationAdvisor = () => {
     try {
       await apiClient.post('/calibration/skip');
       try { clearBootstrapCache(); } catch {}
-      window.location.href = '/advisor';
+      navigate('/advisor', { replace: true });
     } catch {
       setSkipping(false);
     }
@@ -70,7 +70,7 @@ const CalibrationAdvisor = () => {
     : null;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: CREAM }} data-testid="calibration-page">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--biqc-bg)' }} data-testid="calibration-page">
       <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       {tutorialKey && <CalibrationTutorial pageKey={tutorialKey} />}
@@ -114,7 +114,7 @@ const CalibrationAdvisor = () => {
       {cal.entry === "welcome" && (
         <WelcomeHandshake firstName={cal.firstName} websiteUrl={cal.websiteUrl} setWebsiteUrl={cal.setWebsiteUrl}
           onSubmit={cal.handleAuditSubmit} onManualFallback={() => cal.setEntry("manual_summary")}
-          isSubmitting={cal.isSubmitting} error={cal.error} />
+          isSubmitting={cal.isSubmitting} error={cal.error} initialPhase="scan" />
       )}
 
       {cal.entry === "manual_summary" && (

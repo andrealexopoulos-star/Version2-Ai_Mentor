@@ -34,6 +34,7 @@ from supabase_email_helpers import (
     delete_user_calendar_events_supabase,
     get_user_calendar_events_supabase,
     find_email_by_id_supabase,
+    find_email_by_graph_message_id_supabase,
     delete_user_sync_jobs_supabase,
 )
 from supabase_intelligence_helpers import (
@@ -2157,8 +2158,10 @@ async def suggest_email_reply(email_id: str, current_user: dict = Depends(get_cu
     user_id = current_user["id"]
     
     try:
-        # 1. Get the email from outlook_emails
+        # 1. Get the email from outlook_emails by internal id, then fallback to provider message id.
         email = await find_email_by_id_supabase(get_sb(), email_id)
+        if not email:
+            email = await find_email_by_graph_message_id_supabase(get_sb(), user_id, email_id)
         
         if not email or email.get("user_id") != user_id:
             raise HTTPException(status_code=404, detail="Email not found")
@@ -2183,7 +2186,11 @@ async def suggest_email_reply(email_id: str, current_user: dict = Depends(get_cu
                 items = analysis.get(level, [])
                 for item in items:
                     # Match by graph_message_id (preferred)
-                    if email_graph_id and item.get("id") == email_graph_id:
+                    if email_graph_id and (
+                        item.get("id") == email_graph_id
+                        or item.get("email_id") == email_graph_id
+                        or item.get("graph_message_id") == email_graph_id
+                    ):
                         priority_context = item
                         priority_level = level.replace("_priority", "")
                         break
@@ -2199,8 +2206,16 @@ async def suggest_email_reply(email_id: str, current_user: dict = Depends(get_cu
             
             # Extract reasoning if found
             if priority_context:
-                why_reasoning = priority_context.get("why", "")
-                action_intent = priority_context.get("action", "")
+                why_reasoning = (
+                    priority_context.get("why")
+                    or priority_context.get("reason")
+                    or ""
+                )
+                action_intent = (
+                    priority_context.get("action")
+                    or priority_context.get("suggested_action")
+                    or ""
+                )
         
         # 4. Get business profile for context
         profile = await get_business_profile_supabase(get_sb(), user_id)
@@ -2294,7 +2309,13 @@ Return ONLY valid JSON in this exact format:
             "advisor_rationale": result.get("advisor_rationale", ""),
             "email_id": email_id,
             "priority_level": priority_level,
-            "matched_by": "graph_id" if priority_context and priority_context.get("id") == email.get("graph_message_id") else "subject_from" if priority_context else "none"
+            "matched_by": "graph_id" if priority_context and (
+                priority_context.get("id") == email.get("graph_message_id")
+                or priority_context.get("email_id") == email.get("graph_message_id")
+                or priority_context.get("graph_message_id") == email.get("graph_message_id")
+            ) else "subject_from" if priority_context else "none",
+            "original_subject": email.get("subject", ""),
+            "from": email.get("from_name") or email.get("from_address") or "",
         }
         
     except HTTPException:

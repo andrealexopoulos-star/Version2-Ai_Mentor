@@ -83,6 +83,28 @@ async def find_email_by_id_supabase(supabase_client, email_id: str) -> Optional[
         return None
 
 
+async def find_email_by_graph_message_id_supabase(
+    supabase_client,
+    user_id: str,
+    graph_message_id: str,
+) -> Optional[Dict[str, Any]]:
+    """Find a specific email by provider message id for a user."""
+    try:
+        result = (
+            supabase_client
+            .table("outlook_emails")
+            .select("*")
+            .eq("user_id", user_id)
+            .eq("graph_message_id", graph_message_id)
+            .limit(1)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+    except Exception as e:
+        logger.error(f"Error finding email by graph_message_id: {e}")
+        return None
+
+
 # =============================================
 # SYNC JOB OPERATIONS
 # =============================================
