@@ -17,15 +17,7 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
-const PERPLEXITY_API_KEY =
-  Deno.env.get("PERPLEXITY_API_KEY") ||
-  Deno.env.get("PERPLEXITY_API") ||
-  Deno.env.get("Perplexity_API") ||
-  "";
-
-if (!Deno.env.get("PERPLEXITY_API_KEY") && (Deno.env.get("PERPLEXITY_API") || Deno.env.get("Perplexity_API"))) {
-  console.warn("[market-analysis-ai] Using legacy Perplexity env var. Please migrate to PERPLEXITY_API_KEY.");
-}
+const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

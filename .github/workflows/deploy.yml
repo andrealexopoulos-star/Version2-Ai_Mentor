@@ -229,6 +229,6 @@ jobs:
           curl -s -X PATCH "https://api.supabase.com/v1/projects/vwwandhoydemcybltoxz/config/auth" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{"site_url":"https://biqc.thestrategysquad.com","additional_redirect_urls":"https://biqc.thestrategysquad.com/**,https://biqc.thestrategysquad.com/auth/callback"}' \
+            -d '{"site_url":"https://app.biqc.ai","additional_redirect_urls":"https://app.biqc.ai/**,https://app.biqc.ai/auth/callback,https://biqc.ai/**,https://www.biqc.ai/**,https://biqc.thestrategysquad.com/**,https://biqc.thestrategysquad.com/auth/callback"}' \
             | grep -o '"site_url":"[^"]*"' | head -1
           echo "Supabase site_url locked to production ✓"
