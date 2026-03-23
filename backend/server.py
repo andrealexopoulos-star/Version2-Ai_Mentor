@@ -308,8 +308,14 @@ api_router.include_router(calibration_router)
 from routes.email import router as email_router
 api_router.include_router(email_router)
 
-from routes.health import router as health_router
+from routes.health import router as health_router, warmup_edge_functions
 api_router.include_router(health_router)
+
+
+@api_router.get("/warmup")
+async def warmup_compat():
+    """Backwards-compatible alias for legacy /api/warmup callers."""
+    return await warmup_edge_functions()
 
 from routes.intelligence_actions import router as intelligence_actions_router
 api_router.include_router(intelligence_actions_router)
