@@ -34,12 +34,14 @@ const RegisterSupabase = () => {
   const [captchaStatusReason, setCaptchaStatusReason] = useState('');
   const recaptchaSiteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
   const recaptchaAction = 'register';
+  const recaptchaMode = String(process.env.REACT_APP_RECAPTCHA_MODE || 'auto').toLowerCase();
+  const recaptchaIsV2 = recaptchaMode === 'v2' || recaptchaMode === 'checkbox';
   const recaptchaEnabled = Boolean(recaptchaSiteKey);
   const recaptchaStrict = String(process.env.REACT_APP_RECAPTCHA_STRICT || '').toLowerCase() === 'true';
   const recaptchaOperational = recaptchaEnabled && !captchaUnavailable;
   const [fallbackChallenge, setFallbackChallenge] = useState(null);
   const [fallbackAnswer, setFallbackAnswer] = useState('');
-  const fallbackRequired = recaptchaEnabled && captchaUnavailable && !recaptchaStrict;
+  const fallbackRequired = !recaptchaEnabled && !recaptchaStrict;
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', full_name: '', company_name: '', industry: ''
   });
@@ -93,6 +95,10 @@ const RegisterSupabase = () => {
     try {
       if (recaptchaOperational) {
         if (!captchaToken) {
+          if (recaptchaIsV2) {
+            toast.error('Please complete the captcha checkbox before creating your account.');
+            return;
+          }
           if (recaptchaStrict) {
             toast.error('Please complete the captcha verification.');
             return;
@@ -165,6 +171,10 @@ const RegisterSupabase = () => {
         return;
       }
     } else if (recaptchaOperational && !captchaToken) {
+      if (recaptchaIsV2) {
+        toast.error('Please complete the captcha checkbox first.');
+        return;
+      }
       if (recaptchaStrict) {
         toast.error('Please complete the captcha verification first.');
         return;

@@ -189,12 +189,6 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
       try {
         const runConfiguredMode = async (provider) => {
           if (configuredMode === MODE_V2) {
-            // Operational safety: keys are often misconfigured as v2 while
-            // actual site keys are v3. Try v3 first, then fall back to v2.
-            try {
-              await tryV3(provider);
-              return true;
-            } catch {}
             await tryV2(provider);
             return true;
           }
@@ -229,12 +223,6 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
 
         // Auto provider/mode: try standard first, then enterprise.
         if (configuredMode === MODE_V2) {
-          // Resilience: many production incidents are caused by a v3 site key
-          // being paired with MODE_V2. Try v3 first, then gracefully fall back.
-          try {
-            await tryV3(PROVIDER_STANDARD);
-            return;
-          } catch {}
           try {
             await tryV2(PROVIDER_STANDARD);
             return;
