@@ -161,3 +161,14 @@ export function trackOnceForUser(eventName, userId, metadata = {}) {
     trackEvent(eventName, metadata);
   }
 }
+
+/**
+ * Dispatch an event to Google tag (gtag.js) when available.
+ * This is used for ad/checkout attribution events.
+ */
+export function trackGoogleTagEvent(eventName, params = {}) {
+  if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
+  try {
+    window.gtag('event', eventName, params);
+  } catch {}
+}

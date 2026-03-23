@@ -5,6 +5,7 @@ import { fontFamily } from '../design-system/tokens';
 import { apiClient } from '../lib/api';
 import { TIER_FEATURES } from '../config/tiers';
 import { toast } from 'sonner';
+import { trackGoogleTagEvent } from '../lib/analytics';
 
 export default function UpgradePage() {
   const navigate = useNavigate();
@@ -13,12 +14,29 @@ export default function UpgradePage() {
   const handleUpgrade = async () => {
     setLoading(true);
     try {
+      trackGoogleTagEvent('begin_checkout', {
+        plan_name: 'BIQc Foundation',
+        plan_tier: 'starter',
+        value: 349,
+        currency: 'AUD',
+      });
+      trackGoogleTagEvent('biqc_foundation_purchase_click', {
+        plan_name: 'BIQc Foundation',
+        value: 349,
+        currency: 'AUD',
+      });
+
       const res = await apiClient.post('/stripe/create-checkout-session', {
         tier: 'starter',
         success_url: `${window.location.origin}/upgrade/success`,
         cancel_url: `${window.location.origin}/upgrade`,
       });
       if (res.data?.url) {
+        trackGoogleTagEvent('biqc_foundation_checkout_redirect', {
+          plan_name: 'BIQc Foundation',
+          value: 349,
+          currency: 'AUD',
+        });
         window.location.href = res.data.url;
         return;
       }
