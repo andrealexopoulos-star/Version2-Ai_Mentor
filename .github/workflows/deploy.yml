@@ -35,6 +35,26 @@ jobs:
       - name: Install dependencies
         run: pip install -r backend/requirements.txt
 
+      - name: Pre-deploy iteration drift preflight
+        timeout-minutes: 2
+        run: >
+          python -m pytest
+          backend/tests/test_iteration14_onboarding.py
+          backend/tests/test_iteration15_fixes.py
+          backend/tests/test_iteration17_fact_resolution.py
+          backend/tests/test_iteration18_fact_authority.py
+          backend/tests/test_iteration19_bypass_violations.py
+          backend/tests/test_iteration153_launch_packaging.py
+          backend/tests/test_iteration155_calibration_benchmark_hardening.py
+          --tb=short -q --no-header --timeout=10 -x
+        env:
+          REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL != '' && secrets.REACT_APP_BACKEND_URL || env.BACKEND_BASE_URL }}
+          SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          JWT_SECRET_KEY: test-secret-key
+
       - name: Run backend tests
         timeout-minutes: 3
         run: python -m pytest backend/tests/ --tb=short -q --no-header --timeout=10 -x --ignore=backend/tests/test_iteration24_intelligence_pipeline.py --ignore=backend/tests/test_iteration58_admin_portal.py
