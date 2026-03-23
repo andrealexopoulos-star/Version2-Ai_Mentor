@@ -114,7 +114,7 @@ const LoginSupabase = () => {
           setLoginError('Please complete the captcha verification.');
           return;
         }
-        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken, action: 'login' });
+        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
       }
       const authResult = await signIn(formData.email, formData.password);
       setFailedAttempts(0);
@@ -162,7 +162,7 @@ const LoginSupabase = () => {
     setOauthLoading(true);
     try {
       if (recaptchaEnabled) {
-        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken, action: `oauth_${provider}` });
+        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
       }
       const result = await signInWithOAuth(provider);
       if (result?.url) {

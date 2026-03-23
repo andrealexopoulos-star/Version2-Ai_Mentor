@@ -47,7 +47,7 @@ const RegisterSupabase = () => {
     try {
       if (recaptchaEnabled) {
         if (!captchaToken) { toast.error('Please complete the captcha verification.'); return; }
-        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken, action: 'register' });
+        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
       }
       await signUp(formData.email, formData.password, {
         full_name: formData.full_name, company_name: formData.company_name, industry: formData.industry, role: 'user'
@@ -90,7 +90,7 @@ const RegisterSupabase = () => {
     trackActivationStep('signup_oauth_started', { provider });
     try {
       if (recaptchaEnabled) {
-        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken, action: `oauth_${provider}` });
+        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
       }
       const result = await signInWithOAuth(provider);
       if (result?.url) { window.location.href = result.url; }
