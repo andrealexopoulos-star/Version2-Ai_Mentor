@@ -78,6 +78,9 @@ jobs:
             REACT_APP_SUPABASE_ANON_KEY=${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
             REACT_APP_GOOGLE_CLIENT_ID=${{ secrets.REACT_APP_GOOGLE_CLIENT_ID }}
             REACT_APP_RECAPTCHA_SITE_KEY=${{ secrets.REACT_APP_RECAPTCHA_SITE_KEY }}
+            REACT_APP_RECAPTCHA_MODE=${{ secrets.REACT_APP_RECAPTCHA_MODE }}
+            REACT_APP_RECAPTCHA_PROVIDER=${{ secrets.REACT_APP_RECAPTCHA_PROVIDER }}
+            REACT_APP_RECAPTCHA_STRICT=${{ secrets.REACT_APP_RECAPTCHA_STRICT }}
 
       - name: Record frontend image tag
         run: echo "Frontend image = ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}"

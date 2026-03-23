@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const SCRIPT_ID = 'google-recaptcha-script';
 const MODE_AUTO = 'auto';
@@ -76,7 +76,7 @@ const ensureScript = (mode, provider, siteKey) => {
   });
 };
 
-const RecaptchaGate = ({ onTokenChange, testId = 'recaptcha-gate' }) => {
+const RecaptchaGate = ({ onTokenChange, onStatusChange, testId = 'recaptcha-gate' }) => {
   const siteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
   const configuredMode = normalizeMode(process.env.REACT_APP_RECAPTCHA_MODE);
   const configuredProvider = normalizeProvider(process.env.REACT_APP_RECAPTCHA_PROVIDER);
@@ -86,8 +86,14 @@ const RecaptchaGate = ({ onTokenChange, testId = 'recaptcha-gate' }) => {
   const activeModeRef = useRef(null);
   const activeProviderRef = useRef(null);
   const [error, setError] = useState('');
+  const reportStatus = useCallback((status, reason = '') => {
+    if (typeof onStatusChange === 'function') {
+      onStatusChange({ status, reason });
+    }
+  }, [onStatusChange]);
 
   useEffect(() => {
+    reportStatus('initializing');
     const clearRefresh = () => {
       if (refreshRef.current) {
         clearInterval(refreshRef.current);
@@ -132,6 +138,7 @@ const RecaptchaGate = ({ onTokenChange, testId = 'recaptcha-gate' }) => {
       activeProviderRef.current = provider;
       onTokenChange(token);
       setError('');
+      reportStatus('ready', `${provider}:v3`);
       startV3Refresh('auth', provider);
     };
 
@@ -150,11 +157,13 @@ const RecaptchaGate = ({ onTokenChange, testId = 'recaptcha-gate' }) => {
         'error-callback': () => onTokenChange(''),
       });
       setError('');
+      reportStatus('ready', `${provider}:v2`);
     };
 
     onTokenChange('');
     if (!siteKey) {
       setError('reCAPTCHA site key is missing');
+      reportStatus('error', 'site_key_missing');
       return;
     }
 
@@ -231,7 +240,10 @@ const RecaptchaGate = ({ onTokenChange, testId = 'recaptcha-gate' }) => {
           return;
         }
       } catch {
-        if (alive) setError('Failed to initialize reCAPTCHA. Check key type, provider (standard/enterprise), and allowed domains.');
+        if (alive) {
+          setError('Failed to initialize reCAPTCHA. Check key type, provider (standard/enterprise), and allowed domains.');
+          reportStatus('error', 'init_failed');
+        }
       }
     })();
 
@@ -243,7 +255,7 @@ const RecaptchaGate = ({ onTokenChange, testId = 'recaptcha-gate' }) => {
       clearRefresh();
       resetWidget();
     };
-  }, [configuredMode, configuredProvider, onTokenChange, siteKey]);
+  }, [configuredMode, configuredProvider, onTokenChange, reportStatus, siteKey]);
 
   return (
     <div className="space-y-2" data-testid={testId}>

@@ -22,9 +22,14 @@ const LoginSupabase = () => {
   const [lockoutUntil, setLockoutUntil] = useState(0);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaUnavailable, setCaptchaUnavailable] = useState(false);
+  const [captchaStatusReason, setCaptchaStatusReason] = useState('');
   const [fallbackChallenge, setFallbackChallenge] = useState(null);
   const [fallbackAnswer, setFallbackAnswer] = useState('');
   const recaptchaEnabled = Boolean(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
+  const recaptchaStrict = String(process.env.REACT_APP_RECAPTCHA_STRICT || '').toLowerCase() === 'true';
+  const recaptchaOperational = recaptchaEnabled && !captchaUnavailable;
+  const fallbackRequired = (recaptchaEnabled && captchaUnavailable && !recaptchaStrict) || (!recaptchaEnabled && failedAttempts >= 3);
 
   const buildFallbackChallenge = () => {
     const left = Math.floor(Math.random() * 8) + 2;
@@ -73,15 +78,27 @@ const LoginSupabase = () => {
   }, []);
 
   useEffect(() => {
-    if (recaptchaEnabled) return;
-    if (failedAttempts >= 3 && !fallbackChallenge) {
+    if (fallbackRequired && !fallbackChallenge) {
       setFallbackChallenge(buildFallbackChallenge());
+      return;
     }
-    if (failedAttempts < 3) {
+    if (!fallbackRequired && !recaptchaEnabled && failedAttempts < 3) {
       setFallbackChallenge(null);
       setFallbackAnswer('');
     }
-  }, [failedAttempts, fallbackChallenge, recaptchaEnabled]);
+  }, [failedAttempts, fallbackChallenge, fallbackRequired, recaptchaEnabled]);
+
+  const handleRecaptchaStatus = ({ status, reason }) => {
+    if (status === 'ready') {
+      setCaptchaUnavailable(false);
+      setCaptchaStatusReason('');
+      return;
+    }
+    if (status === 'error') {
+      setCaptchaUnavailable(true);
+      setCaptchaStatusReason(reason || 'init_failed');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -94,7 +111,11 @@ const LoginSupabase = () => {
       setLoginError('Please enter both email and password');
       return;
     }
-    if (!recaptchaEnabled && failedAttempts >= 3) {
+    if (recaptchaStrict && recaptchaEnabled && captchaUnavailable) {
+      setLoginError('Captcha service is unavailable. Please try again in a moment.');
+      return;
+    }
+    if (fallbackRequired) {
       if (!fallbackChallenge) {
         setFallbackChallenge(buildFallbackChallenge());
         setLoginError('Please complete the verification challenge.');
@@ -109,12 +130,24 @@ const LoginSupabase = () => {
     }
     setLoading(true);
     try {
-      if (recaptchaEnabled) {
+      if (recaptchaOperational) {
         if (!captchaToken) {
           setLoginError('Please complete the captcha verification.');
           return;
         }
-        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+        try {
+          await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+        } catch {
+          if (recaptchaStrict) {
+            setLoginError('Captcha verification failed. Please refresh and try again.');
+            return;
+          }
+          setCaptchaUnavailable(true);
+          setCaptchaToken('');
+          if (!fallbackChallenge) setFallbackChallenge(buildFallbackChallenge());
+          setLoginError('Captcha verification is unavailable. Solve the verification challenge and try again.');
+          return;
+        }
       }
       const authResult = await signIn(formData.email, formData.password);
       setFailedAttempts(0);
@@ -155,14 +188,36 @@ const LoginSupabase = () => {
 
   const handleOAuthSignIn = async (provider) => {
     const providerName = provider === 'google' ? 'Google' : 'Microsoft';
-    if (recaptchaEnabled && !captchaToken) {
+    if (recaptchaStrict && recaptchaEnabled && captchaUnavailable) {
+      toast.error('Captcha service is unavailable. Please try again shortly.');
+      return;
+    }
+    if (fallbackRequired) {
+      if (!fallbackChallenge || Number(fallbackAnswer) !== Number(fallbackChallenge.result)) {
+        toast.error('Please solve the verification challenge first.');
+        if (!fallbackChallenge) setFallbackChallenge(buildFallbackChallenge());
+        return;
+      }
+    } else if (recaptchaOperational && !captchaToken) {
       toast.error('Please complete the captcha verification first.');
       return;
     }
     setOauthLoading(true);
     try {
-      if (recaptchaEnabled) {
-        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+      if (recaptchaOperational) {
+        try {
+          await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+        } catch {
+          if (recaptchaStrict) {
+            toast.error('Captcha verification failed. Please refresh and retry.');
+            return;
+          }
+          setCaptchaUnavailable(true);
+          setCaptchaToken('');
+          if (!fallbackChallenge) setFallbackChallenge(buildFallbackChallenge());
+          toast.error('Captcha verification is unavailable. Solve the verification challenge to continue.');
+          return;
+        }
       }
       const result = await signInWithOAuth(provider);
       if (result?.url) {
@@ -302,9 +357,22 @@ const LoginSupabase = () => {
             )}
 
             {recaptchaEnabled && (
-              <RecaptchaGate onTokenChange={setCaptchaToken} testId="login-recaptcha" />
+              <RecaptchaGate
+                onTokenChange={setCaptchaToken}
+                onStatusChange={handleRecaptchaStatus}
+                testId="login-recaptcha"
+              />
             )}
-            {!recaptchaEnabled && failedAttempts >= 3 && fallbackChallenge && (
+            {recaptchaEnabled && captchaUnavailable && (
+              <div
+                className="rounded-xl border px-3 py-3 text-xs"
+                style={{ borderColor: '#334155', background: 'rgba(15,23,42,0.5)', color: '#94A3B8', fontFamily: fontFamily.body }}
+                data-testid="login-recaptcha-fallback-note"
+              >
+                Captcha widget unavailable ({captchaStatusReason || 'init_failed'}). Using backup verification challenge.
+              </div>
+            )}
+            {fallbackRequired && fallbackChallenge && (
               <div className="rounded-xl border px-3 py-3" style={{ borderColor: '#334155', background: 'rgba(15,23,42,0.5)' }} data-testid="login-fallback-captcha">
                 <p className="text-xs mb-2" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
                   Verification required: solve {fallbackChallenge.prompt}
