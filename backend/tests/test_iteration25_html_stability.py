@@ -37,6 +37,14 @@ class TestHtmlVsJsonStability:
     @pytest.fixture(scope="class")
     def auth_token(self):
         """Authenticate and get Supabase access token"""
+        if not BASE_URL:
+            pytest.skip("REACT_APP_BACKEND_URL not configured for endpoint stability tests")
+
+        try:
+            from supabase import create_client
+        except Exception as exc:
+            pytest.skip(f"Supabase client unavailable in test environment: {exc}")
+
         supabase_url = os.environ.get("SUPABASE_URL", os.environ.get("REACT_APP_SUPABASE_URL", ""))
         supabase_key = os.environ.get("SUPABASE_ANON_KEY", "")
 
@@ -44,7 +52,6 @@ class TestHtmlVsJsonStability:
             pytest.skip("Supabase URL/key unavailable in CI; skipping auth-required stability endpoints")
 
         try:
-            from supabase import create_client
             client = create_client(supabase_url, supabase_key)
             response = client.auth.sign_in_with_password({
                 "email": TEST_EMAIL,
@@ -220,6 +227,8 @@ class TestNoAuthEndpoints:
 
     def test_health_check_returns_json(self):
         """GET /api/health returns JSON"""
+        if not BASE_URL:
+            pytest.skip("REACT_APP_BACKEND_URL not configured for endpoint stability tests")
         url = f"{BASE_URL}/api/health"
         response = requests.get(url, headers={
             "Accept": "application/json",
