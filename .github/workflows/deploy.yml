@@ -253,7 +253,8 @@ jobs:
         run: |
           FRONTEND_OK=0
           for i in $(seq 1 12); do
-            FRONTEND_CODE=$(curl --silent --show-error --output /tmp/frontend_home.html --write-out "%{http_code}" https://biqc.ai)
+            FRONTEND_CODE=$(curl -L --silent --show-error --output /tmp/frontend_home.html --write-out "%{http_code}" https://www.biqc.ai || true)
+            FRONTEND_CODE=${FRONTEND_CODE:-000}
             echo "frontend probe attempt ${i}: HTTP ${FRONTEND_CODE}"
             if { [ "$FRONTEND_CODE" -eq 200 ] || [ "$FRONTEND_CODE" -eq 422 ]; } && grep -qi "BIQc" /tmp/frontend_home.html; then
               FRONTEND_OK=1
