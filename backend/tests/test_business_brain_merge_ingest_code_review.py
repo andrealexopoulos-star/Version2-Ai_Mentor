@@ -37,10 +37,13 @@ import pytest
 import json
 import os
 import re
+from pathlib import Path
+import shutil
 
 # Test file paths
-EDGE_FUNCTION_PATH = "/app/supabase/functions/business-brain-merge-ingest/index.ts"
-EDGE_FUNCTION_ALT_PATH = "/app/supabase_edge_functions/business-brain-merge-ingest/index.ts"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+EDGE_FUNCTION_PATH = REPO_ROOT / "supabase" / "functions" / "business-brain-merge-ingest" / "index.ts"
+EDGE_FUNCTION_ALT_PATH = REPO_ROOT / "supabase_edge_functions" / "business-brain-merge-ingest" / "index.ts"
 
 
 class TestBusinessBrainMergeIngestCodeReview:
@@ -200,8 +203,7 @@ class TestLiveEvidenceDocumentation:
         import subprocess
         
         # Check if supabase CLI is available
-        result = subprocess.run(["which", "supabase"], capture_output=True, text=True)
-        supabase_available = result.returncode == 0
+        supabase_available = shutil.which("supabase") is not None
         
         print("=" * 60)
         print("DEPLOYMENT STATUS")
