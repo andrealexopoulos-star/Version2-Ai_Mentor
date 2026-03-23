@@ -216,8 +216,8 @@ class TestCodeVerification:
     """Code-level verification of Priority Compression implementation"""
     
     def test_resolve_facts_before_ai_call(self):
-        """Verify resolve_facts() at line ~103 runs BEFORE AI call at line ~174"""
-        with open('/app/backend/routes/boardroom.py', 'r') as f:
+        """Verify resolve_facts() runs before the LLM invocation path."""
+        with open('/app/backend/routes/boardroom.py', 'r', encoding='utf-8') as f:
             content = f.read()
             lines = content.split('\n')
         
@@ -227,11 +227,15 @@ class TestCodeVerification:
         for i, line in enumerate(lines, 1):
             if 'resolve_facts' in line and 'await' in line and 'resolved_facts' in line:
                 resolve_facts_line = i
-            if 'chat.send_message' in line and 'await' in line:
+            if (
+                ('await llm_chat(' in line)
+                or ('await llm_trinity_chat(' in line)
+                or ('chat.send_message' in line and 'await' in line)
+            ):
                 ai_call_line = i
         
         assert resolve_facts_line is not None, "resolve_facts() call not found"
-        assert ai_call_line is not None, "AI chat.send_message() call not found"
+        assert ai_call_line is not None, "AI invocation call not found"
         assert resolve_facts_line < ai_call_line, \
             f"resolve_facts() at line {resolve_facts_line} should be BEFORE AI call at line {ai_call_line}"
         
