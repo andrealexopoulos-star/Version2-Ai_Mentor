@@ -153,12 +153,28 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
       activeProviderRef.current = provider;
       widgetRef.current = api.render(containerRef.current, {
         sitekey: siteKey,
-        callback: (token) => onTokenChange(token || ''),
-        'expired-callback': () => onTokenChange(''),
-        'error-callback': () => onTokenChange(''),
+        callback: (token) => {
+          const value = token || '';
+          onTokenChange(value);
+          if (value) {
+            setError('');
+            reportStatus('ready', `${provider}:v2`);
+          } else {
+            reportStatus('error', 'empty_token');
+          }
+        },
+        'expired-callback': () => {
+          onTokenChange('');
+          reportStatus('error', 'expired');
+        },
+        'error-callback': () => {
+          onTokenChange('');
+          reportStatus('error', 'widget_error');
+        },
       });
       setError('');
-      reportStatus('ready', `${provider}:v2`);
+      // v2 only becomes "ready" after callback receives a valid token.
+      reportStatus('initializing', `${provider}:v2_waiting_for_token`);
     };
 
     onTokenChange('');
@@ -173,6 +189,12 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
       try {
         const runConfiguredMode = async (provider) => {
           if (configuredMode === MODE_V2) {
+            // Operational safety: keys are often misconfigured as v2 while
+            // actual site keys are v3. Try v3 first, then fall back to v2.
+            try {
+              await tryV3(provider);
+              return true;
+            } catch {}
             await tryV2(provider);
             return true;
           }
