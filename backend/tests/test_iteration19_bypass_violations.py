@@ -26,19 +26,25 @@ import re
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
+
+def _read(path: str) -> str:
+    with open(path, 'r', encoding='utf-8') as f:
+        return f.read()
+
+
+def _extract_function(content: str, function_name: str) -> str:
+    pattern = rf'async def {function_name}\(.*?(?=^async def |^def |^@router|^@api_router|\Z)'
+    match = re.search(pattern, content, re.MULTILINE | re.DOTALL)
+    return match.group(0) if match else ""
+
 class TestCodeVerification:
     """Code-level verification of bypass violation fixes"""
     
     def test_no_ask_them_in_format_advisor_brain_prompt(self):
         """V1: format_advisor_brain_prompt does NOT contain 'ASK THEM'"""
-        with open('/app/backend/server.py', 'r') as f:
-            content = f.read()
-        
-        # Find the format_advisor_brain_prompt function
-        match = re.search(r'def format_advisor_brain_prompt\(.*?^def ', content, re.MULTILINE | re.DOTALL)
-        assert match, "format_advisor_brain_prompt function not found"
-        
-        func_content = match.group(0)
+        content = _read('/app/backend/routes/profile.py')
+        func_content = _extract_function(content, 'format_advisor_brain_prompt')
+        assert func_content, "format_advisor_brain_prompt function not found"
         
         # Check for banned phrases
         assert 'ASK THEM' not in func_content, "Found 'ASK THEM' in format_advisor_brain_prompt"
@@ -47,14 +53,9 @@ class TestCodeVerification:
     
     def test_format_advisor_brain_prompt_reads_known_facts_prompt(self):
         """V1: format_advisor_brain_prompt reads known_facts_prompt from context"""
-        with open('/app/backend/server.py', 'r') as f:
-            content = f.read()
-        
-        # Find the function
-        match = re.search(r'def format_advisor_brain_prompt\(.*?^def ', content, re.MULTILINE | re.DOTALL)
-        assert match, "format_advisor_brain_prompt function not found"
-        
-        func_content = match.group(0)
+        content = _read('/app/backend/routes/profile.py')
+        func_content = _extract_function(content, 'format_advisor_brain_prompt')
+        assert func_content, "format_advisor_brain_prompt function not found"
         
         # Check that it reads known_facts_prompt from context
         assert "known_facts_prompt = context.get" in func_content or "context.get('known_facts_prompt'" in func_content or 'context.get("known_facts_prompt"' in func_content, \
@@ -63,14 +64,9 @@ class TestCodeVerification:
     
     def test_format_advisor_brain_prompt_uses_not_yet_known_fallback(self):
         """V1: format_advisor_brain_prompt uses 'Not yet known' as fallback"""
-        with open('/app/backend/server.py', 'r') as f:
-            content = f.read()
-        
-        # Find the function
-        match = re.search(r'def format_advisor_brain_prompt\(.*?^def ', content, re.MULTILINE | re.DOTALL)
-        assert match, "format_advisor_brain_prompt function not found"
-        
-        func_content = match.group(0)
+        content = _read('/app/backend/routes/profile.py')
+        func_content = _extract_function(content, 'format_advisor_brain_prompt')
+        assert func_content, "format_advisor_brain_prompt function not found"
         
         # Check that it uses 'Not yet known' as fallback
         assert 'Not yet known' in func_content, "format_advisor_brain_prompt does not use 'Not yet known' as fallback"
@@ -78,8 +74,7 @@ class TestCodeVerification:
     
     def test_business_profile_js_uses_context_endpoint(self):
         """V2: BusinessProfile.js calls /api/business-profile/context"""
-        with open('/app/frontend/src/pages/BusinessProfile.js', 'r') as f:
-            content = f.read()
+        content = _read('/app/frontend/src/pages/BusinessProfile.js')
         
         # Must use /business-profile/context
         assert '/business-profile/context' in content, "BusinessProfile.js does not call /business-profile/context"
@@ -96,8 +91,7 @@ class TestCodeVerification:
     
     def test_settings_js_uses_context_endpoint(self):
         """V3: Settings.js calls /api/business-profile/context"""
-        with open('/app/frontend/src/pages/Settings.js', 'r') as f:
-            content = f.read()
+        content = _read('/app/frontend/src/pages/Settings.js')
         
         # Must use /business-profile/context
         assert '/business-profile/context' in content, "Settings.js does not call /business-profile/context"
@@ -113,35 +107,23 @@ class TestCodeVerification:
     
     def test_soundboard_chat_imports_fact_resolution(self):
         """V4: soundboard_chat imports from fact_resolution"""
-        with open('/app/backend/server.py', 'r') as f:
-            content = f.read()
+        content = _read('/app/backend/routes/soundboard.py')
+        func_content = _extract_function(content, 'soundboard_chat')
+        assert func_content, "soundboard_chat function not found"
         
-        # Find soundboard_chat function
-        match = re.search(r'async def soundboard_chat\(.*?^async def ', content, re.MULTILINE | re.DOTALL)
-        if not match:
-            match = re.search(r'async def soundboard_chat\(.*?^@api_router', content, re.MULTILINE | re.DOTALL)
-        assert match, "soundboard_chat function not found"
-        
-        func_content = match.group(0)
-        
-        # Check imports
-        assert 'from fact_resolution import' in func_content, "soundboard_chat does not import from fact_resolution"
-        assert 'resolve_facts' in func_content, "soundboard_chat does not import resolve_facts"
-        assert 'build_known_facts_prompt' in func_content, "soundboard_chat does not import build_known_facts_prompt"
-        print("PASS: soundboard_chat imports from fact_resolution")
+        # Imports can be module-level; usage must be in function body.
+        assert 'from fact_resolution import' in content, "soundboard module does not import from fact_resolution"
+        assert 'resolve_facts' in content, "soundboard module missing resolve_facts reference"
+        assert 'build_known_facts_prompt' in content, "soundboard module missing build_known_facts_prompt reference"
+        assert 'resolve_facts' in func_content, "soundboard_chat does not use resolve_facts"
+        assert 'build_known_facts_prompt' in func_content, "soundboard_chat does not use build_known_facts_prompt"
+        print("PASS: soundboard_chat uses fact_resolution imports")
     
     def test_soundboard_chat_injects_facts_into_system_message(self):
         """V4: soundboard_chat injects facts_prompt into system_message"""
-        with open('/app/backend/server.py', 'r') as f:
-            content = f.read()
-        
-        # Find soundboard_chat function
-        match = re.search(r'async def soundboard_chat\(.*?^async def ', content, re.MULTILINE | re.DOTALL)
-        if not match:
-            match = re.search(r'async def soundboard_chat\(.*?^@api_router', content, re.MULTILINE | re.DOTALL)
-        assert match, "soundboard_chat function not found"
-        
-        func_content = match.group(0)
+        content = _read('/app/backend/routes/soundboard.py')
+        func_content = _extract_function(content, 'soundboard_chat')
+        assert func_content, "soundboard_chat function not found"
         
         # Check that facts_prompt is built
         assert 'facts_prompt = build_known_facts_prompt' in func_content, "soundboard_chat does not build facts_prompt"
@@ -158,16 +140,9 @@ class TestCodeVerification:
     
     def test_generate_checklist_uses_advisor_pattern(self):
         """V7: generate_checklist uses build_advisor_context + format_advisor_brain_prompt"""
-        with open('/app/backend/server.py', 'r') as f:
-            content = f.read()
-        
-        # Find generate_checklist function
-        match = re.search(r'async def generate_checklist\(.*?^async def ', content, re.MULTILINE | re.DOTALL)
-        if not match:
-            match = re.search(r'async def generate_checklist\(.*?^@api_router', content, re.MULTILINE | re.DOTALL)
-        assert match, "generate_checklist function not found"
-        
-        func_content = match.group(0)
+        content = _read('/app/backend/routes/generation.py')
+        func_content = _extract_function(content, 'generate_checklist')
+        assert func_content, "generate_checklist function not found"
         
         # Check that it uses build_advisor_context
         assert 'build_advisor_context' in func_content, "generate_checklist does not use build_advisor_context"
@@ -179,16 +154,9 @@ class TestCodeVerification:
     
     def test_generate_action_plan_uses_advisor_pattern(self):
         """V7: generate_action_plan uses build_advisor_context + format_advisor_brain_prompt"""
-        with open('/app/backend/server.py', 'r') as f:
-            content = f.read()
-        
-        # Find generate_action_plan function
-        match = re.search(r'async def generate_action_plan\(.*?^async def ', content, re.MULTILINE | re.DOTALL)
-        if not match:
-            match = re.search(r'async def generate_action_plan\(.*?^@api_router', content, re.MULTILINE | re.DOTALL)
-        assert match, "generate_action_plan function not found"
-        
-        func_content = match.group(0)
+        content = _read('/app/backend/routes/generation.py')
+        func_content = _extract_function(content, 'generate_action_plan')
+        assert func_content, "generate_action_plan function not found"
         
         # Check that it uses build_advisor_context
         assert 'build_advisor_context' in func_content, "generate_action_plan does not use build_advisor_context"
@@ -200,16 +168,9 @@ class TestCodeVerification:
     
     def test_boardroom_respond_imports_fact_resolution(self):
         """V6: boardroom_respond imports from fact_resolution"""
-        with open('/app/backend/server.py', 'r') as f:
-            content = f.read()
-        
-        # Find boardroom_respond function
-        match = re.search(r'async def boardroom_respond\(.*?^async def ', content, re.MULTILINE | re.DOTALL)
-        if not match:
-            match = re.search(r'async def boardroom_respond\(.*?^@api_router', content, re.MULTILINE | re.DOTALL)
-        assert match, "boardroom_respond function not found"
-        
-        func_content = match.group(0)
+        content = _read('/app/backend/routes/boardroom.py')
+        func_content = _extract_function(content, 'boardroom_respond')
+        assert func_content, "boardroom_respond function not found"
         
         # Check imports
         assert 'from fact_resolution import' in func_content, "boardroom_respond does not import from fact_resolution"
@@ -219,16 +180,9 @@ class TestCodeVerification:
     
     def test_boardroom_respond_injects_facts(self):
         """V6: boardroom_respond injects resolved facts into system_prompt"""
-        with open('/app/backend/server.py', 'r') as f:
-            content = f.read()
-        
-        # Find boardroom_respond function
-        match = re.search(r'async def boardroom_respond\(.*?^async def ', content, re.MULTILINE | re.DOTALL)
-        if not match:
-            match = re.search(r'async def boardroom_respond\(.*?^@api_router', content, re.MULTILINE | re.DOTALL)
-        assert match, "boardroom_respond function not found"
-        
-        func_content = match.group(0)
+        content = _read('/app/backend/routes/boardroom.py')
+        func_content = _extract_function(content, 'boardroom_respond')
+        assert func_content, "boardroom_respond function not found"
         
         # Check that facts_prompt is built
         assert 'facts_prompt = build_known_facts_prompt' in func_content, "boardroom_respond does not build facts_prompt"
