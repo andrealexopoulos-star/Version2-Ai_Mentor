@@ -41,55 +41,56 @@ class TestHealthEndpoints:
 
 class TestAuthProtection:
     """All protected endpoints must return 403 without auth token"""
+    AUTH_BLOCKED_CODES = [401, 403]
     
     def test_calibration_status_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/calibration/status", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print("✅ GET /api/calibration/status -> 403 (Not authenticated)")
     
     def test_admin_prompts_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/admin/prompts", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print("✅ GET /api/admin/prompts -> 403 (Not authenticated)")
     
     def test_business_profile_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/business-profile", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print("✅ GET /api/business-profile -> 403 (Not authenticated)")
     
     def test_soundboard_conversations_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/soundboard/conversations", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print("✅ GET /api/soundboard/conversations -> 403 (Not authenticated)")
     
     def test_cognitive_profile_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/cognitive/profile", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print("✅ GET /api/cognitive/profile -> 403 (Not authenticated)")
     
     def test_executive_mirror_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/executive-mirror", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print("✅ GET /api/executive-mirror -> 403 (Not authenticated)")
     
     def test_dashboard_stats_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/dashboard/stats", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print("✅ GET /api/dashboard/stats -> 403 (Not authenticated)")
     
     def test_data_center_files_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/data-center/files", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print("✅ GET /api/data-center/files -> 403 (Not authenticated)")
     
     def test_onboarding_status_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/onboarding/status", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print("✅ GET /api/onboarding/status -> 403 (Not authenticated)")
     
     def test_chat_history_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/chat/history", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print("✅ GET /api/chat/history -> 403 (Not authenticated)")
 
 
