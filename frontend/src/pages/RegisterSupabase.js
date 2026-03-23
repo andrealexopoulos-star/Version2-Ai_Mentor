@@ -34,12 +34,13 @@ const RegisterSupabase = () => {
   const [captchaStatusReason, setCaptchaStatusReason] = useState('');
   const recaptchaSiteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
   const recaptchaAction = 'register';
-  const recaptchaEnabled = Boolean(recaptchaSiteKey);
+  // Temporary platform-wide kill switch: captcha disabled until further notice.
+  const recaptchaEnabled = false;
   const recaptchaStrict = String(process.env.REACT_APP_RECAPTCHA_STRICT || '').toLowerCase() === 'true';
   const recaptchaOperational = recaptchaEnabled && !captchaUnavailable;
   const [fallbackChallenge, setFallbackChallenge] = useState(null);
   const [fallbackAnswer, setFallbackAnswer] = useState('');
-  const fallbackRequired = recaptchaEnabled && captchaUnavailable && !recaptchaStrict;
+  const fallbackRequired = false;
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', full_name: '', company_name: '', industry: ''
   });

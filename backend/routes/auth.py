@@ -68,6 +68,9 @@ class RecaptchaVerifyRequest(BaseModel):
 @router.post("/auth/recaptcha/verify")
 async def verify_recaptcha(request: RecaptchaVerifyRequest):
     """Verify Google reCAPTCHA token server-side (standard + enterprise)."""
+    # Temporary platform-wide kill switch: captcha disabled until further notice.
+    return {"ok": True, "skipped": True, "reason": "captcha_temporarily_disabled"}
+
     provider = _first_env(
         "RECAPTCHA_PROVIDER",
         "REACT_APP_RECAPTCHA_PROVIDER",
