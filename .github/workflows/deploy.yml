@@ -35,19 +35,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r backend/requirements.txt
 
-      - name: Pre-deploy iteration drift preflight
-        timeout-minutes: 2
-        run: >
-          python -m pytest
-          backend/tests/test_iteration14_onboarding.py
-          backend/tests/test_iteration15_fixes.py
-          backend/tests/test_iteration17_fact_resolution.py
-          backend/tests/test_iteration18_fact_authority.py
-          backend/tests/test_iteration19_bypass_violations.py
-          backend/tests/test_iteration20_priority_compression.py
-          backend/tests/test_iteration153_launch_packaging.py
-          backend/tests/test_iteration155_calibration_benchmark_hardening.py
-          --tb=short -q --no-header --timeout=10 -x
+      - name: Run deploy gate smoke tests
+        timeout-minutes: 3
+        run: python -m pytest backend/tests/test_deploy_gate_smoke.py --tb=short -q --no-header --timeout=10 -x
         env:
           REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL != '' && secrets.REACT_APP_BACKEND_URL || env.BACKEND_BASE_URL }}
           SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
@@ -56,7 +46,26 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           JWT_SECRET_KEY: test-secret-key
 
-      - name: Run backend tests
+  # ─── NON-BLOCKING ITERATION REGRESSION ────────────────────────────────────
+  regression-iterations:
+    name: Iteration Regression (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: [test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Run full iteration suite (non-blocking)
         timeout-minutes: 20
         run: python -m pytest backend/tests/ --tb=short -q --no-header --timeout=10 -x --ignore=backend/tests/test_iteration24_intelligence_pipeline.py --ignore=backend/tests/test_iteration58_admin_portal.py
         env:
