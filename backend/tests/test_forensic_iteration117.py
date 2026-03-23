@@ -191,9 +191,9 @@ class TestProfileEndpoints:
     
     def test_business_profile_unauthorized(self):
         """Business profile should require auth"""
-        response = requests.get(f"{BASE_URL}/api/profile/business", timeout=10)
+        response = requests.get(f"{BASE_URL}/api/business-profile", timeout=10)
         assert response.status_code in [401, 403]
-        print("✓ /api/profile/business: correctly requires auth")
+        print("✓ /api/business-profile: correctly requires auth")
 
 
 class TestUnifiedEndpoints:
