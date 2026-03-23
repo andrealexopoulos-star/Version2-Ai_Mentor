@@ -28,12 +28,10 @@ const LoginSupabase = () => {
   const [fallbackAnswer, setFallbackAnswer] = useState('');
   const recaptchaSiteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
   const recaptchaAction = 'login';
-  const recaptchaMode = String(process.env.REACT_APP_RECAPTCHA_MODE || 'auto').toLowerCase();
-  const recaptchaIsV2 = recaptchaMode === 'v2' || recaptchaMode === 'checkbox';
   const recaptchaEnabled = Boolean(recaptchaSiteKey);
   const recaptchaStrict = String(process.env.REACT_APP_RECAPTCHA_STRICT || '').toLowerCase() === 'true';
   const recaptchaOperational = recaptchaEnabled && !captchaUnavailable;
-  const fallbackRequired = !recaptchaEnabled && failedAttempts >= 3;
+  const fallbackRequired = (recaptchaEnabled && captchaUnavailable && !recaptchaStrict) || (!recaptchaEnabled && failedAttempts >= 3);
 
   const buildFallbackChallenge = () => {
     const left = Math.floor(Math.random() * 8) + 2;
@@ -136,10 +134,6 @@ const LoginSupabase = () => {
     try {
       if (recaptchaOperational) {
         if (!captchaToken) {
-          if (recaptchaIsV2) {
-            setLoginError('Please complete the captcha checkbox before signing in.');
-            return;
-          }
           if (recaptchaStrict) {
             setLoginError('Please complete the captcha verification.');
             return;
@@ -218,10 +212,6 @@ const LoginSupabase = () => {
         return;
       }
     } else if (recaptchaOperational && !captchaToken) {
-      if (recaptchaIsV2) {
-        toast.error('Please complete the captcha checkbox first.');
-        return;
-      }
       if (recaptchaStrict) {
         toast.error('Please complete the captcha verification first.');
         return;

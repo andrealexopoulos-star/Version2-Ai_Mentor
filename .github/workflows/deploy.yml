@@ -251,34 +251,13 @@ jobs:
 
       - name: Smoke test frontend + API routing
         run: |
-          FRONTEND_OK=0
-          for i in $(seq 1 12); do
-            FRONTEND_CODE=$(curl -L --silent --show-error --output /tmp/frontend_home.html --write-out "%{http_code}" https://www.biqc.ai || true)
-            FRONTEND_CODE=${FRONTEND_CODE:-000}
-            echo "frontend probe attempt ${i}: HTTP ${FRONTEND_CODE}"
-            if { [ "$FRONTEND_CODE" -eq 200 ] || [ "$FRONTEND_CODE" -eq 422 ]; } && grep -qi "BIQc" /tmp/frontend_home.html; then
-              FRONTEND_OK=1
-              break
-            fi
-            sleep 5
-          done
-          if [ "$FRONTEND_OK" -ne 1 ]; then
-            echo "Frontend smoke check did not stabilize after retries"
-            exit 1
-          fi
+          curl --fail --silent --show-error https://biqc.ai > /tmp/frontend_home.html
+          grep -qi "BIQc" /tmp/frontend_home.html
 
-          API_OK=0
-          for i in $(seq 1 12); do
-            API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" ${{ env.BACKEND_AUTH_PROBE_URL }})
-            echo "integration-status attempt ${i}: HTTP ${API_CODE}"
-            if [ "$API_CODE" -eq 401 ] || [ "$API_CODE" -eq 403 ]; then
-              API_OK=1
-              break
-            fi
-            sleep 5
-          done
-          if [ "$API_OK" -ne 1 ]; then
-            echo "Expected auth-gated API response (401/403) but did not stabilize"
+          API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" ${{ env.BACKEND_AUTH_PROBE_URL }})
+          echo "integration-status probe HTTP ${API_CODE}"
+          if [ "$API_CODE" -ne 401 ] && [ "$API_CODE" -ne 403 ]; then
+            echo "Expected auth-gated API response (401/403) but got ${API_CODE}"
             cat /tmp/api_probe.json
             exit 1
           fi
