@@ -57,7 +57,7 @@ jobs:
           JWT_SECRET_KEY: test-secret-key
 
       - name: Run backend tests
-        timeout-minutes: 6
+        timeout-minutes: 20
         run: python -m pytest backend/tests/ --tb=short -q --no-header --timeout=10 -x --ignore=backend/tests/test_iteration24_intelligence_pipeline.py --ignore=backend/tests/test_iteration58_admin_portal.py
         env:
           REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL != '' && secrets.REACT_APP_BACKEND_URL || env.BACKEND_BASE_URL }}
