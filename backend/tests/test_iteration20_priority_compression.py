@@ -270,62 +270,65 @@ class TestCodeVerification:
         print("PASS: rank_domains() called to populate priority_compression")
     
     def test_boardroom_js_data_testids_present(self):
-        """Verify data-testid attributes in BoardRoom.js for testing"""
-        with open('/app/frontend/src/components/BoardRoom.js', 'r') as f:
+        """Verify current BoardRoom test hooks exist for UI verification."""
+        with open('/app/frontend/src/components/BoardRoom.js', 'r', encoding='utf-8') as f:
             content = f.read()
         
         required_testids = [
-            'data-testid="primary-focus-section"',
-            'data-testid="secondary-section"',
-            'data-testid="collapsed-section"',
-            'data-testid="show-collapsed-btn"',
-            'data-testid="position-strip"',
-            'data-testid="boardroom-input"',
-            'data-testid="boardroom-submit"',
+            'data-testid="boardroom-home"',
+            'data-testid="executive-zone"',
+            'data-testid="diagnosis-zone"',
+            'data-testid="diagnosis-result"',
+            'data-testid="boardroom-lineage-badge"',
+            'data-testid="boardroom-diagnosis-lineage-badge"',
+            'data-testid="boardroom-diagnosis-evidence-chain"',
         ]
         
-        # Also check for evidence toggle pattern
-        evidence_toggle_pattern = 'data-testid={`evidence-toggle-'
+        # Check dynamic diagnosis cards exist.
+        diagnosis_pattern = 'data-testid={`diagnosis-${area.id}`}'
         
         for testid in required_testids:
             assert testid in content, f"Missing {testid} in BoardRoom.js"
         
-        assert evidence_toggle_pattern in content, "Missing evidence-toggle data-testid pattern"
+        assert diagnosis_pattern in content, "Missing dynamic diagnosis testid pattern"
         
         print("PASS: All required data-testid attributes present in BoardRoom.js")
     
     def test_boardroom_js_priority_compression_rendering(self):
-        """Verify BoardRoom.js renders Priority Compression view correctly"""
-        with open('/app/frontend/src/components/BoardRoom.js', 'r') as f:
+        """Verify BoardRoom.js renders executive briefing + diagnosis surfaces."""
+        with open('/app/frontend/src/components/BoardRoom.js', 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Check state management
-        assert 'priorityCompression' in content, "priorityCompression state not found"
-        assert 'setPriorityCompression' in content, "setPriorityCompression not found"
+        # Snapshot-derived narrative and compression focus should be wired.
+        assert 'snapshot.priority_compression?.primary_focus' in content, \
+            "Priority compression primary focus wiring not found"
+        assert 'narrative' in content and 'primaryBrief' in content, \
+            "Executive narrative rendering state not found"
         
-        # Check rendering conditionals
-        assert 'pc.primary' in content or "pc && pc.primary" in content, "Primary focus rendering not found"
-        assert 'pc.secondary' in content, "Secondary section rendering not found"
-        assert 'pc.collapsed' in content, "Collapsed section rendering not found"
+        # Diagnosis flow should render result and evidence chain.
+        assert 'runDiagnosis' in content and 'diagnosisResult' in content, \
+            "Diagnosis flow state not found"
+        assert 'evidence_chain' in content, "Diagnosis evidence chain rendering not found"
         
-        # Check evidence toggle
-        assert 'toggleEvidence' in content, "toggleEvidence function not found"
-        assert 'expandedEvidence' in content, "expandedEvidence state not found"
+        # Explainability strip should be present for boardroom and diagnosis.
+        assert 'InsightExplainabilityStrip' in content, "Explainability strip wiring missing"
         
-        print("PASS: BoardRoom.js renders Priority Compression view correctly")
+        print("PASS: BoardRoom.js renders executive + diagnosis experiences correctly")
     
     def test_boardroom_js_fallback_position_strip(self):
-        """Verify BoardRoom.js shows fallback position strip when no compression data"""
-        with open('/app/frontend/src/components/BoardRoom.js', 'r') as f:
+        """Verify BoardRoom.js has graceful fallback states when data is missing."""
+        with open('/app/frontend/src/components/BoardRoom.js', 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Check for fallback logic
-        assert 'hasFallbackPositions' in content or '!pc && positionEntries' in content, \
-            "Fallback position strip logic not found"
+        # Fallback for missing briefing + degraded truth should be available.
+        assert 'BIQc can already see' in content and 'Executive briefing will appear here once intelligence is generated.' in content, \
+            "Briefing fallback copy not found"
+        assert 'truthGateMessage' in content and 'degradedTruth' in content, \
+            "Degraded truth fallback logic not found"
         
-        assert 'position-strip' in content, "position-strip testid not found for fallback"
+        assert 'boardroom-truth-state-banner' in content, "Truth-state fallback banner testid not found"
         
-        print("PASS: BoardRoom.js shows fallback position strip when no compression data")
+        print("PASS: BoardRoom.js includes degraded and no-briefing fallback states")
 
 
 class TestHealthCheck:
