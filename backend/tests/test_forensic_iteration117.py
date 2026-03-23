@@ -136,10 +136,10 @@ class TestIntegrationEndpoints:
     """Test integration-related endpoints"""
     
     def test_integrations_status_unauthorized(self):
-        """Integrations status should require auth"""
-        response = requests.get(f"{BASE_URL}/api/integrations/status", timeout=10)
+        """User integration status should require auth"""
+        response = requests.get(f"{BASE_URL}/api/user/integration-status", timeout=10)
         assert response.status_code in [401, 403]
-        print("✓ /api/integrations/status: correctly requires auth")
+        print("✓ /api/user/integration-status: correctly requires auth")
 
 
 class TestCalibrationEndpoints:
