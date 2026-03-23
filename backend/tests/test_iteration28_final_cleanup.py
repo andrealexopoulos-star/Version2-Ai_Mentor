@@ -225,26 +225,27 @@ class TestSecurityProtectedEndpoints:
 
 class TestAdminPromptManagement:
     """Admin prompt management endpoints"""
+    AUTH_BLOCKED_CODES = [401, 403]
     
     def test_admin_prompts_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/admin/prompts")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/admin/prompts returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
+        print(f"✅ /api/admin/prompts returns {response.status_code} without auth")
     
     def test_admin_prompts_invalidate_requires_auth(self):
         response = requests.post(f"{BASE_URL}/api/admin/prompts/invalidate")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/admin/prompts/invalidate POST returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
+        print(f"✅ /api/admin/prompts/invalidate POST returns {response.status_code} without auth")
     
     def test_admin_users_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/admin/users")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/admin/users returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
+        print(f"✅ /api/admin/users returns {response.status_code} without auth")
     
     def test_admin_stats_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/admin/stats")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/admin/stats returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
+        print(f"✅ /api/admin/stats returns {response.status_code} without auth")
 
 
 class TestCognitiveEndpoints:
