@@ -23,7 +23,8 @@ class TestHealthAndBasicEndpoints:
 
     def test_warmup_endpoint(self):
         """Test warmup endpoint returns 200"""
-        response = requests.get(f"{BASE_URL}/api/warmup", timeout=30)
+        # Canonical warmup route lives under /api/health.
+        response = requests.get(f"{BASE_URL}/api/health/warmup", timeout=30)
         assert response.status_code == 200
         print(f"✓ Warmup endpoint passed")
 
