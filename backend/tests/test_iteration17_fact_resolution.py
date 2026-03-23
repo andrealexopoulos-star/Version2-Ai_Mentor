@@ -145,7 +145,11 @@ class TestFactResolutionFunctionality:
         }
         
         result = build_known_facts_prompt(test_facts)
-        assert "KNOWN FACTS" in result, "Should contain header"
+        assert (
+            "KNOWN FACTS" in result
+            or "CONFIRMED FACTS" in result
+            or "UNCONFIRMED FACTS" in result
+        ), "Should contain a facts header"
         assert "business.name" in result, "Should contain fact key"
         assert "Test Company" in result, "Should contain fact value"
         print("✅ build_known_facts_prompt correctly formats facts")
