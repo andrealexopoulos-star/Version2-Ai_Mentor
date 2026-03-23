@@ -4,6 +4,9 @@ const SCRIPT_ID = 'google-recaptcha-script';
 const MODE_AUTO = 'auto';
 const MODE_V2 = 'v2';
 const MODE_V3 = 'v3';
+const PROVIDER_AUTO = 'auto';
+const PROVIDER_STANDARD = 'standard';
+const PROVIDER_ENTERPRISE = 'enterprise';
 
 const normalizeMode = (mode) => {
   const value = String(mode || '').trim().toLowerCase();
@@ -12,23 +15,43 @@ const normalizeMode = (mode) => {
   return MODE_AUTO;
 };
 
-const scriptSrcForMode = (mode, siteKey) => {
+const normalizeProvider = (provider) => {
+  const value = String(provider || '').trim().toLowerCase();
+  if (value === PROVIDER_ENTERPRISE) return PROVIDER_ENTERPRISE;
+  if (value === PROVIDER_STANDARD) return PROVIDER_STANDARD;
+  return PROVIDER_AUTO;
+};
+
+const scriptSrcForConfig = (mode, provider, siteKey) => {
+  if (provider === PROVIDER_ENTERPRISE) {
+    if (mode === MODE_V3) {
+      return `https://www.google.com/recaptcha/enterprise.js?render=${encodeURIComponent(siteKey)}`;
+    }
+    return 'https://www.google.com/recaptcha/enterprise.js?render=explicit';
+  }
   if (mode === MODE_V3) {
     return `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(siteKey)}`;
   }
   return 'https://www.google.com/recaptcha/api.js?render=explicit';
 };
 
-const ensureScript = (mode, siteKey) => {
-  const expectedSrc = scriptSrcForMode(mode, siteKey);
+const getRecaptchaApi = (provider) => {
+  if (!window.grecaptcha) return null;
+  if (provider === PROVIDER_ENTERPRISE) return window.grecaptcha.enterprise || null;
+  return window.grecaptcha;
+};
+
+const ensureScript = (mode, provider, siteKey) => {
+  const expectedSrc = scriptSrcForConfig(mode, provider, siteKey);
   const existing = document.getElementById(SCRIPT_ID);
 
   if (existing) {
     const currentMode = existing.getAttribute('data-recaptcha-mode');
+    const currentProvider = existing.getAttribute('data-recaptcha-provider');
     const currentSrc = existing.getAttribute('data-recaptcha-src');
-    if (currentMode !== mode || currentSrc !== expectedSrc) {
+    if (currentMode !== mode || currentProvider !== provider || currentSrc !== expectedSrc) {
       existing.remove();
-    } else if (window.grecaptcha) {
+    } else if (getRecaptchaApi(provider)) {
       return Promise.resolve();
     } else {
       return new Promise((resolve, reject) => {
@@ -42,6 +65,7 @@ const ensureScript = (mode, siteKey) => {
     const script = document.createElement('script');
     script.id = SCRIPT_ID;
     script.setAttribute('data-recaptcha-mode', mode);
+    script.setAttribute('data-recaptcha-provider', provider);
     script.setAttribute('data-recaptcha-src', expectedSrc);
     script.src = expectedSrc;
     script.async = true;
@@ -55,10 +79,12 @@ const ensureScript = (mode, siteKey) => {
 const RecaptchaGate = ({ onTokenChange, testId = 'recaptcha-gate' }) => {
   const siteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
   const configuredMode = normalizeMode(process.env.REACT_APP_RECAPTCHA_MODE);
+  const configuredProvider = normalizeProvider(process.env.REACT_APP_RECAPTCHA_PROVIDER);
   const containerRef = useRef(null);
   const widgetRef = useRef(null);
   const refreshRef = useRef(null);
   const activeModeRef = useRef(null);
+  const activeProviderRef = useRef(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -71,19 +97,21 @@ const RecaptchaGate = ({ onTokenChange, testId = 'recaptcha-gate' }) => {
 
     const resetWidget = () => {
       try {
-        if (widgetRef.current !== null && window.grecaptcha?.reset) {
-          window.grecaptcha.reset(widgetRef.current);
+        const api = getRecaptchaApi(activeProviderRef.current || configuredProvider);
+        if (widgetRef.current !== null && api?.reset) {
+          api.reset(widgetRef.current);
         }
       } catch {}
       widgetRef.current = null;
     };
 
-    const startV3Refresh = (actionName) => {
+    const startV3Refresh = (actionName, provider) => {
       clearRefresh();
       refreshRef.current = setInterval(async () => {
         try {
-          if (activeModeRef.current !== MODE_V3 || !window.grecaptcha?.execute) return;
-          const token = await window.grecaptcha.execute(siteKey, { action: actionName });
+          const api = getRecaptchaApi(provider);
+          if (activeModeRef.current !== MODE_V3 || !api?.execute) return;
+          const token = await api.execute(siteKey, { action: actionName });
           onTokenChange(token || '');
         } catch {
           onTokenChange('');
@@ -91,27 +119,31 @@ const RecaptchaGate = ({ onTokenChange, testId = 'recaptcha-gate' }) => {
       }, 90000);
     };
 
-    const tryV3 = async () => {
-      await ensureScript(MODE_V3, siteKey);
-      if (!window.grecaptcha?.ready || !window.grecaptcha?.execute) {
+    const tryV3 = async (provider) => {
+      await ensureScript(MODE_V3, provider, siteKey);
+      const api = getRecaptchaApi(provider);
+      if (!api?.ready || !api?.execute) {
         throw new Error('reCAPTCHA v3 unavailable');
       }
-      await new Promise((resolve) => window.grecaptcha.ready(resolve));
-      const token = await window.grecaptcha.execute(siteKey, { action: 'auth' });
+      await new Promise((resolve) => api.ready(resolve));
+      const token = await api.execute(siteKey, { action: 'auth' });
       if (!token) throw new Error('Empty reCAPTCHA token');
       activeModeRef.current = MODE_V3;
+      activeProviderRef.current = provider;
       onTokenChange(token);
       setError('');
-      startV3Refresh('auth');
+      startV3Refresh('auth', provider);
     };
 
-    const tryV2 = async () => {
-      await ensureScript(MODE_V2, siteKey);
-      if (!containerRef.current || !window.grecaptcha?.render) {
+    const tryV2 = async (provider) => {
+      await ensureScript(MODE_V2, provider, siteKey);
+      const api = getRecaptchaApi(provider);
+      if (!containerRef.current || !api?.render) {
         throw new Error('reCAPTCHA v2 unavailable');
       }
       activeModeRef.current = MODE_V2;
-      widgetRef.current = window.grecaptcha.render(containerRef.current, {
+      activeProviderRef.current = provider;
+      widgetRef.current = api.render(containerRef.current, {
         sitekey: siteKey,
         callback: (token) => onTokenChange(token || ''),
         'expired-callback': () => onTokenChange(''),
@@ -129,35 +161,89 @@ const RecaptchaGate = ({ onTokenChange, testId = 'recaptcha-gate' }) => {
     let alive = true;
     (async () => {
       try {
-        if (configuredMode === MODE_V2) {
-          await tryV2();
-          return;
-        }
-        if (configuredMode === MODE_V3) {
-          await tryV3();
-          return;
+        const runConfiguredMode = async (provider) => {
+          if (configuredMode === MODE_V2) {
+            await tryV2(provider);
+            return true;
+          }
+          if (configuredMode === MODE_V3) {
+            await tryV3(provider);
+            return true;
+          }
+          return false;
+        };
+
+        if (configuredProvider === PROVIDER_STANDARD) {
+          if (await runConfiguredMode(PROVIDER_STANDARD)) return;
+          try {
+            await tryV3(PROVIDER_STANDARD);
+            return;
+          } catch {
+            await tryV2(PROVIDER_STANDARD);
+            return;
+          }
         }
 
-        // Auto mode: prefer v3, then fall back to v2 checkbox.
+        if (configuredProvider === PROVIDER_ENTERPRISE) {
+          if (await runConfiguredMode(PROVIDER_ENTERPRISE)) return;
+          try {
+            await tryV3(PROVIDER_ENTERPRISE);
+            return;
+          } catch {
+            await tryV2(PROVIDER_ENTERPRISE);
+            return;
+          }
+        }
+
+        // Auto provider/mode: try standard first, then enterprise.
+        if (configuredMode === MODE_V2) {
+          try {
+            await tryV2(PROVIDER_STANDARD);
+            return;
+          } catch {
+            await tryV2(PROVIDER_ENTERPRISE);
+            return;
+          }
+        }
+        if (configuredMode === MODE_V3) {
+          try {
+            await tryV3(PROVIDER_STANDARD);
+            return;
+          } catch {
+            await tryV3(PROVIDER_ENTERPRISE);
+            return;
+          }
+        }
+
         try {
-          await tryV3();
+          await tryV3(PROVIDER_STANDARD);
+          return;
+        } catch {}
+        try {
+          await tryV2(PROVIDER_STANDARD);
+          return;
+        } catch {}
+        try {
+          await tryV3(PROVIDER_ENTERPRISE);
           return;
         } catch {
-          await tryV2();
+          await tryV2(PROVIDER_ENTERPRISE);
+          return;
         }
       } catch {
-        if (alive) setError('Failed to initialize reCAPTCHA. Check key type and domain settings.');
+        if (alive) setError('Failed to initialize reCAPTCHA. Check key type, provider (standard/enterprise), and allowed domains.');
       }
     })();
 
     return () => {
       alive = false;
       activeModeRef.current = null;
+      activeProviderRef.current = null;
       onTokenChange('');
       clearRefresh();
       resetWidget();
     };
-  }, [configuredMode, onTokenChange, siteKey]);
+  }, [configuredMode, configuredProvider, onTokenChange, siteKey]);
 
   return (
     <div className="space-y-2" data-testid={testId}>
