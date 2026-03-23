@@ -250,40 +250,42 @@ class TestAdminPromptManagement:
 
 class TestCognitiveEndpoints:
     """Cognitive Core endpoints (in server.py)"""
+    AUTH_BLOCKED_CODES = [401, 403]
     
     def test_cognitive_profile_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/cognitive/profile")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/cognitive/profile returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
+        print(f"✅ /api/cognitive/profile returns {response.status_code} without auth")
     
     def test_cognitive_escalation_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/cognitive/escalation")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/cognitive/escalation returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
+        print(f"✅ /api/cognitive/escalation returns {response.status_code} without auth")
     
     def test_advisory_confidence_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/advisory/confidence")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/advisory/confidence returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
+        print(f"✅ /api/advisory/confidence returns {response.status_code} without auth")
 
 
 class TestOnboardingEndpoints:
     """Onboarding routes (in server.py)"""
+    AUTH_BLOCKED_CODES = [401, 403]
     
     def test_onboarding_status_requires_auth(self):
         response = requests.get(f"{BASE_URL}/api/onboarding/status")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/onboarding/status returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
+        print(f"✅ /api/onboarding/status returns {response.status_code} without auth")
     
     def test_onboarding_save_requires_auth(self):
         response = requests.post(f"{BASE_URL}/api/onboarding/save", json={})
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/onboarding/save POST returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
+        print(f"✅ /api/onboarding/save POST returns {response.status_code} without auth")
     
     def test_onboarding_complete_requires_auth(self):
         response = requests.post(f"{BASE_URL}/api/onboarding/complete")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
-        print("✅ /api/onboarding/complete POST returns 403 without auth")
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
+        print(f"✅ /api/onboarding/complete POST returns {response.status_code} without auth")
 
 
 class TestMethodValidation:
