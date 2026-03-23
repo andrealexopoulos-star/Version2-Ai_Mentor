@@ -514,17 +514,17 @@ export const SupabaseAuthProvider = ({ children }) => {
               const retryCal = await retryRes.json();
               calibrationComplete = retryCal.status === 'COMPLETE';
             } else {
-              // Still failing — new user, let calibration flow handle it
-              calibrationComplete = false;
+              // fail-open: auth propagation race or transient backend auth issue
+              calibrationComplete = true;
             }
           } else {
             console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status}`);
-            // Safer default for onboarding: if status cannot be verified, force calibration path.
-            calibrationComplete = false;
+            // fail-open: if calibration status is temporarily unavailable, continue to READY.
+            calibrationComplete = true;
           }
         } catch (e) {
-          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → force NEEDS_CALIBRATION`);
-          calibrationComplete = false;
+          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → fail-open to READY`);
+          calibrationComplete = true;
         }
 
         if (cancelled) return;
