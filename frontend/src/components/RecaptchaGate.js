@@ -207,6 +207,12 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
 
         // Auto provider/mode: try standard first, then enterprise.
         if (configuredMode === MODE_V2) {
+          // Resilience: many production incidents are caused by a v3 site key
+          // being paired with MODE_V2. Try v3 first, then gracefully fall back.
+          try {
+            await tryV3(PROVIDER_STANDARD);
+            return;
+          } catch {}
           try {
             await tryV2(PROVIDER_STANDARD);
             return;
