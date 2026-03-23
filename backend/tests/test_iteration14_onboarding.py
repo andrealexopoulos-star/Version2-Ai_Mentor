@@ -55,15 +55,17 @@ class TestCodeReviewVerification:
     """Code review verification tests - these verify the code structure is correct"""
     
     def test_server_onboarding_status_no_auto_complete(self):
-        """Verify server.py GET /api/onboarding/status has NO auto-complete logic"""
-        # Check lines 5844-5865 (the onboarding/status endpoint)
-        # The endpoint should NOT check company_name for auto-complete
-        server_path = repo_file("backend", "server.py")
-        with open(server_path, 'r', encoding='utf-8', errors='ignore') as f:
-            lines = f.readlines()
-        
-        # Lines 5844-5865 contain the GET /api/onboarding/status endpoint
-        endpoint_lines = ''.join(lines[5843:5865])
+        """Verify onboarding status endpoint keeps explicit incomplete fallback."""
+        # Endpoint implementation now lives in routes/onboarding.py (server.py is router orchestrator).
+        onboarding_path = repo_file("backend", "routes", "onboarding.py")
+        with open(onboarding_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+
+        start_marker = '@router.get("/onboarding/status", response_model=OnboardingStatusResponse)'
+        end_marker = '@router.post("/onboarding/save")'
+        start = content.find(start_marker)
+        end = content.find(end_marker, start + 1)
+        endpoint_lines = content[start:end] if start != -1 and end != -1 else ""
         
         # Verify NO auto-complete logic based on company_name
         assert "company_name" not in endpoint_lines, "GET /api/onboarding/status should NOT contain company_name check"
