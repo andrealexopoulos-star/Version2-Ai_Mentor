@@ -1,11 +1,11 @@
 """
 P0 Auth Loop Bug Tests - Iteration 7
-Tests the fail-open behavior on /api/calibration/status endpoint
+Tests strict auth behavior on /api/calibration/status endpoint
 
-Key fix: Backend now has fail-open behavior on /api/calibration/status
-- Malformed Bearer token should return 200 with NEEDS_CALIBRATION
+Key behavior: Backend enforces fail-closed auth on /api/calibration/status
+- Malformed Bearer token should return 401
 - No auth header should return 401
-- JWT-format token (invalid sig) should return 200 NEEDS_CALIBRATION
+- JWT-format token (invalid sig) should return 401
 """
 import pytest
 import requests
@@ -15,10 +15,10 @@ import json
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Test requirements from the review request:
-# 1. Backend /api/calibration/status with malformed Bearer token -> 200 NEEDS_CALIBRATION
+# Test requirements:
+# 1. Backend /api/calibration/status with malformed Bearer token -> 401
 # 2. Backend /api/calibration/status with no auth header -> 401
-# 3. Backend /api/calibration/status with JWT-format token (invalid sig) -> 200 NEEDS_CALIBRATION
+# 3. Backend /api/calibration/status with JWT-format token (invalid sig) -> 401
 # 4. Backend /api/health returns 200
 
 
@@ -35,8 +35,8 @@ class TestHealthEndpoint:
         assert 'status' in data or isinstance(data, dict), "Health endpoint should return valid JSON"
 
 
-class TestCalibrationStatusFailOpen:
-    """Test the fail-open behavior on /api/calibration/status"""
+class TestCalibrationStatusAuthEnforcement:
+    """Test strict auth behavior on /api/calibration/status"""
     
     def test_no_auth_header_returns_401(self):
         """Test 2: No auth header should return 401"""
@@ -44,22 +44,18 @@ class TestCalibrationStatusFailOpen:
         assert response.status_code == 401, f"Expected 401 for no auth header, got {response.status_code}"
         print(f"✅ No auth header correctly returns 401")
     
-    def test_malformed_bearer_token_returns_200_needs_calibration(self):
-        """Test 1: Malformed Bearer token should return 200 with NEEDS_CALIBRATION (fail-open)"""
+    def test_malformed_bearer_token_returns_401(self):
+        """Test 1: Malformed Bearer token should return 401"""
         headers = {
             "Authorization": "Bearer malformed_token_12345"
         }
         response = requests.get(f"{BASE_URL}/api/calibration/status", headers=headers, timeout=10)
         
-        # Fail-open: should return 200, not 401
-        assert response.status_code == 200, f"Expected 200 (fail-open), got {response.status_code}"
-        
-        data = response.json()
-        assert data.get("status") == "NEEDS_CALIBRATION", f"Expected NEEDS_CALIBRATION, got {data}"
-        print(f"✅ Malformed token correctly returns 200 with NEEDS_CALIBRATION")
+        assert response.status_code == 401, f"Expected 401, got {response.status_code}"
+        print(f"✅ Malformed token correctly returns 401")
     
-    def test_jwt_format_invalid_signature_returns_200_needs_calibration(self):
-        """Test 3: JWT-format token with invalid signature should return 200 NEEDS_CALIBRATION"""
+    def test_jwt_format_invalid_signature_returns_401(self):
+        """Test 3: JWT-format token with invalid signature should return 401"""
         # Create a JWT-like token (header.payload.signature format)
         # This simulates a token that looks like JWT but has invalid/expired signature
         
@@ -86,12 +82,8 @@ class TestCalibrationStatusFailOpen:
         }
         response = requests.get(f"{BASE_URL}/api/calibration/status", headers=headers, timeout=10)
         
-        # Fail-open: JWT format but invalid sig should return 200 with NEEDS_CALIBRATION
-        assert response.status_code == 200, f"Expected 200 (fail-open), got {response.status_code}"
-        
-        data = response.json()
-        assert data.get("status") == "NEEDS_CALIBRATION", f"Expected NEEDS_CALIBRATION, got {data}"
-        print(f"✅ JWT-format token with invalid sig correctly returns 200 with NEEDS_CALIBRATION")
+        assert response.status_code == 401, f"Expected 401, got {response.status_code}"
+        print(f"✅ JWT-format token with invalid sig correctly returns 401")
     
     def test_empty_bearer_token_returns_401(self):
         """Empty Bearer token (just "Bearer ") should return 401"""

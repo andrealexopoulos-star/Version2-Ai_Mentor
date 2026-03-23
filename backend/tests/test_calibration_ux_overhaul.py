@@ -4,7 +4,7 @@ Tests for:
 1. POST /api/calibration/init - requires auth (401 without token)
 2. POST /api/calibration/init - returns {status: ready} with auth
 3. POST /api/calibration/answer - still works with question_id and answer
-4. GET /api/calibration/status - still returns 200 with fail-open
+4. GET /api/calibration/status - enforces auth (401 on invalid tokens)
 5. GET /api/health - returns 200
 """
 
@@ -78,7 +78,7 @@ class TestCalibrationAnswer:
 
 
 class TestCalibrationStatus:
-    """Test GET /api/calibration/status endpoint with fail-open behavior"""
+    """Test GET /api/calibration/status endpoint with strict auth behavior"""
     
     def test_status_without_auth_returns_401(self):
         """GET /api/calibration/status without auth header returns 401"""
@@ -86,29 +86,25 @@ class TestCalibrationStatus:
         assert response.status_code == 401, f"Expected 401, got {response.status_code}: {response.text}"
         print("✓ calibration/status without auth returns 401")
     
-    def test_status_with_invalid_token_returns_200_failopen(self):
-        """GET /api/calibration/status with invalid Bearer token returns 200 NEEDS_CALIBRATION (fail-open)"""
+    def test_status_with_invalid_token_returns_401(self):
+        """GET /api/calibration/status with invalid Bearer token returns 401"""
         response = requests.get(
             f"{BASE_URL}/api/calibration/status",
             headers={"Authorization": "Bearer some-invalid-token"}
         )
-        assert response.status_code == 200, f"Expected 200 (fail-open), got {response.status_code}: {response.text}"
-        data = response.json()
-        assert data.get("status") == "NEEDS_CALIBRATION", f"Expected NEEDS_CALIBRATION, got {data}"
-        print("✓ calibration/status with invalid token returns 200 NEEDS_CALIBRATION (fail-open)")
+        assert response.status_code == 401, f"Expected 401, got {response.status_code}: {response.text}"
+        print("✓ calibration/status with invalid token returns 401")
     
-    def test_status_with_malformed_jwt_returns_200_failopen(self):
-        """GET /api/calibration/status with malformed JWT returns 200 NEEDS_CALIBRATION (fail-open)"""
+    def test_status_with_malformed_jwt_returns_401(self):
+        """GET /api/calibration/status with malformed JWT returns 401"""
         # Simulate a JWT-like token that won't verify
         fake_jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QifQ.InvalidSignature"
         response = requests.get(
             f"{BASE_URL}/api/calibration/status",
             headers={"Authorization": f"Bearer {fake_jwt}"}
         )
-        assert response.status_code == 200, f"Expected 200 (fail-open), got {response.status_code}: {response.text}"
-        data = response.json()
-        assert data.get("status") == "NEEDS_CALIBRATION", f"Expected NEEDS_CALIBRATION, got {data}"
-        print("✓ calibration/status with malformed JWT returns 200 NEEDS_CALIBRATION (fail-open)")
+        assert response.status_code == 401, f"Expected 401, got {response.status_code}: {response.text}"
+        print("✓ calibration/status with malformed JWT returns 401")
     
     def test_status_with_empty_bearer_returns_401(self):
         """GET /api/calibration/status with empty Bearer returns 401"""
