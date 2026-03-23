@@ -179,37 +179,44 @@ class TestFactResolutionFunctionality:
 
 
 class TestServerIntegration:
-    """Test that server.py properly integrates fact_resolution module"""
+    """Test that fact resolution integration points remain present"""
     
     def test_server_imports_fact_resolution_in_build_advisor_context(self):
-        """build_advisor_context should import from fact_resolution"""
+        """build_advisor_context integration should import from fact_resolution."""
         server_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "server.py"
         )
+        profile_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "routes",
+            "profile.py"
+        )
         
         with open(server_path, 'r') as f:
-            content = f.read()
+            server_content = f.read()
+        with open(profile_path, 'r') as f:
+            profile_content = f.read()
         
-        # Check that build_advisor_context imports from fact_resolution
-        # The import is inside the function
-        assert "from fact_resolution import resolve_facts" in content, \
-            "server.py should import resolve_facts from fact_resolution"
-        assert "from fact_resolution import" in content and "build_known_facts_prompt" in content, \
-            "server.py should import build_known_facts_prompt from fact_resolution"
-        print("✅ server.py imports resolve_facts and build_known_facts_prompt from fact_resolution")
+        combined = f"{server_content}\n{profile_content}"
+        assert "from fact_resolution import resolve_facts" in combined, \
+            "fact resolution import for resolve_facts is missing"
+        assert "from fact_resolution import" in combined and "build_known_facts_prompt" in combined, \
+            "fact resolution import for build_known_facts_prompt is missing"
+        print("✅ Fact resolution imports are present for advisor context construction")
     
     def test_build_advisor_context_returns_known_facts_prompt(self):
         """Verify build_advisor_context includes known_facts_prompt in return"""
-        server_path = os.path.join(
+        profile_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "server.py"
+            "routes",
+            "profile.py"
         )
         
-        with open(server_path, 'r') as f:
+        with open(profile_path, 'r') as f:
             content = f.read()
         
-        # Find the build_advisor_context function and check its return
+        # Check that build_advisor_context output keeps known_facts_prompt
         assert '"known_facts_prompt": facts_prompt' in content or "'known_facts_prompt': facts_prompt" in content, \
             "build_advisor_context should return known_facts_prompt"
         print("✅ build_advisor_context returns known_facts_prompt in its output")
@@ -220,14 +227,28 @@ class TestServerIntegration:
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "server.py"
         )
+        onboarding_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "routes",
+            "onboarding.py"
+        )
+        facts_route_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "routes",
+            "facts.py"
+        )
         
         with open(server_path, 'r') as f:
-            content = f.read()
+            server_content = f.read()
+        with open(onboarding_path, 'r') as f:
+            onboarding_content = f.read()
+        with open(facts_route_path, 'r') as f:
+            facts_content = f.read()
         
-        # Check that the endpoint returns resolved_fields
-        assert '"resolved_fields": resolved_fields' in content or "'resolved_fields': resolved_fields" in content, \
-            "GET /api/business-profile/context should return resolved_fields"
-        print("✅ GET /api/business-profile/context returns resolved_fields")
+        combined = f"{server_content}\n{onboarding_content}\n{facts_content}"
+        assert '"resolved_fields": resolved_fields' in combined or "'resolved_fields': resolved_fields" in combined, \
+            "resolved_fields should be returned by business profile context/facts endpoints"
+        print("✅ resolved_fields return wiring is present")
 
 
 class TestOnboardingWizardIntegration:
