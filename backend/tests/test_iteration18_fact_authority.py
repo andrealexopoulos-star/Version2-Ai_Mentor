@@ -213,32 +213,34 @@ class TestOnboardingSaveFactPersistence:
     
     def test_onboarding_save_imports_persist_facts_batch(self):
         """POST /api/onboarding/save should import persist_facts_batch"""
-        server_path = os.path.join(
+        onboarding_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "server.py"
+            "routes",
+            "onboarding.py"
         )
         
-        with open(server_path, 'r') as f:
+        with open(onboarding_path, 'r') as f:
             content = f.read()
         
         assert "from fact_resolution import persist_facts_batch" in content, \
-            "server.py should import persist_facts_batch from fact_resolution"
+            "onboarding route should import persist_facts_batch from fact_resolution"
         assert "ONBOARDING_FIELD_TO_FACT" in content, \
-            "server.py should import ONBOARDING_FIELD_TO_FACT"
+            "onboarding route should import ONBOARDING_FIELD_TO_FACT"
         
         print("✅ POST /api/onboarding/save imports persist_facts_batch and ONBOARDING_FIELD_TO_FACT")
     
     def test_onboarding_save_calls_persist_facts_batch(self):
         """POST /api/onboarding/save should call persist_facts_batch"""
-        server_path = os.path.join(
+        onboarding_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "server.py"
+            "routes",
+            "onboarding.py"
         )
         
-        with open(server_path, 'r') as f:
+        with open(onboarding_path, 'r') as f:
             content = f.read()
         
-        # Find the save_onboarding_progress function and check it calls persist_facts_batch
+        # save_onboarding_progress should persist mapped facts in batch
         assert 'await persist_facts_batch' in content, \
             "save_onboarding_progress should call await persist_facts_batch"
         
