@@ -96,6 +96,25 @@ def _ensure_launch_email_slot(current_user: dict, provider: str) -> None:
 def _normalize_oauth_public_url(url: str, fallback: str) -> str:
     """Normalize public URLs used in OAuth redirects."""
     cleaned = (url or fallback).rstrip("/")
+    try:
+        parsed = urllib.parse.urlparse(cleaned)
+        host = (parsed.hostname or "").lower()
+        # Production OAuth redirect URIs are registered against apex domain.
+        # Normalize accidental www host to avoid Azure AADSTS50011 mismatch.
+        if host == "www.biqc.ai":
+            normalized_netloc = parsed.netloc.replace("www.biqc.ai", "biqc.ai")
+            cleaned = urllib.parse.urlunparse(
+                (
+                    parsed.scheme,
+                    normalized_netloc,
+                    parsed.path,
+                    parsed.params,
+                    parsed.query,
+                    parsed.fragment,
+                )
+            )
+    except Exception:
+        pass
     return cleaned
 
 
