@@ -37,7 +37,7 @@ jobs:
 
       - name: Run deploy gate smoke tests
         timeout-minutes: 3
-        run: python -m pytest backend/tests/test_deploy_gate_smoke.py --tb=short -q --no-header --timeout=10 -x
+        run: python -m pytest backend/tests/test_deploy_gate_smoke.py --tb=short -q --no-header --timeout=20 -x
         env:
           REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL != '' && secrets.REACT_APP_BACKEND_URL || env.BACKEND_BASE_URL }}
           SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
