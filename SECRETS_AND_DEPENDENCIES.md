@@ -1,5 +1,5 @@
 # BIQc Platform — API Keys, Secrets & Dependencies Registry
-# Last updated: 6 March 2026
+# Last updated: 23 March 2026
 #
 # PURPOSE: Single reference for all external service credentials
 # required to run BIQc in production. This file does NOT contain
@@ -50,6 +50,13 @@ MERGE_REDIRECT_URI=https://your-domain.com/api/integrations/merge/callback
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 
+### GOOGLE reCAPTCHA (Auth Bot Protection)
+# Provider: Google reCAPTCHA / reCAPTCHA Enterprise
+# Used by: /api/auth/recaptcha/verify server-side validation
+# Supports either RECAPTCHA_SECRET_KEY or RECAPTCHA_SECRET naming
+RECAPTCHA_SECRET_KEY=
+RECAPTCHA_SECRET=
+
 ### MICROSOFT AZURE (Outlook OAuth)
 # Provider: Microsoft Azure Portal
 # Dashboard: https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps
@@ -88,6 +95,10 @@ REACT_APP_BACKEND_URL=https://your-domain.com
 REACT_APP_GOOGLE_CLIENT_ID=
 REACT_APP_SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=
+REACT_APP_RECAPTCHA_SITE_KEY=
+REACT_APP_RECAPTCHA_MODE=auto
+REACT_APP_RECAPTCHA_PROVIDER=auto
+REACT_APP_RECAPTCHA_STRICT=false
 WDS_SOCKET_PORT=443
 ENABLE_HEALTH_CHECK=false
 

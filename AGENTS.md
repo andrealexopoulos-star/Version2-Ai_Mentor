@@ -19,7 +19,7 @@ BIQc (Business Intelligence & Quality Control) is an AI-powered strategic adviso
 No `.env.example` files exist in the repo. See `SECRETS_AND_DEPENDENCIES.md` for the full registry. Minimal `.env` files to start:
 
 - **`backend/.env`**: Must set `JWT_SECRET_KEY` (mandatory — accessed via `os.environ['JWT_SECRET_KEY']`). All other vars use `os.environ.get()` and degrade gracefully. Without `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`, the server boots but auth/data routes fail.
-- **`frontend/.env`**: Set `REACT_APP_BACKEND_URL=http://localhost:8000`, plus `REACT_APP_SUPABASE_URL` and `REACT_APP_SUPABASE_ANON_KEY` (can be placeholders if no Supabase project is available).
+- **`frontend/.env`**: Set `REACT_APP_BACKEND_URL=http://localhost:8000`, plus `REACT_APP_SUPABASE_URL` and `REACT_APP_SUPABASE_ANON_KEY` (can be placeholders if no Supabase project is available). For captcha-enabled auth also set `REACT_APP_RECAPTCHA_SITE_KEY` (optional tuning: `REACT_APP_RECAPTCHA_MODE`, `REACT_APP_RECAPTCHA_PROVIDER`, `REACT_APP_RECAPTCHA_STRICT`).
 
 ### Lint
 
@@ -41,8 +41,10 @@ These must be available as environment variables (or in `backend/.env` / `fronte
 | `SUPABASE_SERVICE_ROLE_KEY` | Backend | Database writes (bypasses RLS) |
 | `SUPABASE_ANON_KEY` | Frontend + Backend | Client-side Supabase auth |
 | `OPENAI_API_KEY` | Backend | AI chat (SoundBoard), analysis, voice |
+| `RECAPTCHA_SECRET_KEY` | Backend | Server-side captcha token verification |
+| `REACT_APP_RECAPTCHA_SITE_KEY` | Frontend | Login/signup captcha gate |
 
-Without these, the backend starts but returns errors on auth/data/AI endpoints. The frontend renders but login/signup fail.
+Without these, the backend starts but returns errors on auth/data/AI endpoints. The frontend renders; captcha-enabled auth falls back to an on-page challenge if the widget cannot initialize (unless `REACT_APP_RECAPTCHA_STRICT=true`).
 
 ### Hello-world test
 

@@ -1,9 +1,6 @@
 name: Build and deploy container app to Azure Web App - biqc-web
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -40,6 +37,9 @@ jobs:
             REACT_APP_SUPABASE_URL=${{ secrets.REACT_APP_SUPABASE_URL }}
             REACT_APP_SUPABASE_ANON_KEY=${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
             REACT_APP_RECAPTCHA_SITE_KEY=${{ secrets.REACT_APP_RECAPTCHA_SITE_KEY }}
+            REACT_APP_RECAPTCHA_MODE=${{ secrets.REACT_APP_RECAPTCHA_MODE }}
+            REACT_APP_RECAPTCHA_PROVIDER=${{ secrets.REACT_APP_RECAPTCHA_PROVIDER }}
+            REACT_APP_RECAPTCHA_STRICT=${{ secrets.REACT_APP_RECAPTCHA_STRICT }}
 
   deploy:
     runs-on: ubuntu-latest

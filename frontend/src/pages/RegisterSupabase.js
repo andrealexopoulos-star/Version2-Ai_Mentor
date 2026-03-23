@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
@@ -30,7 +30,14 @@ const RegisterSupabase = () => {
   const [oauthLoading, setOauthLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaUnavailable, setCaptchaUnavailable] = useState(false);
+  const [captchaStatusReason, setCaptchaStatusReason] = useState('');
   const recaptchaEnabled = Boolean(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
+  const recaptchaStrict = String(process.env.REACT_APP_RECAPTCHA_STRICT || '').toLowerCase() === 'true';
+  const recaptchaOperational = recaptchaEnabled && !captchaUnavailable;
+  const [fallbackChallenge, setFallbackChallenge] = useState(null);
+  const [fallbackAnswer, setFallbackAnswer] = useState('');
+  const fallbackRequired = recaptchaEnabled && captchaUnavailable && !recaptchaStrict;
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', full_name: '', company_name: '', industry: ''
   });
@@ -38,16 +45,65 @@ const RegisterSupabase = () => {
   const passwordsMatch = formData.password === formData.confirmPassword;
   const isFormValid = formData.email && formData.password && formData.password.length >= 6 && formData.full_name && formData.confirmPassword && passwordsMatch;
 
+  const buildFallbackChallenge = () => {
+    const left = Math.floor(Math.random() * 8) + 2;
+    const right = Math.floor(Math.random() * 8) + 2;
+    return { prompt: `${left} + ${right}`, result: left + right };
+  };
+
+  useEffect(() => {
+    if (fallbackRequired && !fallbackChallenge) {
+      setFallbackChallenge(buildFallbackChallenge());
+      return;
+    }
+    if (!fallbackRequired) {
+      setFallbackChallenge(null);
+      setFallbackAnswer('');
+    }
+  }, [fallbackChallenge, fallbackRequired]);
+
+  const handleRecaptchaStatus = ({ status, reason }) => {
+    if (status === 'ready') {
+      setCaptchaUnavailable(false);
+      setCaptchaStatusReason('');
+      return;
+    }
+    if (status === 'error') {
+      setCaptchaUnavailable(true);
+      setCaptchaStatusReason(reason || 'init_failed');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password || !formData.full_name) { toast.error('Please fill in all required fields'); return; }
     if (formData.password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     if (formData.password !== formData.confirmPassword) { toast.error('Passwords do not match'); return; }
+    if (recaptchaStrict && recaptchaEnabled && captchaUnavailable) { toast.error('Captcha service is unavailable. Please try again shortly.'); return; }
+    if (fallbackRequired) {
+      if (!fallbackChallenge || Number(fallbackAnswer) !== Number(fallbackChallenge.result)) {
+        toast.error('Please solve the verification challenge first.');
+        if (!fallbackChallenge) setFallbackChallenge(buildFallbackChallenge());
+        return;
+      }
+    }
     setLoading(true);
     try {
-      if (recaptchaEnabled) {
+      if (recaptchaOperational) {
         if (!captchaToken) { toast.error('Please complete the captcha verification.'); return; }
-        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+        try {
+          await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+        } catch {
+          if (recaptchaStrict) {
+            toast.error('Captcha verification failed. Please refresh and try again.');
+            return;
+          }
+          setCaptchaUnavailable(true);
+          setCaptchaToken('');
+          if (!fallbackChallenge) setFallbackChallenge(buildFallbackChallenge());
+          toast.error('Captcha verification is unavailable. Solve the backup challenge and retry.');
+          return;
+        }
       }
       await signUp(formData.email, formData.password, {
         full_name: formData.full_name, company_name: formData.company_name, industry: formData.industry, role: 'user'
@@ -82,15 +138,37 @@ const RegisterSupabase = () => {
 
   const handleOAuthSignIn = async (provider) => {
     const providerName = provider === 'google' ? 'Google' : 'Microsoft';
-    if (recaptchaEnabled && !captchaToken) {
+    if (recaptchaStrict && recaptchaEnabled && captchaUnavailable) {
+      toast.error('Captcha service is unavailable. Please try again shortly.');
+      return;
+    }
+    if (fallbackRequired) {
+      if (!fallbackChallenge || Number(fallbackAnswer) !== Number(fallbackChallenge.result)) {
+        toast.error('Please solve the verification challenge first.');
+        if (!fallbackChallenge) setFallbackChallenge(buildFallbackChallenge());
+        return;
+      }
+    } else if (recaptchaOperational && !captchaToken) {
       toast.error('Please complete the captcha verification first.');
       return;
     }
     setOauthLoading(true);
     trackActivationStep('signup_oauth_started', { provider });
     try {
-      if (recaptchaEnabled) {
-        await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+      if (recaptchaOperational) {
+        try {
+          await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+        } catch {
+          if (recaptchaStrict) {
+            toast.error('Captcha verification failed. Please refresh and retry.');
+            return;
+          }
+          setCaptchaUnavailable(true);
+          setCaptchaToken('');
+          if (!fallbackChallenge) setFallbackChallenge(buildFallbackChallenge());
+          toast.error('Captcha verification is unavailable. Solve the backup challenge and retry.');
+          return;
+        }
       }
       const result = await signInWithOAuth(provider);
       if (result?.url) { window.location.href = result.url; }
@@ -227,7 +305,40 @@ const RegisterSupabase = () => {
               {loading ? "Creating account..." : "Create account"}
             </button>
             {recaptchaEnabled && (
-              <RecaptchaGate onTokenChange={setCaptchaToken} testId="register-recaptcha" />
+              <RecaptchaGate
+                onTokenChange={setCaptchaToken}
+                onStatusChange={handleRecaptchaStatus}
+                testId="register-recaptcha"
+              />
+            )}
+            {recaptchaEnabled && captchaUnavailable && (
+              <div
+                className="rounded-xl border px-3 py-3 text-xs"
+                style={{ borderColor: '#334155', background: 'rgba(15,23,42,0.5)', color: '#94A3B8', fontFamily: fontFamily.body }}
+                data-testid="register-recaptcha-fallback-note"
+              >
+                Captcha widget unavailable ({captchaStatusReason || 'init_failed'}). Using backup verification challenge.
+              </div>
+            )}
+            {fallbackRequired && fallbackChallenge && (
+              <div
+                className="rounded-xl border px-3 py-3"
+                style={{ borderColor: '#334155', background: 'rgba(15,23,42,0.5)' }}
+                data-testid="register-fallback-captcha"
+              >
+                <p className="text-xs mb-2" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
+                  Verification required: solve {fallbackChallenge.prompt}
+                </p>
+                <Input
+                  type="number"
+                  value={fallbackAnswer}
+                  onChange={(e) => setFallbackAnswer(e.target.value)}
+                  placeholder="Your answer"
+                  className="h-10 text-sm rounded-lg"
+                  style={{ fontFamily: fontFamily.body, background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
+                  data-testid="register-fallback-captcha-input"
+                />
+              </div>
             )}
           </form>
 
