@@ -28,7 +28,8 @@ const LoginSupabase = () => {
   const [fallbackAnswer, setFallbackAnswer] = useState('');
   const recaptchaSiteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
   const recaptchaAction = 'login';
-  const recaptchaEnabled = Boolean(recaptchaSiteKey);
+  // Temporary release bypass: disable Google reCAPTCHA until iteration blockers are stabilized.
+  const recaptchaEnabled = false;
   const recaptchaStrict = String(process.env.REACT_APP_RECAPTCHA_STRICT || '').toLowerCase() === 'true';
   const recaptchaOperational = recaptchaEnabled && !captchaUnavailable;
   const fallbackRequired = (recaptchaEnabled && captchaUnavailable && !recaptchaStrict) || (!recaptchaEnabled && failedAttempts >= 3);
