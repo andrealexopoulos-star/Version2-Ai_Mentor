@@ -84,19 +84,19 @@ class TestAuthEndpoints:
     """Auth route tests"""
 
     def test_auth_me_unauthenticated(self, session):
-        """GET /api/auth/me without token should return 401/403"""
+        """GET /api/auth/supabase/me without token should return 401/403"""
         clean_session = requests.Session()
-        response = clean_session.get(f"{BASE_URL}/api/auth/me")
+        response = clean_session.get(f"{BASE_URL}/api/auth/supabase/me")
         assert response.status_code in [401, 403, 422]
-        print(f"✓ Unauthenticated /auth/me correctly blocked: {response.status_code}")
+        print(f"✓ Unauthenticated /auth/supabase/me correctly blocked: {response.status_code}")
 
     def test_auth_me_authenticated(self, authenticated_session):
-        """GET /api/auth/me with token should return user data"""
-        response = authenticated_session.get(f"{BASE_URL}/api/auth/me")
+        """GET /api/auth/supabase/me with token should return user data"""
+        response = authenticated_session.get(f"{BASE_URL}/api/auth/supabase/me")
         assert response.status_code == 200
         data = response.json()
         assert "id" in data or "user" in data
-        print(f"✓ Authenticated /auth/me: user_id present")
+        print(f"✓ Authenticated /auth/supabase/me: user_id present")
 
 
 # ═══ SOUNDBOARD ENDPOINTS ═══
