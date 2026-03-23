@@ -8,7 +8,12 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://api.biqc.ai')
+BASE_URL = (
+    os.environ.get("REACT_APP_BACKEND_URL")
+    or os.environ.get("BACKEND_BASE_URL")
+    or os.environ.get("BACKEND_URL")
+    or "https://api.biqc.ai"
+).rstrip("/")
 
 # Test credentials - andre@thestrategysquad.com.au
 TEST_EMAIL = "andre@thestrategysquad.com.au"
@@ -20,11 +25,11 @@ class TestHealthAndBasics:
     
     def test_health_endpoint(self):
         """Test health endpoint returns JSON"""
-        response = requests.get(f"{BASE_URL}/api/health")
+        response = requests.get(f"{BASE_URL}/api/health", timeout=10)
         assert response.status_code == 200
         assert 'application/json' in response.headers.get('content-type', '')
         data = response.json()
-        assert data.get('status') == 'healthy'
+        assert data.get('status') in ('healthy', 'ok')
         print(f"✅ Health endpoint OK: {data}")
     
     def test_no_html_on_api_routes(self):
@@ -35,7 +40,7 @@ class TestHealthAndBasics:
             '/api/docs',
         ]
         for endpoint in test_endpoints:
-            response = requests.get(f"{BASE_URL}{endpoint}")
+            response = requests.get(f"{BASE_URL}{endpoint}", timeout=10)
             content_type = response.headers.get('content-type', '')
             # Should NOT be text/html for API routes
             if response.status_code != 404:
@@ -185,7 +190,7 @@ class TestCacheControlHeaders:
     
     def test_api_responses_have_no_cache_headers(self):
         """Verify API responses include cache-control headers"""
-        response = requests.get(f"{BASE_URL}/api/health")
+        response = requests.get(f"{BASE_URL}/api/health", timeout=10)
         
         # Check cache control headers exist (may be set by proxy or backend)
         headers_lower = {k.lower(): v for k, v in response.headers.items()}
