@@ -12,8 +12,31 @@ Key tests:
 import pytest
 import requests
 import os
+from pathlib import Path
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+REPO_ROOT = Path(__file__).resolve().parents[2]
+APP_ROOT = Path("/app")
+
+
+def _resolve_repo_path(*parts: str) -> Path:
+    app_path = APP_ROOT.joinpath(*parts)
+    if app_path.exists():
+        return app_path
+    return REPO_ROOT.joinpath(*parts)
+
+
+def _files_with_text(root: Path, text: str):
+    matches = []
+    for file_path in root.rglob("*"):
+        if not file_path.is_file():
+            continue
+        if file_path.suffix.lower() not in {".js", ".jsx", ".ts", ".tsx"}:
+            continue
+        content = file_path.read_text(encoding="utf-8", errors="ignore")
+        if text in content:
+            matches.append(str(file_path.relative_to(root)))
+    return matches
 
 class TestDataPlaneRemediation:
     """Tests for BIQC data-plane remediation changes"""
@@ -62,9 +85,8 @@ class TestNoMongoDBDependency:
 
     def test_no_motor_import(self):
         """server.py should NOT contain motor imports"""
-        server_path = "/app/backend/server.py"
-        with open(server_path, 'r') as f:
-            content = f.read()
+        server_path = _resolve_repo_path("backend", "server.py")
+        content = server_path.read_text(encoding="utf-8")
         
         assert "from motor" not in content.lower(), "Found 'from motor' import in server.py"
         assert "import motor" not in content.lower(), "Found 'import motor' in server.py"
@@ -73,9 +95,8 @@ class TestNoMongoDBDependency:
 
     def test_no_mongodb_client_init(self):
         """server.py should NOT initialize MongoDB client on startup"""
-        server_path = "/app/backend/server.py"
-        with open(server_path, 'r') as f:
-            first_200_lines = ''.join(f.readlines()[:200])
+        server_path = _resolve_repo_path("backend", "server.py")
+        first_200_lines = ''.join(server_path.read_text(encoding="utf-8").splitlines(keepends=True)[:200])
         
         # Check that there's no MongoDB initialization at startup
         assert "mongo_client" not in first_200_lines.lower(), "Found mongo_client in startup code"
@@ -88,29 +109,22 @@ class TestShadowStateRemoval:
 
     def test_no_biqc_context_v1_writes(self):
         """Frontend should NOT write to localStorage biqc_context_v1"""
-        import subprocess
-        result = subprocess.run(
-            ['grep', '-r', 'biqc_context_v1', '/app/frontend/src/'],
-            capture_output=True, text=True
-        )
-        assert result.returncode == 1, f"Found biqc_context_v1 references: {result.stdout}"
+        frontend_src = _resolve_repo_path("frontend", "src")
+        matches = _files_with_text(frontend_src, "biqc_context_v1")
+        assert not matches, f"Found biqc_context_v1 references in: {matches}"
         print("✅ No biqc_context_v1 localStorage references")
 
     def test_no_biqc_intelligence_state(self):
         """Frontend should NOT write to localStorage biqc_intelligence_state"""
-        import subprocess
-        result = subprocess.run(
-            ['grep', '-r', 'biqc_intelligence_state', '/app/frontend/src/'],
-            capture_output=True, text=True
-        )
-        assert result.returncode == 1, f"Found biqc_intelligence_state references: {result.stdout}"
+        frontend_src = _resolve_repo_path("frontend", "src")
+        matches = _files_with_text(frontend_src, "biqc_intelligence_state")
+        assert not matches, f"Found biqc_intelligence_state references in: {matches}"
         print("✅ No biqc_intelligence_state localStorage references")
 
     def test_no_dead_context_state(self):
         """SupabaseAuthContext should NOT export dead state variables"""
-        context_path = "/app/frontend/src/context/SupabaseAuthContext.js"
-        with open(context_path, 'r') as f:
-            content = f.read()
+        context_path = _resolve_repo_path("frontend", "src", "context", "SupabaseAuthContext.js")
+        content = context_path.read_text(encoding="utf-8")
         
         dead_state = ['businessContext', 'contextLoading', 'contextError', 
                       'contextSource', 'onboardingState', 'calibrationMode']
@@ -123,9 +137,8 @@ class TestShadowStateRemoval:
 
     def test_api_js_no_localstorage_fallback(self):
         """api.js should NOT read localStorage token as fallback"""
-        api_path = "/app/frontend/src/lib/api.js"
-        with open(api_path, 'r') as f:
-            content = f.read()
+        api_path = _resolve_repo_path("frontend", "src", "lib", "api.js")
+        content = api_path.read_text(encoding="utf-8")
         
         assert "localStorage" not in content, f"Found localStorage in api.js"
         print("✅ No localStorage token fallback in api.js")
@@ -136,9 +149,8 @@ class TestAuthCallbackClean:
 
     def test_no_localstorage_writes_in_callback(self):
         """AuthCallbackSupabase should NOT write to biqc_context_v1"""
-        callback_path = "/app/frontend/src/pages/AuthCallbackSupabase.js"
-        with open(callback_path, 'r') as f:
-            content = f.read()
+        callback_path = _resolve_repo_path("frontend", "src", "pages", "AuthCallbackSupabase.js")
+        content = callback_path.read_text(encoding="utf-8")
         
         assert "biqc_context_v1" not in content, "Found biqc_context_v1 in AuthCallbackSupabase"
         assert "localStorage.setItem" not in content or "biqc" not in content, \
