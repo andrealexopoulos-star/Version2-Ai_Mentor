@@ -6,7 +6,12 @@ import pytest
 import httpx
 import os
 
-BASE_URL = os.environ.get("BACKEND_URL", "http://localhost:8001")
+BASE_URL = (
+    os.environ.get("REACT_APP_BACKEND_URL")
+    or os.environ.get("BACKEND_URL")
+    or os.environ.get("BACKEND_BASE_URL")
+    or "http://localhost:8001"
+).rstrip("/")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://vwwandhoydemcybltoxz.supabase.co")
 
 
