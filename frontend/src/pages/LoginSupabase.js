@@ -132,7 +132,14 @@ const LoginSupabase = () => {
     try {
       if (recaptchaOperational) {
         if (!captchaToken) {
-          setLoginError('Please complete the captcha verification.');
+          if (recaptchaStrict) {
+            setLoginError('Please complete the captcha verification.');
+            return;
+          }
+          setCaptchaUnavailable(true);
+          setCaptchaStatusReason('token_missing');
+          if (!fallbackChallenge) setFallbackChallenge(buildFallbackChallenge());
+          setLoginError('Captcha token unavailable. Solve the verification challenge and try again.');
           return;
         }
         try {
@@ -199,7 +206,14 @@ const LoginSupabase = () => {
         return;
       }
     } else if (recaptchaOperational && !captchaToken) {
-      toast.error('Please complete the captcha verification first.');
+      if (recaptchaStrict) {
+        toast.error('Please complete the captcha verification first.');
+        return;
+      }
+      setCaptchaUnavailable(true);
+      setCaptchaStatusReason('token_missing');
+      if (!fallbackChallenge) setFallbackChallenge(buildFallbackChallenge());
+      toast.error('Captcha token unavailable. Solve the verification challenge first.');
       return;
     }
     setOauthLoading(true);
