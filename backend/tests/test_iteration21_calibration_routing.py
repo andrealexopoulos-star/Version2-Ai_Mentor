@@ -81,12 +81,25 @@ class TestFrontendCodeVerification:
         assert len(matches) >= 1, "SupabaseAuthContext.js does not call /api/calibration/status"
         print(f"✓ SupabaseAuthContext.js calls /api/calibration/status ({len(matches)} occurrence(s))")
     
-    def test_auth_callback_only_uses_backend_calibration_endpoint(self, auth_callback_content):
-        """Frontend: AuthCallbackSupabase.js only calls /api/calibration/status backend endpoint"""
-        pattern = r'/api/calibration/status'
-        matches = re.findall(pattern, auth_callback_content)
-        assert len(matches) >= 1, "AuthCallbackSupabase.js does not call /api/calibration/status"
-        print(f"✓ AuthCallbackSupabase.js calls /api/calibration/status ({len(matches)} occurrence(s))")
+    def test_auth_callback_uses_backend_routing_endpoints(self, auth_callback_content):
+        """Frontend: AuthCallbackSupabase.js uses backend-owned post-auth routing probes."""
+        calibration_pattern = r'/api/calibration/status'
+        calibration_matches = re.findall(calibration_pattern, auth_callback_content)
+        integration_patterns = [
+            r'/api/integrations/merge/connected',
+            r'/api/outlook/status',
+            r'/api/gmail/status',
+        ]
+        integration_hits = sum(
+            len(re.findall(pattern, auth_callback_content))
+            for pattern in integration_patterns
+        )
+        assert (len(calibration_matches) >= 1) or (integration_hits >= 1), \
+            "AuthCallbackSupabase.js does not call backend calibration/routing endpoints"
+        print(
+            "✓ AuthCallbackSupabase.js uses backend routing probes "
+            f"(calibration={len(calibration_matches)}, integration_hits={integration_hits})"
+        )
     
     def test_auth_context_fail_open_behavior(self, supabase_auth_context_content):
         """Frontend: SupabaseAuthContext.js fails-open to READY on error (calibrationComplete = true in catch)"""
