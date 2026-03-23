@@ -44,6 +44,7 @@ jobs:
           backend/tests/test_iteration17_fact_resolution.py
           backend/tests/test_iteration18_fact_authority.py
           backend/tests/test_iteration19_bypass_violations.py
+          backend/tests/test_iteration20_priority_compression.py
           backend/tests/test_iteration153_launch_packaging.py
           backend/tests/test_iteration155_calibration_benchmark_hardening.py
           --tb=short -q --no-header --timeout=10 -x
