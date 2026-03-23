@@ -4,7 +4,7 @@ Per-User Cognitive Core - SUPABASE VERSION
 Maintains a continuously evolving, non-resetting cognitive profile for each user.
 This profile persists across sessions, conversations, agents, and time.
 
-MIGRATED TO: Supabase PostgreSQL (from MongoDB)
+MIGRATED TO: Supabase PostgreSQL
 - Uses JSONB columns for flexible schema
 - Maintains all 4 cognitive layers
 - Compatible with OAuth authentication
@@ -44,7 +44,7 @@ class CognitiveCore:
     """
     
     def __init__(self, supabase_client: Client):
-        """Initialize with Supabase client instead of MongoDB"""
+        """Initialize with Supabase client"""
         self.supabase = supabase_client
         logger.info("Cognitive Core initialized with Supabase PostgreSQL")
     

@@ -1,6 +1,6 @@
 """
 Supabase Intelligence & Support Collections Helpers
-Replaces MongoDB operations for intelligence, chat, files, analyses
+Supabase operations for intelligence, chat, files, and analyses
 """
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone

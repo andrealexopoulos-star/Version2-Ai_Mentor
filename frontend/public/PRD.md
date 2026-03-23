@@ -87,4 +87,4 @@ Transform the BIQc platform into a high-performance, AI-driven strategic busines
 
 ## Test Credentials
 - Superadmin: andre@thestrategysquad.com.au / BIQc_Test_2026!
-- Test User: e2e.test.feb17@emergentagent.com / TestPassword123!
+- Test User: e2e.test.feb17@biqc.ai / TestPassword123!

@@ -1,7 +1,7 @@
 """
 Supabase Schema Setup and Migration Script
 
-This script creates the PostgreSQL schema in Supabase equivalent to the MongoDB collections.
+This script creates the PostgreSQL schema in Supabase for the application data model.
 It handles schema creation, data migration, and validation.
 """
 
@@ -24,7 +24,7 @@ def get_supabase_client() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 def create_schema():
-    """Create PostgreSQL tables matching MongoDB collections"""
+    """Create PostgreSQL tables for core application collections"""
     
     supabase = get_supabase_client()
     

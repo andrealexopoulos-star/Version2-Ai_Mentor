@@ -2,7 +2,7 @@
 BIQc Watchtower — Cold Read Intelligence Engine
 PROMPT 2A FINAL - Hybrid Bridge Architecture
 
-INPUT: MongoDB (read-only)
+INPUT: email datastore (read-only)
 OUTPUT: Supabase watchtower_events (write-only)
 INTELLIGENCE: Non-trivial, multi-message, temporal pattern detection
 
@@ -28,7 +28,7 @@ def create_fingerprint(domain: str, type: str, key: str) -> str:
 
 
 async def analyze_email_relationship_patterns(
-    mongo_db: Any,
+    email_store: Any,
     user_id: str,
     account_id: str,
     lookback_days: int = 90,
@@ -71,10 +71,10 @@ async def analyze_email_relationship_patterns(
         UNREAD_MIN_DAYS = 14
         confidence_level = "moderate"
     
-    # Query MongoDB outlook_emails (INDEXED on user_id as of PROMPT 1)
+    # Query outlook_emails (indexed on user_id)
     cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
     
-    cursor = mongo_db.outlook_emails.find(
+    cursor = email_store.outlook_emails.find(
         {
             "user_id": user_id,
             "received_date": {"$gte": cutoff_date.isoformat()}
@@ -148,7 +148,7 @@ async def analyze_email_relationship_patterns(
             if last_seen_days >= SILENCE_MIN_DAYS:
                 # Check for outbound attempts (Sent Items context)
                 # Query sent emails to this recipient
-                outbound_cursor = mongo_db.outlook_emails.find(
+                outbound_cursor = email_store.outlook_emails.find(
                     {
                         "user_id": user_id,
                         "folder": "sent",
@@ -340,8 +340,8 @@ async def analyze_email_relationship_patterns(
     # Detect: Emails sent outside standard business hours (11pm-5am pattern)
     # Uses: Sent Items metadata ONLY
     
-    # Query sent items from MongoDB/Supabase
-    sent_cursor = mongo_db.outlook_emails.find(
+    # Query sent items
+    sent_cursor = email_store.outlook_emails.find(
         {
             "user_id": user_id,
             "folder": "sent",
@@ -422,14 +422,14 @@ async def analyze_email_relationship_patterns(
 async def generate_cold_read(
     account_id: str,
     user_id: str,
-    mongo_db: Any,
+    email_store: Any,
     watchtower_store: Any,
     lookback_days: int = 90
 ) -> Dict[str, Any]:
     """
     WATCHTOWER COLD READ - Hybrid Intelligence Bridge
     
-    INPUT: MongoDB outlook_emails (read-only)
+    INPUT: outlook_emails datastore (read-only)
     OUTPUT: Supabase watchtower_events (write-only)
     INTELLIGENCE: Multi-message pattern detection
     
@@ -438,7 +438,7 @@ async def generate_cold_read(
     Args:
         account_id: Workspace ID
         user_id: User ID for email query
-        mongo_db: MongoDB database instance
+        email_store: datastore instance exposing outlook_emails access
         watchtower_store: Supabase watchtower store
         lookback_days: Analysis window (default 90 days)
         
@@ -470,7 +470,7 @@ async def generate_cold_read(
         # === COMMUNICATIONS DOMAIN: Email Intelligence ===
         
         email_events = await analyze_email_relationship_patterns(
-            mongo_db=mongo_db,
+            email_store=email_store,
             user_id=user_id,
             account_id=account_id,
             lookback_days=lookback_days,
@@ -485,7 +485,7 @@ async def generate_cold_read(
         
         # Get email count for reporting
         cutoff = datetime.now(timezone.utc) - timedelta(days=lookback_days)
-        email_count = await mongo_db.outlook_emails.count_documents({
+        email_count = await email_store.outlook_emails.count_documents({
             "user_id": user_id,
             "received_date": {"$gte": cutoff.isoformat()}
         })

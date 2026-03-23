@@ -19,7 +19,7 @@ const AGENT_COLORS = {
   MySoundBoard: '#10B981',
   BoardRoom: '#dc2626',
   'BIQc-02': '#d97706',
-  EmergentAdvisor: '#ea580c',
+  StrategyAdvisor: '#ea580c',
   EmailAnalyst: '#4f46e5',
   BIQC: '#0d9488',
   ProfileAnalyst: '#8b5cf6',

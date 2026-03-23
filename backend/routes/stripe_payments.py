@@ -81,7 +81,7 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
     user_email = current_user.get("email", "")
 
     # URL resolution
-    base = req.origin_url or req.success_url or "https://biqc.thestrategysquad.com"
+    base = req.origin_url or req.success_url or "https://biqc.ai"
     if base.endswith('/upgrade/success') or base.endswith('/upgrade'):
         base = base.split('/upgrade')[0]
 

@@ -163,7 +163,7 @@ def configure_middleware(app):
         CORSMiddleware,
         allow_credentials=True,
         allow_origins=_allowed_origins(),
-        allow_origin_regex=r"https://([a-z0-9-]+\.)?(thestrategysquad\.com|preview\.emergentagent\.com)$|http://(localhost|127\.0\.0\.1):3000$",
+        allow_origin_regex=r"^https://biqc\.ai$|^http://(localhost|127\.0\.0\.1):3000$",
         allow_methods=["*"],
         allow_headers=["*"],
         expose_headers=["X-API-Server"],

@@ -3,14 +3,14 @@ BIQc Sprint 2 API Tests — Iteration 105
 Tests for new unified integration-status endpoints:
   GET  /api/user/integration-status
   POST /api/user/integration-status/sync
-Preview URL: https://truth-engine-19.preview.emergentagent.com
+Preview URL: https://biqc.ai
 """
 import pytest
 import requests
 import os
 import time
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://truth-engine-19.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://biqc.ai").rstrip("/")
 
 # ─── AUTH HELPERS ─────────────────────────────────────────────
 def get_auth_token(email="newtest1@biqctest.io", password="BIQcTest!2026"):

@@ -96,10 +96,6 @@ def _ensure_launch_email_slot(current_user: dict, provider: str) -> None:
 def _normalize_oauth_public_url(url: str, fallback: str) -> str:
     """Normalize public URLs used in OAuth redirects."""
     cleaned = (url or fallback).rstrip("/")
-    if '.emergent.host' in cleaned:
-        cleaned = cleaned.replace('.emergent.host', '.com')
-    if 'preview.emergentagent.com' in cleaned:
-        cleaned = os.environ.get('BACKEND_URL', fallback).rstrip("/")
     return cleaned
 
 
@@ -283,7 +279,7 @@ def _filter_replied_inbox_emails(inbox_emails: List[Dict[str, Any]], sent_emails
 # ═══════════════════════════════════════════════════════════════
 
 # ═══════════════════════════════════════════════════════════════
-# OUTLOOK HYBRID TOKEN HELPERS (Supabase + MongoDB Support)
+# OUTLOOK HYBRID TOKEN HELPERS (Supabase token storage)
 # ═══════════════════════════════════════════════════════════════
 
 async def get_outlook_tokens(user_id: str) -> Optional[Dict[str, Any]]:
@@ -1496,8 +1492,7 @@ async def refresh_outlook_token_supabase(user_id: str, refresh_token: str) -> Di
     }
 
 
-# REMOVED: Legacy MongoDB token refresh function
-# This function used db.users (MongoDB) which is being phased out
+# REMOVED: Legacy token refresh function using deprecated storage
 # Replaced by refresh_outlook_token_supabase() which uses Supabase
 # Original code preserved in git history if needed
 
@@ -2070,7 +2065,7 @@ async def analyze_email_priority(current_user: dict = Depends(get_current_user))
     """
     user_id = current_user["id"]
     
-    # Get business profile for context (still MongoDB for now - will migrate later)
+    # Get business profile context from Supabase
     profile = await get_business_profile_supabase(get_sb(), user_id)
     business_goals = profile.get("short_term_goals", "") if profile else ""
     business_challenges = profile.get("main_challenges", "") if profile else ""

@@ -26,7 +26,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        REACT_APP_BACKEND_URL: ${REACT_APP_BACKEND_URL:-https://biqc.thestrategysquad.com}
+        REACT_APP_BACKEND_URL: ${REACT_APP_BACKEND_URL:-https://biqc.ai}
         REACT_APP_SUPABASE_URL: ${REACT_APP_SUPABASE_URL}
         REACT_APP_SUPABASE_ANON_KEY: ${REACT_APP_SUPABASE_ANON_KEY}
     container_name: biqc-frontend
