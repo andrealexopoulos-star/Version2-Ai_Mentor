@@ -169,7 +169,13 @@ jobs:
           az webapp config appsettings set \
             --name ${{ env.AZURE_WEBAPP_BACKEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --settings WEBSITES_PORT=8001 PORT=8001
+            --settings WEBSITES_PORT=8001 PORT=8001 \
+              RECAPTCHA_PROVIDER=${{ secrets.RECAPTCHA_PROVIDER }} \
+              RECAPTCHA_SECRET_KEY=${{ secrets.RECAPTCHA_SECRET_KEY }} \
+              RECAPTCHA_SITE_KEY=${{ secrets.REACT_APP_RECAPTCHA_SITE_KEY }} \
+              RECAPTCHA_ENTERPRISE_PROJECT_ID=${{ secrets.RECAPTCHA_ENTERPRISE_PROJECT_ID }} \
+              RECAPTCHA_ENTERPRISE_API_KEY=${{ secrets.RECAPTCHA_ENTERPRISE_API_KEY }} \
+              RECAPTCHA_MIN_SCORE=${{ secrets.RECAPTCHA_MIN_SCORE }}
 
       - name: Restart frontend
         run: |

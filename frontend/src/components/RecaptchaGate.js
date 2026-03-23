@@ -76,8 +76,9 @@ const ensureScript = (mode, provider, siteKey) => {
   });
 };
 
-const RecaptchaGate = ({ onTokenChange, onStatusChange, testId = 'recaptcha-gate' }) => {
+const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId = 'recaptcha-gate' }) => {
   const siteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
+  const actionName = String(action || 'auth').trim() || 'auth';
   const configuredMode = normalizeMode(process.env.REACT_APP_RECAPTCHA_MODE);
   const configuredProvider = normalizeProvider(process.env.REACT_APP_RECAPTCHA_PROVIDER);
   const containerRef = useRef(null);
@@ -132,14 +133,14 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, testId = 'recaptcha-gate
         throw new Error('reCAPTCHA v3 unavailable');
       }
       await new Promise((resolve) => api.ready(resolve));
-      const token = await api.execute(siteKey, { action: 'auth' });
+      const token = await api.execute(siteKey, { action: actionName });
       if (!token) throw new Error('Empty reCAPTCHA token');
       activeModeRef.current = MODE_V3;
       activeProviderRef.current = provider;
       onTokenChange(token);
       setError('');
       reportStatus('ready', `${provider}:v3`);
-      startV3Refresh('auth', provider);
+      startV3Refresh(actionName, provider);
     };
 
     const tryV2 = async (provider) => {
@@ -255,7 +256,7 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, testId = 'recaptcha-gate
       clearRefresh();
       resetWidget();
     };
-  }, [configuredMode, configuredProvider, onTokenChange, reportStatus, siteKey]);
+  }, [actionName, configuredMode, configuredProvider, onTokenChange, reportStatus, siteKey]);
 
   return (
     <div className="space-y-2" data-testid={testId}>
