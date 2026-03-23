@@ -94,7 +94,17 @@ class RateLimitAPIMiddleware(BaseHTTPMiddleware):
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
             return f"token:{hashlib.sha256(token.encode()).hexdigest()[:24]}"
-        client_host = getattr(request.client, "host", None) or "anonymous"
+        # Prefer original client IP from trusted proxy headers to avoid
+        # collapsing many users behind a single reverse-proxy address.
+        forwarded_for = (request.headers.get("x-forwarded-for") or "").strip()
+        if forwarded_for:
+            client_host = forwarded_for.split(",")[0].strip()
+        else:
+            client_host = (
+                (request.headers.get("x-real-ip") or "").strip()
+                or getattr(request.client, "host", None)
+                or "anonymous"
+            )
         return f"ip:{client_host}"
 
     @staticmethod

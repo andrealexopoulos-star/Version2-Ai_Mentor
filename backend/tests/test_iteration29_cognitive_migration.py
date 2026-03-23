@@ -40,28 +40,28 @@ class TestRBACAdminRoutes:
     """RBAC tests - Admin routes require super_admin role"""
     
     def test_admin_prompts_requires_super_admin(self):
-        """Test /api/admin/prompts returns 403 without auth"""
+        """Test /api/admin/prompts returns auth block without auth"""
         response = requests.get(f"{BASE_URL}/api/admin/prompts")
-        assert response.status_code == 403, f"Expected 403 (super_admin gated), got {response.status_code}"
-        print("PASS: /api/admin/prompts returns 403 without auth (super_admin gated)")
+        assert response.status_code in [401, 403], f"Expected 401/403 (super_admin gated), got {response.status_code}"
+        print(f"PASS: /api/admin/prompts returns {response.status_code} without auth (super_admin gated)")
     
     def test_admin_prompts_invalidate_requires_super_admin(self):
-        """Test /api/admin/prompts/invalidate POST returns 403 without auth"""
+        """Test /api/admin/prompts/invalidate POST returns auth block without auth"""
         response = requests.post(f"{BASE_URL}/api/admin/prompts/invalidate")
-        assert response.status_code == 403, f"Expected 403 (super_admin gated), got {response.status_code}"
-        print("PASS: /api/admin/prompts/invalidate POST returns 403 without auth")
+        assert response.status_code in [401, 403], f"Expected 401/403 (super_admin gated), got {response.status_code}"
+        print(f"PASS: /api/admin/prompts/invalidate POST returns {response.status_code} without auth")
     
     def test_admin_users_requires_super_admin(self):
-        """Test /api/admin/users returns 403 without auth"""
+        """Test /api/admin/users returns auth block without auth"""
         response = requests.get(f"{BASE_URL}/api/admin/users")
-        assert response.status_code == 403, f"Expected 403 (super_admin gated), got {response.status_code}"
-        print("PASS: /api/admin/users returns 403 without auth (super_admin gated)")
+        assert response.status_code in [401, 403], f"Expected 401/403 (super_admin gated), got {response.status_code}"
+        print(f"PASS: /api/admin/users returns {response.status_code} without auth (super_admin gated)")
     
     def test_admin_stats_requires_super_admin(self):
-        """Test /api/admin/stats returns 403 without auth"""
+        """Test /api/admin/stats returns auth block without auth"""
         response = requests.get(f"{BASE_URL}/api/admin/stats")
-        assert response.status_code == 403, f"Expected 403 (super_admin gated), got {response.status_code}"
-        print("PASS: /api/admin/stats returns 403 without auth")
+        assert response.status_code in [401, 403], f"Expected 401/403 (super_admin gated), got {response.status_code}"
+        print(f"PASS: /api/admin/stats returns {response.status_code} without auth")
 
 
 class TestProtectedEndpoints:

@@ -429,6 +429,8 @@ async def get_oauth_url(provider: str, redirect_to: str = None):
             "provider": provider
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"OAuth URL error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate OAuth URL: {str(e)}")

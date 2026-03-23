@@ -23,9 +23,9 @@ import json
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Test credentials
-TEST_EMAIL = "andre@thestrategysquad.com.au"
-TEST_PASSWORD = "Biqc#Cert2026!xQ9z"
+# Test credentials (must be provided by environment in CI)
+TEST_EMAIL = os.environ.get("TEST_USER_EMAIL", os.environ.get("E2E_TEST_EMAIL", ""))
+TEST_PASSWORD = os.environ.get("TEST_USER_PASSWORD", os.environ.get("E2E_TEST_PASSWORD", ""))
 
 
 class TestHtmlVsJsonStability:
@@ -42,14 +42,17 @@ class TestHtmlVsJsonStability:
 
         try:
             from supabase import create_client
-        except Exception as exc:
-            pytest.skip(f"Supabase client unavailable in test environment: {exc}")
+        except ImportError:
+            pytest.skip("Supabase client not available for iteration25")
 
         supabase_url = os.environ.get("SUPABASE_URL", os.environ.get("REACT_APP_SUPABASE_URL", ""))
-        supabase_key = os.environ.get("SUPABASE_ANON_KEY", "")
+        supabase_key = os.environ.get(
+            "SUPABASE_ANON_KEY",
+            os.environ.get("REACT_APP_SUPABASE_ANON_KEY", "")
+        )
 
-        if not supabase_url or not supabase_key:
-            pytest.skip("Supabase URL/key unavailable in CI; skipping auth-required stability endpoints")
+        if not (supabase_url and supabase_key and TEST_EMAIL and TEST_PASSWORD):
+            pytest.skip("Auth test env not configured for iteration25")
 
         try:
             client = create_client(supabase_url, supabase_key)
@@ -58,7 +61,7 @@ class TestHtmlVsJsonStability:
                 "password": TEST_PASSWORD
             })
         except Exception as exc:
-            pytest.skip(f"Supabase auth unavailable in CI: {exc}")
+            pytest.skip(f"Authentication unavailable for iteration25: {exc}")
 
         if response.session and response.session.access_token:
             return response.session.access_token
