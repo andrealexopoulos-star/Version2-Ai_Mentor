@@ -232,3 +232,19 @@ jobs:
             -d '{"site_url":"https://app.biqc.ai","additional_redirect_urls":"https://app.biqc.ai/**,https://app.biqc.ai/auth/callback,https://biqc.ai/**,https://www.biqc.ai/**,https://biqc.thestrategysquad.com/**,https://biqc.thestrategysquad.com/auth/callback"}' \
             | grep -o '"site_url":"[^"]*"' | head -1
           echo "Supabase site_url locked to production ✓"
+
+      - name: Publish deployment summary
+        run: |
+          {
+            echo "## Deployment Verification"
+            echo ""
+            echo "- **Branch:** \`${{ github.ref_name }}\`"
+            echo "- **Commit SHA:** \`${{ github.sha }}\`"
+            echo "- **Frontend image:** \`${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}\`"
+            echo "- **Backend image:** \`${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}\`"
+            echo "- **Frontend URL:** https://biqc.thestrategysquad.com"
+            echo "- **Backend URL:** ${{ env.BACKEND_BASE_URL }}"
+            echo "- **Run URL:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo ""
+            echo "All verification and smoke-test steps above must pass for this summary to appear."
+          } >> "$GITHUB_STEP_SUMMARY"
