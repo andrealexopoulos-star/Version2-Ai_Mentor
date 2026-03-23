@@ -53,7 +53,15 @@ GOOGLE_CLIENT_SECRET=
 ### GOOGLE reCAPTCHA (Auth Bot Protection)
 # Provider: Google reCAPTCHA / reCAPTCHA Enterprise
 # Used by: /api/auth/recaptcha/verify server-side validation
-# Supports either RECAPTCHA_SECRET_KEY or RECAPTCHA_SECRET naming
+# Standard mode supports either RECAPTCHA_SECRET_KEY or RECAPTCHA_SECRET naming
+# Enterprise mode uses assessments API with project+API key:
+#   POST https://recaptchaenterprise.googleapis.com/v1/projects/{RECAPTCHA_ENTERPRISE_PROJECT_ID}/assessments?key={RECAPTCHA_ENTERPRISE_API_KEY}
+# Provider can be: auto | standard | enterprise
+RECAPTCHA_PROVIDER=auto
+RECAPTCHA_SITE_KEY=
+RECAPTCHA_ENTERPRISE_PROJECT_ID=
+RECAPTCHA_ENTERPRISE_API_KEY=
+RECAPTCHA_MIN_SCORE=0.3
 RECAPTCHA_SECRET_KEY=
 RECAPTCHA_SECRET=
 

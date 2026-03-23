@@ -6,6 +6,7 @@ import os
 import json
 import urllib.parse
 import urllib.request
+import urllib.error
 from routes.deps import get_current_user, get_sb, logger
 from supabase_client import safe_query_single
 from auth_supabase import (
@@ -50,19 +51,97 @@ async def supabase_login(request: SignInRequest):
 
 class RecaptchaVerifyRequest(BaseModel):
     token: str
+    expectedAction: Optional[str] = None
+    siteKey: Optional[str] = None
     action: Optional[str] = None
 
 
 @router.post("/auth/recaptcha/verify")
 async def verify_recaptcha(request: RecaptchaVerifyRequest):
-    """Verify Google reCAPTCHA token server-side."""
-    secret = os.environ.get("RECAPTCHA_SECRET_KEY") or os.environ.get("RECAPTCHA_SECRET") or ""
-    if not secret:
-        return {"ok": True, "skipped": True, "reason": "recaptcha_secret_not_configured"}
+    """Verify Google reCAPTCHA token server-side (standard + enterprise)."""
+    provider = (
+        os.environ.get("RECAPTCHA_PROVIDER")
+        or os.environ.get("REACT_APP_RECAPTCHA_PROVIDER")
+        or "auto"
+    ).strip().lower()
+    secret = (os.environ.get("RECAPTCHA_SECRET_KEY") or os.environ.get("RECAPTCHA_SECRET") or "").strip()
+    enterprise_project_id = (
+        os.environ.get("RECAPTCHA_ENTERPRISE_PROJECT_ID")
+        or os.environ.get("GOOGLE_CLOUD_PROJECT")
+        or ""
+    ).strip()
+    enterprise_api_key = (
+        os.environ.get("RECAPTCHA_ENTERPRISE_API_KEY")
+        or os.environ.get("GOOGLE_API_KEY")
+        or ""
+    ).strip()
+    expected_action = (request.expectedAction or request.action or "").strip()
+    site_key = (
+        request.siteKey
+        or os.environ.get("RECAPTCHA_SITE_KEY")
+        or os.environ.get("REACT_APP_RECAPTCHA_SITE_KEY")
+        or ""
+    ).strip()
+    min_score_raw = (os.environ.get("RECAPTCHA_MIN_SCORE") or "0.3").strip()
+    try:
+        min_score = float(min_score_raw)
+    except ValueError:
+        min_score = 0.3
 
     token = (request.token or "").strip()
     if not token:
         raise HTTPException(status_code=400, detail="Missing captcha token")
+
+    use_enterprise = provider == "enterprise" or (enterprise_project_id and enterprise_api_key)
+    if use_enterprise and enterprise_project_id and enterprise_api_key and site_key:
+        event_payload = {"token": token, "siteKey": site_key}
+        if expected_action:
+            event_payload["expectedAction"] = expected_action
+        payload = json.dumps({"event": event_payload}).encode("utf-8")
+        project = urllib.parse.quote(enterprise_project_id, safe="")
+        api_key = urllib.parse.quote(enterprise_api_key, safe="")
+        endpoint = f"https://recaptchaenterprise.googleapis.com/v1/projects/{project}/assessments?key={api_key}"
+        try:
+            req = urllib.request.Request(
+                endpoint,
+                data=payload,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                body = resp.read().decode("utf-8")
+            data = json.loads(body)
+        except urllib.error.HTTPError as exc:
+            detail = "Captcha verification unavailable"
+            try:
+                err_body = exc.read().decode("utf-8")
+                parsed = json.loads(err_body)
+                detail = parsed.get("error", {}).get("message") or detail
+            except Exception:
+                pass
+            logger.warning(f"[recaptcha enterprise] verification request failed: {detail}")
+            raise HTTPException(status_code=502, detail="Captcha verification unavailable")
+        except Exception as exc:
+            logger.warning(f"[recaptcha enterprise] verification request failed: {exc}")
+            raise HTTPException(status_code=502, detail="Captcha verification unavailable")
+
+        token_props = data.get("tokenProperties") or {}
+        if not token_props.get("valid", False):
+            reason = (token_props.get("invalidReason") or "UNKNOWN").strip()
+            raise HTTPException(status_code=400, detail=f"Captcha verification failed ({reason})")
+
+        returned_action = (token_props.get("action") or "").strip()
+        if expected_action and returned_action and returned_action != expected_action:
+            raise HTTPException(status_code=400, detail="Captcha action mismatch")
+
+        score = (data.get("riskAnalysis") or {}).get("score")
+        if isinstance(score, (int, float)) and score < min_score:
+            raise HTTPException(status_code=400, detail="Captcha score too low")
+
+        return {"ok": True, "provider": "enterprise", "score": score, "action": returned_action or None}
+
+    if not secret:
+        return {"ok": True, "skipped": True, "reason": "recaptcha_secret_not_configured"}
 
     payload = urllib.parse.urlencode({
         "secret": secret,
@@ -87,15 +166,14 @@ async def verify_recaptcha(request: RecaptchaVerifyRequest):
         raise HTTPException(status_code=400, detail="Captcha verification failed")
 
     returned_action = (data.get("action") or "").strip()
-    expected_action = (request.action or "").strip()
     if expected_action and returned_action and returned_action != expected_action:
         raise HTTPException(status_code=400, detail="Captcha action mismatch")
 
     score = data.get("score")
-    if isinstance(score, (int, float)) and score < 0.3:
+    if isinstance(score, (int, float)) and score < min_score:
         raise HTTPException(status_code=400, detail="Captcha score too low")
 
-    return {"ok": True, "score": score, "action": returned_action or None}
+    return {"ok": True, "provider": "standard", "score": score, "action": returned_action or None}
 
 @router.get("/auth/supabase/oauth/{provider}")
 async def supabase_oauth(provider: str, redirect_to: Optional[str] = None):

@@ -32,7 +32,9 @@ const RegisterSupabase = () => {
   const [captchaToken, setCaptchaToken] = useState('');
   const [captchaUnavailable, setCaptchaUnavailable] = useState(false);
   const [captchaStatusReason, setCaptchaStatusReason] = useState('');
-  const recaptchaEnabled = Boolean(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
+  const recaptchaSiteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
+  const recaptchaAction = 'register';
+  const recaptchaEnabled = Boolean(recaptchaSiteKey);
   const recaptchaStrict = String(process.env.REACT_APP_RECAPTCHA_STRICT || '').toLowerCase() === 'true';
   const recaptchaOperational = recaptchaEnabled && !captchaUnavailable;
   const [fallbackChallenge, setFallbackChallenge] = useState(null);
@@ -102,7 +104,11 @@ const RegisterSupabase = () => {
           return;
         }
         try {
-          await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+          await apiClient.post('/auth/recaptcha/verify', {
+            token: captchaToken,
+            expectedAction: recaptchaAction,
+            siteKey: recaptchaSiteKey,
+          });
         } catch {
           if (recaptchaStrict) {
             toast.error('Captcha verification failed. Please refresh and try again.');
@@ -174,7 +180,11 @@ const RegisterSupabase = () => {
     try {
       if (recaptchaOperational) {
         try {
-          await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+          await apiClient.post('/auth/recaptcha/verify', {
+            token: captchaToken,
+            expectedAction: recaptchaAction,
+            siteKey: recaptchaSiteKey,
+          });
         } catch {
           if (recaptchaStrict) {
             toast.error('Captcha verification failed. Please refresh and retry.');
@@ -325,6 +335,7 @@ const RegisterSupabase = () => {
               <RecaptchaGate
                 onTokenChange={setCaptchaToken}
                 onStatusChange={handleRecaptchaStatus}
+                action={recaptchaAction}
                 testId="register-recaptcha"
               />
             )}

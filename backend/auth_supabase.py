@@ -245,15 +245,17 @@ async def verify_supabase_token(token: str) -> Dict[str, Any]:
         except Exception as db_err:
             logger.warning(f"[Auth] DB lookup failed for {user.email}: {db_err} — returning minimal profile")
             db_user = {}
+        if not isinstance(db_user, dict):
+            db_user = {}
 
         return {
             "id": user.id,
             "email": user.email,
-            "role": "superadmin" if _is_master_admin_email(user.email) else ((db_user or {}).get("role") or "user"),
-            "is_master_account": True if _is_master_admin_email(user.email) else (db_user or {}).get("is_master_account", False),
-            "subscription_tier": (db_user or {}).get("subscription_tier", "free"),
-            "full_name": (db_user or {}).get("full_name") or user.user_metadata.get("full_name"),
-            "company_name": (db_user or {}).get("company_name"),
+            "role": "superadmin" if _is_master_admin_email(user.email) else (db_user.get("role") or "user"),
+            "is_master_account": True if _is_master_admin_email(user.email) else db_user.get("is_master_account", False),
+            "subscription_tier": db_user.get("subscription_tier", "free"),
+            "full_name": db_user.get("full_name") or user.user_metadata.get("full_name"),
+            "company_name": db_user.get("company_name"),
         }
 
     except HTTPException:

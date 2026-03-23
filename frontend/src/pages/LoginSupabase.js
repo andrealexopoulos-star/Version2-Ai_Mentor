@@ -26,7 +26,9 @@ const LoginSupabase = () => {
   const [captchaStatusReason, setCaptchaStatusReason] = useState('');
   const [fallbackChallenge, setFallbackChallenge] = useState(null);
   const [fallbackAnswer, setFallbackAnswer] = useState('');
-  const recaptchaEnabled = Boolean(process.env.REACT_APP_RECAPTCHA_SITE_KEY);
+  const recaptchaSiteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
+  const recaptchaAction = 'login';
+  const recaptchaEnabled = Boolean(recaptchaSiteKey);
   const recaptchaStrict = String(process.env.REACT_APP_RECAPTCHA_STRICT || '').toLowerCase() === 'true';
   const recaptchaOperational = recaptchaEnabled && !captchaUnavailable;
   const fallbackRequired = (recaptchaEnabled && captchaUnavailable && !recaptchaStrict) || (!recaptchaEnabled && failedAttempts >= 3);
@@ -143,7 +145,11 @@ const LoginSupabase = () => {
           return;
         }
         try {
-          await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+          await apiClient.post('/auth/recaptcha/verify', {
+            token: captchaToken,
+            expectedAction: recaptchaAction,
+            siteKey: recaptchaSiteKey,
+          });
         } catch {
           if (recaptchaStrict) {
             setLoginError('Captcha verification failed. Please refresh and try again.');
@@ -220,7 +226,11 @@ const LoginSupabase = () => {
     try {
       if (recaptchaOperational) {
         try {
-          await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
+          await apiClient.post('/auth/recaptcha/verify', {
+            token: captchaToken,
+            expectedAction: recaptchaAction,
+            siteKey: recaptchaSiteKey,
+          });
         } catch {
           if (recaptchaStrict) {
             toast.error('Captcha verification failed. Please refresh and retry.');
@@ -374,6 +384,7 @@ const LoginSupabase = () => {
               <RecaptchaGate
                 onTokenChange={setCaptchaToken}
                 onStatusChange={handleRecaptchaStatus}
+                action={recaptchaAction}
                 testId="login-recaptcha"
               />
             )}
