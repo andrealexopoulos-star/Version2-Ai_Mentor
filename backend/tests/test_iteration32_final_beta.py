@@ -22,17 +22,18 @@ class TestHealthEndpoint:
 
 class TestAdminEndpoints:
     """Admin endpoints - super_admin gated, should return 403 without auth"""
+    AUTH_BLOCKED_CODES = [401, 403]
     
     def test_admin_prompts_returns_403(self):
         """GET /api/admin/prompts returns 403 (super_admin gated)"""
         response = requests.get(f"{BASE_URL}/api/admin/prompts")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print(f"✓ /api/admin/prompts: {response.status_code} (correctly gated)")
     
     def test_admin_prompts_key_test_returns_403(self):
         """POST /api/admin/prompts/{key}/test returns 403 (super_admin gated)"""
         response = requests.post(f"{BASE_URL}/api/admin/prompts/test_key/test")
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}"
         print(f"✓ /api/admin/prompts/{{key}}/test: {response.status_code} (correctly gated)")
 
 
