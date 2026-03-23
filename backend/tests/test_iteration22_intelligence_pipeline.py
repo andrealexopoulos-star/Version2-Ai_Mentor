@@ -300,48 +300,50 @@ class TestEmissionLayerCodeFix:
 
     def test_cold_read_calls_emission_layer(self):
         """
-        Verify cold-read endpoint calls emission_layer.run_emission().
+        Verify intelligence pipeline calls emission_layer.run_emission().
         """
-        server_file = "/app/backend/server.py"
+        integrations_file = "/app/backend/routes/integrations.py"
         
-        with open(server_file, 'r') as f:
+        with open(integrations_file, 'r') as f:
             content = f.read()
         
         assert 'emission_layer.run_emission(user_id, account_id)' in content, \
-            "Cold-read should call emission_layer.run_emission()"
+            "Intelligence pipeline should call emission_layer.run_emission()"
         
-        print("VERIFIED: Cold-read endpoint calls emission_layer.run_emission()")
+        print("VERIFIED: Integrations intelligence pipeline calls emission_layer.run_emission()")
 
     def test_cold_read_calls_watchtower_engine(self):
         """
-        Verify cold-read endpoint calls watchtower_engine.run_analysis().
+        Verify intelligence pipeline calls watchtower_engine.run_analysis().
         """
-        server_file = "/app/backend/server.py"
+        integrations_file = "/app/backend/routes/integrations.py"
         
-        with open(server_file, 'r') as f:
+        with open(integrations_file, 'r') as f:
             content = f.read()
         
         assert 'engine.run_analysis(user_id)' in content, \
-            "Cold-read should call watchtower_engine.run_analysis()"
+            "Intelligence pipeline should call watchtower_engine.run_analysis()"
         
-        print("VERIFIED: Cold-read endpoint calls watchtower_engine.run_analysis()")
+        print("VERIFIED: Integrations intelligence pipeline calls watchtower_engine.run_analysis()")
 
     def test_pipeline_order_emission_before_watchtower(self):
-        """Verify emission layer runs before watchtower engine in cold-read."""
-        server_file = "/app/backend/server.py"
+        """Verify emission layer runs before watchtower engine in ingestion path."""
+        integrations_file = "/app/backend/routes/integrations.py"
         
-        with open(server_file, 'r') as f:
+        with open(integrations_file, 'r') as f:
             content = f.read()
         
-        # Find the cold-read endpoint section
+        # Find the ingestion endpoint section
         emission_pos = content.find('emission_layer.run_emission')
         watchtower_pos = content.find('engine.run_analysis(user_id)')
-        cold_read_pos = content.find('generate_cold_read(')
+        ingest_pos = content.find('trigger_ingestion(')
         
-        assert emission_pos < watchtower_pos < cold_read_pos, \
-            "Pipeline order should be: emission → watchtower → cold-read"
+        assert emission_pos != -1 and watchtower_pos != -1 and ingest_pos != -1, \
+            "Could not locate emission/watchtower/ingestion symbols in integrations route"
+        assert ingest_pos < emission_pos < watchtower_pos, \
+            "Pipeline order should be: ingestion route → emission → watchtower"
         
-        print("VERIFIED: Pipeline order is emission → watchtower → cold-read")
+        print("VERIFIED: Pipeline order is ingestion route → emission → watchtower")
 
 
 class TestWatchtowerFindings:
