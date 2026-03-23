@@ -12,8 +12,15 @@ Test requirements:
 import pytest
 import requests
 import os
+from pathlib import Path
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL')
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def repo_file(*parts: str) -> Path:
+    """Resolve a repository-relative file path for CI portability."""
+    return REPO_ROOT.joinpath(*parts)
 
 class TestOnboardingStatusEndpoint:
     """Test GET /api/onboarding/status endpoint behavior"""
@@ -49,16 +56,10 @@ class TestCodeReviewVerification:
     
     def test_server_onboarding_status_no_auto_complete(self):
         """Verify server.py GET /api/onboarding/status has NO auto-complete logic"""
-        import subprocess
-        result = subprocess.run(
-            ["grep", "-n", "auto-complete\|company_name", "/app/backend/server.py"],
-            capture_output=True, text=True
-        )
-        
         # Check lines 5844-5865 (the onboarding/status endpoint)
         # The endpoint should NOT check company_name for auto-complete
-        server_path = "/app/backend/server.py"
-        with open(server_path, 'r') as f:
+        server_path = repo_file("backend", "server.py")
+        with open(server_path, 'r', encoding='utf-8', errors='ignore') as f:
             lines = f.readlines()
         
         # Lines 5844-5865 contain the GET /api/onboarding/status endpoint
@@ -76,21 +77,17 @@ class TestCodeReviewVerification:
     
     def test_protectedroute_no_onboarding_api_call(self):
         """Verify ProtectedRoute.js has NO API call for onboarding status"""
-        import subprocess
-        
-        # Check for onboarding/status in ProtectedRoute.js
-        result = subprocess.run(
-            ["grep", "-c", "onboarding/status", "/app/frontend/src/components/ProtectedRoute.js"],
-            capture_output=True, text=True
-        )
-        count = int(result.stdout.strip()) if result.returncode == 0 else 0
+        protected_route_path = repo_file("frontend", "src", "components", "ProtectedRoute.js")
+        with open(protected_route_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+        count = content.count("onboarding/status")
         assert count == 0, "ProtectedRoute.js should NOT contain 'onboarding/status' API call"
         
         print("✅ VERIFIED: ProtectedRoute.js has NO API call to GET /api/onboarding/status")
     
     def test_protectedroute_reads_from_context(self):
         """Verify ProtectedRoute.js reads onboardingStatus from context"""
-        with open("/app/frontend/src/components/ProtectedRoute.js", 'r') as f:
+        with open(repo_file("frontend", "src", "components", "ProtectedRoute.js"), 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
         
         # Should use useSupabaseAuth() to get onboardingStatus
@@ -105,7 +102,7 @@ class TestCodeReviewVerification:
     
     def test_supbase_auth_context_has_onboarding_state(self):
         """Verify SupabaseAuthContext has onboardingStatus state"""
-        with open("/app/frontend/src/context/SupabaseAuthContext.js", 'r') as f:
+        with open(repo_file("frontend", "src", "context", "SupabaseAuthContext.js"), 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
         
         # Check for onboardingStatus state
@@ -124,7 +121,7 @@ class TestCodeReviewVerification:
     
     def test_supabase_auth_context_fetches_once(self):
         """Verify SupabaseAuthContext fetches onboarding status ONCE during bootstrap"""
-        with open("/app/frontend/src/context/SupabaseAuthContext.js", 'r') as f:
+        with open(repo_file("frontend", "src", "context", "SupabaseAuthContext.js"), 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
         
         # Check for the fetch in bootstrap useEffect (after calibration)
@@ -139,7 +136,7 @@ class TestCodeReviewVerification:
     
     def test_onboarding_wizard_uses_mark_complete(self):
         """Verify OnboardingWizard calls markOnboardingComplete from context"""
-        with open("/app/frontend/src/pages/OnboardingWizard.js", 'r') as f:
+        with open(repo_file("frontend", "src", "pages", "OnboardingWizard.js"), 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
         
         # Check destructuring
@@ -154,7 +151,7 @@ class TestCodeReviewVerification:
     
     def test_onboarding_wizard_loads_from_context(self):
         """Verify OnboardingWizard loads existing data from /api/business-profile/context"""
-        with open("/app/frontend/src/pages/OnboardingWizard.js", 'r') as f:
+        with open(repo_file("frontend", "src", "pages", "OnboardingWizard.js"), 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
         
         # Check for the API call
