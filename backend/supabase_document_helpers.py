@@ -1,6 +1,6 @@
 """
 Supabase Documents Helper Functions
-Replaces MongoDB document operations
+Supabase-backed document operations
 """
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone

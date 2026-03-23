@@ -215,7 +215,7 @@ jobs:
 
       - name: Smoke test frontend + API routing
         run: |
-          curl --fail --silent --show-error https://biqc.thestrategysquad.com > /tmp/frontend_home.html
+          curl --fail --silent --show-error https://biqc.ai > /tmp/frontend_home.html
           grep -qi "BIQc" /tmp/frontend_home.html
 
           API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" ${{ env.BACKEND_AUTH_PROBE_URL }})
@@ -232,7 +232,7 @@ jobs:
           curl -s -X PATCH "https://api.supabase.com/v1/projects/vwwandhoydemcybltoxz/config/auth" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{"site_url":"https://app.biqc.ai","additional_redirect_urls":"https://app.biqc.ai/**,https://app.biqc.ai/auth/callback,https://biqc.ai/**,https://www.biqc.ai/**,https://biqc.thestrategysquad.com/**,https://biqc.thestrategysquad.com/auth/callback"}' \
+            -d '{"site_url":"https://biqc.ai","additional_redirect_urls":"https://biqc.ai/**,https://biqc.ai/auth/callback"}' \
             | grep -o '"site_url":"[^"]*"' | head -1
           echo "Supabase site_url locked to production ✓"
 
@@ -245,7 +245,7 @@ jobs:
             echo "- **Commit SHA:** \`${{ github.sha }}\`"
             echo "- **Frontend image:** \`${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}\`"
             echo "- **Backend image:** \`${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}\`"
-            echo "- **Frontend URL:** https://biqc.thestrategysquad.com"
+            echo "- **Frontend URL:** https://biqc.ai"
             echo "- **Backend URL:** ${{ env.BACKEND_BASE_URL }}"
             echo "- **Run URL:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             echo ""

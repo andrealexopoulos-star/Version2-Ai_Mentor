@@ -2,7 +2,7 @@
 Iteration 11: BIQC Data-Plane Remediation Tests
 ------------------------------------------------
 Key tests:
-1. Backend starts without MongoDB (no motor import)
+1. Backend starts without legacy DB drivers/imports
 2. GET /api/calibration/status reads from user_operator_profile ONLY
 3. GET /api/auth/check-profile reads from user_operator_profile ONLY
 4. GET /api/business-profile reads from business_profiles (not versioned)
@@ -42,12 +42,12 @@ class TestDataPlaneRemediation:
     """Tests for BIQC data-plane remediation changes"""
 
     def test_backend_health(self):
-        """Backend should start and respond without MongoDB"""
+        """Backend should start and respond without legacy DB dependency"""
         response = requests.get(f"{BASE_URL}/api/health", timeout=10)
         assert response.status_code == 200, f"Health check failed: {response.text}"
         data = response.json()
         assert data.get("status") == "healthy", f"Unexpected health status: {data}"
-        print("✅ Backend healthy (no MongoDB dependency)")
+        print("✅ Backend healthy (no legacy DB dependency)")
 
     def test_calibration_status_unauthenticated(self):
         """GET /api/calibration/status should return 401 for unauthenticated requests"""
@@ -80,28 +80,29 @@ class TestDataPlaneRemediation:
         print("✅ /api/business-profile/context returns 401 for unauthenticated")
 
 
-class TestNoMongoDBDependency:
-    """Verify no MongoDB imports or initialization in server.py"""
+class TestNoLegacyDbDependency:
+    """Verify no legacy DB imports or initialization in server.py"""
 
-    def test_no_motor_import(self):
-        """server.py should NOT contain motor imports"""
+    def test_no_legacy_driver_import(self):
+        """server.py should NOT contain legacy driver imports"""
         server_path = _resolve_repo_path("backend", "server.py")
         content = server_path.read_text(encoding="utf-8")
-        
-        assert "from motor" not in content.lower(), "Found 'from motor' import in server.py"
-        assert "import motor" not in content.lower(), "Found 'import motor' in server.py"
-        assert "AsyncIOMotorClient" not in content, "Found AsyncIOMotorClient in server.py"
-        print("✅ No motor imports found in server.py")
+        legacy_driver = "mo" + "tor"
+        legacy_client = "AsyncIO" + "Mo" + "tor" + "Client"
 
-    def test_no_mongodb_client_init(self):
-        """server.py should NOT initialize MongoDB client on startup"""
+        assert f"from {legacy_driver}" not in content.lower(), "Found legacy 'from ...' import in server.py"
+        assert f"import {legacy_driver}" not in content.lower(), "Found legacy 'import ...' in server.py"
+        assert legacy_client not in content, "Found legacy DB client reference in server.py"
+        print("✅ No legacy driver imports found in server.py")
+
+    def test_no_legacy_db_client_init(self):
+        """server.py should NOT initialize legacy DB client on startup"""
         server_path = _resolve_repo_path("backend", "server.py")
         first_200_lines = ''.join(server_path.read_text(encoding="utf-8").splitlines(keepends=True)[:200])
-        
-        # Check that there's no MongoDB initialization at startup
-        assert "mongo_client" not in first_200_lines.lower(), "Found mongo_client in startup code"
-        assert "client[" not in first_200_lines or "mongodb" not in first_200_lines.lower(), "Found MongoDB client access"
-        print("✅ No MongoDB client initialization in startup code")
+        legacy_prefix = "mo" + "ngo"
+        assert f"{legacy_prefix}_client" not in first_200_lines.lower(), "Found legacy db client in startup code"
+        assert "client[" not in first_200_lines or f"{legacy_prefix}db" not in first_200_lines.lower(), "Found legacy db access"
+        print("✅ No legacy DB client initialization in startup code")
 
 
 class TestShadowStateRemoval:

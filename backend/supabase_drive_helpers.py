@@ -1,6 +1,6 @@
 """
 Supabase Google Drive Helpers
-100% PostgreSQL storage - Zero MongoDB dependency
+100% PostgreSQL storage
 """
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone

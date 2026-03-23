@@ -17,7 +17,7 @@ import json
 BASE_URL = (
     os.environ.get("BACKEND_BASE_URL")
     or os.environ.get("REACT_APP_BACKEND_URL")
-    or "https://truth-engine-19.preview.emergentagent.com"
+    or "https://biqc.ai"
 ).rstrip("/")
 
 # Test credentials

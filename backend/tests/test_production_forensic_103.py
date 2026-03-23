@@ -1,6 +1,6 @@
 """
 Iteration 103: Production Forensic Backend Tests
-Tests backend API at https://truth-engine-19.preview.emergentagent.com
+Tests backend API at https://biqc.ai
 """
 import pytest
 import requests

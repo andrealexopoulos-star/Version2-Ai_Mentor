@@ -98,7 +98,7 @@ async def invite_user(req: InviteCreateRequest, current_user: dict = Depends(req
     if owner_domain and invite_domain and owner_domain != invite_domain:
         raise HTTPException(status_code=400, detail="Invited user must use the same email domain as the account")
 
-    # Check if email already exists in Supabase (MongoDB removed)
+    # Check if email already exists in Supabase
     try:
         existing_user = get_sb().table("users").select("id, email").eq("email", req.email.lower().strip()).execute()
         if existing_user.data and len(existing_user.data) > 0:

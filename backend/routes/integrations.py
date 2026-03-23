@@ -2354,7 +2354,7 @@ async def handle_watchtower_event(
     return {
         "success": success
     }
-    pass  # MongoDB client removed — no cleanup needed
+    pass  # No local client cleanup needed
 
 
 # ==================== GOOGLE DRIVE INTEGRATION (MERGE.DEV) ====================
@@ -2363,7 +2363,7 @@ async def handle_watchtower_event(
 async def connect_google_drive(current_user: dict = Depends(get_current_user)):
     """
     Generate Merge Link Token for Google Drive connection
-    100% Supabase storage - Zero MongoDB
+    100% Supabase storage
     """
     from workspace_helpers import get_or_create_user_account
     
@@ -2577,7 +2577,7 @@ async def get_google_drive_files(
 ):
     """
     Get Google Drive files from Supabase
-    100% PostgreSQL - Zero MongoDB
+    100% PostgreSQL
     """
     from supabase_drive_helpers import get_user_drive_files
     

@@ -9,4 +9,4 @@ Disallow: /business-profile
 Disallow: /data-center
 Disallow: /admin
 
-Sitemap: https://biqc.thestrategysquad.com/sitemap.xml
+Sitemap: https://biqc.ai/sitemap.xml

@@ -542,7 +542,7 @@ async def update_business_profile(profile: BusinessProfileUpdate, current_user: 
     
     # Update user's basic info
     user_updates = {}
-    # Update user info in Supabase (MongoDB removed - FIX APPLIED)
+    # Update user info in Supabase
     user_updates = {}
     if profile.business_name:
         user_updates["company_name"] = profile.business_name
@@ -1240,7 +1240,7 @@ async def admin_set_subscription(user_id: str, update: SubscriptionUpdate, admin
 
     now = datetime.now(timezone.utc)
     
-    # Update Supabase users table (MongoDB removed - FIX APPLIED)
+    # Update Supabase users table
     try:
         get_sb().table("users").update({
             "subscription_tier": tier,

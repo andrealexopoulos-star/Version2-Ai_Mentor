@@ -14,7 +14,7 @@ import sys
 
 sys.path.insert(0, '/app/backend')
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://truth-engine-19.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://biqc.ai').rstrip('/')
 
 # ============================================
 # Tier Stack and Label Verification Tests
@@ -24,11 +24,11 @@ class TestTierStackDefinitions:
     """Verify tier_resolver.py has correct tier stack and labels per user spec."""
     
     def test_tier_order_includes_custom(self):
-        """Verify TIERS list includes 'custom' tier."""
+        """Verify canonical tier stack is free/starter/super_admin only."""
         from tier_resolver import TIERS
         
-        assert 'custom' in TIERS, "custom tier should be in TIERS list"
-        assert TIERS.index('custom') > TIERS.index('enterprise'), "custom should come after enterprise in tier list"
+        assert TIERS == ['free', 'starter', 'super_admin'], f"Unexpected tier stack: {TIERS}"
+        assert 'custom' not in TIERS, "custom is a legacy DB value mapped to starter"
     
     def test_brain_plan_labels_no_growth(self):
         """Verify BRAIN_PLAN_LABELS does NOT contain 'Growth' label."""
@@ -38,30 +38,29 @@ class TestTierStackDefinitions:
         assert 'Growth' not in labels, "Growth label should NOT be in BRAIN_PLAN_LABELS"
     
     def test_brain_plan_labels_smb_protect_before_custom(self):
-        """Verify SMB Protect is for 'enterprise' tier and Custom is separate."""
+        """Verify user-facing Brain labels expose Foundation, not legacy tier names."""
         from tier_resolver import BRAIN_PLAN_LABELS
         
-        assert BRAIN_PLAN_LABELS.get('enterprise') == 'SMB Protect', "enterprise tier should show 'SMB Protect'"
-        assert BRAIN_PLAN_LABELS.get('custom') == 'Custom', "custom tier should show 'Custom'"
+        assert BRAIN_PLAN_LABELS.get('starter') == 'Foundation', "starter tier should show Foundation"
+        assert BRAIN_PLAN_LABELS.get('super_admin') == 'Foundation', "super_admin should not expose an admin-only plan label"
+        assert BRAIN_PLAN_LABELS.get('custom') is None, "custom should not be a canonical display tier"
     
     def test_super_admin_not_exposed_as_client_plan_label(self):
-        """Verify super_admin resolves to 'Custom' label (not exposed client-facing)."""
+        """Verify super_admin resolves to Foundation label (not exposed client-facing)."""
         from tier_resolver import BRAIN_PLAN_LABELS
         
         super_admin_label = BRAIN_PLAN_LABELS.get('super_admin')
-        assert super_admin_label == 'Custom', f"super_admin label should be 'Custom', got '{super_admin_label}'"
+        assert super_admin_label == 'Foundation', f"super_admin label should be 'Foundation', got '{super_admin_label}'"
         assert super_admin_label != 'Super Admin', "super_admin should NOT be exposed as 'Super Admin' client-facing"
     
     def test_tier_stack_order_correct(self):
-        """Verify tier stack order: Free → Foundation → Performance → SMB Protect → Custom."""
+        """Verify tier stack order: Free → Foundation (Starter) → Foundation (Super Admin)."""
         from tier_resolver import BRAIN_PLAN_LABELS
         
         expected_labels_by_tier = {
             'free': 'Free',
             'starter': 'Foundation',
-            'professional': 'Performance',
-            'enterprise': 'SMB Protect',
-            'custom': 'Custom',
+            'super_admin': 'Foundation',
         }
         
         for tier, expected_label in expected_labels_by_tier.items():
@@ -73,23 +72,23 @@ class TestCustomTierResolverLogic:
     """Verify tier resolver supports custom tier correctly."""
     
     def test_resolve_tier_custom(self):
-        """Verify resolve_tier returns 'custom' for custom subscription tier."""
+        """Verify resolve_tier maps legacy custom subscriptions to starter."""
         from tier_resolver import resolve_tier
         
         user = {'email': 'custom@example.com', 'subscription_tier': 'custom'}
         tier = resolve_tier(user)
-        assert tier == 'custom', f"Expected 'custom' tier, got '{tier}'"
+        assert tier == 'starter', f"Expected 'starter' tier, got '{tier}'"
     
     def test_tier_rank_custom(self):
-        """Verify custom tier has correct rank (between enterprise and super_admin)."""
+        """Verify custom tier rank maps to starter-tier access."""
         from tier_resolver import tier_rank
         
-        assert tier_rank('custom') == 4, "custom tier rank should be 4"
-        assert tier_rank('enterprise') == 3, "enterprise tier rank should be 3"
+        assert tier_rank('custom') == 1, "custom tier rank should map to starter"
+        assert tier_rank('enterprise') == 1, "enterprise tier rank should map to starter"
         assert tier_rank('super_admin') == 99, "super_admin tier rank should be 99"
         
-        # custom > enterprise
-        assert tier_rank('custom') > tier_rank('enterprise')
+        # legacy paid tiers collapse to starter rank
+        assert tier_rank('custom') == tier_rank('enterprise')
         # super_admin > custom
         assert tier_rank('super_admin') > tier_rank('custom')
     

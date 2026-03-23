@@ -1,6 +1,6 @@
 """
 Supabase Email & Calendar Helper Functions
-Replaces MongoDB operations with Supabase queries
+Supabase query helpers for email and calendar data
 """
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
