@@ -34,6 +34,15 @@ from auth_supabase import (
     SignInRequest
 )
 
+
+def _first_env(*names: str) -> str:
+    """Return first non-empty environment variable value from aliases."""
+    for name in names:
+        value = (os.environ.get(name) or "").strip()
+        if value:
+            return value
+    return ""
+
 @router.post("/auth/supabase/signup")
 async def supabase_signup(request: SignUpRequest):
     """
@@ -59,30 +68,42 @@ class RecaptchaVerifyRequest(BaseModel):
 @router.post("/auth/recaptcha/verify")
 async def verify_recaptcha(request: RecaptchaVerifyRequest):
     """Verify Google reCAPTCHA token server-side (standard + enterprise)."""
-    provider = (
-        os.environ.get("RECAPTCHA_PROVIDER")
-        or os.environ.get("REACT_APP_RECAPTCHA_PROVIDER")
-        or "auto"
-    ).strip().lower()
-    secret = (os.environ.get("RECAPTCHA_SECRET_KEY") or os.environ.get("RECAPTCHA_SECRET") or "").strip()
-    enterprise_project_id = (
-        os.environ.get("RECAPTCHA_ENTERPRISE_PROJECT_ID")
-        or os.environ.get("GOOGLE_CLOUD_PROJECT")
-        or ""
-    ).strip()
-    enterprise_api_key = (
-        os.environ.get("RECAPTCHA_ENTERPRISE_API_KEY")
-        or os.environ.get("GOOGLE_API_KEY")
-        or ""
-    ).strip()
+    provider = _first_env(
+        "RECAPTCHA_PROVIDER",
+        "REACT_APP_RECAPTCHA_PROVIDER",
+    ) or "auto"
+    provider = provider.lower()
+    # Accept common alias names used across Azure/GCP/GitHub secrets.
+    secret = _first_env(
+        "RECAPTCHA_SECRET_KEY",
+        "RECAPTCHA_SECRET",
+        "GOOGLE_RECAPTCHA_SECRET_KEY",
+        "GOOGLE_RECAPTCHA_SECRET",
+        "CAPTCHA_SECRET_KEY",
+    )
+    enterprise_project_id = _first_env(
+        "RECAPTCHA_ENTERPRISE_PROJECT_ID",
+        "GOOGLE_CLOUD_PROJECT",
+        "GOOGLE_CLOUD_PROJECT_ID",
+        "GOOGLE_PROJECT_ID",
+    )
+    enterprise_api_key = _first_env(
+        "RECAPTCHA_ENTERPRISE_API_KEY",
+        "GOOGLE_API_KEY",
+        "GOOGLE_CLOUD_API_KEY",
+        "RECAPTCHA_API_KEY",
+    )
     expected_action = (request.expectedAction or request.action or "").strip()
     site_key = (
-        request.siteKey
-        or os.environ.get("RECAPTCHA_SITE_KEY")
-        or os.environ.get("REACT_APP_RECAPTCHA_SITE_KEY")
-        or ""
-    ).strip()
-    min_score_raw = (os.environ.get("RECAPTCHA_MIN_SCORE") or "0.3").strip()
+        (request.siteKey or "").strip()
+        or _first_env(
+            "RECAPTCHA_SITE_KEY",
+            "REACT_APP_RECAPTCHA_SITE_KEY",
+            "GOOGLE_RECAPTCHA_SITE_KEY",
+            "CAPTCHA_SITE_KEY",
+        )
+    )
+    min_score_raw = _first_env("RECAPTCHA_MIN_SCORE") or "0.3"
     try:
         min_score = float(min_score_raw)
     except ValueError:

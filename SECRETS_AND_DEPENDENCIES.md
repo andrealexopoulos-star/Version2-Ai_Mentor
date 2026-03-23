@@ -54,6 +54,9 @@ GOOGLE_CLIENT_SECRET=
 # Provider: Google reCAPTCHA / reCAPTCHA Enterprise
 # Used by: /api/auth/recaptcha/verify server-side validation
 # Standard mode supports either RECAPTCHA_SECRET_KEY or RECAPTCHA_SECRET naming
+# Runtime also accepts aliases: GOOGLE_RECAPTCHA_SECRET_KEY, GOOGLE_RECAPTCHA_SECRET,
+# CAPTCHA_SECRET_KEY, GOOGLE_CLOUD_PROJECT_ID, GOOGLE_CLOUD_API_KEY,
+# GOOGLE_RECAPTCHA_SITE_KEY, CAPTCHA_SITE_KEY.
 # Enterprise mode uses assessments API with project+API key:
 #   POST https://recaptchaenterprise.googleapis.com/v1/projects/{RECAPTCHA_ENTERPRISE_PROJECT_ID}/assessments?key={RECAPTCHA_ENTERPRISE_API_KEY}
 # Provider can be: auto | standard | enterprise
