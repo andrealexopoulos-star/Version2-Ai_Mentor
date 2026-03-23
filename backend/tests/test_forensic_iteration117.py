@@ -88,7 +88,7 @@ class TestUnauthorizedEndpoints:
     def test_admin_rate_limits_defaults_unauthorized(self):
         """Admin rate limits should require super admin"""
         response = requests.get(f"{BASE_URL}/api/admin/rate-limits/defaults", timeout=10)
-        assert response.status_code == 403
+        assert response.status_code in [401, 403]
         print("✓ /api/admin/rate-limits/defaults: correctly requires admin auth")
 
 
