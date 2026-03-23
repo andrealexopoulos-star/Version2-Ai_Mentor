@@ -10,12 +10,15 @@ Static safeguards for:
 from pathlib import Path
 
 
-def _read(path: str) -> str:
-    return Path(path).read_text(encoding="utf-8")
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _read_repo(*parts: str) -> str:
+    return _REPO_ROOT.joinpath(*parts).read_text(encoding="utf-8")
 
 
 def test_protected_route_allows_calibration_path():
-    content = _read("/workspace/frontend/src/components/ProtectedRoute.js")
+    content = _read_repo("frontend", "src", "components", "ProtectedRoute.js")
     assert (
         "if (isCalibrationRoute) return children;" in content
     ), "ProtectedRoute should allow /calibration path during loading/ready states"
@@ -25,8 +28,9 @@ def test_protected_route_allows_calibration_path():
 
 
 def test_auth_bootstrap_is_fail_closed_for_calibration_errors():
-    content = _read("/workspace/frontend/src/context/SupabaseAuthContext.js")
-    assert "Fetch failed" in content and "fail-closed" in content, (
+    content = _read_repo("frontend", "src", "context", "SupabaseAuthContext.js")
+    lowered = content.lower()
+    assert "fetch failed" in lowered and "fail-closed" in lowered, (
         "Auth bootstrap should fail-closed to calibration when routing truth is unavailable"
     )
     assert "calibrationComplete = false;" in content, (
@@ -35,6 +39,6 @@ def test_auth_bootstrap_is_fail_closed_for_calibration_errors():
 
 
 def test_marketing_intel_has_legacy_competitive_endpoints():
-    content = _read("/workspace/backend/routes/marketing_intel.py")
+    content = _read_repo("backend", "routes", "marketing_intel.py")
     assert '@router.get("/competitive-benchmark/scores")' in content
     assert '@router.post("/competitive-benchmark/refresh")' in content

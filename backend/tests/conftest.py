@@ -16,10 +16,11 @@ from typing import Any
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _APP_ROOT = "/app"
+_WORKSPACE_ROOT = "/workspace"
 
 
 def _map_app_path(path_like: Any) -> Any:
-    """Map '/app/...'-style paths to the real repository root."""
+    """Map legacy absolute CI paths to the real repository root."""
     try:
         raw = os.fspath(path_like)
     except TypeError:
@@ -30,6 +31,11 @@ def _map_app_path(path_like: Any) -> Any:
         return str(_REPO_ROOT)
     if normalized.startswith(f"{_APP_ROOT}/"):
         rel = normalized[len(_APP_ROOT) + 1 :]
+        return str(_REPO_ROOT / rel)
+    if normalized == _WORKSPACE_ROOT:
+        return str(_REPO_ROOT)
+    if normalized.startswith(f"{_WORKSPACE_ROOT}/"):
+        rel = normalized[len(_WORKSPACE_ROOT) + 1 :]
         return str(_REPO_ROOT / rel)
     return path_like
 

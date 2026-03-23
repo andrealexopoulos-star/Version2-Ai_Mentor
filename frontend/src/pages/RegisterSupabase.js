@@ -90,7 +90,17 @@ const RegisterSupabase = () => {
     setLoading(true);
     try {
       if (recaptchaOperational) {
-        if (!captchaToken) { toast.error('Please complete the captcha verification.'); return; }
+        if (!captchaToken) {
+          if (recaptchaStrict) {
+            toast.error('Please complete the captcha verification.');
+            return;
+          }
+          setCaptchaUnavailable(true);
+          setCaptchaStatusReason('token_missing');
+          if (!fallbackChallenge) setFallbackChallenge(buildFallbackChallenge());
+          toast.error('Captcha token unavailable. Solve the backup challenge and retry.');
+          return;
+        }
         try {
           await apiClient.post('/auth/recaptcha/verify', { token: captchaToken });
         } catch {
@@ -149,7 +159,14 @@ const RegisterSupabase = () => {
         return;
       }
     } else if (recaptchaOperational && !captchaToken) {
-      toast.error('Please complete the captcha verification first.');
+      if (recaptchaStrict) {
+        toast.error('Please complete the captcha verification first.');
+        return;
+      }
+      setCaptchaUnavailable(true);
+      setCaptchaStatusReason('token_missing');
+      if (!fallbackChallenge) setFallbackChallenge(buildFallbackChallenge());
+      toast.error('Captcha token unavailable. Solve the backup challenge first.');
       return;
     }
     setOauthLoading(true);
