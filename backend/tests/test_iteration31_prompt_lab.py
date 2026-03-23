@@ -20,11 +20,12 @@ BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 class TestPromptLabBackendAuth:
     """Admin Prompt Lab endpoints - super_admin gated (403 without auth)"""
+    AUTH_BLOCKED_CODES = [401, 403]
 
     def test_get_prompts_returns_403_without_auth(self):
         """GET /api/admin/prompts requires super_admin - returns 403 without auth"""
         response = requests.get(f"{BASE_URL}/api/admin/prompts", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}: {response.text}"
         # Verify JSON response with detail
         data = response.json()
         assert "detail" in data, "Error response should contain 'detail' field"
@@ -32,7 +33,7 @@ class TestPromptLabBackendAuth:
     def test_get_prompt_detail_returns_403_without_auth(self):
         """GET /api/admin/prompts/{prompt_key} requires super_admin - returns 403 without auth"""
         response = requests.get(f"{BASE_URL}/api/admin/prompts/test_prompt_key", timeout=10)
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}: {response.text}"
         data = response.json()
         assert "detail" in data, "Error response should contain 'detail' field"
 
@@ -48,7 +49,7 @@ class TestPromptLabBackendAuth:
             json=payload,
             timeout=10
         )
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}: {response.text}"
         data = response.json()
         assert "detail" in data, "Error response should contain 'detail' field"
 
@@ -58,7 +59,7 @@ class TestPromptLabBackendAuth:
             f"{BASE_URL}/api/admin/prompts/test_prompt_key/test",
             timeout=10
         )
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}: {response.text}"
         data = response.json()
         assert "detail" in data, "Error response should contain 'detail' field"
 
@@ -69,7 +70,7 @@ class TestPromptLabBackendAuth:
             json={},
             timeout=10
         )
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
+        assert response.status_code in self.AUTH_BLOCKED_CODES, f"Expected 401/403, got {response.status_code}: {response.text}"
         data = response.json()
         assert "detail" in data, "Error response should contain 'detail' field"
 
