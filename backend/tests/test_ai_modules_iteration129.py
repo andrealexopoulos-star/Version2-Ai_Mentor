@@ -66,10 +66,10 @@ class TestAuthenticationAndAIModules:
     
     def test_01_health_check(self):
         """Basic API health check"""
-        response = requests.get(f"{BASE_URL}/api/", timeout=10)
+        response = requests.get(f"{BASE_URL}/api/health", timeout=5)
         assert response.status_code == 200
         data = response.json()
-        assert "message" in data or "version" in data
+        assert data.get("status") in ["healthy", "ok"]
         print(f"✓ API Health: {data}")
     
     def test_02_authentication_success(self, auth_session):
@@ -371,8 +371,7 @@ class TestLLMRouterHealth:
     
     def test_router_config(self):
         """Verify LLM router is configured"""
-        # This tests the preview environment's backend
-        response = requests.get(f"{BASE_URL}/api/", timeout=10)
+        response = requests.get(f"{BASE_URL}/api/health", timeout=5)
         assert response.status_code == 200
         print("✓ LLM Router backend is responding")
 
