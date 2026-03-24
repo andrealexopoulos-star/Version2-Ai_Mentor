@@ -28,11 +28,11 @@ const LoginSupabase = () => {
   const [fallbackAnswer, setFallbackAnswer] = useState('');
   const recaptchaSiteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
   const recaptchaAction = 'login';
-  // Temporary platform-wide kill switch: captcha disabled until further notice.
-  const recaptchaEnabled = false;
+  const recaptchaDisabled = String(process.env.REACT_APP_RECAPTCHA_DISABLED || '').toLowerCase() === 'true';
+  const recaptchaEnabled = Boolean(recaptchaSiteKey) && !recaptchaDisabled;
   const recaptchaStrict = String(process.env.REACT_APP_RECAPTCHA_STRICT || '').toLowerCase() === 'true';
   const recaptchaOperational = recaptchaEnabled && !captchaUnavailable;
-  const fallbackRequired = false;
+  const fallbackRequired = (recaptchaEnabled && captchaUnavailable && !recaptchaStrict) || (!recaptchaEnabled && failedAttempts >= 3);
 
   const buildFallbackChallenge = () => {
     const left = Math.floor(Math.random() * 8) + 2;
