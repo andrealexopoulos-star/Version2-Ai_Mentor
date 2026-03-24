@@ -21,16 +21,13 @@ import SiteHomePage from './pages/website/HomePage';
 import SitePlatformPage from './pages/website/PlatformPage';
 import SiteIntelligencePage from './pages/website/IntelligencePage';
 import SiteIntegrationsPage from './pages/website/IntegrationsPage';
-import SitePricingPage from './pages/website/PricingPage';
 import SiteTrustLandingPage from './pages/website/TrustLandingPage';
 import AILearningGuarantee from './pages/AILearningGuarantee';
 import BlogPage from './pages/BlogPage';
 import BlogArticlePage from './pages/BlogArticlePage';
 import ContactPage from './pages/ContactPage';
-import TrustPage from './pages/TrustPage';
 import Pricing from './pages/Pricing';
 import SubscribePage from './pages/SubscribePage';
-import TermsAndConditions from './pages/TermsAndConditions';
 import EnterpriseTerms from './pages/EnterpriseTerms';
 import LandingIntelligent from './pages/LandingIntelligent';
 import MoreFeaturesPage from './pages/MoreFeaturesPage';
@@ -190,6 +187,11 @@ const LaunchRoute = ({ children, access, featureKey = null }) => {
 };
 
 function AppRoutes() {
+  const previewRoutesEnabled = (
+    (process.env.REACT_APP_ENABLE_PREVIEW_ROUTES || '').toLowerCase() === 'true'
+    || process.env.NODE_ENV !== 'production'
+  );
+
   useEffect(() => {
     const warmup = async () => {
       try {
@@ -225,11 +227,12 @@ function AppRoutes() {
         <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:slug" element={<BlogArticlePage />} />
-        <Route path="/terms" element={<TermsAndConditions />} />
+        <Route path="/landing-intelligent" element={<LandingIntelligent />} />
+        <Route path="/terms" element={<Navigate to="/trust/terms" replace />} />
         <Route path="/enterprise-terms" element={<EnterpriseTerms />} />
-        <Route path="/cognitive-v2-preview" element={<CognitiveV2Mockup />} />
-        <Route path="/loading-preview" element={<LoadingPreview />} />
-        <Route path="/calibration-preview" element={<CalibrationPreview />} />
+        {previewRoutesEnabled && <Route path="/cognitive-v2-preview" element={<CognitiveV2Mockup />} />}
+        {previewRoutesEnabled && <Route path="/loading-preview" element={<LoadingPreview />} />}
+        {previewRoutesEnabled && <Route path="/calibration-preview" element={<CalibrationPreview />} />}
 
         {/* Platform demos */}
         <Route path="/platform/login" element={<PlatformLogin />} />
@@ -243,6 +246,12 @@ function AppRoutes() {
         <Route path="/platform/industry/consulting" element={<ConsultingView />} />
         <Route path="/platform/industry/agency" element={<AgencyView />} />
         <Route path="/platform/industry/saas" element={<SaaSView />} />
+        <Route path="/site/trust/terms" element={<Navigate to="/trust/terms" replace />} />
+        <Route path="/site/trust/privacy" element={<Navigate to="/trust/privacy" replace />} />
+        <Route path="/site/trust/dpa" element={<Navigate to="/trust/dpa" replace />} />
+        <Route path="/site/trust/security" element={<Navigate to="/trust/security" replace />} />
+        <Route path="/site/trust/centre" element={<Navigate to="/trust/centre" replace />} />
+        <Route path="/site/trust" element={<Navigate to="/trust" replace />} />
         <Route path="/site" element={<Navigate to="/" replace />} />
         <Route path="/site/*" element={<Navigate to="/" replace />} />
 
@@ -290,7 +299,7 @@ function AppRoutes() {
         <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="revenue"><RevenuePage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="operations"><OperationsPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/risk" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="risk-workforce"><RiskPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="risk-workforce"><CompliancePage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="compliance"><CompliancePage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><LaunchRoute access="paid"><ReportsPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/audit-log" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="risk-workforce"><AuditLogPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/alerts" element={<ProtectedRoute><AlertsPageAuth /></ProtectedRoute>} />
@@ -304,8 +313,8 @@ function AppRoutes() {
         <Route path="/boardroom" element={<Navigate to="/board-room" replace />} />
         <Route path="/sop-generator" element={<ProtectedRoute><LaunchRoute access="paid"><SOPGenerator /></LaunchRoute></ProtectedRoute>} />
         <Route path="/decisions" element={<ProtectedRoute><LaunchRoute access="paid"><DecisionsPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/diagnosis" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="analysis-diagnosis-suite"><Diagnosis /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/analysis" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="analysis-diagnosis-suite"><Analysis /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/diagnosis" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="diagnosis"><Diagnosis /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/analysis" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="analysis"><Analysis /></LaunchRoute></ProtectedRoute>} />
         <Route path="/documents" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="documents-library"><Documents /></LaunchRoute></ProtectedRoute>} />
         <Route path="/documents/:id" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="documents-library"><DocumentView /></LaunchRoute></ProtectedRoute>} />
         <Route path="/data-center" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="watchtower"><DataCenter /></LaunchRoute></ProtectedRoute>} />
@@ -334,7 +343,7 @@ function AppRoutes() {
 }
 
 function App() {
-  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || 'no-google-client-id.local';
+  const googleClientId = (process.env.REACT_APP_GOOGLE_CLIENT_ID || '').trim();
 
   useEffect(() => {
     document.documentElement.style.overflowY = 'scroll';
@@ -353,19 +362,25 @@ function App() {
     }
   }, []);
 
-  return (
+  const appTree = (
+    <BrowserRouter>
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <SupabaseAuthProvider>
+        <MobileDrawerProvider>
+          <InstallPrompt />
+          <AppRoutes />
+          <Toaster position="top-right" richColors />
+        </MobileDrawerProvider>
+      </SupabaseAuthProvider>
+    </BrowserRouter>
+  );
+
+  return googleClientId ? (
     <GoogleOAuthProvider clientId={googleClientId}>
-      <BrowserRouter>
-        <a href="#main-content" className="skip-link">Skip to main content</a>
-        <SupabaseAuthProvider>
-          <MobileDrawerProvider>
-            <InstallPrompt />
-            <AppRoutes />
-            <Toaster position="top-right" richColors />
-          </MobileDrawerProvider>
-        </SupabaseAuthProvider>
-      </BrowserRouter>
+      {appTree}
     </GoogleOAuthProvider>
+  ) : (
+    appTree
   );
 }
 

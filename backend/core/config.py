@@ -6,8 +6,6 @@ import os
 import logging
 import time
 import hashlib
-import json
-import base64
 from collections import defaultdict, deque
 from threading import Lock
 from pathlib import Path
@@ -51,9 +49,6 @@ RATE_LIMIT_RULES = {
 }
 RATE_LIMIT_BUCKETS = defaultdict(deque)
 RATE_LIMIT_LOCK = Lock()
-# Master admin for rate-limit bypass; default andre@... for testing. Override with BIQC_MASTER_ADMIN_EMAIL.
-MASTER_ADMIN_EMAIL = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "andre@thestrategysquad.com.au").strip().lower()
-
 # Admin inbox for operational alerts (waitlist / contact form, etc.)
 BIQC_ADMIN_NOTIFICATION_EMAIL = (
     os.environ.get("BIQC_ADMIN_NOTIFICATION_EMAIL") or "andre@thestrategysquad.com.au"
@@ -107,32 +102,9 @@ class RateLimitAPIMiddleware(BaseHTTPMiddleware):
             )
         return f"ip:{client_host}"
 
-    @staticmethod
-    def _extract_email_from_token(request):
-        auth_header = request.headers.get("authorization", "")
-        if not auth_header.startswith("Bearer "):
-            return None
-
-        token = auth_header[7:]
-        try:
-            parts = token.split('.')
-            if len(parts) < 2:
-                return None
-            payload_segment = parts[1]
-            padding = '=' * (-len(payload_segment) % 4)
-            decoded = base64.urlsafe_b64decode(payload_segment + padding)
-            payload = json.loads(decoded.decode('utf-8'))
-            return str(payload.get('email') or payload.get('user_metadata', {}).get('email') or '').strip().lower() or None
-        except Exception:
-            return None
-
     async def dispatch(self, request, call_next):
         rule = RATE_LIMIT_RULES.get(request.url.path)
         if not rule:
-            return await call_next(request)
-
-        email = self._extract_email_from_token(request)
-        if email == MASTER_ADMIN_EMAIL:
             return await call_next(request)
 
         now = time.time()

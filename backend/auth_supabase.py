@@ -8,6 +8,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict, Any
 import os
 import logging
+from urllib.parse import quote, urlparse
 from supabase_client import get_supabase_client, init_supabase
 
 supabase_admin = init_supabase()
@@ -17,8 +18,23 @@ logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
 
-# Master admin (superadmin role override); default andre@... for testing. Override with BIQC_MASTER_ADMIN_EMAIL.
-MASTER_ADMIN_EMAIL = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "andre@thestrategysquad.com.au").strip().lower()
+def _is_production() -> bool:
+    env = (os.environ.get("ENVIRONMENT") or "").strip().lower()
+    prod_flag = (os.environ.get("PRODUCTION") or "").strip().lower()
+    return env == "production" or prod_flag in {"1", "true", "yes"}
+
+
+def _load_master_admin_email() -> str:
+    configured = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "").strip().lower()
+    if configured:
+        return configured
+    if _is_production():
+        raise RuntimeError("BIQC_MASTER_ADMIN_EMAIL must be configured in production")
+    return ""
+
+
+# Master admin (superadmin role override). Must be explicitly configured in production.
+MASTER_ADMIN_EMAIL = _load_master_admin_email()
 
 
 def _is_master_admin_email(email: str | None) -> bool:
@@ -47,6 +63,7 @@ class SignUpRequest(BaseModel):
     full_name: Optional[str] = None
     company_name: Optional[str] = None
     industry: Optional[str] = None
+    # Kept for backward compatibility with old clients; ignored server-side.
     role: Optional[str] = None
 
 class SignInRequest(BaseModel):
@@ -138,7 +155,8 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
             "full_name": metadata.get("full_name") if metadata else None,
             "company_name": metadata.get("company_name") if metadata else None,
             "industry": metadata.get("industry") if metadata else None,
-            "role": "superadmin" if _is_master_admin_email(email) else ((metadata.get("role") if metadata else None) or "user"),
+            # Never trust client-supplied signup role.
+            "role": "superadmin" if _is_master_admin_email(email) else "user",
             "subscription_tier": "free",
             "is_master_account": _is_master_admin_email(email),
             "created_at": datetime.utcnow().isoformat(),
@@ -219,7 +237,7 @@ async def verify_supabase_token(token: str) -> Dict[str, Any]:
     try:
         # Validate token segments before calling Supabase
         segments = token.split('.')
-        logger.info(f"[Auth] Token segments: {len(segments)}, length: {len(token)}, first_10: {token[:10]}...")
+        logger.debug("[Auth] Token format received with %s segments", len(segments))
         if len(segments) != 3:
             raise HTTPException(status_code=401, detail="Malformed token")
 
@@ -299,8 +317,7 @@ async def signup_with_email(request: SignUpRequest):
                 "data": {
                     "full_name": request.full_name,
                     "company_name": request.company_name,
-                    "industry": request.industry,
-                    "role": request.role
+                    "industry": request.industry
                 }
             }
         })
@@ -315,8 +332,7 @@ async def signup_with_email(request: SignUpRequest):
             metadata={
                 "full_name": request.full_name,
                 "company_name": request.company_name,
-                "industry": request.industry,
-                "role": request.role
+                "industry": request.industry
             }
         )
         
@@ -409,9 +425,24 @@ async def get_oauth_url(provider: str, redirect_to: str = None):
         if provider not in ["google", "azure"]:
             raise HTTPException(status_code=400, detail="Invalid provider. Use 'google' or 'azure'")
         
-        options = {}
+        normalized_redirect = None
         if redirect_to:
-            options["redirectTo"] = redirect_to
+            parsed = urlparse(redirect_to)
+            if parsed.scheme != "https" or not parsed.netloc:
+                raise HTTPException(status_code=400, detail="Invalid redirect target")
+
+            allowed_origins = {
+                (os.environ.get("FRONTEND_URL") or "").strip(),
+                (os.environ.get("PUBLIC_FRONTEND_URL") or "").strip(),
+                (os.environ.get("REACT_APP_FRONTEND_URL") or "").strip(),
+            }
+            allowed_origins = {origin.rstrip("/") for origin in allowed_origins if origin}
+            redirect_origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+            if not allowed_origins:
+                raise HTTPException(status_code=503, detail="OAuth redirect allowlist is not configured")
+            if redirect_origin not in allowed_origins:
+                raise HTTPException(status_code=400, detail="Redirect target not allowed")
+            normalized_redirect = redirect_to
         
         # Supabase handles the OAuth flow automatically
         # Add prompt=select_account to force account picker
@@ -421,8 +452,8 @@ async def get_oauth_url(provider: str, redirect_to: str = None):
         # This prevents auto-login with cached credentials
         auth_url += "&prompt=select_account"
         
-        if redirect_to:
-            auth_url += f"&redirect_to={redirect_to}"
+        if normalized_redirect:
+            auth_url += f"&redirect_to={quote(normalized_redirect, safe=':/?=&%-._~')}"
         
         return {
             "url": auth_url,
@@ -455,9 +486,9 @@ async def get_current_user_from_request(request) -> Dict[str, Any]:
         if not token:
             raise HTTPException(status_code=401, detail="No token provided")
         
-        # Debug: log token format (first/last chars + segment count)
+        # Debug: log token segment count only (no token material)
         segments = token.split(".")
-        logger.info(f"[Auth] Token segments: {len(segments)}, length: {len(token)}, first_10: {token[:10]}...")
+        logger.debug("[Auth] Request token format received with %s segments", len(segments))
         
         # Verify token using existing function
         return await verify_supabase_token(token)

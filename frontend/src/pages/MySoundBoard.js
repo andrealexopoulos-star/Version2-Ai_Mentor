@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
@@ -6,10 +6,10 @@ import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import VoiceChat from '../components/VoiceChat';
+import BoardroomCouncilCard from '../components/soundboard/BoardroomCouncilCard';
 import { fontFamily } from "../design-system/tokens";
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
-import { resolveTier, TIER_RANK } from '../lib/tierResolver';
-import { isPrivilegedUser } from '../lib/privilegedUser';
+import { getSoundboardPolicy, normalizeMessageContent, SOUND_BOARD_MODES } from '../lib/soundboardPolicy';
 import LineageBadge from '../components/LineageBadge';
 import { useLocation } from 'react-router-dom';
 import { EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
@@ -21,14 +21,35 @@ import {
 
 const SOUNDBOARD_CHAT_TIMEOUT_MS = 120000;
 const SOUNDBOARD_LAYOUT_KEY = 'biqc_soundboard_layout_v2';
-const BOARDROOM_LOADING_STEPS = [
-  'Thinking through strategic priorities...',
-  'Reviewing CRM opportunities and stage movement...',
-  'Checking accounting patterns, cash timing, and overdue risk...',
-  'Scanning communication signals from inbox and sent activity...',
-  'Comparing operations pressure against capacity signals...',
-  'Aligning Boardroom perspectives into one clear recommendation...',
-];
+const buildBoardroomChecks = (connectedSources = [], evidenceSources = []) => {
+  const normalized = new Set(
+    [...connectedSources, ...evidenceSources]
+      .map((v) => String(v || '').toLowerCase().trim())
+      .filter(Boolean)
+  );
+  const hasCRM = normalized.has('crm');
+  const hasAccounting = normalized.has('accounting');
+  const hasEmail = normalized.has('email');
+  const hasMarket = ['market', 'google_ads', 'ads', 'competitor', 'web'].some((key) => normalized.has(key));
+
+  const steps = [
+    { role: 'CEO', line: 'Checking strategic priorities and growth pressure...' },
+    hasCRM
+      ? { role: 'CEO', line: 'Checking CRM pipeline momentum and stalled deals...' }
+      : { role: 'COO', line: 'Checking execution cadence from available business signals...' },
+    hasAccounting
+      ? { role: 'CFO', line: 'Checking overdue invoices, cash timing, and runway...' }
+      : { role: 'CFO', line: 'Checking cash risk assumptions from calibration and activity patterns...' },
+    hasEmail
+      ? { role: 'COO', line: 'Checking inbox response lag and escalation patterns...' }
+      : { role: 'HR', line: 'Checking team load and decision bottlenecks from current evidence...' },
+  ];
+  if (hasMarket) {
+    steps.push({ role: 'CMO', line: 'Checking Google Ads and market demand signals...' });
+  }
+  steps.push({ role: 'CCO', line: 'Aligning boardroom views into one clear recommendation...' });
+  return steps;
+};
 
 const deriveRequestScope = (message = '') => {
   const text = String(message || '').toLowerCase();
@@ -119,6 +140,7 @@ const MySoundBoard = () => {
   const [recordingScans, setRecordingScans] = useState({});
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [showAgentMenu, setShowAgentMenu] = useState(false);
+  const [showAdvancedControls, setShowAdvancedControls] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(288);
   const [chatColumnMaxWidth, setChatColumnMaxWidth] = useState(768);
   const [selectedMode, setSelectedMode] = useState('auto');
@@ -134,14 +156,6 @@ const MySoundBoard = () => {
     }
   });
 
-  const BIQC_MODES = [
-    { id: 'auto', label: 'BIQc Auto', desc: 'Adaptive routing across BIQc cognition pathways', icon: '⚡', backend_mode: 'auto', minTier: 'free' },
-    { id: 'normal', label: 'Normal', desc: 'Default paid conversation mode', icon: '◉', backend_mode: 'normal', minTier: 'starter' },
-    { id: 'thinking', label: 'Deep Thinking', desc: 'High-depth strategic reasoning mode', icon: '🧠', backend_mode: 'thinking', minTier: 'starter' },
-    { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'starter' },
-    { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'starter' },
-  ];
-
   const BIQC_AGENTS = [
     { id: 'auto', label: 'Auto', shortDesc: 'Pick specialist by question', icon: '⚡' },
     { id: 'boardroom', label: 'Boardroom', shortDesc: 'CEO/CFO/COO/CTO/HR/CCO council', icon: '🏛️' },
@@ -153,18 +167,9 @@ const MySoundBoard = () => {
     { id: 'operations', label: 'Operations', shortDesc: 'Workflow & capacity', icon: '⚙️' },
     { id: 'strategy', label: 'Strategy', shortDesc: 'Planning & scenarios', icon: '🎯' },
   ];
-  const BOARDROOM_ROLES = ['CEO', 'CFO', 'COO', 'CTO', 'HR', 'CCO'];
 
-  const resolvedTier = resolveTier(user);
-  const privileged = isPrivilegedUser(user);
-  const isPaidUser = (TIER_RANK[resolvedTier] ?? 0) >= 1;
-  const canUseTrinity = privileged || isPaidUser;
-
-  const availableModes = BIQC_MODES.filter((mode) => {
-    if (privileged) return true;
-    if (mode.id === 'trinity') return canUseTrinity;
-    return (TIER_RANK[resolvedTier] ?? 0) >= (TIER_RANK[mode.minTier] ?? 0);
-  });
+  const policy = getSoundboardPolicy(user);
+  const { isPaidUser, canUseTrinity, availableModes } = policy;
 
   useEffect(() => {
     if (isPaidUser && selectedMode === 'auto') {
@@ -197,10 +202,42 @@ const MySoundBoard = () => {
   }, [layoutStorageKey, sidebarWidth, chatColumnMaxWidth]);
 
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
-  const activeMode = BIQC_MODES.find((mode) => mode.id === selectedMode) || BIQC_MODES[0];
+  const activeMode = SOUND_BOARD_MODES.find((mode) => mode.id === selectedMode) || SOUND_BOARD_MODES[0];
   const showBoardroomViz = selectedAgent === 'boardroom';
   const [boardroomNarrationIndex, setBoardroomNarrationIndex] = useState(0);
   const [boardroomProgress, setBoardroomProgress] = useState(12);
+  const boardroomConnectedSources = useMemo(() => {
+    const fromContract = latestAssistantMessage?.soundboard_contract?.connected_sources;
+    if (Array.isArray(fromContract)) return fromContract;
+    if (latestAssistantMessage?.lineage?.connected_sources_list) return latestAssistantMessage.lineage.connected_sources_list;
+    if (latestAssistantMessage?.lineage?.connected_sources && typeof latestAssistantMessage.lineage.connected_sources === 'object') {
+      return Object.keys(latestAssistantMessage.lineage.connected_sources).filter((k) => latestAssistantMessage.lineage.connected_sources[k]);
+    }
+    return [];
+  }, [latestAssistantMessage]);
+  const boardroomEvidenceSources = useMemo(
+    () => (latestAssistantMessage?.evidence_pack?.sources || []).map((item) => item?.source).filter(Boolean),
+    [latestAssistantMessage]
+  );
+  const boardroomSourceLabels = useMemo(() => {
+    const sourceLabelMap = {
+      crm: 'CRM',
+      accounting: 'Accounting',
+      email: 'Email',
+      market: 'Market',
+      google_ads: 'Google Ads',
+      ads: 'Ads',
+      web: 'Web',
+      competitor: 'Competitor',
+    };
+    const unique = [...new Set([...boardroomConnectedSources, ...boardroomEvidenceSources].map((v) => String(v || '').toLowerCase().trim()).filter(Boolean))];
+    return unique.map((key) => sourceLabelMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())).slice(0, 5);
+  }, [boardroomConnectedSources, boardroomEvidenceSources]);
+  const boardroomChecks = useMemo(
+    () => buildBoardroomChecks(boardroomConnectedSources, boardroomEvidenceSources),
+    [boardroomConnectedSources, boardroomEvidenceSources]
+  );
+  const activeBoardroomCheck = boardroomChecks[boardroomNarrationIndex % Math.max(1, boardroomChecks.length)] || { role: 'CEO', line: 'Checking strategic priorities...' };
   const fetchScanUsage = useCallback(async (forceRefresh = false) => {
     try {
       const CACHE_KEY = 'biqc_scan_usage_cache';
@@ -260,7 +297,7 @@ const MySoundBoard = () => {
     }
 
     const narrationTimer = setInterval(() => {
-      setBoardroomNarrationIndex((prev) => (prev + 1) % BOARDROOM_LOADING_STEPS.length);
+      setBoardroomNarrationIndex((prev) => (prev + 1) % Math.max(1, boardroomChecks.length));
     }, 1400);
     const progressTimer = setInterval(() => {
       setBoardroomProgress((prev) => {
@@ -273,7 +310,7 @@ const MySoundBoard = () => {
       clearInterval(narrationTimer);
       clearInterval(progressTimer);
     };
-  }, [loading, showBoardroomViz]);
+  }, [loading, showBoardroomViz, boardroomChecks.length]);
 
   const fetchConversations = async () => {
     try {
@@ -318,6 +355,11 @@ const MySoundBoard = () => {
   };
 
   const sendMessage = async (messageOverride = null, contextOverride = null) => {
+    // React button clicks pass a synthetic event as first argument when onClick
+    // is set directly to this function. Ignore that event object.
+    if (messageOverride && typeof messageOverride === 'object' && typeof messageOverride.preventDefault === 'function') {
+      messageOverride = null;
+    }
     if ((!input.trim() && !attachedFile) && !messageOverride) return;
     if (loading) return;
 
@@ -347,7 +389,7 @@ const MySoundBoard = () => {
     setLoading(true);
 
     try {
-      const currentMode = BIQC_MODES.find(m => m.id === selectedMode) || BIQC_MODES[0];
+      const currentMode = SOUND_BOARD_MODES.find(m => m.id === selectedMode) || SOUND_BOARD_MODES[0];
       const advisorContext = contextOverride || advisorHandoff || null;
       const requestScope = deriveRequestScope(fullMessage);
       const intelligenceContext = advisorContext ? {
@@ -367,7 +409,7 @@ const MySoundBoard = () => {
       } : {};
       if (!advisorContext) intelligenceContext.request_scope = requestScope;
 
-      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage, agent_name;
+      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage, agent_name, boardroom_trace, boardroom_status, evidence_pack, soundboard_contract, advisory_slots;
 
       const response = await apiClient.post(
         '/soundboard/chat',
@@ -393,6 +435,11 @@ const MySoundBoard = () => {
         data_freshness,
         lineage,
         agent_name,
+        boardroom_trace,
+        boardroom_status,
+        evidence_pack,
+        soundboard_contract,
+        advisory_slots,
       } = response.data);
 
       const replyTrimmed = typeof reply === 'string' ? reply.trim() : '';
@@ -417,6 +464,11 @@ const MySoundBoard = () => {
         data_sources_count,
         data_freshness,
         lineage,
+        boardroom_trace,
+        boardroom_status,
+        evidence_pack,
+        soundboard_contract,
+        advisory_slots,
       };
       if (generatedFile) assistantMsg.file = generatedFile;
       setMessages(prev => [...prev, assistantMsg]);
@@ -842,7 +894,7 @@ const MySoundBoard = () => {
                           <p className="text-[10px] font-medium mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>{message.agent_name}</p>
                         )}
                         <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                          {message.content}
+                          {normalizeMessageContent(message.content)}
                         </p>
                         {/* Proactive next-action suggestions */}
                         {message.role === 'assistant' && message.suggested_actions?.length > 0 && (
@@ -863,6 +915,45 @@ const MySoundBoard = () => {
                             <span className="text-[9px] px-1.5 py-0.5 rounded"
                               style={{ background: 'rgba(255,255,255,0.05)', color: '#4A5568', fontFamily: fontFamily.mono }}>
                               {message.intent.domain.toUpperCase()} · {message.model_used || 'AI'}
+                            </span>
+                          </div>
+                        )}
+                        {message.role === 'assistant' && message.evidence_pack?.sources?.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5" data-testid="soundboard-evidence-row">
+                            {message.evidence_pack.sources.slice(0, 5).map((source) => (
+                              <span
+                                key={source.id || source.source}
+                                className="text-[9px] px-1.5 py-0.5 rounded"
+                                style={{ background: 'rgba(139,92,246,0.12)', color: '#A78BFA', fontFamily: fontFamily.mono }}
+                              >
+                                {source.source} {source.freshness ? `(${source.freshness})` : ''}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {message.role === 'assistant' && message.boardroom_trace?.phases?.length > 0 && (
+                          <div className="mt-2 rounded-lg p-2" style={{ border: '1px solid rgba(59,130,246,0.25)', background: 'rgba(2,6,23,0.45)' }}>
+                            <p className="text-[10px] mb-1" style={{ color: '#60A5FA', fontFamily: fontFamily.mono }}>Boardroom orchestration</p>
+                            <div className="flex flex-wrap gap-1">
+                              {message.boardroom_trace.phases.slice(0, 6).map((phase, phaseIdx) => (
+                                <span
+                                  key={`${phase.phase}-${phase.role || phaseIdx}`}
+                                  className="text-[9px] px-1.5 py-0.5 rounded"
+                                  style={{ background: 'rgba(59,130,246,0.16)', color: '#BFDBFE', fontFamily: fontFamily.mono }}
+                                >
+                                  {phase.phase}{phase.role ? `:${phase.role}` : ''} {phase.status || 'ok'}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {message.role === 'assistant' && message.boardroom_status === 'fallback_error' && (
+                          <div className="mt-2">
+                            <span
+                              className="text-[9px] px-1.5 py-0.5 rounded"
+                              style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B', fontFamily: fontFamily.mono }}
+                            >
+                              Boardroom degraded mode
                             </span>
                           </div>
                         )}
@@ -893,6 +984,16 @@ const MySoundBoard = () => {
                                 data-testid="soundboard-response-freshness-chip"
                               >
                                 freshness {message.data_freshness}
+                              </span>
+                            )}
+                            {message.advisory_slots?.kpi_note && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.5 rounded"
+                                style={{ background: 'rgba(139,92,246,0.12)', color: '#C4B5FD', fontFamily: fontFamily.mono }}
+                                data-testid="soundboard-response-kpi-chip"
+                                title={message.advisory_slots.kpi_note}
+                              >
+                                KPI note
                               </span>
                             )}
                           </div>
@@ -928,7 +1029,7 @@ const MySoundBoard = () => {
                             <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                           </div>
                           <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                            {showBoardroomViz ? BOARDROOM_LOADING_STEPS[boardroomNarrationIndex] : 'Thinking...'}
+                            {showBoardroomViz ? `${activeBoardroomCheck.role}: ${activeBoardroomCheck.line}` : 'Thinking...'}
                           </span>
                         </div>
                         {showBoardroomViz && (
@@ -943,18 +1044,18 @@ const MySoundBoard = () => {
                               />
                             </div>
                             <div className="flex flex-wrap gap-1">
-                              {BOARDROOM_ROLES.map((role, i) => (
+                              {boardroomChecks.map((step, i) => (
                                 <span
-                                  key={role}
+                                  key={`${step.role}-${i}`}
                                   className="text-[9px] px-1.5 py-0.5 rounded animate-pulse"
                                   style={{
-                                    background: 'rgba(59,130,246,0.12)',
-                                    color: '#93C5FD',
+                                    background: i === boardroomNarrationIndex % Math.max(1, boardroomChecks.length) ? 'rgba(59,130,246,0.22)' : 'rgba(59,130,246,0.12)',
+                                    color: i === boardroomNarrationIndex % Math.max(1, boardroomChecks.length) ? '#DBEAFE' : '#93C5FD',
                                     fontFamily: fontFamily.mono,
                                     animationDelay: `${i * 120}ms`,
                                   }}
                                 >
-                                  {role}
+                                  {step.role}
                                 </span>
                               ))}
                             </div>
@@ -988,125 +1089,147 @@ const MySoundBoard = () => {
                   </button>
                 </div>
               )}
-              {/* Model selector (restored dropdown style, proprietary BIQc labels) */}
-              <div className="flex flex-wrap items-center gap-2 px-1 mb-2 relative" data-testid="soundboard-mode-toggle-wrapper">
-                <div className="relative">
-                <button
-                  onClick={() => { setShowModeMenu((v) => !v); setShowAgentMenu(false); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
-                  data-testid="soundboard-mode-selector"
-                >
-                  <span>{activeMode?.icon}</span>
-                  <span>{activeMode?.label}</span>
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                </button>
+              <div className="px-1 mb-2 relative" data-testid="soundboard-mode-toggle-wrapper">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setSelectedAgent('general')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                    style={{
+                      background: selectedAgent === 'general' ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.1)',
+                      border: `1px solid ${selectedAgent === 'general' ? 'rgba(129,140,248,0.55)' : 'rgba(99,102,241,0.25)'}`,
+                      color: '#C7D2FE',
+                      fontFamily: fontFamily.mono
+                    }}
+                  >
+                    <span>◎</span>
+                    <span>Advisor</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectedAgent('boardroom')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                    style={{
+                      background: selectedAgent === 'boardroom' ? 'rgba(59,130,246,0.22)' : 'rgba(59,130,246,0.1)',
+                      border: `1px solid ${selectedAgent === 'boardroom' ? 'rgba(96,165,250,0.55)' : 'rgba(59,130,246,0.25)'}`,
+                      color: '#93C5FD',
+                      fontFamily: fontFamily.mono
+                    }}
+                  >
+                    <span>🏛️</span>
+                    <span>Boardroom</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAdvancedControls((prev) => !prev);
+                      if (showAdvancedControls) {
+                        setShowModeMenu(false);
+                        setShowAgentMenu(false);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-full text-[11px] font-semibold"
+                    style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.35)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                  >
+                    {showAdvancedControls ? 'Hide advanced controls' : 'Show advanced controls'}
+                  </button>
+                </div>
 
-                {showModeMenu && (
-                  <div className="absolute bottom-full left-0 mb-2 w-80 rounded-xl overflow-hidden shadow-xl z-50"
-                    style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
-                    {availableModes.map((mode, idx) => (
+                {showAdvancedControls && (
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <div className="relative">
                       <button
-                        key={mode.id}
-                        onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
-                        className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5"
-                        style={{ borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none' }}
-                        data-testid={`soundboard-mode-option-${mode.id}`}
+                        onClick={() => { setShowModeMenu((v) => !v); setShowAgentMenu(false); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110"
+                        style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                        data-testid="soundboard-mode-selector"
                       >
-                        <span className="text-lg shrink-0">{mode.icon}</span>
-                        <div>
-                          <p className="text-sm font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>
-                            {mode.label}
-                            {selectedMode === mode.id && (
-                              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.15)', color: '#FF6A00' }}>
-                                Active
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-[11px] mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
-                        </div>
+                        <span>{activeMode?.icon}</span>
+                        <span>{activeMode?.label}</span>
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </button>
-                    ))}
 
-                    {!canUseTrinity && (
-                      <a href="/subscribe" className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 no-underline"
-                        style={{ textDecoration: 'none' }} data-testid="soundboard-trinity-upgrade-link">
-                        <span className="text-lg shrink-0 opacity-40">◈</span>
-                        <div>
-                          <p className="text-sm font-semibold" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>BIQc Trinity</p>
-                          <p className="text-[11px] mt-0.5" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>Available on the paid plan</p>
+                      {showModeMenu && (
+                        <div className="absolute bottom-full left-0 mb-2 w-80 rounded-xl overflow-hidden shadow-xl z-50"
+                          style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                          {availableModes.map((mode, idx) => (
+                            <button
+                              key={mode.id}
+                              onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
+                              className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5"
+                              style={{ borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none' }}
+                              data-testid={`soundboard-mode-option-${mode.id}`}
+                            >
+                              <span className="text-lg shrink-0">{mode.icon}</span>
+                              <div>
+                                <p className="text-sm font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>
+                                  {mode.label}
+                                  {selectedMode === mode.id && (
+                                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.15)', color: '#FF6A00' }}>
+                                      Active
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-[11px] mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
+                              </div>
+                            </button>
+                          ))}
+
+                          {!canUseTrinity && (
+                            <a href="/subscribe" className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 no-underline"
+                              style={{ textDecoration: 'none' }} data-testid="soundboard-trinity-upgrade-link">
+                              <span className="text-lg shrink-0 opacity-40">◈</span>
+                              <div>
+                                <p className="text-sm font-semibold" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>BIQc Trinity</p>
+                                <p className="text-[11px] mt-0.5" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>Available on the paid plan</p>
+                              </div>
+                            </a>
+                          )}
                         </div>
-                      </a>
-                    )}
+                      )}
+                    </div>
+                    <div className="relative">
+                      <button
+                        onClick={() => { setShowAgentMenu((v) => !v); setShowModeMenu(false); }}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+                        style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', color: '#3B82F6', fontFamily: fontFamily.mono }}
+                        data-testid="soundboard-agent-selector"
+                      >
+                        <span>{BIQC_AGENTS.find(a => a.id === selectedAgent)?.icon || '⚡'}</span>
+                        <span>{BIQC_AGENTS.find(a => a.id === selectedAgent)?.label || 'Auto'}</span>
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+                      {showAgentMenu && (
+                        <div className="absolute bottom-full left-0 mb-2 w-56 rounded-xl overflow-hidden shadow-xl z-50"
+                          style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                          <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Agent</p>
+                          {BIQC_AGENTS.map((agent) => (
+                            <button
+                              key={agent.id}
+                              onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
+                              style={{ borderTop: '1px solid #1E2D3D' }}
+                              data-testid={`soundboard-agent-${agent.id}`}
+                            >
+                              <span className="text-sm shrink-0">{agent.icon}</span>
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#F4F7FA', fontFamily: fontFamily.body }}>{agent.label}</p>
+                                <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{agent.shortDesc}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
-                </div>
-                <div className="relative">
-                  <button
-                    onClick={() => { setShowAgentMenu((v) => !v); setShowModeMenu(false); }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-                    style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', color: '#3B82F6', fontFamily: fontFamily.mono }}
-                    data-testid="soundboard-agent-selector"
-                  >
-                    <span>{BIQC_AGENTS.find(a => a.id === selectedAgent)?.icon || '⚡'}</span>
-                    <span>{BIQC_AGENTS.find(a => a.id === selectedAgent)?.label || 'Auto'}</span>
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                  </button>
-                  {showAgentMenu && (
-                    <div className="absolute bottom-full left-0 mb-2 w-56 rounded-xl overflow-hidden shadow-xl z-50"
-                      style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
-                      <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Agent</p>
-                      {BIQC_AGENTS.map((agent) => (
-                        <button
-                          key={agent.id}
-                          onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
-                          style={{ borderTop: '1px solid #1E2D3D' }}
-                          data-testid={`soundboard-agent-${agent.id}`}
-                        >
-                          <span className="text-sm shrink-0">{agent.icon}</span>
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#F4F7FA', fontFamily: fontFamily.body }}>{agent.label}</p>
-                            <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{agent.shortDesc}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
               {showBoardroomViz && (
-                <div
-                  className="mb-2 rounded-xl px-3 py-2"
-                  style={{ background: 'rgba(2, 6, 23, 0.8)', border: '1px solid rgba(59,130,246,0.35)' }}
-                  data-testid="soundboard-boardroom-visualizer"
-                >
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <p className="text-[10px] uppercase tracking-wider" style={{ color: '#93C5FD', fontFamily: fontFamily.mono }}>
-                      Boardroom Council Active
-                    </p>
-                    <p className="text-[9px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
-                      Cross-integration priority synthesis
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {BOARDROOM_ROLES.map((role, i) => (
-                      <span
-                        key={role}
-                        className="px-2 py-1 rounded-lg text-[10px] animate-pulse"
-                        style={{
-                          background: 'rgba(30, 41, 59, 0.9)',
-                          color: '#E2E8F0',
-                          border: '1px solid rgba(148, 163, 184, 0.35)',
-                          fontFamily: fontFamily.mono,
-                          animationDelay: `${i * 120}ms`,
-                        }}
-                      >
-                        {role}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                <BoardroomCouncilCard
+                  checks={boardroomChecks}
+                  sourceLabels={boardroomSourceLabels}
+                  activeIndex={boardroomNarrationIndex}
+                  activeCheck={activeBoardroomCheck}
+                  compact={false}
+                  testId="soundboard-boardroom-visualizer"
+                />
               )}
 
               <div 
@@ -1134,7 +1257,7 @@ const MySoundBoard = () => {
                   <Paperclip className="w-4 h-4" />
                 </button>
                 <Button
-                  onClick={sendMessage}
+                  onClick={() => sendMessage()}
                   disabled={(!input.trim() && !attachedFile) || loading}
                   className="btn-primary p-2"
                   data-testid="send-message-btn"

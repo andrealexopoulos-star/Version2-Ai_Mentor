@@ -11,9 +11,22 @@ from datetime import datetime, timezone
 import uuid
 import logging
 import os
+import json
+import re
 
 from core.llm_router import llm_chat, llm_chat_with_usage
+from core.advisor_response_style import (
+    build_advisor_style_guidance,
+    build_flagship_response_contract_text,
+    ensure_flagship_response_sections,
+    parse_flagship_response_slots,
+)
 from routes.deps import get_current_user, get_sb, OPENAI_KEY, AI_MODEL, logger
+from routes.soundboard_contract import (
+    CONTRACT_VERSION,
+    build_contract_payload,
+    enforce_mode_for_tier,
+)
 from prompt_registry import get_prompt
 from auth_supabase import get_user_by_id
 from supabase_intelligence_helpers import (
@@ -25,6 +38,9 @@ from supabase_intelligence_helpers import (
 from fact_resolution import resolve_facts, build_known_facts_prompt
 
 router = APIRouter()
+
+SOUNDBOARD_V3_ENABLED = (os.environ.get("SOUNDBOARD_V3_ENABLED", "true").strip().lower() in {"1", "true", "yes"})
+SOUNDBOARD_BOARDROOM_ORCH_ENABLED = (os.environ.get("SOUNDBOARD_BOARDROOM_ORCH_ENABLED", "true").strip().lower() in {"1", "true", "yes"})
 
 
 def _call_cognition_for_soundboard(sb, user_id):
@@ -126,6 +142,7 @@ def _build_grounded_exec_fallback(*, has_crm: bool, has_accounting: bool, has_em
     fatigue = (people or {}).get("fatigue")
 
     lines = [
+        "Priority now: contain the most material cross-functional risk cluster this week.",
         "Situation: I am using your connected BIQc telemetry to provide this summary.",
         f"Connected systems: {', '.join(connected) if connected else 'integration visibility limited in this turn'}.",
         f"Live signals observed: {len(obs_events or [])}.",
@@ -135,12 +152,18 @@ def _build_grounded_exec_fallback(*, has_crm: bool, has_accounting: bool, has_em
 
     lines.append("Decision: Prioritise one cross-functional containment action across revenue, execution cadence, and client response latency this week.")
     lines.append(
+        "Pathways: "
+        "A) Immediate containment (owner assigned in 24h, deadline this week). "
+        "B) Stabilisation sprint (2-week execution with daily telemetry check-ins)."
+    )
+    lines.append(
         "This week:\n"
         f"- Revenue checkpoint: pipeline ${pipeline_total:,.0f}, stalled deals {stalled_deals}.\n"
         f"- Cash checkpoint: overdue invoices ${overdue_total:,.0f}.\n"
         f"- Risk checkpoint: overall risk {risk_level}."
         + (f"\n- Workforce checkpoint: capacity {capacity if capacity is not None else 'unknown'} / fatigue {fatigue if fatigue is not None else 'unknown'}." if (capacity is not None or fatigue is not None) else "")
     )
+    lines.append("KPI note: Track weekly cash conversion and stalled-deal recovery rate. If KPI targets are not set, set a baseline this week.")
     lines.append("Risk if delayed: unresolved signal clusters can compound into forecast misses, slower cash conversion, and lower client confidence.")
     return "\n\n".join(lines)
 
@@ -164,6 +187,80 @@ def _generic_response_detected(text: str) -> bool:
     return marker_hit or digit_count < 2
 
 
+def _ensure_flagship_contract_sections(text: str) -> str:
+    return ensure_flagship_response_sections(text)
+
+
+def _choose_human_opening(seed: str) -> str:
+    options = [
+        "You're right to focus on this now.",
+        "Makes sense to prioritise this first.",
+        "This is the right place to focus this week.",
+        "Good instinct — this is where the leverage is.",
+    ]
+    idx = abs(hash(seed or "biqc")) % len(options)
+    return options[idx]
+
+
+def _extract_last_assistant_message(messages_history: List[Dict[str, Any]]) -> str:
+    for msg in reversed(messages_history or []):
+        if str(msg.get("role", "")).lower() == "assistant":
+            return str(msg.get("content") or "").strip()
+    return ""
+
+
+def _limit_to_executive_length(text: str, max_sentences: int = 6) -> str:
+    draft = str(text or "").strip()
+    if not draft:
+        return draft
+    parts = [p.strip() for p in re.split(r"(?<=[.!?])\s+", draft) if p.strip()]
+    if len(parts) <= max_sentences:
+        return draft
+    return " ".join(parts[:max_sentences]).strip()
+
+
+def _humanize_contract_response(
+    text: str,
+    slots: Dict[str, Any],
+    *,
+    mode: str = "normal",
+    agent_id: str = "general",
+    last_assistant_message: str = "",
+) -> str:
+    if not isinstance(slots, dict) or not slots.get("is_complete"):
+        return text
+
+    priority = str(slots.get("priority_now") or "").strip().rstrip(".")
+    decision = str(slots.get("decision") or "").strip().rstrip(".")
+    pathways = str(slots.get("pathways") or "").strip().rstrip(".")
+    kpi_note = str(slots.get("kpi_note") or "").strip().rstrip(".")
+    risk = str(slots.get("risk_if_delayed") or "").strip().rstrip(".")
+
+    opening = _choose_human_opening(f"{priority}:{decision}:{mode}:{agent_id}")
+    if last_assistant_message:
+        previous_lead = re.split(r"(?<=[.!?])\s+", last_assistant_message.strip())[0].strip().lower()
+        if previous_lead and previous_lead == opening.strip().lower():
+            opening = "Here's the sharpest move right now."
+
+    if agent_id == "boardroom":
+        narrative = (
+            f"{opening} {priority}. "
+            f"Boardroom consensus is to {decision}. "
+            f"We can move two ways: {pathways}. "
+            f"For control, keep this KPI front and centre: {kpi_note}. "
+            f"If we delay, {risk}."
+        )
+    else:
+        narrative = (
+            f"{opening} {priority}. "
+            f"My recommendation is to {decision}. "
+            f"You've got two practical options: {pathways}. "
+            f"Keep one KPI in view this week: {kpi_note}. "
+            f"If this waits, {risk}."
+        )
+    return _limit_to_executive_length(narrative, max_sentences=6)
+
+
 def _build_specificity_fallback(*, profile: Dict[str, Any], top_concerns: List[Dict[str, Any]], coverage_pct: float, live_signal_count: int) -> str:
     business_name = (profile or {}).get("business_name") or "your business"
     industry = (profile or {}).get("industry") or "your industry"
@@ -175,12 +272,38 @@ def _build_specificity_fallback(*, profile: Dict[str, Any], top_concerns: List[D
     source_count = top.get("data_sources_count") or 1
 
     return (
+        f"Priority now: {issue} is the most material near-term operating risk for {business_name}.\n\n"
         f"Situation: For {business_name} in {industry}, BIQc has enough evidence to isolate one immediate decision area: {issue}. "
         f"Coverage is {coverage_pct}% with {live_signal_count} live signals in this cycle.\n\n"
         f"Decision: Execute this now — {action}.\n\n"
+        "Pathways: A) Fast containment this week with one accountable owner. "
+        "B) Structured recovery plan with a 14-day checkpoint.\n\n"
         f"This week: Assign one owner, lock a deadline, and review measurable movement within 48 hours. "
         f"Current evidence footprint: {source_count} source stream(s), freshness {freshness}.\n\n"
+        "KPI note: Track one KPI tied to this issue this week. If KPI configuration is missing, set the baseline and owner now.\n\n"
         f"Risk if delayed: {risk}."
+    )
+
+
+def _build_boardroom_fallback(
+    *,
+    profile: Dict[str, Any],
+    coverage_pct: float,
+    live_signal_count: int,
+    has_crm: bool,
+    has_accounting: bool,
+    has_email: bool,
+) -> str:
+    business_name = (profile or {}).get("business_name") or "your business"
+    connected = [name for name, enabled in [("CRM", has_crm), ("Accounting", has_accounting), ("Email", has_email)] if enabled]
+    connected_label = ", ".join(connected) if connected else "no live connectors yet"
+    return (
+        f"Priority now: tighten one operating decision this week for {business_name}, starting with the strongest available signal.\n\n"
+        f"Decision: use boardroom triage despite limited telemetry — assign one accountable owner and set a 48-hour checkpoint.\n\n"
+        f"Pathways: A) Fast boardroom containment using current context ({connected_label}). "
+        "B) Full boardroom pass after connecting live systems for deeper diagnosis.\n\n"
+        f"KPI note: with coverage at {coverage_pct}% and {live_signal_count} live signals, set a baseline KPI this week (owner + target + review date).\n\n"
+        "Risk if delayed: low-visibility decisions drift, and small execution misses compound into cash and delivery pressure."
     )
 
 
@@ -205,7 +328,7 @@ def _soundboard_contract_meta(*, has_crm: bool, has_accounting: bool, has_email:
         "data_sources_count": max(1, data_sources_count),
         "data_freshness": freshness,
         "lineage": {
-            "engine": "soundboard_v2",
+            "engine": "soundboard_v3",
             "coverage_pct": coverage_pct,
             "live_signals_count": live_signal_count,
             "connected_sources": {
@@ -213,8 +336,106 @@ def _soundboard_contract_meta(*, has_crm: bool, has_accounting: bool, has_email:
                 "accounting": has_accounting,
                 "email": has_email,
             },
+            "connected_sources_list": [
+                source
+                for source, enabled in (
+                    ("crm", has_crm),
+                    ("accounting", has_accounting),
+                    ("email", has_email),
+                    ("signals", live_signal_count > 0),
+                )
+                if enabled
+            ],
             "top_concern_ids": [c.get("concern_id") for c in (top_concerns or []) if isinstance(c, dict)],
         },
+    }
+
+
+def _build_evidence_pack(
+    *,
+    profile: Dict[str, Any],
+    has_crm: bool,
+    has_accounting: bool,
+    has_email: bool,
+    live_signal_count: int,
+    live_signal_age_hours: Optional[float],
+    top_concerns: List[Dict[str, Any]],
+    intent_domain: str,
+    intent_action: str,
+) -> Dict[str, Any]:
+    has_recent_live_signals = bool(live_signal_count and live_signal_count > 0)
+    connector_freshness = "live" if has_recent_live_signals else "connected"
+    sources = []
+    if profile:
+        sources.append(
+            {
+                "id": "calibration",
+                "source": "calibration",
+                "freshness": "profile",
+                "confidence": 0.82,
+                "summary": "Business DNA profile and calibration context",
+            }
+        )
+    if has_crm:
+        sources.append(
+            {
+                "id": "crm",
+                "source": "crm",
+                "freshness": connector_freshness,
+                "confidence": 0.88,
+                "summary": "CRM pipeline and opportunity telemetry",
+            }
+        )
+    if has_accounting:
+        sources.append(
+            {
+                "id": "accounting",
+                "source": "accounting",
+                "freshness": connector_freshness,
+                "confidence": 0.9,
+                "summary": "Accounting invoices, cash timing, and revenue traces",
+            }
+        )
+    if has_email:
+        sources.append(
+            {
+                "id": "email",
+                "source": "email",
+                "freshness": connector_freshness,
+                "confidence": 0.76,
+                "summary": "Inbox/sent communication signal patterns",
+            }
+        )
+    if live_signal_count > 0:
+        age = "unknown"
+        if live_signal_age_hours is not None:
+            age = f"{int(round(live_signal_age_hours * 60))}m" if live_signal_age_hours < 1 else f"{int(round(live_signal_age_hours))}h"
+        sources.append(
+            {
+                "id": "signals",
+                "source": "platform_signals",
+                "freshness": age,
+                "confidence": 0.84,
+                "summary": f"{live_signal_count} live signal events in current cycle",
+            }
+        )
+    if top_concerns:
+        concern = top_concerns[0] or {}
+        sources.append(
+            {
+                "id": "brain",
+                "source": "business_brain",
+                "freshness": str(concern.get("data_freshness") or "unknown"),
+                "confidence": 0.81,
+                "summary": str(concern.get("issue_brief") or concern.get("decision_label") or "Top concern available"),
+            }
+        )
+
+    return {
+        "contract_version": CONTRACT_VERSION,
+        "intent": {"domain": intent_domain, "action": intent_action},
+        "source_count": len(sources),
+        "sources": sources,
     }
 
 
@@ -297,10 +518,10 @@ RESPONSE STRUCTURE
 ══════════════════════════════════════════════════════════
 For strategic responses, follow this structure in flowing prose (NOT headers or bullet points unless explicitly asked):
 
-1. SITUATION: What is happening? Use specific numbers, names, or entity names from the data.
-2. ANALYSIS: What drives it? Reference specific metrics or patterns and their sources.
-3. RECOMMENDATION: One clear, concrete action with quantified impact where possible.
-4. THIS WEEK: One actionable next step with who/what/by-when.
+1. PRIORITY NOW: What matters most this week in this business.
+2. DECISION: One clear, concrete recommendation with quantified impact where possible.
+3. PATHWAYS: One or two practical ways forward with owner and timing.
+4. KPI NOTE: One KPI to monitor next OR the KPI setup step if KPI data is missing.
 5. RISK IF DELAYED: What happens if they don't act? Quantify where possible.
 6. NEXT ACTIONS: Offer 1-2 proactive follow-ups BIQc can execute (e.g. "Would you like me to draft reminder emails to the 3 overdue clients?", "Shall I prepare a cash flow forecast based on your Xero data?").
 
@@ -833,6 +1054,141 @@ async def _call_trinity_orchestration(
     return fused, f"trinity/{fused_model}"
 
 
+async def _run_boardroom_orchestration(
+    *,
+    openai_key: str,
+    google_key: str,
+    anthropic_key: str,
+    clean_message: str,
+    system_message: str,
+    messages_history: List[Dict[str, Any]],
+) -> tuple[str, str, Dict[str, Any]]:
+    """Boardroom multi-agent cycle: delegate -> challenge -> consensus."""
+    personas = [
+        ("ceo", "Chief Executive Officer: strategic direction and opportunity cost"),
+        ("cfo", "Chief Financial Officer: cash conversion, margin, and risk-weighted economics"),
+        ("coo", "Chief Operating Officer: execution bottlenecks and owner accountability"),
+        ("cmo", "Chief Marketing Officer: demand quality, pipeline velocity, market narrative"),
+    ]
+    deliberations: List[Dict[str, str]] = []
+    phase_trace = []
+
+    # Delegation phase
+    for role_key, role_desc in personas:
+        role_system = (
+            f"{system_message}\n\n"
+            f"[BOARDROOM ROLE]\n{role_desc}\n"
+            "Return exactly three sections:\n"
+            "1) strongest_signal\n2) contradiction\n3) 48h_action."
+        )
+        try:
+            if _has_configured_key(openai_key):
+                role_text, role_model = await _call_openai_with_fallback(
+                    api_key=openai_key,
+                    system_message=role_system,
+                    clean_message=clean_message,
+                    messages_history=messages_history[-8:],
+                    model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+                    reasoning=True,
+                )
+            elif _has_configured_key(anthropic_key):
+                role_text, role_model = await _call_anthropic_with_fallback(
+                    api_key=anthropic_key,
+                    system_message=role_system,
+                    clean_message=clean_message,
+                    model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+                )
+            else:
+                role_text, role_model = await _call_gemini_with_fallback(
+                    api_key=google_key,
+                    system_message=role_system,
+                    clean_message=clean_message,
+                    model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+                )
+            deliberations.append({"role": role_key, "analysis": role_text, "model": role_model})
+            phase_trace.append({"phase": "delegate", "role": role_key, "status": "ok"})
+        except Exception as exc:
+            phase_trace.append({"phase": "delegate", "role": role_key, "status": "error", "detail": str(exc)[:180]})
+
+    if not deliberations:
+        raise RuntimeError("Boardroom delegation failed across all council roles.")
+
+    challenge_prompt = "\n\n".join(
+        [f"[{item['role'].upper()}]\n{_truncate_for_synthesis(item['analysis'], 900)}" for item in deliberations]
+    )
+    challenge_system = (
+        "You are BIQc Contradiction Chair. Detect conflicts across council analyses and return:\n"
+        "1) non_negotiables\n2) contradictions\n3) highest_leverage_decision."
+    )
+    if _has_configured_key(openai_key):
+        challenge_text, challenge_model = await _call_openai_with_fallback(
+            api_key=openai_key,
+            system_message=challenge_system,
+            clean_message=challenge_prompt,
+            messages_history=[],
+            model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+            reasoning=True,
+        )
+    elif _has_configured_key(anthropic_key):
+        challenge_text, challenge_model = await _call_anthropic_with_fallback(
+            api_key=anthropic_key,
+            system_message=challenge_system,
+            clean_message=challenge_prompt,
+            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+        )
+    else:
+        challenge_text, challenge_model = await _call_gemini_with_fallback(
+            api_key=google_key,
+            system_message=challenge_system,
+            clean_message=challenge_prompt,
+            model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+        )
+    phase_trace.append({"phase": "challenge", "status": "ok", "model": challenge_model})
+
+    consensus_system = (
+        "You are BIQc Boardroom Consensus Synthesizer.\n"
+        "Output format:\n"
+        "Priority now:\nDecision:\nPathways:\nKPI note:\nRisk if delayed:\nEvidence lines:"
+    )
+    consensus_input = (
+        f"User request:\n{clean_message}\n\n"
+        f"Council deliberations:\n{challenge_prompt}\n\n"
+        f"Contradiction chair output:\n{challenge_text}"
+    )
+    if _has_configured_key(openai_key):
+        final_text, final_model = await _call_openai_with_fallback(
+            api_key=openai_key,
+            system_message=consensus_system,
+            clean_message=consensus_input,
+            messages_history=[],
+            model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+            reasoning=True,
+        )
+    elif _has_configured_key(anthropic_key):
+        final_text, final_model = await _call_anthropic_with_fallback(
+            api_key=anthropic_key,
+            system_message=consensus_system,
+            clean_message=consensus_input,
+            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+        )
+    else:
+        final_text, final_model = await _call_gemini_with_fallback(
+            api_key=google_key,
+            system_message=consensus_system,
+            clean_message=consensus_input,
+            model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+        )
+    phase_trace.append({"phase": "consensus", "status": "ok", "model": final_model})
+    trace = {
+        "contract_version": CONTRACT_VERSION,
+        "council_size": len(deliberations),
+        "deliberations": deliberations,
+        "challenge": {"model": challenge_model, "summary": challenge_text[:900]},
+        "phases": phase_trace,
+    }
+    return final_text, f"boardroom/{final_model}", trace
+
+
 class ConversationRename(BaseModel):
     title: str
 
@@ -1101,14 +1457,13 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 entity = evt.get('entity', {})
                 if isinstance(entity, str):
                     try:
-                        import json as _json
-                        entity = _json.loads(entity)
+                        entity = json.loads(entity)
                     except Exception:
                         entity = {}
                 metric = evt.get('metric', {})
                 if isinstance(metric, str):
                     try:
-                        metric = _json.loads(metric)
+                        metric = json.loads(metric)
                     except Exception:
                         metric = {}
 
@@ -1264,6 +1619,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     if sanitised['blocked']:
         return {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
     clean_message = sanitised['text']
+    intent_domain, intent_action, complexity = _infer_intent_heuristic(clean_message)
     request_scope = _coerce_request_scope(req, clean_message)
     mailbox_scope = request_scope.get("mailbox_scope", {})
     mailbox_requested = any(mailbox_scope.values())
@@ -1283,6 +1639,26 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             intent_action = "compare"
         if complexity != "high":
             complexity = "high"
+    evidence_pack = _build_evidence_pack(
+        profile=profile or {},
+        has_crm=has_crm,
+        has_accounting=has_accounting,
+        has_email=has_email,
+        live_signal_count=live_signal_count,
+        live_signal_age_hours=live_signal_age_hours,
+        top_concerns=top_brain_concerns,
+        intent_domain=intent_domain,
+        intent_action=intent_action,
+    ) if SOUNDBOARD_V3_ENABLED else {}
+
+    # If live integrations are connected, do not hard-block strategic responses.
+    # Degrade gracefully and keep responses grounded in connected evidence.
+    if guardrail_status == "BLOCKED" and (has_crm or has_accounting or has_email):
+        logger.info(
+            f"[GUARDRAIL_OVERRIDE] user={user_id[:8]} coverage={coverage_pct}% "
+            "live_integrations_present=True forcing DEGRADED"
+        )
+        guardrail_status = "DEGRADED"
 
     # ═══ PERSONALIZATION GUARDRAIL: Block generic advice ═══
     if guardrail_status == "BLOCKED":
@@ -1290,6 +1666,17 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         critical_missing = [f for f in missing_fields if f["critical"]][:5]
         missing_list = ", ".join(f["label"] for f in critical_missing) if critical_missing else "business profile fields"
         logger.warning(f"[GUARDRAIL_BLOCKED] user={user_id[:8]} coverage={coverage_pct}% missing_critical={len(missing_critical)}")
+        blocked_contract = build_contract_payload(
+            tier=(current_user.get("subscription_tier") or profile.get("subscription_tier") or "free"),
+            mode_requested=getattr(req, "mode", "auto"),
+            mode_effective="auto",
+            guardrail="BLOCKED",
+            coverage_pct=coverage_pct,
+            confidence_score=contract_meta.get("confidence_score", 0.2),
+            data_sources_count=contract_meta.get("data_sources_count", 1),
+            data_freshness=contract_meta.get("data_freshness", "unknown"),
+            connected_sources=(contract_meta.get("lineage") or {}).get("connected_sources", {}),
+        )
         return {
             "reply": f"I need a bit more context about your business before I can give you specific advice. I'm currently working with {coverage_pct}% data coverage — not enough to deliver accurate guidance.\n\nTo unlock personalised intelligence, please complete: {missing_list}. It takes about 3 minutes and makes every response significantly more useful.",
             "guardrail": "BLOCKED",
@@ -1298,6 +1685,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "context_fields": context_fields,
             "live_signals": live_signal_count,
             "conversation_id": req.conversation_id,
+            "evidence_pack": evidence_pack,
+            "soundboard_contract": blocked_contract,
             **contract_meta,
         }
 
@@ -1307,7 +1696,20 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         signal_injection = f"\n\n═══ LIVE SIGNAL STATUS ═══\nActive observation signals: {live_signal_count}\nLast signal: {live_signal_age_hours}h ago\nUSE THESE to ground your advice.\n"
 
     # P1: Response contract enforcement
-    contract_injection = "\n\n═══ RESPONSE CONTRACT (MANDATORY) ═══\nEvery strategic response MUST include:\n1) SITUATION: What is happening? Use specific numbers or entity names from the data above.\n2) DECISION: One clear recommendation.\n3) THIS WEEK: One concrete action with who/what/by-when.\n4) RISK IF DELAYED: What happens if they don't act? Quantify.\nDo NOT output generic strategy. Every sentence must reference THIS business.\nDATA ATTRIBUTION: When referencing a fact, state its source inline — e.g. 'Based on your calibration data...' or 'Your HubSpot pipeline shows...' or 'From your Xero invoices...'. Never state a fact without its source.\n"
+    style_injection = build_advisor_style_guidance(
+        user_first_name=user_first_name,
+        business_name=(profile or {}).get("business_name"),
+    )
+    contract_injection = (
+        "\n\n═══ RESPONSE CONTRACT (MANDATORY) ═══\n"
+        f"{build_flagship_response_contract_text()}"
+        "Do NOT output generic strategy. Every sentence must reference THIS business.\n"
+        "DATA ATTRIBUTION: When referencing a fact, state its source inline — e.g. "
+        "'Based on your calibration data...' or 'Your HubSpot pipeline shows...' or "
+        "'From your Xero invoices...'. Never state a fact without its source.\n"
+        "TONE: Keep it warm, plain-English, and conversational. Avoid robotic headings unless the user asks for a formal memo.\n"
+        f"\n[STYLE GUIDANCE]\n{style_injection}\n"
+    )
     if mailbox_requested or wants_integration_analytics:
         scope_notes = []
         if mailbox_requested:
@@ -1389,7 +1791,16 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     else:
         guardrail_injection += "\n[NO PERSISTED BRAIN CONCERNS AVAILABLE THIS TURN — USE LIVE SIGNALS + BUSINESS DNA ONLY, DO NOT GENERATE GENERIC THEORY.]\n"
 
-    system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + signal_injection + guardrail_injection + contract_injection + f"\n\nCONTEXT:\n{user_context}"
+    evidence_lines = []
+    for item in (evidence_pack.get("sources") or [])[:8]:
+        evidence_lines.append(
+            f"- {item.get('source')} | freshness={item.get('freshness')} | confidence={item.get('confidence')} | {item.get('summary')}"
+        )
+    evidence_injection = ""
+    if evidence_lines:
+        evidence_injection = "\n\n═══ EVIDENCE CONTRACT (MANDATORY SOURCE REFERENCES) ═══\n" + "\n".join(evidence_lines) + "\n"
+
+    system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + signal_injection + guardrail_injection + evidence_injection + contract_injection + f"\n\nCONTEXT:\n{user_context}"
 
     # ═══ FILE GENERATION DETECTION ═══
     file_keywords = {
@@ -1453,7 +1864,10 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     # ═══ RATE LIMITING per subscription tier ═══
     from routes.deps import check_rate_limit, AI_MODELS
-    mode = getattr(req, 'mode', 'auto')
+    requested_mode = getattr(req, 'mode', 'auto')
+    tier_for_contract = (current_user.get("subscription_tier") or profile.get("subscription_tier") or "free")
+    is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin", "admin"}
+    mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
     feature = 'trinity_daily' if mode == 'trinity' else 'soundboard_daily'
     await check_rate_limit(user_id, feature, get_sb())
 
@@ -1468,8 +1882,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     has_google_key = _has_configured_key(GOOGLE_DIRECT_KEY)
     has_anthropic_key = _has_configured_key(ANTHROPIC_DIRECT_KEY)
 
-    # Step 1: Intent classification with o4-mini (fast thinking, direct OpenAI key)
-    intent_domain, intent_action, complexity = _infer_intent_heuristic(req.message)
+    # Step 1: Intent refinement with o4-mini (fast thinking, direct OpenAI key)
     if has_openai_key:
         try:
             import json as _json
@@ -1497,13 +1910,26 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     effective_agent_id = agent_id if (agent_id and agent_id != "auto") else intent_domain
     effective_agent = SOUNDBOARD_AGENTS.get(effective_agent_id) or SOUNDBOARD_AGENTS["general"]
     effective_agent_name = effective_agent.get("name", "Strategic Advisor")
+    boardroom_trace = None
 
     # Step 2/3: Route + Generate response
     try:
         import time as _time
         _start = _time.time()
 
-        if mode == "trinity":
+        if SOUNDBOARD_BOARDROOM_ORCH_ENABLED and effective_agent_id == "boardroom":
+            mode_label = "Boardroom Council"
+            routing_reason = "Agent-selected boardroom deliberation and consensus synthesis"
+            response, resolved_model, boardroom_trace = await _run_boardroom_orchestration(
+                openai_key=OPENAI_DIRECT_KEY,
+                google_key=GOOGLE_DIRECT_KEY,
+                anthropic_key=ANTHROPIC_DIRECT_KEY,
+                clean_message=clean_message,
+                system_message=system_message,
+                messages_history=messages_history,
+            )
+            response_model = resolved_model
+        elif mode == "trinity":
             mode_label = "BIQc Trinity"
             routing_reason = "User-selected Trinity mode (GPT-5.4 + Codex-5.3 + Gemini Pro orchestration)"
             response, resolved_model = await _call_trinity_orchestration(
@@ -1627,11 +2053,38 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             response = sanitise_output(response)
 
         if _generic_response_detected(response):
-            response = _build_specificity_fallback(
-                profile=profile or {},
-                top_concerns=top_brain_concerns,
-                coverage_pct=coverage_pct,
-                live_signal_count=live_signal_count,
+            if effective_agent_id == "boardroom":
+                response = _build_boardroom_fallback(
+                    profile=profile or {},
+                    coverage_pct=coverage_pct,
+                    live_signal_count=live_signal_count,
+                    has_crm=has_crm,
+                    has_accounting=has_accounting,
+                    has_email=has_email,
+                )
+            else:
+                response = _build_specificity_fallback(
+                    profile=profile or {},
+                    top_concerns=top_brain_concerns,
+                    coverage_pct=coverage_pct,
+                    live_signal_count=live_signal_count,
+                )
+            response = sanitise_output(response)
+
+        clean_lower = clean_message.strip().lower()
+        greeting_only = clean_lower in {"hi", "hey", "hello", "yo", "good morning", "good afternoon", "good evening"}
+        should_enforce_contract = not greeting_only and len(clean_message.split()) >= 4
+        advisory_slots = {}
+        if should_enforce_contract:
+            response = _ensure_flagship_contract_sections(response)
+            response = sanitise_output(response)
+            advisory_slots = parse_flagship_response_slots(response)
+            response = _humanize_contract_response(
+                response,
+                advisory_slots,
+                mode=mode,
+                agent_id=effective_agent_id,
+                last_assistant_message=_extract_last_assistant_message(messages_history),
             )
             response = sanitise_output(response)
 
@@ -1668,6 +2121,10 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             conversation_id = req.conversation_id
             sb.table("soundboard_conversations").update({
                 "updated_at": now,
+                "mode_requested": requested_mode,
+                "mode_effective": mode,
+                "last_model_used": response_model,
+                "contract_version": CONTRACT_VERSION,
             }).eq("id", conversation_id).eq("user_id", user_id).execute()
         else:
             conversation_id = str(uuid.uuid4())
@@ -1675,6 +2132,10 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 "id": conversation_id,
                 "user_id": user_id,
                 "title": conversation_title or "New Conversation",
+                "mode_requested": requested_mode,
+                "mode_effective": mode,
+                "last_model_used": response_model,
+                "contract_version": CONTRACT_VERSION,
                 "created_at": now,
                 "updated_at": now,
             }).execute()
@@ -1688,6 +2149,14 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 "role": item["role"],
                 "content": item["content"],
                 "timestamp": item["timestamp"],
+                "evidence_pack": evidence_pack if item["role"] == "assistant" else {},
+                "boardroom_trace": boardroom_trace if item["role"] == "assistant" and boardroom_trace else {},
+                "metadata": {
+                    "mode_effective": mode,
+                    "contract_version": CONTRACT_VERSION,
+                    "advisory_slots": advisory_slots if item["role"] == "assistant" else {},
+                    "boardroom_status": ("orchestrated" if effective_agent_id == "boardroom" and boardroom_trace else ("requested_no_trace" if effective_agent_id == "boardroom" else "not_requested")) if item["role"] == "assistant" else None,
+                },
             }
             for item in new_messages
         ]
@@ -1748,26 +2217,37 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         # ═══ PROACTIVE NEXT ACTIONS (based on intent and data) ═══
         suggested_actions = []
         if intent_domain == "finance" and has_accounting:
-            suggested_actions.append({"label": "Draft overdue invoice reminders", "action": "draft_invoice_reminders"})
-            suggested_actions.append({"label": "Generate cash flow forecast", "action": "generate_cashflow_forecast"})
+            suggested_actions.append({"label": "Draft overdue invoice reminders", "action": "draft_invoice_reminders", "prompt": "Draft overdue invoice reminders with priority order, tone guidance, and next-send schedule."})
+            suggested_actions.append({"label": "Generate cash flow forecast", "action": "generate_cashflow_forecast", "prompt": "Generate a 13-week cash flow forecast with best/base/worst scenarios and top risk levers."})
         elif intent_domain == "sales" and has_crm:
-            suggested_actions.append({"label": "Flag stalled deals in HubSpot", "action": "flag_stalled_deals"})
-            suggested_actions.append({"label": "Draft follow-up email for top deal", "action": "draft_deal_followup"})
+            suggested_actions.append({"label": "Flag stalled deals in HubSpot", "action": "flag_stalled_deals", "prompt": "Flag stalled deals and create an owner-by-owner rescue plan for the next 7 days."})
+            suggested_actions.append({"label": "Draft follow-up email for top deal", "action": "draft_deal_followup", "prompt": "Draft a decisive follow-up email for the highest-value stalled deal including decision-close language."})
         elif intent_domain == "marketing":
-            suggested_actions.append({"label": "Run competitive benchmark", "action": "run_benchmark"})
-            suggested_actions.append({"label": "Generate campaign performance summary", "action": "generate_campaign_summary"})
+            suggested_actions.append({"label": "Run competitive benchmark", "action": "run_benchmark", "prompt": "Run a competitor benchmark and identify one offensive move and one defensive move for this month."})
+            suggested_actions.append({"label": "Generate campaign performance summary", "action": "generate_campaign_summary", "prompt": "Generate a campaign performance summary with spend efficiency and channel reallocation actions."})
         elif intent_domain == "risk":
-            suggested_actions.append({"label": "Generate risk report PDF", "action": "generate_risk_report"})
+            suggested_actions.append({"label": "Generate risk report PDF", "action": "generate_risk_report", "prompt": "Generate a risk report with risk score changes, triggers, and mitigation owners."})
         elif intent_domain == "hr":
-            suggested_actions.append({"label": "Generate SOP for this process", "action": "generate_sop"})
+            suggested_actions.append({"label": "Generate SOP for this process", "action": "generate_sop", "prompt": "Generate an SOP with step owners, controls, and execution checkpoints."})
         if mailbox_requested:
-            suggested_actions.append({"label": "Summarise Inbox/Sent/Deleted deltas", "action": "summarise_mailbox_deltas"})
-            suggested_actions.append({"label": "Create owner response triage list", "action": "generate_response_triage"})
+            suggested_actions.append({"label": "Summarise Inbox/Sent/Deleted deltas", "action": "summarise_mailbox_deltas", "prompt": "Summarise Inbox, Sent, and Deleted deltas with escalation and response lag signals."})
+            suggested_actions.append({"label": "Create owner response triage list", "action": "generate_response_triage", "prompt": "Create an owner triage list with urgency tiers and response SLAs."})
         if wants_integration_analytics:
-            suggested_actions.append({"label": "Run cross-integration variance check", "action": "cross_integration_variance"})
-            suggested_actions.append({"label": "Generate Merge analytics memo", "action": "merge_analytics_memo"})
+            suggested_actions.append({"label": "Run cross-integration variance check", "action": "cross_integration_variance", "prompt": "Run a cross-integration variance check and surface top contradictions with root-cause hypotheses."})
+            suggested_actions.append({"label": "Generate Merge analytics memo", "action": "merge_analytics_memo", "prompt": "Generate a merge analytics memo with trend narrative and next-week executive actions."})
 
         execution_id = str(uuid.uuid4())[:8] if suggested_actions else None
+        soundboard_contract = build_contract_payload(
+            tier=tier_for_contract,
+            mode_requested=requested_mode,
+            mode_effective=mode,
+            guardrail=guardrail_status,
+            coverage_pct=coverage_pct,
+            confidence_score=contract_meta.get("confidence_score", 0.2),
+            data_sources_count=contract_meta.get("data_sources_count", 1),
+            data_freshness=contract_meta.get("data_freshness", "unknown"),
+            connected_sources=(contract_meta.get("lineage") or {}).get("connected_sources", {}),
+        )
 
         return {
             "reply": response,
@@ -1781,42 +2261,110 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "intent": {"domain": intent_domain, "action": intent_action},
             "request_scope": request_scope,
             "model_used": response_model,
+            "mode_effective": mode,
+            "boardroom_trace": boardroom_trace,
+            "boardroom_status": "orchestrated" if effective_agent_id == "boardroom" and boardroom_trace else ("requested_no_trace" if effective_agent_id == "boardroom" else "not_requested"),
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:6]] if guardrail_status == "DEGRADED" else [],
+            "evidence_pack": evidence_pack,
+            "soundboard_contract": soundboard_contract,
+            "advisory_slots": advisory_slots,
             **contract_meta,
         }
 
     except RuntimeError as e:
         logger.error(f"Soundboard provider error: {e}")
-        fallback = _build_specificity_fallback(
+        fallback = _build_boardroom_fallback(
+            profile=profile or {},
+            coverage_pct=coverage_pct,
+            live_signal_count=live_signal_count,
+            has_crm=has_crm,
+            has_accounting=has_accounting,
+            has_email=has_email,
+        ) if effective_agent_id == "boardroom" else _build_specificity_fallback(
             profile=profile or {},
             top_concerns=top_brain_concerns,
             coverage_pct=coverage_pct,
             live_signal_count=live_signal_count,
         )
+        fallback_trace = {
+            "contract_version": CONTRACT_VERSION,
+            "phases": [{"phase": "boardroom_orchestration", "status": "error"}],
+            "error": str(e)[:240],
+        } if effective_agent_id == "boardroom" else None
+        fallback_slots = parse_flagship_response_slots(fallback)
+        fallback_human = _humanize_contract_response(fallback, fallback_slots)
+        error_contract = build_contract_payload(
+            tier=tier_for_contract,
+            mode_requested=requested_mode,
+            mode_effective=mode,
+            guardrail=guardrail_status,
+            coverage_pct=coverage_pct,
+            confidence_score=contract_meta.get("confidence_score", 0.2),
+            data_sources_count=contract_meta.get("data_sources_count", 1),
+            data_freshness=contract_meta.get("data_freshness", "unknown"),
+            connected_sources=(contract_meta.get("lineage") or {}).get("connected_sources", {}),
+        )
         return {
-            "reply": fallback,
+            "reply": fallback_human,
             "conversation_id": req.conversation_id,
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "provider_error": str(e),
+            "mode_effective": mode,
+            "evidence_pack": evidence_pack,
+            "boardroom_trace": fallback_trace,
+            "boardroom_status": "fallback_error" if effective_agent_id == "boardroom" else "not_requested",
+            "soundboard_contract": error_contract,
+            "advisory_slots": fallback_slots,
             **contract_meta,
         }
     except Exception as e:
         logger.error(f"Soundboard chat error: {e}")
-        fallback = _build_specificity_fallback(
+        fallback = _build_boardroom_fallback(
+            profile=profile or {},
+            coverage_pct=coverage_pct,
+            live_signal_count=live_signal_count,
+            has_crm=has_crm,
+            has_accounting=has_accounting,
+            has_email=has_email,
+        ) if effective_agent_id == "boardroom" else _build_specificity_fallback(
             profile=profile or {},
             top_concerns=top_brain_concerns,
             coverage_pct=coverage_pct,
             live_signal_count=live_signal_count,
         )
+        fallback_trace = {
+            "contract_version": CONTRACT_VERSION,
+            "phases": [{"phase": "boardroom_orchestration", "status": "error"}],
+            "error": str(e)[:240],
+        } if effective_agent_id == "boardroom" else None
+        fallback_slots = parse_flagship_response_slots(fallback)
+        fallback_human = _humanize_contract_response(fallback, fallback_slots)
+        error_contract = build_contract_payload(
+            tier=tier_for_contract,
+            mode_requested=requested_mode,
+            mode_effective=mode,
+            guardrail=guardrail_status,
+            coverage_pct=coverage_pct,
+            confidence_score=contract_meta.get("confidence_score", 0.2),
+            data_sources_count=contract_meta.get("data_sources_count", 1),
+            data_freshness=contract_meta.get("data_freshness", "unknown"),
+            connected_sources=(contract_meta.get("lineage") or {}).get("connected_sources", {}),
+        )
         return {
-            "reply": fallback,
+            "reply": fallback_human,
             "conversation_id": req.conversation_id,
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "runtime_error": str(e),
+            "mode_effective": mode,
+            "evidence_pack": evidence_pack,
+            "boardroom_trace": fallback_trace,
+            "boardroom_status": "fallback_error" if effective_agent_id == "boardroom" else "not_requested",
+            "soundboard_contract": error_contract,
+            "advisory_slots": fallback_slots,
             **contract_meta,
         }
 

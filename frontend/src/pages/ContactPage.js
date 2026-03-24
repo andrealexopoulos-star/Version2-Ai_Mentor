@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Shield, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import { apiClient } from '../lib/api';
-import { supabase } from '../context/SupabaseAuthContext';
 
 const CHARCOAL = '#0F1720';
 const MUTED = '#64748B';
@@ -18,6 +17,8 @@ const ContactPage = () => {
   const [form, setForm] = useState({ name: '', email: '', company: '', phone: '', businessSize: '', featureLabel: waitlistLabel, message: '' });
   const [infoOpen, setInfoOpen] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const heading = useMemo(() => {
     if (isCustomConnector) return 'Add a custom connector';
@@ -27,26 +28,29 @@ const ContactPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
+    setSubmitError('');
     try {
-      const { data } = await supabase.auth.getSession();
-      if (data?.session?.access_token) {
-        const now = new Date();
-        const callbackDate = now.toISOString().slice(0, 10);
-        const callbackTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        await apiClient.post('/enterprise/contact-request', {
-          name: form.name,
-          business_name: form.company,
-          email: form.email,
-          phone: form.phone,
-          callback_date: callbackDate,
-          callback_time: callbackTime,
-          description: `${isWaitlist && form.businessSize ? `Business size: ${form.businessSize}. ` : ''}${isCustomConnector ? 'Custom connector request. ' : ''}${form.message}`,
-          feature_requested: form.featureLabel || waitlistLabel || (isCustomConnector ? 'Custom Connector' : ''),
-          current_tier: isWaitlist ? 'waitlist' : (isCustomConnector ? 'custom_connector' : 'contact'),
-        });
-      }
-    } catch {}
-    setSubmitted(true);
+      const now = new Date();
+      const callbackDate = now.toISOString().slice(0, 10);
+      const callbackTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      await apiClient.post('/enterprise/contact-request', {
+        name: form.name,
+        business_name: form.company,
+        email: form.email,
+        phone: form.phone,
+        callback_date: callbackDate,
+        callback_time: callbackTime,
+        description: `${isWaitlist && form.businessSize ? `Business size: ${form.businessSize}. ` : ''}${isCustomConnector ? 'Custom connector request. ' : ''}${form.message}`,
+        feature_requested: form.featureLabel || waitlistLabel || (isCustomConnector ? 'Custom Connector' : ''),
+        current_tier: isWaitlist ? 'waitlist' : (isCustomConnector ? 'custom_connector' : 'contact'),
+      });
+      setSubmitted(true);
+    } catch (err) {
+      setSubmitError(err?.response?.data?.detail || 'Unable to submit request right now. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
@@ -191,9 +195,12 @@ const ContactPage = () => {
                     data-testid="contact-message" />
                 </div>
                 <button type="submit" className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white font-semibold w-full sm:w-auto hover:-translate-y-0.5 transition-all"
-                  style={{ fontFamily: 'var(--font-heading)', background: CHARCOAL, fontSize: 15, boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="contact-submit">
-                  <Send className="w-4 h-4" /> {isWaitlist ? 'Join Waitlist' : (isCustomConnector ? 'Submit connector request' : 'Request Demo')}
+                  style={{ fontFamily: 'var(--font-heading)', background: CHARCOAL, fontSize: 15, boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="contact-submit" disabled={submitting}>
+                  <Send className="w-4 h-4" /> {submitting ? 'Submitting...' : (isWaitlist ? 'Join Waitlist' : (isCustomConnector ? 'Submit connector request' : 'Request Demo'))}
                 </button>
+                {submitError && (
+                  <p className="text-xs text-red-400" data-testid="contact-submit-error">{submitError}</p>
+                )}
                 <p className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>We'll respond within 24 hours. No spam, ever.</p>
               </form>
             )}

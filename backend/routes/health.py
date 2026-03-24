@@ -2,7 +2,7 @@
 Health monitoring for BIQc background workers and services.
 Provides endpoints to check status of email sync, intelligence automation, and Supabase connectivity.
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
 import os
 import logging
@@ -10,6 +10,17 @@ from biqc_jobs import biqc_jobs
 
 router = APIRouter(prefix="/health", tags=["health"])
 logger = logging.getLogger(__name__)
+
+
+def _is_production() -> bool:
+    env = (os.environ.get("ENVIRONMENT") or "").strip().lower()
+    prod_flag = (os.environ.get("PRODUCTION") or "").strip().lower()
+    return env == "production" or prod_flag in {"1", "true", "yes"}
+
+
+def _require_non_production() -> None:
+    if _is_production():
+        raise HTTPException(status_code=403, detail="Endpoint unavailable in production")
 
 
 def _check_supabase():
@@ -49,6 +60,7 @@ def _check_openai():
 @router.get("/detailed")
 async def detailed_health():
     """Comprehensive health check of all services and workers."""
+    _require_non_production()
     checks = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "api": {"status": "healthy"},
@@ -79,6 +91,7 @@ async def detailed_health():
 @router.get("/workers")
 async def workers_health():
     """Quick check on background worker status."""
+    _require_non_production()
     return {
         "email_sync": _check_worker("email_sync_worker"),
         "intelligence": _check_worker("intelligence_worker"),
@@ -90,6 +103,7 @@ async def workers_health():
 @router.get("/warmup")
 async def warmup_edge_functions():
     """Ping Supabase Edge Functions to prevent cold starts. Called by cron or frontend."""
+    _require_non_production()
     import httpx
     supabase_url = os.environ.get("SUPABASE_URL", "")
     service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")

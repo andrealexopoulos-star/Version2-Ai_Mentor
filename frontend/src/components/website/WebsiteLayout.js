@@ -155,12 +155,12 @@ const WebsiteFooter = () => (
           </div>
           <div className="mt-6 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
-            <span className="text-[10px] text-[#9FB0C3]/50" style={{ fontFamily: fontFamily.mono }}>Australian Sovereign Data</span>
+            <span className="text-[10px] text-[#9FB0C3]/50" style={{ fontFamily: fontFamily.mono }}>All data hosted in Australia</span>
           </div>
         </div>
       </div>
       <div className="mt-12 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        <span className="text-xs text-[#9FB0C3]/40" style={{ fontFamily: fontFamily.mono }}>&copy; {new Date().getFullYear()} The Strategy Squad Pty Ltd. ABN 12 345 678 901</span>
+        <span className="text-xs text-[#9FB0C3]/40" style={{ fontFamily: fontFamily.mono }}>&copy; {new Date().getFullYear()} Business Intelligence Quotient Centre Pty Ltd. ABN available on request.</span>
         <span className="text-xs text-[#9FB0C3]/40" style={{ fontFamily: fontFamily.mono }}>Sydney, Australia</span>
       </div>
     </div>

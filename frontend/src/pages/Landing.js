@@ -76,7 +76,7 @@ const Landing = () => {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-sm sm:text-base text-slate-900">BIQC</span>
-              <span className="text-[8px] text-gray-500 -mt-0.5 hidden sm:block">powered by The Strategy Squad</span>
+              <span className="text-[8px] text-gray-500 -mt-0.5 hidden sm:block">powered by Business Intelligence Quotient Centre</span>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-8">
@@ -419,7 +419,7 @@ const Landing = () => {
       <section className="py-6 px-6 bg-slate-800">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-slate-400 text-xs leading-relaxed">
-            <strong className="text-slate-300">Important:</strong> The Strategy Squad provides general information and educational content only. 
+            <strong className="text-slate-300">Important:</strong> Business Intelligence Quotient Centre provides general information and educational content only.
             It does not constitute financial, legal, tax, or professional advice. You should seek independent professional advice 
             before making any business decisions. See our <button onClick={() => navigate('/terms')} className="text-blue-400 hover:underline">Terms and Conditions</button> for full details.
           </p>
@@ -434,7 +434,7 @@ const Landing = () => {
               <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
                 <Zap className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-white text-lg">The Strategy Squad</span>
+              <span className="font-bold text-white text-lg">Business Intelligence Quotient Centre</span>
             </div>
             <div className="flex items-center gap-8">
               <button onClick={() => navigate('/pricing')} className="text-slate-400 hover:text-white text-sm font-medium transition-colors">Pricing</button>
@@ -444,7 +444,7 @@ const Landing = () => {
           </div>
           <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-slate-500 text-sm">
-              © 2025 The Strategy Squad Pty Ltd. All rights reserved.
+              © 2025 Business Intelligence Quotient Centre Pty Ltd. All rights reserved.
             </p>
             <p className="text-slate-600 text-xs">
               Personalised AI Business Intelligence • General Information Only • Not Professional Advice

@@ -6,11 +6,11 @@ import { fontFamily } from '../../design-system/tokens';
 
 
 const legalDocs = [
-  { icon: FileText, title: 'Terms & Conditions', path: '/site/trust/terms', summary: 'Governs your use of BIQc services, subscription terms, responsibilities, and dispute resolution procedures.' },
-  { icon: Eye, title: 'Privacy Policy', path: '/site/trust/privacy', summary: 'Details how we collect, use, store, and protect your personal and business information under Australian privacy law.' },
-  { icon: Lock, title: 'Data Processing Agreement', path: '/site/trust/dpa', summary: 'Defines the terms under which BIQc processes your business data, data controller/processor responsibilities, and sub-processor disclosures.' },
-  { icon: Server, title: 'Security & Infrastructure', path: '/site/trust/security', summary: 'Technical overview of our security architecture, encryption standards, access controls, and incident response procedures.' },
-  { icon: Shield, title: 'Trust Centre', path: '/site/trust/centre', summary: 'Central hub for all compliance certifications, audit reports, uptime status, and data sovereignty documentation.' },
+  { icon: FileText, title: 'Terms & Conditions', path: '/trust/terms', summary: 'Governs your use of BIQc services, subscription terms, responsibilities, and dispute resolution procedures.' },
+  { icon: Eye, title: 'Privacy Policy', path: '/trust/privacy', summary: 'Details how we collect, use, store, and protect your personal and business information under Australian privacy law.' },
+  { icon: Lock, title: 'Data Processing Agreement', path: '/trust/dpa', summary: 'Defines the terms under which BIQc processes your business data, data controller/processor responsibilities, and sub-processor disclosures.' },
+  { icon: Server, title: 'Security & Infrastructure', path: '/trust/security', summary: 'Technical overview of our security architecture, encryption standards, access controls, and incident response procedures.' },
+  { icon: Shield, title: 'Trust Centre', path: '/trust/centre', summary: 'Central hub for all compliance certifications, audit reports, uptime status, and data sovereignty documentation.' },
 ];
 
 const TrustLandingPage = () => (
@@ -38,12 +38,12 @@ const TrustLandingPage = () => (
               <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
               <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>Australian Sovereign Hosting</span>
             </div>
-            <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>Your data never leaves Australia.</h2>
+            <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>Australian-hosted data, transparent processing.</h2>
             <p className="text-base text-[#9FB0C3] mb-6 leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              All data is hosted, processed, and stored exclusively within Australian data centres. No offshore processing. No international data transfers. Full compliance with Australian privacy law.
+              All data is hosted in Australian infrastructure. Some integrated providers may process limited data outside Australia depending on enabled services. Full compliance with Australian privacy law remains mandatory.
             </p>
             <div className="space-y-3">
-              {['Sydney-based data centres', 'Australian-owned infrastructure', 'Compliant with the Privacy Act 1988', 'No data processed offshore', 'Full data sovereignty guarantee'].map((item) => (
+              {['Sydney-based data centres', 'Australian-owned infrastructure', 'Compliant with the Privacy Act 1988', 'Sub-processor transparency', 'Data sovereignty controls by design'].map((item) => (
                 <div key={item} className="flex items-center gap-2.5">
                   <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0" />
                   <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{item}</span>

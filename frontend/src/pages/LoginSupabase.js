@@ -276,7 +276,7 @@ const LoginSupabase = () => {
             </div>
             <div className="min-w-0">
               <span className="text-xl font-semibold text-[#F4F7FA] block" style={{ fontFamily: DISPLAY }}>BIQc</span>
-              <span className="text-[10px] text-[#64748B] -mt-0.5 block truncate" style={{ fontFamily: fontFamily.mono }}>powered by The Strategy Squad</span>
+              <span className="text-[10px] text-[#64748B] -mt-0.5 block truncate" style={{ fontFamily: fontFamily.mono }}>powered by Business Intelligence Quotient Centre</span>
             </div>
           </div>
 
@@ -388,15 +388,6 @@ const LoginSupabase = () => {
                 action={recaptchaAction}
                 testId="login-recaptcha"
               />
-            )}
-            {recaptchaEnabled && captchaUnavailable && (
-              <div
-                className="rounded-xl border px-3 py-3 text-xs"
-                style={{ borderColor: '#334155', background: 'rgba(15,23,42,0.5)', color: '#94A3B8', fontFamily: fontFamily.body }}
-                data-testid="login-recaptcha-fallback-note"
-              >
-                Captcha widget unavailable ({captchaStatusReason || 'init_failed'}). Using backup verification challenge.
-              </div>
             )}
             {fallbackRequired && fallbackChallenge && (
               <div className="rounded-xl border px-3 py-3" style={{ borderColor: '#334155', background: 'rgba(15,23,42,0.5)' }} data-testid="login-fallback-captcha">

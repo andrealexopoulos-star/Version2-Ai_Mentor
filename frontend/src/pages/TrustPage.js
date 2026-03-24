@@ -14,11 +14,11 @@ const up = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transit
 const stg = { visible: { transition: { staggerChildren: 0.08 } } };
 
 const CARDS = [
-  { icon: Globe, title: 'Australian Data Residency', desc: 'Physically hosted on encrypted Sydney and Melbourne nodes. Your data never leaves Australian jurisdiction. No exceptions, no mirrors, no offshore replication.', accent: AZURE },
+  { icon: Globe, title: 'Australian Data Residency', desc: 'All data is hosted on encrypted Australian infrastructure with documented processing boundaries for enabled providers.', accent: AZURE },
   { icon: Lock, title: 'Zero-Leakage Guarantee', desc: 'BIQc uses private, containerised AI instances. Your strategic insights are never used to improve the general models used by your competitors. Siloed intelligence, permanently.', accent: MINT },
   { icon: Database, title: 'Ownership & Portability', desc: 'You own the intelligence. Complete data portability and 48-hour purge protocols. Export everything at any time. Delete your account and all data is permanently purged. No lock-in.', accent: AZURE },
   { icon: Shield, title: 'AES-256 Encryption', desc: 'Military-grade encryption at rest and in transit — the same standard used by the Australian Defence Force and Five Eyes intelligence alliance.', accent: MINT },
-  { icon: Scale, title: 'Australian Privacy Principles', desc: 'Your data remains protected under Australian Privacy Principles (APP) 2026, never subject to the U.S. Cloud Act or offshore surveillance. Australian law, Australian jurisdiction.', accent: AZURE },
+  { icon: Scale, title: 'Australian Privacy Principles', desc: 'Customer data handling is aligned to Australian Privacy Principles with contractual and technical controls across supported providers.', accent: AZURE },
   { icon: Eye, title: 'Minimal Collection', desc: 'BIQc observes patterns, not content. Intelligence signals extracted without storing raw email bodies or document contents. We see what matters, not what\'s private.', accent: MINT },
 ];
 
@@ -28,13 +28,13 @@ const TrustPage = () => {
   useEffect(() => {
     document.title = 'Trust & Data Sovereignty | BIQc - Australian Business Intelligence';
     const metas = [
-      { name: 'description', content: 'BIQc guarantees 100% Australian data sovereignty with AES-256 encryption, zero-leakage AI, and compliance with Australian Privacy Principles (APP) 2026. Your business intelligence never leaves Australian jurisdiction.' },
+      { name: 'description', content: 'BIQc provides all data hosted in Australian infrastructure, AES-256 encryption, and transparent provider processing controls aligned to Australian privacy requirements.' },
       { name: 'keywords', content: 'Australian data sovereignty, business data security Australia, AES-256 encryption, zero leakage AI, Australian Privacy Principles, data residency Australia, sovereign cloud Australia, business intelligence security, SME data protection' },
       { property: 'og:title', content: 'Trust & Data Sovereignty | BIQc' },
-      { property: 'og:description', content: '100% Australian data sovereignty. AES-256 encryption. Zero-leakage AI. Your business intelligence is sovereign — never subject to the U.S. Cloud Act.' },
+      { property: 'og:description', content: 'All data hosted in Australian infrastructure, AES-256 encryption, and transparent provider processing controls for business intelligence.' },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:title', content: 'Trust & Data Sovereignty | BIQc' },
-      { name: 'twitter:description', content: '100% Australian data sovereignty. AES-256 encryption. Zero-leakage AI instances. Protected under Australian Privacy Principles 2026.' },
+      { name: 'twitter:description', content: 'All data hosted in Australian infrastructure, AES-256 encryption, and transparent provider processing controls aligned to Australian privacy requirements.' },
     ];
     const created = metas.map(attrs => {
       const el = document.createElement('meta');
@@ -87,7 +87,7 @@ const TrustPage = () => {
               <div className="space-y-4">
                 <h2 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em]" style={{ fontFamily: fontFamily.display }}>Your Business DNA is yours.</h2>
                 <p className="text-sm leading-[1.8]" style={{ color: MUTED }}>
-                  Physically hosted on encrypted Sydney and Melbourne nodes. Zero leakage to global LLM training. We are a Sovereign Intelligence Partner, not a data broker.
+                  All data is hosted on encrypted Australian infrastructure. Enabled providers may process scoped data based on selected integrations and AI features.
                 </p>
                 <p className="text-sm leading-[1.8]" style={{ color: MUTED }}>
                   BIQc uses private, containerised AI instances. Your strategic insights are never used to improve the general models used by your competitors. What you build in BIQc stays in BIQc — permanently siloed, permanently yours.
@@ -101,7 +101,7 @@ const TrustPage = () => {
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold tracking-[-0.02em]" style={{ fontFamily: fontFamily.display }}>Australian Jurisdiction, Australian Law</h2>
                 <p className="text-sm leading-[1.8]" style={{ color: MUTED }}>
-                  In the event of a legal or compliance query, your data remains protected under Australian Privacy Principles (APP) 2026, never subject to the U.S. Cloud Act or offshore surveillance. Australian law. Australian jurisdiction. Full stop.
+                  In the event of legal or compliance review, BIQc applies Australian privacy obligations and maintains documented sub-processor controls for enabled services.
                 </p>
               </div>
             </div>
@@ -142,7 +142,7 @@ const TrustPage = () => {
       </section>
 
       <footer className="relative z-10 py-8 px-6 lg:px-16" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-        <p className="text-center text-[11px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>&copy; 2026 BIQc — Business IQ Centre. Powered by The Strategy Squad.</p>
+        <p className="text-center text-[11px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>&copy; 2026 BIQc — Business IQ Centre. Powered by Business Intelligence Quotient Centre.</p>
       </footer>
     </div>
   );

@@ -47,9 +47,25 @@ from config.urls import get_backend_url, get_frontend_url
 from biqc_jobs import enqueue_job
 from tier_resolver import resolve_tier
 
-JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'fallback-secret')
-
 router = APIRouter()
+
+
+def _is_production() -> bool:
+    env = (os.environ.get("ENVIRONMENT") or "").strip().lower()
+    prod_flag = (os.environ.get("PRODUCTION") or "").strip().lower()
+    return env == "production" or prod_flag in {"1", "true", "yes"}
+
+
+def _load_oauth_state_secret() -> str:
+    configured = (os.environ.get("JWT_SECRET_KEY") or "").strip()
+    if configured:
+        return configured
+    if _is_production():
+        raise RuntimeError("JWT_SECRET_KEY must be configured in production")
+    return "dev-oauth-state-secret"
+
+
+JWT_SECRET = _load_oauth_state_secret()
 
 
 def _connected_integration_count_for_email(user_id: str) -> int:
@@ -1734,7 +1750,7 @@ async def debug_outlook_tokens(current_user: dict = Depends(get_current_user)):
     Should be disabled in production
     """
     # Guard: Only allow in development
-    if os.environ.get("ENVIRONMENT", "development") == "production":
+    if _is_production():
         raise HTTPException(status_code=404, detail="Endpoint not available in production")
     
     user_id = current_user["id"]

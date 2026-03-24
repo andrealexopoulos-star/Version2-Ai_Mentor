@@ -444,11 +444,11 @@ const AdminDashboard = () => {
                 <Sec title="Enterprise Procurement Readiness">
                   <div className="space-y-2">
                     {[
-                      ['Terms & Conditions', '/site/trust/terms', 'Ready'],
-                      ['Privacy Policy', '/site/trust/privacy', 'Ready'],
-                      ['Data Processing Agreement', '/site/trust/dpa', 'Ready'],
-                      ['Security & Infrastructure', '/site/trust/security', 'Ready'],
-                      ['Trust Centre', '/site/trust/centre', 'Ready'],
+                      ['Terms & Conditions', '/trust/terms', 'Ready'],
+                      ['Privacy Policy', '/trust/privacy', 'Ready'],
+                      ['Data Processing Agreement', '/trust/dpa', 'Ready'],
+                      ['Security & Infrastructure', '/trust/security', 'Ready'],
+                      ['Trust Centre', '/trust/centre', 'Ready'],
                       ['SOC2 Type II Report', null, 'In Progress'],
                       ['Penetration Test Report', null, 'Planned'],
                       ['Sub-processor List', null, 'Planned'],
@@ -669,11 +669,11 @@ const AdminDashboard = () => {
                 <Sec title="Trust Signals (User-Facing)">
                   <div className="space-y-2">
                     {[
-                      ['Transparent uptime panel', '/site/trust/centre', 'Ready'],
-                      ['Data location disclosure', '/site/trust', 'Ready'],
-                      ['Live security status', '/site/trust/security', 'Ready'],
+                      ['Transparent uptime panel', '/trust/centre', 'Ready'],
+                      ['Data location disclosure', '/trust', 'Ready'],
+                      ['Live security status', '/trust/security', 'Ready'],
                       ['Last backup indicator', null, 'Planned'],
-                      ['Encryption badge detail', '/site/trust/security', 'Ready'],
+                      ['Encryption badge detail', '/trust/security', 'Ready'],
                       ['Audit export button', null, 'Planned'],
                       ['Admin access transparency log', null, 'Planned'],
                     ].map(([l, href, s]) => (

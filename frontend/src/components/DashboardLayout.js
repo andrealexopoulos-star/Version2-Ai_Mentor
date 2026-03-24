@@ -19,7 +19,7 @@ import {
   BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox
 } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
-import { checkRouteAccess, resolveTier } from '../lib/tierResolver';
+import { resolveTier, getRouteAccess } from '../lib/tierResolver';
 import { canAccess, requiredTier, TIERS } from '../config/tiers';
 import { isPrivilegedUser } from '../lib/privilegedUser';
 import { fontFamily } from '../design-system/tokens';
@@ -300,6 +300,18 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   }, [isCalibrated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isActive = useCallback((path) => location.pathname === path || location.pathname.startsWith(`${path}/`), [location.pathname]);
+  const getLockedRedirect = useCallback((path) => {
+    const config = getRouteAccess(path);
+    if (config?.launchType === 'waitlist') {
+      const feature = config.featureKey ? `?feature=${encodeURIComponent(config.featureKey)}` : '';
+      return `/more-features${feature}`;
+    }
+    if (config?.launchType === 'foundation' || config?.launchType === 'paid') {
+      const feature = config.featureKey ? `?feature=${encodeURIComponent(config.featureKey)}` : '';
+      return `/biqc-foundation${feature}`;
+    }
+    return '/upgrade';
+  }, []);
   const currentPageLabel = useMemo(() => {
     for (const section of visibleSections) {
       if (section.path && isActive(section.path)) return section.label;
@@ -517,7 +529,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                   <div className="flex items-center gap-0.5">
                     <button
                       onClick={() => {
-                        if (sectionLocked) { navigate('/upgrade'); return; }
+                        if (sectionLocked) { navigate(getLockedRedirect(section.path)); return; }
                         navigate(section.path);
                       }}
                       className="flex items-center gap-2.5 flex-1 px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all"
@@ -571,7 +583,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                       const locked = !canAccess(userTier, item.path, user?.email || '');
 
                       const handleNavClick = () => {
-                        if (locked) { navigate('/upgrade'); return; }
+                        if (locked) { navigate(getLockedRedirect(item.path)); return; }
                         navigate(item.path);
                         closeAll();
                       };

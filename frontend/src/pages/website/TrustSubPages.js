@@ -34,7 +34,7 @@ const TrustPageShell = ({ title, lastUpdated, children }) => (
 export const TermsPage = () => (
   <TrustPageShell title="Terms & Conditions" lastUpdated="February 2026">
     <h2>1. Agreement to Terms</h2>
-    <p>By accessing or using BIQc (&ldquo;the Platform&rdquo;), provided by The Strategy Squad Pty Ltd (ABN 12 345 678 901), you agree to be bound by these Terms & Conditions. If you do not agree, you must not use the Platform.</p>
+    <p>By accessing or using BIQc (&ldquo;the Platform&rdquo;), provided by Business Intelligence Quotient Centre Pty Ltd (ABN available on request), you agree to be bound by these Terms & Conditions. If you do not agree, you must not use the Platform.</p>
     <h2>2. Platform Description</h2>
     <p>BIQc is an autonomous business intelligence platform that connects to your business systems, analyses operational data, and provides actionable intelligence. The Platform is provided as a subscription service (SaaS).</p>
     <h2>3. Eligibility</h2>
@@ -60,7 +60,7 @@ export const TermsPage = () => (
 export const PrivacyPage = () => (
   <TrustPageShell title="Privacy Policy" lastUpdated="February 2026">
     <h2>1. Introduction</h2>
-    <p>The Strategy Squad Pty Ltd (&ldquo;we&rdquo;, &ldquo;us&rdquo;) is committed to protecting your privacy. This policy describes how we collect, use, and safeguard personal and business information in compliance with the Privacy Act 1988 (Cth) and the Australian Privacy Principles (APPs).</p>
+    <p>Business Intelligence Quotient Centre Pty Ltd (&ldquo;we&rdquo;, &ldquo;us&rdquo;) is committed to protecting your privacy. This policy describes how we collect, use, and safeguard personal and business information in compliance with the Privacy Act 1988 (Cth) and the Australian Privacy Principles (APPs).</p>
     <h2>2. Information We Collect</h2>
     <h3>Personal Information</h3>
     <ul>
@@ -83,7 +83,7 @@ export const PrivacyPage = () => (
       <li>To maintain security and prevent fraud</li>
     </ul>
     <h2>4. Data Storage & Security</h2>
-    <p>All data is stored in Australian data centres. We use AES-256 encryption at rest, TLS 1.3 in transit, and enforce role-based access controls with multi-factor authentication.</p>
+    <p>All data is stored in Australian data centres. We use encryption at rest and in transit, and enforce role-based access controls with account security controls.</p>
     <h2>5. Data Sharing</h2>
     <p>We do not sell, rent, or share your data with third parties for marketing purposes. Data may be shared with sub-processors solely for the purpose of delivering BIQc services, subject to equivalent privacy protections.</p>
     <h2>6. Your Rights</h2>
@@ -102,11 +102,11 @@ export const PrivacyPage = () => (
 export const DPAPage = () => (
   <TrustPageShell title="Data Processing Agreement" lastUpdated="February 2026">
     <h2>1. Scope</h2>
-    <p>This Data Processing Agreement (&ldquo;DPA&rdquo;) forms part of the Terms & Conditions between The Strategy Squad Pty Ltd (&ldquo;Processor&rdquo;) and the customer (&ldquo;Controller&rdquo;) and governs the processing of business data through the BIQc platform.</p>
+    <p>This Data Processing Agreement (&ldquo;DPA&rdquo;) forms part of the Terms & Conditions between Business Intelligence Quotient Centre Pty Ltd (&ldquo;Processor&rdquo;) and the customer (&ldquo;Controller&rdquo;) and governs the processing of business data through the BIQc platform.</p>
     <h2>2. Roles</h2>
     <ul>
       <li><strong>Data Controller:</strong> The customer who determines the purpose and means of processing</li>
-      <li><strong>Data Processor:</strong> The Strategy Squad Pty Ltd, processing data on the Controller's behalf</li>
+      <li><strong>Data Processor:</strong> Business Intelligence Quotient Centre Pty Ltd, processing data on the Controller's behalf</li>
     </ul>
     <h2>3. Processing Purpose</h2>
     <p>Data is processed solely for the purpose of providing autonomous business intelligence services as described in the BIQc service agreement. Processing includes data ingestion, analysis, anomaly detection, and report generation.</p>
@@ -135,7 +135,7 @@ export const DPAPage = () => (
 export const SecurityPage = () => (
   <TrustPageShell title="Security & Infrastructure" lastUpdated="February 2026">
     <h2>1. Infrastructure Overview</h2>
-    <p>BIQc operates on enterprise-grade infrastructure hosted exclusively within Australian data centres. Our architecture is designed for high availability, security, and data sovereignty.</p>
+    <p>BIQc operates with all data hosted in Australian infrastructure and managed provider services. Our architecture is designed for high availability, security, and data governance transparency.</p>
     <h2>2. Encryption</h2>
     <h3>At Rest</h3>
     <p>All stored data is encrypted using AES-256 with automatically rotated encryption keys. Database-level encryption ensures data protection even at the storage layer.</p>
@@ -143,10 +143,10 @@ export const SecurityPage = () => (
     <p>All data transmitted between systems uses TLS 1.3. API communications are secured with mutual TLS where applicable. No plain-text data transmission at any point.</p>
     <h2>3. Access Controls</h2>
     <ul>
-      <li>Multi-factor authentication enforced for all accounts</li>
+      <li>Role-based access controls with account-level security controls</li>
       <li>Role-based access control (RBAC) with least-privilege principle</li>
       <li>Session management with automatic timeout</li>
-      <li>IP allowlisting for administrative access</li>
+      <li>Administrative access restrictions for privileged operations</li>
       <li>All access logged and auditable</li>
     </ul>
     <h2>4. Network Security</h2>
@@ -158,7 +158,7 @@ export const SecurityPage = () => (
     </ul>
     <h2>5. Monitoring & Incident Response</h2>
     <ul>
-      <li>24/7 infrastructure monitoring</li>
+      <li>Continuous infrastructure monitoring</li>
       <li>Automated anomaly detection</li>
       <li>Incident response within 72 hours of detection</li>
       <li>Post-incident review and remediation</li>
@@ -178,9 +178,9 @@ export const TrustCentrePage = () => (
     <p>The BIQc Trust Centre provides centralised access to all security, compliance, and data governance documentation. We believe in full transparency with our customers.</p>
     <h2>Data Sovereignty</h2>
     <ul>
-      <li>All data hosted in Australian data centres (Sydney)</li>
-      <li>No international data transfers</li>
-      <li>Australian-owned and operated infrastructure</li>
+      <li>All data hosted in Australian data centres</li>
+      <li>Provider processing disclosures available in legal documentation</li>
+      <li>Data governance controls documented for enabled services</li>
       <li>Full compliance with Australian data protection legislation</li>
     </ul>
     <h2>Security Certifications</h2>
@@ -192,10 +192,10 @@ export const TrustCentrePage = () => (
     </ul>
     <h2>Uptime & Reliability</h2>
     <ul>
-      <li>99.9% uptime SLA</li>
-      <li>Multi-region failover capability</li>
+      <li>Target high-availability architecture</li>
+      <li>Resilience controls appropriate to deployed environment</li>
       <li>Automated backups with point-in-time recovery</li>
-      <li>Disaster recovery procedures tested quarterly</li>
+      <li>Disaster recovery procedures maintained and reviewed</li>
     </ul>
     <h2>Documentation</h2>
     <p>For detailed information on specific topics, please refer to:</p>

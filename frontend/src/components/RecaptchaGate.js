@@ -41,6 +41,22 @@ const getRecaptchaApi = (provider) => {
   return window.grecaptcha;
 };
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const waitForRecaptchaApi = async (provider, mode, timeoutMs = 6000) => {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const api = getRecaptchaApi(provider);
+    if (mode === MODE_V3) {
+      if (api?.ready && api?.execute) return api;
+    } else if (api?.render) {
+      return api;
+    }
+    await sleep(100);
+  }
+  throw new Error(`reCAPTCHA ${mode} API unavailable`);
+};
+
 const ensureScript = (mode, provider, siteKey) => {
   const expectedSrc = scriptSrcForConfig(mode, provider, siteKey);
   const existing = document.getElementById(SCRIPT_ID);
@@ -87,6 +103,7 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
   const activeModeRef = useRef(null);
   const activeProviderRef = useRef(null);
   const [error, setError] = useState('');
+  const showDebug = String(process.env.REACT_APP_RECAPTCHA_DEBUG || '').toLowerCase() === 'true';
   const reportStatus = useCallback((status, reason = '') => {
     if (typeof onStatusChange === 'function') {
       onStatusChange({ status, reason });
@@ -110,6 +127,12 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
         }
       } catch {}
       widgetRef.current = null;
+      // Prevent "already rendered in this element" on React dev remounts.
+      try {
+        if (containerRef.current) {
+          containerRef.current.innerHTML = '';
+        }
+      } catch {}
     };
 
     const startV3Refresh = (actionName, provider) => {
@@ -128,10 +151,7 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
 
     const tryV3 = async (provider) => {
       await ensureScript(MODE_V3, provider, siteKey);
-      const api = getRecaptchaApi(provider);
-      if (!api?.ready || !api?.execute) {
-        throw new Error('reCAPTCHA v3 unavailable');
-      }
+      const api = await waitForRecaptchaApi(provider, MODE_V3);
       await new Promise((resolve) => api.ready(resolve));
       const token = await api.execute(siteKey, { action: actionName });
       if (!token) throw new Error('Empty reCAPTCHA token');
@@ -145,10 +165,14 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
 
     const tryV2 = async (provider) => {
       await ensureScript(MODE_V2, provider, siteKey);
-      const api = getRecaptchaApi(provider);
-      if (!containerRef.current || !api?.render) {
+      const api = await waitForRecaptchaApi(provider, MODE_V2);
+      if (!containerRef.current) {
         throw new Error('reCAPTCHA v2 unavailable');
       }
+      // Ensure a clean mount point before rendering.
+      try {
+        containerRef.current.innerHTML = '';
+      } catch {}
       activeModeRef.current = MODE_V2;
       activeProviderRef.current = provider;
       widgetRef.current = api.render(containerRef.current, {
@@ -169,6 +193,11 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
         },
         'error-callback': () => {
           onTokenChange('');
+          // Hide provider error widget (e.g. invalid key type) and trigger fallback.
+          try {
+            if (containerRef.current) containerRef.current.innerHTML = '';
+          } catch {}
+          widgetRef.current = null;
           reportStatus('error', 'widget_error');
         },
       });
@@ -187,19 +216,39 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
     let alive = true;
     (async () => {
       try {
+        const tryModeWithProviderFallback = async (mode, preferredProvider) => {
+          const providers = preferredProvider === PROVIDER_ENTERPRISE
+            ? [PROVIDER_ENTERPRISE, PROVIDER_STANDARD]
+            : [PROVIDER_STANDARD, PROVIDER_ENTERPRISE];
+          let lastError = null;
+          for (const provider of providers) {
+            try {
+              if (mode === MODE_V3) {
+                await tryV3(provider);
+              } else {
+                await tryV2(provider);
+              }
+              return;
+            } catch (err) {
+              lastError = err;
+            }
+          }
+          throw lastError || new Error(`reCAPTCHA ${mode} init failed`);
+        };
+
         const runConfiguredMode = async (provider) => {
           if (configuredMode === MODE_V2) {
             // Operational safety: keys are often misconfigured as v2 while
             // actual site keys are v3. Try v3 first, then fall back to v2.
             try {
-              await tryV3(provider);
+              await tryModeWithProviderFallback(MODE_V3, provider);
               return true;
             } catch {}
-            await tryV2(provider);
+            await tryModeWithProviderFallback(MODE_V2, provider);
             return true;
           }
           if (configuredMode === MODE_V3) {
-            await tryV3(provider);
+            await tryModeWithProviderFallback(MODE_V3, provider);
             return true;
           }
           return false;
@@ -208,10 +257,10 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
         if (configuredProvider === PROVIDER_STANDARD) {
           if (await runConfiguredMode(PROVIDER_STANDARD)) return;
           try {
-            await tryV3(PROVIDER_STANDARD);
+            await tryModeWithProviderFallback(MODE_V3, PROVIDER_STANDARD);
             return;
           } catch {
-            await tryV2(PROVIDER_STANDARD);
+            await tryModeWithProviderFallback(MODE_V2, PROVIDER_STANDARD);
             return;
           }
         }
@@ -219,10 +268,10 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
         if (configuredProvider === PROVIDER_ENTERPRISE) {
           if (await runConfiguredMode(PROVIDER_ENTERPRISE)) return;
           try {
-            await tryV3(PROVIDER_ENTERPRISE);
+            await tryModeWithProviderFallback(MODE_V3, PROVIDER_ENTERPRISE);
             return;
           } catch {
-            await tryV2(PROVIDER_ENTERPRISE);
+            await tryModeWithProviderFallback(MODE_V2, PROVIDER_ENTERPRISE);
             return;
           }
         }
@@ -232,42 +281,23 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
           // Resilience: many production incidents are caused by a v3 site key
           // being paired with MODE_V2. Try v3 first, then gracefully fall back.
           try {
-            await tryV3(PROVIDER_STANDARD);
+            await tryModeWithProviderFallback(MODE_V3, PROVIDER_STANDARD);
             return;
           } catch {}
-          try {
-            await tryV2(PROVIDER_STANDARD);
-            return;
-          } catch {
-            await tryV2(PROVIDER_ENTERPRISE);
-            return;
-          }
+          await tryModeWithProviderFallback(MODE_V2, PROVIDER_STANDARD);
+          return;
         }
         if (configuredMode === MODE_V3) {
-          try {
-            await tryV3(PROVIDER_STANDARD);
-            return;
-          } catch {
-            await tryV3(PROVIDER_ENTERPRISE);
-            return;
-          }
+          await tryModeWithProviderFallback(MODE_V3, PROVIDER_STANDARD);
+          return;
         }
 
         try {
-          await tryV3(PROVIDER_STANDARD);
+          await tryModeWithProviderFallback(MODE_V3, PROVIDER_STANDARD);
           return;
         } catch {}
-        try {
-          await tryV2(PROVIDER_STANDARD);
-          return;
-        } catch {}
-        try {
-          await tryV3(PROVIDER_ENTERPRISE);
-          return;
-        } catch {
-          await tryV2(PROVIDER_ENTERPRISE);
-          return;
-        }
+        await tryModeWithProviderFallback(MODE_V2, PROVIDER_STANDARD);
+        return;
       } catch {
         if (alive) {
           setError('Failed to initialize reCAPTCHA. Check key type, provider (standard/enterprise), and allowed domains.');
@@ -289,7 +319,7 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
   return (
     <div className="space-y-2" data-testid={testId}>
       <div ref={containerRef} />
-      {error && (
+      {showDebug && error && (
         <p className="text-xs" style={{ color: '#F59E0B' }}>
           {error}
         </p>

@@ -13,11 +13,12 @@ Responsibilities:
 import logging
 from typing import Optional
 from functools import lru_cache
+from auth_supabase import MASTER_ADMIN_EMAIL
 
 logger = logging.getLogger(__name__)
 
 # ═══ SUPER ADMIN — IMMUTABLE, EMAIL-BASED ═══
-SUPER_ADMIN_EMAIL = "andre@thestrategysquad.com.au"
+SUPER_ADMIN_EMAIL = MASTER_ADMIN_EMAIL
 
 # ═══ TIER DEFINITIONS — Only free, starter (BIQc Foundation), super_admin ═══
 TIERS = ['free', 'starter', 'super_admin']
@@ -168,9 +169,12 @@ PAID_EMAIL_CATEGORIES = ['financial', 'churn', 'risk', 'operational', 'escalatio
 def resolve_tier(user: dict) -> str:
     """Resolve user's effective tier. Super admin override is immutable."""
     email = (user.get('email') or '').lower().strip()
+    role = (user.get('role') or '').lower().strip()
 
     # SUPER ADMIN OVERRIDE — cannot be restricted
     if email == SUPER_ADMIN_EMAIL.lower():
+        return 'super_admin'
+    if role in {'superadmin', 'super_admin'}:
         return 'super_admin'
 
     # Database tier

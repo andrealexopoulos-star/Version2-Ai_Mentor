@@ -5,7 +5,7 @@ All actions audit-logged. All routes require super_admin role + feature flag.
 import logging
 from datetime import datetime, timezone
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 
@@ -24,11 +24,24 @@ def _require_super_admin(current_user: dict):
         raise HTTPException(status_code=403, detail="Super admin feature not enabled")
 
 
+def _get_service_client():
+    try:
+        from routes.deps import get_sb
+        return get_sb()
+    except Exception:
+        from supabase_client import init_supabase
+        sb = init_supabase()
+        if not sb:
+            raise HTTPException(status_code=503, detail="Database is unavailable")
+        return sb
+
+
 # ═══ SUPER ADMIN TEST PAGE ═══
 
 @router.get("/super-admin/verify")
 async def verify_super_admin(current_user: dict = Depends(get_current_user)):
     """Verify super admin status and feature flags."""
+    _require_super_admin(current_user)
     tier = resolve_tier(current_user)
     flags = {}
     for flag in ['super_admin_enabled', 'support_page_enabled', 'legal_menu_enabled',
@@ -55,10 +68,11 @@ async def list_all_users(current_user: dict = Depends(get_current_user)):
     if not _get_cached_flag('support_page_enabled'):
         raise HTTPException(status_code=403, detail="Support page not enabled")
     try:
-        from supabase_client import get_supabase_client
-        sb = get_supabase_client()
+        sb = _get_service_client()
         result = sb.rpc('admin_list_users', {}).execute()
         return {'users': result.data if isinstance(result.data, list) else []}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -75,14 +89,15 @@ async def toggle_user(req: ToggleUserRequest, current_user: dict = Depends(get_c
     """Disable or enable a user account. Audit logged."""
     _require_super_admin(current_user)
     try:
-        from supabase_client import get_supabase_client
-        sb = get_supabase_client()
+        sb = _get_service_client()
         result = sb.rpc('admin_toggle_user', {
             'p_admin_id': current_user['id'],
             'p_target_id': req.user_id,
             'p_disable': req.disable,
         }).execute()
         return result.data if result.data else {'status': 'ok'}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -99,18 +114,29 @@ async def reset_password(req: ResetPasswordRequest, current_user: dict = Depends
     """Trigger password reset email via Supabase Auth. Audit logged."""
     _require_super_admin(current_user)
     try:
-        from supabase_client import get_supabase_client
-        sb = get_supabase_client()
+        sb = _get_service_client()
+        target = sb.table('users').select('id, email').eq('id', req.user_id).single().execute()
+        target_user = target.data or {}
+        if not target_user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        target_email = (target_user.get('email') or '').strip().lower()
+        requested_email = (req.email or '').strip().lower()
+        if not target_email or requested_email != target_email:
+            raise HTTPException(status_code=400, detail="User/email mismatch")
+
         # Supabase admin API for password reset
-        sb.auth.admin.generate_link({'type': 'recovery', 'email': req.email})
+        sb.auth.admin.generate_link({'type': 'recovery', 'email': target_email})
         # Audit log
         sb.table('admin_actions').insert({
             'admin_user_id': current_user['id'],
             'target_user_id': req.user_id,
             'action_type': 'reset_password',
-            'new_value': {'email': req.email},
+            'new_value': {'email': target_email},
         }).execute()
-        return {'status': 'reset_sent', 'email': req.email}
+        return {'status': 'reset_sent', 'email': target_email}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -129,14 +155,15 @@ async def update_subscription(req: UpdateSubRequest, current_user: dict = Depend
     if req.tier not in ['free', 'starter', 'professional', 'enterprise', 'super_admin']:
         raise HTTPException(status_code=400, detail="Invalid tier")
     try:
-        from supabase_client import get_supabase_client
-        sb = get_supabase_client()
+        sb = _get_service_client()
         result = sb.rpc('admin_update_subscription', {
             'p_admin_id': current_user['id'],
             'p_target_id': req.user_id,
             'p_tier': req.tier,
         }).execute()
         return result.data if result.data else {'status': 'ok'}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -152,8 +179,7 @@ async def impersonate_user(req: ImpersonateRequest, current_user: dict = Depends
     """Create impersonation session. Audit logged with admin + target + timestamp."""
     _require_super_admin(current_user)
     try:
-        from supabase_client import get_supabase_client
-        sb = get_supabase_client()
+        sb = _get_service_client()
         # Get target user details
         target = sb.table('users').select('id, email, full_name, role').eq('id', req.user_id).single().execute()
         if not target.data:
@@ -184,8 +210,7 @@ async def get_admin_audit_log(current_user: dict = Depends(get_current_user)):
     """Get admin action audit trail."""
     _require_super_admin(current_user)
     try:
-        from supabase_client import get_supabase_client
-        sb = get_supabase_client()
+        sb = _get_service_client()
         result = sb.table('admin_actions').select('*').order('created_at', desc=True).limit(50).execute()
         return {'actions': result.data or []}
     except Exception:
@@ -267,16 +292,32 @@ async def _notify_admin_enterprise_contact(req: EnterpriseContactRequest, submit
         logger.warning("enterprise contact admin notification failed: %s", e, exc_info=True)
 
 
+async def _get_optional_user(request: Request) -> dict:
+    """Best-effort auth extraction for public contact submissions."""
+    auth_header = request.headers.get("Authorization", "").strip()
+    if not auth_header.startswith("Bearer "):
+        return {}
+    token = auth_header.split(" ", 1)[1].strip()
+    if not token:
+        return {}
+    try:
+        from auth_supabase import verify_supabase_token
+        user = await verify_supabase_token(token)
+        return user if isinstance(user, dict) else {}
+    except Exception:
+        return {}
+
+
 @router.post("/enterprise/contact-request")
 async def enterprise_contact_request(
     req: EnterpriseContactRequest,
+    request: Request,
     background_tasks: BackgroundTasks,
-    current_user: dict = Depends(get_current_user),
 ):
     """Store enterprise contact request. Will eventually be synced to HubSpot."""
+    current_user = await _get_optional_user(request)
     try:
-        from supabase_client import get_supabase_client
-        sb = get_supabase_client()
+        sb = _get_service_client()
         now = datetime.now(timezone.utc).isoformat()
         sb.table('enterprise_contact_requests').insert({
             'user_id': current_user.get('id'),
@@ -303,8 +344,7 @@ async def list_enterprise_contacts(current_user: dict = Depends(get_current_user
     """List all enterprise contact requests (admin only)."""
     _require_super_admin(current_user)
     try:
-        from supabase_client import get_supabase_client
-        sb = get_supabase_client()
+        sb = _get_service_client()
         result = sb.table('enterprise_contact_requests').select('*').order('created_at', desc=True).limit(100).execute()
         return {'requests': result.data or []}
     except Exception as e:
