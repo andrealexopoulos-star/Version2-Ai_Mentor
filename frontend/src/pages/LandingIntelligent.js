@@ -652,7 +652,7 @@ const LandingIntelligent = () => {
       {/* Disclaimer */}
       <div className="relative z-10 py-5 px-6 text-center" style={{ background: '#243140', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <p className="text-xs text-slate-500 leading-relaxed max-w-3xl mx-auto">
-          <strong className="text-slate-400">Important:</strong> The Strategy Squad provides general information and educational content only. It does not constitute financial, legal, tax, or professional advice. See our <button onClick={() => nav('/terms')} style={{ color: '#FF6A00', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Terms and Conditions</button> for full details.
+          <strong className="text-slate-400">Important:</strong> Business Intelligence Quotient Centre provides general information and educational content only. It does not constitute financial, legal, tax, or professional advice. See our <button onClick={() => nav('/terms')} style={{ color: '#FF6A00', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Terms and Conditions</button> for full details.
         </p>
       </div>
 
@@ -663,7 +663,7 @@ const LandingIntelligent = () => {
           <span className="text-[10px] sm:text-xs text-slate-600" style={{ fontFamily: 'var(--font-mono)' }}>© 2026 BIQc — Business IQ Centre</span>
         </div>
         <div className="flex flex-wrap justify-center gap-3 sm:gap-5">
-          {['Pricing','Trust & Security','Terms','Enterprise Terms','Privacy'].map(l => <button key={l} onClick={() => l === 'Pricing' ? nav('/pricing') : l === 'Trust & Security' ? nav('/trust') : l === 'Terms' ? nav('/terms') : l === 'Enterprise Terms' ? nav('/enterprise-terms') : null} className="text-[10px] sm:text-xs text-slate-600 hover:text-slate-400 transition-colors" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>{l}</button>)}
+          {['Pricing','Trust & Security','Terms','Enterprise Terms','Privacy'].map(l => <button key={l} onClick={() => l === 'Pricing' ? nav('/pricing') : l === 'Trust & Security' ? nav('/trust') : l === 'Terms' ? nav('/terms') : l === 'Enterprise Terms' ? nav('/enterprise-terms') : l === 'Privacy' ? nav('/trust/privacy') : null} className="text-[10px] sm:text-xs text-slate-600 hover:text-slate-400 transition-colors" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>{l}</button>)}
         </div>
       </footer>
 

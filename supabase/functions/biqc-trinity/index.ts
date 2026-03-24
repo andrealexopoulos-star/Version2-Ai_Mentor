@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
 
-  const { message, business_context = "" } = body;
+  const { message, business_context = "", conversation_id = null, mode_requested = "trinity", agent_id = "boardroom" } = body;
   if (!message) return new Response(JSON.stringify({ error: "message required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   const startTime = Date.now();
@@ -162,14 +162,23 @@ Now synthesize these three perspectives into one cohesive, authoritative executi
     const totalMs = Date.now() - startTime;
     console.log(`[TRINITY] Complete in ${totalMs}ms`);
 
-    // ── Save to conversation log ─────────────────────────────────────────────────
-    await adminSb.from("soundboard_conversations").insert({
+    // ── Save to canonical conversation + message tables ─────────────────────────
+    const nowIso = new Date().toISOString();
+    const conversationId = conversation_id || crypto.randomUUID();
+    const modelUsed = "trinity/gpt-5.2+claude-opus-4-6+gemini-2.5-pro+o3-pro";
+
+    const convoPayload = {
+      id: conversationId,
       user_id: userId,
-      message,
-      reply: synthesis,
-      model_used: "trinity/gpt-5.2+claude-opus-4-6+gemini-2.5-pro+o3-pro",
+      title: "Trinity Session",
+      contract_version: "soundboard_v3",
+      mode_requested,
+      mode_effective: "trinity",
+      last_model_used: modelUsed,
+      updated_at: nowIso,
       metadata: {
         mode: "trinity",
+        agent_id,
         parallel_ms: parallelMs,
         total_ms: totalMs,
         contributors: {
@@ -178,10 +187,54 @@ Now synthesize these three perspectives into one cohesive, authoritative executi
           gemini: geminiResult.status,
         },
       },
-    }).select().maybeSingle();
+    };
+
+    if (conversation_id) {
+      await adminSb
+        .from("soundboard_conversations")
+        .update(convoPayload)
+        .eq("id", conversationId)
+        .eq("user_id", userId);
+    } else {
+      await adminSb.from("soundboard_conversations").insert({
+        ...convoPayload,
+        created_at: nowIso,
+      });
+    }
+
+    await adminSb.from("soundboard_messages").insert([
+      {
+        conversation_id: conversationId,
+        user_id: userId,
+        role: "user",
+        content: message,
+        timestamp: nowIso,
+        metadata: { source: "biqc-trinity-edge" },
+      },
+      {
+        conversation_id: conversationId,
+        user_id: userId,
+        role: "assistant",
+        content: synthesis,
+        timestamp: nowIso,
+        boardroom_trace: {
+          phase: "trinity_edge",
+          contributors: {
+            gpt52: gptResult.status,
+            claude: claudeResult.status,
+            gemini: geminiResult.status,
+          },
+        },
+        metadata: {
+          mode_effective: "trinity",
+          model_used: modelUsed,
+        },
+      },
+    ]);
 
     return new Response(JSON.stringify({
       reply: synthesis,
+      conversation_id: conversationId,
       mode: "trinity",
       contributors: {
         gpt52:  { status: gptResult.status,    preview: gptAnalysis.slice(0, 120) },

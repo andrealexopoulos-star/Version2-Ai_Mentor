@@ -92,7 +92,7 @@ export default function MoreFeaturesPage() {
                 <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Request access</p>
                 <p className="mt-3 text-sm leading-7" style={{ color: 'var(--biqc-text-2)' }}>
                   {hasPlatformOverride
-                    ? 'You have direct platform access as Andre. Open the live module from here.'
+                    ? 'You have direct platform access. Open the live module from here.'
                     : 'Tell us why you need this module, how large the business is, and what operating outcome matters most.'}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">

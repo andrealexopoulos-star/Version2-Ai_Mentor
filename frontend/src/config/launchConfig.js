@@ -236,6 +236,14 @@ export const WAITLIST_FEATURES = [
     about: 'Expanded operations advisory workspace for teams who need deeper process intervention support.',
     features: ['Ops playbooks', 'Bottleneck coaching', 'Escalation review', 'Advisory workflows'],
   },
+  {
+    key: 'operations-intelligence',
+    title: 'Operator Intelligence',
+    route: '/operator',
+    category: 'Execution',
+    about: 'Operator-focused intelligence workspace for real-time operational pressure and coordination decisions.',
+    features: ['Operator command view', 'Live operational pressure map', 'Cross-team decision support', 'Escalation and response context'],
+  },
 ];
 
 export const WAITLIST_ROUTE_MAP = WAITLIST_FEATURES.reduce((acc, feature) => {

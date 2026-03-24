@@ -144,7 +144,7 @@ const CalibrationPreview = () => {
         {screen === 'wow-summary' && (
           <div className="h-[calc(100vh-40px)] flex flex-col overflow-y-auto" style={{ background: 'var(--biqc-bg)' }}>
             <WowSummary firstName="Andre" wowSummary={{
-              business_overview: "The Strategy Squad is a management consulting firm specialising in AI-driven business intelligence for Australian SMBs.",
+              business_overview: "Business Intelligence Quotient Centre is a management consulting firm specialising in AI-driven business intelligence for Australian SMBs.",
               industry_position: "Positioned as a pioneer in autonomous business intelligence, bridging the gap between enterprise-grade tools and SMB accessibility.",
               competitive_advantages: "Australian data sovereignty, AI-first approach, integrated CRM/accounting intelligence, proactive risk detection.",
               target_market: "Australian SMBs with 5-50 employees in professional services, technology, and consulting sectors.",

@@ -186,7 +186,7 @@ const ProfileImport = () => {
                 <Input
                   value={profileData.business_name}
                   onChange={(e) => updateField('business_name', e.target.value)}
-                  placeholder="The Strategy Squad Pty Ltd"
+                  placeholder="Business Intelligence Quotient Centre Pty Ltd"
                   className="mt-2"
                 />
               </div>

@@ -8,6 +8,9 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
+if not BASE_URL:
+    pytest.skip("REACT_APP_BACKEND_URL not set; skipping live endpoint checks", allow_module_level=True)
+
 class TestHealthEndpoints:
     """Health and basic connectivity tests"""
     

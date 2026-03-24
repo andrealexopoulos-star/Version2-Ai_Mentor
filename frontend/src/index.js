@@ -53,8 +53,11 @@ import App from "@/App";
 })();
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+// Dev perf: StrictMode intentionally double-invokes effects, which can trigger
+// duplicate polling/network traffic and make the platform feel slow locally.
+const app = <App />;
+if (process.env.NODE_ENV === "production") {
+  root.render(<React.StrictMode>{app}</React.StrictMode>);
+} else {
+  root.render(app);
+}

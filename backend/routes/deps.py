@@ -24,6 +24,9 @@ _production = os.environ.get("PRODUCTION", "").strip().lower() in ("1", "true", 
 _dev_bypass_requested = os.environ.get("DEV_BYPASS_AUTH", "").strip().lower() in ("1", "true", "yes")
 DEV_BYPASS_AUTH = _dev_bypass_requested and not (_env == "production" or _production)
 DEV_BYPASS_SECRET = os.environ.get("DEV_BYPASS_SECRET", "dev-bypass-local").strip()
+if DEV_BYPASS_AUTH and DEV_BYPASS_SECRET == "dev-bypass-local":
+    logger.warning("[Auth] DEV_BYPASS_AUTH disabled because DEV_BYPASS_SECRET is default")
+    DEV_BYPASS_AUTH = False
 DEV_BYPASS_USER = {
     "id": "dev-bypass-user",
     "email": "dev@local",
@@ -150,7 +153,7 @@ def get_user_rate_limit_state(sb, user_id: str):
     user_row = sb.table("users").select("id, email, subscription_tier").eq("id", user_id).maybe_single().execute()
     user_data = user_row.data or {}
     tier = _normalize_subscription_tier(user_data.get("subscription_tier"))
-    admin_bypass = user_data.get("email") == "andre@thestrategysquad.com.au" or tier == "super_admin"
+    admin_bypass = user_data.get("email", "").strip().lower() == MASTER_ADMIN_EMAIL or tier == "super_admin"
 
     override_config = {}
     operator_profile = {}
@@ -192,7 +195,7 @@ def get_user_rate_limit_state(sb, user_id: str):
 async def check_rate_limit(user_id: str, feature: str, sb=None) -> bool:
     """Tier-aware monthly quota + burst protection. Raises HTTPException if blocked."""
     if not sb:
-        return True  # Skip if no DB connection
+        raise HTTPException(status_code=503, detail="Rate limit service unavailable")
     try:
         state = get_user_rate_limit_state(sb, user_id)
         if state.get("admin_bypass"):
@@ -247,8 +250,9 @@ async def check_rate_limit(user_id: str, feature: str, sb=None) -> bool:
         return True
     except HTTPException:
         raise
-    except Exception:
-        return True  # Fail open — don't break the app if usage tracking fails
+    except Exception as exc:
+        logger.error("Rate limit check failed for %s/%s: %s", user_id, feature, exc)
+        raise HTTPException(status_code=503, detail="Rate limit service unavailable")
 
 
 supabase_admin = None
@@ -301,8 +305,9 @@ async def get_current_user(
                         raise HTTPException(status_code=403, detail="Account suspended. Contact support.")
             except HTTPException:
                 raise
-            except Exception:
-                pass  # If check fails, let user through (fail-open for auth)
+            except Exception as exc:
+                logger.error("Suspension status check failed for user %s: %s", user.get("id"), exc)
+                raise HTTPException(status_code=503, detail="Authentication check unavailable")
             return user
         else:
             raise HTTPException(status_code=401, detail="Invalid token")
@@ -323,7 +328,8 @@ async def get_admin_user(current_user: dict = Depends(get_current_user)):
 async def get_super_admin(current_user: dict = Depends(get_current_user)):
     """Super-admin only. Strictest gate — for system-level operations.
     Also grants access to the master account email."""
-    if current_user.get("role") != "superadmin" and current_user.get("email", "").strip().lower() != MASTER_ADMIN_EMAIL:
+    role = (current_user.get("role") or "").strip().lower()
+    if role not in {"superadmin", "super_admin"} and current_user.get("email", "").strip().lower() != MASTER_ADMIN_EMAIL:
         raise HTTPException(status_code=403, detail="Super-admin access required")
     return current_user
 

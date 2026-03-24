@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, Loader2, Lock } from 'lucide-react';
+import { ArrowRight, Check, CheckCircle2, Loader2, Lock } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { apiClient } from '../lib/api';
 import { TIER_FEATURES } from '../config/tiers';
 import { toast } from 'sonner';
 import { trackGoogleTagEvent } from '../lib/analytics';
 
-export default function UpgradePage() {
+export default function UpgradePage({ success = false }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -47,6 +47,45 @@ export default function UpgradePage() {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen px-6 py-16" style={{ background: '#070E18', fontFamily: fontFamily.body }} data-testid="upgrade-success-page">
+        <div className="mx-auto max-w-3xl space-y-8 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full px-4 py-2" style={{ background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.3)' }}>
+            <CheckCircle2 className="h-4 w-4 text-[#10B981]" />
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>
+              Upgrade successful
+            </span>
+          </div>
+          <h1 className="text-4xl sm:text-5xl" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+            BIQc Foundation is now active
+          </h1>
+          <p className="mx-auto max-w-2xl text-sm sm:text-base" style={{ color: '#9FB0C3' }}>
+            Your subscription has been confirmed. You can now access BIQc Foundation modules from the platform menu.
+          </p>
+          <div className="mx-auto flex max-w-md flex-col gap-3 sm:flex-row">
+            <button
+              onClick={() => navigate('/advisor')}
+              className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white"
+              style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
+              data-testid="upgrade-success-go-advisor"
+            >
+              Go to Advisor <ArrowRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => navigate('/biqc-foundation')}
+              className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl border text-sm font-semibold"
+              style={{ borderColor: '#243140', color: '#C9D5E2', fontFamily: fontFamily.body }}
+              data-testid="upgrade-success-open-foundation"
+            >
+              View Foundation
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-6 py-16" style={{ background: '#070E18', fontFamily: fontFamily.body }} data-testid="upgrade-page">

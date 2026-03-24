@@ -143,7 +143,7 @@ const GUIDES = [
     icon: Shield,
     color: '#EF4444',
     title: 'Data Security & Privacy',
-    why: 'BIQc is built with Australian data sovereignty as a founding principle. Your data never leaves Australian infrastructure.',
+    why: 'BIQc is built with Australian data sovereignty as a founding principle. All data is hosted in Australian infrastructure with transparent provider processing controls.',
     steps: [
       { step: 'Australian hosting', detail: 'All data is stored and processed in Sydney and Melbourne data centres.' },
       { step: 'AES-256 encryption', detail: 'All data at rest and in transit is encrypted with military-grade AES-256 encryption.' },

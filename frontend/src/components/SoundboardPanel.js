@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, Database, CheckCircle2, XCircle, Plus, Trash2, Download, FileText, Zap, Eye } from 'lucide-react';
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
@@ -6,8 +6,9 @@ import { trackEvent, EVENTS, trackActivationStep, trackOnceForUser } from '../li
 import DataCoverageGate from './DataCoverageGate';
 import { CheckInAlerts } from './CheckInAlerts';
 import { fontFamily } from '../design-system/tokens';
-import { isPrivilegedUser } from '../lib/privilegedUser';
+import { getSoundboardPolicy, normalizeMessageContent } from '../lib/soundboardPolicy';
 import VoiceChat from './VoiceChat';
+import BoardroomCouncilCard from './soundboard/BoardroomCouncilCard';
 
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
@@ -43,14 +44,47 @@ const getSoundboardErrorMessage = (error) => {
   return 'Connection issue. Try again.';
 };
 
+const buildBoardroomChecks = (connectedSources = [], evidenceSources = []) => {
+  const normalized = new Set(
+    [...connectedSources, ...evidenceSources]
+      .map((v) => String(v || '').toLowerCase().trim())
+      .filter(Boolean)
+  );
+  const hasCRM = normalized.has('crm');
+  const hasAccounting = normalized.has('accounting');
+  const hasEmail = normalized.has('email');
+  const hasMarket = ['market', 'google_ads', 'ads', 'competitor', 'web'].some((key) => normalized.has(key));
+
+  const steps = [
+    { role: 'CEO', line: 'Checking strategic priorities and growth pressure...' },
+    hasCRM
+      ? { role: 'CEO', line: 'Checking CRM pipeline momentum and stalled deals...' }
+      : { role: 'COO', line: 'Checking execution cadence from available business signals...' },
+    hasAccounting
+      ? { role: 'CFO', line: 'Checking overdue invoices, cash timing, and runway...' }
+      : { role: 'CFO', line: 'Checking cash risk assumptions from calibration and activity patterns...' },
+    hasEmail
+      ? { role: 'COO', line: 'Checking inbox response lag and escalation patterns...' }
+      : { role: 'HR', line: 'Checking team load and decision bottlenecks from current evidence...' },
+  ];
+  if (hasMarket) {
+    steps.push({ role: 'CMO', line: 'Checking Google Ads and market demand signals...' });
+  }
+  steps.push({ role: 'CCO', line: 'Aligning boardroom views into one clear recommendation...' });
+  return steps;
+};
+
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [showAgentMenu, setShowAgentMenu] = useState(false);
+  const [showAdvancedControls, setShowAdvancedControls] = useState(false);
   const [selectedMode, setSelectedMode] = useState('auto');
   const [selectedAgent, setSelectedAgent] = useState('auto');
+  const [boardroomNarrationIndex, setBoardroomNarrationIndex] = useState(0);
+  const [boardroomProgress, setBoardroomProgress] = useState(12);
   const [showHistory, setShowHistory] = useState(false);
   const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -64,15 +98,14 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [recordingScans, setRecordingScans] = useState({});
   const { session, user } = useSupabaseAuth();
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || '';
-  const userTier = String(user?.subscription_tier || 'free').toLowerCase();
-  const isAndre = isPrivilegedUser(user);
+  const policy = getSoundboardPolicy(user);
 
   const BIQC_MODES = [
     { id: 'auto', label: 'BIQc Auto', desc: 'Smart mode — BIQc picks the best approach for your question', icon: '⚡', backend_mode: 'auto', minTier: 'free' },
-    { id: 'normal', label: 'Normal', desc: 'Default paid conversation mode', icon: '◉', backend_mode: 'normal', minTier: 'foundation' },
-    { id: 'thinking', label: 'Deep Thinking', desc: 'High-depth strategic reasoning mode', icon: '🧠', backend_mode: 'thinking', minTier: 'foundation' },
-    { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'foundation' },
-    { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc cognition pathways and BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'pro' },
+    { id: 'normal', label: 'Normal', desc: 'Default paid conversation mode', icon: '◉', backend_mode: 'normal', minTier: 'starter' },
+    { id: 'thinking', label: 'Deep Thinking', desc: 'High-depth strategic reasoning mode', icon: '🧠', backend_mode: 'thinking', minTier: 'starter' },
+    { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'starter' },
+    { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc cognition pathways and BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'starter' },
   ];
   const BIQC_AGENTS = [
     { id: 'auto', label: 'Auto', shortDesc: 'Pick specialist by question', icon: '⚡' },
@@ -86,20 +119,71 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     { id: 'strategy', label: 'Strategy', shortDesc: 'Planning & scenarios', icon: '🎯' },
   ];
 
-  const tierRank = { free: 0, starter: 0, foundation: 1, growth: 2, custom: 3, pro: 2, enterprise: 3 };
-  const isPaidUser = (tierRank[userTier] ?? 0) >= 1;
-  const canUseTrinity = isAndre || ['pro', 'enterprise', 'growth', 'custom'].includes(userTier);
+  const { isPaidUser, canUseTrinity } = policy;
+  const minTierRank = { free: 0, starter: 1 };
   const availableModes = BIQC_MODES.filter((mode) => {
-    if (isAndre) return true;
+    if (policy.privileged) return true;
     if (mode.id === 'trinity') return canUseTrinity;
-    return (tierRank[userTier] ?? 0) >= (tierRank[mode.minTier] ?? 0);
+    return policy.tierRank >= (minTierRank[mode.minTier] ?? 0);
   });
   const activeMode = availableModes.find((mode) => mode.id === selectedMode) || availableModes[0] || BIQC_MODES[0];
   const activeAgent = BIQC_AGENTS.find((agent) => agent.id === selectedAgent) || BIQC_AGENTS[0];
+  const showBoardroomViz = selectedAgent === 'boardroom';
+  const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
+  const boardroomConnectedSources = useMemo(() => {
+    const fromContract = latestAssistantMessage?.soundboard_contract?.connected_sources;
+    if (Array.isArray(fromContract)) return fromContract;
+    if (Array.isArray(latestAssistantMessage?.connected_sources)) return latestAssistantMessage.connected_sources;
+    return [];
+  }, [latestAssistantMessage]);
+  const boardroomEvidenceSources = useMemo(
+    () => (latestAssistantMessage?.evidence_pack?.sources || []).map((item) => item?.source).filter(Boolean),
+    [latestAssistantMessage]
+  );
+  const boardroomSourceLabels = useMemo(() => {
+    const sourceLabelMap = {
+      crm: 'CRM',
+      accounting: 'Accounting',
+      email: 'Email',
+      market: 'Market',
+      google_ads: 'Google Ads',
+      ads: 'Ads',
+      web: 'Web',
+      competitor: 'Competitor',
+    };
+    const unique = [...new Set([...boardroomConnectedSources, ...boardroomEvidenceSources].map((v) => String(v || '').toLowerCase().trim()).filter(Boolean))];
+    return unique.map((key) => sourceLabelMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())).slice(0, 4);
+  }, [boardroomConnectedSources, boardroomEvidenceSources]);
+  const boardroomChecks = useMemo(
+    () => buildBoardroomChecks(boardroomConnectedSources, boardroomEvidenceSources),
+    [boardroomConnectedSources, boardroomEvidenceSources]
+  );
+  const activeBoardroomCheck = boardroomChecks[boardroomNarrationIndex % Math.max(1, boardroomChecks.length)] || { role: 'CEO', line: 'Checking strategic priorities...' };
 
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    if (!loading || !showBoardroomViz) {
+      setBoardroomNarrationIndex(0);
+      setBoardroomProgress(12);
+      return undefined;
+    }
+    const narrationTimer = setInterval(() => {
+      setBoardroomNarrationIndex((prev) => (prev + 1) % Math.max(1, boardroomChecks.length));
+    }, 1400);
+    const progressTimer = setInterval(() => {
+      setBoardroomProgress((prev) => {
+        if (prev >= 92) return 26;
+        return Math.min(92, prev + 10);
+      });
+    }, 900);
+    return () => {
+      clearInterval(narrationTimer);
+      clearInterval(progressTimer);
+    };
+  }, [loading, showBoardroomViz, boardroomChecks.length]);
 
   // Fetch scan usage from Supabase backend on mount — with 5-minute sessionStorage cache
   const fetchScanUsage = useCallback(async (forceRefresh = false) => {
@@ -130,6 +214,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         setMessages([{
           role: 'assistant',
           text: "Hey — I'm your BIQc business advisor. Ask a concrete business question and I'll respond with what BIQc can verify from your current context.\n\nIf any source is missing or stale, I'll call that out clearly and guide the next step.\n\nWhat's on your mind?",
+          content: "Hey — I'm your BIQc business advisor. Ask a concrete business question and I'll respond with what BIQc can verify from your current context.\n\nIf any source is missing or stale, I'll call that out clearly and guide the next step.\n\nWhat's on your mind?",
         }]);
       }
     }).catch(() => {});
@@ -155,7 +240,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   useEffect(() => {
     if (actionMessage && actionMessage.trim()) {
       setInput('');
-      setMessages(prev => [...prev, { role: 'user', text: actionMessage }]);
+      setMessages(prev => [...prev, { role: 'user', text: actionMessage, content: actionMessage }]);
       executeMessage(actionMessage);
       if (onActionConsumed) onActionConsumed();
     }
@@ -182,12 +267,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       if (isDataQuery(msgToSend)) {
         const result = await queryIntegrationData(msgToSend);
         if (result?.status === 'not_connected') {
-          setMessages(prev => [...prev, { role: 'assistant', text: result.message, type: 'integration_prompt' }]);
+          setMessages(prev => [...prev, { role: 'assistant', text: result.message, content: result.message, type: 'integration_prompt' }]);
           setLoading(false);
           return;
         }
         if (result?.status === 'answered') {
-          setMessages(prev => [...prev, { role: 'assistant', text: result.answer, sources: result.data_sources }]);
+          setMessages(prev => [...prev, { role: 'assistant', text: result.answer, content: result.answer, sources: result.data_sources }]);
           setLoading(false);
           return;
         }
@@ -199,7 +284,21 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         agent_id: selectedAgent || 'auto',
       });
       if (res.data?.reply) {
-        const assistantMsg = { role: 'assistant', text: res.data.reply };
+        const assistantMsg = {
+          role: 'assistant',
+          text: res.data.reply,
+          content: res.data.reply,
+          boardroom_trace: res.data.boardroom_trace,
+          boardroom_status: res.data.boardroom_status,
+          evidence_pack: res.data.evidence_pack,
+          soundboard_contract: res.data.soundboard_contract,
+          confidence_score: res.data.confidence_score,
+          data_freshness: res.data.data_freshness,
+          data_sources_count: res.data.data_sources_count,
+          lineage: res.data.lineage,
+          suggested_actions: res.data.suggested_actions,
+          advisory_slots: res.data.advisory_slots,
+        };
         if (res.data?.agent_name) assistantMsg.agent_name = res.data.agent_name;
         if (res.data?.file) assistantMsg.file = res.data.file;
         setMessages(prev => [...prev, assistantMsg]);
@@ -229,7 +328,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         }
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', text: getSoundboardErrorMessage(error) }]);
+      const errText = getSoundboardErrorMessage(error);
+      setMessages(prev => [...prev, { role: 'assistant', text: errText, content: errText }]);
     }
     setLoading(false);
   };
@@ -254,7 +354,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     }
 
     if (!fullMessage.trim()) return;
-    setMessages(prev => [...prev, { role: 'user', text: displayText }]);
+    setMessages(prev => [...prev, { role: 'user', text: displayText, content: displayText }]);
     trackEvent(EVENTS.SOUNDBOARD_QUERY, { message_length: fullMessage.length, has_attachment: !!attachedFile });
     trackOnceForUser(EVENTS.ACTIVATION_FIRST_SOUNDBOARD_USE, user?.id, { entrypoint: 'soundboard_panel' });
     trackActivationStep('first_soundboard_use', { entrypoint: 'soundboard_panel' });
@@ -266,7 +366,21 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     setActiveConvId(conv.id);
     try {
       const res = await apiClient.get(`/soundboard/conversations/${conv.id}`);
-      setMessages((res.data?.messages || []).map(m => ({ role: m.role, text: m.content })));
+      setMessages((res.data?.messages || []).map((m) => ({
+        role: m.role,
+        text: m.content,
+        content: m.content,
+        evidence_pack: m.evidence_pack,
+        boardroom_trace: m.boardroom_trace,
+        boardroom_status: m.boardroom_status || m?.metadata?.boardroom_status,
+        soundboard_contract: m.soundboard_contract,
+        confidence_score: m.confidence_score,
+        data_freshness: m.data_freshness,
+        data_sources_count: m.data_sources_count,
+        lineage: m.lineage,
+        suggested_actions: m.suggested_actions,
+        advisory_slots: m.advisory_slots || m?.metadata?.advisory_slots,
+      })));
     } catch {
       setMessages([]);
     }
@@ -289,7 +403,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       reader.onload = (ev) => setAttachedFile({ name: file.name, content: ev.target.result, size: file.size, type: 'text' });
       reader.readAsText(file);
     } else if (file.size > MAX_SIZE) {
-      setMessages(prev => [...prev, { role: 'assistant', text: 'File too large (max 500KB for text files). Try pasting key sections directly.' }]);
+      const tooLargeText = 'File too large (max 500KB for text files). Try pasting key sections directly.';
+      setMessages(prev => [...prev, { role: 'assistant', text: tooLargeText, content: tooLargeText }]);
     } else {
       setAttachedFile({ name: file.name, content: null, size: file.size, type: 'binary', hint: 'Describe what you need from this file' });
     }
@@ -443,12 +558,48 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 </p>
               )}
               {msg.type === 'integration_prompt' && <Database className="w-3.5 h-3.5 text-[#F59E0B] inline mr-1.5 -mt-0.5" />}
-              {msg.text}
+              {normalizeMessageContent(msg.content ?? msg.text)}
+              {msg.evidence_pack?.sources?.length > 0 && (
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {msg.evidence_pack.sources.slice(0, 4).map((s) => (
+                    <span key={s.id || s.source} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#8B5CF610', color: '#A78BFA', fontFamily: fontFamily.mono }}>
+                      {s.source}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {msg.boardroom_trace?.phases?.length > 0 && (
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {msg.boardroom_trace.phases.slice(0, 4).map((phase, idx) => (
+                    <span key={`${phase.phase}-${phase.role || idx}`} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#3B82F615', color: '#93C5FD', fontFamily: fontFamily.mono }}>
+                      {phase.phase}{phase.role ? `:${phase.role}` : ''} {phase.status || 'ok'}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {msg.boardroom_status === 'fallback_error' && (
+                <div className="mt-2">
+                  <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#F59E0B15', color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                    Boardroom degraded mode
+                  </span>
+                </div>
+              )}
               {msg.sources?.length > 0 && (
                 <div className="flex gap-1 mt-2 flex-wrap">
                   {msg.sources.map((s, j) => (
                     <span key={j} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#10B98110', color: '#10B981', fontFamily: fontFamily.mono }}>{s}</span>
                   ))}
+                </div>
+              )}
+              {msg.advisory_slots?.kpi_note && (
+                <div className="mt-2">
+                  <span
+                    className="text-[9px] px-1.5 py-0.5 rounded"
+                    style={{ background: '#8B5CF615', color: '#C4B5FD', fontFamily: fontFamily.mono }}
+                    title={msg.advisory_slots.kpi_note}
+                  >
+                    KPI note
+                  </span>
                 </div>
               )}
               {/* File download card */}
@@ -469,12 +620,42 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
         {loading && (
           <div className="flex justify-start">
-            <div className="px-4 py-2.5 rounded-2xl text-sm flex items-center gap-2" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', borderRadius: '20px 20px 20px 4px' }}>
-              <div className="flex gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="px-4 py-2.5 rounded-2xl text-sm" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', borderRadius: '20px 20px 20px 4px' }}>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+                <span className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
+                  {showBoardroomViz ? `${activeBoardroomCheck.role}: ${activeBoardroomCheck.line}` : 'Thinking...'}
+                </span>
               </div>
+              {showBoardroomViz && (
+                <div className="mt-2">
+                  <div className="w-full h-1 rounded-full overflow-hidden mb-1" style={{ background: 'rgba(30, 41, 59, 0.8)' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${boardroomProgress}%`, background: 'linear-gradient(90deg, #3B82F6 0%, #10B981 100%)' }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {boardroomChecks.map((step, i) => (
+                      <span
+                        key={`${step.role}-loading-${i}`}
+                        className="text-[9px] px-1.5 py-0.5 rounded"
+                        style={{
+                          background: i === boardroomNarrationIndex % Math.max(1, boardroomChecks.length) ? 'rgba(59,130,246,0.22)' : 'rgba(59,130,246,0.12)',
+                          color: i === boardroomNarrationIndex % Math.max(1, boardroomChecks.length) ? '#DBEAFE' : '#93C5FD',
+                          fontFamily: fontFamily.mono,
+                        }}
+                      >
+                        {step.role}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -504,87 +685,144 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           </div>
         )}
 
-        <div className="mb-2 relative flex items-center gap-2" data-testid="soundboard-panel-mode-wrapper">
-          <div className="relative">
+        <div className="mb-2" data-testid="soundboard-panel-mode-wrapper">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => { setShowModeMenu((v) => !v); setShowAgentMenu(false); }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all hover:brightness-110"
-              style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
-              data-testid="soundboard-panel-mode-selector"
+              onClick={() => setSelectedAgent('general')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+              style={{
+                background: selectedAgent === 'general' ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.1)',
+                border: `1px solid ${selectedAgent === 'general' ? 'rgba(129,140,248,0.55)' : 'rgba(99,102,241,0.25)'}`,
+                color: '#C7D2FE',
+                fontFamily: fontFamily.mono
+              }}
             >
-              <span>{activeMode?.icon}</span>
-              <span>{activeMode?.label}</span>
-              <ChevronDown className="w-3 h-3" />
+              <span>◎</span>
+              <span>Advisor</span>
             </button>
+            <button
+              onClick={() => setSelectedAgent('boardroom')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+              style={{
+                background: selectedAgent === 'boardroom' ? 'rgba(59,130,246,0.22)' : 'rgba(59,130,246,0.1)',
+                border: `1px solid ${selectedAgent === 'boardroom' ? 'rgba(96,165,250,0.55)' : 'rgba(59,130,246,0.25)'}`,
+                color: '#93C5FD',
+                fontFamily: fontFamily.mono
+              }}
+            >
+              <span>🏛️</span>
+              <span>Boardroom</span>
+            </button>
+            <button
+              onClick={() => {
+                setShowAdvancedControls((prev) => !prev);
+                if (showAdvancedControls) {
+                  setShowModeMenu(false);
+                  setShowAgentMenu(false);
+                }
+              }}
+              className="px-2.5 py-1 rounded-full text-[10px] font-semibold"
+              style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.35)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+            >
+              {showAdvancedControls ? 'Hide advanced' : 'Show advanced'}
+            </button>
+          </div>
 
-            {showModeMenu && (
-              <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-xl z-50"
-                style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
-                {availableModes.map((mode, idx) => (
-                  <button
-                    key={mode.id}
-                    onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
-                    className="w-full flex items-start gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
-                    style={{ borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none' }}
-                    data-testid={`soundboard-panel-mode-option-${mode.id}`}
-                  >
-                    <span className="text-sm shrink-0">{mode.icon}</span>
-                    <div>
-                      <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>{mode.label}</p>
-                      <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
-                    </div>
-                  </button>
-                ))}
+          {showAdvancedControls && (
+            <div className="mt-2 relative flex items-center gap-2">
+              <div className="relative">
+                <button
+                  onClick={() => { setShowModeMenu((v) => !v); setShowAgentMenu(false); }}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all hover:brightness-110"
+                  style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                  data-testid="soundboard-panel-mode-selector"
+                >
+                  <span>{activeMode?.icon}</span>
+                  <span>{activeMode?.label}</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
 
-                {!canUseTrinity && (
-                  <a href="/biqc-foundation" className="block px-3 py-2 text-[10px] no-underline"
-                    style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="soundboard-panel-trinity-upgrade-link">
-                    Unlock BIQc Trinity: get consensus intelligence across BIQc pathways.
-                  </a>
+                {showModeMenu && (
+                  <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-xl z-50"
+                    style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                    {availableModes.map((mode, idx) => (
+                      <button
+                        key={mode.id}
+                        onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
+                        className="w-full flex items-start gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
+                        style={{ borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none' }}
+                        data-testid={`soundboard-panel-mode-option-${mode.id}`}
+                      >
+                        <span className="text-sm shrink-0">{mode.icon}</span>
+                        <div>
+                          <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>{mode.label}</p>
+                          <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
+                        </div>
+                      </button>
+                    ))}
+
+                    {!canUseTrinity && (
+                      <a href="/biqc-foundation" className="block px-3 py-2 text-[10px] no-underline"
+                        style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="soundboard-panel-trinity-upgrade-link">
+                        Unlock BIQc Trinity: get consensus intelligence across BIQc pathways.
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
 
-          <div className="relative">
-            <button
-              onClick={() => { setShowAgentMenu((v) => !v); setShowModeMenu(false); }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold"
-              style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', color: '#3B82F6', fontFamily: fontFamily.mono }}
-              data-testid="soundboard-panel-agent-selector"
-            >
-              <span>{activeAgent.icon}</span>
-              <span>{activeAgent.label}</span>
-              <ChevronDown className="w-3 h-3" />
-            </button>
+              <div className="relative">
+                <button
+                  onClick={() => { setShowAgentMenu((v) => !v); setShowModeMenu(false); }}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+                  style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', color: '#3B82F6', fontFamily: fontFamily.mono }}
+                  data-testid="soundboard-panel-agent-selector"
+                >
+                  <span>{activeAgent.icon}</span>
+                  <span>{activeAgent.label}</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
 
-            {showAgentMenu && (
-              <div className="absolute bottom-full left-0 mb-2 w-60 rounded-xl overflow-hidden shadow-xl z-50"
-                style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
-                <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Agent persona</p>
-                {BIQC_AGENTS.map((agent) => (
-                  <button
-                    key={agent.id}
-                    onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
-                    style={{ borderTop: '1px solid #1E2D3D' }}
-                    data-testid={`soundboard-panel-agent-option-${agent.id}`}
-                  >
-                    <span className="text-sm shrink-0">{agent.icon}</span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#F4F7FA', fontFamily: fontFamily.body }}>
-                        {agent.label}
-                      </p>
-                      <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
-                        {agent.shortDesc}
-                      </p>
-                    </div>
-                  </button>
-                ))}
+                {showAgentMenu && (
+                  <div className="absolute bottom-full left-0 mb-2 w-60 rounded-xl overflow-hidden shadow-xl z-50"
+                    style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                    <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Agent persona</p>
+                    {BIQC_AGENTS.map((agent) => (
+                      <button
+                        key={agent.id}
+                        onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
+                        style={{ borderTop: '1px solid #1E2D3D' }}
+                        data-testid={`soundboard-panel-agent-option-${agent.id}`}
+                      >
+                        <span className="text-sm shrink-0">{agent.icon}</span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#F4F7FA', fontFamily: fontFamily.body }}>
+                            {agent.label}
+                          </p>
+                          <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
+                            {agent.shortDesc}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
+
+        {showBoardroomViz && (
+          <BoardroomCouncilCard
+            checks={boardroomChecks}
+            sourceLabels={boardroomSourceLabels}
+            activeIndex={boardroomNarrationIndex}
+            activeCheck={activeBoardroomCheck}
+            compact
+            testId="soundboard-panel-boardroom-visualizer"
+          />
+        )}
 
         <div className="rounded-2xl flex items-end gap-1 p-1.5" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${attachedFile ? 'rgba(255,106,0,0.4)' : '#243140'}` }}>
           <input type="file" ref={fileRef} className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.md,.json,.py,.js" />

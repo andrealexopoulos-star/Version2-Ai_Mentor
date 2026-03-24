@@ -3082,7 +3082,8 @@ async def get_merge_integration_catalog(
     q = str(search or "").strip().lower()
     integrations: List[Dict[str, Any]] = []
     seen = set()
-    next_url = "https://api.merge.dev/api/integrations"
+    # Use canonical trailing-slash endpoint to avoid extra 301 redirects.
+    next_url = "https://api.merge.dev/api/integrations/"
     page_safety = 0
 
     try:

@@ -10,8 +10,13 @@ import { fontFamily } from '../design-system/tokens';
  * @param {{ lineage?: { connected_sources?: string[] }, data_freshness?: string, confidence_score?: number } | null} props
  */
 export function LineageBadge({ lineage, data_freshness, confidence_score, className = '', compact = false }) {
-  const sources = lineage?.connected_sources;
-  const hasSources = Array.isArray(sources) && sources.length > 0;
+  const rawSources = lineage?.connected_sources_list || lineage?.connected_sources;
+  const sources = Array.isArray(rawSources)
+    ? rawSources
+    : (rawSources && typeof rawSources === 'object'
+      ? Object.keys(rawSources).filter((key) => Boolean(rawSources[key]))
+      : []);
+  const hasSources = sources.length > 0;
   const freshness = data_freshness || lineage?.last_updated;
   const confidence = confidence_score != null ? Number(confidence_score) : null;
 

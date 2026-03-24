@@ -11,7 +11,7 @@ from routes.deps import get_current_user, get_sb, logger
 from supabase_client import safe_query_single
 from auth_supabase import (
     signup_with_email, signin_with_email, get_oauth_url,
-    get_current_user_supabase, get_user_by_id,
+    get_user_by_id,
     SignUpRequest, SignInRequest,
 )
 from supabase_intelligence_helpers import get_business_profile_supabase
@@ -27,7 +27,6 @@ from auth_supabase import (
     signup_with_email,
     signin_with_email,
     get_oauth_url,
-    get_current_user_supabase,
     get_current_user_from_request,
     get_user_by_id,
     SignUpRequest,
@@ -165,6 +164,10 @@ async def verify_recaptcha(request: RecaptchaVerifyRequest):
         return {"ok": True, "provider": "enterprise", "score": score, "action": returned_action or None}
 
     if not secret:
+        env = (os.environ.get("ENVIRONMENT") or "").strip().lower()
+        is_production = env == "production" or (os.environ.get("PRODUCTION") or "").strip().lower() in {"1", "true", "yes"}
+        if is_production:
+            raise HTTPException(status_code=503, detail="Captcha verification unavailable")
         return {"ok": True, "skipped": True, "reason": "recaptcha_secret_not_configured"}
 
     payload = urllib.parse.urlencode({
@@ -207,7 +210,7 @@ async def supabase_oauth(provider: str, redirect_to: Optional[str] = None):
     return await get_oauth_url(provider, redirect_to)
 
 @router.get("/auth/supabase/me")
-async def supabase_get_me(current_user: dict = Depends(get_current_user_supabase)):
+async def supabase_get_me(current_user: dict = Depends(get_current_user)):
     """Get current authenticated user (Supabase version). Resilient to upstream failures."""
     try:
         return {"user": current_user, "message": "Authenticated via Supabase"}
@@ -216,7 +219,7 @@ async def supabase_get_me(current_user: dict = Depends(get_current_user_supabase
         return {"user": {"id": current_user.get("id", ""), "email": current_user.get("email", ""), "role": "user"}, "message": "Partial profile"}
 
 @router.get("/auth/check-profile")
-async def check_user_profile(current_user: dict = Depends(get_current_user_supabase)):
+async def check_user_profile(current_user: dict = Depends(get_current_user)):
     """Calibration-first profile check used by AuthCallbackSupabase.
     Single source of truth: user_operator_profile.persona_calibration_status"""
     try:

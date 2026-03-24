@@ -22,7 +22,7 @@ const TermsAndConditions = () => {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
               <span className="font-bold text-white text-xs">TS</span>
             </div>
-            <span className="font-semibold text-slate-900">The Strategy Squad</span>
+            <span className="font-semibold text-slate-900">Business Intelligence Quotient Centre</span>
           </div>
         </div>
       </nav>
@@ -50,7 +50,7 @@ const TermsAndConditions = () => {
               <div>
                 <h3 className="font-semibold text-amber-900 mb-2">Important Notice - General Information Only</h3>
                 <p className="text-amber-800 text-sm leading-relaxed">
-                  The Strategy Squad provides <strong>general information and educational content only</strong>. 
+                  Business Intelligence Quotient Centre provides <strong>general information and educational content only</strong>.
                   Our AI-powered platform does not provide personal financial advice, legal advice, tax advice, 
                   or any other form of professional advice. You should seek independent professional advice 
                   before making any business decisions.
@@ -70,12 +70,12 @@ const TermsAndConditions = () => {
               </h2>
               <div className="pl-10 space-y-4 text-slate-600">
                 <p>
-                  By accessing or using The Strategy Squad platform (&quot;Service&quot;), operated by The Strategy Squad Pty Ltd
+                  By accessing or using Business Intelligence Quotient Centre platform (&quot;Service&quot;), operated by Business Intelligence Quotient Centre Pty Ltd
                   (ABN to be registered) (&quot;Company&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;), you agree to be bound by these Terms and
                   Conditions (&quot;Terms&quot;). If you do not agree to these Terms, you must not access or use the Service.
                 </p>
                 <p>
-                  These Terms constitute a legally binding agreement between you and The Strategy Squad. By using our 
+                  These Terms constitute a legally binding agreement between you and Business Intelligence Quotient Centre. By using our
                   Service, you represent that you are at least 18 years of age and have the legal capacity to enter 
                   into this agreement.
                 </p>
@@ -140,7 +140,7 @@ const TermsAndConditions = () => {
                 </p>
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
                   <p>
-                    <strong>3.1</strong> The Strategy Squad, its directors, officers, employees, agents, contractors, 
+                    <strong>3.1</strong> Business Intelligence Quotient Centre, its directors, officers, employees, agents, contractors,
                     and affiliates (&quot;Released Parties&quot;) shall not be liable for any:
                   </p>
                   <ul className="list-disc pl-5 space-y-1">
@@ -160,7 +160,7 @@ const TermsAndConditions = () => {
                   </p>
                   <p>
                     <strong>3.3</strong> You acknowledge that the limitations of liability in this section are 
-                    fundamental elements of the agreement between you and The Strategy Squad, and the Service 
+                    fundamental elements of the agreement between you and Business Intelligence Quotient Centre, and the Service
                     would not be provided without such limitations.
                   </p>
                 </div>
@@ -175,7 +175,7 @@ const TermsAndConditions = () => {
               </h2>
               <div className="pl-10 space-y-4 text-slate-600">
                 <p>
-                  You agree to indemnify, defend, and hold harmless The Strategy Squad, its directors, officers, 
+                  You agree to indemnify, defend, and hold harmless Business Intelligence Quotient Centre, its directors, officers,
                   employees, agents, contractors, licensors, service providers, subcontractors, suppliers, interns, 
                   and affiliates from and against any and all:
                 </p>
@@ -217,7 +217,7 @@ const TermsAndConditions = () => {
                   <li>A partnership or joint venture</li>
                 </ul>
                 <p>
-                  The Strategy Squad does not hold an Australian Financial Services Licence (AFSL) and is not 
+                  Business Intelligence Quotient Centre does not hold an Australian Financial Services Licence (AFSL) and is not
                   authorised to provide financial product advice. Any financial information provided is general 
                   in nature and does not constitute financial product advice.
                 </p>
@@ -240,7 +240,7 @@ const TermsAndConditions = () => {
                   <li>AI responses are based on patterns in training data and may not reflect current market conditions, laws, or best practices</li>
                   <li>The AI does not have access to real-time data unless explicitly connected through integrations</li>
                   <li>AI-generated content should be independently verified before being relied upon</li>
-                  <li>The Strategy Squad does not guarantee the accuracy, completeness, or reliability of AI-generated content</li>
+                  <li>Business Intelligence Quotient Centre does not guarantee the accuracy, completeness, or reliability of AI-generated content</li>
                 </ul>
               </div>
             </section>
@@ -369,7 +369,7 @@ const TermsAndConditions = () => {
               <div className="pl-10 space-y-4 text-slate-600">
                 <p>
                   These Terms, together with the Privacy Policy, constitute the entire agreement between you and 
-                  The Strategy Squad regarding the Service and supersede all prior and contemporaneous agreements, 
+                  Business Intelligence Quotient Centre regarding the Service and supersede all prior and contemporaneous agreements,
                   proposals, or representations, written or oral.
                 </p>
               </div>
@@ -386,7 +386,7 @@ const TermsAndConditions = () => {
                   For any questions about these Terms and Conditions, please contact us at:
                 </p>
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                  <p><strong>The Strategy Squad Pty Ltd</strong></p>
+                  <p><strong>Business Intelligence Quotient Centre Pty Ltd</strong></p>
                   <p>Email: legal@thestrategysquad.com.au</p>
                   <p>Australia</p>
                 </div>
@@ -402,7 +402,7 @@ const TermsAndConditions = () => {
               <div>
                 <h3 className="font-semibold text-blue-900 mb-2">Acknowledgement</h3>
                 <p className="text-blue-800 text-sm leading-relaxed">
-                  By using The Strategy Squad platform, you acknowledge that you have read, understood, and agree 
+                  By using Business Intelligence Quotient Centre platform, you acknowledge that you have read, understood, and agree
                   to be bound by these Terms and Conditions. You confirm that you understand the Service provides 
                   general information only and is not a substitute for professional advice.
                 </p>
@@ -416,7 +416,7 @@ const TermsAndConditions = () => {
       <footer className="py-8 px-6 bg-slate-900">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-slate-400 text-sm">
-            © 2025 The Strategy Squad Pty Ltd. All rights reserved.
+            © 2025 Business Intelligence Quotient Centre Pty Ltd. All rights reserved.
           </p>
           <p className="text-slate-500 text-xs mt-2">
             ABN: To be registered | Governed by the laws of New South Wales, Australia

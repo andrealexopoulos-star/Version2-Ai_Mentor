@@ -288,7 +288,7 @@ const IntegrationsPage = () => {
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { icon: Code, label: 'Open API', desc: 'Connect any REST or GraphQL API' },
-              { icon: Webhook, label: 'Webhooks', desc: 'Real-time events from any system' },
+              { icon: Webhook, label: 'Webhooks', desc: 'Real-time events from supported connectors' },
               { icon: FileSpreadsheet, label: 'CSV Import', desc: 'Bulk import structured data' },
               { icon: Globe, label: 'Custom Sync', desc: 'Encrypted, role-based data sync' },
             ].map((item, i) => (
@@ -317,12 +317,12 @@ const IntegrationsPage = () => {
             Your data stays yours — always.
           </h2>
           <p className="text-base mb-10 max-w-2xl mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
-            Every integration uses the Merge unified API — one standard, enterprise-grade connection layer with complete audit trails, zero data retention, and instant revocation.
+            Integrations are routed through supported connector layers with audit trails and revocation controls. Processing location may vary by enabled provider.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
               { icon: Lock,         title: 'AES-256 Encrypted',      desc: 'All data encrypted at rest and in transit with military-grade AES-256 encryption.' },
-              { icon: Shield,       title: 'Australian Data Residency', desc: 'Your data never leaves Australian servers. Zero offshore processing, ever.' },
+              { icon: Shield,       title: 'Australian Data Residency', desc: 'Core platform data is hosted in Australian infrastructure with transparent provider processing disclosures.' },
               { icon: RefreshCw,    title: 'Revoke Anytime',          desc: 'Disconnect any integration instantly. Your data is purged within 24 hours.' },
             ].map((item, i) => (
               <div key={i} className="flex flex-col items-center text-center gap-3 p-6 rounded-2xl"

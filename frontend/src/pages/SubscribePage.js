@@ -6,6 +6,7 @@ import { apiClient } from '../lib/api';
 import { Lock, ArrowRight, Check, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { PRICING_TIERS } from '../config/pricingTiers';
 import { fontFamily } from '../design-system/tokens';
+import { toast } from 'sonner';
 
 
 const FEATURE_LABELS = {
@@ -72,9 +73,12 @@ const SubscribePage = () => {
       const res = await apiClient.post('/payments/checkout', { package_id: packageId, origin_url: origin });
       if (res.data?.url) {
         window.location.href = res.data.url;
+        return;
       }
+      toast.error('Checkout is unavailable right now. Please try again.');
     } catch (err) {
       console.error('Checkout error:', err);
+      toast.error('Checkout failed. Please try again.');
     } finally {
       setLoading(null);
     }

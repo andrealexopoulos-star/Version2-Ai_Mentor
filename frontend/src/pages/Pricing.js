@@ -4,9 +4,11 @@ import { Button } from '../components/ui/button';
 import { ArrowRight, Check, Shield } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { PRICING_TIERS } from '../config/pricingTiers';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const { user } = useSupabaseAuth();
 
   return (
     <div className="min-h-screen" style={{ background: '#0A0F18', color: '#F4F7FA' }} data-testid="pricing-page">
@@ -55,7 +57,13 @@ export default function Pricing() {
                 ))}
               </div>
               <Button
-                onClick={() => navigate(plan.id === 'free' ? '/register-supabase' : '/register-supabase')}
+                onClick={() => {
+                  if (plan.id === 'free') {
+                    navigate('/register-supabase');
+                    return;
+                  }
+                  navigate(user ? '/subscribe' : '/register-supabase');
+                }}
                 className="mt-8 h-12 w-full rounded-2xl text-white"
                 style={{ background: plan.id === 'free' ? '#243140' : '#FF6A00', fontFamily: fontFamily.body }}
                 data-testid={`cta-${plan.id}`}

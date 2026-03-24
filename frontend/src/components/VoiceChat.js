@@ -4,7 +4,7 @@ import { supabase } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
 import { 
   Mic, MicOff, Phone, PhoneOff, Video, VideoOff, 
-  MessageSquare, Volume2, VolumeX, Maximize2, Users
+  MessageSquare, Volume2, VolumeX
 } from 'lucide-react';
 
 const AI_ADVISOR_IMAGE = "/advisor-avatar.png";
@@ -25,13 +25,13 @@ const buildMemoFromTranscript = (transcriptItems, durationSec) => {
   const actionItems = extractActionItems(transcriptItems);
   const summary = transcriptItems
     .slice(-6)
-    .map((entry) => `${entry.role === 'agent' ? 'Chairman' : 'Owner'}: ${entry.text}`)
+    .map((entry) => `${entry.role === 'agent' ? 'Advisor' : 'Owner'}: ${entry.text}`)
     .join(' ')
     .slice(0, 900);
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     created_at: new Date().toISOString(),
-    title: 'Advisory Board Chairman Memo',
+    title: 'Strategic Advisor Memo',
     duration_seconds: durationSec || 0,
     summary: summary || 'Session captured. Review transcript and assign owners.',
     action_items: actionItems,
@@ -104,6 +104,8 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
 
       peerConnectionRef.current.ontrack = (event) => {
         audioElementRef.current.srcObject = event.streams[0];
+        audioElementRef.current.muted = !isSpeakerOn;
+        audioElementRef.current.volume = isSpeakerOn ? 1 : 0;
         setIsAgentSpeaking(true);
         setTimeout(() => setIsAgentSpeaking(false), 500);
       };
@@ -222,7 +224,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
       // Add initial greeting to transcript
       setTranscript([{
         role: 'agent',
-        text: 'Good to see you. I am your Advisory Board Chairman for this session. Give me the decision we need to tighten this week.',
+        text: 'Good to see you. I am your strategic advisor for this session. Tell me the decision we need to tighten this week.',
         time: new Date()
       }]);
       
@@ -329,6 +331,12 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!audioElementRef.current) return;
+    audioElementRef.current.muted = !isSpeakerOn;
+    audioElementRef.current.volume = isSpeakerOn ? 1 : 0;
+  }, [isSpeakerOn]);
+
   return (
     <div className="fixed inset-0 z-50 bg-[#1a1a2e] flex flex-col">
       {/* Top Bar */}
@@ -351,12 +359,6 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
             className={`p-2 rounded-lg transition-colors ${showTranscript ? 'bg-white/20' : 'hover:bg-white/10'}`}
           >
             <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-white/80" />
-          </button>
-          <button className="p-2 rounded-lg hover:bg-white/10 hidden sm:block">
-            <Users className="w-5 h-5 text-white/80" />
-          </button>
-          <button className="p-2 rounded-lg hover:bg-white/10 hidden sm:block">
-            <Maximize2 className="w-5 h-5 text-white/80" />
           </button>
         </div>
       </div>
@@ -405,19 +407,19 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
             
             {/* Name tag */}
             <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg">
-              <p className="text-white font-medium text-center text-sm sm:text-base">Advisory Board Chairman</p>
+              <p className="text-white font-medium text-center text-sm sm:text-base">Strategic Advisor</p>
               <p className="text-white/60 text-xs text-center">MySoundBoard</p>
             </div>
             
             {/* Audio visualizer when speaking */}
             {isAgentSpeaking && (
               <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex items-end gap-1 h-8">
-                {[...Array(5)].map((_, i) => (
+                {[8, 14, 22, 14, 8].map((baseHeight, i) => (
                   <div 
                     key={i}
                     className="w-1 bg-blue-500 rounded-full"
                     style={{
-                      height: `${Math.random() * 24 + 8}px`,
+                      height: `${baseHeight + (isAgentSpeaking ? 6 : 0)}px`,
                       animation: `audio-bar 0.5s ease-in-out infinite`,
                       animationDelay: `${i * 0.1}s`
                     }}
@@ -464,8 +466,8 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-white/20 mx-auto mb-4 sm:mb-6">
                   <img src={AI_ADVISOR_IMAGE} alt="Advisor" className="w-full h-full object-cover grayscale" />
                 </div>
-                <h2 className="text-white text-xl sm:text-2xl font-semibold mb-2">Chairman session ready</h2>
-                <p className="text-white/60 text-sm sm:text-base mb-4 sm:mb-6">Start a strategic advisory call and capture board-level notes</p>
+                <h2 className="text-white text-xl sm:text-2xl font-semibold mb-2">Advisor session ready</h2>
+                <p className="text-white/60 text-sm sm:text-base mb-4 sm:mb-6">Start a strategic call and capture practical next actions</p>
                 <Button 
                   onClick={startCall}
                   className="bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-full text-base sm:text-lg"
@@ -528,7 +530,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
               {transcript.map((item, idx) => (
                 <div key={idx} className={`${item.role === 'agent' ? 'text-blue-300' : 'text-green-300'}`}>
                   <p className="text-xs text-white/40 mb-1">
-                    {item.role === 'agent' ? 'Chairman' : 'You'}
+                    {item.role === 'agent' ? 'Advisor' : 'You'}
                   </p>
                   <p className="text-xs sm:text-sm text-white/80">{item.text}</p>
                 </div>
@@ -604,7 +606,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
         {/* Helper text */}
         <p className="text-center text-white/40 text-xs mt-2 sm:mt-3">
           {isConnected 
-            ? isMuted ? 'You are muted' : 'Speak naturally - your chairman is listening'
+            ? isMuted ? 'You are muted' : 'Speak naturally - your advisor is listening'
             : 'Click "Start Call" to begin your voice session'
           }
         </p>

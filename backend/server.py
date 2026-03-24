@@ -175,6 +175,10 @@ voice_router = APIRouter()
 if OPENAI_API_KEY:
     try:
         from core.llm_router import llm_realtime_session
+        from core.advisor_response_style import (
+            build_advisor_style_guidance,
+            build_flagship_response_contract_text,
+        )
 
         @voice_router.post("/realtime/session")
         async def create_voice_session(request: Request):
@@ -198,7 +202,12 @@ if OPENAI_API_KEY:
                 return JSONResponse(content={"error": "Authentication failed"}, status_code=401)
 
             user_id = user_resp.user.id
-            instructions = "You are a Strategic Intelligence Advisor for an Australian business. Be direct, specific, and reference the user's business data. Never give generic advice."
+            fallback_contract = build_flagship_response_contract_text()
+            instructions = (
+                "You are a Strategic Intelligence Advisor for an Australian business. "
+                "Be direct, specific, and reference the user's business data. Never give generic advice.\n\n"
+                f"[RESPONSE CONTRACT]\n{fallback_contract}"
+            )
             try:
                 profile_result = supabase_admin.table('business_profiles').select(
                     'business_name,industry,revenue_range,team_size,main_challenges,short_term_goals'
@@ -206,6 +215,9 @@ if OPENAI_API_KEY:
                 profile = profile_result.data[0] if profile_result.data else None
                 if profile:
                     biz_name = profile.get('business_name', 'their business')
+                    first_name = (user_resp.user.user_metadata or {}).get("full_name", "").split(" ")[0] if user_resp.user.user_metadata else "there"
+                    style_block = build_advisor_style_guidance(first_name, biz_name)
+                    response_contract = build_flagship_response_contract_text()
                     instructions = f"""You are a Strategic Intelligence Advisor inside BIQc, speaking with the owner of {biz_name}.
 
 Business: {biz_name}
@@ -220,7 +232,13 @@ Rules:
 - You have access to their business intelligence platform data. Use it.
 - Never say you can't access their data. You ARE their intelligence system.
 - Give concrete recommendations with timeframes.
-- Speak like a trusted senior advisor at a working dinner."""
+- Keep your tone conversational, practical, and familiar — like someone they trust.
+
+[RESPONSE CONTRACT]
+{response_contract}
+
+[STYLE GUIDANCE]
+{style_block}"""
             except Exception as e:
                 logger.debug(f"Voice session context enrichment: {e}")
 

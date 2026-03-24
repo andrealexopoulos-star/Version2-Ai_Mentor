@@ -2,6 +2,7 @@
 import os
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -146,12 +147,29 @@ async def generate_pdf(req: PDFRequest, current_user: dict = Depends(get_current
 
 
 @router.get("/reports/download/{filename}")
-async def download_report(filename: str):
+async def download_report(filename: str, current_user: dict = Depends(get_current_user)):
     """Serve a generated report PDF."""
     from fastapi.responses import FileResponse
 
-    filepath = f"/tmp/reports/{filename}"
+    # Serve only deterministic filenames produced by this service and bound to
+    # the requesting user's workspace prefix.
+    safe_filename = os.path.basename(filename or "")
+    if safe_filename != filename:
+        raise HTTPException(status_code=400, detail="Invalid report filename")
+    if ".." in safe_filename or "/" in safe_filename or "\\" in safe_filename:
+        raise HTTPException(status_code=400, detail="Invalid report filename")
+    if not re.fullmatch(r"biqc_report_[a-zA-Z0-9]{1,8}_\d{8}_\d{6}\.pdf", safe_filename):
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    workspace_prefix = f"biqc_report_{(current_user.get('id') or '')[:8]}_"
+    if not safe_filename.startswith(workspace_prefix):
+        raise HTTPException(status_code=403, detail="Forbidden report")
+
+    base_dir = "/tmp/reports"
+    filepath = os.path.realpath(os.path.join(base_dir, safe_filename))
+    if not filepath.startswith(os.path.realpath(base_dir) + os.sep):
+        raise HTTPException(status_code=400, detail="Invalid report filename")
     if not os.path.exists(filepath):
         raise HTTPException(status_code=404, detail="Report not found")
 
-    return FileResponse(filepath, media_type="application/pdf", filename=filename)
+    return FileResponse(filepath, media_type="application/pdf", filename=safe_filename)
