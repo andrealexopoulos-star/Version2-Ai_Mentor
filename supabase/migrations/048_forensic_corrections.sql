@@ -57,30 +57,45 @@ END $$;
 
 -- PROTOCOL 2: Clear contaminated intelligence fields (verified real columns)
 DO $$
+DECLARE
+  v_set_clause TEXT := '';
 BEGIN
   IF to_regclass('public.business_profiles') IS NOT NULL THEN
-    UPDATE public.business_profiles
-    SET
-      market_position           = NULL,
-      main_products_services    = NULL,
-      unique_value_proposition  = NULL,
-      competitive_advantages    = NULL,
-      target_market             = NULL,
-      ideal_customer_profile    = NULL,
-      geographic_focus          = NULL,
-      abn                       = NULL,
-      competitor_scan_result    = NULL,
-      cached_market_intel       = NULL,
-      competitor_scan_last      = NULL,
-      last_market_scraped_at    = NULL,
-      updated_at                = now()
-    WHERE user_id IN (
-      SELECT id FROM auth.users
-      WHERE email IN (
-        'trent-test1@biqc-test.com',
-        'trent-test2@biqc-test.com',
-        'trent-test3@biqc-test.com'
-      )
-    );
+    SELECT string_agg(format('%I = NULL', c.column_name), ', ')
+      INTO v_set_clause
+    FROM information_schema.columns c
+    WHERE c.table_schema = 'public'
+      AND c.table_name = 'business_profiles'
+      AND c.column_name IN (
+        'market_position',
+        'main_products_services',
+        'unique_value_proposition',
+        'competitive_advantages',
+        'target_market',
+        'ideal_customer_profile',
+        'geographic_focus',
+        'abn',
+        'competitor_scan_result',
+        'cached_market_intel',
+        'competitor_scan_last',
+        'last_market_scraped_at'
+      );
+
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'business_profiles' AND column_name = 'updated_at'
+    ) THEN
+      v_set_clause := COALESCE(v_set_clause || ', ', '') || 'updated_at = now()';
+    END IF;
+
+    IF COALESCE(v_set_clause, '') <> '' THEN
+      EXECUTE format(
+        'UPDATE public.business_profiles SET %s WHERE user_id IN (
+           SELECT id FROM auth.users
+           WHERE email IN (''trent-test1@biqc-test.com'',''trent-test2@biqc-test.com'',''trent-test3@biqc-test.com'')
+         )',
+        v_set_clause
+      );
+    END IF;
   END IF;
 END $$;
