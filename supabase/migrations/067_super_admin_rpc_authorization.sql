@@ -1,5 +1,20 @@
 -- Harden super-admin RPC authorization and audit-log visibility.
 
+CREATE TABLE IF NOT EXISTS public.users (
+    id UUID PRIMARY KEY,
+    email TEXT UNIQUE,
+    full_name TEXT,
+    role TEXT DEFAULT 'user',
+    is_master_account BOOLEAN DEFAULT false,
+    is_disabled BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE IF EXISTS public.users
+    ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user',
+    ADD COLUMN IF NOT EXISTS is_master_account BOOLEAN DEFAULT false,
+    ADD COLUMN IF NOT EXISTS is_disabled BOOLEAN DEFAULT false;
+
 ALTER TABLE IF EXISTS public.admin_actions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "superadmin_read" ON public.admin_actions;
