@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     full_name TEXT,
     subscription_tier TEXT DEFAULT 'free',
     role TEXT DEFAULT 'user',
+    is_master_account BOOLEAN DEFAULT false,
     is_disabled BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -50,6 +51,13 @@ BEGIN
             WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'role'
         ) THEN
             ALTER TABLE public.users ADD COLUMN role TEXT DEFAULT 'user';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'is_master_account'
+        ) THEN
+            ALTER TABLE public.users ADD COLUMN is_master_account BOOLEAN DEFAULT false;
         END IF;
         IF NOT EXISTS (
             SELECT 1
