@@ -10,6 +10,8 @@ env:
   BACKEND_IMAGE: biqcregistry.azurecr.io/biqc-backend
   IMAGE_TAG: ${{ github.sha }}
   BACKEND_BASE_URL: https://biqc-api.azurewebsites.net
+  FRONTEND_APP_URL: https://biqc-web.azurewebsites.net
+  PRODUCTION_URL: https://biqc.ai
   AZURE_WEBAPP_FRONTEND: biqc-web
   AZURE_WEBAPP_BACKEND: biqc-api
   AZURE_RESOURCE_GROUP: biqc-production
@@ -251,8 +253,53 @@ jobs:
 
       - name: Smoke test frontend + API routing
         run: |
-          curl --fail --silent --show-error https://biqc.ai > /tmp/frontend_home.html
+          curl --fail --silent --show-error ${{ env.PRODUCTION_URL }} > /tmp/frontend_home.html
           grep -qi "BIQc" /tmp/frontend_home.html
+
+          # First validate direct frontend app host
+          DIRECT_CAL_CODE=$(curl --silent --output /tmp/direct_calibration_route.html --write-out "%{http_code}" ${{ env.FRONTEND_APP_URL }}/calibration)
+          echo "direct frontend host /calibration HTTP ${DIRECT_CAL_CODE}"
+          if [ "$DIRECT_CAL_CODE" -ne 200 ]; then
+            echo "Expected direct frontend host to serve SPA route /calibration"
+            cat /tmp/direct_calibration_route.html
+            exit 1
+          fi
+
+          DIRECT_API_HEALTH_CODE=$(curl --silent --output /tmp/direct_api_health.json --write-out "%{http_code}" ${{ env.FRONTEND_APP_URL }}/api/health)
+          echo "direct frontend host /api/health HTTP ${DIRECT_API_HEALTH_CODE}"
+          if [ "$DIRECT_API_HEALTH_CODE" -ne 200 ]; then
+            echo "Expected direct frontend host to proxy /api/health"
+            cat /tmp/direct_api_health.json
+            exit 1
+          fi
+
+          # Then validate production domain
+          CAL_CODE=$(curl --silent --output /tmp/calibration_route.html --write-out "%{http_code}" ${{ env.PRODUCTION_URL }}/calibration)
+          echo "calibration route HTTP ${CAL_CODE}"
+          if [ "$CAL_CODE" -ne 200 ]; then
+            echo "Expected production domain to serve /calibration"
+            echo "If direct host passed above, this indicates DNS/custom-domain routing drift."
+            cat /tmp/calibration_route.html
+            exit 1
+          fi
+          grep -qi "<html" /tmp/calibration_route.html
+
+          API_FRONT_CODE=$(curl --silent --output /tmp/frontend_api_health.json --write-out "%{http_code}" ${{ env.PRODUCTION_URL }}/api/health)
+          echo "frontend-domain /api/health probe HTTP ${API_FRONT_CODE}"
+          if [ "$API_FRONT_CODE" -ne 200 ]; then
+            echo "Expected production domain to proxy /api/health"
+            echo "If direct host passed above, this indicates DNS/custom-domain routing drift."
+            cat /tmp/frontend_api_health.json
+            exit 1
+          fi
+
+          CAL_AUTH_CODE=$(curl --silent --output /tmp/cal_status_probe.json --write-out "%{http_code}" ${{ env.PRODUCTION_URL }}/api/calibration/status)
+          echo "frontend-domain /api/calibration/status probe HTTP ${CAL_AUTH_CODE}"
+          if [ "$CAL_AUTH_CODE" -ne 401 ] && [ "$CAL_AUTH_CODE" -ne 403 ]; then
+            echo "Expected auth-gated calibration status (401/403) but got ${CAL_AUTH_CODE}"
+            cat /tmp/cal_status_probe.json
+            exit 1
+          fi
 
           API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" ${{ env.BACKEND_AUTH_PROBE_URL }})
           echo "integration-status probe HTTP ${API_CODE}"
@@ -261,6 +308,16 @@ jobs:
             cat /tmp/api_probe.json
             exit 1
           fi
+
+      - name: Verify frontend custom-domain binding
+        run: |
+          HOSTNAMES=$(az webapp config hostname list \
+            --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "[].name" -o tsv)
+          echo "Frontend hostnames:"
+          echo "$HOSTNAMES"
+          echo "$HOSTNAMES" | grep -q "^biqc.ai$"
 
       # ── PERMANENT FIX: Enforce Supabase site_url after every deploy ──────
       - name: Lock Supabase site_url to production

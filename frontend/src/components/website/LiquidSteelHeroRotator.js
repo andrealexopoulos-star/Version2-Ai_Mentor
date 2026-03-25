@@ -9,7 +9,7 @@ const RichText = ({ text, style }) => {
   return (
     <span style={style}>
       {parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) return <span key={i} style={{ color: '#FF7A18', fontWeight: 500 }}>{part.slice(2, -2)}</span>;
+        if (part.startsWith('**') && part.endsWith('**')) return <span key={i} style={{ color: '#C65F2E', fontWeight: 500 }}>{part.slice(2, -2)}</span>;
         if (part.startsWith('//') && part.endsWith('//')) return <em key={i} style={{ fontStyle: 'italic' }}>{part.slice(2, -2)}</em>;
         return <span key={i}>{part}</span>;
       })}
@@ -19,16 +19,16 @@ const RichText = ({ text, style }) => {
 
 const VARIANTS = [
   {
-    h1: 'A Single **Intelligence Layer** Across All Business Systems',
-    h2: 'Unify fragmented business tools, data and departments into structured decision ready intelligence',
+    h1: 'A Single **Intelligence Layer** Across Your Entire Business',
+    h2: 'Soundboard unifies fragmented tools, teams, and data into one executive decision system.',
   },
   {
-    h1: 'Turn Disconnected Systems Into **One Intelligence Platform**',
-    h2: '//BIQc// connects your systems, detects emerging risk, and measures the real impact of leadership decisions.',
+    h1: 'Meet //BIQc Soundboard// - Your **Flagship Decision Council**',
+    h2: 'Run CEO, Finance Manager, and Marketing Manager perspectives in one live boardroom before risk compounds.',
   },
   {
-    h1: '//BIQc// - The **Intelligence Layer** Above Your Systems',
-    h2: 'Detect instability, constantly learning from every past and present to strengthen your business decisions',
+    h1: 'Turn Reactive Firefighting Into **Evidence-Led Execution**',
+    h2: 'Detect instability early, prioritize what matters now, and act with confidence.',
   },
 ];
 
@@ -143,14 +143,14 @@ export const LiquidSteelHeroRotator = () => {
       <button onClick={goPrev} data-testid="hero-prev" aria-label="Previous"
         className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200"
         style={{ zIndex: 5, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#9FB0C3', opacity: transitioning ? 0.2 : 0.4, pointerEvents: transitioning ? 'none' : 'auto' }}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.borderColor = 'rgba(255,122,24,0.3)'; e.currentTarget.style.color = '#FF7A18'; }}
+        onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.borderColor = 'rgba(198,95,46,0.3)'; e.currentTarget.style.color = '#C65F2E'; }}
         onMouseLeave={e => { e.currentTarget.style.opacity = '0.4'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#9FB0C3'; }}>
         <ChevronLeft className="w-5 h-5" />
       </button>
       <button onClick={goNext} data-testid="hero-next" aria-label="Next"
         className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200"
         style={{ zIndex: 5, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#9FB0C3', opacity: transitioning ? 0.2 : 0.4, pointerEvents: transitioning ? 'none' : 'auto' }}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.borderColor = 'rgba(255,122,24,0.3)'; e.currentTarget.style.color = '#FF7A18'; }}
+        onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.borderColor = 'rgba(198,95,46,0.3)'; e.currentTarget.style.color = '#C65F2E'; }}
         onMouseLeave={e => { e.currentTarget.style.opacity = '0.4'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#9FB0C3'; }}>
         <ChevronRight className="w-5 h-5" />
       </button>

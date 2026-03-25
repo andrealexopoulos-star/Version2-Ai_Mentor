@@ -8,6 +8,7 @@ import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import React, { useEffect } from 'react';
 import InstallPrompt from './components/InstallPrompt';
+import { apiClient } from './lib/api';
 
 // ── Auth pages ────────────────────────────────────────────────────────────────
 import LoginSupabase from "./pages/LoginSupabase";
@@ -195,11 +196,7 @@ function AppRoutes() {
   useEffect(() => {
     const warmup = async () => {
       try {
-        const sbUrl = process.env.REACT_APP_SUPABASE_URL;
-        const key = process.env.REACT_APP_SUPABASE_ANON_KEY;
-        if (sbUrl && key) {
-          fetch(`${sbUrl}/functions/v1/warm-cognitive-engine`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': key }, body: '{}' }).catch(() => {});
-        }
+        await apiClient.post('/edge/functions/warm-cognitive-engine', { payload: {} }).catch(() => {});
       } catch {}
     };
     warmup();

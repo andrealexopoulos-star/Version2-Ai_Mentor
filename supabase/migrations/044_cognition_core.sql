@@ -108,6 +108,21 @@ CREATE INDEX IF NOT EXISTS idx_outcome_checkpoints_tenant ON outcome_checkpoints
 -- Skip CREATE TABLE. Just ensure seed data is present using correct column names.
 -- Real schema: source_domain, target_domain, mechanism, base_probability, severity, time_horizon
 
+-- Fresh preview branches may not include this legacy table yet.
+CREATE TABLE IF NOT EXISTS propagation_rules (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  source_domain TEXT NOT NULL,
+  target_domain TEXT NOT NULL,
+  mechanism TEXT NOT NULL DEFAULT 'direct',
+  base_probability NUMERIC(5,2) NOT NULL DEFAULT 0.50,
+  severity TEXT NOT NULL DEFAULT 'medium',
+  time_horizon TEXT NOT NULL DEFAULT '14 days',
+  trigger_threshold NUMERIC(5,2) NOT NULL DEFAULT 0.40,
+  amplification_factor NUMERIC(5,2) NOT NULL DEFAULT 1.00,
+  dampening_factor NUMERIC(5,2) NOT NULL DEFAULT 0.00,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- Clear existing rows and re-seed with correct values
 DELETE FROM propagation_rules;
 

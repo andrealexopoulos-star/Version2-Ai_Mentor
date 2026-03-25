@@ -19,6 +19,12 @@
 -- Replaces: contradiction_engine.py
 -- ═══════════════════════════════════════════════════════════════
 
+-- Compatibility guard:
+-- Earlier migration 016 defines detect_contradictions(UUID) RETURNS JSON.
+-- We replace that implementation with RETURNS JSONB here, which requires
+-- dropping the prior signature first on fresh/preview databases.
+DROP FUNCTION IF EXISTS detect_contradictions(UUID);
+
 CREATE OR REPLACE FUNCTION detect_contradictions(p_workspace_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql

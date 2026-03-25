@@ -15,7 +15,7 @@ const PricingPage = () => (
           Multiply the Capability<br />of Your Entire Team.
         </h1>
         <p className="text-base text-[#C8D4E0] max-w-lg mx-auto mb-4" style={{ fontFamily: fontFamily.body, lineHeight: 1.7 }}>
-          BIQc enhances the judgement, clarity and execution speed of your CFO, COO and Commercial leaders.
+          BIQc enhances the judgement, clarity and execution speed of your Finance Manager, COO and Commercial leaders.
         </p>
         <p className="text-sm text-[#7A8FA3] max-w-xl mx-auto" style={{ fontFamily: fontFamily.body, lineHeight: 1.7 }}>
           Built for growth-stage businesses managing margin pressure, hiring decisions and competitive intensity. BIQc strengthens decision discipline across market, revenue and workforce.

@@ -175,7 +175,7 @@ const LoginSupabase = () => {
     } catch (error) {
       const rawMsg = error.message || '';
       if (rawMsg.includes('Supabase is not configured')) {
-        setLoginError('Add REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY to frontend/.env, then restart npm start. See the yellow box above.');
+        setLoginError('Authentication is not configured. Add required identity provider variables to frontend/.env and restart the app.');
         return;
       }
       const nextFailedAttempts = failedAttempts + 1;
@@ -251,7 +251,7 @@ const LoginSupabase = () => {
     } catch (error) {
       const msg = error?.message || '';
       if (msg.includes('Supabase is not configured')) {
-        toast.error('Configure Supabase in frontend/.env first (see yellow box above).');
+        toast.error('Configure authentication variables in frontend/.env first.');
       } else {
         toast.error(`${providerName} sign-in failed. Please try again.`);
       }
@@ -291,10 +291,21 @@ const LoginSupabase = () => {
             >
               <p className="font-semibold text-[#FBBF24] mb-1">Local setup required</p>
               <p className="text-[#FDE68A]/90 leading-relaxed">
-                OAuth and email sign-in need your Supabase project. In <code className="text-xs bg-black/30 px-1 rounded">frontend/.env</code> set{' '}
-                <code className="text-xs bg-black/30 px-1 rounded">REACT_APP_SUPABASE_URL</code> and{' '}
-                <code className="text-xs bg-black/30 px-1 rounded">REACT_APP_SUPABASE_ANON_KEY</code> (Supabase Dashboard → Settings → API). Copy from{' '}
+                OAuth and email sign-in need identity provider configuration. Add required auth variables in{' '}
+                <code className="text-xs bg-black/30 px-1 rounded">frontend/.env</code>, copy defaults from{' '}
                 <code className="text-xs bg-black/30 px-1 rounded">.env.example</code>, then restart <code className="text-xs bg-black/30 px-1 rounded">npm start</code>.
+              </p>
+            </div>
+          )}
+          {recaptchaDisabled && (
+            <div
+              className="mb-6 rounded-xl border px-4 py-3 text-sm"
+              style={{ borderColor: '#22C55E', background: 'rgba(34,197,94,0.12)', color: '#BBF7D0', fontFamily: fontFamily.body }}
+              data-testid="login-captcha-local-bypass-notice"
+            >
+              <p className="font-semibold text-[#86EFAC] mb-1">Local review mode</p>
+              <p className="text-[#DCFCE7]/90 leading-relaxed">
+                Captcha is disabled for local review via <code className="text-xs bg-black/30 px-1 rounded">REACT_APP_RECAPTCHA_DISABLED=true</code>.
               </p>
             </div>
           )}

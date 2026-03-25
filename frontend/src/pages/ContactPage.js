@@ -220,7 +220,7 @@ const ContactPage = () => {
 
               <div className={`px-6 pb-6 space-y-5 transition-all duration-300 ${infoOpen ? 'block' : 'hidden lg:block'}`}>
                 {[
-                  { label: 'Your Digital Leadership Team', desc: 'CTO, CFO, CMO, COO, CCO — deployed as AI agents working 24/7 across your business.' },
+                  { label: 'Your Digital Leadership Team', desc: 'CTO, Finance Manager, Marketing Manager, COO, CCO - deployed as AI agents working 24/7 across your business.' },
                   { label: 'Australian Sovereign', desc: 'Your data stays on Australian soil. Protected by local privacy laws. Zero foreign access.' },
                   { label: 'Not a Dashboard', desc: 'BIQc doesn\'t wait for you to ask. It monitors, detects, alerts, and acts — before problems become crises.' },
                   { label: 'Live in Minutes', desc: 'Connect one tool and BIQc begins monitoring immediately. No implementation project. No consultants.' },

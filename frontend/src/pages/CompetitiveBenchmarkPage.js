@@ -166,6 +166,7 @@ export default function CompetitiveBenchmarkPage() {
   const [data, setData] = useState(null);
   const [hasRealData, setHasRealData] = useState(false);
   const [benchmarkQueued, setBenchmarkQueued] = useState(false);
+  const [showProvenance, setShowProvenance] = useState(false);
   const autoBenchmarkTriggeredRef = useRef(false);
 
   // Req 4: Competitor comparison
@@ -260,6 +261,12 @@ export default function CompetitiveBenchmarkPage() {
         return (v != null && (minV == null || v < minV)) ? p : min;
       }, PILLARS[0]).key
     : null;
+  const benchmarkProvenance = [
+    { label: 'Scan source', value: data?.scanSource || 'Unknown' },
+    { label: 'Scan domain', value: data?.scanDomain || 'Not connected' },
+    { label: 'Last updated', value: data?.lastUpdated ? new Date(data.lastUpdated).toLocaleString('en-AU') : 'Unknown' },
+    { label: 'Evidence confidence', value: hasRealData ? 'Derived from stored benchmark signals' : 'Calibrating (insufficient evidence)' },
+  ];
 
   // Req 4: Analyze a competitor domain
   const analyzeCompetitor = async (domain, idx) => {
@@ -318,6 +325,29 @@ export default function CompetitiveBenchmarkPage() {
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
           </Button>
         </div>
+        <Card style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="benchmark-provenance-card">
+          <CardContent className="p-4">
+            <button
+              type="button"
+              onClick={() => setShowProvenance((prev) => !prev)}
+              className="w-full flex items-center justify-between text-left"
+              data-testid="benchmark-provenance-toggle"
+            >
+              <span className="text-xs uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Evidence chain</span>
+              {showProvenance ? <ChevronDown className="w-4 h-4 rotate-180" style={{ color: '#94A3B8' }} /> : <ChevronDown className="w-4 h-4" style={{ color: '#94A3B8' }} />}
+            </button>
+            {showProvenance && (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2" data-testid="benchmark-provenance-drawer">
+                {benchmarkProvenance.map((item) => (
+                  <div key={item.label} className="rounded-lg px-3 py-2" style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)' }}>
+                    <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>{item.label}</p>
+                    <p className="mt-1 text-xs" style={{ color: '#CBD5E1' }}>{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {loading ? (
           <div className="py-8"><PageLoadingState message="Loading benchmark data…" /></div>

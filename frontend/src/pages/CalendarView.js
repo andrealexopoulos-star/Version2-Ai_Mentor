@@ -1,14 +1,15 @@
-import { CognitiveMesh } from '../components/LoadingSystems';
 import { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '../context/SupabaseAuthContext';
 import { 
   Calendar as CalendarIcon, RefreshCw, Users, Clock, 
   MapPin, TrendingUp
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { PageLoadingState } from '../components/PageStateComponents';
 
 const CalendarView = () => {
   const location = useLocation();
@@ -20,6 +21,7 @@ const CalendarView = () => {
   const [loadError, setLoadError] = useState('');
   const [calendarMeta, setCalendarMeta] = useState(null);
   const [draftSaving, setDraftSaving] = useState(false);
+  const [calendarProvider, setCalendarProvider] = useState('outlook');
   const [advisorDraft, setAdvisorDraft] = useState(() => {
     let initial = location.state?.advisorFollowUp || null;
     if (!initial) {
@@ -61,7 +63,23 @@ const CalendarView = () => {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   };
   useEffect(() => {
-    syncCalendar(true);
+    const init = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          const { data: connections } = await supabase
+            .from('email_connections')
+            .select('provider,connected')
+            .eq('user_id', session.user.id)
+            .eq('connected', true);
+          const providers = (connections || []).map((row) => row.provider);
+          if (providers.includes('outlook')) setCalendarProvider('outlook');
+          else if (providers.includes('gmail')) setCalendarProvider('gmail');
+        }
+      } catch {}
+      syncCalendar(true);
+    };
+    init();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchCalendarData = async () => {
@@ -69,8 +87,10 @@ const CalendarView = () => {
       setLoading(true);
       setLoadError('');
       const [eventsRes, intelRes] = await Promise.all([
-        apiClient.get('/outlook/calendar/events?days_back=0&days_ahead=30'),
-        apiClient.get('/outlook/intelligence').catch(() => ({ data: {} })),
+        apiClient.get('/email/calendar/events?days_back=0&days_ahead=30'),
+        calendarProvider === 'outlook'
+          ? apiClient.get('/outlook/intelligence').catch(() => ({ data: {} }))
+          : Promise.resolve({ data: { message: 'Gmail intelligence calibration in progress.' } }),
       ]);
       setEvents(eventsRes.data?.events || []);
       setCalendarMeta({
@@ -90,7 +110,7 @@ const CalendarView = () => {
     try {
       setSyncing(true);
       if (!silent) toast.info('Syncing calendar...');
-      const response = await apiClient.post('/outlook/calendar/sync');
+      const response = await apiClient.post(`/email/calendar/sync?provider=${encodeURIComponent(calendarProvider || 'outlook')}`);
       if (!silent) toast.success(`Calendar synced: ${response.data.events_synced} events`);
       if (response?.data?.synced_at || response?.data?.date_range) {
         setCalendarMeta((prev) => ({
@@ -104,7 +124,7 @@ const CalendarView = () => {
     } catch (error) {
       if (!silent) {
         if (error.response?.data?.detail?.includes('not connected')) {
-          toast.error('Please connect your Outlook account first in Integrations');
+          toast.error(`Please connect your ${calendarProvider === 'gmail' ? 'Gmail' : 'Outlook'} account first in Integrations`);
         } else {
           toast.error('Failed to sync calendar: ' + (error.response?.data?.detail || error.message));
         }
@@ -151,6 +171,34 @@ const CalendarView = () => {
     || calendarIntel?.insights
     || calendarIntel?.brief
     || null;
+  const formatIntelligenceSummary = (value) => {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => (typeof item === 'string' ? item : JSON.stringify(item)))
+        .filter(Boolean)
+        .join(' • ');
+    }
+    if (typeof value === 'object') {
+      if (typeof value.summary === 'string') return value.summary;
+      return Object.entries(value)
+        .slice(0, 4)
+        .map(([key, item]) => `${key}: ${typeof item === 'string' ? item : JSON.stringify(item)}`)
+        .join(' • ');
+    }
+    return String(value);
+  };
+  const intelligenceSummaryText = formatIntelligenceSummary(intelligenceSummary);
+  const syncBadge = syncing
+    ? { label: 'Syncing', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' }
+    : loading
+      ? { label: 'Loading', color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' }
+      : loadError
+        ? { label: 'Degraded', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' }
+        : upcomingEvents.length > 0
+          ? { label: 'Synced', color: '#10B981', bg: 'rgba(16,185,129,0.12)' }
+          : { label: 'No events', color: '#94A3B8', bg: 'rgba(148,163,184,0.12)' };
 
   const createDraftEvent = async () => {
     if (!advisorDraft) return;
@@ -246,14 +294,14 @@ const CalendarView = () => {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <CalendarIcon className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
-              <span className="badge badge-primary">
+              <span className="badge badge-primary" style={{ background: syncBadge.bg, color: syncBadge.color }}>
                 <TrendingUp className="w-3 h-3" />
-                Synced
+                {syncBadge.label}
               </span>
             </div>
             <h1 style={{ color: 'var(--text-primary)' }}>Calendar Intelligence</h1>
             <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
-              Your schedule synced for AI-powered insights
+              {loadError ? 'Calendar data has partial issues. Review status and retry sync if needed.' : `Your ${calendarProvider === 'gmail' ? 'Gmail' : 'Outlook'} schedule synced for AI-powered insights`}
             </p>
           </div>
           
@@ -347,10 +395,7 @@ const CalendarView = () => {
 
         {/* Events List */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <CognitiveMesh compact />
-            <p style={{ color: 'var(--text-muted)' }}>Loading calendar...</p>
-          </div>
+          <PageLoadingState message="Loading calendar..." />
         ) : loadError && upcomingEvents.length === 0 ? (
           <div
             className="text-center py-16 rounded-2xl"
@@ -382,7 +427,7 @@ const CalendarView = () => {
               No Calendar Events
             </h3>
             <p className="mb-6 max-w-md mx-auto" style={{ color: 'var(--text-muted)' }}>
-              Sync your Outlook calendar to see your upcoming meetings and let AI understand your schedule.
+              Sync your {calendarProvider === 'gmail' ? 'Gmail' : 'Outlook'} calendar to see upcoming meetings and let BIQc reason over your schedule.
             </p>
             <Button onClick={syncCalendar} disabled={syncing} className="btn-primary">
               <RefreshCw className="w-4 h-4 mr-2" />
@@ -390,6 +435,14 @@ const CalendarView = () => {
             </Button>
           </div>
         ) : (
+          <>
+          {loadError && (
+            <div className="rounded-xl border px-4 py-3" style={{ background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.3)' }} data-testid="calendar-partial-error">
+              <p className="text-sm" style={{ color: '#FCA5A5' }}>
+                Calendar intelligence is partially degraded: {loadError}
+              </p>
+            </div>
+          )}
           <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(300px,0.75fr)]" data-testid="calendar-command-grid">
             <div className="space-y-6">
               {sortedDateKeys.map((date) => {
@@ -509,12 +562,13 @@ const CalendarView = () => {
                 <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }} data-testid="calendar-intelligence-summary">
                   <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Calendar intelligence</p>
                   <p className="mt-3 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
-                    {typeof intelligenceSummary === 'string' ? intelligenceSummary : JSON.stringify(intelligenceSummary)}
+                    {intelligenceSummaryText || 'No summary available.'}
                   </p>
                 </div>
               )}
             </div>
           </div>
+          </>
         )}
       </div>
     </DashboardLayout>

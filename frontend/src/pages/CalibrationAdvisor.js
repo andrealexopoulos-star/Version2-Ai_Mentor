@@ -114,14 +114,17 @@ const CalibrationAdvisor = () => {
       {cal.entry === "welcome" && (
         <WelcomeHandshake firstName={cal.firstName} websiteUrl={cal.websiteUrl} setWebsiteUrl={cal.setWebsiteUrl}
           onSubmit={cal.handleAuditSubmit} onManualFallback={() => cal.setEntry("manual_summary")}
-          isSubmitting={cal.isSubmitting} error={cal.error} initialPhase="scan" />
+          isSubmitting={cal.isSubmitting} error={cal.error} initialPhase="scan"
+          scanFailure={cal.scanFailure}
+          scanAttemptCount={cal.scanAttemptCount}
+          canManualFallback={cal.canManualFallback} />
       )}
 
       {cal.entry === "manual_summary" && (
         <ManualSummaryFallback firstName={cal.firstName} onSubmit={cal.handleManualSummary} isSubmitting={cal.isSubmitting} />
       )}
 
-      {cal.entry === "analyzing" && <AuditProgress onManualFallback={() => cal.setEntry('manual_summary')} />}
+      {cal.entry === "analyzing" && <AuditProgress />}
 
       {/* ═══ PHASE 3: Forensic Identity Verification (BEFORE footprint report) ═══ */}
       {cal.entry === "identity_verification" && cal.identitySignals && (
@@ -133,6 +136,21 @@ const CalibrationAdvisor = () => {
           onReject={cal.handleRejectIdentity}
           isRegenerating={cal.isRegenerating}
           onAbnLookup={cal.handleAbnLookup}
+        />
+      )}
+      {cal.entry === "identity_verification" && !cal.identitySignals && (
+        <WelcomeHandshake
+          firstName={cal.firstName}
+          websiteUrl={cal.websiteUrl}
+          setWebsiteUrl={cal.setWebsiteUrl}
+          onSubmit={cal.handleAuditSubmit}
+          onManualFallback={() => cal.setEntry("manual_summary")}
+          isSubmitting={cal.isSubmitting}
+          error={cal.error || "Scan data was incomplete. Check your website details and regenerate the scan."}
+          initialPhase="scan"
+          scanFailure={cal.scanFailure}
+          scanAttemptCount={cal.scanAttemptCount}
+          canManualFallback={cal.canManualFallback}
         />
       )}
 

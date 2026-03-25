@@ -42,6 +42,16 @@ def _first_env(*names: str) -> str:
             return value
     return ""
 
+
+def _is_production_env() -> bool:
+    env = (os.environ.get("ENVIRONMENT") or "").strip().lower()
+    prod_flag = (os.environ.get("PRODUCTION") or "").strip().lower()
+    return env == "production" or prod_flag in {"1", "true", "yes"}
+
+
+def _is_truthy_env(name: str) -> bool:
+    return (os.environ.get(name) or "").strip().lower() in {"1", "true", "yes", "on"}
+
 @router.post("/auth/supabase/signup")
 async def supabase_signup(request: SignUpRequest):
     """
@@ -49,11 +59,23 @@ async def supabase_signup(request: SignUpRequest):
     """
     return await signup_with_email(request)
 
+
+@router.post("/auth/signup")
+async def signup_alias(request: SignUpRequest):
+    """Neutral alias for signup endpoint."""
+    return await signup_with_email(request)
+
 @router.post("/auth/supabase/login")
 async def supabase_login(request: SignInRequest):
     """
     New Supabase-based login endpoint
     """
+    return await signin_with_email(request)
+
+
+@router.post("/auth/login")
+async def login_alias(request: SignInRequest):
+    """Neutral alias for login endpoint."""
     return await signin_with_email(request)
 
 
@@ -67,8 +89,18 @@ class RecaptchaVerifyRequest(BaseModel):
 @router.post("/auth/recaptcha/verify")
 async def verify_recaptcha(request: RecaptchaVerifyRequest):
     """Verify Google reCAPTCHA token server-side (standard + enterprise)."""
-    # Temporary platform-wide kill switch: captcha disabled until further notice.
-    return {"ok": True, "skipped": True, "reason": "captcha_temporarily_disabled"}
+    # Local/dev bypass only. Never bypass in production.
+    # Supported flags:
+    # - RECAPTCHA_DEV_BYPASS=true
+    # - CAPTCHA_DEV_BYPASS=true
+    # - RECAPTCHA_BYPASS=true
+    if not _is_production_env():
+        if (
+            _is_truthy_env("RECAPTCHA_DEV_BYPASS")
+            or _is_truthy_env("CAPTCHA_DEV_BYPASS")
+            or _is_truthy_env("RECAPTCHA_BYPASS")
+        ):
+            return {"ok": True, "skipped": True, "reason": "captcha_dev_bypass"}
 
     provider = _first_env(
         "RECAPTCHA_PROVIDER",
@@ -164,8 +196,7 @@ async def verify_recaptcha(request: RecaptchaVerifyRequest):
         return {"ok": True, "provider": "enterprise", "score": score, "action": returned_action or None}
 
     if not secret:
-        env = (os.environ.get("ENVIRONMENT") or "").strip().lower()
-        is_production = env == "production" or (os.environ.get("PRODUCTION") or "").strip().lower() in {"1", "true", "yes"}
+        is_production = _is_production_env()
         if is_production:
             raise HTTPException(status_code=503, detail="Captcha verification unavailable")
         return {"ok": True, "skipped": True, "reason": "recaptcha_secret_not_configured"}
@@ -209,13 +240,29 @@ async def supabase_oauth(provider: str, redirect_to: Optional[str] = None):
     """
     return await get_oauth_url(provider, redirect_to)
 
+
+@router.get("/auth/oauth/{provider}")
+async def oauth_alias(provider: str, redirect_to: Optional[str] = None):
+    """Neutral alias for OAuth URL endpoint."""
+    return await get_oauth_url(provider, redirect_to)
+
 @router.get("/auth/supabase/me")
 async def supabase_get_me(current_user: dict = Depends(get_current_user)):
     """Get current authenticated user (Supabase version). Resilient to upstream failures."""
     try:
-        return {"user": current_user, "message": "Authenticated via Supabase"}
+        return {"user": current_user, "message": "Authenticated"}
     except Exception as e:
         logger.error(f"[auth/me] Unexpected error: {e}")
+        return {"user": {"id": current_user.get("id", ""), "email": current_user.get("email", ""), "role": "user"}, "message": "Partial profile"}
+
+
+@router.get("/auth/me")
+async def get_me_alias(current_user: dict = Depends(get_current_user)):
+    """Neutral alias for current user endpoint."""
+    try:
+        return {"user": current_user, "message": "Authenticated"}
+    except Exception as e:
+        logger.error(f"[auth/me alias] Unexpected error: {e}")
         return {"user": {"id": current_user.get("id", ""), "email": current_user.get("email", ""), "role": "user"}, "message": "Partial profile"}
 
 @router.get("/auth/check-profile")

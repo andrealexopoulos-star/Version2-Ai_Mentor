@@ -19,7 +19,7 @@ export const DEV_BYPASS_SECRET =
 export const isDevBypassAuth = () => devBypassAuth;
 
 export const SUPABASE_SETUP_MESSAGE =
-  'Supabase is not configured. In the frontend folder, copy .env.example to .env and set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY from your Supabase project (Settings → API). Restart npm start, then sign in again.';
+  'Authentication is not configured. In the frontend folder, copy .env.example to .env, set your identity provider variables, then restart the app.';
 
 export const AUTH_STATE = {
   LOADING: 'LOADING',
@@ -287,7 +287,7 @@ export const SupabaseAuthProvider = ({ children }) => {
       // Then enrich from users table (authoritative source for role, subscription_tier)
       if (existingSession?.access_token) {
         try {
-          const res = await fetch(`${getBackendUrl()}/api/auth/supabase/me`, {
+          const res = await fetch(`${getBackendUrl()}/api/auth/me`, {
             headers: { 'Authorization': `Bearer ${existingSession.access_token}`, 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
           });
           if (res.ok) {
@@ -331,7 +331,7 @@ export const SupabaseAuthProvider = ({ children }) => {
       throw new Error(SUPABASE_SETUP_MESSAGE);
     }
     clearClientAuthCachesForFreshLogin();
-    const response = await fetch(`${getBackendUrl()}/api/auth/supabase/login`, {
+    const response = await fetch(`${getBackendUrl()}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -514,17 +514,17 @@ export const SupabaseAuthProvider = ({ children }) => {
               const retryCal = await retryRes.json();
               calibrationComplete = retryCal.status === 'COMPLETE';
             } else {
-              // fail-open: auth propagation race or transient backend auth issue
-              calibrationComplete = true;
+              // fail-closed: do not bypass calibration when status cannot be validated
+              calibrationComplete = false;
             }
           } else {
             console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status}`);
-            // fail-open: if calibration status is temporarily unavailable, continue to READY.
-            calibrationComplete = true;
+            // fail-closed: if calibration status is unavailable, require calibration path.
+            calibrationComplete = false;
           }
         } catch (e) {
-          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → fail-open to READY`);
-          calibrationComplete = true;
+          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → fail-closed to calibration`);
+          calibrationComplete = false;
         }
 
         if (cancelled) return;

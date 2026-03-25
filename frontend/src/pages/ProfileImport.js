@@ -248,7 +248,7 @@ const ProfileImport = () => {
                 <Input
                   value={profileData.website}
                   onChange={(e) => updateField('website', e.target.value)}
-                  placeholder="www.thestrategysquad.com"
+                  placeholder="www.yourcompany.com"
                   className="mt-2"
                 />
               </div>

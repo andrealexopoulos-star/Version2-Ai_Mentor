@@ -133,7 +133,7 @@ const ForensicAuditPage = () => {
               Enter any public business URL and BIQc will analyse how cleanly data can be extracted from it. Use this to verify your own website or a competitor's page before connecting it as a data source.
             </p>
             <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
-              Example valid URLs: thestrategysquad.com.au • hubspot.com/about • xero.com/au
+              Example valid URLs: yourcompany.com • hubspot.com/about • xero.com/au
             </p>
           </div>
         </div>
