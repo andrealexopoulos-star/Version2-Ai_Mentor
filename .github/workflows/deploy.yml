@@ -312,7 +312,7 @@ jobs:
       - name: Verify frontend custom-domain binding
         run: |
           HOSTNAMES=$(az webapp config hostname list \
-            --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
+            --webapp-name ${{ env.AZURE_WEBAPP_FRONTEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --query "[].name" -o tsv)
           echo "Frontend hostnames:"
