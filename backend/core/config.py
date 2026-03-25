@@ -40,6 +40,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024
 
 RATE_LIMIT_RULES = {
     "/api/auth/supabase/login": {"window": 300, "limit": 5, "detail": "Too many login attempts. Please wait a few minutes before trying again."},
+    "/api/auth/login": {"window": 300, "limit": 5, "detail": "Too many login attempts. Please wait a few minutes before trying again."},
     "/api/soundboard/chat": {"window": 300, "limit": 120, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
     "/api/boardroom/respond": {"window": 300, "limit": 20, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
     "/api/voice/war-room/start": {"window": 300, "limit": 10, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
@@ -51,7 +52,7 @@ RATE_LIMIT_BUCKETS = defaultdict(deque)
 RATE_LIMIT_LOCK = Lock()
 # Admin inbox for operational alerts (waitlist / contact form, etc.)
 BIQC_ADMIN_NOTIFICATION_EMAIL = (
-    os.environ.get("BIQC_ADMIN_NOTIFICATION_EMAIL") or "andre@thestrategysquad.com.au"
+    os.environ.get("BIQC_ADMIN_NOTIFICATION_EMAIL") or "ops@biqc.ai"
 ).strip()
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 RESEND_FROM_EMAIL = (

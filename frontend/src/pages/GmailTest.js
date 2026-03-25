@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { callEdgeFunction } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -26,44 +27,10 @@ const GmailTest = () => {
     try {
       // console.log('=== TESTING GMAIL CONNECTION ===');
       
-      // Get current Supabase session token
-      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        supabaseUrl,
-        process.env.REACT_APP_SUPABASE_ANON_KEY
-      );
-
-      const { data: { session } } = await supabase.auth.getSession();
+      const data = await callEdgeFunction('gmail_prod', {});
       
-      if (!session?.access_token) {
-        toast.error('No active session found');
-        setLoading(false);
-        return;
-      }
-
-      // console.log('✅ Session token retrieved');
-      // console.log('📧 Calling Edge Function: gmail_test');
-
-      // Call the Edge Function
-      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/gmail_prod`;
-      // console.log('Edge Function URL:', edgeFunctionUrl);
-
-      const response = await fetch(edgeFunctionUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      
-      // console.log('📥 Edge Function Response:', data);
-      // console.log('Status:', response.status);
-
       setRawResponse({
-        status: response.status,
+        status: data?.ok ? 200 : 400,
         data: data,
       });
 
@@ -103,7 +70,7 @@ const GmailTest = () => {
             Gmail Connection Test
           </h1>
           <p style={{ color: 'var(--text-secondary)' }}>
-            Test the Supabase Edge Function that connects to Gmail API
+            Test the Gmail connector service that verifies mailbox access
           </p>
         </div>
 
@@ -118,11 +85,11 @@ const GmailTest = () => {
           <CardContent>
             <div className="space-y-4">
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                This will call the <code className="px-2 py-1 bg-gray-100 rounded">gmail_test</code> Edge Function
+                This will call the <code className="px-2 py-1 bg-gray-100 rounded">gmail_prod</code> connector endpoint
                 which will:
               </p>
               <ul className="text-sm space-y-2 ml-6 list-disc" style={{ color: 'var(--text-secondary)' }}>
-                <li>Verify your Supabase authentication</li>
+                <li>Verify your authenticated session</li>
                 <li>Extract Google OAuth tokens from your identity</li>
                 <li>Call Gmail API to fetch your labels</li>
                 <li>Store tokens in the database</li>

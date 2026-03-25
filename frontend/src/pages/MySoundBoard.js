@@ -38,14 +38,14 @@ const buildBoardroomChecks = (connectedSources = [], evidenceSources = []) => {
       ? { role: 'CEO', line: 'Checking CRM pipeline momentum and stalled deals...' }
       : { role: 'COO', line: 'Checking execution cadence from available business signals...' },
     hasAccounting
-      ? { role: 'CFO', line: 'Checking overdue invoices, cash timing, and runway...' }
-      : { role: 'CFO', line: 'Checking cash risk assumptions from calibration and activity patterns...' },
+      ? { role: 'Finance Manager', line: 'Checking overdue invoices, cash timing, and runway...' }
+      : { role: 'Finance Manager', line: 'Checking cash risk assumptions from calibration and activity patterns...' },
     hasEmail
       ? { role: 'COO', line: 'Checking inbox response lag and escalation patterns...' }
       : { role: 'HR', line: 'Checking team load and decision bottlenecks from current evidence...' },
   ];
   if (hasMarket) {
-    steps.push({ role: 'CMO', line: 'Checking Google Ads and market demand signals...' });
+    steps.push({ role: 'Marketing Manager', line: 'Checking Google Ads and market demand signals...' });
   }
   steps.push({ role: 'CCO', line: 'Aligning boardroom views into one clear recommendation...' });
   return steps;
@@ -158,7 +158,7 @@ const MySoundBoard = () => {
 
   const BIQC_AGENTS = [
     { id: 'auto', label: 'Auto', shortDesc: 'Pick specialist by question', icon: '⚡' },
-    { id: 'boardroom', label: 'Boardroom', shortDesc: 'CEO/CFO/COO/CTO/HR/CCO council', icon: '🏛️' },
+    { id: 'boardroom', label: 'Boardroom', shortDesc: 'CEO/Finance/Marketing/Ops/Risk council', icon: '🏛️' },
     { id: 'general', label: 'Strategic Advisor', shortDesc: 'Full picture & priorities', icon: '◎' },
     { id: 'finance', label: 'Finance', shortDesc: 'Cash, revenue, margins', icon: '💰' },
     { id: 'sales', label: 'Sales', shortDesc: 'Pipeline & deals', icon: '📊' },

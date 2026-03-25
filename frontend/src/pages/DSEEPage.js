@@ -45,7 +45,7 @@ const DSEEPage = () => {
           </p>
           <div className="p-3 rounded-lg" style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.12)' }}>
             <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
-              Enter your business website URL to run a structural scan. Example: <span style={{ color: '#FF6A00' }}>thestrategysquad.com.au</span>
+              Enter your business website URL to run a structural scan. Example: <span style={{ color: '#FF6A00' }}>yourcompany.com</span>
               &nbsp;•&nbsp; Results include: business classification, competitor mapping, digital density, and strategic exposure points.
             </p>
           </div>

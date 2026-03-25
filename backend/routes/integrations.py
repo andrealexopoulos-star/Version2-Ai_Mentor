@@ -41,6 +41,112 @@ from biqc_jobs import enqueue_job
 from tier_resolver import resolve_tier
 
 router = APIRouter()
+EDGE_PROXY_ALLOWLIST = {
+    "biqc-insights-cognitive",
+    "calibration-psych",
+    "calibration-sync",
+    "calibration-business-dna",
+    "scrape-business-profile",
+    "business-identity-lookup",
+    "query-integrations-data",
+    "checkin-manager",
+    "warm-cognitive-engine",
+    "gmail_prod",
+}
+
+
+class EdgeProxyRequest(BaseModel):
+    payload: Dict[str, Any] = {}
+
+
+@router.post("/edge/functions/{function_name}")
+async def proxy_edge_function(
+    function_name: str,
+    request: Request,
+    body: EdgeProxyRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Proxy selected edge functions to avoid exposing provider URLs to clients."""
+    name = (function_name or "").strip()
+    if name not in EDGE_PROXY_ALLOWLIST:
+        raise HTTPException(status_code=403, detail="Edge function not allowed")
+
+    supabase_url = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
+    if not supabase_url:
+        raise HTTPException(status_code=503, detail="Edge proxy unavailable")
+    anon_key = (os.environ.get("SUPABASE_ANON_KEY") or "").strip()
+    if not anon_key:
+        raise HTTPException(status_code=503, detail="Edge proxy unavailable")
+
+    inbound_auth = request.headers.get("authorization") or ""
+    if not inbound_auth.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+
+    endpoint = f"{supabase_url}/functions/v1/{name}"
+    try:
+        async with httpx.AsyncClient(timeout=45) as client:
+            edge_res = await client.post(
+                endpoint,
+                json=body.payload or {},
+                headers={
+                    "Authorization": inbound_auth,
+                    "apikey": anon_key,
+                    "Content-Type": "application/json",
+                },
+            )
+        content_type = edge_res.headers.get("content-type", "")
+        if "application/json" in content_type:
+            try:
+                payload = edge_res.json()
+            except Exception:
+                payload = {
+                    "code": "EDGE_INVALID_PAYLOAD",
+                    "error": "Invalid edge response payload",
+                    "stage": "proxy",
+                }
+        else:
+            payload = {
+                "code": "EDGE_NON_JSON_RESPONSE",
+                "error": edge_res.text[:500] if edge_res.text else "Edge function request failed",
+                "stage": "proxy",
+            }
+
+        if edge_res.status_code >= 400 and isinstance(payload, dict):
+            payload.setdefault("code", "EDGE_FUNCTION_FAILED")
+            payload.setdefault("stage", "edge_function")
+            payload.setdefault("error", payload.get("detail") or "Edge function request failed")
+
+        return JSONResponse(status_code=edge_res.status_code, content=payload)
+    except HTTPException:
+        raise
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=504,
+            detail={
+                "code": "EDGE_FUNCTION_TIMEOUT",
+                "error": "Edge function timed out",
+                "stage": "proxy",
+            },
+        )
+    except httpx.HTTPError:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "code": "EDGE_FUNCTION_UNAVAILABLE",
+                "error": "Edge function unavailable",
+                "stage": "proxy",
+            },
+        )
+    except Exception as exc:
+        logger.warning(f"[edge-proxy] {name} failed for user {current_user.get('id')}: {exc}")
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "code": "EDGE_PROXY_FAILURE",
+                "error": "Edge function unavailable",
+                "stage": "proxy",
+            },
+        )
 
 
 def _connected_integration_count(user_id: str) -> int:
@@ -2008,7 +2114,8 @@ async def get_advisor_executive_surface(current_user: dict = Depends(get_current
     """
     user_id = current_user["id"]
     user_email = str(current_user.get("email") or "").strip().lower()
-    is_founder_ops_account = user_email == "andre@thestrategysquad.com.au"
+    founder_email = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "").strip().lower()
+    is_founder_ops_account = bool(founder_email and user_email == founder_email)
 
     def _parse_dt(value: Optional[str]) -> Optional[datetime]:
         if not value:

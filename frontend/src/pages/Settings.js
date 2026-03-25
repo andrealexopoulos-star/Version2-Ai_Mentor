@@ -16,9 +16,6 @@ import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
 import { supabase } from '../context/SupabaseAuthContext';
 import { invalidateTutorialCache } from '../components/TutorialOverlay';
-
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 const sectionResizeStyle = { resize: 'horizontal', overflow: 'auto', minWidth: '320px', maxWidth: '100%' };
 
 const Settings = () => {

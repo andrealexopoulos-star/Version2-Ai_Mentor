@@ -51,20 +51,10 @@ export const getApiBaseUrl = () => {
 };
 
 /**
- * Get OAuth redirect URL for Supabase authentication
+ * Get OAuth redirect URL for authentication callback.
  */
 export const getOAuthRedirectUrl = () => {
   return `${getAppBaseUrl()}/auth/callback`;
-};
-
-/**
- * Get Supabase configuration
- */
-export const getSupabaseConfig = () => {
-  return {
-    url: process.env.REACT_APP_SUPABASE_URL,
-    anonKey: process.env.REACT_APP_SUPABASE_ANON_KEY
-  };
 };
 
 /**
@@ -99,7 +89,6 @@ export const URL_CONFIG = {
   get BACKEND() { return getBackendUrl(); },
   get API() { return getApiBaseUrl(); },
   get OAUTH_REDIRECT() { return getOAuthRedirectUrl(); },
-  get SUPABASE() { return getSupabaseConfig(); },
 };
 
 export default URL_CONFIG;

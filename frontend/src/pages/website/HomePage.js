@@ -1,11 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
-import { LiquidSteelHeroRotator } from '../../components/website/LiquidSteelHeroRotator';
-import { IntegrationCarousel } from '../../components/website/IntegrationCarousel';
+import HeroExperienceTabs from '../../components/website/HeroExperienceTabs';
+import ModernIntegrationBanner from '../../components/website/ModernIntegrationBanner';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
-import { HowItWorks } from '../../components/website/HowItWorks';
-import { CheckCircle2, Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle } from 'lucide-react';
+import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
 
@@ -15,8 +14,6 @@ const GlassCard = ({ children, className = '' }) => (
     {children}
   </div>
 );
-
-const DIAMOND_PATTERN = `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cpath d='M40 4L76 40L40 76L4 40z' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E")`;
 
 /* ── Stat card — orange-bordered rounded card like Intelligence Diagram ─── */
 const StatCard = ({ stat, body, biqc }) => (
@@ -75,10 +72,7 @@ const HomePage = () => (
     {/* ══════════════════════════════════════
         HERO — above the fold
     ══════════════════════════════════════ */}
-    <section className="relative overflow-hidden" style={{ minHeight: '100vh', background: '#070E18' }} data-testid="hero-section">
-
-      {/* Diamond grid background */}
-      <div className="absolute inset-0" style={{ backgroundImage: DIAMOND_PATTERN, backgroundSize: '80px 80px', zIndex: 1 }} />
+    <section className="relative overflow-hidden" style={{ minHeight: '80vh', background: '#081423' }} data-testid="hero-section">
 
       {/* Centre spotlight glow */}
       <div className="absolute inset-0" style={{
@@ -86,106 +80,106 @@ const HomePage = () => (
         zIndex: 2,
       }} />
 
-      {/* Content — centred column */}
-      <div className="relative flex flex-col items-center text-center px-5 sm:px-8"
-        style={{ minHeight: '100vh', zIndex: 3, paddingTop: 72, paddingBottom: 64 }}>
+      {/* Content — split hero */}
+      <div className="relative w-full max-w-[1500px] mx-auto px-6 sm:px-10 lg:px-14"
+        style={{ minHeight: '80vh', zIndex: 3, paddingTop: 66, paddingBottom: 20 }}>
+        <div className="grid gap-10 lg:gap-14 lg:grid-cols-[1.12fr_0.88fr] items-center">
+          <div className="text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6"
+              style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
+              <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#FF7A18', opacity: 0.8 }} />
+              <span className="text-xs font-medium tracking-widest uppercase"
+                style={{ fontFamily: fontFamily.mono, color: '#FF7A18', opacity: 0.8 }}>
+                Australian Owned &amp; Operated
+              </span>
+            </div>
 
-        {/* ── Australian Shield — subtle pill above headline ── */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-3"
-          style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
-          <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#FF7A18', opacity: 0.8 }} />
-          <span className="text-xs font-medium tracking-widest uppercase"
-            style={{ fontFamily: fontFamily.mono, color: '#FF7A18', opacity: 0.8 }}>
-            Australian Owned &amp; Operated
-          </span>
-        </div>
+            <h1
+              className="text-[32px] sm:text-[46px] lg:text-[60px] leading-[1.06] tracking-tight"
+              style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}
+            >
+              One intelligence layer for every
+              <br />
+              <span style={{ color: '#C65F2E' }}>decision that matters.</span>
+            </h1>
+            <p className="mt-5 text-base sm:text-lg max-w-2xl leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+              BIQc brings your business systems into one live Intelligence Platform. Helping owners and leaders make faster decisions, evaluate trade-offs clearly, and execute with confidence in realtime.
+            </p>
 
-        {/* ── Headline ── */}
-        <div className="w-full max-w-5xl mx-auto mb-5">
-          <LiquidSteelHeroRotator />
-        </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-7 mb-3 w-full max-w-sm sm:max-w-none">
+              <Link to="/register-supabase"
+                className="w-full sm:w-auto px-10 py-3.5 rounded-xl text-sm font-semibold text-white text-center transition-all hover:brightness-110"
+                style={{ background: 'linear-gradient(135deg, #C65F2E, #A64F26)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 6px 24px rgba(198,95,46,0.28)', minWidth: 180 }}
+                data-testid="hero-cta">
+                Start Free Trial
+              </Link>
+              <Link to="/platform"
+                className="w-full sm:w-auto px-10 py-3.5 rounded-xl text-sm font-semibold text-white text-center transition-all hover:bg-white/5"
+                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.22)', fontFamily: fontFamily.body, fontWeight: 600, minWidth: 180 }}
+                data-testid="hero-learn-more">
+                See How It Works
+              </Link>
+            </div>
 
-        {/* ── Two CTAs — side by side on desktop, stacked on mobile ── */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-3 w-full max-w-sm sm:max-w-none mx-auto">
-          <Link to="/register-supabase"
-            className="w-full sm:w-auto px-10 py-3.5 rounded-xl text-sm font-semibold text-white text-center transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 6px 24px rgba(255,122,24,0.28)', minWidth: 180 }}
-            data-testid="hero-cta">
-            Try It For Free
-          </Link>
-          <Link to="/platform"
-            className="w-full sm:w-auto px-10 py-3.5 rounded-xl text-sm font-semibold text-white text-center transition-all hover:bg-white/5"
-            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.22)', fontFamily: fontFamily.body, fontWeight: 600, minWidth: 180 }}
-            data-testid="hero-learn-more">
-            Learn More
-          </Link>
-        </div>
+            <p className="text-xs mb-4" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+              Already have an account?{' '}
+              <Link to="/login-supabase" className="font-semibold text-white hover:text-[#C65F2E] transition-colors" data-testid="hero-login">Log in</Link>
+              <span style={{ opacity: 0.4 }}> &middot; </span>
+              <span style={{ opacity: 0.8 }}>No credit card required</span>
+            </p>
 
-        {/* Login link */}
-        <p className="text-xs mb-5 text-center" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
-          Already have an account?{' '}
-          <Link to="/login-supabase" className="font-semibold text-white hover:text-[#FF7A18] transition-colors" data-testid="hero-login">Log in</Link>
-        </p>
-
-        {/* ── Protect / Stabilise / Strengthen ── */}
-        <div className="flex flex-col items-center gap-2 mb-16">
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-            {['Protect', 'Stabilise', 'Strengthen'].map(word => (
-              <div key={word} className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: '#FF7A18' }} />
-                <span className="text-base sm:text-lg font-semibold" style={{ fontFamily: fontFamily.body, color: '#E6EEF7' }}>{word}</span>
-              </div>
-            ))}
           </div>
-          <p className="text-xs text-center mt-1" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.4 }}>
-            No credit card required &middot; Australian owned &amp; operated
-          </p>
-        </div>
 
-        {/* ════════════════════════════════════
-            AI ERA SECTION — sits at the fold
-        ════════════════════════════════════ */}
-
-        {/* Section heading */}
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 mt-6"
-          style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
-          What Businesses Are Achieving In The AI Era
-        </h2>
-
-        {/* Intro paragraph — under heading */}
-        <p className="text-base sm:text-lg mb-10 max-w-2xl mx-auto leading-relaxed"
-          style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
-          Business leaders make hundreds of decisions every day, and research shows up to{' '}
-          <span style={{ color: '#FF7A18', fontWeight: 600 }}>40%</span> of those decisions are made without the right data.
-        </p>
-
-        {/* ── Stat cards — 3-col grid with shadow/glow ── */}
-        <div className="w-full max-w-5xl mx-auto px-2 pb-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {STATS.map((item, i) => (
-              <StatCard key={i} {...item} />
-            ))}
+          <div className="w-full flex lg:justify-end">
+            <HeroExperienceTabs />
           </div>
         </div>
 
       </div>
     </section>
 
-    {/* gap */}
-    <div style={{ background: '#07121E', height: 20 }} />
+    {/* How it all works block under hero */}
+    <section className="pt-8 sm:pt-10 pb-4" style={{ background: '#07121E' }} data-testid="how-it-all-works">
+      <div className="max-w-5xl mx-auto px-6 text-center">
+        <h2
+          className="text-3xl sm:text-4xl lg:text-5xl font-semibold"
+          style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}
+        >
+          How it all works
+        </h2>
+        <p className="mt-3 text-sm sm:text-base max-w-2xl mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          BIQc pulls live signal from every system, runs continuous watchtower checks, and turns complexity into clear boardroom actions.
+        </p>
+      </div>
+    </section>
 
-    {/* HOW IT WORKS — consolidated from /platform + /intelligence */}
-    <HowItWorks />
-
-    {/* INTELLIGENCE ARCHITECTURE DIAGRAM */}
     <div style={{ background: '#07121E' }}>
       <IntelligenceDiagram />
     </div>
 
-    {/* INTEGRATION CAROUSEL */}
-    <div style={{ background: '#07121E' }}>
-      <IntegrationCarousel />
-    </div>
+    <ModernIntegrationBanner />
+
+    {/* AI era evidence cards */}
+    <section className="py-14 sm:py-16" style={{ background: '#07121E' }} data-testid="ai-era-section">
+      <div className="max-w-5xl mx-auto px-6">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 text-center"
+          style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
+          What Businesses Are Achieving In The AI Era
+        </h2>
+        <p className="text-base sm:text-lg mb-10 max-w-2xl mx-auto leading-relaxed text-center"
+          style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          Business leaders make hundreds of decisions every day, and research shows up to{' '}
+          <span style={{ color: '#C65F2E', fontWeight: 600 }}>40%</span> of those decisions are made without the right data.
+        </p>
+        <div className="w-full max-w-5xl mx-auto px-2 pb-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {STATS.map((item, i) => (
+              <StatCard key={i} {...item} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
 
     {/* TRUST & COMPLIANCE BADGES */}
     <section className="py-10" style={{ background: '#07121E', borderTop: '1px solid rgba(255,122,24,0.1)', borderBottom: '1px solid rgba(255,122,24,0.1)' }} data-testid="trust-badges">

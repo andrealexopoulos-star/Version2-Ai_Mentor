@@ -45,9 +45,7 @@ apiClient.interceptors.request.use(async (config) => {
         config.headers.Authorization = `Bearer ${session.access_token}`;
       }
     }
-  } catch (error) {
-    console.warn('Failed to get Supabase session:', error.message);
-  }
+  } catch {}
   
   if (!config.headers) config.headers = {};
   config.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate';
@@ -70,7 +68,7 @@ apiClient.interceptors.response.use(
     
     if (ct.includes('text/html')) {
       const url = response.config?.url || 'unknown';
-      console.error('[apiClient] API returned HTML for', url);
+      if (process.env.NODE_ENV !== 'production') console.error('[apiClient] API returned HTML for', url);
       return Promise.reject(new Error(`API returned HTML instead of JSON for ${url}`));
     }
     
@@ -91,3 +89,12 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const callEdgeFunction = async (functionName, payload = {}, timeout = 45000) => {
+  const response = await apiClient.post(
+    `/edge/functions/${encodeURIComponent(functionName)}`,
+    { payload },
+    { timeout }
+  );
+  return response.data;
+};

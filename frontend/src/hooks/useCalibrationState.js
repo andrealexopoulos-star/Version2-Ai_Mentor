@@ -1,13 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseAuth } from "../context/SupabaseAuthContext";
-import { apiClient } from "../lib/api";
+import { apiClient, callEdgeFunction } from "../lib/api";
 import { REVEAL_PHASES } from "../components/calibration/ExecutiveReveal";
 import { parseIdentitySignals } from "../components/calibration/ForensicIdentityCard";
 import { EVENTS, trackActivationStep, trackOnceForUser } from "../lib/analytics";
-
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 const extractFirstName = (raw) => {
   if (!raw) return '';
@@ -16,6 +13,50 @@ const extractFirstName = (raw) => {
     return namePart.charAt(0).toUpperCase() + namePart.slice(1);
   }
   return raw.split(' ')[0];
+};
+
+const MAX_SCAN_ATTEMPTS_BEFORE_MANUAL = 2;
+
+const SCAN_ERROR_MESSAGES = {
+  INVALID_WEBSITE_URL: "Website URL looks invalid. Check the domain and try scanning again.",
+  WEBSITE_UNREACHABLE: "We could not reach that website. Check the URL and try regenerating the scan.",
+  WEBSITE_TIMEOUT: "Website scan timed out. Confirm the URL and regenerate the scan.",
+  INSUFFICIENT_PUBLIC_CONTENT: "We could not extract enough public content. Confirm website details and regenerate the scan.",
+  AI_EXTRACTION_FAILED: "Scan completed but extraction failed. Please regenerate the scan.",
+  AI_RESPONSE_PARSE_FAILED: "Scan response was incomplete. Please regenerate the scan.",
+  EDGE_PROXY_UNAVAILABLE: "Scan service is temporarily unavailable. Please try again in a moment.",
+  EDGE_FUNCTION_TIMEOUT: "Scan service timed out. Please regenerate the scan.",
+  EDGE_FUNCTION_UNAVAILABLE: "Scan engine is temporarily unavailable. Please try again.",
+  EDGE_PROXY_FAILURE: "Scan gateway is temporarily unavailable. Please try again.",
+  UNKNOWN_SCAN_FAILURE: "Scan did not complete. Check website details and regenerate the scan.",
+};
+
+const getScanFailure = (error, fallbackCode = "UNKNOWN_SCAN_FAILURE") => {
+  const responseData = error?.response?.data || {};
+  const detailPayload =
+    responseData && typeof responseData.detail === "object" ? responseData.detail : {};
+  const status = error?.response?.status;
+  const code =
+    responseData.code ||
+    detailPayload.code ||
+    responseData.error_code ||
+    responseData.detail_code ||
+    responseData.detail ||
+    fallbackCode;
+  const stage = responseData.stage || detailPayload.stage || "scan";
+  const details =
+    responseData.details ||
+    detailPayload.details ||
+    responseData.message ||
+    detailPayload.error ||
+    "";
+  return {
+    code,
+    stage,
+    status,
+    details,
+    message: SCAN_ERROR_MESSAGES[code] || SCAN_ERROR_MESSAGES.UNKNOWN_SCAN_FAILURE,
+  };
 };
 
 const fetchWithTimeout = async (url, options = {}, timeoutMs = 25000) => {
@@ -44,6 +85,9 @@ export const useCalibrationState = () => {
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
   const [identityConfidence, setIdentityConfidence] = useState(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [scanFailure, setScanFailure] = useState(null);
+  const [scanAttemptCount, setScanAttemptCount] = useState(0);
+  const [lastScanUrl, setLastScanUrl] = useState("");
 
   const [question, setQuestion] = useState(null);
   const [options, setOptions] = useState([]);
@@ -74,6 +118,7 @@ export const useCalibrationState = () => {
     userName || user?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || ''
   );
   const userEmail = user?.email || session?.user?.email || '';
+  const canManualFallback = scanAttemptCount >= MAX_SCAN_ATTEMPTS_BEFORE_MANUAL;
 
   const handleSignOut = async () => {
     try {
@@ -130,20 +175,19 @@ export const useCalibrationState = () => {
     setIntelligenceData(null);
   }, [entry]);
 
+  const registerScanFailure = (failure, attemptedUrl, attempts) => {
+    setScanFailure(failure);
+    setError(failure?.message || SCAN_ERROR_MESSAGES.UNKNOWN_SCAN_FAILURE);
+    if (attemptedUrl) setWebsiteUrl(attemptedUrl);
+    setScanAttemptCount(attempts);
+    setIsRegenerating(false);
+    setIsSubmitting(false);
+    setEntry("welcome");
+  };
+
   const callEdge = async (payload) => {
-    const token = session?.access_token;
-    if (!token) throw new Error("No session");
-    const res = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calibration-psych`, {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json", "apikey": ANON_KEY },
-      body: JSON.stringify(payload),
-    }, 30000);
-    if (!res.ok) {
-      let errText = '';
-      try { errText = await res.text(); } catch { /* */ }
-      throw new Error(`${res.status}: ${errText.substring(0, 120)}`);
-    }
-    return await res.json();
+    if (!session?.access_token) throw new Error("No session");
+    return await callEdgeFunction("calibration-psych", payload, 30000);
   };
 
   const triggerComplete = () => {
@@ -157,16 +201,8 @@ export const useCalibrationState = () => {
       try {
         const token = session?.access_token;
         if (token) {
-          await fetch(`${SUPABASE_URL}/functions/v1/calibration-sync`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-            body: '{}',
-          }).catch(() => {});
-          await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-            body: '{"refresh": true}',
-          }).catch(() => {});
+          await callEdgeFunction('calibration-sync', {}).catch(() => {});
+          await callEdgeFunction('biqc-insights-cognitive', { refresh: true }).catch(() => {});
         }
       } catch (e) { console.warn('[calibration] Sync failed (non-blocking):', e); }
     })();
@@ -244,11 +280,6 @@ export const useCalibrationState = () => {
         try { clearBootstrapCache(); } catch {}
         navigate('/market', { replace: true }); return;
       }
-      if (d.status === 'IN_PROGRESS' && d.calibration_step > 1) {
-        autoSave(9, "COMPLETE");
-        triggerComplete();
-        return;
-      }
       setEntry("ignition");
     } catch { setEntry("ignition"); }
   };
@@ -265,6 +296,11 @@ export const useCalibrationState = () => {
     if (isSubmitting || !websiteUrl.trim()) return;
     let url = websiteUrl.trim();
     if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = `https://${url}`;
+    const normalizedUrl = url.trim().toLowerCase();
+    const attempts = normalizedUrl === lastScanUrl ? scanAttemptCount + 1 : 1;
+    setLastScanUrl(normalizedUrl);
+    setScanAttemptCount(attempts);
+    setScanFailure(null);
     setWowSummary(null);
     setIdentitySignals(null);
     setIdentityConfirmed(false);
@@ -300,35 +336,37 @@ export const useCalibrationState = () => {
       // Gives users immediate feedback while AI analysis runs
       if (token) {
         try {
-          const scrapeRes = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/scrape-business-profile`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-            body: JSON.stringify({ url }),
-          }, 15000);
-          if (scrapeRes.ok) {
-            const scrapeData = await scrapeRes.json();
-            if (scrapeData?.business_name || scrapeData?.description) {
-              // Instantly pre-fill what we have from HTML
-              setIdentitySignals({
-                domain: url,
-                businessName: scrapeData.business_name || '',
-                whatYouDo: scrapeData.description || scrapeData.meta_description || '',
-              });
-            }
+          const scrapeData = await callEdgeFunction('scrape-business-profile', { url }, 15000);
+          if (scrapeData?.business_name || scrapeData?.description) {
+            // Instantly pre-fill what we have from HTML
+            setIdentitySignals({
+              domain: url,
+              businessName: scrapeData.business_name || '',
+              whatYouDo: scrapeData.description || scrapeData.meta_description || '',
+            });
           }
         } catch { /* non-fatal — AI analysis continues below */ }
       }
 
       if (token) {
         try {
-          const res = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calibration-business-dna`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-            body: JSON.stringify({ website_url: url }),
-          }, 30000);
-          if (res.ok) { auditData = await res.json(); }
-        } catch {
-          setError('Website scan timed out. Continue with manual summary to complete calibration.');
+          auditData = await callEdgeFunction('calibration-business-dna', { website_url: url }, 30000);
+          if (auditData?.status === "error" || auditData?.ok === false || auditData?.error_code) {
+            const syntheticError = {
+              response: {
+                status: 422,
+                data: {
+                  code: auditData?.error_code || "UNKNOWN_SCAN_FAILURE",
+                  stage: auditData?.stage || "scan",
+                  details: auditData?.error || "",
+                },
+              },
+            };
+            throw syntheticError;
+          }
+        } catch (scanErr) {
+          registerScanFailure(getScanFailure(scanErr, "WEBSITE_TIMEOUT"), url, attempts);
+          return;
         }
       }
 
@@ -450,14 +488,26 @@ export const useCalibrationState = () => {
 
         setIdentitySignals(signals);
         setIdentityConfirmed(false);
+        setScanFailure(null);
 
         autoSave(1);
         // NEW FLOW: Go to identity_verification BEFORE footprint report
         setEntry("identity_verification");
       } else {
-        setEntry("manual_summary");
+        registerScanFailure(
+          getScanFailure(
+            { response: { status: 422, data: { code: "INSUFFICIENT_PUBLIC_CONTENT", stage: "scan" } } },
+            "INSUFFICIENT_PUBLIC_CONTENT"
+          ),
+          url,
+          attempts
+        );
+        return;
       }
-    } catch { setEntry("manual_summary"); }
+    } catch (err) {
+      registerScanFailure(getScanFailure(err), url, attempts);
+      return;
+    }
     finally { setIsSubmitting(false); }
   };
 
@@ -506,22 +556,34 @@ export const useCalibrationState = () => {
 
     let url = websiteUrl.trim();
     if (url && !url.startsWith('http://') && !url.startsWith('https://')) url = `https://${url}`;
+    const normalizedUrl = url.trim().toLowerCase();
+    const attempts = normalizedUrl === lastScanUrl ? scanAttemptCount + 1 : 1;
+    setLastScanUrl(normalizedUrl);
+    setScanAttemptCount(attempts);
+    setScanFailure(null);
 
     try {
       const token = session?.access_token;
       if (token) {
-        const res = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calibration-business-dna`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-          body: JSON.stringify({
-            website_url: url,
-            business_name_hint: hints?.businessName || hints?.legalName || '',
-            location_hint: hints?.address || hints?.suburb || '',
-            abn_hint: hints?.abn || '',
-          }),
+        const auditData = await callEdgeFunction('calibration-business-dna', {
+          website_url: url,
+          business_name_hint: hints?.businessName || hints?.legalName || '',
+          location_hint: hints?.address || hints?.suburb || '',
+          abn_hint: hints?.abn || '',
         }, 30000);
-        if (res.ok) {
-          const auditData = await res.json();
+        if (auditData?.status === "error" || auditData?.ok === false || auditData?.error_code) {
+          throw {
+            response: {
+              status: 422,
+              data: {
+                code: auditData?.error_code || "UNKNOWN_SCAN_FAILURE",
+                stage: auditData?.stage || "regenerate",
+                details: auditData?.error || "",
+              },
+            },
+          };
+        }
+        if (auditData) {
           if (auditData?.extracted_data) {
             const ex = auditData.extracted_data;
             const fullExtraction = { ...ex, _sources: auditData.data_sources || [], _website: url, _generated_at: new Date().toISOString() };
@@ -565,14 +627,24 @@ export const useCalibrationState = () => {
             if (hints?.abn) signals.abn = hints.abn || signals.abn;
             setIdentitySignals(signals);
             setEntry("identity_verification");
+            setScanFailure(null);
             setIsRegenerating(false);
             return;
           }
         }
       }
-      setEntry("identity_verification");
-    } catch {
-      setEntry("identity_verification");
+      registerScanFailure(
+        getScanFailure(
+          { response: { status: 422, data: { code: "INSUFFICIENT_PUBLIC_CONTENT", stage: "regenerate" } } },
+          "INSUFFICIENT_PUBLIC_CONTENT"
+        ),
+        url,
+        attempts
+      );
+      return;
+    } catch (err) {
+      registerScanFailure(getScanFailure(err), url, attempts);
+      return;
     }
     setIsRegenerating(false);
   };
@@ -738,13 +810,8 @@ export const useCalibrationState = () => {
     try {
       const token = session?.access_token;
       if (!token) return;
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-        body: '{}',
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await callEdgeFunction('biqc-insights-cognitive', {});
+      if (data) {
         setIntelligenceData(data);
       }
     } catch {}
@@ -755,13 +822,8 @@ export const useCalibrationState = () => {
     try {
       const token = session?.access_token;
       if (!token) return null;
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/business-identity-lookup`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-        body: JSON.stringify(lookupParams),
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await callEdgeFunction('business-identity-lookup', lookupParams || {});
+      if (data) {
         if (data.status === 'found' || data.status === 'ambiguous') {
           // Merge lookup results into identity signals
           setIdentitySignals(prev => ({
@@ -790,6 +852,7 @@ export const useCalibrationState = () => {
     selectedOption, setSelectedOption, textValue, setTextValue,
     messages, inputValue, setInputValue,
     currentStep, intelligenceData, fetchIntelligence, proceedFromIntelligence,
+    scanFailure, scanAttemptCount, canManualFallback,
     // Identity verification
     identitySignals, identityConfirmed, identityConfidence, isRegenerating,
     handleConfirmIdentity, handleRegenerateIdentity, handleRejectIdentity, handleAbnLookup,

@@ -115,7 +115,7 @@ export default function ProtectedRoute({ children, adminOnly }) {
     let cancelled = false;
     const checkAdmin = async () => {
       try {
-        const res = await apiClient.get('/auth/supabase/me');
+        const res = await apiClient.get('/auth/me');
         const role = res.data?.user?.role;
         const email = res.data?.user?.email;
         if (!cancelled) setIsAdmin(ADMIN_ROLES.includes(role) || (user && isPrivilegedUser(user)));

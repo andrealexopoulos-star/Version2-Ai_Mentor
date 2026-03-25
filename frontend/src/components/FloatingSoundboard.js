@@ -1,12 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Lightbulb, Database, CheckCircle2, XCircle, Paperclip, Download, FileText } from 'lucide-react';
-import { apiClient } from '../lib/api';
+import { apiClient, callEdgeFunction } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { fontFamily } from '../design-system/tokens';
-
-
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 // Detect if a message is a data query (needs integration data)
 const DATA_QUERY_PATTERNS = [
@@ -165,12 +161,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
     try {
       const token = session?.access_token;
       if (!token) return null;
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/query-integrations-data`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-        body: JSON.stringify({ query }),
-      });
-      if (res.ok) return await res.json();
+      return await callEdgeFunction('query-integrations-data', { query });
     } catch (e) {
       console.warn('[soundboard] Integration query failed:', e);
     }
@@ -190,11 +181,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       // Trigger snapshot refresh
       const token = session?.access_token;
       if (token) {
-        fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-          body: '{"refresh": true}',
-        }).catch(() => {});
+        callEdgeFunction('biqc-insights-cognitive', { refresh: true }).catch(() => {});
       }
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', text: 'Failed to update. Please try again.' }]);

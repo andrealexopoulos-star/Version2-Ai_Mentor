@@ -106,9 +106,9 @@ async def get_data_readiness(current_user: dict = Depends(get_current_user)):
     return await _rpc('compute_data_readiness', current_user['id'])
 
 
-@router.get("/intelligence/watchtower")
+@router.get("/intelligence/watchtower/positions")
 async def get_watchtower_positions(current_user: dict = Depends(get_current_user)):
-    """Compute domain-level positions (stable/drift/compression/critical)."""
+    """Raw watchtower positions RPC (non-canonical helper endpoint)."""
     return await _rpc('compute_watchtower_positions', current_user['id'])
 
 

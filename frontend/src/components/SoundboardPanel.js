@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, Database, CheckCircle2, XCircle, Plus, Trash2, Download, FileText, Zap, Eye } from 'lucide-react';
-import { apiClient } from '../lib/api';
+import { apiClient, callEdgeFunction } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { trackEvent, EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
 import DataCoverageGate from './DataCoverageGate';
@@ -10,9 +10,6 @@ import { getSoundboardPolicy, normalizeMessageContent } from '../lib/soundboardP
 import VoiceChat from './VoiceChat';
 import BoardroomCouncilCard from './soundboard/BoardroomCouncilCard';
 
-
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 // Data query detection — ONLY route to integration Edge Function for EXPLICIT data retrieval requests.
 // Must NOT intercept strategic advisory questions that happen to mention business terms.
@@ -61,14 +58,14 @@ const buildBoardroomChecks = (connectedSources = [], evidenceSources = []) => {
       ? { role: 'CEO', line: 'Checking CRM pipeline momentum and stalled deals...' }
       : { role: 'COO', line: 'Checking execution cadence from available business signals...' },
     hasAccounting
-      ? { role: 'CFO', line: 'Checking overdue invoices, cash timing, and runway...' }
-      : { role: 'CFO', line: 'Checking cash risk assumptions from calibration and activity patterns...' },
+      ? { role: 'Finance Manager', line: 'Checking overdue invoices, cash timing, and runway...' }
+      : { role: 'Finance Manager', line: 'Checking cash risk assumptions from calibration and activity patterns...' },
     hasEmail
       ? { role: 'COO', line: 'Checking inbox response lag and escalation patterns...' }
       : { role: 'HR', line: 'Checking team load and decision bottlenecks from current evidence...' },
   ];
   if (hasMarket) {
-    steps.push({ role: 'CMO', line: 'Checking Google Ads and market demand signals...' });
+    steps.push({ role: 'Marketing Manager', line: 'Checking Google Ads and market demand signals...' });
   }
   steps.push({ role: 'CCO', line: 'Aligning boardroom views into one clear recommendation...' });
   return steps;
@@ -109,7 +106,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   ];
   const BIQC_AGENTS = [
     { id: 'auto', label: 'Auto', shortDesc: 'Pick specialist by question', icon: '⚡' },
-    { id: 'boardroom', label: 'Boardroom', shortDesc: 'CEO/CFO/COO/CTO/HR/CCO council', icon: '🏛️' },
+    { id: 'boardroom', label: 'Boardroom', shortDesc: 'CEO/Finance/Marketing/Ops/Risk council', icon: '🏛️' },
     { id: 'general', label: 'Strategic Advisor', shortDesc: 'Full picture & priorities', icon: '◎' },
     { id: 'finance', label: 'Finance', shortDesc: 'Cash, revenue, margins', icon: '💰' },
     { id: 'sales', label: 'Sales', shortDesc: 'Pipeline & deals', icon: '📊' },
@@ -250,12 +247,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     try {
       const token = session?.access_token;
       if (!token) return null;
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/query-integrations-data`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-        body: JSON.stringify({ query }),
-      });
-      if (res.ok) return await res.json();
+      return await callEdgeFunction('query-integrations-data', { query });
     } catch {}
     return null;
   };

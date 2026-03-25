@@ -120,7 +120,19 @@ const PrivacyModal = ({ onClose }) => (
  *  Phase 1: Intro with Privacy link + Continue button
  *  Phase 2: Website URL scan form
  */
-export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmit, onManualFallback, isSubmitting, error, initialPhase = 'intro' }) => {
+export const WelcomeHandshake = ({
+  firstName,
+  websiteUrl,
+  setWebsiteUrl,
+  onSubmit,
+  onManualFallback,
+  isSubmitting,
+  error,
+  initialPhase = 'intro',
+  scanFailure = null,
+  scanAttemptCount = 0,
+  canManualFallback = false,
+}) => {
   const [phase, setPhase] = useState(initialPhase); // intro | scan
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [handles, setHandles] = useState({ linkedin: '', twitter: '', instagram: '', facebook: '' });
@@ -226,20 +238,27 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
       <div className="flex-1 flex items-center justify-center px-6">
         <div className="max-w-lg w-full text-center">
           <h1 className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
-            Let's scan your business.
+            {scanFailure ? "Let's retry your scan." : "Let's scan your business."}
           </h1>
           <p className="text-base leading-relaxed mb-8" style={{ color: MUTED, maxWidth: 460, margin: '0 auto 32px' }}>
-            Enter your website URL. BIQc will analyse your market position, competitive landscape and digital footprint in real time.
+            {scanFailure
+              ? 'Check your website details, then regenerate the scan. If it still fails, manual setup will unlock.'
+              : 'Enter your website URL. BIQc will analyse your market position, competitive landscape and digital footprint in real time.'}
           </p>
 
           {error && <p className="text-sm text-red-500 mb-4" data-testid="calibration-error">{error}</p>}
+          {scanFailure && (
+            <p className="text-xs mb-4" style={{ color: '#3B82F6' }} data-testid="calibration-retry-guidance">
+              Attempt {scanAttemptCount}: verify domain spelling, ensure the site is live, then click Regenerate Scan.
+            </p>
+          )}
 
           <form onSubmit={onSubmit} className="max-w-md mx-auto space-y-4">
             <input
               type="text"
               value={websiteUrl}
               onChange={(e) => setWebsiteUrl(e.target.value)}
-              placeholder="thestrategysquad.com"
+              placeholder="yourcompany.com"
               className="w-full rounded-xl px-5 py-4 text-lg text-center focus:outline-none transition-colors"
               style={{ background: CARD_BG, border: `2px solid ${CARD_BORDER}`, color: CHARCOAL, fontFamily: SERIF }}
               autoFocus
@@ -251,7 +270,7 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
               className="w-full px-8 py-3.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
               style={{ background: '#FF6A00', color: '#FFFFFF', fontFamily: SERIF }}
               data-testid="begin-audit-btn">
-              {isSubmitting ? 'Scanning...' : 'Begin Strategic Audit'}
+              {isSubmitting ? 'Scanning...' : scanFailure ? 'Regenerate Scan' : 'Begin Strategic Audit'}
             </button>
           </form>
 
@@ -297,12 +316,14 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
             )}
           </div>
 
-          <button onClick={onManualFallback}
-            className="mt-6 text-xs font-medium cursor-pointer transition-colors"
-            style={{ color: MUTED }}
-            data-testid="no-website-btn">
-            I Don't Have a Website — Analyse My Business Manually
-          </button>
+          {canManualFallback && (
+            <button onClick={onManualFallback}
+              className="mt-6 text-xs font-medium cursor-pointer transition-colors"
+              style={{ color: MUTED }}
+              data-testid="no-website-btn">
+              Continue manually after scan retries
+            </button>
+          )}
         </div>
       </div>
     </>

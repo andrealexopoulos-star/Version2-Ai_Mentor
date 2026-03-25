@@ -104,7 +104,7 @@ export default function BIQcLegalPage() {
 
             <div className="mt-8 rounded-2xl border p-4" style={{ borderColor: 'rgba(255,106,0,0.24)', background: 'rgba(255,106,0,0.06)' }}>
               <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Contact</p>
-              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }}>legal@thestrategysquad.com.au</p>
+              <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }}>legal@biqc.ai</p>
               <p className="mt-1 text-xs" style={{ color: 'var(--biqc-text-2)' }}>For legal, privacy, or trust-centre questions.</p>
             </div>
           </section>

@@ -385,7 +385,7 @@ const EnterpriseTerms = () => {
         <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 rounded-2xl" style={{ background: 'var(--biqc-bg)' }}>
           <div>
             <p className="text-xs font-semibold text-white mb-1" style={{ fontFamily: 'var(--font-heading)' }}>Questions about this Agreement?</p>
-            <p className="text-xs text-slate-400">Contact Business Intelligence Quotient Centre at <span className="text-orange-400">legal@thestrategysquad.com.au</span></p>
+            <p className="text-xs text-slate-400">Contact Business Intelligence Quotient Centre at <span className="text-orange-400">legal@biqc.ai</span></p>
           </div>
           <div className="flex gap-3">
             <button onClick={() => navigate('/trust')} className="flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-body)' }}>

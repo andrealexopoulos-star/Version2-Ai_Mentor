@@ -111,7 +111,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
             Here's what BIQc sees.
           </h1>
           <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-            Before we calibrate your preferences, review your current market position.
+            Your first intelligence baseline is ready. Review it, then continue into the platform.
           </p>
         </div>
 
