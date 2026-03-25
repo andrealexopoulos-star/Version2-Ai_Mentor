@@ -254,6 +254,31 @@ jobs:
           curl --fail --silent --show-error https://biqc.ai > /tmp/frontend_home.html
           grep -qi "BIQc" /tmp/frontend_home.html
 
+          CAL_CODE=$(curl --silent --output /tmp/calibration_route.html --write-out "%{http_code}" https://biqc.ai/calibration)
+          echo "calibration route HTTP ${CAL_CODE}"
+          if [ "$CAL_CODE" -ne 200 ]; then
+            echo "Expected https://biqc.ai/calibration to return 200"
+            cat /tmp/calibration_route.html
+            exit 1
+          fi
+          grep -qi "<html" /tmp/calibration_route.html
+
+          API_FRONT_CODE=$(curl --silent --output /tmp/frontend_api_health.json --write-out "%{http_code}" https://biqc.ai/api/health)
+          echo "frontend-domain /api/health probe HTTP ${API_FRONT_CODE}"
+          if [ "$API_FRONT_CODE" -ne 200 ]; then
+            echo "Expected https://biqc.ai/api/health to return 200 via frontend reverse-proxy"
+            cat /tmp/frontend_api_health.json
+            exit 1
+          fi
+
+          CAL_AUTH_CODE=$(curl --silent --output /tmp/cal_status_probe.json --write-out "%{http_code}" https://biqc.ai/api/calibration/status)
+          echo "frontend-domain /api/calibration/status probe HTTP ${CAL_AUTH_CODE}"
+          if [ "$CAL_AUTH_CODE" -ne 401 ] && [ "$CAL_AUTH_CODE" -ne 403 ]; then
+            echo "Expected auth-gated calibration status (401/403) but got ${CAL_AUTH_CODE}"
+            cat /tmp/cal_status_probe.json
+            exit 1
+          fi
+
           API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" ${{ env.BACKEND_AUTH_PROBE_URL }})
           echo "integration-status probe HTTP ${API_CODE}"
           if [ "$API_CODE" -ne 401 ] && [ "$API_CODE" -ne 403 ]; then
