@@ -21,20 +21,43 @@ ALTER TABLE admin_actions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "superadmin_read" ON admin_actions FOR SELECT USING (true);
 CREATE POLICY "service_manage" ON admin_actions FOR ALL USING (true) WITH CHECK (true);
 
--- 2. Ensure role column on users
+-- Backward-compat table used by legacy admin RPCs.
+-- Fresh preview branches may not have this relation, so define a safe baseline.
+CREATE TABLE IF NOT EXISTS public.users (
+    id UUID PRIMARY KEY,
+    email TEXT UNIQUE,
+    full_name TEXT,
+    role TEXT DEFAULT 'user',
+    is_disabled BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Ensure role column on users (legacy/public users table may be absent in fresh previews)
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'role') THEN
-        ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_disabled') THEN
-        ALTER TABLE users ADD COLUMN is_disabled BOOLEAN DEFAULT false;
+    IF to_regclass('public.users') IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'role'
+        ) THEN
+            ALTER TABLE public.users ADD COLUMN role TEXT DEFAULT 'user';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'is_disabled'
+        ) THEN
+            ALTER TABLE public.users ADD COLUMN is_disabled BOOLEAN DEFAULT false;
+        END IF;
+
+        -- 3. Set andre as super_admin
+        UPDATE public.users SET role = 'super_admin' WHERE email = 'andre@thestrategysquad.com.au';
+        UPDATE public.users SET role = 'super_admin' WHERE email = 'andre@thestrategysquad.com';
+    ELSE
+        RAISE NOTICE 'Skipping role/is_disabled bootstrap: public.users not present';
     END IF;
 END $$;
-
--- 3. Set andre as super_admin
-UPDATE users SET role = 'super_admin' WHERE email = 'andre@thestrategysquad.com.au';
-UPDATE users SET role = 'super_admin' WHERE email = 'andre@thestrategysquad.com';
 
 -- 4. Feature flags
 INSERT INTO ic_feature_flags (flag_name, enabled, description) VALUES
