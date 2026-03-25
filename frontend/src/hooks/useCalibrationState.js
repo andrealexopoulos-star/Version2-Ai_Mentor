@@ -69,6 +69,48 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 25000) => {
   }
 };
 
+const buildExtractionFromDeepEnrichment = (deepEnrichment) => {
+  if (!deepEnrichment || typeof deepEnrichment !== "object") return null;
+  const hasUsableContent = [
+    deepEnrichment.business_name,
+    deepEnrichment.description,
+    deepEnrichment.main_products_services,
+    deepEnrichment.target_market,
+    deepEnrichment.unique_value_proposition,
+    deepEnrichment.competitive_advantages,
+    deepEnrichment.market_position,
+    deepEnrichment.abn,
+  ].some((v) => typeof v === "string" && v.trim().length > 0) || (Array.isArray(deepEnrichment.competitors) && deepEnrichment.competitors.length > 0);
+
+  if (!hasUsableContent) return null;
+
+  return {
+    business_name: deepEnrichment.business_name || "",
+    description: deepEnrichment.description || "",
+    industry: deepEnrichment.industry || "",
+    main_products_services: deepEnrichment.main_products_services || "",
+    target_market: deepEnrichment.target_market || "",
+    unique_value_proposition: deepEnrichment.unique_value_proposition || "",
+    competitive_advantages: deepEnrichment.competitive_advantages || "",
+    market_position: deepEnrichment.market_position || "",
+    competitor_scan_result: deepEnrichment.competitor_analysis || "",
+    abn: deepEnrichment.abn || "",
+    competitors: Array.isArray(deepEnrichment.competitors) ? deepEnrichment.competitors : [],
+    social_media_links: deepEnrichment.social_handles || {},
+    trust_signals: Array.isArray(deepEnrichment.trust_signals) ? deepEnrichment.trust_signals : [],
+    executive_summary: deepEnrichment.executive_summary || "",
+    cmo_executive_brief: deepEnrichment.cmo_executive_brief || "",
+    seo_analysis: deepEnrichment.seo_analysis || null,
+    paid_media_analysis: deepEnrichment.paid_media_analysis || null,
+    social_media_analysis: deepEnrichment.social_media_analysis || null,
+    website_health: deepEnrichment.website_health || null,
+    swot: deepEnrichment.swot || null,
+    competitor_swot: Array.isArray(deepEnrichment.competitor_swot) ? deepEnrichment.competitor_swot : [],
+    cmo_priority_actions: Array.isArray(deepEnrichment.cmo_priority_actions) ? deepEnrichment.cmo_priority_actions : [],
+    deep_scan_sources: deepEnrichment.sources || null,
+  };
+};
+
 export const useCalibrationState = () => {
   const navigate = useNavigate();
   const { user, session, loading, signOut, clearBootstrapCache } = useSupabaseAuth();
@@ -331,6 +373,7 @@ export const useCalibrationState = () => {
       const token = session?.access_token;
       let auditData = null;
       let deepEnrichment = null;
+      let edgeScanError = null;
 
       // FAST PRE-FILL: scrape-business-profile runs instantly (no LLM, pure HTML)
       // Gives users immediate feedback while AI analysis runs
@@ -350,7 +393,7 @@ export const useCalibrationState = () => {
 
       if (token) {
         try {
-          auditData = await callEdgeFunction('calibration-business-dna', { website_url: url }, 30000);
+          auditData = await callEdgeFunction('calibration-business-dna', { website_url: url }, 90000);
           if (auditData?.status === "error" || auditData?.ok === false || auditData?.error_code) {
             const syntheticError = {
               response: {
@@ -365,8 +408,7 @@ export const useCalibrationState = () => {
             throw syntheticError;
           }
         } catch (scanErr) {
-          registerScanFailure(getScanFailure(scanErr, "WEBSITE_TIMEOUT"), url, attempts);
-          return;
+          edgeScanError = scanErr;
         }
       }
 
@@ -380,8 +422,8 @@ export const useCalibrationState = () => {
         // non-fatal; continue with edge extraction
       }
 
-      if (auditData?.extracted_data) {
-        const exRaw = auditData.extracted_data;
+      const exRaw = auditData?.extracted_data || buildExtractionFromDeepEnrichment(deepEnrichment);
+      if (exRaw) {
         const ex = {
           ...exRaw,
           ...(deepEnrichment ? {
@@ -494,14 +536,18 @@ export const useCalibrationState = () => {
         // NEW FLOW: Go to identity_verification BEFORE footprint report
         setEntry("identity_verification");
       } else {
-        registerScanFailure(
-          getScanFailure(
-            { response: { status: 422, data: { code: "INSUFFICIENT_PUBLIC_CONTENT", stage: "scan" } } },
-            "INSUFFICIENT_PUBLIC_CONTENT"
-          ),
-          url,
-          attempts
-        );
+        if (edgeScanError) {
+          registerScanFailure(getScanFailure(edgeScanError, "WEBSITE_TIMEOUT"), url, attempts);
+        } else {
+          registerScanFailure(
+            getScanFailure(
+              { response: { status: 422, data: { code: "INSUFFICIENT_PUBLIC_CONTENT", stage: "scan" } } },
+              "INSUFFICIENT_PUBLIC_CONTENT"
+            ),
+            url,
+            attempts
+          );
+        }
         return;
       }
     } catch (err) {
@@ -564,74 +610,106 @@ export const useCalibrationState = () => {
 
     try {
       const token = session?.access_token;
+      let auditData = null;
+      let deepEnrichment = null;
+      let edgeScanError = null;
       if (token) {
-        const auditData = await callEdgeFunction('calibration-business-dna', {
-          website_url: url,
-          business_name_hint: hints?.businessName || hints?.legalName || '',
-          location_hint: hints?.address || hints?.suburb || '',
-          abn_hint: hints?.abn || '',
-        }, 30000);
-        if (auditData?.status === "error" || auditData?.ok === false || auditData?.error_code) {
-          throw {
-            response: {
-              status: 422,
-              data: {
-                code: auditData?.error_code || "UNKNOWN_SCAN_FAILURE",
-                stage: auditData?.stage || "regenerate",
-                details: auditData?.error || "",
+        try {
+          auditData = await callEdgeFunction('calibration-business-dna', {
+            website_url: url,
+            business_name_hint: hints?.businessName || hints?.legalName || '',
+            location_hint: hints?.address || hints?.suburb || '',
+            abn_hint: hints?.abn || '',
+          }, 90000);
+          if (auditData?.status === "error" || auditData?.ok === false || auditData?.error_code) {
+            throw {
+              response: {
+                status: 422,
+                data: {
+                  code: auditData?.error_code || "UNKNOWN_SCAN_FAILURE",
+                  stage: auditData?.stage || "regenerate",
+                  details: auditData?.error || "",
+                },
               },
-            },
-          };
-        }
-        if (auditData) {
-          if (auditData?.extracted_data) {
-            const ex = auditData.extracted_data;
-            const fullExtraction = { ...ex, _sources: auditData.data_sources || [], _website: url, _generated_at: new Date().toISOString() };
-
-            const wow = {
-              business_name: ex.business_name || ex.name || ex.company || '',
-              what_you_do: ex.main_products_services || ex.business_overview || ex.description || ex.about || '',
-              who_you_serve: ex.target_market || ex.ideal_customer_profile || ex.audience || '',
-              what_sets_you_apart: ex.competitive_advantages || ex.unique_value_proposition || ex.differentiators || '',
-              biggest_challenges: ex.main_challenges || ex.key_challenges || ex.challenges || '',
-              growth_opportunity: ex.growth_strategy || ex.industry_position || ex.market_position || '',
-              _full: fullExtraction,
             };
-            setWowSummary(wow);
-
-            const signals = parseIdentitySignals(ex, url);
-            const edgeSignals = auditData.identity_signals || ex._identity_signals || {};
-            if (edgeSignals.abn_candidates?.length > 0 && !signals.abn) {
-              signals.abn = edgeSignals.abn_candidates[0];
-            }
-            if (edgeSignals.phone_numbers?.length > 0 && signals.phones?.length === 0) {
-              signals.phones = edgeSignals.phone_numbers;
-            }
-            if (edgeSignals.email_addresses?.length > 0 && signals.emails?.length === 0) {
-              signals.emails = edgeSignals.email_addresses;
-            }
-            if (edgeSignals.address_candidates?.length > 0 && !signals.address) {
-              signals.address = edgeSignals.address_candidates[0];
-            }
-            if (edgeSignals.geographic_mentions?.length > 0 && !signals.geo) {
-              signals.geo = edgeSignals.geographic_mentions.join(', ');
-            }
-            if (edgeSignals.social_media_links && (!signals.socials || signals.socials.length === 0)) {
-              signals.socials = Object.entries(edgeSignals.social_media_links)
-                .filter(([, socialUrl]) => socialUrl)
-                .map(([platform, socialUrl]) => ({ platform, url: socialUrl }));
-            }
-            // Merge user hints into signals
-            if (hints?.businessName || hints?.legalName) signals.businessName = hints.businessName || hints.legalName || signals.businessName;
-            if (hints?.address || hints?.suburb) signals.address = hints.address || hints.suburb || signals.address;
-            if (hints?.abn) signals.abn = hints.abn || signals.abn;
-            setIdentitySignals(signals);
-            setEntry("identity_verification");
-            setScanFailure(null);
-            setIsRegenerating(false);
-            return;
           }
+        } catch (scanErr) {
+          edgeScanError = scanErr;
         }
+      }
+
+      try {
+        const deepRes = await apiClient.post('/calibration/enrichment/website', { url, action: 'scan' });
+        if (deepRes?.data?.status === 'draft' && deepRes?.data?.enrichment) {
+          deepEnrichment = deepRes.data.enrichment;
+        }
+      } catch {
+        // non-fatal in regenerate mode
+      }
+
+      const ex = auditData?.extracted_data || buildExtractionFromDeepEnrichment(deepEnrichment);
+      if (ex) {
+        const fullExtraction = {
+          ...ex,
+          _sources: auditData?.data_sources || [],
+          _deep_sources: deepEnrichment?.sources || null,
+          _website: url,
+          _generated_at: new Date().toISOString(),
+        };
+
+        const wow = {
+          business_name: ex.business_name || ex.name || ex.company || '',
+          what_you_do: ex.main_products_services || ex.business_overview || ex.description || ex.about || '',
+          who_you_serve: ex.target_market || ex.ideal_customer_profile || ex.audience || '',
+          what_sets_you_apart: ex.competitive_advantages || ex.unique_value_proposition || ex.differentiators || '',
+          biggest_challenges: ex.main_challenges || ex.key_challenges || ex.challenges || '',
+          growth_opportunity: ex.growth_strategy || ex.industry_position || ex.market_position || '',
+          _full: fullExtraction,
+        };
+        setWowSummary(wow);
+
+        const signals = parseIdentitySignals(ex, url);
+        const edgeSignals = auditData?.identity_signals || ex._identity_signals || {};
+        if (edgeSignals.abn_candidates?.length > 0 && !signals.abn) {
+          signals.abn = edgeSignals.abn_candidates[0];
+        }
+        if (deepEnrichment?.abn && !signals.abn) {
+          signals.abn = deepEnrichment.abn;
+        }
+        if (!signals.abn && Array.isArray(deepEnrichment?.abn_candidates) && deepEnrichment.abn_candidates.length > 0) {
+          signals.abn = deepEnrichment.abn_candidates[0];
+        }
+        if (edgeSignals.phone_numbers?.length > 0 && signals.phones?.length === 0) {
+          signals.phones = edgeSignals.phone_numbers;
+        }
+        if (edgeSignals.email_addresses?.length > 0 && signals.emails?.length === 0) {
+          signals.emails = edgeSignals.email_addresses;
+        }
+        if (edgeSignals.address_candidates?.length > 0 && !signals.address) {
+          signals.address = edgeSignals.address_candidates[0];
+        }
+        if (edgeSignals.geographic_mentions?.length > 0 && !signals.geo) {
+          signals.geo = edgeSignals.geographic_mentions.join(', ');
+        }
+        if (edgeSignals.social_media_links && (!signals.socials || signals.socials.length === 0)) {
+          signals.socials = Object.entries(edgeSignals.social_media_links)
+            .filter(([, socialUrl]) => socialUrl)
+            .map(([platform, socialUrl]) => ({ platform, url: socialUrl }));
+        }
+        // Merge user hints into signals
+        if (hints?.businessName || hints?.legalName) signals.businessName = hints.businessName || hints.legalName || signals.businessName;
+        if (hints?.address || hints?.suburb) signals.address = hints.address || hints.suburb || signals.address;
+        if (hints?.abn) signals.abn = hints.abn || signals.abn;
+        setIdentitySignals(signals);
+        setEntry("identity_verification");
+        setScanFailure(null);
+        setIsRegenerating(false);
+        return;
+      }
+
+      if (edgeScanError) {
+        registerScanFailure(getScanFailure(edgeScanError, "WEBSITE_TIMEOUT"), url, attempts);
+        return;
       }
       registerScanFailure(
         getScanFailure(
