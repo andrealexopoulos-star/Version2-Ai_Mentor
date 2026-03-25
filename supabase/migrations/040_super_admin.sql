@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY,
     email TEXT UNIQUE,
     full_name TEXT,
+    subscription_tier TEXT DEFAULT 'free',
     role TEXT DEFAULT 'user',
     is_disabled BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -36,6 +37,13 @@ CREATE TABLE IF NOT EXISTS public.users (
 DO $$
 BEGIN
     IF to_regclass('public.users') IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'subscription_tier'
+        ) THEN
+            ALTER TABLE public.users ADD COLUMN subscription_tier TEXT DEFAULT 'free';
+        END IF;
         IF NOT EXISTS (
             SELECT 1
             FROM information_schema.columns
