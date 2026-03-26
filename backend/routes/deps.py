@@ -35,6 +35,18 @@ DEV_BYPASS_USER = {
     "full_name": "Dev User",
 }
 
+# Calibration QA bypass (optional, explicitly enabled via env)
+QA_BYPASS_AUTH = os.environ.get("QA_BYPASS_AUTH", "").strip().lower() in ("1", "true", "yes")
+QA_BYPASS_SECRET = os.environ.get("QA_BYPASS_SECRET", "").strip()
+QA_BYPASS_USER_ID = os.environ.get("QA_BYPASS_USER_ID", "").strip()
+QA_BYPASS_EMAIL = os.environ.get("QA_BYPASS_EMAIL", "").strip().lower()
+QA_BYPASS_ROLE = os.environ.get("QA_BYPASS_ROLE", "admin").strip()
+QA_BYPASS_TIER = os.environ.get("QA_BYPASS_TIER", "starter").strip()
+if QA_BYPASS_AUTH and (not QA_BYPASS_SECRET or not (QA_BYPASS_USER_ID or QA_BYPASS_EMAIL)):
+    logger.warning("[Auth] QA_BYPASS_AUTH disabled due to missing QA_BYPASS_SECRET and QA_BYPASS_USER_ID/QA_BYPASS_EMAIL")
+    QA_BYPASS_AUTH = False
+
+
 # ─── AI Model Configuration (your own API keys) ──────────────────────────────
 # Set OPENAI_API_KEY and GOOGLE_API_KEY in Azure App Service environment variables
 
@@ -289,6 +301,30 @@ async def get_current_user(
             logger.info("[Auth] Dev bypass accepted")
             return dict(DEV_BYPASS_USER)
 
+    # Calibration QA bypass: explicit opt-in with per-environment secret.
+    if QA_BYPASS_AUTH:
+        qa_bypass = request.headers.get("X-QA-Bypass", "").strip()
+        if qa_bypass and qa_bypass == QA_BYPASS_SECRET:
+            user_id = QA_BYPASS_USER_ID
+            email = QA_BYPASS_EMAIL
+            if (not user_id) and email:
+                try:
+                    sb = get_sb()
+                    row = sb.table("users").select("id,email").eq("email", email).limit(1).execute()
+                    if row.data:
+                        user_id = row.data[0].get("id") or ""
+                        email = (row.data[0].get("email") or email).strip().lower()
+                except Exception as exc:
+                    logger.warning("[Auth] QA bypass email resolution failed: %s", exc)
+            if user_id:
+                logger.info("[Auth] Calibration QA bypass accepted")
+                return {
+                    "id": user_id,
+                    "email": email or "qa@local",
+                    "role": QA_BYPASS_ROLE,
+                    "subscription_tier": QA_BYPASS_TIER,
+                    "full_name": "Calibration QA",
+                }
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
     token = credentials.credentials
@@ -366,3 +402,5 @@ async def get_current_account(current_user: dict = Depends(get_current_user)):
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     return account
+
+
