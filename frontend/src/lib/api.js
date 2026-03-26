@@ -11,6 +11,17 @@ const devBypassAuth =
 const devBypassSecret =
   (typeof process !== 'undefined' && process.env.REACT_APP_DEV_BYPASS_SECRET) || 'dev-bypass-local';
 
+const getCalibrationQaKey = () => {
+  try {
+    if (typeof window === 'undefined') return '';
+    const pathname = window.location?.pathname || '';
+    if (pathname !== '/calibration-qa') return '';
+    return (sessionStorage.getItem('biqc_calibration_qa_key') || '').trim();
+  } catch {
+    return '';
+  }
+};
+
 export const apiClient = axios.create({
   baseURL: API_BASE,
   timeout: 30000,
@@ -20,6 +31,10 @@ apiClient.interceptors.request.use(async (config) => {
   config.headers = config.headers || {};
   if (devBypassAuth && devBypassSecret) {
     config.headers['X-Dev-Bypass'] = devBypassSecret;
+  }
+  const qaBypassKey = getCalibrationQaKey();
+  if (qaBypassKey) {
+    config.headers['X-QA-Bypass'] = qaBypassKey;
   }
   try {
     const { data: { session } } = await supabase.auth.getSession();
