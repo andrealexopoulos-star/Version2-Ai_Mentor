@@ -18,6 +18,7 @@ import httpx
 from routes.deps import (
     get_current_user, get_current_user_from_request,
     get_sb, OPENAI_KEY, AI_MODEL, cognitive_core, logger,
+    QA_BYPASS_AUTH, QA_BYPASS_SECRET,
 )
 from supabase_client import safe_query_single
 from auth_supabase import get_user_by_id
@@ -78,9 +79,17 @@ async def proxy_edge_function(
     if not anon_key:
         raise HTTPException(status_code=503, detail="Edge proxy unavailable")
 
-    inbound_auth = request.headers.get("authorization") or ""
+    inbound_auth = (request.headers.get("authorization") or "").strip()
+    proxy_apikey = anon_key
     if not inbound_auth.lower().startswith("bearer "):
-        raise HTTPException(status_code=401, detail="Missing authorization header")
+        qa_bypass = (request.headers.get("X-QA-Bypass") or "").strip()
+        if QA_BYPASS_AUTH and QA_BYPASS_SECRET and qa_bypass == QA_BYPASS_SECRET:
+            service_role_key = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+            proxy_token = service_role_key or anon_key
+            inbound_auth = f"Bearer {proxy_token}"
+            proxy_apikey = proxy_token
+        else:
+            raise HTTPException(status_code=401, detail="Missing authorization header")
 
     endpoint = f"{supabase_url}/functions/v1/{name}"
     try:
@@ -90,7 +99,7 @@ async def proxy_edge_function(
                 json=body.payload or {},
                 headers={
                     "Authorization": inbound_auth,
-                    "apikey": anon_key,
+                    "apikey": proxy_apikey,
                     "Content-Type": "application/json",
                 },
             )
