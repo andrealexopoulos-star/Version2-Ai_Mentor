@@ -45,6 +45,7 @@ import Integrations from './pages/Integrations';
 import EmailInbox from './pages/EmailInbox';
 import CalendarView from './pages/CalendarView';
 import CalibrationAdvisor from './pages/CalibrationAdvisor';
+import CalibrationQaAccess from './pages/CalibrationQaAccess';
 import ForensicCalibration from './pages/ForensicCalibration';
 
 // ── Intelligence pages ────────────────────────────────────────────────────────
@@ -269,6 +270,7 @@ function AppRoutes() {
         <Route path="/onboarding-decision" element={<ProtectedRoute><OnboardingDecision /></ProtectedRoute>} />
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
         <Route path="/calibration" element={<ProtectedRoute><CalibrationAdvisor /></ProtectedRoute>} />
+        <Route path="/calibration-qa" element={<CalibrationQaAccess />} />
         <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 
         {/* Subscription */}
@@ -385,3 +387,5 @@ function App() {
 }
 
 export default App;
+
+
