@@ -142,7 +142,12 @@ const WebsiteNav = () => {
           </Link>
           {/* Mobile: Log In text + hamburger */}
           <Link to="/login-supabase" className="md:hidden text-xs text-[#9FB0C3] hover:text-white" style={{ fontFamily: fontFamily.display }} data-testid="nav-mobile-login">Log in</Link>
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-[#9FB0C3]" data-testid="nav-mobile-toggle">
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden p-2 text-[#9FB0C3]"
+            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+            data-testid="nav-mobile-toggle"
+          >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
@@ -186,7 +191,7 @@ const WebsiteFooter = () => (
           <p className="text-xs text-[#9FB0C3]/60 leading-relaxed" style={{ fontFamily: fontFamily.display }}>Autonomous Business Intelligence for SMBs. Australian owned & operated.</p>
         </div>
         <div>
-          <h4 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Product</h4>
+          <h2 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Product</h2>
           <div className="space-y-2.5">
             {[['Platform', '/platform'], ['Intelligence', '/intelligence'], ['Integrations', '/our-integrations'], ['Pricing', '/pricing']].map(([l, p]) => (
               <Link key={p} to={p} className="block text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
@@ -194,7 +199,7 @@ const WebsiteFooter = () => (
           </div>
         </div>
         <div>
-          <h4 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Legal</h4>
+          <h2 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Legal</h2>
           <div className="space-y-2.5">
             {TRUST_ITEMS.map((item) => (
               <Link key={item.path} to={item.path} className="block text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
@@ -202,7 +207,7 @@ const WebsiteFooter = () => (
           </div>
         </div>
         <div>
-          <h4 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Company</h4>
+          <h2 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Company</h2>
           <div className="space-y-2.5">
             {[['Contact', '/contact'], ['Trust', '/trust'], ['Try It Free', '/register-supabase']].map(([l, p]) => (
               <Link key={l} to={p} className="block text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>

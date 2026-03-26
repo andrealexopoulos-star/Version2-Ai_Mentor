@@ -19,6 +19,7 @@ import { CalibratingSession } from "../components/calibration/CalibratingSession
 import { CalibrationTutorial } from "../components/TutorialOverlay";
 import { CognitiveIgnitionScreen } from "../components/CognitiveLoadingScreen";
 import { ExecutiveCMOSnapshot, ForensicCalibrationUI } from "../components/calibration/IntelligencePhases";
+import { WowCardsStage, DeepNarrativeStage, RoadmapStage, ReportGenerationStage } from "../components/calibration/ForensicFlowStages";
 import { SkipForward, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -66,7 +67,7 @@ const CalibrationAdvisor = () => {
 
   const tutorialKey = cal.entry === 'welcome' ? 'calibration-welcome'
     : (cal.entry === 'calibrating') ? 'calibration-chat'
-    : (cal.entry === 'wow_summary') ? 'calibration-wow'
+    : (cal.entry === 'wow_summary' || cal.entry === 'wow_cards') ? 'calibration-wow'
     : null;
 
   return (
@@ -126,6 +127,46 @@ const CalibrationAdvisor = () => {
 
       {cal.entry === "analyzing" && <AuditProgress />}
 
+      {cal.entry === "abn_validation" && (
+        <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }}>
+          <div className="max-w-2xl mx-auto px-4 sm:px-8 py-10">
+            <div className="rounded-xl p-6" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${CARD_BORDER}` }}>
+              <h2 className="text-xl font-semibold text-[#F4F7FA] mb-2">ABN Validation</h2>
+              <p className="text-sm text-[#9FB0C3] mb-6 whitespace-pre-wrap">
+                {`ABN status: ${cal.identitySignals?.abn_status || 'not_found'}\nVerified: ${cal.identitySignals?.abn_verified ? 'yes' : 'no'}\nLegal name: ${cal.identitySignals?.legal_name || 'Not available'}\nRegistered address: ${cal.identitySignals?.registered_address || 'Not available'}`}
+              </p>
+              <button
+                onClick={cal.handleAbnValidationContinue}
+                className="px-8 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
+                style={{ background: '#FF6A00' }}
+              >
+                Continue to Social Enrichment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cal.entry === "social_enrichment" && (
+        <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }}>
+          <div className="max-w-2xl mx-auto px-4 sm:px-8 py-10">
+            <div className="rounded-xl p-6" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${CARD_BORDER}` }}>
+              <h2 className="text-xl font-semibold text-[#F4F7FA] mb-2">Social Enrichment</h2>
+              <p className="text-sm text-[#9FB0C3] mb-6 whitespace-pre-wrap">
+                {`Source: ${cal.identitySignals?.social_enrichment?.source || 'search'}\nStatus: ${cal.identitySignals?.social_enrichment?.social_status || 'not_detected'}\nLinkedIn: ${cal.identitySignals?.social_enrichment?.linkedin || 'Not detected'}\nFacebook: ${cal.identitySignals?.social_enrichment?.facebook || 'Not detected'}\nInstagram: ${cal.identitySignals?.social_enrichment?.instagram || 'Not detected'}\nX/Twitter: ${cal.identitySignals?.social_enrichment?.twitter || 'Not detected'}\nYouTube: ${cal.identitySignals?.social_enrichment?.youtube || 'Not detected'}`}
+              </p>
+              <button
+                onClick={cal.handleSocialEnrichmentContinue}
+                className="px-8 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
+                style={{ background: '#FF6A00' }}
+              >
+                Continue to Identity Verification
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ PHASE 3: Forensic Identity Verification (BEFORE footprint report) ═══ */}
       {cal.entry === "identity_verification" && cal.identitySignals && (
         <ForensicIdentityCard
@@ -151,6 +192,26 @@ const CalibrationAdvisor = () => {
           scanFailure={cal.scanFailure}
           scanAttemptCount={cal.scanAttemptCount}
           canManualFallback={cal.canManualFallback}
+        />
+      )}
+
+      {cal.entry === "wow_cards" && (
+        <WowCardsStage wowSummary={cal.wowSummary} identitySignals={cal.identitySignals} onContinue={cal.handleContinueWowCards} />
+      )}
+
+      {cal.entry === "deep_narrative" && (
+        <DeepNarrativeStage wowSummary={cal.wowSummary} onContinue={cal.handleContinueDeepNarrative} />
+      )}
+
+      {cal.entry === "roadmap" && (
+        <RoadmapStage wowSummary={cal.wowSummary} onContinue={cal.handleContinueRoadmap} />
+      )}
+
+      {cal.entry === "report_generation" && (
+        <ReportGenerationStage
+          isGenerating={cal.isGeneratingReport}
+          reportCount={Array.isArray(cal.deepCmoReportHistory) ? cal.deepCmoReportHistory.length : 0}
+          onGenerate={cal.handleGenerateReportAndContinue}
         />
       )}
 

@@ -42,6 +42,16 @@ const webpackConfig = {
       },
     },
   },
+  jest: {
+    configure: (jestConfig) => {
+      // Keep Jest module resolution aligned with webpack alias '@' → src/.
+      jestConfig.moduleNameMapper = {
+        ...(jestConfig.moduleNameMapper || {}),
+        "^@/(.*)$": "<rootDir>/src/$1",
+      };
+      return jestConfig;
+    },
+  },
   webpack: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

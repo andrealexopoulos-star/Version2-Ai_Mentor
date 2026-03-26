@@ -399,23 +399,60 @@ export const AuditProgress = ({ onManualFallback = null }) => {
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6" data-testid="analyzing-state">
       <style>{`
-        @keyframes meshFloat{0%,100%{transform:translate(0,0)}25%{transform:translate(3px,-4px)}50%{transform:translate(-2px,3px)}75%{transform:translate(4px,2px)}}
-        @keyframes meshLine{0%{opacity:0;stroke-dashoffset:60}50%{opacity:0.3}100%{opacity:0;stroke-dashoffset:0}}
-        @keyframes meshPulse{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:0.8;transform:scale(1.3)}}
+        @keyframes tvGlow{0%,100%{box-shadow:0 0 0 rgba(255,106,0,0.0)}50%{box-shadow:0 0 24px rgba(255,106,0,0.22)}}
+        @keyframes scanLine{0%{transform:translateY(-100%)}100%{transform:translateY(260%)}}
+        @keyframes noiseFlicker{0%,100%{opacity:0.05}20%{opacity:0.12}45%{opacity:0.03}70%{opacity:0.09}}
+        @keyframes packetFloat{0%{opacity:0;transform:translateX(-12px)}20%{opacity:1}80%{opacity:1}100%{opacity:0;transform:translateX(18px)}}
+        @keyframes pulseDot{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.35)}}
       `}</style>
 
-      {/* Cognitive mesh animation — replaces rotating circle */}
-      <div className="relative mb-8" style={{ width: 200, height: 150 }}>
-        <svg width="200" height="150" viewBox="0 0 200 150">
-          {[[40,30,100,40],[100,40,160,70],[60,90,120,80],[120,80,170,100],[40,30,60,90],[100,40,120,80],[160,70,170,100]].map(([x1,y1,x2,y2], i) => (
-            <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#FF6A00" strokeWidth="0.5" strokeDasharray="60"
-              style={{ animation: `meshLine ${3+i*0.7}s ease-in-out infinite`, animationDelay: `${i*0.4}s` }} />
+      {/* TV forensic scan animation */}
+      <div
+        className="relative mb-8"
+        style={{
+          width: 'min(92vw, 1300px)',
+          height: 'min(72vh, 950px)',
+          maxWidth: 1300,
+          maxHeight: 950,
+        }}
+      >
+        <div
+          className="absolute inset-0 rounded-2xl"
+          style={{ border: '1px solid #304356', background: '#0B121B', animation: 'tvGlow 2.4s ease-in-out infinite' }}
+        />
+        <div className="absolute left-[2.5%] right-[2.5%] top-[2.5%] bottom-[8%] rounded-xl overflow-hidden" style={{ background: '#060D16', border: '1px solid #1E2C3D' }}>
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(59,130,246,0.08), rgba(255,106,0,0.07))' }} />
+          <div className="absolute left-0 right-0 h-[12%]" style={{ background: 'linear-gradient(180deg, rgba(255,106,0,0.22), rgba(255,106,0,0))', animation: 'scanLine 1.35s linear infinite' }} />
+          <div className="absolute inset-0" style={{ backgroundImage: 'repeating-linear-gradient(180deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 2px, transparent 4px)', animation: 'noiseFlicker 0.9s steps(2,end) infinite' }} />
+
+          <div className="absolute left-[2.5%] top-[3%] flex gap-2">
+            {['website', 'social', 'market', 'identity'].map((t, i) => (
+              <span key={t} className="text-[11px] px-2 py-1 rounded-full"
+                style={{ color: '#9FB0C3', background: '#1A2430', border: '1px solid #243140', animation: `packetFloat 1.4s ease-in-out infinite`, animationDelay: `${i * 0.15}s` }}>
+                {t}
+              </span>
+            ))}
+          </div>
+
+          <div className="absolute left-[3%] right-[3%] bottom-[3%] space-y-2">
+            {[
+              'ingest: homepage_html',
+              'parse: linkedin|facebook|instagram|x|youtube',
+              'resolve: abn_candidates',
+              'sync: evidence graph',
+            ].map((line, i) => (
+              <div key={line} className="text-[14px]" style={{ color: '#7FA0BF', fontFamily: 'monospace', opacity: 0.9 - i * 0.12 }}>
+                {`> ${line}`}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-[2%] flex items-center gap-3">
+          {[0, 1, 2].map((i) => (
+            <span key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: '#FF6A00', animation: `pulseDot 1.2s ease-in-out infinite`, animationDelay: `${i * 0.2}s` }} />
           ))}
-          {[[40,30],[100,40],[160,70],[60,90],[120,80],[170,100],[80,60],[140,50],[30,65],[175,40],[90,110],[150,120]].map(([cx,cy], i) => (
-            <circle key={i} cx={cx} cy={cy} r={i < 4 ? 3 : 2} fill="#FF6A00"
-              style={{ animation: `meshFloat ${4+i*0.3}s ease-in-out infinite, meshPulse ${2+i*0.5}s ease-in-out infinite`, animationDelay: `${i*0.2}s`, opacity: i < 6 ? 0.6 : 0.25 }} />
-          ))}
-        </svg>
+          <span className="text-[13px]" style={{ color: '#7A8FA6', fontFamily: 'monospace' }}>BIQc forensic ingest</span>
+        </div>
       </div>
 
       <p className="text-base text-center leading-relaxed transition-opacity duration-1000"

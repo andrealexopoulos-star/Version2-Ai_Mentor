@@ -324,7 +324,13 @@ const RegisterSupabase = () => {
               <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Password <span className="text-[#EF4444]">*</span></label>
               <div className="relative">
                 <Input id="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => set('password', e.target.value)} placeholder="Min 6 characters" className="h-11 pr-12 text-sm rounded-xl" style={{ ...inputStyle, WebkitTextSecurity: showPassword ? 'none' : 'disc' }} required minLength={6} data-testid="register-password-input" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#9FB0C3]" data-testid="register-toggle-password">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#9FB0C3]"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  data-testid="register-toggle-password"
+                >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
