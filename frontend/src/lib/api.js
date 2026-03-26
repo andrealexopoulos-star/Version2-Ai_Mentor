@@ -14,7 +14,7 @@ const devBypassSecret =
 const getCalibrationQaKey = () => {
   try {
     if (typeof window === 'undefined') return '';
-    const pathname = window.location?.pathname || '';
+    const pathname = (window.location?.pathname || '').replace(/\/+$/, '');
     if (pathname !== '/calibration-qa') return '';
     return (sessionStorage.getItem('biqc_calibration_qa_key') || '').trim();
   } catch {
