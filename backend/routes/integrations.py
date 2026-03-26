@@ -101,6 +101,7 @@ async def proxy_edge_function(
                     "Authorization": inbound_auth,
                     "apikey": proxy_apikey,
                     "Content-Type": "application/json",
+                    "X-QA-Bypass": (request.headers.get("X-QA-Bypass") or "").strip(),
                 },
             )
         content_type = edge_res.headers.get("content-type", "")
