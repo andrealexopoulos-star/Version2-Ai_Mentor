@@ -120,7 +120,19 @@ const PrivacyModal = ({ onClose }) => (
  *  Phase 1: Intro with Privacy link + Continue button
  *  Phase 2: Website URL scan form
  */
-export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmit, onManualFallback, isSubmitting, error, initialPhase = 'intro' }) => {
+export const WelcomeHandshake = ({
+  firstName,
+  websiteUrl,
+  setWebsiteUrl,
+  onSubmit,
+  onManualFallback,
+  isSubmitting,
+  error,
+  initialPhase = 'intro',
+  scanFailure = null,
+  scanAttemptCount = 0,
+  canManualFallback = false,
+}) => {
   const [phase, setPhase] = useState(initialPhase); // intro | scan
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [handles, setHandles] = useState({ linkedin: '', twitter: '', instagram: '', facebook: '' });
@@ -226,20 +238,27 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
       <div className="flex-1 flex items-center justify-center px-6">
         <div className="max-w-lg w-full text-center">
           <h1 className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
-            Let's scan your business.
+            {scanFailure ? "Let's retry your scan." : "Let's scan your business."}
           </h1>
           <p className="text-base leading-relaxed mb-8" style={{ color: MUTED, maxWidth: 460, margin: '0 auto 32px' }}>
-            Enter your website URL. BIQc will analyse your market position, competitive landscape and digital footprint in real time.
+            {scanFailure
+              ? 'Check your website details, then regenerate the scan. If it still fails, manual setup will unlock.'
+              : 'Enter your website URL. BIQc will analyse your market position, competitive landscape and digital footprint in real time.'}
           </p>
 
           {error && <p className="text-sm text-red-500 mb-4" data-testid="calibration-error">{error}</p>}
+          {scanFailure && (
+            <p className="text-xs mb-4" style={{ color: '#3B82F6' }} data-testid="calibration-retry-guidance">
+              Attempt {scanAttemptCount}: verify domain spelling, ensure the site is live, then click Regenerate Scan.
+            </p>
+          )}
 
           <form onSubmit={onSubmit} className="max-w-md mx-auto space-y-4">
             <input
               type="text"
               value={websiteUrl}
               onChange={(e) => setWebsiteUrl(e.target.value)}
-              placeholder="thestrategysquad.com"
+              placeholder="yourcompany.com"
               className="w-full rounded-xl px-5 py-4 text-lg text-center focus:outline-none transition-colors"
               style={{ background: CARD_BG, border: `2px solid ${CARD_BORDER}`, color: CHARCOAL, fontFamily: SERIF }}
               autoFocus
@@ -251,7 +270,7 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
               className="w-full px-8 py-3.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
               style={{ background: '#FF6A00', color: '#FFFFFF', fontFamily: SERIF }}
               data-testid="begin-audit-btn">
-              {isSubmitting ? 'Scanning...' : 'Begin Strategic Audit'}
+              {isSubmitting ? 'Scanning...' : scanFailure ? 'Regenerate Scan' : 'Begin Strategic Audit'}
             </button>
           </form>
 
@@ -297,12 +316,14 @@ export const WelcomeHandshake = ({ firstName, websiteUrl, setWebsiteUrl, onSubmi
             )}
           </div>
 
-          <button onClick={onManualFallback}
-            className="mt-6 text-xs font-medium cursor-pointer transition-colors"
-            style={{ color: MUTED }}
-            data-testid="no-website-btn">
-            I Don't Have a Website — Analyse My Business Manually
-          </button>
+          {canManualFallback && (
+            <button onClick={onManualFallback}
+              className="mt-6 text-xs font-medium cursor-pointer transition-colors"
+              style={{ color: MUTED }}
+              data-testid="no-website-btn">
+              Continue manually after scan retries
+            </button>
+          )}
         </div>
       </div>
     </>
@@ -366,35 +387,133 @@ export const ManualSummaryFallback = ({ firstName, onSubmit, isSubmitting }) => 
 export const AuditProgress = ({ onManualFallback = null }) => {
   const [phase, setPhase] = useState(0);
   const [showFallback, setShowFallback] = useState(false);
+  const [tick, setTick] = useState(0);
+
   useEffect(() => {
     const interval = setInterval(() => setPhase(p => (p + 1) % ANALYZE_PHASES.length), 3000);
+    const tickInterval = setInterval(() => setTick(t => t + 1), 180);
     const fallbackTimer = setTimeout(() => setShowFallback(true), 18000);
     return () => {
       clearInterval(interval);
+      clearInterval(tickInterval);
       clearTimeout(fallbackTimer);
     };
   }, []);
 
+  const signalStrength = 62 + (tick % 14);
+  const confidence = 48 + (tick % 23);
+  const packetsPerSecond = 1200 + (tick * 7);
+  const sweepRotation = (tick * 7) % 360;
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6" data-testid="analyzing-state">
       <style>{`
-        @keyframes meshFloat{0%,100%{transform:translate(0,0)}25%{transform:translate(3px,-4px)}50%{transform:translate(-2px,3px)}75%{transform:translate(4px,2px)}}
-        @keyframes meshLine{0%{opacity:0;stroke-dashoffset:60}50%{opacity:0.3}100%{opacity:0;stroke-dashoffset:0}}
-        @keyframes meshPulse{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:0.8;transform:scale(1.3)}}
+        @keyframes panelGlow{0%,100%{box-shadow:0 0 0 rgba(255,106,0,0.0), inset 0 0 0 rgba(255,106,0,0.0)}50%{box-shadow:0 0 34px rgba(255,106,0,0.14), inset 0 0 24px rgba(255,106,0,0.09)}}
+        @keyframes crtFlicker{0%,100%{opacity:0.18}50%{opacity:0.11}}
+        @keyframes scanlineSweep{0%{transform:translateY(-110%)}100%{transform:translateY(310%)}}
+        @keyframes dataPulse{0%,100%{opacity:0.45}50%{opacity:1}}
       `}</style>
 
-      {/* Cognitive mesh animation — replaces rotating circle */}
-      <div className="relative mb-8" style={{ width: 200, height: 150 }}>
-        <svg width="200" height="150" viewBox="0 0 200 150">
-          {[[40,30,100,40],[100,40,160,70],[60,90,120,80],[120,80,170,100],[40,30,60,90],[100,40,120,80],[160,70,170,100]].map(([x1,y1,x2,y2], i) => (
-            <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#FF6A00" strokeWidth="0.5" strokeDasharray="60"
-              style={{ animation: `meshLine ${3+i*0.7}s ease-in-out infinite`, animationDelay: `${i*0.4}s` }} />
-          ))}
-          {[[40,30],[100,40],[160,70],[60,90],[120,80],[170,100],[80,60],[140,50],[30,65],[175,40],[90,110],[150,120]].map(([cx,cy], i) => (
-            <circle key={i} cx={cx} cy={cy} r={i < 4 ? 3 : 2} fill="#FF6A00"
-              style={{ animation: `meshFloat ${4+i*0.3}s ease-in-out infinite, meshPulse ${2+i*0.5}s ease-in-out infinite`, animationDelay: `${i*0.2}s`, opacity: i < 6 ? 0.6 : 0.25 }} />
-          ))}
-        </svg>
+      <div
+        className="relative mb-8 w-full max-w-2xl rounded-2xl overflow-hidden"
+        style={{
+          background: 'linear-gradient(160deg, #0A111A 0%, #0E1824 45%, #111D2B 100%)',
+          border: '1px solid #27374A',
+          animation: 'panelGlow 3.2s ease-in-out infinite',
+        }}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(to bottom, rgba(255,255,255,0.035) 0px, rgba(255,255,255,0.035) 1px, transparent 2px, transparent 4px)',
+            animation: 'crtFlicker 0.28s linear infinite',
+          }}
+        />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(180deg, rgba(255,106,0,0) 0%, rgba(255,106,0,0.13) 45%, rgba(255,106,0,0) 100%)',
+            transform: 'translateY(-110%)',
+            animation: 'scanlineSweep 2.9s linear infinite',
+          }}
+        />
+
+        <div className="relative grid grid-cols-1 md:grid-cols-[220px,1fr] gap-5 p-5">
+          <div className="flex items-center justify-center">
+            <div
+              className="relative rounded-full"
+              style={{
+                width: 170,
+                height: 170,
+                border: '1px solid rgba(255,106,0,0.5)',
+                background: 'radial-gradient(circle at center, rgba(255,106,0,0.18) 0%, rgba(255,106,0,0.06) 35%, rgba(255,106,0,0.02) 60%, rgba(0,0,0,0.0) 100%)',
+              }}
+            >
+              <div className="absolute left-1/2 top-0 h-full w-px" style={{ background: 'rgba(255,106,0,0.16)' }} />
+              <div className="absolute top-1/2 left-0 w-full h-px" style={{ background: 'rgba(255,106,0,0.16)' }} />
+              {[30, 55, 80].map((size) => (
+                <div
+                  key={size}
+                  className="absolute rounded-full"
+                  style={{
+                    inset: `${size / 2}px`,
+                    border: '1px solid rgba(255,106,0,0.18)',
+                  }}
+                />
+              ))}
+              <div
+                className="absolute top-1/2 left-1/2"
+                style={{
+                  width: 1,
+                  height: 82,
+                  transformOrigin: 'bottom center',
+                  transform: `translate(-50%, -100%) rotate(${sweepRotation}deg)`,
+                  background: 'linear-gradient(to top, rgba(255,106,0,0.9) 0%, rgba(255,106,0,0.1) 100%)',
+                }}
+              />
+              <div
+                className="absolute top-1/2 left-1/2 w-2.5 h-2.5 rounded-full"
+                style={{ transform: 'translate(-50%, -50%)', background: '#FF6A00', boxShadow: '0 0 14px rgba(255,106,0,0.6)' }}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-2 text-[11px]" style={{ color: '#B9C8D8', fontFamily: "'JetBrains Mono', monospace" }}>
+              <div className="rounded-lg px-2.5 py-2" style={{ background: '#0B141F', border: '1px solid #223243' }}>
+                <div style={{ color: '#6C8095' }}>SIGNAL</div>
+                <div style={{ color: '#FFB06E' }}>{signalStrength}%</div>
+              </div>
+              <div className="rounded-lg px-2.5 py-2" style={{ background: '#0B141F', border: '1px solid #223243' }}>
+                <div style={{ color: '#6C8095' }}>CONFIDENCE</div>
+                <div style={{ color: '#FFB06E' }}>{confidence}%</div>
+              </div>
+              <div className="rounded-lg px-2.5 py-2" style={{ background: '#0B141F', border: '1px solid #223243' }}>
+                <div style={{ color: '#6C8095' }}>PACKETS/S</div>
+                <div style={{ color: '#FFB06E' }}>{packetsPerSecond}</div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              {Array.from({ length: 8 }).map((_, i) => {
+                const active = ((tick + i * 3) % 10) + 2;
+                return (
+                  <div key={i} className="h-2 rounded-full overflow-hidden" style={{ background: '#142130' }}>
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${active * 10}%`,
+                        background: 'linear-gradient(90deg, #FF6A00 0%, #FFC48B 100%)',
+                        animation: 'dataPulse 1.1s ease-in-out infinite',
+                        animationDelay: `${i * 0.08}s`,
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
 
       <p className="text-base text-center leading-relaxed transition-opacity duration-1000"
