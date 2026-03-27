@@ -62,8 +62,14 @@ const extractAgentReply = (payload) => {
   return '';
 };
 
-const isCalibrationLinkDisrupted = (text) =>
-  typeof text === 'string' && /calibration link disrupted|please retry/i.test(text);
+const isCalibrationLinkDisrupted = (text) => {
+  if (typeof text !== 'string' || !text.trim()) return false;
+  const normalized = text.toLowerCase().replace(/[^a-z\s]/g, ' ');
+  return (
+    normalized.includes('calibration') &&
+    (normalized.includes('disrupt') || normalized.includes('retry'))
+  );
+};
 
 const IntroScreen = ({ firstName, onStart }) => (
   <div className="h-screen flex flex-col items-center justify-center px-6 text-center"
