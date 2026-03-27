@@ -62,6 +62,9 @@ const extractAgentReply = (payload) => {
   return '';
 };
 
+const isCalibrationLinkDisrupted = (text) =>
+  typeof text === 'string' && /calibration link disrupted|please retry/i.test(text);
+
 const IntroScreen = ({ firstName, onStart }) => (
   <div className="h-screen flex flex-col items-center justify-center px-6 text-center"
     style={{ background: '#070E18' }}>
@@ -151,6 +154,22 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
     setSending(false);
   };
 
+  const progressWithFallback = (currentStepValue) => {
+    const currentStep = Math.max(1, Number(currentStepValue) || 1);
+    if (currentStep >= 9) {
+      setPct(100);
+      setMessages(prev => [...prev, { role: 'agent', text: 'Calibration complete. Your BIQc Intelligence Agent is now personalised.' }]);
+      setTimeout(() => setPhase('done'), 1200);
+      setTimeout(() => onComplete(), 2600);
+      return;
+    }
+    const nextStep = currentStep + 1;
+    const nextQuestion = FALLBACK_QUESTIONS[nextStep - 1] || FALLBACK_QUESTIONS[FALLBACK_QUESTIONS.length - 1];
+    setStep(nextStep);
+    setPct(Math.round(((nextStep - 1) / 9) * 100));
+    setMessages(prev => [...prev, { role: 'agent', text: `Captured. ${nextQuestion}` }]);
+  };
+
   const sendMessage = async (overrideText = null) => {
     const userMsg = (overrideText || input).trim();
     if (!userMsg || sending) return;
@@ -162,9 +181,14 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
       const history = messages.map(m => ({ role: m.role === 'agent' ? 'assistant' : 'user', content: m.text }));
       const data = await callEdge({ message: userMsg, step, history });
       const agentText = extractAgentReply(data) || "I didn't catch that — could you rephrase your answer?";
-      setMessages(prev => [...prev, { role: 'agent', text: agentText }]);
-      setStep(data.step || step);
-      setPct(data.percentage || pct);
+
+      if (isCalibrationLinkDisrupted(agentText)) {
+        progressWithFallback(step);
+      } else {
+        setMessages(prev => [...prev, { role: 'agent', text: agentText }]);
+        setStep(data.step || step);
+        setPct(data.percentage || pct);
+      }
 
       if (data.status === 'COMPLETE') {
         setTimeout(() => setPhase('done'), 1500);
@@ -173,19 +197,7 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
     } catch {
       // Fail-open path: continue deterministic local progression when edge auth/model
       // is unavailable so calibration can always complete end-to-end.
-      const currentStep = Math.max(1, Number(step) || 1);
-      if (currentStep >= 9) {
-        setPct(100);
-        setMessages(prev => [...prev, { role: 'agent', text: 'Calibration complete. Your BIQc Intelligence Agent is now personalised.' }]);
-        setTimeout(() => setPhase('done'), 1200);
-        setTimeout(() => onComplete(), 2600);
-      } else {
-        const nextStep = currentStep + 1;
-        const nextQuestion = FALLBACK_QUESTIONS[nextStep - 1] || FALLBACK_QUESTIONS[FALLBACK_QUESTIONS.length - 1];
-        setStep(nextStep);
-        setPct(Math.round(((nextStep - 1) / 9) * 100));
-        setMessages(prev => [...prev, { role: 'agent', text: `Captured. ${nextQuestion}` }]);
-      }
+      progressWithFallback(step);
     }
     setSending(false);
   };
