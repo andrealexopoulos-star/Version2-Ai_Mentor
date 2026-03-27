@@ -148,6 +148,114 @@ function buildStaffSignals(full) {
   return { teamMembers, teamSize, founderBackground, staffReviewSignals, hasStaffData };
 }
 
+function buildCustomerReviewSignals(full) {
+  const trustSignalsRaw = Array.isArray(full.trust_signals) ? full.trust_signals : [];
+  const trustSignals = trustSignalsRaw
+    .map((item) => {
+      if (!item) return '';
+      if (typeof item === 'string') return item.trim();
+      if (typeof item === 'object') return (item.signal || item.title || item.label || item.text || '').toString().trim();
+      return '';
+    })
+    .filter(Boolean);
+
+  const customerReviewSignals = trustSignals.filter((signal) =>
+    /(testimonial|case stud|review|google review|productreview|rating|social proof)/i.test(signal)
+  );
+
+  const reviewEvidence = [
+    ...(full.customer_count ? [`Client count signal: ${full.customer_count}`] : []),
+    ...(full.case_studies ? ['Case studies detected in public footprint'] : []),
+    ...(full.testimonials ? ['Testimonials detected in public footprint'] : []),
+    ...customerReviewSignals,
+  ].filter(Boolean);
+
+  const hasReviewData = reviewEvidence.length > 0;
+  const confidenceBand = hasReviewData ? (reviewEvidence.length >= 3 ? 'medium-high' : 'medium') : 'low';
+
+  const impact = hasReviewData
+    ? [
+      {
+        fundamental: 'Conversion rate',
+        impact: '+6% to +18%',
+        mechanism: 'Proof-backed messaging reduces buyer doubt during first-touch evaluation.',
+      },
+      {
+        fundamental: 'Customer acquisition cost',
+        impact: '-8% to -22%',
+        mechanism: 'Higher trust density improves paid and organic click-to-enquiry efficiency.',
+      },
+      {
+        fundamental: 'Gross profit',
+        impact: '+2 to +6 pts margin',
+        mechanism: 'Stronger credibility reduces discount pressure and supports value-based pricing.',
+      },
+    ]
+    : [
+      {
+        fundamental: 'Conversion rate',
+        impact: '-10% to -25% drag risk',
+        mechanism: 'Low visible proof forces prospects to delay or abandon decision.',
+      },
+      {
+        fundamental: 'Customer acquisition cost',
+        impact: '+12% to +30% risk',
+        mechanism: 'Paid campaigns require more spend to overcome trust gaps.',
+      },
+      {
+        fundamental: 'Gross profit',
+        impact: '-3 to -8 pts margin risk',
+        mechanism: 'Sales teams compensate weak proof with discounting.',
+      },
+    ];
+
+  return { reviewEvidence, customerReviewSignals, hasReviewData, confidenceBand, impact };
+}
+
+function buildStaffImpactSignals(staffSignals) {
+  const reviewCount = (staffSignals.staffReviewSignals || []).length;
+  const hasTeamMembers = (staffSignals.teamMembers || []).length > 0;
+  const hasAny = staffSignals.hasStaffData;
+
+  const impact = hasAny
+    ? [
+      {
+        fundamental: 'Service delivery capacity',
+        impact: hasTeamMembers ? 'Stronger execution continuity' : 'Moderate continuity risk',
+        mechanism: 'Visible role structure reduces key-person dependency and delivery bottlenecks.',
+      },
+      {
+        fundamental: 'Revenue retention',
+        impact: reviewCount > 0 ? '+3% to +10% retention support' : 'Retention volatility risk',
+        mechanism: 'Healthier staff signals correlate with stronger customer experience consistency.',
+      },
+      {
+        fundamental: 'Operating profit',
+        impact: reviewCount > 0 ? '+1 to +4 pts margin support' : '-2 to -6 pts margin risk',
+        mechanism: 'Lower team friction reduces rework, escalation cost, and service leakage.',
+      },
+    ]
+    : [
+      {
+        fundamental: 'Service delivery capacity',
+        impact: 'Unquantified risk',
+        mechanism: 'No verifiable staffing signals limits execution confidence.',
+      },
+      {
+        fundamental: 'Revenue retention',
+        impact: 'Potential churn pressure',
+        mechanism: 'Team health blind spots often surface as inconsistent client experience.',
+      },
+      {
+        fundamental: 'Operating profit',
+        impact: 'Margin leakage risk',
+        mechanism: 'Unseen people issues typically increase rework and management overhead.',
+      },
+    ];
+
+  return { impact };
+}
+
 const ScoreBar = ({ score, max = 10, color }) => {
   const pct = Math.min(Math.round((score / max) * 100), 100);
   const c = color || (score >= 7 ? '#10B981' : score >= 4 ? '#F59E0B' : '#EF4444');
@@ -174,6 +282,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
   const geo = buildGeographicPresence(full);
   const competitors = buildCompetitorInsights(full);
   const staff = buildStaffSignals(full);
+  const customerReviews = buildCustomerReviewSignals(full);
+  const staffImpact = buildStaffImpactSignals(staff);
   const cmoExecutiveBrief = full.cmo_executive_brief || full.executive_summary || '';
   const websiteHealth = full.website_health || {};
   const seoAnalysis = full.seo_analysis || {};
@@ -464,7 +574,54 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           )}
         </div>
 
-        {/* ── SECTION 5A: STAFF & TEAM SIGNALS ── */}
+        {/* ── SECTION 5A: CUSTOMER REVIEW INTELLIGENCE ── */}
+        <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.43s ease-out' }} data-testid="customer-review-intelligence">
+          <div className="flex items-center gap-2 mb-3">
+            <Star className="w-4 h-4" style={{ color: '#F59E0B' }} />
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Customer Review Intelligence</h2>
+            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#F59E0B', background: '#F59E0B15', fontFamily: fontFamily.mono }}>
+              confidence: {customerReviews.confidenceBand}
+            </span>
+          </div>
+
+          {customerReviews.reviewEvidence.length > 0 ? (
+            <>
+              <div className="mb-3">
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Explicit Public Review Evidence</p>
+                <div className="space-y-1.5">
+                  {customerReviews.reviewEvidence.slice(0, 5).map((signal, idx) => (
+                    <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      - {signal}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>
+              No explicit customer review markers were found in the current public scan.
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            {customerReviews.impact.map((row, idx) => (
+              <div key={idx} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{row.fundamental}</p>
+                <p className="text-xs mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{row.impact}</p>
+                <p className="text-[11px] leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{row.mechanism}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Depth Preview (Example)</p>
+            <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+              Example depth BIQc can provide: "Across 47 public reviews, response-time complaints appeared in 29.8% of negative mentions, correlated with a 14-day sales-cycle extension. Modeled impact: 6-11% conversion drag and 2.1-3.8 point gross-margin compression due to discount-led recovery."
+            </p>
+          </div>
+        </div>
+
+        {/* ── SECTION 5B: STAFF & TEAM SIGNALS ── */}
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.45s ease-out' }} data-testid="staff-intelligence">
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-4 h-4" style={{ color: '#3B82F6' }} />
@@ -500,11 +657,30 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               {staff.staffReviewSignals.length > 0 && (
                 <div>
                   <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Staff Review Signals</p>
-                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                    {staff.staffReviewSignals.slice(0, 3).join(' · ')}
-                  </p>
+                  <div className="space-y-1.5">
+                    {staff.staffReviewSignals.slice(0, 4).map((signal, idx) => (
+                      <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                        - {signal}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               )}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                {staffImpact.impact.map((row, idx) => (
+                  <div key={idx} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{row.fundamental}</p>
+                    <p className="text-xs mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{row.impact}</p>
+                    <p className="text-[11px] leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{row.mechanism}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Depth Preview (Example)</p>
+                <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+                  Example depth BIQc can provide: "Team sentiment declined from neutral to negative over 6 weeks, with repeated workload and escalation markers. Predicted effect: 9-16% delivery-cycle slippage, 4-9% retention risk, and 1.5-3.2 point operating-margin pressure unless staffing bottlenecks are corrected."
+                </p>
+              </div>
             </div>
           ) : (
             <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No staff review or team structure signals were detected from public sources yet. Add LinkedIn and review channels to strengthen this layer.</p>
