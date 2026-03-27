@@ -93,8 +93,59 @@ function buildGeographicPresence(full) {
 function buildCompetitorInsights(full) {
   const industry = full.industry || '';
   const location = full.location || full.geographic_focus || '';
-  const hasCompetitorData = full.competitive_advantages || full.competitive_moat;
-  return { industry, location, hasCompetitorData, competitiveAdvantages: full.competitive_advantages || '', moat: full.competitive_moat || '' };
+  const competitorList = Array.isArray(full.competitors)
+    ? full.competitors
+      .map((c) => {
+        if (!c) return '';
+        if (typeof c === 'string') return c.trim();
+        if (typeof c === 'object') return (c.name || c.business_name || c.domain || '').trim();
+        return '';
+      })
+      .filter(Boolean)
+    : [];
+  const competitorAnalysis = typeof full.competitor_analysis === 'string' ? full.competitor_analysis : '';
+  const hasCompetitorData = Boolean(
+    full.competitive_advantages ||
+    full.competitive_moat ||
+    competitorAnalysis ||
+    competitorList.length > 0
+  );
+  return {
+    industry,
+    location,
+    hasCompetitorData,
+    competitiveAdvantages: full.competitive_advantages || '',
+    moat: full.competitive_moat || '',
+    competitorAnalysis,
+    competitorList,
+  };
+}
+
+function buildStaffSignals(full) {
+  const teamMembers = Array.isArray(full.team_members) ? full.team_members : [];
+  const teamSize = full.team_size || '';
+  const founderBackground = full.founder_background || '';
+  const trustSignalsRaw = Array.isArray(full.trust_signals) ? full.trust_signals : [];
+  const trustSignals = trustSignalsRaw
+    .map((item) => {
+      if (!item) return '';
+      if (typeof item === 'string') return item.trim();
+      if (typeof item === 'object') {
+        return (item.signal || item.title || item.label || item.text || '').toString().trim();
+      }
+      return '';
+    })
+    .filter(Boolean);
+  const staffReviewSignals = trustSignals.filter((signal) =>
+    /(glassdoor|indeed|seek|employee|staff|team review|culture)/i.test(signal)
+  );
+  const hasStaffData = Boolean(
+    teamMembers.length > 0 ||
+    teamSize ||
+    founderBackground ||
+    staffReviewSignals.length > 0
+  );
+  return { teamMembers, teamSize, founderBackground, staffReviewSignals, hasStaffData };
 }
 
 const ScoreBar = ({ score, max = 10, color }) => {
@@ -122,6 +173,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
   const audit = buildCommunicationAudit(full);
   const geo = buildGeographicPresence(full);
   const competitors = buildCompetitorInsights(full);
+  const staff = buildStaffSignals(full);
   const cmoExecutiveBrief = full.cmo_executive_brief || full.executive_summary || '';
   const websiteHealth = full.website_health || {};
   const seoAnalysis = full.seo_analysis || {};
@@ -389,9 +441,73 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   ))}
                 </div>
               )}
+              {competitors.competitorList.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Detected Competitors</p>
+                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    {competitors.competitorList.slice(0, 5).join(' · ')}
+                  </p>
+                </div>
+              )}
+              {competitors.competitorAnalysis && (
+                <div className="mt-3 p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Competitive Pressure Summary</p>
+                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    {competitors.competitorAnalysis.substring(0, 280)}
+                    {competitors.competitorAnalysis.length > 280 ? '...' : ''}
+                  </p>
+                </div>
+              )}
             </>
           ) : (
             <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No competitor data detected from publicly available sources. BIQc does not assume or fabricate competitor information — run an Exposure Scan to unlock this analysis.</p>
+          )}
+        </div>
+
+        {/* ── SECTION 5A: STAFF & TEAM SIGNALS ── */}
+        <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.45s ease-out' }} data-testid="staff-intelligence">
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="w-4 h-4" style={{ color: '#3B82F6' }} />
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Staff & Team Signals</h2>
+          </div>
+          {staff.hasStaffData ? (
+            <div className="space-y-3">
+              {(staff.teamSize || staff.teamMembers.length > 0) && (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                  Team footprint: {staff.teamSize || `${staff.teamMembers.length} named team member${staff.teamMembers.length === 1 ? '' : 's'} detected`}.
+                </p>
+              )}
+              {staff.teamMembers.length > 0 && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Named Team Members</p>
+                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    {staff.teamMembers.slice(0, 4).map((m) => {
+                      if (typeof m === 'string') return m;
+                      if (m?.name && m?.role) return `${m.name} (${m.role})`;
+                      return m?.name || m?.role || '';
+                    }).filter(Boolean).join(' · ')}
+                  </p>
+                </div>
+              )}
+              {staff.founderBackground && (
+                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Founder / Leadership Context</p>
+                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    {staff.founderBackground.substring(0, 240)}{staff.founderBackground.length > 240 ? '...' : ''}
+                  </p>
+                </div>
+              )}
+              {staff.staffReviewSignals.length > 0 && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Staff Review Signals</p>
+                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    {staff.staffReviewSignals.slice(0, 3).join(' · ')}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No staff review or team structure signals were detected from public sources yet. Add LinkedIn and review channels to strengthen this layer.</p>
           )}
         </div>
 
