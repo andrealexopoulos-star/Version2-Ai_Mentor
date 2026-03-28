@@ -123,9 +123,8 @@ async def proxy_edge_function(
     edge_payload = dict(body.payload or {})
     if current_user and current_user.get("id"):
         edge_payload.setdefault("user_id", current_user["id"])
-    timeout_seconds = 90 if resolved_name == "calibration-business-dna" else 45
     try:
-        async with httpx.AsyncClient(timeout=timeout_seconds) as client:
+        async with httpx.AsyncClient(timeout=90) as client:
             edge_res = await client.post(
                 endpoint,
                 json=edge_payload,
