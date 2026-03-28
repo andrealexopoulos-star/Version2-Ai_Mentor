@@ -413,36 +413,27 @@ export const useCalibrationState = () => {
         return;
       }
 
-      // Social enrichment layer (real extraction only).
+      // Backend enrichment orchestrates ALL edge functions (social-enrichment,
+      // deep-web-recon, competitor-monitor, market-analysis-ai, market-signal-scorer)
+      // plus Serper searches and multi-page crawl. No need to call them separately.
       let socialEnrichment = null;
-      try {
-        socialEnrichment = await callEdgeWithTrace('social-enrichment', { website_url: url }, 25000, 'social_enrichment');
-      } catch {}
-
       let deepReconData = null;
       let competitorMonitorData = null;
-      const [deepReconRes, competitorRes] = await Promise.allSettled([
-        callEdgeWithTrace('deep-web-recon', { website: url }, 25000, 'deep_web_recon'),
-        callEdgeWithTrace('competitor-monitor', {}, 25000, 'competitor_monitor'),
-      ]);
-      if (deepReconRes.status === 'fulfilled') deepReconData = deepReconRes.value;
-      if (competitorRes.status === 'fulfilled') competitorMonitorData = competitorRes.value;
-      if (socialEnrichment?.field_provenance && typeof socialEnrichment.field_provenance === 'object') {
-        Object.entries(socialEnrichment.field_provenance).forEach(([field, meta]) => {
-          applyProvenance(field, meta?.source_fn || 'social-enrichment', typeof meta?.confidence === 'number' ? meta.confidence : 0.7);
-        });
-      }
-      if (deepReconData?.field_provenance && typeof deepReconData.field_provenance === 'object') {
-        Object.entries(deepReconData.field_provenance).forEach(([field, meta]) => {
-          applyProvenance(field, meta?.source_fn || 'deep-web-recon', typeof meta?.confidence === 'number' ? meta.confidence : 0.7);
-        });
-      }
 
-      // Deep backend enrichment (Trinity + web search + ABN + competitor scan)
+      // Deep backend enrichment (Trinity + web search + ABN + competitor scan + all edge functions)
       try {
         const deepRes = await apiClient.post('/calibration/enrichment/website', { url, action: 'scan' }, { timeout: 120000 });
         if (deepRes?.data?.status === 'draft' && deepRes?.data?.enrichment) {
           deepEnrichment = deepRes.data.enrichment;
+          if (deepEnrichment.social_handles) {
+            socialEnrichment = { social_handles: deepEnrichment.social_handles, trust_signals: deepEnrichment.trust_signals || [] };
+          }
+          if (deepEnrichment.deep_recon_summary || deepEnrichment.deep_recon_signals) {
+            deepReconData = { executive_summary: deepEnrichment.deep_recon_summary, signals: deepEnrichment.deep_recon_signals || [], sources: deepEnrichment.sources?.edge_tools?.deep_web_recon ? ['deep-web-recon'] : [] };
+          }
+          if (deepEnrichment.competitor_monitor_summary) {
+            competitorMonitorData = { ok: true, signals: deepEnrichment.competitor_monitor_summary };
+          }
         }
       } catch {
         // non-fatal; continue with edge extraction

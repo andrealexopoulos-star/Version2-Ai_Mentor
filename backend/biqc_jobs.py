@@ -19,10 +19,62 @@ from urllib.parse import urlparse
 
 from redis.asyncio import Redis
 from redis.backoff import ExponentialBackoff
+from redis.credentials import CredentialProvider
 from redis.exceptions import RedisError
 from redis.retry import Retry
 
 logger = logging.getLogger(__name__)
+
+REDIS_AAD_SCOPE = "https://redis.azure.com/.default"
+
+
+def _redis_aad_username_from_token(access_token: str) -> Optional[str]:
+    """Extract Azure AD object id for Redis username (Microsoft Entra Redis auth)."""
+    try:
+        import jwt
+
+        decoded = jwt.decode(
+            access_token,
+            algorithms=["RS256"],
+            options={"verify_signature": False},
+        )
+        return decoded.get("oid") or decoded.get("sub")
+    except Exception:
+        return None
+
+
+class _AzureManagedIdentityRedisCredentialProvider(CredentialProvider):
+    """Azure Cache for Redis / Entra ID using Managed Identity only (never DefaultAzureCredential).
+
+    User-assigned MI client id must be set via REDIS_MANAGED_IDENTITY_CLIENT_ID — not AZURE_CLIENT_ID,
+    so local service-principal env vars do not override App Service managed identity for Redis.
+    """
+
+    def __init__(self) -> None:
+        from azure.identity.aio import ManagedIdentityCredential
+
+        mi_client_id = (os.environ.get("REDIS_MANAGED_IDENTITY_CLIENT_ID") or "").strip() or None
+        if mi_client_id:
+            self._credential = ManagedIdentityCredential(client_id=mi_client_id)
+        else:
+            self._credential = ManagedIdentityCredential()
+        self._explicit_username = (os.environ.get("REDIS_AAD_USERNAME") or "").strip() or None
+
+    async def aclose(self) -> None:
+        await self._credential.close()
+
+    async def get_credentials_async(self) -> tuple[str, str]:
+        token = await self._credential.get_token(REDIS_AAD_SCOPE)
+        username = self._explicit_username or _redis_aad_username_from_token(token.token)
+        if not username:
+            raise ValueError(
+                "Redis Entra auth: set REDIS_AAD_USERNAME to the identity object id, "
+                "or use a token that includes an oid claim."
+            )
+        return username, token.token
+
+    def get_credentials(self) -> tuple[str, str]:
+        raise NotImplementedError("use get_credentials_async for async Redis client")
 
 QUEUE_NAMESPACE = "biqc-jobs"
 QUEUE_KEY = f"{QUEUE_NAMESPACE}:queue"
@@ -52,6 +104,7 @@ class BIQcRedisJobs:
     def __init__(self) -> None:
         self.redis_url = os.environ.get("REDIS_URL")
         self.redis: Optional[Redis] = None
+        self._redis_mi_provider: Optional[_AzureManagedIdentityRedisCredentialProvider] = None
         self.redis_connected = False
         self.last_error: Optional[str] = None
         self.worker_task: Optional[asyncio.Task] = None
@@ -71,6 +124,7 @@ class BIQcRedisJobs:
         }
 
     async def initialize(self) -> bool:
+        await self._close_mi_provider_if_any()
         if not self.redis_url:
             self.redis_connected = False
             self.last_error = "REDIS_URL not configured"
@@ -88,9 +142,15 @@ class BIQcRedisJobs:
             self.redis_connected = False
             self.last_error = str(exc)
             self.redis = None
+            await self._close_mi_provider_if_any()
             logger.warning("Redis unavailable – continuing without queue.")
             logger.debug("Redis initialization failure detail: %s", exc)
             return False
+
+    async def _close_mi_provider_if_any(self) -> None:
+        if self._redis_mi_provider is not None:
+            await self._redis_mi_provider.aclose()
+            self._redis_mi_provider = None
 
     def _common_redis_kwargs(self) -> Dict[str, Any]:
         retry = Retry(ExponentialBackoff(base=1, cap=8), 3)
@@ -104,9 +164,112 @@ class BIQcRedisJobs:
             "health_check_interval": 30,
         }
 
+    def _managed_identity_env_enabled(self) -> bool:
+        flag = os.environ.get("REDIS_USE_MANAGED_IDENTITY", "").strip().lower()
+        return flag in ("1", "true", "yes")
+
+    def _has_explicit_redis_password(self, value: str) -> bool:
+        """True if URL or connection string includes an access key / password (prefer key auth)."""
+        v = str(value or "").strip()
+        if v.startswith(("redis://", "rediss://")):
+            parsed = urlparse(v)
+            return bool(parsed.password)
+        parts = [part.strip() for part in v.split(",") if part.strip()]
+        for part in parts:
+            if "=" not in part:
+                continue
+            key, raw_val = part.split("=", 1)
+            key = key.strip().lower()
+            raw_val = raw_val.strip()
+            if key in {"password", "accesskey"} and raw_val:
+                return True
+        return False
+
+    def _build_redis_client_managed_identity(self, value: str, common_kwargs: Dict[str, Any]) -> Redis:
+        provider = _AzureManagedIdentityRedisCredentialProvider()
+        self._redis_mi_provider = provider
+
+        v = str(value or "").strip().strip('"').strip("'")
+        if v.startswith(("redis://", "rediss://")):
+            parsed = urlparse(v)
+            if parsed.scheme not in {"redis", "rediss"}:
+                raise ValueError("Unsupported REDIS_URL scheme for managed identity")
+            host = parsed.hostname
+            if not host:
+                raise ValueError("REDIS_URL must include a host for managed identity")
+            port = parsed.port or (6380 if parsed.scheme == "rediss" else 6379)
+            ssl_enabled = parsed.scheme == "rediss"
+            db = 0
+            if parsed.path and parsed.path != "/":
+                try:
+                    db = int(parsed.path.lstrip("/"))
+                except ValueError:
+                    db = 0
+            return Redis(
+                host=host,
+                port=port,
+                db=db,
+                ssl=ssl_enabled,
+                credential_provider=provider,
+                **common_kwargs,
+            )
+
+        parts = [part.strip() for part in v.split(",") if part.strip()]
+        host = None
+        port = 6380
+        ssl_enabled = True
+        db = 0
+
+        for index, part in enumerate(parts):
+            if index == 0 and "=" not in part and ":" in part:
+                host_part, port_part = part.rsplit(":", 1)
+                host = host_part.strip()
+                try:
+                    port = int(port_part.strip())
+                except ValueError:
+                    port = 6380
+                continue
+
+            if "=" not in part:
+                continue
+            key, raw_val = part.split("=", 1)
+            key = key.strip().lower()
+            raw_val = raw_val.strip()
+            if key in {"host", "hostname"}:
+                host = raw_val
+            elif key == "ssl":
+                ssl_enabled = raw_val.lower() == "true"
+            elif key in {"port"}:
+                try:
+                    port = int(raw_val)
+                except ValueError:
+                    pass
+            elif key in {"db", "database"}:
+                try:
+                    db = int(raw_val)
+                except ValueError:
+                    pass
+
+        if not host:
+            raise ValueError("Redis managed identity requires a host in REDIS_URL")
+
+        return Redis(
+            host=host,
+            port=port,
+            db=db,
+            ssl=ssl_enabled,
+            credential_provider=provider,
+            **common_kwargs,
+        )
+
     def _build_redis_client(self, redis_value: str) -> Redis:
         value = str(redis_value or '').strip().strip('"').strip("'")
         common_kwargs = self._common_redis_kwargs()
+
+        if self._managed_identity_env_enabled() and not self._has_explicit_redis_password(value):
+            return self._build_redis_client_managed_identity(value, common_kwargs)
+
+        self._redis_mi_provider = None
 
         if value.startswith('redis://') or value.startswith('rediss://'):
             parsed = urlparse(value)
@@ -169,6 +332,7 @@ class BIQcRedisJobs:
         if self.redis is not None:
             await self.redis.aclose()
             self.redis = None
+        await self._close_mi_provider_if_any()
         self.redis_connected = False
 
     async def start_worker(self) -> None:
@@ -518,6 +682,17 @@ class BIQcRedisJobs:
 
 
 biqc_jobs = BIQcRedisJobs()
+
+
+def get_redis() -> Optional[Redis]:
+    """Return the shared Redis client if connected, else None.
+
+    Used by scan_cache and other modules that need Redis access
+    without duplicating connection logic.
+    """
+    if biqc_jobs.redis_connected and biqc_jobs.redis is not None:
+        return biqc_jobs.redis
+    return None
 
 
 async def enqueue_job(job_type: str, payload: Dict[str, Any], *, company_id: Optional[str] = None, window_seconds: int = 300) -> Dict[str, Any]:

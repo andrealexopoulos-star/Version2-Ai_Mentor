@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, TrendingUp, Settings as SettingsIcon, Shield, Radar, AlertTriangle, Zap, Workflow, Link2, Activity, FileText, ClipboardList, Bell, ChevronDown, ChevronRight, Menu, X, BarChart3 } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
+import brandLogoHead from '../../assets/biqc-logo-head.png';
 
 
 const NAV_GROUPS = [
@@ -51,10 +52,8 @@ const PlatformLayout = ({ children, title }) => {
       <div className={`${mobile ? 'relative z-10 w-[280px] h-full' : 'h-full'} flex flex-col overflow-y-auto`} style={{ background: '#0A1018', borderRight: '1px solid #243140' }}>
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 h-16 shrink-0" style={{ borderBottom: '1px solid #243140' }}>
-          <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
-            <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
-          </div>
-          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>BIQc</span>
+          <img src={brandLogoHead} alt="BIQc logo mark" className="h-8 w-auto object-contain" />
+          <span className="text-[28px] leading-none font-semibold tracking-tight text-white" style={{ fontFamily: fontFamily.display }}>BIQc</span>
           <span className="text-[10px] text-[#64748B] ml-1" style={{ fontFamily: fontFamily.mono }}>v2.1</span>
         </div>
 

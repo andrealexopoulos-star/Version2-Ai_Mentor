@@ -18,6 +18,10 @@ from html import unescape
 from urllib.parse import urlparse, urljoin
 
 import httpx
+from scan_cache import (
+    normalize_domain, get_domain_scan, set_domain_scan,
+    invalidate_domain_scan, get_edge_result, set_edge_result,
+)
 from core.llm_router import llm_trinity_chat
 from core.helpers import serper_search, scrape_url_text
 from routes.deps import (
@@ -59,6 +63,7 @@ class ConsoleStateSave(BaseModel):
 class WebsiteEnrichRequest(BaseModel):
     url: str
     action: str = "scan"
+    bust_cache: bool = False
 
 
 def _extract_abn_candidates(text: str) -> List[str]:
@@ -135,18 +140,40 @@ async def _fetch_html_and_text(url: str, timeout: int = 15) -> Dict[str, str]:
 
 async def _crawl_site_context(seed_url: str, seed_html: str, max_pages: int = 10) -> Dict[str, Any]:
     links = _extract_internal_links(seed_html, seed_url, limit=max_pages + 2)
+    target_links = links[:max_pages]
+    if not target_links:
+        return {"pages": [], "text": ""}
+
+    results = await asyncio.gather(
+        *[_fetch_html_and_text(link, timeout=12) for link in target_links],
+        return_exceptions=True,
+    )
+
     crawled: List[Dict[str, Any]] = []
     texts: List[str] = []
-    for link in links[:max_pages]:
-        try:
-            page = await _fetch_html_and_text(link, timeout=12)
-            txt = (page.get("text") or "")[:5000]
-            if txt:
-                texts.append(f"URL: {link}\n{txt}")
-            crawled.append({"url": link, "text_len": len(txt)})
-        except Exception:
+    for i, result in enumerate(results):
+        link = target_links[i]
+        if isinstance(result, Exception):
             crawled.append({"url": link, "text_len": 0})
+            continue
+        txt = (result.get("text") or "")[:5000]
+        if txt:
+            texts.append(f"URL: {link}\n{txt}")
+        crawled.append({"url": link, "text_len": len(txt)})
     return {"pages": crawled, "text": "\n\n".join(texts)}
+
+
+_edge_client: Optional[httpx.AsyncClient] = None
+
+
+def _get_edge_client() -> httpx.AsyncClient:
+    global _edge_client
+    if _edge_client is None or _edge_client.is_closed:
+        _edge_client = httpx.AsyncClient(
+            timeout=90,
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+        )
+    return _edge_client
 
 
 async def _call_edge_function(function_name: str, payload: Dict[str, Any], auth_header: str = "") -> Dict[str, Any]:
@@ -156,17 +183,18 @@ async def _call_edge_function(function_name: str, payload: Dict[str, Any], auth_
         return {"ok": False, "error": "supabase_not_configured"}
     endpoint = f"{supabase_url}/functions/v1/{function_name}"
     outbound_auth = auth_header.strip() if auth_header else f"Bearer {service_role}"
-    try:
-        async with httpx.AsyncClient(timeout=90) as client:
-            res = await client.post(
-                endpoint,
-                json=payload or {},
-                headers={
-                    "Authorization": outbound_auth,
-                    "apikey": service_role,
-                    "Content-Type": "application/json",
-                },
-            )
+    headers = {
+        "Authorization": outbound_auth,
+        "apikey": service_role,
+        "Content-Type": "application/json",
+    }
+    client = _get_edge_client()
+    for attempt in range(2):
+        try:
+            res = await client.post(endpoint, json=payload or {}, headers=headers)
+            if res.status_code >= 500 and attempt == 0:
+                await asyncio.sleep(2)
+                continue
             try:
                 data = res.json()
             except Exception:
@@ -174,8 +202,14 @@ async def _call_edge_function(function_name: str, payload: Dict[str, Any], auth_
             if isinstance(data, dict):
                 data.setdefault("_http_status", res.status_code)
             return data if isinstance(data, dict) else {"data": data, "_http_status": res.status_code}
-    except Exception as e:
-        return {"ok": False, "error": str(e)[:220]}
+        except httpx.TimeoutException:
+            if attempt == 0:
+                await asyncio.sleep(2)
+                continue
+            return {"ok": False, "error": f"timeout after retry calling {function_name}"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:220]}
+    return {"ok": False, "error": f"exhausted retries for {function_name}"}
 
 
 def _extract_meta_content(html: str, key: str) -> str:
@@ -1019,6 +1053,21 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
 
     if payload.action == "scan":
         try:
+            scan_domain = normalize_domain(url)
+            if payload.bust_cache:
+                await invalidate_domain_scan(scan_domain)
+                logger.info("[enrichment/website] cache BUSTED for %s (user requested)", scan_domain)
+            cached = await get_domain_scan(scan_domain)
+            if cached:
+                logger.info("[enrichment/website] cache HIT for %s", scan_domain)
+                return {
+                    "status": "draft",
+                    "url": url,
+                    "enrichment": cached,
+                    "cached": True,
+                    "message": "Cached scan result returned.",
+                }
+
             seed_page = await _fetch_html_and_text(url, timeout=20)
             page_text = seed_page.get("text") or ""
             raw_html = seed_page.get("html") or ""
@@ -1041,14 +1090,18 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             twitter_query = f'"{business_name_hint}" Twitter OR X'
             review_query = f'"{business_name_hint}" reviews testimonials case study'
 
-            company_search = await serper_search(company_query, gl="au", hl="en", num=8)
-            competitor_search = await serper_search(competitor_query, gl="au", hl="en", num=8)
-            abn_search = await serper_search(abn_query, gl="au", hl="en", num=5)
-            linkedin_search = await serper_search(linkedin_query, gl="au", hl="en", num=5)
-            instagram_search = await serper_search(instagram_query, gl="au", hl="en", num=5)
-            facebook_search = await serper_search(facebook_query, gl="au", hl="en", num=5)
-            twitter_search = await serper_search(twitter_query, gl="au", hl="en", num=5)
-            review_search = await serper_search(review_query, gl="au", hl="en", num=8)
+            (company_search, competitor_search, abn_search,
+             linkedin_search, instagram_search, facebook_search,
+             twitter_search, review_search) = await asyncio.gather(
+                serper_search(company_query, gl="au", hl="en", num=8),
+                serper_search(competitor_query, gl="au", hl="en", num=8),
+                serper_search(abn_query, gl="au", hl="en", num=5),
+                serper_search(linkedin_query, gl="au", hl="en", num=5),
+                serper_search(instagram_query, gl="au", hl="en", num=5),
+                serper_search(facebook_query, gl="au", hl="en", num=5),
+                serper_search(twitter_query, gl="au", hl="en", num=5),
+                serper_search(review_query, gl="au", hl="en", num=8),
+            )
 
             combined_text = "\n\n".join([
                 page_text[:12000],
@@ -1164,17 +1217,26 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if enrichment["social_handles"].get("twitter") and not enrichment["social_handles"].get("x"):
                 enrichment["social_handles"]["x"] = enrichment["social_handles"]["twitter"]
 
-            # Edge intelligence orchestration: fire all scan tools in parallel.
+            # Edge intelligence orchestration: check cache, then fire uncached tools in parallel.
+            async def _cached_edge(fn_name, payload_dict, auth):
+                hit = await get_edge_result(fn_name, scan_domain)
+                if hit:
+                    return hit
+                result = await _call_edge_function(fn_name, payload_dict, auth_header=auth)
+                if isinstance(result, dict) and not result.get("error"):
+                    asyncio.create_task(set_edge_result(fn_name, scan_domain, result))
+                return result
+
             deep_recon, social_enrichment, competitor_monitor, market_analysis, market_scorer = await asyncio.gather(
-                _call_edge_function("deep-web-recon", {"user_id": user_id, "website": url}, auth_header=inbound_auth),
-                _call_edge_function("social-enrichment", {"website_url": url}, auth_header=inbound_auth),
-                _call_edge_function("competitor-monitor", {"user_id": user_id}, auth_header=inbound_auth),
-                _call_edge_function("market-analysis-ai", {
+                _cached_edge("deep-web-recon", {"user_id": user_id, "website": url}, inbound_auth),
+                _cached_edge("social-enrichment", {"website_url": url}, inbound_auth),
+                _cached_edge("competitor-monitor", {"user_id": user_id}, inbound_auth),
+                _cached_edge("market-analysis-ai", {
                     "product_or_service": enrichment.get("main_products_services", ""),
                     "region": "Australia",
                     "specific_question": f"Analyse the competitive positioning and market opportunity for {enrichment.get('business_name', '')} in the {enrichment.get('industry', '')} sector",
-                }, auth_header=inbound_auth),
-                _call_edge_function("market-signal-scorer", {"tenant_id": user_id}, auth_header=inbound_auth),
+                }, inbound_auth),
+                _cached_edge("market-signal-scorer", {"tenant_id": user_id}, inbound_auth),
                 return_exceptions=True,
             )
             if isinstance(deep_recon, Exception): deep_recon = {"error": str(deep_recon)}
@@ -1364,6 +1426,8 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 pass
 
             enrichment["ai_errors"] = ai_errors
+
+            asyncio.create_task(set_domain_scan(scan_domain, enrichment))
 
             return {
                 "status": "draft",

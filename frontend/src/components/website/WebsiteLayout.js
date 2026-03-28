@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, Menu, X, Shield, FileText, Lock, Server, Eye, BookOpen } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
+import brandLogoHead from '../../assets/biqc-logo-head.png';
 
 const DISPLAY = "'Cormorant Garamond', Georgia, serif";
 
@@ -16,12 +17,21 @@ const TRUST_ITEMS = [
 ];
 
 const NAV_LINKS = [
+  { label: 'Meet BIQc', path: '/platform', dropdown: 'meet' },
   { label: 'Platform', path: '/platform' },
   { label: 'Intelligence', path: '/intelligence' },
   { label: 'Integrations', path: '/our-integrations' },
   { label: 'Pricing', path: '/pricing' },
   { label: 'Blog', path: '/blog' },
-  { label: 'Trust', path: '/trust', dropdown: true },
+  { label: 'Trust', path: '/trust', dropdown: 'trust' },
+];
+
+const MEET_BIQC_ITEMS = [
+  { label: 'Executive Overview', blurb: 'See the leadership control centre in action', path: '/platform/overview' },
+  { label: 'Revenue Intelligence', blurb: 'Catch growth and margin pressure early', path: '/platform/revenue' },
+  { label: 'Alerts & Watchtower', blurb: 'Track operational risk before it compounds', path: '/platform/alerts' },
+  { label: 'Automations', blurb: 'Turn decisions into repeatable execution', path: '/platform/automations' },
+  { label: 'Integrations Demo', blurb: 'Connect your stack and run on evidence', path: '/platform/integrations-demo' },
 ];
 
 const TrustDropdown = ({ open, onClose }) => {
@@ -45,9 +55,35 @@ const TrustDropdown = ({ open, onClose }) => {
   );
 };
 
+const MeetDropdown = ({ open, onClose }) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  if (!open) return null;
+  return (
+    <div ref={ref} className="absolute top-full left-0 mt-2 w-[340px] rounded-xl overflow-hidden" style={{ background: 'rgba(20,28,38,0.95)', border: '1px solid rgba(255,106,0,0.15)', backdropFilter: 'blur(24px)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+      <div className="px-5 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+        <p className="text-[11px] uppercase tracking-wider" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Meet BIQc</p>
+        <p className="text-xs mt-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>Explore each capability and the business outcomes it delivers.</p>
+      </div>
+      {MEET_BIQC_ITEMS.map((item) => (
+        <Link key={item.path} to={item.path} onClick={onClose} className="block px-5 py-3.5 transition-all hover:bg-white/5 group" data-testid={`meet-dropdown-${item.label.toLowerCase().replace(/\s+/g,'-')}`}>
+          <p className="text-sm text-[#F4F7FA] group-hover:text-white" style={{ fontFamily: fontFamily.display }}>{item.label}</p>
+          <p className="text-xs mt-0.5 text-[#9FB0C3] group-hover:text-[#CBD5E1]" style={{ fontFamily: fontFamily.body }}>{item.blurb}</p>
+        </Link>
+      ))}
+    </div>
+  );
+};
+
 const WebsiteNav = () => {
   const location = useLocation();
   const [trustOpen, setTrustOpen] = useState(false);
+  const [meetOpen, setMeetOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -55,20 +91,35 @@ const WebsiteNav = () => {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5" data-testid="nav-logo">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #FF6A00, #FF8C33)' }}>
-            <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily.mono }}>B</span>
-          </div>
-          <span className="text-lg font-semibold text-[#F4F7FA] tracking-tight" style={{ fontFamily: fontFamily.display }}>BIQc</span>
+          <img src={brandLogoHead} alt="BIQc logo mark" className="h-9 w-auto object-contain" />
+          <span className="text-[34px] leading-none font-semibold tracking-tight text-white" style={{ fontFamily: fontFamily.display }}>
+            BIQc
+          </span>
         </Link>
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-1">
           {NAV_LINKS.map((link) => {
-            const isActive = location.pathname === link.path || (link.dropdown && location.pathname.startsWith('/trust'));
+            const isActive = location.pathname === link.path
+              || (link.dropdown === 'trust' && location.pathname.startsWith('/trust'))
+              || (link.dropdown === 'meet' && location.pathname.startsWith('/platform'));
             return (
               <div key={link.label} className="relative">
                 {link.dropdown ? (
-                  <button onClick={() => setTrustOpen(!trustOpen)} className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm transition-all" style={{ color: isActive ? '#FF6A00' : '#9FB0C3', fontFamily: fontFamily.display }} data-testid="nav-trust">
+                  <button
+                    onClick={() => {
+                      if (link.dropdown === 'trust') {
+                        setTrustOpen(!trustOpen);
+                        setMeetOpen(false);
+                      } else if (link.dropdown === 'meet') {
+                        setMeetOpen(!meetOpen);
+                        setTrustOpen(false);
+                      }
+                    }}
+                    className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm transition-all"
+                    style={{ color: isActive ? '#FF6A00' : '#9FB0C3', fontFamily: fontFamily.display }}
+                    data-testid={link.dropdown === 'meet' ? 'nav-meet-biqc' : 'nav-trust'}
+                  >
                     {link.label} <ChevronDown className="w-3.5 h-3.5" />
                   </button>
                 ) : (
@@ -76,7 +127,8 @@ const WebsiteNav = () => {
                     {link.label}
                   </Link>
                 )}
-                {link.dropdown && <TrustDropdown open={trustOpen} onClose={() => setTrustOpen(false)} />}
+                {link.dropdown === 'trust' && <TrustDropdown open={trustOpen} onClose={() => setTrustOpen(false)} />}
+                {link.dropdown === 'meet' && <MeetDropdown open={meetOpen} onClose={() => setMeetOpen(false)} />}
               </div>
             );
           })}
@@ -90,7 +142,12 @@ const WebsiteNav = () => {
           </Link>
           {/* Mobile: Log In text + hamburger */}
           <Link to="/login-supabase" className="md:hidden text-xs text-[#9FB0C3] hover:text-white" style={{ fontFamily: fontFamily.display }} data-testid="nav-mobile-login">Log in</Link>
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-[#9FB0C3]" data-testid="nav-mobile-toggle">
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden p-2 text-[#9FB0C3]"
+            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+            data-testid="nav-mobile-toggle"
+          >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
@@ -102,7 +159,10 @@ const WebsiteNav = () => {
           {NAV_LINKS.map((link) => (
             <div key={link.label}>
               <Link to={link.path} onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-[#9FB0C3] hover:text-white hover:bg-white/5 transition-all" style={{ fontFamily: fontFamily.display }}>{link.label}</Link>
-              {link.dropdown && TRUST_ITEMS.map((item) => (
+              {link.dropdown === 'trust' && TRUST_ITEMS.map((item) => (
+                <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className="block px-8 py-2 text-xs text-[#9FB0C3]/70 hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
+              ))}
+              {link.dropdown === 'meet' && MEET_BIQC_ITEMS.map((item) => (
                 <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className="block px-8 py-2 text-xs text-[#9FB0C3]/70 hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
               ))}
             </div>
@@ -122,16 +182,16 @@ const WebsiteFooter = () => (
     <div className="max-w-7xl mx-auto px-6 py-16">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
         <div>
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
-              <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
-            </div>
-            <span className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>BIQc</span>
+          <div className="flex items-center gap-2.5 mb-6">
+            <img src={brandLogoHead} alt="BIQc logo mark" className="h-8 w-auto object-contain" />
+            <span className="text-[30px] leading-none font-semibold tracking-tight text-white" style={{ fontFamily: fontFamily.display }}>
+              BIQc
+            </span>
           </div>
           <p className="text-xs text-[#9FB0C3]/60 leading-relaxed" style={{ fontFamily: fontFamily.display }}>Autonomous Business Intelligence for SMBs. Australian owned & operated.</p>
         </div>
         <div>
-          <h4 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Product</h4>
+          <h2 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Product</h2>
           <div className="space-y-2.5">
             {[['Platform', '/platform'], ['Intelligence', '/intelligence'], ['Integrations', '/our-integrations'], ['Pricing', '/pricing']].map(([l, p]) => (
               <Link key={p} to={p} className="block text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
@@ -139,7 +199,7 @@ const WebsiteFooter = () => (
           </div>
         </div>
         <div>
-          <h4 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Legal</h4>
+          <h2 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Legal</h2>
           <div className="space-y-2.5">
             {TRUST_ITEMS.map((item) => (
               <Link key={item.path} to={item.path} className="block text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
@@ -147,7 +207,7 @@ const WebsiteFooter = () => (
           </div>
         </div>
         <div>
-          <h4 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Company</h4>
+          <h2 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Company</h2>
           <div className="space-y-2.5">
             {[['Contact', '/contact'], ['Trust', '/trust'], ['Try It Free', '/register-supabase']].map(([l, p]) => (
               <Link key={l} to={p} className="block text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
