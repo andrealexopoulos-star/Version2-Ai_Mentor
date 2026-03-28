@@ -113,11 +113,14 @@ async def proxy_edge_function(
     endpoint = f"{supabase_url}/functions/v1/{resolved_name}"
     calibration_run_id = (request.headers.get("X-Calibration-Run-Id") or "").strip()
     calibration_step = (request.headers.get("X-Calibration-Step") or "").strip()
+    edge_payload = dict(body.payload or {})
+    if current_user and current_user.get("id"):
+        edge_payload.setdefault("user_id", current_user["id"])
     try:
         async with httpx.AsyncClient(timeout=90) as client:
             edge_res = await client.post(
                 endpoint,
-                json=body.payload or {},
+                json=edge_payload,
                 headers={
                     "Authorization": outbound_auth,
                     "apikey": outbound_apikey,
