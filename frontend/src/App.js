@@ -8,6 +8,7 @@ import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import React, { useEffect } from 'react';
 import InstallPrompt from './components/InstallPrompt';
+import { apiClient } from './lib/api';
 
 // ── Auth pages ────────────────────────────────────────────────────────────────
 import LoginSupabase from "./pages/LoginSupabase";
@@ -45,7 +46,7 @@ import Integrations from './pages/Integrations';
 import EmailInbox from './pages/EmailInbox';
 import CalendarView from './pages/CalendarView';
 import CalibrationAdvisor from './pages/CalibrationAdvisor';
-import CalibrationQaAccess from './pages/CalibrationQaAccess';
+// CalibrationQaAccess removed — calibration runs after first signup only
 import ForensicCalibration from './pages/ForensicCalibration';
 
 // ── Intelligence pages ────────────────────────────────────────────────────────
@@ -166,6 +167,19 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
+const LegacyIntegrationsQueryRedirect = () => {
+  const location = useLocation();
+  const legacyPart = location.pathname.startsWith('/integrations/')
+    ? location.pathname.slice('/integrations/'.length)
+    : '';
+
+  if (legacyPart && legacyPart.includes('=')) {
+    return <Navigate to={`/integrations?${legacyPart}`} replace />;
+  }
+
+  return <Navigate to="/integrations" replace />;
+};
+
 const LaunchRoute = ({ children, access, featureKey = null }) => {
   const location = useLocation();
   const { user, session, authState, loading } = useSupabaseAuth();
@@ -196,11 +210,7 @@ function AppRoutes() {
   useEffect(() => {
     const warmup = async () => {
       try {
-        const sbUrl = process.env.REACT_APP_SUPABASE_URL;
-        const key = process.env.REACT_APP_SUPABASE_ANON_KEY;
-        if (sbUrl && key) {
-          fetch(`${sbUrl}/functions/v1/warm-cognitive-engine`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': key }, body: '{}' }).catch(() => {});
-        }
+        await apiClient.get('/health/warmup');
       } catch {}
     };
     warmup();
@@ -270,7 +280,7 @@ function AppRoutes() {
         <Route path="/onboarding-decision" element={<ProtectedRoute><OnboardingDecision /></ProtectedRoute>} />
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
         <Route path="/calibration" element={<ProtectedRoute><CalibrationAdvisor /></ProtectedRoute>} />
-        <Route path="/calibration-qa" element={<CalibrationQaAccess />} />
+        {/* /calibration-qa removed — calibration is triggered after first signup only */}
         <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 
         {/* Subscription */}
@@ -288,6 +298,10 @@ function AppRoutes() {
         <Route path="/market/calibration" element={<ProtectedRoute><ForensicCalibration /></ProtectedRoute>} />
         <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
         <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
+        <Route
+          path="/integrations/:legacyQuery"
+          element={<ProtectedRoute><LegacyIntegrationsQueryRedirect /></ProtectedRoute>}
+        />
         <Route path="/connect-email" element={<ProtectedRoute><ConnectEmail /></ProtectedRoute>} />
         <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
         <Route path="/forensic-audit" element={<ProtectedRoute><LaunchRoute access="paid"><ForensicAuditPage /></LaunchRoute></ProtectedRoute>} />

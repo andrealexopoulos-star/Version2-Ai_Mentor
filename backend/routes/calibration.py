@@ -60,6 +60,12 @@ class ConsoleStateSave(BaseModel):
     current_step: int
     status: str = "IN_PROGRESS"
 
+class RecalibrationContactRequest(BaseModel):
+    name: str
+    email: str
+    message: str = ""
+    days_since_calibration: Optional[int] = None
+
 class WebsiteEnrichRequest(BaseModel):
     url: str
     action: str = "scan"
@@ -2291,6 +2297,32 @@ async def handle_regeneration_response(payload: RegenerationResponsePayload, cur
     if action not in {"accept", "refine", "keep"}:
         raise HTTPException(status_code=400, detail="Invalid response action")
     return await record_regeneration_response(current_user["id"], payload.proposal_id, action, get_sb())
+
+
+# ═══ RECALIBRATION CONTACT (SALES GATE) ═══
+
+@router.post("/contact/recalibration")
+async def recalibration_contact(payload: RecalibrationContactRequest, current_user: dict = Depends(get_current_user)):
+    """Log a recalibration request and notify sales. Does NOT trigger recalibration directly."""
+    user_id = current_user.get("id", "")
+    try:
+        sb = get_sb()
+        sb.table("intelligence_actions").insert({
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "source": "recalibration_request",
+            "source_id": f"recal_{user_id}_{int(datetime.now(timezone.utc).timestamp())}",
+            "domain": "calibration",
+            "severity": "low",
+            "title": f"Recalibration requested by {payload.name}",
+            "description": f"Email: {payload.email}\nDays since calibration: {payload.days_since_calibration}\nMessage: {payload.message}",
+            "suggested_action": "Contact user to schedule recalibration session.",
+            "status": "action_required",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }).execute()
+    except Exception as exc:
+        logger.warning("Failed to log recalibration contact: %s", exc)
+    return {"status": "ok", "message": "Recalibration request received. Our team will contact you within 24 hours."}
 
 
 # ═══ RECALIBRATION & CHECK-IN SCHEDULING ═══
