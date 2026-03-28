@@ -316,38 +316,26 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "").trim();
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const token = authHeader.replace("Bearer ", "");
-    let user: { id: string } | null = null;
-    try {
-      const { data, error: authError } = await supabase.auth.getUser(token);
-      if (!authError && data?.user) {
-        user = data.user;
-      }
-    } catch { /* service role key or invalid JWT — fall through */ }
     let user: { id: string; email?: string } | null = null;
-
-    if (token) {
-      const { data: { user: authedUser }, error: authError } = await supabase.auth.getUser(token);
-      if (!authError && authedUser) {
-        user = authedUser;
+    try {
+      if (token) {
+        const { data, error: authError } = await supabase.auth.getUser(token);
+        if (!authError && data?.user) {
+          user = data.user;
+        }
       }
+    } catch {
+      /* invalid JWT — fall through */
     }
 
-    // QA calibration fast-path: backend proxy may forward service-role bearer token.
-    // Only allow fallback when explicit QA bypass is enabled and user context is pinned.
     if (!user) {
       const qaBypassHeader = (req.headers.get("X-QA-Bypass") || "").trim();
       const usingServiceRoleToken = token.length > 0 && token === SUPABASE_SERVICE_ROLE_KEY;
-      const qaBypassValid = QA_BYPASS_AUTH && QA_BYPASS_SECRET.length > 0 && qaBypassHeader === QA_BYPASS_SECRET;
+      const qaBypassValid =
+        QA_BYPASS_AUTH && QA_BYPASS_SECRET.length > 0 && qaBypassHeader === QA_BYPASS_SECRET;
       if (qaBypassValid && usingServiceRoleToken && QA_BYPASS_USER_ID) {
         user = { id: QA_BYPASS_USER_ID, email: QA_BYPASS_EMAIL };
       }
-    }
-
-    if (!user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
     const body = await req.json();
@@ -355,12 +343,13 @@ serve(async (req) => {
     if (!user) {
       const bodyUserId = body.user_id || body.tenant_id || "";
       if (bodyUserId) {
-        user = { id: bodyUserId };
+        user = { id: String(bodyUserId) };
       } else if (token === SUPABASE_SERVICE_ROLE_KEY) {
         user = { id: "service-role-scan" };
       } else {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
     }
