@@ -157,7 +157,7 @@ async def _call_edge_function(function_name: str, payload: Dict[str, Any], auth_
     endpoint = f"{supabase_url}/functions/v1/{function_name}"
     outbound_auth = auth_header.strip() if auth_header else f"Bearer {service_role}"
     try:
-        async with httpx.AsyncClient(timeout=30) as client:
+        async with httpx.AsyncClient(timeout=90) as client:
             res = await client.post(
                 endpoint,
                 json=payload or {},

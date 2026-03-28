@@ -394,7 +394,7 @@ export const useCalibrationState = () => {
       }
 
       try {
-        auditData = await callEdgeWithTrace('calibration-business-dna', { website_url: url }, 30000, 'business_dna');
+        auditData = await callEdgeWithTrace('calibration-business-dna', { website_url: url }, 90000, 'business_dna');
           if (auditData?.status === "error" || auditData?.ok === false || auditData?.error_code) {
             const syntheticError = {
               response: {
@@ -440,7 +440,7 @@ export const useCalibrationState = () => {
 
       // Deep backend enrichment (Trinity + web search + ABN + competitor scan)
       try {
-        const deepRes = await apiClient.post('/calibration/enrichment/website', { url, action: 'scan' });
+        const deepRes = await apiClient.post('/calibration/enrichment/website', { url, action: 'scan' }, { timeout: 120000 });
         if (deepRes?.data?.status === 'draft' && deepRes?.data?.enrichment) {
           deepEnrichment = deepRes.data.enrichment;
         }
@@ -873,7 +873,7 @@ export const useCalibrationState = () => {
           business_name_hint: hints?.businessName || hints?.legalName || '',
           location_hint: hints?.address || hints?.suburb || '',
           abn_hint: hints?.abn || '',
-        }, 30000, 'business_dna_regenerate');
+        }, 90000, 'business_dna_regenerate');
         if (auditData?.status === "error" || auditData?.ok === false || auditData?.error_code) {
           throw {
             response: {

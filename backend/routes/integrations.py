@@ -114,7 +114,7 @@ async def proxy_edge_function(
     calibration_run_id = (request.headers.get("X-Calibration-Run-Id") or "").strip()
     calibration_step = (request.headers.get("X-Calibration-Step") or "").strip()
     try:
-        async with httpx.AsyncClient(timeout=45) as client:
+        async with httpx.AsyncClient(timeout=90) as client:
             edge_res = await client.post(
                 endpoint,
                 json=body.payload or {},
