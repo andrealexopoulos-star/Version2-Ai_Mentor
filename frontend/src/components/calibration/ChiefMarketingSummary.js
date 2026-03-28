@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, AlertTriangle, TrendingUp, Globe, Users, Star, Target, ChevronDown, ChevronUp, CheckCircle2, XCircle, Zap, BarChart3 } from 'lucide-react';
+import { ArrowRight, AlertTriangle, TrendingUp, Globe, Users, Star, Target, ChevronDown, ChevronUp, CheckCircle2, XCircle, Zap, BarChart3, Shield, Activity } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
 
@@ -63,7 +63,7 @@ function buildCommunicationAudit(full) {
       category: 'Pricing Transparency',
       score: full.pricing_model && full.pricing_model !== 'Not available from current data' ? 5 : 2,
       evidence: full.pricing_model && full.pricing_model !== 'Not available from current data' ? `Model detected: ${full.pricing_model}` : 'No pricing information visible on website.',
-      advice: full.pricing_model ? 'Add a starting price or pricing tier page — even a "From $X" reference increases conversion rate by 25-40%.' : 'Consider a transparent pricing or packages page. Price anchoring increases inbound quality.',
+      advice: full.pricing_model ? 'Add a starting price or pricing tier page — even a "From $X" reference reduces friction and improves lead quality.' : 'Consider a transparent pricing or packages page. Price anchoring increases inbound quality.',
     },
     {
       category: 'Call-to-Action Clarity',
@@ -173,87 +173,158 @@ function buildCustomerReviewSignals(full) {
   const hasReviewData = reviewEvidence.length > 0;
   const confidenceBand = hasReviewData ? (reviewEvidence.length >= 3 ? 'medium-high' : 'medium') : 'low';
 
-  const impact = hasReviewData
-    ? [
+  const evidenceCount = reviewEvidence.length;
+  const strongEvidence = evidenceCount >= 3;
+  const weakEvidence = evidenceCount > 0 && evidenceCount < 3;
+  const evidenceSummary = reviewEvidence.slice(0, 3).join(', ');
+
+  let impact;
+  if (strongEvidence) {
+    impact = [
       {
         fundamental: 'Conversion rate',
-        impact: '+6% to +18%',
-        mechanism: 'Proof-backed messaging reduces buyer doubt during first-touch evaluation.',
+        impact: 'Positive lift expected',
+        mechanism: `Found ${evidenceCount} social-proof signals (${evidenceSummary}) — strong visible trust markers typically support higher visitor-to-enquiry conversion.`,
       },
       {
         fundamental: 'Customer acquisition cost',
-        impact: '-8% to -22%',
-        mechanism: 'Higher trust density improves paid and organic click-to-enquiry efficiency.',
+        impact: 'Efficiency gain expected',
+        mechanism: `${evidenceCount} verified proof points reduce the trust gap in paid and organic funnels, lowering cost per qualified lead.`,
       },
       {
         fundamental: 'Gross profit',
-        impact: '+2 to +6 pts margin',
-        mechanism: 'Stronger credibility reduces discount pressure and supports value-based pricing.',
-      },
-    ]
-    : [
-      {
-        fundamental: 'Conversion rate',
-        impact: '-10% to -25% drag risk',
-        mechanism: 'Low visible proof forces prospects to delay or abandon decision.',
-      },
-      {
-        fundamental: 'Customer acquisition cost',
-        impact: '+12% to +30% risk',
-        mechanism: 'Paid campaigns require more spend to overcome trust gaps.',
-      },
-      {
-        fundamental: 'Gross profit',
-        impact: '-3 to -8 pts margin risk',
-        mechanism: 'Sales teams compensate weak proof with discounting.',
+        impact: 'Margin support likely',
+        mechanism: `Multiple proof signals (${evidenceCount} detected) strengthen value-based pricing and reduce discount pressure during sales.`,
       },
     ];
+  } else if (weakEvidence) {
+    impact = [
+      {
+        fundamental: 'Conversion rate',
+        impact: 'Modest lift possible',
+        mechanism: `Found ${evidenceCount} proof signal${evidenceCount === 1 ? '' : 's'} (${evidenceSummary}) — limited social proof may partially support conversion but leaves trust gaps.`,
+      },
+      {
+        fundamental: 'Customer acquisition cost',
+        impact: 'Minor efficiency gain',
+        mechanism: `Only ${evidenceCount} visible proof marker${evidenceCount === 1 ? '' : 's'} detected — insufficient density to materially reduce acquisition cost.`,
+      },
+      {
+        fundamental: 'Gross profit',
+        impact: 'Neutral to slight support',
+        mechanism: `Thin proof layer (${evidenceCount} signal${evidenceCount === 1 ? '' : 's'}) provides limited pricing leverage — expanding case studies would strengthen margin.`,
+      },
+    ];
+  } else {
+    impact = [
+      {
+        fundamental: 'Conversion rate',
+        impact: 'Drag risk — no proof detected',
+        mechanism: 'No visible customer reviews, testimonials, or case studies found — prospects lack third-party validation to support purchase decisions.',
+      },
+      {
+        fundamental: 'Customer acquisition cost',
+        impact: 'Elevated cost risk',
+        mechanism: 'No detected social proof means paid campaigns must work harder to build trust, increasing cost per acquisition.',
+      },
+      {
+        fundamental: 'Gross profit',
+        impact: 'Margin pressure risk',
+        mechanism: 'Absence of verifiable proof often forces sales to compensate with discounting. No review footprint detected in this scan.',
+      },
+    ];
+  }
+  const topEvidence = reviewEvidence.slice(0, 3).join(' | ');
+  const depthNarrative = hasReviewData
+    ? `Observed ${reviewEvidence.length} customer-proof marker${reviewEvidence.length === 1 ? '' : 's'} in public footprint${topEvidence ? `: ${topEvidence}.` : '.'} Revenue impact model uses only detected signals and scales confidence to ${confidenceBand}.`
+    : 'No verifiable customer review footprint detected in this scan, so BIQc suppresses deep narrative claims until stronger evidence is observed.';
 
-  return { reviewEvidence, customerReviewSignals, hasReviewData, confidenceBand, impact };
+  return { reviewEvidence, customerReviewSignals, hasReviewData, confidenceBand, impact, depthNarrative };
 }
 
 function buildStaffImpactSignals(staffSignals) {
   const reviewCount = (staffSignals.staffReviewSignals || []).length;
-  const hasTeamMembers = (staffSignals.teamMembers || []).length > 0;
+  const teamMemberCount = (staffSignals.teamMembers || []).length;
+  const hasTeamMembers = teamMemberCount > 0;
+  const hasFounder = Boolean(staffSignals.founderBackground);
+  const hasTeamSize = Boolean(staffSignals.teamSize);
   const hasAny = staffSignals.hasStaffData;
 
-  const impact = hasAny
-    ? [
+  const signalParts = [];
+  if (hasTeamMembers) signalParts.push(`${teamMemberCount} named team member${teamMemberCount === 1 ? '' : 's'}`);
+  if (hasTeamSize) signalParts.push(`team size: ${staffSignals.teamSize}`);
+  if (hasFounder) signalParts.push('founder background detected');
+  if (reviewCount > 0) signalParts.push(`${reviewCount} staff review signal${reviewCount === 1 ? '' : 's'}`);
+  const signalSummary = signalParts.join(', ');
+
+  let impact;
+  if (hasAny && (hasTeamMembers || reviewCount > 0)) {
+    impact = [
       {
         fundamental: 'Service delivery capacity',
-        impact: hasTeamMembers ? 'Stronger execution continuity' : 'Moderate continuity risk',
-        mechanism: 'Visible role structure reduces key-person dependency and delivery bottlenecks.',
+        impact: hasTeamMembers ? 'Execution continuity supported' : 'Partial visibility only',
+        mechanism: hasTeamMembers
+          ? `${teamMemberCount} named team member${teamMemberCount === 1 ? '' : 's'} detected — visible role structure reduces key-person dependency risk.`
+          : `No named team members found but ${signalSummary} provides partial staffing visibility.`,
       },
       {
         fundamental: 'Revenue retention',
-        impact: reviewCount > 0 ? '+3% to +10% retention support' : 'Retention volatility risk',
-        mechanism: 'Healthier staff signals correlate with stronger customer experience consistency.',
+        impact: reviewCount > 0 ? 'Retention support indicated' : 'Limited retention signal',
+        mechanism: reviewCount > 0
+          ? `${reviewCount} staff review signal${reviewCount === 1 ? '' : 's'} detected — positive team culture markers correlate with consistent client experience.`
+          : `No staff review signals found. Team health is not publicly verifiable — retention impact cannot be assessed from available data.`,
       },
       {
         fundamental: 'Operating profit',
-        impact: reviewCount > 0 ? '+1 to +4 pts margin support' : '-2 to -6 pts margin risk',
-        mechanism: 'Lower team friction reduces rework, escalation cost, and service leakage.',
-      },
-    ]
-    : [
-      {
-        fundamental: 'Service delivery capacity',
-        impact: 'Unquantified risk',
-        mechanism: 'No verifiable staffing signals limits execution confidence.',
-      },
-      {
-        fundamental: 'Revenue retention',
-        impact: 'Potential churn pressure',
-        mechanism: 'Team health blind spots often surface as inconsistent client experience.',
-      },
-      {
-        fundamental: 'Operating profit',
-        impact: 'Margin leakage risk',
-        mechanism: 'Unseen people issues typically increase rework and management overhead.',
+        impact: reviewCount > 0 && hasTeamMembers ? 'Margin support indicated' : 'Insufficient data for margin assessment',
+        mechanism: reviewCount > 0 && hasTeamMembers
+          ? `Combined evidence (${signalSummary}) suggests manageable team friction — lower rework and escalation costs support operating margin.`
+          : `Only partial team signals found (${signalSummary}). Insufficient evidence to assess margin impact with confidence.`,
       },
     ];
+  } else if (hasAny) {
+    impact = [
+      {
+        fundamental: 'Service delivery capacity',
+        impact: 'Partial visibility — risk not quantifiable',
+        mechanism: `Detected: ${signalSummary}. Insufficient structure data to assess delivery continuity with confidence.`,
+      },
+      {
+        fundamental: 'Revenue retention',
+        impact: 'Insufficient data',
+        mechanism: `Only foundational signals found (${signalSummary}). No staff review or team structure data to assess retention impact.`,
+      },
+      {
+        fundamental: 'Operating profit',
+        impact: 'Cannot assess from available signals',
+        mechanism: `Limited staffing evidence (${signalSummary}) does not support a margin impact estimate. More data needed.`,
+      },
+    ];
+  } else {
+    impact = [
+      {
+        fundamental: 'Service delivery capacity',
+        impact: 'Unverified — no signals detected',
+        mechanism: 'No public staffing, team structure, or employee review signals were found in this scan.',
+      },
+      {
+        fundamental: 'Revenue retention',
+        impact: 'Blind spot — no team health data',
+        mechanism: 'Without visible team signals, client experience consistency cannot be assessed from public data.',
+      },
+      {
+        fundamental: 'Operating profit',
+        impact: 'Unknown risk exposure',
+        mechanism: 'No staff data detected. BIQc does not fabricate team dynamics — connect internal HR or review channels to unlock this analysis.',
+      },
+    ];
+  }
 
-  return { impact };
+  const depthNarrative = hasAny
+    ? `Staff intelligence is derived from ${signalSummary}. Impact assessments are scoped strictly to verified public signals — no assumptions about internal team dynamics.`
+    : 'No public staff-review or structure markers were verified. BIQc reports risk posture only and does not infer hidden team dynamics.';
+
+  return { impact, depthNarrative };
 }
 
 const ScoreBar = ({ score, max = 10, color }) => {
@@ -292,6 +363,17 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
   const swot = full.swot || {};
   const competitorSwot = Array.isArray(full.competitor_swot) ? full.competitor_swot : [];
   const cmoPriorityActions = Array.isArray(full.cmo_priority_actions) ? full.cmo_priority_actions : [];
+  const fieldProvenance = full._field_provenance || {};
+  const analysisGaps = Array.isArray(full.analysis_gaps) ? full.analysis_gaps : [];
+  const marketIntelScore = typeof full.market_intelligence_score === 'number' ? full.market_intelligence_score : null;
+  const marketTrajectory = full.market_trajectory || '';
+  const marketEvidence = Array.isArray(full.market_evidence) ? full.market_evidence : [];
+  const marketAnalysis = full.market_analysis || null;
+  const deepReconSummary = full.deep_recon_summary || '';
+  const deepReconSignals = Array.isArray(full.deep_recon_signals) ? full.deep_recon_signals : [];
+  const hasDeepRecon = Boolean(deepReconSummary || deepReconSignals.length > 0);
+  const competitorMonitorData = full.competitor_monitor_data || null;
+  const competitorMonitorSummary = full.competitor_monitor_summary || '';
 
   // Business summary paragraphs
   const bizName = full.business_name || wowSummary?.business_name || 'This business';
@@ -405,6 +487,31 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
               {cmoExecutiveBrief}
             </p>
+          </div>
+        )}
+
+        {/* ── SECTION 2B2: DEEP INTELLIGENCE SIGNALS ── */}
+        {hasDeepRecon && (
+          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #8B5CF640', animation: 'cmsFade 0.92s ease-out' }} data-testid="deep-intelligence-signals">
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="w-4 h-4" style={{ color: '#8B5CF6' }} />
+              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Deep Intelligence Signals</h2>
+            </div>
+            {deepReconSummary && (
+              <p className="text-sm text-[#9FB0C3] leading-relaxed mb-3" style={{ fontFamily: fontFamily.body }}>
+                {deepReconSummary}
+              </p>
+            )}
+            {deepReconSignals.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Detected Signals</p>
+                {deepReconSignals.map((signal, idx) => (
+                  <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    • {typeof signal === 'string' ? signal : (signal?.text || signal?.description || signal?.signal || JSON.stringify(signal))}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -568,6 +675,40 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   </p>
                 </div>
               )}
+              {(competitorMonitorSummary || competitorMonitorData) && (
+                <div className="mt-3 p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Competitor Monitor</p>
+                  {competitorMonitorSummary && (
+                    <p className="text-xs text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>
+                      {competitorMonitorSummary}
+                    </p>
+                  )}
+                  {competitorMonitorData && typeof competitorMonitorData === 'object' && (
+                    <div className="space-y-2 mt-2">
+                      {Array.isArray(competitorMonitorData.competitors) && competitorMonitorData.competitors.map((comp, idx) => (
+                        <div key={idx} className="p-2 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                          <p className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>
+                            {comp.name || comp.domain || `Competitor ${idx + 1}`}
+                          </p>
+                          {comp.summary && <p className="text-[11px] text-[#9FB0C3] mt-1" style={{ fontFamily: fontFamily.body }}>{comp.summary}</p>}
+                          {comp.threat_level && <p className="text-[10px] mt-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Threat level: {comp.threat_level}</p>}
+                          {comp.signals && Array.isArray(comp.signals) && comp.signals.length > 0 && (
+                            <p className="text-[11px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.body }}>
+                              Signals: {comp.signals.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                      {competitorMonitorData.summary && !competitorMonitorSummary && (
+                        <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{competitorMonitorData.summary}</p>
+                      )}
+                      {typeof competitorMonitorData === 'string' && (
+                        <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{competitorMonitorData}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           ) : (
             <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No competitor data detected from publicly available sources. BIQc does not assume or fabricate competitor information — run an Exposure Scan to unlock this analysis.</p>
@@ -614,9 +755,9 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           </div>
 
           <div className="mt-3 p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
-            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Depth Preview (Example)</p>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Review Intelligence Depth</p>
             <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              Example depth BIQc can provide: "Across 47 public reviews, response-time complaints appeared in 29.8% of negative mentions, correlated with a 14-day sales-cycle extension. Modeled impact: 6-11% conversion drag and 2.1-3.8 point gross-margin compression due to discount-led recovery."
+              {customerReviews.depthNarrative}
             </p>
           </div>
         </div>
@@ -676,9 +817,9 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 ))}
               </div>
               <div className="p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
-                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Depth Preview (Example)</p>
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Staff Intelligence Depth</p>
                 <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-                  Example depth BIQc can provide: "Team sentiment declined from neutral to negative over 6 weeks, with repeated workload and escalation markers. Predicted effect: 9-16% delivery-cycle slippage, 4-9% retention risk, and 1.5-3.2 point operating-margin pressure unless staffing bottlenecks are corrected."
+                  {staffImpact.depthNarrative}
                 </p>
               </div>
             </div>
@@ -698,10 +839,203 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               {['strengths', 'weaknesses', 'opportunities', 'threats'].map((key) => (
                 <div key={key} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
                   <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{key}</p>
-                  <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-                    {Array.isArray(swot[key]) && swot[key].length > 0 ? swot[key][0] : 'No verified data yet.'}
-                  </p>
+                  {Array.isArray(swot[key]) && swot[key].length > 0 ? (
+                    <ul className="space-y-1">
+                      {swot[key].map((item, idx) => (
+                        <li key={idx} className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+                          {swot[key].length > 1 ? '• ' : ''}{typeof item === 'string' ? item : (item?.text || item?.description || JSON.stringify(item))}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Insufficient verified data.</p>
+                  )}
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── SECTION 5C: MARKET INTELLIGENCE ANALYSIS ── */}
+        {(marketAnalysis || marketIntelScore !== null || marketEvidence.length > 0) && (
+          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #06B6D440', animation: 'cmsFade 1.52s ease-out' }} data-testid="market-intelligence-analysis">
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="w-4 h-4" style={{ color: '#06B6D4' }} />
+              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Market Intelligence Analysis</h2>
+              {marketIntelScore !== null && (
+                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{
+                  color: marketIntelScore >= 70 ? '#10B981' : marketIntelScore >= 40 ? '#F59E0B' : '#EF4444',
+                  background: (marketIntelScore >= 70 ? '#10B981' : marketIntelScore >= 40 ? '#F59E0B' : '#EF4444') + '15',
+                  fontFamily: fontFamily.mono,
+                }}>
+                  score: {marketIntelScore}/100
+                </span>
+              )}
+            </div>
+
+            {marketTrajectory && (
+              <p className="text-xs text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
+                Market trajectory: <strong style={{ color: '#F4F7FA' }}>{marketTrajectory}</strong>
+              </p>
+            )}
+
+            {marketAnalysis && (
+              <div className="space-y-3">
+                {marketAnalysis.analysis_title && (
+                  <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{marketAnalysis.analysis_title}</p>
+                )}
+                {marketAnalysis.market_size && (
+                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Market Size</p>
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      {typeof marketAnalysis.market_size === 'string' ? marketAnalysis.market_size : JSON.stringify(marketAnalysis.market_size)}
+                    </p>
+                  </div>
+                )}
+                {marketAnalysis.competitor_landscape && (
+                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Competitor Landscape</p>
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      {typeof marketAnalysis.competitor_landscape === 'string' ? marketAnalysis.competitor_landscape : JSON.stringify(marketAnalysis.competitor_landscape)}
+                    </p>
+                  </div>
+                )}
+                {marketAnalysis.customer_insight && (
+                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Customer Insight</p>
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      {typeof marketAnalysis.customer_insight === 'string' ? marketAnalysis.customer_insight : JSON.stringify(marketAnalysis.customer_insight)}
+                    </p>
+                  </div>
+                )}
+                {marketAnalysis.revenue_opportunity && (
+                  <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Revenue Opportunity</p>
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      {typeof marketAnalysis.revenue_opportunity === 'string' ? marketAnalysis.revenue_opportunity : JSON.stringify(marketAnalysis.revenue_opportunity)}
+                    </p>
+                  </div>
+                )}
+                {Array.isArray(marketAnalysis.recommendations) && marketAnalysis.recommendations.length > 0 && (
+                  <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Recommendations</p>
+                    <ul className="space-y-1">
+                      {marketAnalysis.recommendations.map((rec, idx) => (
+                        <li key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>• {typeof rec === 'string' ? rec : (rec?.text || rec?.recommendation || JSON.stringify(rec))}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {Array.isArray(marketAnalysis.risks_to_watch) && marketAnalysis.risks_to_watch.length > 0 && (
+                  <div className="p-3 rounded-lg" style={{ background: '#EF444408', border: '1px solid #EF444420' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>Risks to Watch</p>
+                    <ul className="space-y-1">
+                      {marketAnalysis.risks_to_watch.map((risk, idx) => (
+                        <li key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>• {typeof risk === 'string' ? risk : (risk?.text || risk?.risk || JSON.stringify(risk))}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {marketAnalysis.swot && typeof marketAnalysis.swot === 'object' && Object.keys(marketAnalysis.swot).length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Market SWOT</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {['strengths', 'weaknesses', 'opportunities', 'threats'].map((k) => (
+                        Array.isArray(marketAnalysis.swot[k]) && marketAnalysis.swot[k].length > 0 && (
+                          <div key={k} className="p-2 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{k}</p>
+                            <ul className="space-y-0.5">
+                              {marketAnalysis.swot[k].map((item, idx) => (
+                                <li key={idx} className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>• {typeof item === 'string' ? item : JSON.stringify(item)}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {marketAnalysis.data_quality_note && (
+                  <p className="text-[11px] text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>
+                    Data quality: {marketAnalysis.data_quality_note}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {marketEvidence.length > 0 && (
+              <div className="mt-3">
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Market Evidence Signals</p>
+                <div className="space-y-1">
+                  {marketEvidence.map((ev, idx) => (
+                    <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      • {typeof ev === 'string' ? ev : (ev?.text || ev?.signal || ev?.description || JSON.stringify(ev))}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!marketAnalysis && marketIntelScore === null && marketEvidence.length === 0 && (
+              <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Insufficient verified data for market intelligence analysis.</p>
+            )}
+          </div>
+        )}
+
+        {Object.keys(fieldProvenance).length > 0 && (
+          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #3B82F620', animation: 'cmsFade 1.55s ease-out' }} data-testid="data-provenance">
+            <div className="flex items-center gap-2 mb-3">
+              <BarChart3 className="w-4 h-4" style={{ color: '#3B82F6' }} />
+              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Data Provenance</h2>
+            </div>
+            <div className="space-y-1.5">
+              {Object.entries(fieldProvenance).slice(0, 12).map(([field, meta]) => (
+                <p key={field} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                  {field} -> {meta?.source_fn || 'unknown-source'} (confidence: {typeof meta?.confidence === 'number' ? Math.round(meta.confidence * 100) : 'n/a'}%)
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(marketIntelScore !== null || analysisGaps.length > 0) && (
+          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #F59E0B30', animation: 'cmsFade 1.58s ease-out' }} data-testid="intelligence-quality">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-4 h-4" style={{ color: '#F59E0B' }} />
+              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Intelligence Quality & Gaps</h2>
+            </div>
+            {marketIntelScore !== null && (
+              <p className="text-xs text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>
+                Market intelligence score: <span className="text-[#F4F7FA]">{marketIntelScore}/100</span>{marketTrajectory ? ` (${marketTrajectory})` : ''}.
+              </p>
+            )}
+            {analysisGaps.length > 0 ? (
+              <div className="space-y-1.5">
+                {analysisGaps.slice(0, 6).map((gap, idx) => (
+                  <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    - {gap}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                No critical public-data gaps detected in this scan cycle.
+              </p>
+            )}
+          </div>
+        )}
+
+        {Array.isArray(full._trace) && full._trace.length > 0 && (
+          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #243140', animation: 'cmsFade 1.57s ease-out' }} data-testid="scan-observability">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="w-4 h-4" style={{ color: '#FF6A00' }} />
+              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Scan Observability</h2>
+            </div>
+            <div className="space-y-1.5">
+              {full._trace.slice(-8).map((t, idx) => (
+                <p key={`${t.step}-${idx}`} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                  {t.step} -> {t.function} ({t.ok ? 'ok' : 'failed'}) {t.request_id ? ` [${t.request_id}]` : ''}
+                </p>
               ))}
             </div>
           </div>
@@ -729,7 +1063,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               },
               !full.customer_count && {
                 icon: AlertTriangle, color: '#F59E0B',
-                text: 'Add measurable social proof — specific client results with company name, outcome, and timeframe. Generic testimonials have 40% less impact than named case studies.',
+                text: 'Add measurable social proof — specific client results with company name, outcome, and timeframe. Named case studies consistently outperform generic testimonials.',
               },
               !geo.hasSocialPresence && {
                 icon: AlertTriangle, color: '#F59E0B',

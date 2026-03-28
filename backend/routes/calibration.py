@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone, timedelta
 import asyncio
-import os
 import uuid
 import re
 import json
@@ -19,10 +18,6 @@ from html import unescape
 from urllib.parse import urlparse, urljoin
 
 import httpx
-from scan_cache import (
-    normalize_domain, get_domain_scan, set_domain_scan,
-    invalidate_domain_scan, get_edge_result, set_edge_result,
-)
 from core.llm_router import llm_trinity_chat
 from core.helpers import serper_search, scrape_url_text
 from routes.deps import (
@@ -61,22 +56,9 @@ class ConsoleStateSave(BaseModel):
     current_step: int
     status: str = "IN_PROGRESS"
 
-class ReportSaveRequest(BaseModel):
-    report_type: str
-    title: str
-    content: Dict[str, Any] = {}
-    generated_at: Optional[str] = None
-
-class RecalibrationContactRequest(BaseModel):
-    name: str
-    email: str
-    message: str = ""
-    days_since_calibration: Optional[int] = None
-
 class WebsiteEnrichRequest(BaseModel):
     url: str
     action: str = "scan"
-    bust_cache: bool = False
 
 
 def _extract_abn_candidates(text: str) -> List[str]:
@@ -153,40 +135,18 @@ async def _fetch_html_and_text(url: str, timeout: int = 15) -> Dict[str, str]:
 
 async def _crawl_site_context(seed_url: str, seed_html: str, max_pages: int = 10) -> Dict[str, Any]:
     links = _extract_internal_links(seed_html, seed_url, limit=max_pages + 2)
-    target_links = links[:max_pages]
-    if not target_links:
-        return {"pages": [], "text": ""}
-
-    results = await asyncio.gather(
-        *[_fetch_html_and_text(link, timeout=12) for link in target_links],
-        return_exceptions=True,
-    )
-
     crawled: List[Dict[str, Any]] = []
     texts: List[str] = []
-    for i, result in enumerate(results):
-        link = target_links[i]
-        if isinstance(result, Exception):
+    for link in links[:max_pages]:
+        try:
+            page = await _fetch_html_and_text(link, timeout=12)
+            txt = (page.get("text") or "")[:5000]
+            if txt:
+                texts.append(f"URL: {link}\n{txt}")
+            crawled.append({"url": link, "text_len": len(txt)})
+        except Exception:
             crawled.append({"url": link, "text_len": 0})
-            continue
-        txt = (result.get("text") or "")[:5000]
-        if txt:
-            texts.append(f"URL: {link}\n{txt}")
-        crawled.append({"url": link, "text_len": len(txt)})
     return {"pages": crawled, "text": "\n\n".join(texts)}
-
-
-_edge_client: Optional[httpx.AsyncClient] = None
-
-
-def _get_edge_client() -> httpx.AsyncClient:
-    global _edge_client
-    if _edge_client is None or _edge_client.is_closed:
-        _edge_client = httpx.AsyncClient(
-            timeout=90,
-            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
-        )
-    return _edge_client
 
 
 async def _call_edge_function(function_name: str, payload: Dict[str, Any], auth_header: str = "") -> Dict[str, Any]:
@@ -196,18 +156,17 @@ async def _call_edge_function(function_name: str, payload: Dict[str, Any], auth_
         return {"ok": False, "error": "supabase_not_configured"}
     endpoint = f"{supabase_url}/functions/v1/{function_name}"
     outbound_auth = auth_header.strip() if auth_header else f"Bearer {service_role}"
-    headers = {
-        "Authorization": outbound_auth,
-        "apikey": service_role,
-        "Content-Type": "application/json",
-    }
-    client = _get_edge_client()
-    for attempt in range(2):
-        try:
-            res = await client.post(endpoint, json=payload or {}, headers=headers)
-            if res.status_code >= 500 and attempt == 0:
-                await asyncio.sleep(2)
-                continue
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            res = await client.post(
+                endpoint,
+                json=payload or {},
+                headers={
+                    "Authorization": outbound_auth,
+                    "apikey": service_role,
+                    "Content-Type": "application/json",
+                },
+            )
             try:
                 data = res.json()
             except Exception:
@@ -215,14 +174,8 @@ async def _call_edge_function(function_name: str, payload: Dict[str, Any], auth_
             if isinstance(data, dict):
                 data.setdefault("_http_status", res.status_code)
             return data if isinstance(data, dict) else {"data": data, "_http_status": res.status_code}
-        except httpx.TimeoutException:
-            if attempt == 0:
-                await asyncio.sleep(2)
-                continue
-            return {"ok": False, "error": f"timeout after retry calling {function_name}"}
-        except Exception as e:
-            return {"ok": False, "error": str(e)[:220]}
-    return {"ok": False, "error": f"exhausted retries for {function_name}"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:220]}
 
 
 def _extract_meta_content(html: str, key: str) -> str:
@@ -386,128 +339,6 @@ def _extract_sentence_with_keywords(text: str, keywords: List[str]) -> str:
         if any(keyword in lowered for keyword in keywords) and 25 <= len(sentence) <= 220:
             return sentence.strip()
     return ""
-
-
-def _parse_google_reviews(search_result: dict, business_name: str) -> dict:
-    """Extract star ratings, review counts, and snippets from customer review sites."""
-    results = search_result.get("results") or []
-    snippets = []
-    star_rating = None
-    review_count = None
-    positive = []
-    negative = []
-    sources_found = []
-
-    for r in results:
-        snippet = r.get("snippet") or ""
-        title = r.get("title") or ""
-        link = r.get("link") or ""
-        combined = f"{title} {snippet}"
-
-        source = "Google"
-        if "trustpilot" in link.lower():
-            source = "Trustpilot"
-        elif "productreview" in link.lower():
-            source = "ProductReview"
-        elif "google.com/maps" in link.lower():
-            source = "Google Maps"
-
-        rating_match = re.search(r"(\d(?:\.\d)?)\s*(?:out of\s*5|/\s*5|stars?|★|rating|score)", combined, re.IGNORECASE)
-        if rating_match and star_rating is None:
-            val = float(rating_match.group(1))
-            if 0 < val <= 5:
-                star_rating = val
-                sources_found.append(source)
-
-        count_match = re.search(r"(\d[\d,]*)\s*(?:reviews?|ratings?|google reviews?|verified)", combined, re.IGNORECASE)
-        if count_match and review_count is None:
-            raw_count = count_match.group(1).replace(",", "")
-            if raw_count.isdigit() and int(raw_count) < 1000000:
-                review_count = int(raw_count)
-
-        if snippet and len(snippet) > 20:
-            tagged = f"[{source}] {snippet[:200]}"
-            snippets.append(tagged)
-            neg_keywords = ["poor", "terrible", "awful", "bad experience", "worst", "horrible", "disappointed", "rude", "scam", "avoid", "slow", "unreliable"]
-            if any(kw in snippet.lower() for kw in neg_keywords):
-                negative.append(tagged)
-            else:
-                positive.append(tagged)
-
-    return {
-        "star_rating": star_rating,
-        "review_count": review_count,
-        "snippets": snippets[:10],
-        "positive": positive[:5],
-        "negative": negative[:5],
-        "sources": sources_found,
-        "has_data": bool(star_rating or review_count or snippets),
-    }
-
-
-def _parse_glassdoor_reviews(search_result: dict, business_name: str) -> dict:
-    """Extract ratings and review snippets from employer review sites (Glassdoor, Indeed, Seek)."""
-    results = search_result.get("results") or []
-    snippets = []
-    rating = None
-    positive = []
-    negative = []
-    employer_sites = ["glassdoor", "indeed", "seek.com", "fairwork", "payscale"]
-
-    for r in results:
-        snippet = r.get("snippet") or ""
-        title = r.get("title") or ""
-        link = r.get("link") or ""
-        combined = f"{title} {snippet}"
-
-        is_employer_site = any(site in link.lower() or site in title.lower() for site in employer_sites)
-        if not is_employer_site:
-            continue
-
-        rating_match = re.search(r"(\d(?:\.\d)?)\s*(?:out of\s*5|/\s*5|stars?|★|overall|rating)", combined, re.IGNORECASE)
-        if rating_match and rating is None:
-            val = float(rating_match.group(1))
-            if 0 < val <= 5:
-                rating = val
-
-        if snippet and len(snippet) > 20:
-            source = "Glassdoor" if "glassdoor" in link.lower() else "Indeed" if "indeed" in link.lower() else "Employer review"
-            snippets.append(f"[{source}] {snippet[:200]}")
-            neg_keywords = ["poor", "toxic", "bad management", "low pay", "high turnover", "overworked", "no growth", "terrible", "worst", "avoid"]
-            if any(kw in snippet.lower() for kw in neg_keywords):
-                negative.append(f"[{source}] {snippet[:200]}")
-            else:
-                positive.append(f"[{source}] {snippet[:200]}")
-
-    return {
-        "rating": rating,
-        "snippets": snippets[:10],
-        "positive": positive[:5],
-        "negative": negative[:5],
-        "has_data": bool(rating or snippets),
-    }
-
-
-def _aggregate_reviews(google: dict, glassdoor: dict) -> dict:
-    """Combine Google and Glassdoor review signals into a single aggregation."""
-    scores = []
-    if google.get("star_rating"):
-        scores.append(google["star_rating"])
-    if glassdoor.get("rating"):
-        scores.append(glassdoor["rating"])
-    combined_score = round(sum(scores) / len(scores), 1) if scores else None
-
-    all_positive = (google.get("positive") or []) + (glassdoor.get("positive") or [])
-    all_negative = (google.get("negative") or []) + (glassdoor.get("negative") or [])
-    all_snippets = (google.get("snippets") or []) + (glassdoor.get("snippets") or [])
-
-    return {
-        "combined_score": combined_score,
-        "positive_count": len(all_positive),
-        "negative_count": len(all_negative),
-        "top_recent": all_snippets[:3],
-        "has_data": bool(combined_score or all_snippets),
-    }
 
 
 def _build_seo_analysis(raw_html: str, page_text: str, page_title: str, meta_description: str) -> Dict[str, Any]:
@@ -871,8 +702,7 @@ async def skip_calibration(current_user: dict = Depends(get_current_user)):
     """Super admin only — skip calibration entirely and mark as complete."""
     user_role = current_user.get("role", "user")
     user_email = current_user.get("email", "")
-    founder_email = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "").strip().lower()
-    if user_role not in ("superadmin", "admin") and (not founder_email or user_email.strip().lower() != founder_email):
+    if user_role not in ("superadmin", "admin") and user_email != "andre@thestrategysquad.com.au":
         raise HTTPException(status_code=403, detail="Super admin only")
     
     user_id = current_user["id"]
@@ -1189,21 +1019,6 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
 
     if payload.action == "scan":
         try:
-            scan_domain = normalize_domain(url)
-            if payload.bust_cache:
-                await invalidate_domain_scan(scan_domain)
-                logger.info("[enrichment/website] cache BUSTED for %s (user requested)", scan_domain)
-            cached = await get_domain_scan(scan_domain)
-            if cached:
-                logger.info("[enrichment/website] cache HIT for %s", scan_domain)
-                return {
-                    "status": "draft",
-                    "url": url,
-                    "enrichment": cached,
-                    "cached": True,
-                    "message": "Cached scan result returned.",
-                }
-
             seed_page = await _fetch_html_and_text(url, timeout=20)
             page_text = seed_page.get("text") or ""
             raw_html = seed_page.get("html") or ""
@@ -1225,34 +1040,15 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             facebook_query = f'"{business_name_hint}" Facebook'
             twitter_query = f'"{business_name_hint}" Twitter OR X'
             review_query = f'"{business_name_hint}" reviews testimonials case study'
-            review_google_query = f'site:google.com/maps OR site:trustpilot.com OR site:productreview.com.au "{business_name_hint}" reviews rating'
-            review_glassdoor_query = f'site:glassdoor.com.au OR site:glassdoor.com OR site:seek.com.au "{business_name_hint}" reviews rating employees'
-            review_indeed_query = f'"{business_name_hint}" employee reviews rating site:indeed.com OR site:glassdoor.com'
 
-            (company_search, competitor_search, abn_search,
-             linkedin_search, instagram_search, facebook_search,
-             twitter_search, review_search,
-             google_review_search, glassdoor_review_search,
-             indeed_review_search) = await asyncio.gather(
-                serper_search(company_query, gl="au", hl="en", num=10),
-                serper_search(competitor_query, gl="au", hl="en", num=10),
-                serper_search(abn_query, gl="au", hl="en", num=10),
-                serper_search(linkedin_query, gl="au", hl="en", num=10),
-                serper_search(instagram_query, gl="au", hl="en", num=10),
-                serper_search(facebook_query, gl="au", hl="en", num=10),
-                serper_search(twitter_query, gl="au", hl="en", num=10),
-                serper_search(review_query, gl="au", hl="en", num=10),
-                serper_search(review_google_query, num=10),
-                serper_search(review_glassdoor_query, num=10),
-                serper_search(review_indeed_query, num=10),
-            )
-
-            google_reviews = _parse_google_reviews(google_review_search, business_name_hint)
-            merged_employer_results = {
-                "results": (glassdoor_review_search.get("results") or []) + (indeed_review_search.get("results") or []),
-            }
-            glassdoor_reviews = _parse_glassdoor_reviews(merged_employer_results, business_name_hint)
-            review_aggregation = _aggregate_reviews(google_reviews, glassdoor_reviews)
+            company_search = await serper_search(company_query, gl="au", hl="en", num=8)
+            competitor_search = await serper_search(competitor_query, gl="au", hl="en", num=8)
+            abn_search = await serper_search(abn_query, gl="au", hl="en", num=5)
+            linkedin_search = await serper_search(linkedin_query, gl="au", hl="en", num=5)
+            instagram_search = await serper_search(instagram_query, gl="au", hl="en", num=5)
+            facebook_search = await serper_search(facebook_query, gl="au", hl="en", num=5)
+            twitter_search = await serper_search(twitter_query, gl="au", hl="en", num=5)
+            review_search = await serper_search(review_query, gl="au", hl="en", num=8)
 
             combined_text = "\n\n".join([
                 page_text[:12000],
@@ -1261,8 +1057,6 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (competitor_search.get("results") or [])]),
                 "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (abn_search.get("results") or [])]),
                 "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (review_search.get("results") or [])]),
-                "\n".join([f"- Google Review: {r.get('snippet', '')}" for r in (google_review_search.get("results") or [])]),
-                "\n".join([f"- Glassdoor: {r.get('snippet', '')}" for r in (glassdoor_review_search.get("results") or [])]),
             ])
             abn_candidates = _extract_abn_candidates(combined_text)
 
@@ -1315,16 +1109,11 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "swot": {},
                 "competitor_swot": [],
                 "cmo_priority_actions": [],
-                "google_reviews": google_reviews,
-                "glassdoor_reviews": glassdoor_reviews,
-                "review_aggregation": review_aggregation,
                 "sources": {
                     "company": company_search.get("results") or [],
                     "competitors": competitor_search.get("results") or [],
                     "abn": abn_search.get("results") or [],
                     "reviews": review_search.get("results") or [],
-                    "google_reviews": google_review_search.get("results") or [],
-                    "glassdoor_reviews": glassdoor_review_search.get("results") or [],
                     "social_search": {
                         "linkedin": linkedin_search.get("results") or [],
                         "instagram": instagram_search.get("results") or [],
@@ -1375,32 +1164,17 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if enrichment["social_handles"].get("twitter") and not enrichment["social_handles"].get("x"):
                 enrichment["social_handles"]["x"] = enrichment["social_handles"]["twitter"]
 
-            # Edge intelligence orchestration: check cache, then fire uncached tools in parallel.
-            async def _cached_edge(fn_name, payload_dict, auth):
-                hit = await get_edge_result(fn_name, scan_domain)
-                if hit:
-                    return hit
-                result = await _call_edge_function(fn_name, payload_dict, auth_header=auth)
-                if isinstance(result, dict) and not result.get("error"):
-                    asyncio.create_task(set_edge_result(fn_name, scan_domain, result))
-                return result
-
-            deep_recon, social_enrichment, competitor_monitor, market_analysis, market_scorer, browse_ai_reviews, semrush_intel = await asyncio.gather(
-                _cached_edge("deep-web-recon", {"user_id": user_id, "website": url}, inbound_auth),
-                _cached_edge("social-enrichment", {"website_url": url}, inbound_auth),
-                _cached_edge("competitor-monitor", {"user_id": user_id}, inbound_auth),
-                _cached_edge("market-analysis-ai", {
+            # Edge intelligence orchestration: fire all scan tools in parallel.
+            deep_recon, social_enrichment, competitor_monitor, market_analysis, market_scorer = await asyncio.gather(
+                _call_edge_function("deep-web-recon", {"user_id": user_id, "website": url}, auth_header=inbound_auth),
+                _call_edge_function("social-enrichment", {"website_url": url}, auth_header=inbound_auth),
+                _call_edge_function("competitor-monitor", {"user_id": user_id}, auth_header=inbound_auth),
+                _call_edge_function("market-analysis-ai", {
                     "product_or_service": enrichment.get("main_products_services", ""),
                     "region": "Australia",
                     "specific_question": f"Analyse the competitive positioning and market opportunity for {enrichment.get('business_name', '')} in the {enrichment.get('industry', '')} sector",
-                }, inbound_auth),
-                _cached_edge("market-signal-scorer", {"tenant_id": user_id}, inbound_auth),
-                _cached_edge("browse-ai-reviews", {
-                    "business_name": enrichment.get("business_name", ""),
-                    "domain": domain,
-                    "location": enrichment.get("location") or enrichment.get("geographic_focus") or "Australia",
-                }, inbound_auth),
-                _cached_edge("semrush-domain-intel", {"domain": domain, "database": "us"}, inbound_auth),
+                }, auth_header=inbound_auth),
+                _call_edge_function("market-signal-scorer", {"tenant_id": user_id}, auth_header=inbound_auth),
                 return_exceptions=True,
             )
             if isinstance(deep_recon, Exception): deep_recon = {"error": str(deep_recon)}
@@ -1408,8 +1182,6 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if isinstance(competitor_monitor, Exception): competitor_monitor = {"error": str(competitor_monitor)}
             if isinstance(market_analysis, Exception): market_analysis = {"error": str(market_analysis)}
             if isinstance(market_scorer, Exception): market_scorer = {"error": str(market_scorer)}
-            if isinstance(browse_ai_reviews, Exception): browse_ai_reviews = {"error": str(browse_ai_reviews)}
-            if isinstance(semrush_intel, Exception): semrush_intel = {"error": str(semrush_intel)}
 
             ai_errors = []
             if isinstance(deep_recon, dict) and deep_recon.get("error"):
@@ -1422,53 +1194,11 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 ai_errors.append({"function": "market-analysis-ai", "error": market_analysis["error"]})
             if isinstance(market_scorer, dict) and market_scorer.get("error"):
                 ai_errors.append({"function": "market-signal-scorer", "error": market_scorer["error"]})
-            if isinstance(browse_ai_reviews, dict) and browse_ai_reviews.get("error"):
-                ai_errors.append({"function": "browse-ai-reviews", "error": browse_ai_reviews["error"]})
-            if isinstance(semrush_intel, dict) and semrush_intel.get("error"):
-                ai_errors.append({"function": "semrush-domain-intel", "error": semrush_intel["error"]})
 
             edge_meta = {
                 "market_analysis_failed": not isinstance(market_analysis, dict) or bool(market_analysis.get("error")),
                 "market_scorer_failed": not isinstance(market_scorer, dict) or bool(market_scorer.get("error")),
             }
-
-            if isinstance(browse_ai_reviews, dict) and browse_ai_reviews.get("ok"):
-                enrichment["browse_ai_reviews"] = browse_ai_reviews
-                agg = browse_ai_reviews.get("aggregated") or {}
-                if agg.get("customer_score") and not enrichment.get("google_reviews", {}).get("star_rating"):
-                    enrichment.setdefault("google_reviews", {})["star_rating"] = agg["customer_score"]
-                    enrichment["google_reviews"]["has_data"] = True
-                if agg.get("staff_score") and not enrichment.get("glassdoor_reviews", {}).get("rating"):
-                    enrichment.setdefault("glassdoor_reviews", {})["rating"] = agg["staff_score"]
-                    enrichment["glassdoor_reviews"]["has_data"] = True
-                if agg.get("top_positive"):
-                    enrichment.setdefault("google_reviews", {}).setdefault("positive", []).extend(agg["top_positive"][:3])
-                    enrichment["google_reviews"]["has_data"] = True
-                if agg.get("top_negative"):
-                    enrichment.setdefault("google_reviews", {}).setdefault("negative", []).extend(agg["top_negative"][:3])
-                    enrichment["google_reviews"]["has_data"] = True
-                if agg.get("customer_count"):
-                    enrichment.setdefault("google_reviews", {})["review_count"] = agg["customer_count"]
-                if browse_ai_reviews.get("customer_reviews"):
-                    all_snippets = []
-                    for cr in browse_ai_reviews["customer_reviews"]:
-                        for rv in (cr.get("reviews") or [])[:5]:
-                            all_snippets.append(f"[{cr.get('platform', 'review')}] {rv.get('text', '')[:200]}")
-                    enrichment.setdefault("google_reviews", {}).setdefault("snippets", []).extend(all_snippets[:5])
-                if browse_ai_reviews.get("staff_reviews"):
-                    all_staff_snippets = []
-                    for sr in browse_ai_reviews["staff_reviews"]:
-                        for rv in (sr.get("reviews") or [])[:5]:
-                            all_staff_snippets.append(f"[{sr.get('platform', 'employer')}] {rv.get('text', '')[:200]}")
-                    enrichment.setdefault("glassdoor_reviews", {}).setdefault("snippets", []).extend(all_staff_snippets[:5])
-                    enrichment["glassdoor_reviews"]["has_data"] = True
-                enrichment.setdefault("review_aggregation", {}).update({
-                    "combined_score": agg.get("customer_score"),
-                    "positive_count": len(agg.get("top_positive") or []),
-                    "negative_count": len(agg.get("top_negative") or []),
-                    "top_recent": (agg.get("top_positive") or [])[:2] + (agg.get("top_negative") or [])[:1],
-                    "has_data": bool(agg.get("customer_score") or agg.get("top_positive")),
-                })
 
             social_edge_handles = (social_enrichment or {}).get("social_handles") or {}
             if isinstance(social_edge_handles, dict):
@@ -1606,43 +1336,6 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     f"Primary opportunity is to tighten positioning for {enrichment.get('target_market') or 'its core market'}, "
                     f"improve discoverability via SEO, and operationalize proof-led acquisition across owned and paid channels."
                 )
-
-            if isinstance(semrush_intel, dict) and semrush_intel.get("ok"):
-                sr_seo = semrush_intel.get("seo_analysis") or {}
-                if sr_seo.get("organic_keywords"):
-                    enrichment["seo_analysis"] = {
-                        **enrichment.get("seo_analysis", {}),
-                        "semrush_rank": sr_seo.get("semrush_rank"),
-                        "organic_keywords": sr_seo.get("organic_keywords"),
-                        "organic_traffic": sr_seo.get("organic_traffic"),
-                        "organic_cost_usd": sr_seo.get("organic_cost_usd"),
-                        "featured_snippets": sr_seo.get("featured_snippets"),
-                        "top_organic_keywords": sr_seo.get("top_organic_keywords", [])[:10],
-                        "score": sr_seo.get("score") or enrichment.get("seo_analysis", {}).get("score"),
-                        "status": sr_seo.get("status") or enrichment.get("seo_analysis", {}).get("status"),
-                        "source": "semrush",
-                    }
-                sr_paid = semrush_intel.get("paid_media_analysis") or {}
-                if sr_paid.get("adwords_keywords") is not None:
-                    enrichment["paid_media_analysis"] = {
-                        **enrichment.get("paid_media_analysis", {}),
-                        "adwords_keywords": sr_paid.get("adwords_keywords"),
-                        "adwords_traffic": sr_paid.get("adwords_traffic"),
-                        "adwords_cost_usd": sr_paid.get("adwords_cost_usd"),
-                        "top_paid_keywords": sr_paid.get("top_paid_keywords", [])[:10],
-                        "maturity": sr_paid.get("maturity") or enrichment.get("paid_media_analysis", {}).get("maturity"),
-                        "assessment": sr_paid.get("assessment") or enrichment.get("paid_media_analysis", {}).get("assessment"),
-                        "source": "semrush",
-                    }
-                sr_comp = semrush_intel.get("competitor_analysis") or {}
-                if sr_comp.get("organic_competitors"):
-                    enrichment["semrush_competitors"] = sr_comp.get("organic_competitors", [])
-                    sr_comp_names = [c.get("domain", "") for c in sr_comp.get("organic_competitors", []) if c.get("domain")]
-                    existing = enrichment.get("competitors") or []
-                    merged = list(dict.fromkeys(existing + sr_comp_names))
-                    enrichment["competitors"] = merged[:10]
-                enrichment["semrush_data"] = semrush_intel
-
             try:
                 enrichment.setdefault("sources", {})
                 enrichment["sources"]["edge_tools"] = {
@@ -1671,8 +1364,6 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 pass
 
             enrichment["ai_errors"] = ai_errors
-
-            asyncio.create_task(set_domain_scan(scan_domain, enrichment))
 
             return {
                 "status": "draft",
@@ -2538,32 +2229,6 @@ async def handle_regeneration_response(payload: RegenerationResponsePayload, cur
     return await record_regeneration_response(current_user["id"], payload.proposal_id, action, get_sb())
 
 
-# ═══ RECALIBRATION CONTACT (SALES GATE) ═══
-
-@router.post("/contact/recalibration")
-async def recalibration_contact(payload: RecalibrationContactRequest, current_user: dict = Depends(get_current_user)):
-    """Log a recalibration request and notify sales. Does NOT trigger recalibration directly."""
-    user_id = current_user.get("id", "")
-    try:
-        sb = get_sb()
-        sb.table("intelligence_actions").insert({
-            "id": str(uuid.uuid4()),
-            "user_id": user_id,
-            "source": "recalibration_request",
-            "source_id": f"recal_{user_id}_{int(datetime.now(timezone.utc).timestamp())}",
-            "domain": "calibration",
-            "severity": "low",
-            "title": f"Recalibration requested by {payload.name}",
-            "description": f"Email: {payload.email}\nDays since calibration: {payload.days_since_calibration}\nMessage: {payload.message}",
-            "suggested_action": "Contact user to schedule recalibration session.",
-            "status": "action_required",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }).execute()
-    except Exception as exc:
-        logger.warning("Failed to log recalibration contact: %s", exc)
-    return {"status": "ok", "message": "Recalibration request received. Our team will contact you within 24 hours."}
-
-
 # ═══ RECALIBRATION & CHECK-IN SCHEDULING ═══
 
 class ScheduleCheckInRequest(BaseModel):
@@ -2879,27 +2544,4 @@ async def get_forensic_calibration(current_user: dict = Depends(get_current_user
     except Exception as e:
         logger.error(f"[forensic] Read error: {e}")
         return {"exists": False}
-
-
-@router.post("/reports/save")
-async def save_calibration_report(payload: ReportSaveRequest, current_user: dict = Depends(get_current_user)):
-    user_id = current_user.get("id", "")
-    try:
-        sb = get_sb()
-        sb.table("intelligence_actions").insert({
-            "id": str(uuid.uuid4()),
-            "user_id": user_id,
-            "source": f"calibration_report_{payload.report_type}",
-            "source_id": f"report_{payload.report_type}_{int(datetime.now(timezone.utc).timestamp())}",
-            "domain": "reports",
-            "severity": "info",
-            "title": payload.title,
-            "description": json.dumps(payload.content, default=str)[:10000],
-            "suggested_action": "Available for download in Reports section.",
-            "status": "complete",
-            "created_at": payload.generated_at or datetime.now(timezone.utc).isoformat(),
-        }).execute()
-    except Exception as exc:
-        logger.warning("Failed to save calibration report: %s", exc)
-    return {"status": "ok", "report_type": payload.report_type}
 

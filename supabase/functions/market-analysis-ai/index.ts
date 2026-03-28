@@ -41,7 +41,7 @@ async function perplexitySearch(query: string): Promise<string> {
     const res = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${PERPLEXITY_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "sonar", messages: [{ role: "user", content: query }], max_tokens: 1000 }),
+      body: JSON.stringify({ model: "sonar", messages: [{ role: "user", content: query }], max_tokens: 500 }),
     });
     if (res.ok) { const d = await res.json(); return d.choices?.[0]?.message?.content || ""; }
   } catch (e) { console.error("[perplexity]", e); }
@@ -227,7 +227,7 @@ ${JSON.stringify(ctx, null, 2)}`;
           { role: "user", content: userPrompt },
         ],
         temperature: 0.35,
-        max_tokens: 8000,
+        max_tokens: 4000,
       }),
     });
 

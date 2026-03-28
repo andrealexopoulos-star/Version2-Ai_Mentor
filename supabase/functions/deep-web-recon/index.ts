@@ -69,7 +69,7 @@ async function scrapeWithFirecrawl(
     if (!res.ok) return null;
     const payload = await res.json();
     const md = String(payload?.data?.markdown || payload?.data?.content || "");
-    return md.length > 50 ? md.substring(0, 20000) : null;
+    return md.length > 50 ? md.substring(0, 6000) : null;
   } catch {
     return null;
   }
@@ -85,7 +85,7 @@ async function scrapeRawHtml(url: string): Promise<string | null> {
     });
     if (!res.ok) return null;
     const html = await res.text();
-    return html.slice(0, 20_000);
+    return html.slice(0, 12_000);
   } catch {
     return null;
   } finally {
@@ -187,7 +187,7 @@ async function synthesizeSWOT(
   const model = Deno.env.get("OPENAI_MODEL") || "gpt-4o";
 
   const scrapeSummary = scrapedSections
-    .map((s) => `### ${s.source.toUpperCase()}\n${s.content.substring(0, 8000)}`)
+    .map((s) => `### ${s.source.toUpperCase()}\n${s.content.substring(0, 3000)}`)
     .join("\n\n---\n\n");
 
   const systemPrompt =
@@ -221,7 +221,7 @@ Return JSON ONLY (no markdown fences):
           { role: "user", content: userPrompt },
         ],
         temperature: 0.3,
-        max_tokens: 8000,
+        max_tokens: 4000,
       }),
     });
 

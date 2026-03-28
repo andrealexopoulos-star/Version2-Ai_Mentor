@@ -86,9 +86,6 @@ async def proxy_edge_function(
     if name not in EDGE_PROXY_ALLOWLIST:
         raise HTTPException(status_code=403, detail="Edge function not allowed")
     resolved_name = "calibration-psych" if name == "calibration_psych" else name
-    name = (function_name or "").strip()
-    if name not in EDGE_PROXY_ALLOWLIST:
-        raise HTTPException(status_code=403, detail="Edge function not allowed")
 
     supabase_url = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
     if not supabase_url:
@@ -126,8 +123,9 @@ async def proxy_edge_function(
     edge_payload = dict(body.payload or {})
     if current_user and current_user.get("id"):
         edge_payload.setdefault("user_id", current_user["id"])
+    timeout_seconds = 90 if resolved_name == "calibration-business-dna" else 45
     try:
-        async with httpx.AsyncClient(timeout=90) as client:
+        async with httpx.AsyncClient(timeout=timeout_seconds) as client:
             edge_res = await client.post(
                 endpoint,
                 json=edge_payload,
@@ -138,30 +136,6 @@ async def proxy_edge_function(
                     "X-Calibration-Run-Id": calibration_run_id,
                     "X-Calibration-Step": calibration_step,
                     "X-Proxy-Request-Id": proxy_request_id,
-    inbound_auth = (request.headers.get("authorization") or "").strip()
-    proxy_apikey = anon_key
-    if not inbound_auth.lower().startswith("bearer "):
-        qa_bypass = (request.headers.get("X-QA-Bypass") or "").strip()
-        if QA_BYPASS_AUTH and QA_BYPASS_SECRET and qa_bypass == QA_BYPASS_SECRET:
-            service_role_key = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
-            proxy_token = service_role_key or anon_key
-            inbound_auth = f"Bearer {proxy_token}"
-            proxy_apikey = proxy_token
-        else:
-            raise HTTPException(status_code=401, detail="Missing authorization header")
-
-    endpoint = f"{supabase_url}/functions/v1/{name}"
-    try:
-        # calibration-business-dna can legitimately run longer due multi-source retrieval + extraction.
-        timeout_seconds = 90 if name == "calibration-business-dna" else 45
-        async with httpx.AsyncClient(timeout=timeout_seconds) as client:
-            edge_res = await client.post(
-                endpoint,
-                json=body.payload or {},
-                headers={
-                    "Authorization": inbound_auth,
-                    "apikey": proxy_apikey,
-                    "Content-Type": "application/json",
                     "X-QA-Bypass": (request.headers.get("X-QA-Bypass") or "").strip(),
                 },
             )
