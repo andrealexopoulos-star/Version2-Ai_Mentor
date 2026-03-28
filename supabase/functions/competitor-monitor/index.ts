@@ -148,7 +148,15 @@ async function monitorUser(sb: any, userId: string): Promise<{ signals: number; 
   const website = profile.website || "";
 
   // Build search query
-  const searchQuery = `Latest news, pricing changes, product launches, and hiring for competitors of ${businessName} in the ${industry} industry in Australia. Focus on the last 7 days.${website ? ` Their website is ${website}.` : ""}`;
+  const competitorNames = (() => {
+    try {
+      if (typeof profile.competitor_data === 'string') return JSON.parse(profile.competitor_data);
+      if (Array.isArray(profile.competitor_data)) return profile.competitor_data;
+    } catch {}
+    return [];
+  })();
+  const namedList = competitorNames.length > 0 ? ` Key competitors to monitor: ${competitorNames.slice(0, 5).join(', ')}.` : '';
+  const searchQuery = `Latest news, pricing changes, product launches, and hiring for competitors of ${businessName} in the ${industry} industry in Australia. Focus on the last 7 days.${website ? ` Their website is ${website}.` : ''}${namedList}`;
 
   // Search current competitive landscape
   const currentSignals = await searchPerplexity(searchQuery);
@@ -169,10 +177,16 @@ async function monitorUser(sb: any, userId: string): Promise<{ signals: number; 
   // Analyse changes
   const changes = await analyseChanges(businessName, industry, previousSignals, currentSignals);
 
-  // Persist scan result
+  // Persist scan result to a separate field to avoid clobbering calibration's competitor_scan_result
   await sb.from("business_profiles").update({
     competitor_scan_last: new Date().toISOString(),
-    competitor_scan_result: currentSignals.substring(0, 2000),
+    competitor_monitor_latest: JSON.stringify({
+      signals: changes,
+      raw_intelligence: currentSignals.substring(0, 2000),
+      scanned_at: new Date().toISOString(),
+      business_name: businessName,
+      industry: industry,
+    }),
   }).eq("user_id", userId);
 
   // Create intelligence actions for detected changes

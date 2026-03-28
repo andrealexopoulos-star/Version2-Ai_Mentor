@@ -7,7 +7,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const OPENAI_KEY = Deno.env.get("Calibration-Psych") || "";
+const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 const MODEL = "gpt-5.3";
 
 const STEPS: { [k: number]: { field: string; label: string } } = {
@@ -222,7 +222,7 @@ serve(async (req: Request) => {
   try {
     // Deterministic path is forced for reliability and latency.
     // This prevents calibration interruptions when external model calls are slow/unavailable.
-    const modelAvailable = false;
+    const modelAvailable = !!OPENAI_KEY;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Missing auth" }), { status: 401, headers: CORS });

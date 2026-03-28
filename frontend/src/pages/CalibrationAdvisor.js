@@ -6,7 +6,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { apiClient } from "../lib/api";
 import {
   CalibrationLoading, WelcomeHandshake, ManualSummaryFallback,
-  AuditProgress,
+  AuditProgress, WowCards, StrategicRoadmap,
 } from "../components/calibration/CalibrationComponents";
 import { WowSummary, DissolveTransition } from "../components/calibration/WowSummary";
 import ChiefMarketingSummary from "../components/calibration/ChiefMarketingSummary";
@@ -66,7 +66,7 @@ const CalibrationAdvisor = () => {
 
   const tutorialKey = cal.entry === 'welcome' ? 'calibration-welcome'
     : (cal.entry === 'calibrating') ? 'calibration-chat'
-    : (cal.entry === 'wow_summary') ? 'calibration-wow'
+    : (cal.entry === 'wow_cards' || cal.entry === 'strategic_roadmap' || cal.entry === 'wow_summary') ? 'calibration-wow'
     : null;
 
   return (
@@ -114,14 +114,17 @@ const CalibrationAdvisor = () => {
       {cal.entry === "welcome" && (
         <WelcomeHandshake firstName={cal.firstName} websiteUrl={cal.websiteUrl} setWebsiteUrl={cal.setWebsiteUrl}
           onSubmit={cal.handleAuditSubmit} onManualFallback={() => cal.setEntry("manual_summary")}
-          isSubmitting={cal.isSubmitting} error={cal.error} initialPhase="scan" />
+          isSubmitting={cal.isSubmitting} error={cal.error} initialPhase="scan"
+          scanFailure={cal.scanFailure}
+          scanAttemptCount={cal.scanAttemptCount}
+          canManualFallback={cal.canManualFallback} />
       )}
 
       {cal.entry === "manual_summary" && (
         <ManualSummaryFallback firstName={cal.firstName} onSubmit={cal.handleManualSummary} isSubmitting={cal.isSubmitting} />
       )}
 
-      {cal.entry === "analyzing" && <AuditProgress onManualFallback={() => cal.setEntry('manual_summary')} />}
+      {cal.entry === "analyzing" && <AuditProgress />}
 
       {/* ═══ PHASE 3: Forensic Identity Verification (BEFORE footprint report) ═══ */}
       {cal.entry === "identity_verification" && cal.identitySignals && (
@@ -135,8 +138,39 @@ const CalibrationAdvisor = () => {
           onAbnLookup={cal.handleAbnLookup}
         />
       )}
+      {cal.entry === "identity_verification" && !cal.identitySignals && (
+        <WelcomeHandshake
+          firstName={cal.firstName}
+          websiteUrl={cal.websiteUrl}
+          setWebsiteUrl={cal.setWebsiteUrl}
+          onSubmit={cal.handleAuditSubmit}
+          onManualFallback={() => cal.setEntry("manual_summary")}
+          isSubmitting={cal.isSubmitting}
+          error={cal.error || "Scan data was incomplete. Check your website details and regenerate the scan."}
+          initialPhase="scan"
+          scanFailure={cal.scanFailure}
+          scanAttemptCount={cal.scanAttemptCount}
+          canManualFallback={cal.canManualFallback}
+        />
+      )}
 
-      {/* ═══ PHASE 4: Chief Marketing Summary (CMO Report) ═══ */}
+      {/* ═══ PHASE 4: WOW Forensic Insight Cards ═══ */}
+      {cal.entry === "wow_cards" && cal.identityConfirmed && cal.wowSummary && (
+        <WowCards
+          cards={cal.buildWowCards()}
+          onConfirm={cal.handleConfirmWowCards}
+        />
+      )}
+
+      {/* ═══ PHASE 5: Strategic Roadmap (7/30/90) ═══ */}
+      {cal.entry === "strategic_roadmap" && cal.identityConfirmed && cal.wowSummary && (
+        <StrategicRoadmap
+          roadmap={cal.buildStrategicRoadmap()}
+          onConfirm={cal.handleConfirmRoadmap}
+        />
+      )}
+
+      {/* ═══ PHASE 6: Chief Marketing Summary (CMO Report) ═══ */}
       {cal.entry === "wow_summary" && cal.identityConfirmed && !cal.transitioning && (
         cal.wowSummary ? (
           <ChiefMarketingSummary

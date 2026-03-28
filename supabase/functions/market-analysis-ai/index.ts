@@ -221,13 +221,13 @@ ${JSON.stringify(ctx, null, 2)}`;
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gemini-3-pro-preview",
+        model: Deno.env.get("OPENAI_MODEL") || "gpt-4o",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.35,
-        max_tokens: 1500,
+        max_tokens: 4000,
       }),
     });
 
