@@ -60,6 +60,7 @@ EDGE_PROXY_ALLOWLIST = {
     "market-analysis-ai",
     "market-signal-scorer",
     "browse-ai-reviews",
+    "semrush-domain-intel",
 }
 
 
