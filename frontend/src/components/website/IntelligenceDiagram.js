@@ -1,269 +1,312 @@
 import { useEffect, useRef } from 'react';
 import { fontFamily } from '../../design-system/tokens';
 
+// ─── Input categories — 3×2 grid ─────────────────────────────────────────────
 
-const SYSTEMS = [
-  { label: 'Finance Systems', tools: ['Xero', 'NetSuite', 'QuickBooks', 'MYOB'] },
-  { label: 'Operations Systems', tools: ['ERP Systems', 'HubSpot', 'Monday', 'Asana'] },
-  { label: 'Sales Systems', tools: ['Salesforce', 'CRMs', 'Pipedrive', 'HubSpot'] },
+const SIX_INPUT_CATEGORIES = [
+  {
+    label: 'Financial & Accounting',
+    desc: 'Live cash flow, invoice ageing, and margin signals.',
+    tools: ['Xero', 'QuickBooks', 'MYOB', 'NetSuite'],
+    color: '#10B981',
+  },
+  {
+    label: 'CRM & Sales',
+    desc: 'Pipeline velocity, deal health, and client engagement.',
+    tools: ['HubSpot', 'Salesforce', 'Pipedrive'],
+    color: '#3B82F6',
+  },
+  {
+    label: 'Operations',
+    desc: 'Task status, project timelines, and SOP compliance.',
+    tools: ['Monday', 'Asana', 'ERP Systems'],
+    color: '#8B5CF6',
+  },
+  {
+    label: 'Email & Comms',
+    desc: 'Response patterns, escalations, and sentiment shifts.',
+    tools: ['Outlook', 'Gmail', 'Slack', 'Teams'],
+    color: '#F59E0B',
+  },
+  {
+    label: 'Market Intelligence',
+    desc: 'Competitor moves, demand shifts, and industry signals.',
+    tools: ['Competitor Recon', 'Industry Signals', 'Web Scanning'],
+    color: '#FF6A00',
+  },
+  {
+    label: 'HR & Payments',
+    desc: 'Staff utilisation, overtime, and payroll anomalies.',
+    tools: ['BambooHR', 'Workable', 'Stripe'],
+    color: '#EF4444',
+  },
 ];
 
+const PIPELINE_STEPS = ['Connect', 'Analyse', 'Detect', 'Act'];
+
+// ─── Animated vertical connector ─────────────────────────────────────────────
+
 const AnimatedConnector = ({ height = 40 }) => (
-  <div className="flex justify-center relative" style={{ padding: '6px 0', height: height + 12 }}>
-    <div className="absolute left-1/2 -translate-x-1/2 top-[6px]" style={{
-      width: 2,
-      height,
-      background: 'linear-gradient(to bottom, rgba(255,140,40,0.5), rgba(255,140,40,0.15))',
+  <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', padding: '6px 0', height: height + 12 }}>
+    <div style={{
+      position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 6,
+      width: 2, height,
+      background: 'linear-gradient(to bottom, rgba(255,140,40,0.55), rgba(255,140,40,0.12))',
       boxShadow: '0 0 8px rgba(255,140,40,0.3)',
     }} />
-    <div className="signal-pulse absolute left-1/2 -translate-x-1/2" style={{
-      width: 6,
-      height: 6,
-      borderRadius: '50%',
-      background: '#FF8C28',
-      top: 6,
+    <div className="signal-pulse" style={{
+      position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+      width: 7, height: 7, borderRadius: '50%', background: '#FF8C28', top: 6,
       boxShadow: '0 0 12px rgba(255,140,40,0.8), 0 0 24px rgba(255,140,40,0.4)',
     }} />
     <style>{`
-      .signal-pulse {
-        animation: signalMove 2s ease-in-out infinite;
-      }
+      .signal-pulse { animation: signalMove 2s ease-in-out infinite; }
       @keyframes signalMove {
-        0% { transform: translateX(-50%) translateY(0); opacity: 0; }
-        20% { opacity: 1; }
-        80% { opacity: 1; }
-        100% { transform: translateX(-50%) translateY(${height}px); opacity: 0; }
+        0%   { transform: translateX(-50%) translateY(0);            opacity: 0; }
+        20%  { opacity: 1; }
+        80%  { opacity: 1; }
+        100% { transform: translateX(-50%) translateY(${height}px);  opacity: 0; }
       }
     `}</style>
   </div>
 );
 
-const GlowCard = ({ children, className = '', glow = false }) => (
-  <div className={`rounded-xl p-5 sm:p-6 transition-all duration-300 hover:border-[#FF7A18]/40 ${className}`} style={{
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,140,40,0.25)',
-    boxShadow: glow ? '0 0 40px rgba(255,140,40,0.1), 0 0 80px rgba(255,140,40,0.05)' : 'none',
-  }}>
-    {children}
-  </div>
-);
+// ─── Main component ───────────────────────────────────────────────────────────
 
-const FlowLabel = ({ label, sublabel }) => (
-  <div className="text-center">
-    <span className="font-semibold tracking-[0.2em] uppercase block" style={{ fontFamily: fontFamily.mono, color: '#FF9C45', fontSize: '12px' }}>{label}</span>
-    {sublabel && <span className="block mt-1" style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontWeight: 300, fontSize: '13px' }}>{sublabel}</span>}
-  </div>
-);
-
-const AnimatedNodeSVG = () => {
-  const svgRef = useRef(null);
-
+export const IntelligenceDiagram = ({ embedded = false }) => {
+  const ref = useRef(null);
   useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    const dots = svg.querySelectorAll('.flow-dot');
-    dots.forEach((dot, i) => {
+    if (!ref.current) return;
+    ref.current.querySelectorAll('.flow-dot').forEach((dot, i) => {
       dot.style.animationDelay = `${i * 0.4}s`;
     });
   }, []);
 
   return (
-    <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 120" preserveAspectRatio="xMidYMid meet" style={{ opacity: 0.6 }}>
-      <defs>
-        <radialGradient id="nodeGlow">
-          <stop offset="0%" stopColor="rgba(255,140,40,0.4)" />
-          <stop offset="100%" stopColor="transparent" />
-        </radialGradient>
-      </defs>
-      {/* Animated connection lines from 3 system cards to watchtower */}
-      {[200, 400, 600].map((x, i) => (
-        <g key={i}>
-          <line x1={x} y1="10" x2="400" y2="110" stroke="rgba(255,140,40,0.15)" strokeWidth="1" strokeDasharray="4 3" />
-          <circle className="flow-dot" cx="0" cy="0" r="3" fill="#FF8C28" style={{
-            filter: 'drop-shadow(0 0 4px rgba(255,140,40,0.8))',
-            animation: `flowDown${i} 2.5s ease-in-out infinite`,
+    <section
+      ref={ref}
+      className={`relative overflow-hidden ${embedded ? 'pt-6 pb-8' : 'py-16 sm:py-20'}`}
+      data-testid="intelligence-diagram"
+    >
+      <style>{`
+        @keyframes coreGlow {
+          0%,100% { box-shadow: 0 0 40px rgba(255,140,40,0.35), 0 0 80px rgba(255,140,40,0.15); }
+          50%      { box-shadow: 0 0 55px rgba(255,140,40,0.5),  0 0 110px rgba(255,140,40,0.22); }
+        }
+        @keyframes corePulse {
+          0%,100% { opacity: 0.3; transform: scale(1); }
+          50%     { opacity: 0.6; transform: scale(1.15); }
+        }
+        @keyframes waveFloat {
+          0%,100% { transform: translateX(-50%) scaleX(1);    opacity: 0.04; }
+          50%     { transform: translateX(-50%) scaleX(1.04); opacity: 0.09; }
+        }
+        @keyframes stepPulse {
+          0%,100% { opacity: 0.55; }
+          50%     { opacity: 1; }
+        }
+      `}</style>
+
+      {/* Subtle grid */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: 'linear-gradient(rgba(255,140,40,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,140,40,0.018) 1px, transparent 1px)',
+        backgroundSize: '60px 60px',
+      }} />
+      {/* Central energy wave */}
+      <div className="absolute left-1/2 -translate-x-1/2 hidden sm:block pointer-events-none" style={{
+        top: '35%', width: 1000, height: 320,
+        background: 'radial-gradient(ellipse, rgba(255,140,40,0.06) 0%, transparent 70%)',
+        animation: 'waveFloat 10s ease-in-out infinite',
+      }} />
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
+
+        {/* ── TIER 1: YOUR BUSINESS SIGNALS — 3×2 grid ── */}
+        <div className="text-center mb-8">
+          <h2 style={{
+            fontFamily: fontFamily.display,
+            color: '#F4F7FA',
+            fontSize: 'clamp(26px, 3.8vw, 44px)',
+            fontWeight: 700,
+            lineHeight: 1.1,
+            marginBottom: 8,
           }}>
-            <animateMotion dur="2.5s" repeatCount="indefinite" begin={`${i * 0.6}s`}>
-              <mpath href={`#path-${i}`} />
-            </animateMotion>
-          </circle>
-          <path id={`path-${i}`} d={`M${x},10 L400,110`} fill="none" />
-        </g>
-      ))}
-    </svg>
-  );
-};
+            Your Business Signals
+          </h2>
+          <p style={{
+            fontFamily: fontFamily.body,
+            color: '#9FB0C3',
+            fontSize: 'clamp(14px, 1.6vw, 17px)',
+            lineHeight: 1.6,
+          }}>
+            What is happening across your systems
+          </p>
+        </div>
 
-export const IntelligenceDiagram = () => (
-  <section className="relative py-20 sm:py-28 overflow-hidden" data-testid="intelligence-diagram">
-    <style>{`
-      @keyframes coreGlow {
-        0%,100% { box-shadow: 0 0 40px rgba(255,140,40,0.35), 0 0 80px rgba(255,140,40,0.15); }
-        50% { box-shadow: 0 0 50px rgba(255,140,40,0.5), 0 0 100px rgba(255,140,40,0.22); }
-      }
-      @keyframes corePulse {
-        0%,100% { opacity: 0.3; transform: scale(1); }
-        50% { opacity: 0.6; transform: scale(1.15); }
-      }
-      @keyframes signalFlow {
-        0% { stroke-dashoffset: 20; }
-        100% { stroke-dashoffset: 0; }
-      }
-      @keyframes waveFloat {
-        0%,100% { transform: translateX(-50%) scaleX(1); opacity: 0.04; }
-        50% { transform: translateX(-50%) scaleX(1.04); opacity: 0.08; }
-      }
-    `}</style>
+        {/* 3-column × 2-row input grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 16,
+        }}>
+          {SIX_INPUT_CATEGORIES.map(cat => (
+            <div
+              key={cat.label}
+              style={{
+                borderRadius: 14,
+                padding: '20px 20px',
+                background: 'rgba(255,255,255,0.025)',
+                border: `1px solid ${cat.color}35`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                transition: 'border-color 0.2s',
+              }}
+            >
+              {/* Icon dot + label */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 10, height: 10, borderRadius: '50%',
+                  background: cat.color,
+                  boxShadow: `0 0 8px ${cat.color}80`,
+                  flexShrink: 0,
+                }} />
+                <span style={{
+                  fontFamily: fontFamily.mono,
+                  color: cat.color,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  lineHeight: 1.3,
+                }}>
+                  {cat.label}
+                </span>
+              </div>
 
-    {/* Subtle intelligence field background */}
-    <div className="absolute inset-0" style={{
-      backgroundImage: 'linear-gradient(rgba(255,140,40,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,140,40,0.02) 1px, transparent 1px)',
-      backgroundSize: '60px 60px',
-    }} />
+              {/* Description */}
+              <p style={{
+                fontFamily: fontFamily.body,
+                color: 'rgba(159,176,195,0.65)',
+                fontSize: 12,
+                lineHeight: 1.55,
+                margin: 0,
+              }}>
+                {cat.desc}
+              </p>
 
-    {/* Energy wave layers */}
-    <div className="absolute left-1/2 -translate-x-1/2 hidden sm:block" style={{
-      top: '30%', width: 900, height: 250,
-      background: 'radial-gradient(ellipse, rgba(255,140,40,0.07) 0%, transparent 70%)',
-      animation: 'waveFloat 10s ease-in-out infinite', pointerEvents: 'none',
-    }} />
-    <div className="absolute left-1/2 -translate-x-1/2 hidden sm:block" style={{
-      top: '55%', width: 700, height: 180,
-      background: 'radial-gradient(ellipse, rgba(255,140,40,0.05) 0%, transparent 70%)',
-      animation: 'waveFloat 8s ease-in-out infinite 2s', pointerEvents: 'none',
-    }} />
-
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
-
-      {/* TIER 1: BUSINESS SIGNALS */}
-      <FlowLabel label="Business Signals" sublabel="What is happening across your systems" />
-      <AnimatedConnector height={32} />
-
-      {/* Three system blocks with animated connecting lines */}
-      <div className="relative">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 relative z-10">
-          {SYSTEMS.map(sys => (
-            <GlowCard key={sys.label}>
-              <h4 className="font-bold tracking-[0.15em] uppercase mb-3 text-center" style={{ fontFamily: fontFamily.mono, color: '#FF9C45', fontSize: '12px' }}>{sys.label}</h4>
-              <div className="flex flex-wrap justify-center gap-2">
-                {sys.tools.map(t => (
-                  <span key={t} className="px-3 py-1 rounded-md transition-colors hover:bg-orange-500/10" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', fontSize: '12px', whiteSpace: 'nowrap' }}>{t}</span>
+              {/* Tool pills */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 'auto' }}>
+                {cat.tools.map(t => (
+                  <span key={t} style={{
+                    fontFamily: fontFamily.mono,
+                    color: '#9FB0C3',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    fontSize: 11,
+                    padding: '3px 8px',
+                    borderRadius: 5,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {t}
+                  </span>
                 ))}
               </div>
-            </GlowCard>
+            </div>
           ))}
         </div>
-      </div>
 
-      <AnimatedConnector height={40} />
+        <AnimatedConnector height={52} />
 
-      {/* TIER 2: WATCHTOWER */}
-      <GlowCard className="max-w-md mx-auto text-center" glow>
-        <FlowLabel label="Watchtower" sublabel="Continuous monitoring across your tools" />
-        {/* Animated radar sweep */}
-        <div className="flex justify-center mt-3">
-          <div className="relative w-8 h-8">
-            <div className="absolute inset-0 rounded-full" style={{ border: '1.5px solid rgba(255,140,40,0.2)' }} />
-            <div className="absolute inset-1 rounded-full" style={{ border: '1px solid rgba(255,140,40,0.12)' }} />
-            <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 rounded-full -translate-x-1/2 -translate-y-1/2" style={{ background: '#FF8C28', boxShadow: '0 0 8px rgba(255,140,40,0.8)' }} />
-            <div className="absolute top-1/2 left-1/2 origin-bottom" style={{
-              width: 1, height: 14, background: 'linear-gradient(to top, rgba(255,140,40,0.6), transparent)',
-              transform: 'translate(-50%, -100%)',
-              animation: 'spin 3s linear infinite',
+        {/* ── TIER 2: BIQc INTELLIGENCE ENGINE ── */}
+        <div className="text-center mb-6">
+          <span style={{ fontFamily: fontFamily.mono, color: '#FF9C45', fontSize: '11px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase' }}>
+            BIQc Intelligence Engine
+          </span>
+          <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: '13px', marginTop: 4 }}>
+            Continuous AI cognition across every signal
+          </p>
+        </div>
+
+        {/* Core glowing node */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+          <div style={{ position: 'relative' }} data-testid="biqc-core-node">
+            <div style={{
+              position: 'absolute', inset: -48, borderRadius: '50%', pointerEvents: 'none',
+              background: 'radial-gradient(circle, rgba(255,140,40,0.14) 0%, rgba(255,100,0,0.04) 50%, transparent 70%)',
+              animation: 'corePulse 6s ease-in-out infinite',
             }} />
-          </div>
-        </div>
-      </GlowCard>
-
-      <AnimatedConnector height={48} />
-
-      {/* TIER 3: BIQc CORE */}
-      <div className="flex items-center justify-center gap-6 sm:gap-10">
-        {/* Left inputs */}
-        <div className="text-right flex-1 max-w-[160px] hidden sm:block">
-          <p className="text-[12px] sm:text-[13px] mb-1" style={{ fontFamily: fontFamily.body, fontWeight: 300, color: '#9FB0C3' }}>Risk Signals</p>
-          <p className="text-[12px] sm:text-[13px]" style={{ fontFamily: fontFamily.body, fontWeight: 300, color: '#9FB0C3' }}>Market Intelligence</p>
-        </div>
-
-        {/* Animated input lines */}
-        <div className="hidden sm:flex items-center" style={{ width: 40 }}>
-          <svg width="40" height="4" viewBox="0 0 40 4">
-            <line x1="0" y1="2" x2="40" y2="2" stroke="rgba(255,140,40,0.3)" strokeWidth="1" strokeDasharray="4 3">
-              <animate attributeName="stroke-dashoffset" from="20" to="0" dur="2s" repeatCount="indefinite" />
-            </line>
-            <circle cx="0" cy="2" r="2" fill="#FF8C28" style={{ filter: 'drop-shadow(0 0 4px rgba(255,140,40,0.8))' }}>
-              <animate attributeName="cx" from="0" to="40" dur="1.5s" repeatCount="indefinite" />
-            </circle>
-          </svg>
-        </div>
-
-        {/* Core node with HALO */}
-        <div className="relative" data-testid="biqc-core-node">
-          {/* Outer halo */}
-          <div className="absolute -inset-10 rounded-full" style={{
-            background: 'radial-gradient(circle, rgba(255,140,40,0.15) 0%, rgba(255,100,0,0.05) 50%, transparent 70%)',
-            animation: 'corePulse 6s ease-in-out infinite',
-            pointerEvents: 'none',
-          }} />
-          {/* Second halo ring */}
-          <div className="absolute -inset-6 rounded-full" style={{
-            border: '1px solid rgba(255,140,40,0.08)',
-            animation: 'corePulse 6s ease-in-out infinite 1.5s',
-            pointerEvents: 'none',
-          }} />
-          {/* Core */}
-          <div className="relative px-8 sm:px-12 py-5 sm:py-6 rounded-full text-center" style={{
-            background: 'linear-gradient(135deg, rgba(42,52,68,0.95), rgba(15,23,32,0.95))',
-            border: '2px solid rgba(255,140,40,0.5)',
-            animation: 'coreGlow 6s ease-in-out infinite',
-          }}>
-            <span className="text-xl sm:text-2xl font-bold block" style={{ fontFamily: fontFamily.mono, color: '#FF7A18', textShadow: '0 0 20px rgba(255,122,24,0.5)' }}>BIQc</span>
-            <span className="tracking-[0.15em] uppercase block mt-1" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', fontSize: '10px' }}>Business Intelligence</span>
-            <span className="tracking-[0.15em] uppercase block" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', fontSize: '10px' }}>Quotient Centre</span>
+            <div style={{
+              position: 'absolute', inset: -28, borderRadius: '50%', pointerEvents: 'none',
+              border: '1px solid rgba(255,140,40,0.08)',
+              animation: 'corePulse 6s ease-in-out infinite 1.5s',
+            }} />
+            <div style={{
+              position: 'relative',
+              padding: '28px 80px',
+              borderRadius: 20,
+              textAlign: 'center',
+              background: 'linear-gradient(135deg, rgba(38,50,65,0.97), rgba(12,20,30,0.97))',
+              border: '2px solid rgba(255,140,40,0.5)',
+              animation: 'coreGlow 6s ease-in-out infinite',
+            }}>
+              <span style={{
+                fontFamily: fontFamily.mono, color: '#FF7A18',
+                fontSize: 30, fontWeight: 800, display: 'block',
+                textShadow: '0 0 28px rgba(255,122,24,0.6)',
+              }}>
+                BIQc
+              </span>
+              <span style={{
+                display: 'block', marginTop: 4,
+                fontFamily: fontFamily.mono, color: '#9FB0C3',
+                fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase',
+              }}>
+                Your AI Executive Team
+              </span>
+              <span style={{
+                display: 'block', marginTop: 8,
+                fontFamily: fontFamily.body,
+                color: 'rgba(159,176,195,0.6)',
+                fontSize: 11,
+              }}>
+                Powered By BIQc Trinity Intelligence Layer
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Animated output lines */}
-        <div className="hidden sm:flex items-center" style={{ width: 40 }}>
-          <svg width="40" height="4" viewBox="0 0 40 4">
-            <line x1="0" y1="2" x2="40" y2="2" stroke="rgba(255,140,40,0.3)" strokeWidth="1" strokeDasharray="4 3">
-              <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="2s" repeatCount="indefinite" />
-            </line>
-            <circle cx="0" cy="2" r="2" fill="#FF8C28" style={{ filter: 'drop-shadow(0 0 4px rgba(255,140,40,0.8))' }}>
-              <animate attributeName="cx" from="0" to="40" dur="1.5s" repeatCount="indefinite" />
-            </circle>
-          </svg>
+        {/* 4-step animated pipeline */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {PIPELINE_STEPS.map((step, i) => (
+            <div key={step} style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{
+                padding: '9px 22px', borderRadius: 8,
+                background: 'rgba(255,140,40,0.05)',
+                border: '1px solid rgba(255,140,40,0.18)',
+                animation: `stepPulse 3s ease-in-out infinite ${i * 0.65}s`,
+              }}>
+                <span style={{ fontFamily: fontFamily.mono, color: '#FF9C45', fontSize: 12, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+                  {step}
+                </span>
+              </div>
+              {i < PIPELINE_STEPS.length - 1 && (
+                <div style={{ padding: '0 5px' }}>
+                  <svg width="24" height="10" viewBox="0 0 24 10" fill="none">
+                    <line x1="0" y1="5" x2="20" y2="5" stroke="rgba(255,140,40,0.35)" strokeWidth="1.2" strokeDasharray="3 2">
+                      <animate attributeName="stroke-dashoffset" from="10" to="0" dur="1.5s" repeatCount="indefinite" />
+                    </line>
+                    <polygon points="18,2 24,5 18,8" fill="rgba(255,140,40,0.5)" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* Right outputs */}
-        <div className="flex-1 max-w-[160px] hidden sm:block">
-          <p className="text-[12px] sm:text-[13px] mb-1" style={{ fontFamily: fontFamily.body, fontWeight: 300, color: '#9FB0C3' }}>Decision Guidance</p>
-          <p className="text-[12px] sm:text-[13px]" style={{ fontFamily: fontFamily.body, fontWeight: 300, color: '#9FB0C3' }}>Growth Signals</p>
-        </div>
       </div>
-
-      <AnimatedConnector height={48} />
-
-      {/* TIER 4: DECISION SUPPORT */}
-      <GlowCard className="max-w-md mx-auto text-center" glow>
-        <FlowLabel label="Decision Support" sublabel="Clear signals that guide leadership decisions" />
-      </GlowCard>
-
-      {/* Partner logos with brand colors */}
-      <div className="flex items-center justify-center gap-6 sm:gap-10 flex-wrap mt-12 sm:mt-16">
-        {['HubSpot', 'Salesforce', 'Xero', 'Stripe', 'Slack', 'Google'].map(name => (
-          <div key={name} className="flex items-center gap-2 opacity-50 hover:opacity-90 transition-opacity cursor-default">
-            <span className="text-[12px] sm:text-[13px]" style={{ fontFamily: fontFamily.body, fontWeight: 400, color: getBrandColor(name) }}>{name}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-const getBrandColor = (name) => {
-  const colors = { HubSpot: '#FF6A00', Salesforce: '#00A1E0', Xero: '#13B5EA', Stripe: '#635BFF', Slack: '#E01E5A', Google: '#4285F4' };
-  return colors[name] || '#9FB0C3';
+    </section>
+  );
 };
 
 export default IntelligenceDiagram;

@@ -22,6 +22,7 @@ import SiteHomePage from './pages/website/HomePage';
 import SitePlatformPage from './pages/website/PlatformPage';
 import SiteIntelligencePage from './pages/website/IntelligencePage';
 import SiteIntegrationsPage from './pages/website/IntegrationsPage';
+import SoundboardPage from './pages/website/SoundboardPage';
 import SiteTrustLandingPage from './pages/website/TrustLandingPage';
 import AILearningGuarantee from './pages/AILearningGuarantee';
 import BlogPage from './pages/BlogPage';
@@ -167,6 +168,19 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
+const LegacyIntegrationsQueryRedirect = () => {
+  const location = useLocation();
+  const legacyPart = location.pathname.startsWith('/integrations/')
+    ? location.pathname.slice('/integrations/'.length)
+    : '';
+
+  if (legacyPart && legacyPart.includes('=')) {
+    return <Navigate to={`/integrations?${legacyPart}`} replace />;
+  }
+
+  return <Navigate to="/integrations" replace />;
+};
+
 const LaunchRoute = ({ children, access, featureKey = null }) => {
   const location = useLocation();
   const { user, session, authState, loading } = useSupabaseAuth();
@@ -213,6 +227,7 @@ function AppRoutes() {
         <Route path="/platform" element={<SitePlatformPage />} />
         <Route path="/intelligence" element={<SiteIntelligencePage />} />
         <Route path="/our-integrations" element={<SiteIntegrationsPage />} />
+        <Route path="/meet/soundboard" element={<SoundboardPage />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/trust" element={<SiteTrustLandingPage />} />
         <Route path="/trust/ai-learning-guarantee" element={<AILearningGuarantee />} />
@@ -285,6 +300,10 @@ function AppRoutes() {
         <Route path="/market/calibration" element={<ProtectedRoute><ForensicCalibration /></ProtectedRoute>} />
         <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
         <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
+        <Route
+          path="/integrations/:legacyQuery"
+          element={<ProtectedRoute><LegacyIntegrationsQueryRedirect /></ProtectedRoute>}
+        />
         <Route path="/connect-email" element={<ProtectedRoute><ConnectEmail /></ProtectedRoute>} />
         <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
         <Route path="/forensic-audit" element={<ProtectedRoute><LaunchRoute access="paid"><ForensicAuditPage /></LaunchRoute></ProtectedRoute>} />
