@@ -121,7 +121,7 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
 
-        {/* ── TIER 1: YOUR BUSINESS SIGNALS — 3×2 grid ── */}
+        {/* ── TIER 1 heading ── */}
         <div className="text-center mb-8">
           <h2 style={{
             fontFamily: fontFamily.display,
@@ -129,18 +129,10 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
             fontSize: 'clamp(26px, 3.8vw, 44px)',
             fontWeight: 700,
             lineHeight: 1.1,
-            marginBottom: 8,
+            marginBottom: 0,
           }}>
-            Your Business Signals
+            How BIQc Works
           </h2>
-          <p style={{
-            fontFamily: fontFamily.body,
-            color: '#9FB0C3',
-            fontSize: 'clamp(14px, 1.6vw, 17px)',
-            lineHeight: 1.6,
-          }}>
-            What is happening across your systems
-          </p>
         </div>
 
         {/* 3-column × 2-row input grid */}
