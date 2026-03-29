@@ -388,54 +388,14 @@ def _extract_sentence_with_keywords(text: str, keywords: List[str]) -> str:
 
 
 def _parse_google_reviews(search_result: dict, business_name: str) -> dict:
-    """Extract star ratings, review counts, and snippets from Google review Serper results."""
+    """Extract star ratings, review counts, and snippets from customer review sites."""
     results = search_result.get("results") or []
     snippets = []
     star_rating = None
     review_count = None
     positive = []
     negative = []
-
-    for r in results:
-        snippet = r.get("snippet") or ""
-        title = r.get("title") or ""
-        combined = f"{title} {snippet}"
-
-        rating_match = re.search(r"(\d(?:\.\d)?)\s*(?:out of\s*5|/\s*5|stars?|★)", combined, re.IGNORECASE)
-        if rating_match and star_rating is None:
-            star_rating = float(rating_match.group(1))
-
-        count_match = re.search(r"(\d[\d,]*)\s*(?:reviews?|ratings?|google reviews?)", combined, re.IGNORECASE)
-        if count_match and review_count is None:
-            raw_count = count_match.group(1).replace(",", "")
-            if raw_count.isdigit():
-                review_count = int(raw_count)
-
-        if snippet and len(snippet) > 20:
-            snippets.append(snippet[:200])
-            neg_keywords = ["poor", "terrible", "awful", "bad experience", "worst", "horrible", "disappointed", "rude", "scam"]
-            if any(kw in snippet.lower() for kw in neg_keywords):
-                negative.append(snippet[:200])
-            else:
-                positive.append(snippet[:200])
-
-    return {
-        "star_rating": star_rating,
-        "review_count": review_count,
-        "snippets": snippets[:10],
-        "positive": positive[:5],
-        "negative": negative[:5],
-        "has_data": bool(star_rating or review_count or snippets),
-    }
-
-
-def _parse_glassdoor_reviews(search_result: dict, business_name: str) -> dict:
-    """Extract ratings and review snippets from Glassdoor Serper results."""
-    results = search_result.get("results") or []
-    snippets = []
-    rating = None
-    positive = []
-    negative = []
+    sources_found = []
 
     for r in results:
         snippet = r.get("snippet") or ""
@@ -443,20 +403,80 @@ def _parse_glassdoor_reviews(search_result: dict, business_name: str) -> dict:
         link = r.get("link") or ""
         combined = f"{title} {snippet}"
 
-        if "glassdoor" not in link.lower() and "glassdoor" not in title.lower():
-            continue
+        source = "Google"
+        if "trustpilot" in link.lower():
+            source = "Trustpilot"
+        elif "productreview" in link.lower():
+            source = "ProductReview"
+        elif "google.com/maps" in link.lower():
+            source = "Google Maps"
 
-        rating_match = re.search(r"(\d(?:\.\d)?)\s*(?:out of\s*5|/\s*5|stars?|★|overall)", combined, re.IGNORECASE)
-        if rating_match and rating is None:
-            rating = float(rating_match.group(1))
+        rating_match = re.search(r"(\d(?:\.\d)?)\s*(?:out of\s*5|/\s*5|stars?|★|rating|score)", combined, re.IGNORECASE)
+        if rating_match and star_rating is None:
+            val = float(rating_match.group(1))
+            if 0 < val <= 5:
+                star_rating = val
+                sources_found.append(source)
+
+        count_match = re.search(r"(\d[\d,]*)\s*(?:reviews?|ratings?|google reviews?|verified)", combined, re.IGNORECASE)
+        if count_match and review_count is None:
+            raw_count = count_match.group(1).replace(",", "")
+            if raw_count.isdigit() and int(raw_count) < 1000000:
+                review_count = int(raw_count)
 
         if snippet and len(snippet) > 20:
-            snippets.append(snippet[:200])
-            neg_keywords = ["poor", "toxic", "bad management", "low pay", "high turnover", "overworked", "no growth"]
+            tagged = f"[{source}] {snippet[:200]}"
+            snippets.append(tagged)
+            neg_keywords = ["poor", "terrible", "awful", "bad experience", "worst", "horrible", "disappointed", "rude", "scam", "avoid", "slow", "unreliable"]
             if any(kw in snippet.lower() for kw in neg_keywords):
-                negative.append(snippet[:200])
+                negative.append(tagged)
             else:
-                positive.append(snippet[:200])
+                positive.append(tagged)
+
+    return {
+        "star_rating": star_rating,
+        "review_count": review_count,
+        "snippets": snippets[:10],
+        "positive": positive[:5],
+        "negative": negative[:5],
+        "sources": sources_found,
+        "has_data": bool(star_rating or review_count or snippets),
+    }
+
+
+def _parse_glassdoor_reviews(search_result: dict, business_name: str) -> dict:
+    """Extract ratings and review snippets from employer review sites (Glassdoor, Indeed, Seek)."""
+    results = search_result.get("results") or []
+    snippets = []
+    rating = None
+    positive = []
+    negative = []
+    employer_sites = ["glassdoor", "indeed", "seek.com", "fairwork", "payscale"]
+
+    for r in results:
+        snippet = r.get("snippet") or ""
+        title = r.get("title") or ""
+        link = r.get("link") or ""
+        combined = f"{title} {snippet}"
+
+        is_employer_site = any(site in link.lower() or site in title.lower() for site in employer_sites)
+        if not is_employer_site:
+            continue
+
+        rating_match = re.search(r"(\d(?:\.\d)?)\s*(?:out of\s*5|/\s*5|stars?|★|overall|rating)", combined, re.IGNORECASE)
+        if rating_match and rating is None:
+            val = float(rating_match.group(1))
+            if 0 < val <= 5:
+                rating = val
+
+        if snippet and len(snippet) > 20:
+            source = "Glassdoor" if "glassdoor" in link.lower() else "Indeed" if "indeed" in link.lower() else "Employer review"
+            snippets.append(f"[{source}] {snippet[:200]}")
+            neg_keywords = ["poor", "toxic", "bad management", "low pay", "high turnover", "overworked", "no growth", "terrible", "worst", "avoid"]
+            if any(kw in snippet.lower() for kw in neg_keywords):
+                negative.append(f"[{source}] {snippet[:200]}")
+            else:
+                positive.append(f"[{source}] {snippet[:200]}")
 
     return {
         "rating": rating,
@@ -1203,13 +1223,15 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             facebook_query = f'"{business_name_hint}" Facebook'
             twitter_query = f'"{business_name_hint}" Twitter OR X'
             review_query = f'"{business_name_hint}" reviews testimonials case study'
-            review_google_query = f'"{business_name_hint}" Google reviews'
-            review_glassdoor_query = f'"{business_name_hint}" Glassdoor reviews employees'
+            review_google_query = f'site:google.com/maps OR site:trustpilot.com OR site:productreview.com.au "{business_name_hint}" reviews rating'
+            review_glassdoor_query = f'site:glassdoor.com.au OR site:glassdoor.com OR site:seek.com.au "{business_name_hint}" reviews rating employees'
+            review_indeed_query = f'"{business_name_hint}" employee reviews rating site:indeed.com OR site:glassdoor.com'
 
             (company_search, competitor_search, abn_search,
              linkedin_search, instagram_search, facebook_search,
              twitter_search, review_search,
-             google_review_search, glassdoor_review_search) = await asyncio.gather(
+             google_review_search, glassdoor_review_search,
+             indeed_review_search) = await asyncio.gather(
                 serper_search(company_query, gl="au", hl="en", num=10),
                 serper_search(competitor_query, gl="au", hl="en", num=10),
                 serper_search(abn_query, gl="au", hl="en", num=10),
@@ -1218,12 +1240,16 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 serper_search(facebook_query, gl="au", hl="en", num=10),
                 serper_search(twitter_query, gl="au", hl="en", num=10),
                 serper_search(review_query, gl="au", hl="en", num=10),
-                serper_search(review_google_query, gl="au", hl="en", num=10),
-                serper_search(review_glassdoor_query, gl="au", hl="en", num=10),
+                serper_search(review_google_query, num=10),
+                serper_search(review_glassdoor_query, num=10),
+                serper_search(review_indeed_query, num=10),
             )
 
             google_reviews = _parse_google_reviews(google_review_search, business_name_hint)
-            glassdoor_reviews = _parse_glassdoor_reviews(glassdoor_review_search, business_name_hint)
+            merged_employer_results = {
+                "results": (glassdoor_review_search.get("results") or []) + (indeed_review_search.get("results") or []),
+            }
+            glassdoor_reviews = _parse_glassdoor_reviews(merged_employer_results, business_name_hint)
             review_aggregation = _aggregate_reviews(google_reviews, glassdoor_reviews)
 
             combined_text = "\n\n".join([

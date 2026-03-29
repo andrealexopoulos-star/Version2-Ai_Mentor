@@ -1290,21 +1290,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           </div>
         )}
 
-        {Object.keys(fieldProvenance).length > 0 && (
-          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #3B82F620', animation: 'cmsFade 1.55s ease-out' }} data-testid="data-provenance">
-            <div className="flex items-center gap-2 mb-3">
-              <BarChart3 className="w-4 h-4" style={{ color: '#3B82F6' }} />
-              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Data Provenance</h2>
-            </div>
-            <div className="space-y-1.5">
-              {Object.entries(fieldProvenance).slice(0, 12).map(([field, meta]) => (
-                <p key={field} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                  {field} -> {meta?.source_fn || 'unknown-source'} (confidence: {typeof meta?.confidence === 'number' ? Math.round(meta.confidence * 100) : 'n/a'}%)
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Data Provenance section removed — internal debugging only */}
 
         {(marketIntelScore !== null || analysisGaps.length > 0) && (
           <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #F59E0B30', animation: 'cmsFade 1.58s ease-out' }} data-testid="intelligence-quality">
@@ -1333,21 +1319,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           </div>
         )}
 
-        {Array.isArray(full._trace) && full._trace.length > 0 && (
-          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #243140', animation: 'cmsFade 1.57s ease-out' }} data-testid="scan-observability">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-4 h-4" style={{ color: '#FF6A00' }} />
-              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Scan Observability</h2>
-            </div>
-            <div className="space-y-1.5">
-              {full._trace.slice(-8).map((t, idx) => (
-                <p key={`${t.step}-${idx}`} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                  {t.step} -> {t.function} ({t.ok ? 'ok' : 'failed'}) {t.request_id ? ` [${t.request_id}]` : ''}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Scan Observability section removed — internal debugging only */}
 
         {/* ── SECTION 6: STRATEGIC RECOMMENDATIONS ── */}
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #10B98120', animation: 'cmsFade 1.6s ease-out' }} data-testid="recommendations">
