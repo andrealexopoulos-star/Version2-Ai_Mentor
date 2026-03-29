@@ -490,6 +490,7 @@ export const useCalibrationState = () => {
             google_reviews: deepEnrichment.google_reviews || null,
             glassdoor_reviews: deepEnrichment.glassdoor_reviews || null,
             review_aggregation: deepEnrichment.review_aggregation || null,
+            browse_ai_reviews: deepEnrichment.browse_ai_reviews || null,
           } : {}),
         };
 

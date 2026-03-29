@@ -59,6 +59,7 @@ EDGE_PROXY_ALLOWLIST = {
     "gmail_prod",
     "market-analysis-ai",
     "market-signal-scorer",
+    "browse-ai-reviews",
 }
 
 
