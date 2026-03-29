@@ -491,6 +491,8 @@ export const useCalibrationState = () => {
             glassdoor_reviews: deepEnrichment.glassdoor_reviews || null,
             review_aggregation: deepEnrichment.review_aggregation || null,
             browse_ai_reviews: deepEnrichment.browse_ai_reviews || null,
+            semrush_data: deepEnrichment.semrush_data || null,
+            semrush_competitors: deepEnrichment.semrush_competitors || null,
           } : {}),
         };
 

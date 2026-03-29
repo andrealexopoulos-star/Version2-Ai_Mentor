@@ -1383,7 +1383,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     asyncio.create_task(set_edge_result(fn_name, scan_domain, result))
                 return result
 
-            deep_recon, social_enrichment, competitor_monitor, market_analysis, market_scorer, browse_ai_reviews = await asyncio.gather(
+            deep_recon, social_enrichment, competitor_monitor, market_analysis, market_scorer, browse_ai_reviews, semrush_intel = await asyncio.gather(
                 _cached_edge("deep-web-recon", {"user_id": user_id, "website": url}, inbound_auth),
                 _cached_edge("social-enrichment", {"website_url": url}, inbound_auth),
                 _cached_edge("competitor-monitor", {"user_id": user_id}, inbound_auth),
@@ -1398,6 +1398,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "domain": domain,
                     "location": enrichment.get("location") or enrichment.get("geographic_focus") or "Australia",
                 }, inbound_auth),
+                _cached_edge("semrush-domain-intel", {"domain": domain, "database": "us"}, inbound_auth),
                 return_exceptions=True,
             )
             if isinstance(deep_recon, Exception): deep_recon = {"error": str(deep_recon)}
@@ -1406,6 +1407,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if isinstance(market_analysis, Exception): market_analysis = {"error": str(market_analysis)}
             if isinstance(market_scorer, Exception): market_scorer = {"error": str(market_scorer)}
             if isinstance(browse_ai_reviews, Exception): browse_ai_reviews = {"error": str(browse_ai_reviews)}
+            if isinstance(semrush_intel, Exception): semrush_intel = {"error": str(semrush_intel)}
 
             ai_errors = []
             if isinstance(deep_recon, dict) and deep_recon.get("error"):
@@ -1420,6 +1422,8 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 ai_errors.append({"function": "market-signal-scorer", "error": market_scorer["error"]})
             if isinstance(browse_ai_reviews, dict) and browse_ai_reviews.get("error"):
                 ai_errors.append({"function": "browse-ai-reviews", "error": browse_ai_reviews["error"]})
+            if isinstance(semrush_intel, dict) and semrush_intel.get("error"):
+                ai_errors.append({"function": "semrush-domain-intel", "error": semrush_intel["error"]})
 
             edge_meta = {
                 "market_analysis_failed": not isinstance(market_analysis, dict) or bool(market_analysis.get("error")),
@@ -1600,6 +1604,43 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     f"Primary opportunity is to tighten positioning for {enrichment.get('target_market') or 'its core market'}, "
                     f"improve discoverability via SEO, and operationalize proof-led acquisition across owned and paid channels."
                 )
+
+            if isinstance(semrush_intel, dict) and semrush_intel.get("ok"):
+                sr_seo = semrush_intel.get("seo_analysis") or {}
+                if sr_seo.get("organic_keywords"):
+                    enrichment["seo_analysis"] = {
+                        **enrichment.get("seo_analysis", {}),
+                        "semrush_rank": sr_seo.get("semrush_rank"),
+                        "organic_keywords": sr_seo.get("organic_keywords"),
+                        "organic_traffic": sr_seo.get("organic_traffic"),
+                        "organic_cost_usd": sr_seo.get("organic_cost_usd"),
+                        "featured_snippets": sr_seo.get("featured_snippets"),
+                        "top_organic_keywords": sr_seo.get("top_organic_keywords", [])[:10],
+                        "score": sr_seo.get("score") or enrichment.get("seo_analysis", {}).get("score"),
+                        "status": sr_seo.get("status") or enrichment.get("seo_analysis", {}).get("status"),
+                        "source": "semrush",
+                    }
+                sr_paid = semrush_intel.get("paid_media_analysis") or {}
+                if sr_paid.get("adwords_keywords") is not None:
+                    enrichment["paid_media_analysis"] = {
+                        **enrichment.get("paid_media_analysis", {}),
+                        "adwords_keywords": sr_paid.get("adwords_keywords"),
+                        "adwords_traffic": sr_paid.get("adwords_traffic"),
+                        "adwords_cost_usd": sr_paid.get("adwords_cost_usd"),
+                        "top_paid_keywords": sr_paid.get("top_paid_keywords", [])[:10],
+                        "maturity": sr_paid.get("maturity") or enrichment.get("paid_media_analysis", {}).get("maturity"),
+                        "assessment": sr_paid.get("assessment") or enrichment.get("paid_media_analysis", {}).get("assessment"),
+                        "source": "semrush",
+                    }
+                sr_comp = semrush_intel.get("competitor_analysis") or {}
+                if sr_comp.get("organic_competitors"):
+                    enrichment["semrush_competitors"] = sr_comp.get("organic_competitors", [])
+                    sr_comp_names = [c.get("domain", "") for c in sr_comp.get("organic_competitors", []) if c.get("domain")]
+                    existing = enrichment.get("competitors") or []
+                    merged = list(dict.fromkeys(existing + sr_comp_names))
+                    enrichment["competitors"] = merged[:10]
+                enrichment["semrush_data"] = semrush_intel
+
             try:
                 enrichment.setdefault("sources", {})
                 enrichment["sources"]["edge_tools"] = {
