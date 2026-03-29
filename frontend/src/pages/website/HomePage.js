@@ -222,6 +222,7 @@ const HomePage = () => (
         >
           One intelligence layer for every{' '}
           <span style={{
+            fontFamily: fontFamily.display,
             background: 'linear-gradient(135deg, #FF8C3A 0%, #C65F2E 60%, #A64F26 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -241,37 +242,22 @@ const HomePage = () => (
           confidence in real time.
         </p>
 
-        {/* CTA buttons */}
-        <div className="hero-fade-4 flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
+        {/* CTA — single centred button */}
+        <div className="hero-fade-4 flex justify-center mb-6">
           <Link
             to="/register-supabase"
-            className="group relative inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5"
+            className="group relative inline-flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5"
             style={{
               background: 'linear-gradient(135deg, #D06832, #A64F26)',
               fontFamily: fontFamily.body,
               fontWeight: 600,
               boxShadow: '0 8px 28px rgba(198,95,46,0.38), 0 2px 4px rgba(0,0,0,0.3)',
-              minWidth: 200,
+              minWidth: 220,
             }}
             data-testid="hero-cta"
           >
-            Start Free Trial
+            Start For Free Today
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-          <Link
-            to="/platform"
-            className="inline-flex items-center justify-center px-8 py-3.5 rounded-xl text-sm font-semibold transition-all hover:bg-white/5 hover:-translate-y-0.5"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.18)',
-              fontFamily: fontFamily.body,
-              fontWeight: 600,
-              color: '#CBD5E1',
-              minWidth: 200,
-            }}
-            data-testid="hero-learn-more"
-          >
-            See the Platform
           </Link>
         </div>
 
