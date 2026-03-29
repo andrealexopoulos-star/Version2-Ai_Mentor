@@ -93,7 +93,9 @@ async def proxy_edge_function(
 
     endpoint = f"{supabase_url}/functions/v1/{name}"
     try:
-        async with httpx.AsyncClient(timeout=45) as client:
+        # calibration-business-dna can legitimately run longer due multi-source retrieval + extraction.
+        timeout_seconds = 90 if name == "calibration-business-dna" else 45
+        async with httpx.AsyncClient(timeout=timeout_seconds) as client:
             edge_res = await client.post(
                 endpoint,
                 json=body.payload or {},
