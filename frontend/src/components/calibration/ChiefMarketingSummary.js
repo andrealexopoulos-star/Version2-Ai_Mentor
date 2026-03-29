@@ -80,13 +80,51 @@ function buildCommunicationAudit(full) {
 function buildGeographicPresence(full) {
   const loc = full.location || full.geographic_focus || null;
   const socials = full.social_media_links || {};
-  const hasLinkedIn = !!(socials.linkedin || full.linkedin_url);
-  const hasFacebook = !!(socials.facebook || full.facebook_url);
-  const hasInstagram = !!(socials.instagram || full.instagram_url);
-  const hasTwitter = !!(socials.twitter || full.twitter_x_url);
+  const handles = full.social_handles || {};
+  const hasLinkedIn = !!(socials.linkedin || full.linkedin_url || handles.linkedin);
+  const hasFacebook = !!(socials.facebook || full.facebook_url || handles.facebook);
+  const hasInstagram = !!(socials.instagram || full.instagram_url || handles.instagram);
+  const hasTwitter = !!(socials.twitter || full.twitter_x_url || handles.twitter || handles.x);
   const activeSocials = [hasLinkedIn && 'LinkedIn', hasFacebook && 'Facebook', hasInstagram && 'Instagram', hasTwitter && 'X/Twitter'].filter(Boolean);
 
-  return { loc, activeSocials, hasSocialPresence: activeSocials.length > 0 };
+  const industry = (full.industry || '').toLowerCase();
+  const model = (full.business_model || '').toLowerCase();
+  const services = full.main_products_services || '';
+  const targetMarket = full.target_market || '';
+
+  const isDigital = /(saas|software|platform|digital|online|cloud|subscription|app)/i.test(`${industry} ${model} ${services}`);
+  const isLocal = /(local|physical|brick|mortar|clinic|salon|restaurant|retail|tradie|plumber|electrician|builder|landscap)/i.test(`${industry} ${model} ${services}`);
+  const isConsulting = /(consult|advisory|agency|professional services|coaching|mentor|strateg)/i.test(`${industry} ${model} ${services}`);
+
+  const expansionRecommendations = [];
+
+  if (isDigital) {
+    expansionRecommendations.push(
+      { region: 'North America (US/Canada)', rationale: 'Largest SaaS/digital market globally. English-speaking reduces localization cost. High average contract values.', evidence: services ? `Current offering "${services.substring(0, 80)}" translates directly to NA buyer expectations.` : 'Digital delivery model supports frictionless NA expansion.' },
+      { region: 'United Kingdom & Europe', rationale: 'Strong B2B digital adoption, especially UK/DACH/Nordics. Similar business culture to AU/NZ.', evidence: targetMarket ? `Target market "${targetMarket.substring(0, 60)}" has direct parallels in UK enterprise.` : 'English-first product can enter UK immediately.' },
+      { region: 'Southeast Asia (SG/MY/PH)', rationale: 'Rapidly growing digital economy. Lower competition density. Strong English business language.', evidence: 'Timezone proximity to AU base supports real-time service delivery.' },
+    );
+  } else if (isLocal) {
+    const region = loc || 'current region';
+    expansionRecommendations.push(
+      { region: `Adjacent suburbs/cities near ${region}`, rationale: 'Expand service radius incrementally. Lowest risk, highest brand trust carryover.', evidence: loc ? `Strong local presence detected in ${loc} — adjacent areas benefit from existing reputation.` : 'Local service model suggests adjacent geographic expansion.' },
+      { region: 'State/territory expansion', rationale: 'Replicate proven local model in similar demographic markets within the same state.', evidence: 'Use Google Business Profile multi-location strategy to dominate local search in new areas.' },
+      { region: 'National franchise/licensing model', rationale: 'Scale proven local playbook through operator partnerships without proportional overhead increase.', evidence: `Service model in ${industry || 'this sector'} has demonstrated franchise scalability in AU market.` },
+    );
+  } else if (isConsulting) {
+    expansionRecommendations.push(
+      { region: 'Remote/national (AU-wide)', rationale: 'Advisory/consulting translates to remote delivery immediately. Expand beyond local geography.', evidence: services ? `"${services.substring(0, 60)}" can be delivered nationally via digital channels.` : 'Consulting model supports immediate national reach.' },
+      { region: 'UK & North America', rationale: 'English-speaking markets with high willingness to pay for specialized advisory.', evidence: targetMarket ? `Target market "${targetMarket.substring(0, 60)}" exists in larger scale in US/UK.` : 'Professional services export well to English-speaking markets.' },
+      { region: 'APAC enterprise partnerships', rationale: 'SG/HK regional hubs value AU-based advisory for cross-border strategy.', evidence: 'APAC expansion via partnership reduces client acquisition cost versus direct entry.' },
+    );
+  } else {
+    expansionRecommendations.push(
+      { region: loc ? `Broader ${loc} metropolitan area` : 'Adjacent regions', rationale: 'Start with geographic adjacency to leverage existing brand awareness.', evidence: 'Incremental geographic growth carries lowest risk and highest trust transfer.' },
+      { region: 'National digital presence', rationale: 'Invest in content marketing and SEO to capture demand beyond local area.', evidence: 'Digital-first lead generation enables national reach without physical expansion.' },
+    );
+  }
+
+  return { loc, activeSocials, hasSocialPresence: activeSocials.length > 0, isDigital, isLocal, isConsulting, expansionRecommendations };
 }
 
 // ── Competitor intelligence ──
@@ -521,34 +559,185 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             <Globe className="w-4 h-4" style={{ color: '#06B6D4' }} />
             <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Website, SEO, Paid & Social Diagnostics</h2>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
+
+            {/* Website Condition */}
             <div>
               <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Website Condition</p>
-              <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                {(websiteHealth.summary || `Status: ${websiteHealth.status || 'unknown'} · Score: ${websiteHealth.score ?? 'n/a'}`)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>SEO</p>
-              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                Score {seoAnalysis.score ?? 'n/a'} · Status {seoAnalysis.status || 'unknown'}
-              </p>
-              {Array.isArray(seoAnalysis.gaps) && seoAnalysis.gaps.length > 0 && (
-                <p className="text-xs text-[#64748B] mt-1" style={{ fontFamily: fontFamily.body }}>{seoAnalysis.gaps.slice(0, 2).join(' ')}</p>
+              {(websiteHealth.score != null || websiteHealth.status) ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    {websiteHealth.score != null && (
+                      <span className="text-sm font-bold" style={{ color: websiteHealth.score >= 75 ? '#10B981' : websiteHealth.score >= 45 ? '#F59E0B' : '#EF4444', fontFamily: fontFamily.mono }}>
+                        {websiteHealth.score}/100
+                      </span>
+                    )}
+                    {websiteHealth.status && (
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{
+                        color: websiteHealth.status === 'strong' ? '#10B981' : websiteHealth.status === 'moderate' ? '#F59E0B' : '#EF4444',
+                        background: (websiteHealth.status === 'strong' ? '#10B981' : websiteHealth.status === 'moderate' ? '#F59E0B' : '#EF4444') + '15',
+                        fontFamily: fontFamily.mono,
+                      }}>
+                        {websiteHealth.status}
+                      </span>
+                    )}
+                  </div>
+                  {websiteHealth.summary && (
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{websiteHealth.summary}</p>
+                  )}
+                  {(websiteHealth.title_tag != null || websiteHealth.meta_description != null || websiteHealth.ssl != null || websiteHealth.mobile_responsive != null) && (
+                    <div className="grid grid-cols-2 gap-1.5 mt-1">
+                      {[
+                        { label: 'Title Tag', val: websiteHealth.title_tag },
+                        { label: 'Meta Description', val: websiteHealth.meta_description },
+                        { label: 'SSL/HTTPS', val: websiteHealth.ssl },
+                        { label: 'Mobile Responsive', val: websiteHealth.mobile_responsive },
+                      ].filter(item => item.val != null).map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5">
+                          {item.val ? <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> : <XCircle className="w-3 h-3 text-[#EF4444]" />}
+                          <span className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : websiteHealth.assessment ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{websiteHealth.assessment}</p>
+              ) : (
+                <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No website health data available.</p>
               )}
             </div>
+
+            {/* SEO */}
+            <div>
+              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>SEO</p>
+              {(seoAnalysis.score != null || seoAnalysis.status) ? (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-3">
+                    {seoAnalysis.score != null && (
+                      <span className="text-sm font-bold" style={{ color: seoAnalysis.score >= 75 ? '#10B981' : seoAnalysis.score >= 45 ? '#F59E0B' : '#EF4444', fontFamily: fontFamily.mono }}>
+                        {seoAnalysis.score}/100
+                      </span>
+                    )}
+                    {seoAnalysis.status && (
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{
+                        color: seoAnalysis.status === 'strong' ? '#10B981' : seoAnalysis.status === 'moderate' ? '#F59E0B' : '#EF4444',
+                        background: (seoAnalysis.status === 'strong' ? '#10B981' : seoAnalysis.status === 'moderate' ? '#F59E0B' : '#EF4444') + '15',
+                        fontFamily: fontFamily.mono,
+                      }}>
+                        {seoAnalysis.status}
+                      </span>
+                    )}
+                  </div>
+                  {Array.isArray(seoAnalysis.strengths) && seoAnalysis.strengths.length > 0 && (
+                    <div className="space-y-0.5">
+                      {seoAnalysis.strengths.slice(0, 4).map((s, idx) => (
+                        <p key={idx} className="text-[11px] text-[#9FB0C3] flex items-center gap-1" style={{ fontFamily: fontFamily.body }}>
+                          <CheckCircle2 className="w-3 h-3 text-[#10B981] shrink-0" /> {s}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {Array.isArray(seoAnalysis.gaps) && seoAnalysis.gaps.length > 0 && (
+                    <div className="space-y-0.5">
+                      {seoAnalysis.gaps.slice(0, 4).map((g, idx) => (
+                        <p key={idx} className="text-[11px] text-[#9FB0C3] flex items-center gap-1" style={{ fontFamily: fontFamily.body }}>
+                          <XCircle className="w-3 h-3 text-[#EF4444] shrink-0" /> {g}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : seoAnalysis.assessment ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{seoAnalysis.assessment}</p>
+              ) : (
+                <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No SEO analysis data available.</p>
+              )}
+              {Array.isArray(seoAnalysis.priority_actions) && seoAnalysis.priority_actions.length > 0 && (
+                <div className="mt-1.5 space-y-0.5">
+                  {seoAnalysis.priority_actions.slice(0, 2).map((a, idx) => (
+                    <p key={idx} className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.body }}>→ {a}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Paid Media */}
             <div>
               <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Paid Media</p>
-              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                {paidAnalysis.assessment || 'No paid media diagnostics available.'}
-              </p>
+              {(paidAnalysis.maturity || paidAnalysis.signals_detected) ? (
+                <div className="space-y-1.5">
+                  {paidAnalysis.maturity && (
+                    <span className="text-xs px-2 py-0.5 rounded-full inline-block" style={{
+                      color: paidAnalysis.maturity === 'active' ? '#10B981' : '#F59E0B',
+                      background: (paidAnalysis.maturity === 'active' ? '#10B981' : '#F59E0B') + '15',
+                      fontFamily: fontFamily.mono,
+                    }}>
+                      {paidAnalysis.maturity}
+                    </span>
+                  )}
+                  {paidAnalysis.assessment && (
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{paidAnalysis.assessment}</p>
+                  )}
+                  {Array.isArray(paidAnalysis.signals_detected) && paidAnalysis.signals_detected.length > 0 && (
+                    <p className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Signals: {paidAnalysis.signals_detected.join(', ')}</p>
+                  )}
+                  {Array.isArray(paidAnalysis.priority_actions) && paidAnalysis.priority_actions.length > 0 && (
+                    <div className="space-y-0.5">
+                      {paidAnalysis.priority_actions.slice(0, 2).map((a, idx) => (
+                        <p key={idx} className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.body }}>→ {a}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : paidAnalysis.assessment ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{paidAnalysis.assessment}</p>
+              ) : paidAnalysis.score != null ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                  Score: {paidAnalysis.score} · {paidAnalysis.status || 'Unknown status'}
+                </p>
+              ) : (
+                <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No paid media diagnostics available.</p>
+              )}
             </div>
+
+            {/* Social Marketing */}
             <div>
               <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Social Marketing</p>
-              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                {socialAnalysis.assessment || 'No social diagnostics available.'}
-              </p>
+              {(socialAnalysis.active_channels || socialAnalysis.channel_count != null) ? (
+                <div className="space-y-1.5">
+                  {Array.isArray(socialAnalysis.active_channels) && socialAnalysis.active_channels.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {socialAnalysis.active_channels.map((ch, idx) => (
+                        <span key={idx} className="text-[11px] px-2 py-0.5 rounded-full" style={{ color: '#06B6D4', background: '#06B6D415', fontFamily: fontFamily.mono }}>{ch}</span>
+                      ))}
+                    </div>
+                  )}
+                  {socialAnalysis.assessment && (
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{socialAnalysis.assessment}</p>
+                  )}
+                  {Array.isArray(socialAnalysis.content_signals_detected) && socialAnalysis.content_signals_detected.length > 0 && (
+                    <p className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Content signals: {socialAnalysis.content_signals_detected.join(', ')}</p>
+                  )}
+                  {Array.isArray(socialAnalysis.priority_actions) && socialAnalysis.priority_actions.length > 0 && (
+                    <div className="space-y-0.5">
+                      {socialAnalysis.priority_actions.slice(0, 2).map((a, idx) => (
+                        <p key={idx} className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.body }}>→ {a}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : socialAnalysis.assessment ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{socialAnalysis.assessment}</p>
+              ) : socialAnalysis.score != null ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                  Score: {socialAnalysis.score} · {socialAnalysis.status || 'Unknown status'}
+                </p>
+              ) : (
+                <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No social diagnostics available.</p>
+              )}
             </div>
+
           </div>
         </div>
 
@@ -592,29 +781,64 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.2s ease-out' }} data-testid="geographic-presence">
           <div className="flex items-center gap-2 mb-3">
             <Globe className="w-4 h-4" style={{ color: '#7C3AED' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Geographic Market Presence</h2>
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Geographic Market Presence & Expansion</h2>
           </div>
+
+          {/* Current presence */}
           {geo.loc ? (
-            <>
-              <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
-                Based on publicly detectable signals, <strong style={{ color: 'var(--biqc-text)' }}>{bizName}</strong> would most likely attract clients in and around <strong style={{ color: 'var(--biqc-text)' }}>{geo.loc}</strong>.
-              </p>
-              {geo.hasSocialPresence ? (
-                <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
-                  Active social presence detected on {geo.activeSocials.join(', ')} — these channels extend reach beyond the primary geographic market and may attract inbound from adjacent regions.
-                </p>
-              ) : (
-                <div className="flex items-start gap-2 p-2.5 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20' }}>
-                  <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B] shrink-0 mt-0.5" />
-                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>No active social media presence detected. Geographic reach is limited to direct website traffic and word of mouth. Social channels would expand acquisition surface significantly.</p>
-                </div>
-              )}
-              {full.geographic_focus && full.geographic_focus !== full.location && (
-                <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>Declared geographic focus: {full.geographic_focus}</p>
-              )}
-            </>
+            <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
+              Based on publicly detectable signals, <strong style={{ color: 'var(--biqc-text)' }}>{bizName}</strong> currently serves clients in and around <strong style={{ color: 'var(--biqc-text)' }}>{geo.loc}</strong>.
+              {full.industry ? ` Operating in the ${full.industry} sector` : ''}{full.business_model ? ` with a ${full.business_model} model.` : '.'}
+            </p>
           ) : (
-            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No location data detected from website or registry. Geographic presence analysis unavailable — BIQc will not assume a market.</p>
+            <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>No location data detected from website or registry.</p>
+          )}
+
+          {geo.hasSocialPresence ? (
+            <p className="text-xs text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
+              Active social presence on {geo.activeSocials.join(', ')} extends reach beyond primary geography.
+            </p>
+          ) : (
+            <div className="flex items-start gap-2 p-2.5 rounded-lg mb-3" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20' }}>
+              <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B] shrink-0 mt-0.5" />
+              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>No active social media presence detected. Geographic reach is limited to direct traffic and word of mouth.</p>
+            </div>
+          )}
+
+          {full.geographic_focus && full.geographic_focus !== full.location && (
+            <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>Declared geographic focus: {full.geographic_focus}</p>
+          )}
+
+          {/* Business type classification */}
+          <div className="p-3 rounded-lg mb-3" style={{ background: '#111A25', border: '1px solid #243140' }}>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#7C3AED', fontFamily: fontFamily.mono }}>Business Type Assessment</p>
+            <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+              {geo.isDigital && 'Digital/SaaS business model detected — global expansion is viable with low marginal cost per new market.'}
+              {geo.isLocal && !geo.isDigital && 'Local/physical service model detected — geographic expansion follows adjacency and replication strategies.'}
+              {geo.isConsulting && !geo.isDigital && !geo.isLocal && 'Consulting/advisory model detected — remote delivery enables national and international reach.'}
+              {!geo.isDigital && !geo.isLocal && !geo.isConsulting && 'General business model — expansion strategy depends on digital capability and service delivery method.'}
+            </p>
+            {full.main_products_services && (
+              <p className="text-[11px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.body }}>
+                Based on offering: "{full.main_products_services.substring(0, 120)}{full.main_products_services.length > 120 ? '...' : ''}"
+              </p>
+            )}
+          </div>
+
+          {/* Expansion recommendations */}
+          {geo.expansionRecommendations.length > 0 && (
+            <div>
+              <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Recommended Expansion Markets</p>
+              <div className="space-y-2">
+                {geo.expansionRecommendations.map((rec, idx) => (
+                  <div key={idx} className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: '#10B981', fontFamily: fontFamily.body }}>{rec.region}</p>
+                    <p className="text-[11px] text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{rec.rationale}</p>
+                    <p className="text-[10px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.mono }}>Evidence: {rec.evidence}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
@@ -725,6 +949,90 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             </span>
           </div>
 
+          {/* Google Reviews + Glassdoor aggregated scores */}
+          {(full.google_reviews?.has_data || full.glassdoor_reviews?.has_data || full.review_aggregation?.has_data) && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
+              {full.google_reviews?.has_data && (
+                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #F59E0B30' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Google Reviews</p>
+                  {full.google_reviews.star_rating != null && (
+                    <p className="text-lg font-bold" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                      {full.google_reviews.star_rating}<span className="text-xs font-normal text-[#64748B]">/5</span>
+                    </p>
+                  )}
+                  {full.google_reviews.review_count != null && (
+                    <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{full.google_reviews.review_count.toLocaleString()} reviews</p>
+                  )}
+                  {!full.google_reviews.star_rating && !full.google_reviews.review_count && full.google_reviews.snippets?.length > 0 && (
+                    <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{full.google_reviews.snippets.length} review signal{full.google_reviews.snippets.length === 1 ? '' : 's'} detected</p>
+                  )}
+                </div>
+              )}
+              {full.glassdoor_reviews?.has_data && (
+                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #8B5CF630' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#8B5CF6', fontFamily: fontFamily.mono }}>Glassdoor</p>
+                  {full.glassdoor_reviews.rating != null && (
+                    <p className="text-lg font-bold" style={{ color: '#8B5CF6', fontFamily: fontFamily.mono }}>
+                      {full.glassdoor_reviews.rating}<span className="text-xs font-normal text-[#64748B]">/5</span>
+                    </p>
+                  )}
+                  {full.glassdoor_reviews.snippets?.length > 0 && (
+                    <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{full.glassdoor_reviews.snippets.length} employee review signal{full.glassdoor_reviews.snippets.length === 1 ? '' : 's'}</p>
+                  )}
+                </div>
+              )}
+              {full.review_aggregation?.has_data && (
+                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #10B98130' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Aggregated</p>
+                  {full.review_aggregation.combined_score != null && (
+                    <p className="text-lg font-bold" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>
+                      {full.review_aggregation.combined_score}<span className="text-xs font-normal text-[#64748B]">/5</span>
+                    </p>
+                  )}
+                  <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    <span style={{ color: '#10B981' }}>{full.review_aggregation.positive_count || 0}</span> positive · <span style={{ color: '#EF4444' }}>{full.review_aggregation.negative_count || 0}</span> negative
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Top 3 recent reviews */}
+          {full.review_aggregation?.top_recent?.length > 0 && (
+            <div className="mb-4">
+              <p className="text-[10px] uppercase tracking-widest mb-1.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Most Recent Review Signals</p>
+              <div className="space-y-1.5">
+                {full.review_aggregation.top_recent.slice(0, 3).map((snippet, idx) => (
+                  <p key={idx} className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+                    "{snippet}"
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Positive vs Negative split */}
+          {(full.google_reviews?.positive?.length > 0 || full.google_reviews?.negative?.length > 0 || full.glassdoor_reviews?.positive?.length > 0 || full.glassdoor_reviews?.negative?.length > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
+              {((full.google_reviews?.positive?.length || 0) + (full.glassdoor_reviews?.positive?.length || 0)) > 0 && (
+                <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Positive Signals</p>
+                  {[...(full.google_reviews?.positive || []), ...(full.glassdoor_reviews?.positive || [])].slice(0, 3).map((s, idx) => (
+                    <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>"{s}"</p>
+                  ))}
+                </div>
+              )}
+              {((full.google_reviews?.negative?.length || 0) + (full.glassdoor_reviews?.negative?.length || 0)) > 0 && (
+                <div className="p-3 rounded-lg" style={{ background: '#EF444408', border: '1px solid #EF444420' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>Negative Signals</p>
+                  {[...(full.google_reviews?.negative || []), ...(full.glassdoor_reviews?.negative || [])].slice(0, 3).map((s, idx) => (
+                    <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>"{s}"</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {customerReviews.reviewEvidence.length > 0 ? (
             <>
               <div className="mb-3">
@@ -738,11 +1046,11 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 </div>
               </div>
             </>
-          ) : (
+          ) : !full.google_reviews?.has_data && !full.glassdoor_reviews?.has_data ? (
             <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>
               No explicit customer review markers were found in the current public scan.
             </p>
-          )}
+          ) : null}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             {customerReviews.impact.map((row, idx) => (

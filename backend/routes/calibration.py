@@ -60,6 +60,12 @@ class ConsoleStateSave(BaseModel):
     current_step: int
     status: str = "IN_PROGRESS"
 
+class ReportSaveRequest(BaseModel):
+    report_type: str
+    title: str
+    content: Dict[str, Any] = {}
+    generated_at: Optional[str] = None
+
 class RecalibrationContactRequest(BaseModel):
     name: str
     email: str
@@ -379,6 +385,108 @@ def _extract_sentence_with_keywords(text: str, keywords: List[str]) -> str:
         if any(keyword in lowered for keyword in keywords) and 25 <= len(sentence) <= 220:
             return sentence.strip()
     return ""
+
+
+def _parse_google_reviews(search_result: dict, business_name: str) -> dict:
+    """Extract star ratings, review counts, and snippets from Google review Serper results."""
+    results = search_result.get("results") or []
+    snippets = []
+    star_rating = None
+    review_count = None
+    positive = []
+    negative = []
+
+    for r in results:
+        snippet = r.get("snippet") or ""
+        title = r.get("title") or ""
+        combined = f"{title} {snippet}"
+
+        rating_match = re.search(r"(\d(?:\.\d)?)\s*(?:out of\s*5|/\s*5|stars?|★)", combined, re.IGNORECASE)
+        if rating_match and star_rating is None:
+            star_rating = float(rating_match.group(1))
+
+        count_match = re.search(r"(\d[\d,]*)\s*(?:reviews?|ratings?|google reviews?)", combined, re.IGNORECASE)
+        if count_match and review_count is None:
+            raw_count = count_match.group(1).replace(",", "")
+            if raw_count.isdigit():
+                review_count = int(raw_count)
+
+        if snippet and len(snippet) > 20:
+            snippets.append(snippet[:200])
+            neg_keywords = ["poor", "terrible", "awful", "bad experience", "worst", "horrible", "disappointed", "rude", "scam"]
+            if any(kw in snippet.lower() for kw in neg_keywords):
+                negative.append(snippet[:200])
+            else:
+                positive.append(snippet[:200])
+
+    return {
+        "star_rating": star_rating,
+        "review_count": review_count,
+        "snippets": snippets[:10],
+        "positive": positive[:5],
+        "negative": negative[:5],
+        "has_data": bool(star_rating or review_count or snippets),
+    }
+
+
+def _parse_glassdoor_reviews(search_result: dict, business_name: str) -> dict:
+    """Extract ratings and review snippets from Glassdoor Serper results."""
+    results = search_result.get("results") or []
+    snippets = []
+    rating = None
+    positive = []
+    negative = []
+
+    for r in results:
+        snippet = r.get("snippet") or ""
+        title = r.get("title") or ""
+        link = r.get("link") or ""
+        combined = f"{title} {snippet}"
+
+        if "glassdoor" not in link.lower() and "glassdoor" not in title.lower():
+            continue
+
+        rating_match = re.search(r"(\d(?:\.\d)?)\s*(?:out of\s*5|/\s*5|stars?|★|overall)", combined, re.IGNORECASE)
+        if rating_match and rating is None:
+            rating = float(rating_match.group(1))
+
+        if snippet and len(snippet) > 20:
+            snippets.append(snippet[:200])
+            neg_keywords = ["poor", "toxic", "bad management", "low pay", "high turnover", "overworked", "no growth"]
+            if any(kw in snippet.lower() for kw in neg_keywords):
+                negative.append(snippet[:200])
+            else:
+                positive.append(snippet[:200])
+
+    return {
+        "rating": rating,
+        "snippets": snippets[:10],
+        "positive": positive[:5],
+        "negative": negative[:5],
+        "has_data": bool(rating or snippets),
+    }
+
+
+def _aggregate_reviews(google: dict, glassdoor: dict) -> dict:
+    """Combine Google and Glassdoor review signals into a single aggregation."""
+    scores = []
+    if google.get("star_rating"):
+        scores.append(google["star_rating"])
+    if glassdoor.get("rating"):
+        scores.append(glassdoor["rating"])
+    combined_score = round(sum(scores) / len(scores), 1) if scores else None
+
+    all_positive = (google.get("positive") or []) + (glassdoor.get("positive") or [])
+    all_negative = (google.get("negative") or []) + (glassdoor.get("negative") or [])
+    all_snippets = (google.get("snippets") or []) + (glassdoor.get("snippets") or [])
+
+    return {
+        "combined_score": combined_score,
+        "positive_count": len(all_positive),
+        "negative_count": len(all_negative),
+        "top_recent": all_snippets[:3],
+        "has_data": bool(combined_score or all_snippets),
+    }
 
 
 def _build_seo_analysis(raw_html: str, page_text: str, page_title: str, meta_description: str) -> Dict[str, Any]:
@@ -1095,19 +1203,28 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             facebook_query = f'"{business_name_hint}" Facebook'
             twitter_query = f'"{business_name_hint}" Twitter OR X'
             review_query = f'"{business_name_hint}" reviews testimonials case study'
+            review_google_query = f'"{business_name_hint}" Google reviews'
+            review_glassdoor_query = f'"{business_name_hint}" Glassdoor reviews employees'
 
             (company_search, competitor_search, abn_search,
              linkedin_search, instagram_search, facebook_search,
-             twitter_search, review_search) = await asyncio.gather(
-                serper_search(company_query, gl="au", hl="en", num=8),
-                serper_search(competitor_query, gl="au", hl="en", num=8),
-                serper_search(abn_query, gl="au", hl="en", num=5),
-                serper_search(linkedin_query, gl="au", hl="en", num=5),
-                serper_search(instagram_query, gl="au", hl="en", num=5),
-                serper_search(facebook_query, gl="au", hl="en", num=5),
-                serper_search(twitter_query, gl="au", hl="en", num=5),
-                serper_search(review_query, gl="au", hl="en", num=8),
+             twitter_search, review_search,
+             google_review_search, glassdoor_review_search) = await asyncio.gather(
+                serper_search(company_query, gl="au", hl="en", num=10),
+                serper_search(competitor_query, gl="au", hl="en", num=10),
+                serper_search(abn_query, gl="au", hl="en", num=10),
+                serper_search(linkedin_query, gl="au", hl="en", num=10),
+                serper_search(instagram_query, gl="au", hl="en", num=10),
+                serper_search(facebook_query, gl="au", hl="en", num=10),
+                serper_search(twitter_query, gl="au", hl="en", num=10),
+                serper_search(review_query, gl="au", hl="en", num=10),
+                serper_search(review_google_query, gl="au", hl="en", num=10),
+                serper_search(review_glassdoor_query, gl="au", hl="en", num=10),
             )
+
+            google_reviews = _parse_google_reviews(google_review_search, business_name_hint)
+            glassdoor_reviews = _parse_glassdoor_reviews(glassdoor_review_search, business_name_hint)
+            review_aggregation = _aggregate_reviews(google_reviews, glassdoor_reviews)
 
             combined_text = "\n\n".join([
                 page_text[:12000],
@@ -1116,6 +1233,8 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (competitor_search.get("results") or [])]),
                 "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (abn_search.get("results") or [])]),
                 "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (review_search.get("results") or [])]),
+                "\n".join([f"- Google Review: {r.get('snippet', '')}" for r in (google_review_search.get("results") or [])]),
+                "\n".join([f"- Glassdoor: {r.get('snippet', '')}" for r in (glassdoor_review_search.get("results") or [])]),
             ])
             abn_candidates = _extract_abn_candidates(combined_text)
 
@@ -1168,11 +1287,16 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "swot": {},
                 "competitor_swot": [],
                 "cmo_priority_actions": [],
+                "google_reviews": google_reviews,
+                "glassdoor_reviews": glassdoor_reviews,
+                "review_aggregation": review_aggregation,
                 "sources": {
                     "company": company_search.get("results") or [],
                     "competitors": competitor_search.get("results") or [],
                     "abn": abn_search.get("results") or [],
                     "reviews": review_search.get("results") or [],
+                    "google_reviews": google_review_search.get("results") or [],
+                    "glassdoor_reviews": glassdoor_review_search.get("results") or [],
                     "social_search": {
                         "linkedin": linkedin_search.get("results") or [],
                         "instagram": instagram_search.get("results") or [],
@@ -2640,4 +2764,27 @@ async def get_forensic_calibration(current_user: dict = Depends(get_current_user
     except Exception as e:
         logger.error(f"[forensic] Read error: {e}")
         return {"exists": False}
+
+
+@router.post("/reports/save")
+async def save_calibration_report(payload: ReportSaveRequest, current_user: dict = Depends(get_current_user)):
+    user_id = current_user.get("id", "")
+    try:
+        sb = get_sb()
+        sb.table("intelligence_actions").insert({
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "source": f"calibration_report_{payload.report_type}",
+            "source_id": f"report_{payload.report_type}_{int(datetime.now(timezone.utc).timestamp())}",
+            "domain": "reports",
+            "severity": "info",
+            "title": payload.title,
+            "description": json.dumps(payload.content, default=str)[:10000],
+            "suggested_action": "Available for download in Reports section.",
+            "status": "complete",
+            "created_at": payload.generated_at or datetime.now(timezone.utc).isoformat(),
+        }).execute()
+    except Exception as exc:
+        logger.warning("Failed to save calibration report: %s", exc)
+    return {"status": "ok", "report_type": payload.report_type}
 

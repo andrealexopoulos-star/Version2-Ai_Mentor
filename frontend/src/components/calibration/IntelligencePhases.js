@@ -28,48 +28,45 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
   const st = ST_COLORS[stateStatus] || ST_COLORS.STABLE;
   const sources = intelligenceData?.data_sources || [];
 
-  const hasAnyIntelligence = intelligenceData !== null && intelligenceData !== undefined;
-  const isReady = hasAnyIntelligence || !!(stateStatus && stateStatus !== 'ANALYZING');
-  const hasData = hasAnyIntelligence || !!(c.executive_memo || c.memo || stateStatus);
-  const [contentRendered, setContentRendered] = useState(false);
+  const isReady = !!(stateStatus && stateStatus !== 'ANALYZING');
+  const hasData = !!(c.executive_memo || c.memo || stateStatus);
 
+  // Auto-advance stages while analyzing
   useEffect(() => {
     if (isReady) return;
     const stages = ['fetching', 'preprocessing', 'analyzing', 'assembling'];
-    const delays = [0, 3000, 7000, 12000];
+    const delays = [0, 4000, 10000, 20000];
     const timers = stages.map((s, i) => setTimeout(() => setSnapshotStage(s), delays[i]));
-    const forceComplete = setTimeout(() => {
-      setSnapshotStage('complete');
-      setContentRendered(true);
-    }, 18000);
-    return () => { timers.forEach(clearTimeout); clearTimeout(forceComplete); };
+    return () => timers.forEach(clearTimeout);
   }, [isReady]);
 
+  // Update stage to complete when data arrives
   useEffect(() => {
     if (isReady && hasData) {
       setSnapshotStage('complete');
-      setContentRendered(true);
       trackSnapshotEvent(EVENTS.SNAPSHOT_FINISH, {
         elapsed_ms: Date.now() - startedAt,
-        state: stateStatus || 'LOADED',
+        state: stateStatus,
       });
     }
   }, [isReady, hasData, stateStatus, startedAt]);
 
+  // Show CTA 20s after snapshot data renders; 60s hard fallback
+  const dataRenderedAtRef = React.useRef(null);
   useEffect(() => {
-    if (!contentRendered) return;
+    if (!isReady || !hasData) { setCtaVisible(false); return; }
+    if (!dataRenderedAtRef.current) dataRenderedAtRef.current = Date.now();
     const timer = setTimeout(() => setCtaVisible(true), 20000);
     return () => clearTimeout(timer);
-  }, [contentRendered]);
+  }, [isReady, hasData]);
 
   useEffect(() => {
     trackSnapshotEvent(EVENTS.SNAPSHOT_START, { timestamp: startedAt });
-    const hardFallback = setTimeout(() => {
-      setSnapshotStage('complete');
-      setContentRendered(true);
+    const fallback = setTimeout(() => {
       setCtaVisible(true);
-    }, 45000);
-    return () => clearTimeout(hardFallback);
+      trackSnapshotEvent(EVENTS.SNAPSHOT_TIMEOUT, { elapsed_ms: 60000 });
+    }, 60000);
+    return () => clearTimeout(fallback);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Integration truth — suppress CRM claims without integration
@@ -381,7 +378,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
               </div>
             )}
           </div>
-        ) : contentRendered ? (
+        ) : (isReady && hasData) ? (
           <div className="text-center">
             <p className="text-xs text-[#64748B] animate-pulse" style={{ fontFamily: fontFamily.mono }}>Reviewing your intelligence snapshot...</p>
           </div>

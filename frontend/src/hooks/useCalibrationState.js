@@ -1030,6 +1030,20 @@ export const useCalibrationState = () => {
   // ═══ PHASE 5: Snapshot → Dashboard ═══
   const proceedFromIntelligence = async () => {
     await autoSave(9, "COMPLETE");
+    try {
+      await apiClient.post('/calibration/reports/save', {
+        report_type: 'cmo_executive_summary',
+        title: 'CMO Executive Summary',
+        content: wowSummary?._full || {},
+        generated_at: new Date().toISOString(),
+      });
+      await apiClient.post('/calibration/reports/save', {
+        report_type: 'executive_intelligence_snapshot',
+        title: 'Executive Intelligence Snapshot',
+        content: intelligenceData || {},
+        generated_at: new Date().toISOString(),
+      });
+    } catch {}
     triggerComplete();
   };
 
