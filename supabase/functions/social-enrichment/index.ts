@@ -161,7 +161,7 @@ async function queryPerplexity(
             content: `What are the official social media profiles for ${subject}?`,
           },
         ],
-        max_tokens: 400,
+        max_tokens: 1000,
         temperature: 0.1,
       }),
     });

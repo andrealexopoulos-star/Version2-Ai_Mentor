@@ -1,7 +1,7 @@
 /**
  * AgentCalibrationChat
  *
- * 9-step operator psychology profiling with multiple choice options.
+ * 6-step operator psychology profiling with dynamic multiple choice options.
  * Uses calibration-psych Supabase edge function.
  */
 
@@ -9,50 +9,24 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, ArrowRight, Loader2, Brain } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
-// ── Pre-defined multiple choice options for each step ────────────────────────
-const STEP_OPTIONS = [
-  // Step 1: communication_style
-  ['Bullet points — fast and structured', 'Narrative — give me the story', 'Data first — numbers, then words', 'Conversational — like a colleague'],
-  // Step 2: verbosity
-  ['Minimal — key points only', 'Moderate — enough context to act', 'Comprehensive — full depth always'],
-  // Step 3: bluntness
-  ['Very direct — don\'t soften it', 'Balanced — direct but considerate', 'Diplomatic — careful framing'],
-  // Step 4: risk_posture
-  ['Conservative — protect what we have', 'Moderate — calculated moves', 'Aggressive — growth over stability'],
-  // Step 5: decision_style
-  ['Gut instinct — I trust my read', 'Data-driven — show me the numbers', 'Consensus — I like team input first', 'Hybrid — data + gut together'],
-  // Step 6: accountability_cadence
-  ['Daily check-ins', 'Weekly reviews', 'Monthly reviews', 'Milestone-based only'],
-  // Step 7: time_constraints
-  ['Always time-poor — be brief', 'Moderate — some breathing room', 'Flexible — I have time for depth'],
-  // Step 8: challenge_tolerance
-  ['Challenge me — push back hard', 'Balanced — challenge when warranted', 'Support me — help me execute my vision'],
-  // Step 9: boundaries
-  ['No limits — tell me everything', 'Only actionable insights — skip theories', 'No bad news without a solution', "Other (I'll type below)"],
-];
+const TOTAL_STEPS = 6;
 
 const STEPS_LABELS = [
-  'Communication style',
-  'Level of detail',
-  'Directness preference',
-  'Risk posture',
-  'Decision approach',
-  'Accountability cadence',
-  'Time constraints',
+  'Communication & thinking',
+  'Risk & decisions',
+  'Strategic depth',
   'Challenge tolerance',
+  'Accountability style',
   'Boundaries & tone',
 ];
 
 const FALLBACK_QUESTIONS = [
-  "Let's start with how you prefer to receive information. Do you prefer bullet points, narrative paragraphs, data-first summaries, or conversational responses?",
-  'How much detail do you prefer in your briefings: minimal, moderate, or comprehensive?',
-  'When risks appear, how direct should I be: very direct, balanced, or diplomatic?',
-  'What best describes your risk posture: conservative, moderate, or aggressive?',
-  'How do you usually decide: instinct, data-driven, consensus, or hybrid?',
-  'How often should BIQc hold you accountable: daily, weekly, monthly, or milestone-based?',
-  'How constrained is your time: always rushed, moderate, or flexible?',
-  'How much should BIQc challenge your thinking: challenge hard, balanced, or mostly supportive?',
-  'Any boundaries I should respect in tone, topics, or delivery style?',
+  "Let's start with how you communicate and think. Do you prefer bullet points, narrative depth, data-first summaries, or a conversational back-and-forth?",
+  'When risk shows up, how do you want to handle it — conservative protection, calculated moves, or aggressive growth plays?',
+  'How deep do you want strategic analysis to go — surface-level actions, moderate context, or full-depth exploration?',
+  'How hard should BIQc push back on your thinking — challenge everything, challenge when warranted, or mostly support your direction?',
+  'What accountability rhythm works best for you — daily nudges, weekly reviews, monthly check-ins, or milestone-based only?',
+  'Any boundaries on tone, topics, or delivery style I should know about?',
 ];
 
 const extractAgentReply = (payload) => {
@@ -101,14 +75,14 @@ const IntroScreen = ({ firstName, onStart }) => (
     <p className="text-sm leading-relaxed max-w-sm mb-6"
       style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
       We're going to ask you{' '}
-      <span style={{ color: '#FF7A18', fontWeight: 600 }}>9 questions</span>{' '}
+      <span style={{ color: '#FF7A18', fontWeight: 600 }}>6 questions</span>{' '}
       about how you think, communicate and make decisions. Your answers will be used
       to calibrate a world-class AI advisor that speaks your language, respects your
       boundaries and delivers intelligence exactly the way you need it.
     </p>
 
     <div className="grid grid-cols-3 gap-3 max-w-sm w-full mb-7">
-      {['Communication style', 'Risk posture', 'Decision approach'].map((label, i) => (
+      {['Communication style', 'Risk posture', 'Strategic depth'].map((label, i) => (
         <div key={i} className="rounded-xl p-3 text-center"
           style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
           <p className="text-[10px] leading-snug" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{label}</p>
@@ -117,7 +91,7 @@ const IntroScreen = ({ firstName, onStart }) => (
     </div>
 
     <p className="text-xs mb-6" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
-      Takes about 3 minutes · Your answers are private · Used only to personalise your agent
+      Takes about 2 minutes · Your answers are private · Used only to personalise your agent
     </p>
 
     <button onClick={onStart}
@@ -138,6 +112,7 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
   const [sending, setSending] = useState(false);
   const [step, setStep] = useState(0);
   const [pct, setPct] = useState(0);
+  const [dynamicOptions, setDynamicOptions] = useState([]);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -149,22 +124,28 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
     setSending(true);
     try {
       const data = await callEdge({ message: 'init', step: 0, history: [] });
-      const agentText = extractAgentReply(data) || "Let's start with how you prefer to receive information.";
+      const agentText = extractAgentReply(data) || FALLBACK_QUESTIONS[0];
       setMessages([{ role: 'agent', text: agentText }]);
       setStep(data.step || 1);
       setPct(data.percentage || 0);
+      setDynamicOptions(Array.isArray(data.options) ? data.options : []);
     } catch {
-      setMessages([{ role: 'agent', text: "Let's start with how you prefer to receive information. Do you prefer bullet points, narrative paragraphs, data-first summaries, or conversational responses?" }]);
+      setMessages([{ role: 'agent', text: FALLBACK_QUESTIONS[0] }]);
       setStep(1);
+      setDynamicOptions([]);
     }
     setSending(false);
   };
 
   const progressWithFallback = (currentStepValue) => {
     const currentStep = Math.max(1, Number(currentStepValue) || 1);
-    if (currentStep >= 9) {
+    if (currentStep >= TOTAL_STEPS) {
       setPct(100);
-      setMessages(prev => [...prev, { role: 'agent', text: 'Calibration complete. Your BIQc Intelligence Agent is now personalised.' }]);
+      setDynamicOptions([]);
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        text: 'Calibration complete — your BIQc Intelligence Agent now understands how you think, decide, and communicate. Preparing your personalised advisory experience…',
+      }]);
       setTimeout(() => setPhase('done'), 1200);
       setTimeout(() => onComplete(), 2600);
       return;
@@ -172,8 +153,9 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
     const nextStep = currentStep + 1;
     const nextQuestion = FALLBACK_QUESTIONS[nextStep - 1] || FALLBACK_QUESTIONS[FALLBACK_QUESTIONS.length - 1];
     setStep(nextStep);
-    setPct(Math.round(((nextStep - 1) / 9) * 100));
-    setMessages(prev => [...prev, { role: 'agent', text: `Captured. ${nextQuestion}` }]);
+    setPct(Math.round(((nextStep - 1) / TOTAL_STEPS) * 100));
+    setDynamicOptions([]);
+    setMessages(prev => [...prev, { role: 'agent', text: `Understood. ${nextQuestion}` }]);
   };
 
   const sendMessage = async (overrideText = null) => {
@@ -182,6 +164,7 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setSending(true);
+    setDynamicOptions([]);
 
     try {
       const history = messages.map(m => ({ role: m.role === 'agent' ? 'assistant' : 'user', content: m.text }));
@@ -194,15 +177,20 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
         setMessages(prev => [...prev, { role: 'agent', text: agentText }]);
         setStep(data.step || step);
         setPct(data.percentage || pct);
+        setDynamicOptions(Array.isArray(data.options) ? data.options : []);
       }
 
       if (data.status === 'COMPLETE') {
+        setDynamicOptions([]);
+        setPct(100);
+        setMessages(prev => [...prev, {
+          role: 'agent',
+          text: 'Your Intelligence Agent is now fully calibrated. Every insight, challenge, and recommendation will be tuned to how you operate. Let\'s get to work.',
+        }]);
         setTimeout(() => setPhase('done'), 1500);
         setTimeout(() => onComplete(), 3000);
       }
     } catch {
-      // Fail-open path: continue deterministic local progression when edge auth/model
-      // is unavailable so calibration can always complete end-to-end.
       progressWithFallback(step);
     }
     setSending(false);
@@ -253,7 +241,7 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
                 BIQc Agent Calibration
               </p>
               <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
-                Step {Math.min(step, 9)} of 9 — {currentStepLabel}
+                Step {Math.min(step, TOTAL_STEPS)} of {TOTAL_STEPS} — {currentStepLabel}
               </p>
             </div>
           </div>
@@ -309,14 +297,14 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Multiple choice options for current step */}
-      {!sending && step >= 1 && step <= 9 && (
+      {/* Dynamic multiple choice options */}
+      {!sending && step >= 1 && step <= TOTAL_STEPS && dynamicOptions.length > 0 && (
         <div className="flex-shrink-0 px-4 pt-3" style={{ borderTop: '1px solid #1E2D3D' }}>
           <p className="text-[10px] mb-2" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>
             Choose an option or type your own answer below
           </p>
           <div className="flex flex-wrap gap-2 mb-3">
-            {(STEP_OPTIONS[step - 1] || []).map((opt, i) => (
+            {dynamicOptions.map((opt, i) => (
               <button key={i} onClick={() => sendMessage(opt)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                 style={{

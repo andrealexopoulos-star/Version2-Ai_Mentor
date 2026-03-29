@@ -51,19 +51,21 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
     }
   }, [isReady, hasData, stateStatus, startedAt]);
 
-  // Show CTA after data is ready (3s delay) or after timeout (35s fallback)
+  // Show CTA 20s after snapshot data renders; 60s hard fallback
+  const dataRenderedAtRef = React.useRef(null);
   useEffect(() => {
-    if (!isReady) { setCtaVisible(false); return; }
-    const timer = setTimeout(() => setCtaVisible(true), 3000);
+    if (!isReady || !hasData) { setCtaVisible(false); return; }
+    if (!dataRenderedAtRef.current) dataRenderedAtRef.current = Date.now();
+    const timer = setTimeout(() => setCtaVisible(true), 20000);
     return () => clearTimeout(timer);
-  }, [isReady]);
+  }, [isReady, hasData]);
 
   useEffect(() => {
     trackSnapshotEvent(EVENTS.SNAPSHOT_START, { timestamp: startedAt });
     const fallback = setTimeout(() => {
       setCtaVisible(true);
-      trackSnapshotEvent(EVENTS.SNAPSHOT_TIMEOUT, { elapsed_ms: 35000 });
-    }, 35000);
+      trackSnapshotEvent(EVENTS.SNAPSHOT_TIMEOUT, { elapsed_ms: 60000 });
+    }, 60000);
     return () => clearTimeout(fallback);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -111,7 +113,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
             Here's what BIQc sees.
           </h1>
           <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-            Before we calibrate your preferences, review your current market position.
+            Your first intelligence baseline is ready. Review it, then continue into the platform.
           </p>
         </div>
 
@@ -352,7 +354,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
           </div>
         )}
 
-        {/* CTA — GATED */}
+        {/* CTA — GATED: hidden while loading, 20s dwell after render, then reveal */}
         {ctaVisible ? (
           <div className="text-center" style={{ animation: 'ctaReveal 0.6s ease-out' }}>
             <button onClick={onContinue}
@@ -376,9 +378,9 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
               </div>
             )}
           </div>
-        ) : isReady ? (
+        ) : (isReady && hasData) ? (
           <div className="text-center">
-            <p className="text-xs text-[#64748B] animate-pulse" style={{ fontFamily: fontFamily.mono }}>Preparing your Intelligence Platform...</p>
+            <p className="text-xs text-[#64748B] animate-pulse" style={{ fontFamily: fontFamily.mono }}>Reviewing your intelligence snapshot...</p>
           </div>
         ) : null}
       </div>
