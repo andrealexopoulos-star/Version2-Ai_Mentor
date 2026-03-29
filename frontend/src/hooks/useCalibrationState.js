@@ -487,6 +487,9 @@ export const useCalibrationState = () => {
             market_intelligence_score: deepEnrichment.market_intelligence_score ?? null,
             market_trajectory: deepEnrichment.market_trajectory || '',
             market_evidence: deepEnrichment.market_evidence || null,
+            google_reviews: deepEnrichment.google_reviews || null,
+            glassdoor_reviews: deepEnrichment.glassdoor_reviews || null,
+            review_aggregation: deepEnrichment.review_aggregation || null,
           } : {}),
         };
 
@@ -1013,10 +1016,8 @@ export const useCalibrationState = () => {
       autoSave(3);
       setTransitioning(false);
 
-      // Go to agent calibration chat (builds personalised AI agent prompt)
-      // This happens AFTER the CMO report, BEFORE "Here's What BIQc Found"
       fetchIntelligence();
-      setEntry("agent_calibration");
+      setEntry("integration_connect");
     } catch { setTransitioning(false); setError("Calibration engine temporarily unavailable."); }
     finally { setIsSubmitting(false); }
   };
