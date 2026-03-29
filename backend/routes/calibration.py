@@ -1383,7 +1383,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     asyncio.create_task(set_edge_result(fn_name, scan_domain, result))
                 return result
 
-            deep_recon, social_enrichment, competitor_monitor, market_analysis, market_scorer = await asyncio.gather(
+            deep_recon, social_enrichment, competitor_monitor, market_analysis, market_scorer, browse_ai_reviews = await asyncio.gather(
                 _cached_edge("deep-web-recon", {"user_id": user_id, "website": url}, inbound_auth),
                 _cached_edge("social-enrichment", {"website_url": url}, inbound_auth),
                 _cached_edge("competitor-monitor", {"user_id": user_id}, inbound_auth),
@@ -1393,6 +1393,11 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "specific_question": f"Analyse the competitive positioning and market opportunity for {enrichment.get('business_name', '')} in the {enrichment.get('industry', '')} sector",
                 }, inbound_auth),
                 _cached_edge("market-signal-scorer", {"tenant_id": user_id}, inbound_auth),
+                _cached_edge("browse-ai-reviews", {
+                    "business_name": enrichment.get("business_name", ""),
+                    "domain": domain,
+                    "location": enrichment.get("location") or enrichment.get("geographic_focus") or "Australia",
+                }, inbound_auth),
                 return_exceptions=True,
             )
             if isinstance(deep_recon, Exception): deep_recon = {"error": str(deep_recon)}
@@ -1400,6 +1405,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if isinstance(competitor_monitor, Exception): competitor_monitor = {"error": str(competitor_monitor)}
             if isinstance(market_analysis, Exception): market_analysis = {"error": str(market_analysis)}
             if isinstance(market_scorer, Exception): market_scorer = {"error": str(market_scorer)}
+            if isinstance(browse_ai_reviews, Exception): browse_ai_reviews = {"error": str(browse_ai_reviews)}
 
             ai_errors = []
             if isinstance(deep_recon, dict) and deep_recon.get("error"):
@@ -1412,11 +1418,51 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 ai_errors.append({"function": "market-analysis-ai", "error": market_analysis["error"]})
             if isinstance(market_scorer, dict) and market_scorer.get("error"):
                 ai_errors.append({"function": "market-signal-scorer", "error": market_scorer["error"]})
+            if isinstance(browse_ai_reviews, dict) and browse_ai_reviews.get("error"):
+                ai_errors.append({"function": "browse-ai-reviews", "error": browse_ai_reviews["error"]})
 
             edge_meta = {
                 "market_analysis_failed": not isinstance(market_analysis, dict) or bool(market_analysis.get("error")),
                 "market_scorer_failed": not isinstance(market_scorer, dict) or bool(market_scorer.get("error")),
             }
+
+            if isinstance(browse_ai_reviews, dict) and browse_ai_reviews.get("ok"):
+                enrichment["browse_ai_reviews"] = browse_ai_reviews
+                agg = browse_ai_reviews.get("aggregated") or {}
+                if agg.get("customer_score") and not enrichment.get("google_reviews", {}).get("star_rating"):
+                    enrichment.setdefault("google_reviews", {})["star_rating"] = agg["customer_score"]
+                    enrichment["google_reviews"]["has_data"] = True
+                if agg.get("staff_score") and not enrichment.get("glassdoor_reviews", {}).get("rating"):
+                    enrichment.setdefault("glassdoor_reviews", {})["rating"] = agg["staff_score"]
+                    enrichment["glassdoor_reviews"]["has_data"] = True
+                if agg.get("top_positive"):
+                    enrichment.setdefault("google_reviews", {}).setdefault("positive", []).extend(agg["top_positive"][:3])
+                    enrichment["google_reviews"]["has_data"] = True
+                if agg.get("top_negative"):
+                    enrichment.setdefault("google_reviews", {}).setdefault("negative", []).extend(agg["top_negative"][:3])
+                    enrichment["google_reviews"]["has_data"] = True
+                if agg.get("customer_count"):
+                    enrichment.setdefault("google_reviews", {})["review_count"] = agg["customer_count"]
+                if browse_ai_reviews.get("customer_reviews"):
+                    all_snippets = []
+                    for cr in browse_ai_reviews["customer_reviews"]:
+                        for rv in (cr.get("reviews") or [])[:5]:
+                            all_snippets.append(f"[{cr.get('platform', 'review')}] {rv.get('text', '')[:200]}")
+                    enrichment.setdefault("google_reviews", {}).setdefault("snippets", []).extend(all_snippets[:5])
+                if browse_ai_reviews.get("staff_reviews"):
+                    all_staff_snippets = []
+                    for sr in browse_ai_reviews["staff_reviews"]:
+                        for rv in (sr.get("reviews") or [])[:5]:
+                            all_staff_snippets.append(f"[{sr.get('platform', 'employer')}] {rv.get('text', '')[:200]}")
+                    enrichment.setdefault("glassdoor_reviews", {}).setdefault("snippets", []).extend(all_staff_snippets[:5])
+                    enrichment["glassdoor_reviews"]["has_data"] = True
+                enrichment.setdefault("review_aggregation", {}).update({
+                    "combined_score": agg.get("customer_score"),
+                    "positive_count": len(agg.get("top_positive") or []),
+                    "negative_count": len(agg.get("top_negative") or []),
+                    "top_recent": (agg.get("top_positive") or [])[:2] + (agg.get("top_negative") or [])[:1],
+                    "has_data": bool(agg.get("customer_score") or agg.get("top_positive")),
+                })
 
             social_edge_handles = (social_enrichment or {}).get("social_handles") or {}
             if isinstance(social_edge_handles, dict):
