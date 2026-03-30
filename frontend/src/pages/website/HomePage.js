@@ -4,9 +4,6 @@ import WebsiteLayout from '../../components/website/WebsiteLayout';
 import HeroExperienceTabs from '../../components/website/HeroExperienceTabs';
 import ModernIntegrationBanner from '../../components/website/ModernIntegrationBanner';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
-import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle } from 'lucide-react';
-import ModernIntegrationBanner from '../../components/website/ModernIntegrationBanner';
-import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
 import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle, DollarSign, TrendingDown, AlertCircle, FileWarning, Check } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 

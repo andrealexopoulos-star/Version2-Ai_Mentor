@@ -27,16 +27,6 @@ const NAV_LINKS = [
 ];
 
 const MEET_BIQC_ITEMS = [
-  { label: 'Executive Overview', blurb: 'See the leadership control centre in action', path: '/platform/overview' },
-  { label: 'Revenue Intelligence', blurb: 'Catch growth and margin pressure early', path: '/platform/revenue' },
-  { label: 'Alerts & Watchtower', blurb: 'Track operational risk before it compounds', path: '/platform/alerts' },
-  { label: 'Automations', blurb: 'Turn decisions into repeatable execution', path: '/platform/automations' },
-  { label: 'Integrations Demo', blurb: 'Connect your stack and run on evidence', path: '/platform/integrations-demo' },
-  { label: 'Pricing',   path: '/pricing' },
-  { label: 'Trust',     path: '/trust',   dropdown: 'trust' },
-];
-
-const MEET_BIQC_ITEMS = [
   { label: 'Platform',                    blurb: 'All flagship pages — see BIQc end-to-end',          path: '/platform' },
   { label: 'Intelligence & Integrations', blurb: 'How BIQc ingests and acts on your business data',   path: '/intelligence' },
   { label: 'Soundboard',                  blurb: 'Live AI modes — Boardroom, Finance, Ops and more',  path: '/meet/soundboard' },

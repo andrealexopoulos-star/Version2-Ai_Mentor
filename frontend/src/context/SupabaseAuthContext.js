@@ -523,11 +523,6 @@ export const SupabaseAuthProvider = ({ children }) => {
             calibrationComplete = false;
           }
         } catch (e) {
-          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → fail-closed to NEEDS_CALIBRATION`);
-            // fail-closed: if calibration status is unavailable, require calibration path.
-            calibrationComplete = false;
-          }
-        } catch (e) {
           console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → fail-closed to calibration`);
           calibrationComplete = false;
         }

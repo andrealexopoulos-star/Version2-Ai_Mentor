@@ -112,7 +112,6 @@ const MarketPage = () => {
       apiClient.get('/market-intelligence').then(r => r.data?.cognitive && r.data?.has_data ? r.data.cognitive : Promise.reject('no data')),
       (async () => {
         const d = await callEdgeFunction('biqc-insights-cognitive', {}, 45000);
-        const d = await callEdgeFunction('biqc-insights-cognitive', {});
         if (!d?.cognitive) throw new Error('no cognitive');
         return d.cognitive;
       })(),
