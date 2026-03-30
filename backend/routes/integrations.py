@@ -126,18 +126,6 @@ async def proxy_edge_function(
     edge_payload = dict(body.payload or {})
     if current_user and current_user.get("id"):
         edge_payload.setdefault("user_id", current_user["id"])
-    try:
-        async with httpx.AsyncClient(timeout=90) as client:
-            edge_res = await client.post(
-                endpoint,
-                json=edge_payload,
-                headers={
-                    "Authorization": outbound_auth,
-                    "apikey": outbound_apikey,
-                    "Content-Type": "application/json",
-                    "X-Calibration-Run-Id": calibration_run_id,
-                    "X-Calibration-Step": calibration_step,
-                    "X-Proxy-Request-Id": proxy_request_id,
     inbound_auth = (request.headers.get("authorization") or "").strip()
     proxy_apikey = anon_key
     if not inbound_auth.lower().startswith("bearer "):

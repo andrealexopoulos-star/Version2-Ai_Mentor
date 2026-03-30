@@ -118,7 +118,6 @@ export const useCalibrationState = () => {
   const navigate = useNavigate();
   const { user, session, loading, signOut, clearBootstrapCache } = useSupabaseAuth();
   const supabase = useSupabaseAuth().supabase;
-  const isCalibrationQaRoute = typeof window !== "undefined" && window.location?.pathname === "/calibration-qa";
   const isCalibrationQaRoute = (() => {
     if (typeof window === "undefined") return false;
     const pathname = (window.location?.pathname || "").replace(/\/+$/, "");

@@ -278,43 +278,6 @@ function buildCustomerReviewSignals(full) {
     : 'No verifiable customer review footprint detected in this scan, so BIQc suppresses deep narrative claims until stronger evidence is observed.';
 
   return { reviewEvidence, customerReviewSignals, hasReviewData, confidenceBand, impact, depthNarrative };
-  const impact = hasReviewData
-    ? [
-      {
-        fundamental: 'Conversion rate',
-        impact: '+6% to +18%',
-        mechanism: 'Proof-backed messaging reduces buyer doubt during first-touch evaluation.',
-      },
-      {
-        fundamental: 'Customer acquisition cost',
-        impact: '-8% to -22%',
-        mechanism: 'Higher trust density improves paid and organic click-to-enquiry efficiency.',
-      },
-      {
-        fundamental: 'Gross profit',
-        impact: '+2 to +6 pts margin',
-        mechanism: 'Stronger credibility reduces discount pressure and supports value-based pricing.',
-      },
-    ]
-    : [
-      {
-        fundamental: 'Conversion rate',
-        impact: '-10% to -25% drag risk',
-        mechanism: 'Low visible proof forces prospects to delay or abandon decision.',
-      },
-      {
-        fundamental: 'Customer acquisition cost',
-        impact: '+12% to +30% risk',
-        mechanism: 'Paid campaigns require more spend to overcome trust gaps.',
-      },
-      {
-        fundamental: 'Gross profit',
-        impact: '-3 to -8 pts margin risk',
-        mechanism: 'Sales teams compensate weak proof with discounting.',
-      },
-    ];
-
-  return { reviewEvidence, customerReviewSignals, hasReviewData, confidenceBand, impact };
 }
 
 function buildStaffImpactSignals(staffSignals) {
