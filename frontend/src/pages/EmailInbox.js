@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
@@ -31,10 +31,15 @@ const EmailInbox = () => {
   const [reclassifying, setReclassifying] = useState(null); // email_id being reclassified
   const [taskingEmail, setTaskingEmail] = useState(null);
   const [dismissingEmail, setDismissingEmail] = useState(null);
+  const [folders, setFolders] = useState([]);
+  const [selectedFolder, setSelectedFolder] = useState('inbox');
+  const [folderMessages, setFolderMessages] = useState([]);
+  const [loadingFolders, setLoadingFolders] = useState(false);
+  const [sendingReply, setSendingReply] = useState(false);
 
   useEffect(() => {
     checkConnections();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const checkConnections = async () => {
     try {
@@ -126,8 +131,10 @@ const EmailInbox = () => {
   useEffect(() => {
     if (activeProvider) {
       fetchPriorityInbox(activeProvider);
+      fetchFolders(activeProvider);
+      fetchFolderMessages(activeProvider, selectedFolder || 'inbox');
     }
-  }, [activeProvider]);
+  }, [activeProvider, selectedFolder]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const normalizePriorityPayload = (payload, fallbackMeta = {}) => {
     if (!payload || typeof payload !== 'object') return null;
@@ -144,30 +151,12 @@ const EmailInbox = () => {
     };
   };
 
-  const fetchPriorityInbox = async (provider) => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fetchPriorityInbox = useCallback(async (provider) => {
     try {
       if (!provider) return;
       setLoading(true);
       setInboxLoadError(null);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setLoading(false); return; }
-
-      // 1. Load from cache first (priority_inbox table) for instant display
-      const { data: cached } = await supabase
-        .from('priority_inbox')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .eq('provider', provider)
-        .order('received_date', { ascending: false })
-        .limit(50);
-
-      if (cached?.length) {
-        const normalized = normalizePriorityRows(cached);
-        setPriorityAnalysis({ ...normalized, analyzed_at: cached[0].analyzed_at, from_cache: true });
-        setLoading(false);
-      }
-
-      // 2. Prefer backend-backed inbox retrieval to avoid direct edge JWT issues in production.
       let latest = null;
       let fetchErrMsg = null;
       try {
@@ -183,18 +172,16 @@ const EmailInbox = () => {
           const analyzed = await apiClient.post('/email/analyze-priority');
           latest = normalizePriorityPayload(analyzed.data, { from_cache: false, analyzed_at: new Date().toISOString() });
         } catch (error) {
-          if (!cached?.length) {
-            console.error('Priority inbox analysis failed:', error?.response?.data || error.message);
-            const detail = error?.response?.data?.detail || error?.message || 'Priority Inbox is temporarily unavailable.';
-            fetchErrMsg = fetchErrMsg || detail;
-            toast.error(detail);
-          }
+          console.error('Priority inbox analysis failed:', error?.response?.data || error.message);
+          const detail = error?.response?.data?.detail || error?.message || 'Priority Inbox is temporarily unavailable.';
+          fetchErrMsg = fetchErrMsg || detail;
+          toast.error(detail);
         }
       }
 
       if (latest) {
         setPriorityAnalysis(latest);
-      } else if (!cached?.length && fetchErrMsg) {
+      } else if (fetchErrMsg) {
         setInboxLoadError(fetchErrMsg);
       }
     } catch (error) {
@@ -203,7 +190,7 @@ const EmailInbox = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Normalize edge function email fields to UI-expected format
   const normalizeEmailFields = (e) => ({
@@ -221,35 +208,51 @@ const EmailInbox = () => {
     user_override:   e.user_override || null,
   });
 
-  // Normalize cached priority_inbox rows to UI format
-  const normalizePriorityRows = (rows) => {
-    const bucket = (level) => rows
-      .filter(r => (r.user_override || r.priority_level) === level)
-      .map(normalizeEmailFields);
-    const latest = rows[0];
-    return {
-      high_priority: bucket('high'),
-      medium_priority: bucket('medium'),
-      low_priority: bucket('low'),
-      strategic_insights: latest?.strategic_insights || '',
-      analyzed_at: latest?.analyzed_at,
-    };
-  };
+  const fetchFolders = useCallback(async (provider) => {
+    if (!provider) return;
+    try {
+      setLoadingFolders(true);
+      const response = await apiClient.get(`/email/folders?provider=${encodeURIComponent(provider)}`);
+      const serverFolders = response.data?.folders || [];
+      setFolders(serverFolders);
+    } catch (error) {
+      console.error('Folder fetch error:', error);
+      setFolders([]);
+    } finally {
+      setLoadingFolders(false);
+    }
+  }, []);
+
+  const fetchFolderMessages = useCallback(async (provider, folderName) => {
+    if (!provider || !folderName) return;
+    try {
+      const response = await apiClient.get(
+        `/email/messages?provider=${encodeURIComponent(provider)}&folder=${encodeURIComponent(folderName)}&limit=30&offset=0`
+      );
+      const messages = (response.data?.messages || []).map((msg) => ({
+        id: msg.id || msg.graph_message_id || msg.email_id,
+        from: msg.from_name || msg.from_address || 'Unknown',
+        subject: msg.subject || '(no subject)',
+        received: msg.received_date || null,
+        snippet: msg.body_preview || msg.snippet || '',
+        web_link: msg.web_link || null,
+      }));
+      setFolderMessages(messages);
+    } catch (error) {
+      console.error('Message fetch error:', error);
+      setFolderMessages([]);
+    }
+  }, []);
 
   // Reclassify an email (updates user_override in priority_inbox)
   const reclassifyEmail = async (emailId, newLevel) => {
     setReclassifying(emailId);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const { error } = await supabase.from('priority_inbox')
-        .update({ user_override: newLevel })
-        .eq('user_id', session.user.id)
-        .eq('email_id', emailId);
-      if (error) {
-        toast.error(error.message || 'Failed to reclassify email');
-        return;
-      }
+      await apiClient.post('/email/priority/reclassify', {
+        email_id: emailId,
+        provider: activeProvider,
+        priority_level: newLevel,
+      });
       // Optimistically update UI
       setPriorityAnalysis(prev => {
         if (!prev) return prev;
@@ -298,14 +301,11 @@ const EmailInbox = () => {
     if (!email?.email_id || !activeProvider) return;
     setDismissingEmail(email.email_id);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const { error } = await supabase.from('priority_inbox')
-        .update({ user_override: 'low' })
-        .eq('user_id', session.user.id)
-        .eq('provider', activeProvider)
-        .eq('email_id', email.email_id);
-      if (error) throw error;
+      await apiClient.post('/email/priority/reclassify', {
+        email_id: email.email_id,
+        provider: activeProvider,
+        priority_level: 'low',
+      });
       setPriorityAnalysis(prev => {
         if (!prev) return prev;
         const allEmails = [
@@ -363,6 +363,27 @@ const EmailInbox = () => {
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     toast.success('Reply copied to clipboard!');
+  };
+
+  const sendRecommendedReply = async () => {
+    if (!replySuggestions?.suggested_reply || !selectedEmail) return;
+    try {
+      setSendingReply(true);
+      const response = await apiClient.post('/email/send-recommended-reply', {
+        email_id: selectedEmail,
+        suggested_reply: replySuggestions.suggested_reply,
+        subject: replySuggestions.original_subject || undefined,
+      });
+      const composeLink = response?.data?.compose_link;
+      if (composeLink) {
+        window.open(composeLink, '_blank', 'noopener,noreferrer');
+      }
+      toast.success('Reply opened in your mailbox composer.');
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Failed to prepare send flow.');
+    } finally {
+      setSendingReply(false);
+    }
   };
 
   const PriorityBadge = ({ level }) => {
@@ -544,7 +565,7 @@ const EmailInbox = () => {
                 {title}
               </h3>
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {count} {count === 1 ? 'email' : 'emails'} need attention
+                {count === 0 ? 'No emails in this bucket' : `${count} ${count === 1 ? 'email' : 'emails'} need attention`}
               </p>
             </div>
           </div>
@@ -590,7 +611,7 @@ const EmailInbox = () => {
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
-                  {hasNewFormat ? 'BIQC Suggested Reply' : 'AI Reply Suggestions'}
+                  {hasNewFormat ? 'BIQc Suggested Reply' : 'AI Reply Suggestions'}
                 </h2>
                 {replySuggestions.priority_level && (
                   <span
@@ -647,7 +668,7 @@ const EmailInbox = () => {
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <TrendingUp className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium text-blue-600">BIQC Advisor Rationale</span>
+                      <span className="font-medium text-blue-600">BIQc Advisor Rationale</span>
                     </div>
                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {replySuggestions.advisor_rationale}
@@ -684,6 +705,15 @@ const EmailInbox = () => {
                       >
                         <Copy className="w-3 h-3 mr-1" />
                         Copy
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={sendRecommendedReply}
+                        disabled={sendingReply}
+                        style={{ background: '#16A34A', color: 'white' }}
+                      >
+                        <Send className="w-3 h-3 mr-1" />
+                        {sendingReply ? 'Preparing…' : 'Send via Mailbox'}
                       </Button>
                     </div>
                   </div>
@@ -758,7 +788,7 @@ const EmailInbox = () => {
                     
                     {reply.strategic_note && (
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                        <span className="font-medium">💡 Why this works:</span> {reply.strategic_note}
+                        <span className="font-medium">Why this works:</span> {reply.strategic_note}
                       </p>
                     )}
                   </div>
@@ -788,6 +818,11 @@ const EmailInbox = () => {
     if (!allPriorityEmails.length) return null;
     return allPriorityEmails.find((email) => email.email_id === selectedEmail) || allPriorityEmails[0];
   }, [allPriorityEmails, selectedEmail]);
+  const providerLabel = activeProvider === 'gmail' ? 'Gmail' : activeProvider === 'outlook' ? 'Outlook' : 'Email';
+  const analysisTimestamp = priorityAnalysis?.analyzed_at ? new Date(priorityAnalysis.analyzed_at) : null;
+  const freshnessText = analysisTimestamp
+    ? `${priorityAnalysis?.from_cache ? 'Cached snapshot' : 'Live analysis'} · ${analysisTimestamp.toLocaleString('en-AU')}`
+    : null;
 
   return (
     <DashboardLayout>
@@ -803,16 +838,22 @@ const EmailInbox = () => {
               </span>
               {activeProvider && (
                 <span className="badge badge-secondary">
-                  {activeProvider === 'gmail' ? '📧 Gmail' : '📮 Outlook'}
+                  <Mail className="w-3 h-3 mr-1 inline-block" />
+                  {providerLabel}
                 </span>
               )}
             </div>
             <h1 style={{ color: 'var(--text-primary)' }}>Priority Inbox</h1>
             <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
               {activeProvider 
-                ? `AI-prioritized emails from ${activeProvider === 'gmail' ? 'Gmail' : 'Outlook'}`
+                ? `AI-prioritized emails from ${providerLabel}`
                 : 'Connect an email provider to get started'}
             </p>
+            {connectedEmail && (
+              <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>
+                Connected account: {connectedEmail}
+              </p>
+            )}
           </div>
           
           {activeProvider && (
@@ -906,6 +947,68 @@ const EmailInbox = () => {
             ))}
           </div>
         )}
+        {freshnessText && (
+          <div
+            className="rounded-xl border px-4 py-3 flex flex-wrap items-center justify-between gap-2"
+            style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}
+            data-testid="priority-inbox-freshness"
+          >
+            <p className="text-xs" style={{ color: '#94A3B8' }}>{freshnessText}</p>
+            {priorityAnalysis?.from_cache && (
+              <button className="text-xs underline" style={{ color: '#FF6A00' }} onClick={runPriorityAnalysis}>
+                Refresh now
+              </button>
+            )}
+          </div>
+        )}
+        {activeProvider && (
+          <div className="grid gap-3 lg:grid-cols-[minmax(220px,0.38fr)_minmax(0,1fr)]" data-testid="priority-inbox-folder-grid">
+            <div className="rounded-xl border p-4" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
+              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Folders</p>
+              <div className="mt-3 space-y-2 max-h-56 overflow-auto pr-1">
+                {(folders || []).slice(0, 12).map((folder) => {
+                  const folderName = folder?.name || 'inbox';
+                  const active = selectedFolder === folderName;
+                  return (
+                    <button
+                      key={folderName}
+                      type="button"
+                      onClick={() => setSelectedFolder(folderName)}
+                      className="w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-all"
+                      style={{
+                        background: active ? 'rgba(255,106,0,0.12)' : 'transparent',
+                        border: `1px solid ${active ? 'rgba(255,106,0,0.35)' : 'rgba(148,163,184,0.15)'}`,
+                        color: active ? '#FFB17A' : '#CBD5E1',
+                      }}
+                    >
+                      <span className="truncate">{folderName}</span>
+                      <span className="text-xs" style={{ color: '#94A3B8' }}>{folder?.count || 0}</span>
+                    </button>
+                  );
+                })}
+                {loadingFolders && (
+                  <p className="text-xs" style={{ color: '#94A3B8' }}>Loading folders…</p>
+                )}
+              </div>
+            </div>
+            <div className="rounded-xl border p-4" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
+              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>
+                Folder preview · {selectedFolder}
+              </p>
+              <div className="mt-3 space-y-2 max-h-56 overflow-auto pr-1">
+                {folderMessages.length === 0 ? (
+                  <p className="text-sm" style={{ color: '#64748B' }}>No messages loaded for this folder yet.</p>
+                ) : folderMessages.map((msg) => (
+                  <div key={msg.id} className="rounded-lg border px-3 py-2" style={{ borderColor: 'rgba(148,163,184,0.18)' }}>
+                    <p className="text-xs truncate" style={{ color: '#F4F7FA' }}>{msg.subject}</p>
+                    <p className="text-[11px] truncate mt-0.5" style={{ color: '#94A3B8' }}>{msg.from}</p>
+                    <p className="text-[11px] mt-1 line-clamp-1" style={{ color: '#64748B' }}>{msg.snippet}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Loading State */}
         {loading ? (
@@ -952,11 +1055,6 @@ const EmailInbox = () => {
           /* Priority Sections */
           <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.75fr)]" data-testid="priority-inbox-command-grid">
             <div className="space-y-4">
-              {priorityAnalysis?.from_cache && (
-                <p className="text-xs text-center" style={{ color: '#64748B' }}>
-                  Showing cached results · <button className="underline" style={{ color: '#FF6A00' }} onClick={runPriorityAnalysis}>Refresh now</button>
-                </p>
-              )}
               <div className="rounded-xl border px-4 py-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }} data-testid="priority-inbox-guidance-card">
                 <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Command centre flow</p>
                 <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Open the highest-risk thread first, validate BIQc’s rationale, then trigger a reply or reclassify before the customer signal degrades.</p>
@@ -1020,6 +1118,12 @@ const EmailInbox = () => {
                       <Button variant="outline" onClick={() => reclassifyEmail(selectedEmailData.email_id, 'high')} data-testid="priority-inbox-mark-high-button">
                         Mark high
                       </Button>
+                      <Button variant="outline" onClick={() => reclassifyEmail(selectedEmailData.email_id, 'medium')}>
+                        Mark medium
+                      </Button>
+                      <Button variant="outline" onClick={() => reclassifyEmail(selectedEmailData.email_id, 'low')}>
+                        Mark low
+                      </Button>
                     </div>
                   </div>
                 ) : (
@@ -1030,12 +1134,6 @@ const EmailInbox = () => {
           </div>
         )}
 
-        {/* Last Analyzed */}
-        {priorityAnalysis?.analyzed_at && (
-          <p className="text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-            Last analyzed: {new Date(priorityAnalysis.analyzed_at).toLocaleString()}
-          </p>
-        )}
       </div>
 
       {/* Reply Suggestions Modal */}

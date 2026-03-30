@@ -14,6 +14,7 @@ import logging
 import re
 import jwt
 import uuid
+import urllib.parse
 from urllib.parse import quote
 from dateutil import parser as dateutil_parser
 
@@ -36,6 +37,8 @@ from supabase_email_helpers import (
     find_email_by_id_supabase,
     find_email_by_graph_message_id_supabase,
     delete_user_sync_jobs_supabase,
+    get_user_emails_page_supabase,
+    list_user_email_folders_supabase,
 )
 from supabase_intelligence_helpers import (
     get_email_intelligence_supabase, update_email_intelligence_supabase,
@@ -66,6 +69,8 @@ def _load_oauth_state_secret() -> str:
 
 
 JWT_SECRET = _load_oauth_state_secret()
+MASTER_ADMIN_EMAIL = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "").strip().lower()
+INTERNAL_EMAIL_DOMAIN = (os.environ.get("BIQC_INTERNAL_EMAIL_DOMAIN") or "biqc.ai").strip().lower().lstrip("@")
 
 
 def _connected_integration_count_for_email(user_id: str) -> int:
@@ -82,6 +87,19 @@ def _connected_integration_count_for_email(user_id: str) -> int:
     except Exception:
         pass
     return count
+
+
+def _is_master_admin(email: Optional[str]) -> bool:
+    if not email or not MASTER_ADMIN_EMAIL:
+        return False
+    return str(email).strip().lower() == MASTER_ADMIN_EMAIL
+
+
+def _is_internal_address(address: Optional[str]) -> bool:
+    if not address:
+        return False
+    value = str(address).strip().lower()
+    return value.endswith(f"@{INTERNAL_EMAIL_DOMAIN}")
 
 
 def _launch_integration_limit(current_user: dict):
@@ -177,6 +195,18 @@ class CalendarEventCreateRequest(BaseModel):
     end_at: str
     location: Optional[str] = None
     attendee_emails: Optional[List[str]] = None
+
+
+class SendRecommendedReplyRequest(BaseModel):
+    email_id: str
+    suggested_reply: str
+    subject: Optional[str] = None
+
+
+class ReclassifyPriorityEmailRequest(BaseModel):
+    email_id: str
+    provider: str
+    priority_level: str
 
 
 def _heuristic_priority(email: Dict[str, Any]) -> Dict[str, Any]:
@@ -439,7 +469,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
                                 ),
                                 "role": "user",
                                 "subscription_tier": "free",
-                                "is_master_account": auth_resp.user.email == "andre@thestrategysquad.com.au",
+                                "is_master_account": _is_master_admin(auth_resp.user.email),
                                 "created_at": now_iso,
                                 "updated_at": now_iso,
                             }
@@ -532,7 +562,7 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
                                 "full_name": (auth_resp.user.user_metadata or {}).get("full_name") or (auth_resp.user.user_metadata or {}).get("name") or "",
                                 "role": "user",
                                 "subscription_tier": "free",
-                                "is_master_account": auth_resp.user.email == "andre@thestrategysquad.com.au",
+                                "is_master_account": _is_master_admin(auth_resp.user.email),
                                 "created_at": now_iso,
                                 "updated_at": now_iso,
                             }
@@ -1258,7 +1288,7 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
                     conversation_id = email.get("conversationId", "")
                     
                     # Determine if external
-                    is_external = any(not addr.endswith("@thestrategysquad.com") for addr in recipient_addresses if addr)
+                    is_external = any(not _is_internal_address(addr) for addr in recipient_addresses if addr)
                     
                     # Store sent metadata for Watchtower context
                     email_doc = {
@@ -1288,7 +1318,7 @@ async def run_comprehensive_email_analysis(user_id: str, job_id: str):
                     emails_by_sender[sender] = emails_by_sender.get(sender, 0) + 1
                 
                 # Detect client vs internal emails
-                is_external = not sender.endswith("@thestrategysquad.com") if sender else True
+                is_external = not _is_internal_address(sender) if sender else True
                 
                 if is_external and emails_by_sender.get(sender, 0) >= 3:
                     # Likely a client - extract intelligence
@@ -1843,6 +1873,68 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
 
 # ==================== CALENDAR INTEGRATION ====================
 
+@router.get("/email/calendar/events")
+async def get_cached_calendar_events(
+    days_ahead: int = 30,
+    current_user: dict = Depends(get_current_user),
+):
+    """Provider-agnostic cached calendar events for UI parity and degraded mode."""
+    rows = await get_user_calendar_events_supabase(get_sb(), current_user["id"], limit=200)
+    now = datetime.now(timezone.utc)
+    horizon = now + timedelta(days=max(1, min(days_ahead, 90)))
+    events = []
+    for row in rows:
+        start_value = row.get("start_time")
+        end_value = row.get("end_time")
+        start_dt = _safe_parse_dt(start_value)
+        if start_dt and start_dt > horizon:
+            continue
+        attendees = row.get("attendees") or []
+        attendee_names = []
+        if isinstance(attendees, list):
+            for item in attendees:
+                if isinstance(item, dict):
+                    attendee_names.append(item.get("name") or item.get("email") or "Attendee")
+                elif isinstance(item, str):
+                    attendee_names.append(item)
+        events.append({
+            "id": row.get("graph_event_id") or row.get("id"),
+            "subject": row.get("subject"),
+            "start": start_value,
+            "end": end_value,
+            "location": row.get("location"),
+            "attendees": attendee_names,
+            "organizer": row.get("organizer_name") or row.get("organizer_email"),
+            "preview": row.get("body_preview", ""),
+            "is_all_day": bool(row.get("is_all_day")),
+            "importance": "normal",
+        })
+    events.sort(key=lambda event: str(event.get("start") or ""))
+    return {
+        "events": events,
+        "total": len(events),
+        "date_range": {"start": now.isoformat(), "end": horizon.isoformat()},
+        "source": "cache",
+    }
+
+
+@router.post("/email/calendar/sync")
+async def sync_calendar_provider_aware(
+    provider: str = "outlook",
+    current_user: dict = Depends(get_current_user),
+):
+    """Calendar sync endpoint with provider-aware messaging."""
+    normalized_provider = (provider or "outlook").strip().lower()
+    if normalized_provider == "outlook":
+        return await sync_calendar(current_user=current_user)
+    if normalized_provider == "gmail":
+        raise HTTPException(
+            status_code=400,
+            detail="Gmail calendar sync is not configured yet. Connect Outlook or use cached calendar data.",
+        )
+    raise HTTPException(status_code=400, detail="Unsupported provider. Use outlook or gmail.")
+
+
 @router.get("/outlook/calendar/events")
 async def get_calendar_events(
     days_ahead: int = 14,
@@ -2111,7 +2203,24 @@ async def analyze_email_priority(current_user: dict = Depends(get_current_user))
     recent_emails = _filter_replied_inbox_emails(recent_inbox_emails, recent_sent_emails)[:50]
     
     if not recent_emails:
-        return {"message": "No emails to analyze. Please sync your Outlook first."}
+        provider_hint = "connected mailbox"
+        try:
+            conn_rows = (
+                get_sb()
+                .table("email_connections")
+                .select("provider")
+                .eq("user_id", user_id)
+                .eq("connected", True)
+                .limit(2)
+                .execute()
+            )
+            providers = [str((row or {}).get("provider") or "").strip().lower() for row in (conn_rows.data or [])]
+            providers = [p for p in providers if p]
+            if providers:
+                provider_hint = " / ".join(sorted(set(providers)))
+        except Exception:
+            pass
+        return {"message": f"No emails to analyze yet. Run a sync for your {provider_hint} account first."}
     
     # Get email intelligence for relationship context from Supabase
     email_intel = await get_email_intelligence_supabase(get_sb(), user_id)
@@ -2389,6 +2498,158 @@ Return ONLY valid JSON in this exact format:
         import traceback
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Suggestion failed: {str(e)}")
+
+
+@router.get("/email/folders")
+async def get_email_folders(
+    provider: Optional[str] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    """Return folder inventory for connected mailbox data."""
+    user_id = current_user["id"]
+    normalized_provider = (provider or "").strip().lower() or None
+    folders = await list_user_email_folders_supabase(
+        get_sb(),
+        user_id=user_id,
+        provider=normalized_provider,
+    )
+    defaults = ["inbox", "sentitems", "drafts", "archive", "junkemail", "deleteditems"]
+    existing_names = {item.get("name") for item in folders}
+    for name in defaults:
+        if name not in existing_names:
+            folders.append({"name": name, "count": 0, "latest_received": None})
+    folders = sorted(folders, key=lambda item: item.get("count", 0), reverse=True)
+    return {
+        "provider": normalized_provider,
+        "folders": folders,
+        "total_folders": len(folders),
+    }
+
+
+@router.get("/email/messages")
+async def get_email_messages(
+    provider: Optional[str] = None,
+    folder: Optional[str] = "inbox",
+    limit: int = 50,
+    offset: int = 0,
+    current_user: dict = Depends(get_current_user),
+):
+    """Canonical mailbox list endpoint used by inbox UI."""
+    user_id = current_user["id"]
+    rows = await get_user_emails_page_supabase(
+        get_sb(),
+        user_id=user_id,
+        provider=(provider or "").strip().lower() or None,
+        folder=(folder or "").strip().lower() or None,
+        limit=limit,
+        offset=offset,
+    )
+    return {
+        "provider": (provider or "").strip().lower() or None,
+        "folder": (folder or "").strip().lower() or None,
+        "offset": max(0, int(offset)),
+        "limit": max(1, min(int(limit), 200)),
+        "count": len(rows),
+        "messages": rows,
+    }
+
+
+@router.post("/email/send-recommended-reply")
+async def send_recommended_reply(
+    payload: SendRecommendedReplyRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Creates an auditable send action and returns provider compose links.
+    This keeps operator control while enabling in-app recommended reply flow.
+    """
+    user_id = current_user["id"]
+    message = await find_email_by_id_supabase(get_sb(), payload.email_id)
+    if not message:
+        message = await find_email_by_graph_message_id_supabase(get_sb(), user_id, payload.email_id)
+    if not message or message.get("user_id") != user_id:
+        raise HTTPException(status_code=404, detail="Email not found")
+
+    from_address = (message.get("from_address") or "").strip()
+    if not from_address:
+        raise HTTPException(status_code=400, detail="Email sender is missing")
+
+    subject = (payload.subject or message.get("subject") or "Follow up").strip()
+    if not subject.lower().startswith("re:"):
+        subject = f"Re: {subject}"
+
+    body = (payload.suggested_reply or "").strip()
+    if not body:
+        raise HTTPException(status_code=400, detail="Suggested reply is required")
+
+    web_link = (message.get("web_link") or "").strip()
+    provider = (message.get("provider") or "").strip().lower()
+    encoded_subject = urllib.parse.quote(subject)
+    encoded_body = urllib.parse.quote(body)
+    mailto_link = f"mailto:{urllib.parse.quote(from_address)}?subject={encoded_subject}&body={encoded_body}"
+    provider_compose_link = mailto_link
+    if provider == "gmail":
+        provider_compose_link = f"https://mail.google.com/mail/?view=cm&fs=1&to={urllib.parse.quote(from_address)}&su={encoded_subject}&body={encoded_body}"
+    elif provider == "outlook":
+        provider_compose_link = f"https://outlook.office.com/mail/deeplink/compose?to={urllib.parse.quote(from_address)}&subject={encoded_subject}&body={encoded_body}"
+
+    # Audit intent so send decisions are traceable.
+    try:
+        get_sb().table("email_tasks").insert({
+            "user_id": user_id,
+            "provider": provider or "unknown",
+            "email_id": message.get("graph_message_id") or message.get("id"),
+            "task_text": f"Reply drafted for {from_address}: {subject}",
+            "status": "pending",
+        }).execute()
+    except Exception as exc:
+        logger.warning(f"Failed to write reply task audit: {exc}")
+
+    return {
+        "status": "ready_to_send",
+        "provider": provider or "unknown",
+        "to": from_address,
+        "subject": subject,
+        "manual_send_required": True,
+        "compose_link": provider_compose_link,
+        "mailbox_link": web_link or None,
+    }
+
+
+@router.post("/email/priority/reclassify")
+async def reclassify_priority_email(
+    payload: ReclassifyPriorityEmailRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Canonical reclassification endpoint for priority inbox."""
+    user_id = current_user["id"]
+    level = (payload.priority_level or "").strip().lower()
+    if level not in {"high", "medium", "low"}:
+        raise HTTPException(status_code=400, detail="priority_level must be high, medium, or low")
+    provider = (payload.provider or "").strip().lower()
+    if not provider:
+        raise HTTPException(status_code=400, detail="provider is required")
+    email_id = (payload.email_id or "").strip()
+    if not email_id:
+        raise HTTPException(status_code=400, detail="email_id is required")
+
+    result = (
+        get_sb()
+        .table("priority_inbox")
+        .update({"user_override": level, "updated_at": datetime.now(timezone.utc).isoformat()})
+        .eq("user_id", user_id)
+        .eq("provider", provider)
+        .eq("email_id", email_id)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Priority inbox row not found")
+    return {
+        "status": "ok",
+        "email_id": email_id,
+        "provider": provider,
+        "user_override": level,
+    }
 
 
 @router.get("/email/priority-inbox")

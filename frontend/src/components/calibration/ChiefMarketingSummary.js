@@ -278,6 +278,43 @@ function buildCustomerReviewSignals(full) {
     : 'No verifiable customer review footprint detected in this scan, so BIQc suppresses deep narrative claims until stronger evidence is observed.';
 
   return { reviewEvidence, customerReviewSignals, hasReviewData, confidenceBand, impact, depthNarrative };
+  const impact = hasReviewData
+    ? [
+      {
+        fundamental: 'Conversion rate',
+        impact: '+6% to +18%',
+        mechanism: 'Proof-backed messaging reduces buyer doubt during first-touch evaluation.',
+      },
+      {
+        fundamental: 'Customer acquisition cost',
+        impact: '-8% to -22%',
+        mechanism: 'Higher trust density improves paid and organic click-to-enquiry efficiency.',
+      },
+      {
+        fundamental: 'Gross profit',
+        impact: '+2 to +6 pts margin',
+        mechanism: 'Stronger credibility reduces discount pressure and supports value-based pricing.',
+      },
+    ]
+    : [
+      {
+        fundamental: 'Conversion rate',
+        impact: '-10% to -25% drag risk',
+        mechanism: 'Low visible proof forces prospects to delay or abandon decision.',
+      },
+      {
+        fundamental: 'Customer acquisition cost',
+        impact: '+12% to +30% risk',
+        mechanism: 'Paid campaigns require more spend to overcome trust gaps.',
+      },
+      {
+        fundamental: 'Gross profit',
+        impact: '-3 to -8 pts margin risk',
+        mechanism: 'Sales teams compensate weak proof with discounting.',
+      },
+    ];
+
+  return { reviewEvidence, customerReviewSignals, hasReviewData, confidenceBand, impact };
 }
 
 function buildStaffImpactSignals(staffSignals) {
@@ -363,6 +400,46 @@ function buildStaffImpactSignals(staffSignals) {
     : 'No public staff-review or structure markers were verified. BIQc reports risk posture only and does not infer hidden team dynamics.';
 
   return { impact, depthNarrative };
+  const hasTeamMembers = (staffSignals.teamMembers || []).length > 0;
+  const hasAny = staffSignals.hasStaffData;
+
+  const impact = hasAny
+    ? [
+      {
+        fundamental: 'Service delivery capacity',
+        impact: hasTeamMembers ? 'Stronger execution continuity' : 'Moderate continuity risk',
+        mechanism: 'Visible role structure reduces key-person dependency and delivery bottlenecks.',
+      },
+      {
+        fundamental: 'Revenue retention',
+        impact: reviewCount > 0 ? '+3% to +10% retention support' : 'Retention volatility risk',
+        mechanism: 'Healthier staff signals correlate with stronger customer experience consistency.',
+      },
+      {
+        fundamental: 'Operating profit',
+        impact: reviewCount > 0 ? '+1 to +4 pts margin support' : '-2 to -6 pts margin risk',
+        mechanism: 'Lower team friction reduces rework, escalation cost, and service leakage.',
+      },
+    ]
+    : [
+      {
+        fundamental: 'Service delivery capacity',
+        impact: 'Unquantified risk',
+        mechanism: 'No verifiable staffing signals limits execution confidence.',
+      },
+      {
+        fundamental: 'Revenue retention',
+        impact: 'Potential churn pressure',
+        mechanism: 'Team health blind spots often surface as inconsistent client experience.',
+      },
+      {
+        fundamental: 'Operating profit',
+        impact: 'Margin leakage risk',
+        mechanism: 'Unseen people issues typically increase rework and management overhead.',
+      },
+    ];
+
+  return { impact };
 }
 
 const ScoreBar = ({ score, max = 10, color }) => {
@@ -1051,6 +1128,11 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               No explicit customer review markers were found in the current public scan.
             </p>
           ) : null}
+          ) : (
+            <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>
+              No explicit customer review markers were found in the current public scan.
+            </p>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             {customerReviews.impact.map((row, idx) => (
@@ -1066,6 +1148,9 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Review Intelligence Depth</p>
             <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
               {customerReviews.depthNarrative}
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Depth Preview (Example)</p>
+            <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+              Example depth BIQc can provide: "Across 47 public reviews, response-time complaints appeared in 29.8% of negative mentions, correlated with a 14-day sales-cycle extension. Modeled impact: 6-11% conversion drag and 2.1-3.8 point gross-margin compression due to discount-led recovery."
             </p>
           </div>
         </div>
@@ -1128,6 +1213,9 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Staff Intelligence Depth</p>
                 <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
                   {staffImpact.depthNarrative}
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Depth Preview (Example)</p>
+                <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+                  Example depth BIQc can provide: "Team sentiment declined from neutral to negative over 6 weeks, with repeated workload and escalation markers. Predicted effect: 9-16% delivery-cycle slippage, 4-9% retention risk, and 1.5-3.2 point operating-margin pressure unless staffing bottlenecks are corrected."
                 </p>
               </div>
             </div>

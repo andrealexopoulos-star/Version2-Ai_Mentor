@@ -208,8 +208,8 @@ class TestBIQcModeLabelVerification:
     """Verify proprietary BIQc mode labels in frontend code"""
     
     def test_soundboard_modes_use_biqc_labels(self):
-        """Verify MySoundBoard.js uses BIQc proprietary labels"""
-        with open('/app/frontend/src/pages/MySoundBoard.js', 'r') as f:
+        """Verify canonical mode policy defines BIQc proprietary labels"""
+        with open('/app/frontend/src/lib/soundboardPolicy.js', 'r') as f:
             content = f.read()
         
         # Check for BIQc mode labels
@@ -221,7 +221,7 @@ class TestBIQcModeLabelVerification:
         for term in forbidden:
             assert term not in content, f"Found forbidden term '{term}' in MySoundBoard.js"
         
-        print("MySoundBoard.js uses proprietary BIQc mode labels (no ChatGPT/Gemini/Claude)")
+        print("soundboardPolicy.js uses proprietary BIQc mode labels (no ChatGPT/Gemini/Claude)")
     
     def test_soundboard_panel_modes_use_biqc_labels(self):
         """Verify SoundboardPanel.js uses BIQc proprietary labels"""

@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import { getBackendUrl } from '../config/urls';
+import { callEdgeFunction } from '../lib/api';
 
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 const CACHE_KEY = 'biqc_snapshot_cache';
 
 /**
@@ -68,13 +67,7 @@ export function useSnapshot() {
     } catch {}
 
     // SLOW PATH: Edge Function (full cognition — 10-30s)
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/biqc-insights-cognitive`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-      body: '{}',
-    });
-    if (!res.ok) throw new Error(`${res.status}`);
-    return res.json();
+    return await callEdgeFunction('biqc-insights-cognitive', {});
   }, []);
 
   // Initial load: cache first → fast backend → edge function background

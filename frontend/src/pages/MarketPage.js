@@ -28,6 +28,7 @@ const STATUS_MAP = {
   DRIFT: { label: 'Slipping', color: '#F59E0B', bg: '#F59E0B08', b: '#F59E0B25' },
   COMPRESSION: { label: 'Under Pressure', color: '#FF6A00', bg: '#FF6A0008', b: '#FF6A0025' },
   CRITICAL: { label: 'At Risk', color: '#EF4444', bg: '#EF444408', b: '#EF444425' },
+  UNKNOWN: { label: 'Waiting for data', color: '#64748B', bg: '#64748B12', b: '#64748B2A' },
 };
 
 const GaugeMeter = ({ value, label, suffix = '%', thresholds = [30, 60, 80] }) => {
@@ -57,6 +58,7 @@ const MarketPage = () => {
   const [gapsOpen, setGapsOpen] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
   const [activeTab, setActiveTab] = useState('intelligence');
+  const [showProvenance, setShowProvenance] = useState(false);
   const [reports, setReports] = useState([]);
   const [watchtower, setWatchtower] = useState(null);
   const [pressure, setPressure] = useState(null);
@@ -110,6 +112,7 @@ const MarketPage = () => {
       apiClient.get('/market-intelligence').then(r => r.data?.cognitive && r.data?.has_data ? r.data.cognitive : Promise.reject('no data')),
       (async () => {
         const d = await callEdgeFunction('biqc-insights-cognitive', {}, 45000);
+        const d = await callEdgeFunction('biqc-insights-cognitive', {});
         if (!d?.cognitive) throw new Error('no cognitive');
         return d.cognitive;
       })(),
@@ -129,9 +132,9 @@ const MarketPage = () => {
 
   const c = snapshot || {};
   const stateStatus = typeof c.system_state === 'object' ? c.system_state?.status : c.system_state;
-  const confidence = typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level;
+  const rawConfidence = typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level;
   const interpretation = typeof c.system_state === 'object' ? c.system_state?.interpretation : null;
-  const st = STATUS_MAP[stateStatus] || STATUS_MAP.STABLE;
+  const st = STATUS_MAP[stateStatus] || STATUS_MAP.UNKNOWN;
   const memo = c.executive_memo || c.memo || '';
   const alignment = c.alignment?.narrative || '';
   const goalProb = c.market_intelligence?.probability_of_goal_achievement || c.probability_of_goal_achievement;
@@ -159,7 +162,7 @@ const MarketPage = () => {
   const pressureAvailable = Boolean(pressure?.pressures && Object.keys(pressure.pressures).length > 0);
   const freshnessAvailable = Boolean(freshness?.freshness && Object.keys(freshness.freshness).length > 0);
   const watchtowerAvailable = Boolean(
-    (!watchtower?.error && Array.isArray(watchtower?.events))
+    (!watchtower?.error && Array.isArray(watchtower?.events) && watchtower.events.length > 0)
     || (watchtower?.positions && Object.keys(watchtower.positions).length > 0)
   );
   const marketPressureSummary = pressureAvailable
@@ -175,7 +178,8 @@ const MarketPage = () => {
         .map(([domain, value]) => `${domain}: ${value.status}`)
         .join(' · ')
     : null;
-  const hasLiveMarketContext = Boolean(snapshot || cognitionMarket || watchtowerAvailable || pressureAvailable || freshnessAvailable);
+  const hasPrimaryMarketPayload = Boolean(snapshot || cognitionMarket);
+  const hasLiveMarketContext = Boolean(hasPrimaryMarketPayload || watchtowerAvailable || pressureAvailable || freshnessAvailable);
 
   const toConfidencePct = (raw) => {
     if (raw == null) return undefined;
@@ -183,10 +187,18 @@ const MarketPage = () => {
     if (!Number.isFinite(n)) return undefined;
     return n > 0 && n <= 1 ? n * 100 : n;
   };
+  const normalizedBannerConfidence = toConfidencePct(rawConfidence);
   const marketIntelLineage = cognitionMarket?.lineage ?? c?.lineage;
   const marketIntelFreshness = cognitionMarket?.data_freshness ?? c?.data_freshness;
   const marketIntelConfidence = toConfidencePct(cognitionMarket?.confidence_score ?? c?.confidence_score)
     ?? toConfidencePct(typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level);
+  const provenanceRows = [
+    { label: 'Primary narrative', value: hasPrimaryMarketPayload ? 'Live' : 'Calibrating' },
+    { label: 'Watchtower feed', value: watchtowerAvailable ? 'Live' : (watchtowerMessage || 'Unavailable') },
+    { label: 'Pressure calibration', value: pressureAvailable ? (marketPressureSummary || 'Live') : (pressureMessage || 'Unavailable') },
+    { label: 'Evidence freshness', value: freshnessAvailable ? (freshnessSummary || 'Live') : (freshnessMessage || 'Unavailable') },
+    { label: 'Confidence', value: marketIntelConfidence != null ? `${Math.round(marketIntelConfidence)}%` : 'Unknown' },
+  ];
 
   const sendToChat = (msg) => setActionMessage(msg);
 
@@ -252,10 +264,16 @@ const MarketPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full" style={{ background: st.color, boxShadow: `0 0 12px ${st.color}50` }} />
-              <span className="text-lg font-bold" style={{ color: st.color, fontFamily: fontFamily.display }}>{hasLiveMarketContext ? st.label : 'Waiting for data'}</span>
+              <span className="text-lg font-bold" style={{ color: st.color, fontFamily: fontFamily.display }}>
+                {hasPrimaryMarketPayload ? st.label : 'Waiting for data'}
+              </span>
             </div>
             <div className="flex items-center gap-2">
-              {confidence && <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: st.color, background: `${st.color}15`, fontFamily: fontFamily.mono }}>{confidence}% confidence</span>}
+              {normalizedBannerConfidence != null && hasPrimaryMarketPayload && (
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: st.color, background: `${st.color}15`, fontFamily: fontFamily.mono }}>
+                  {Math.round(normalizedBannerConfidence)}% confidence
+                </span>
+              )}
               <button onClick={() => { setLoading(true); fetchSnapshot().finally(() => setLoading(false)); }} className="p-1.5 rounded-lg hover:bg-white/5" data-testid="market-refresh">
                 <RefreshCw className="w-3.5 h-3.5 text-[#64748B]" />
               </button>
@@ -273,6 +291,31 @@ const MarketPage = () => {
           </div>
           {interpretation && <p className="text-sm text-[#9FB0C3] leading-relaxed">{interpretation}</p>}
           {!hasLiveMarketContext && <p className="text-sm text-[#64748B]">Connect your tools and complete calibration to see where your business stands.</p>}
+          {!hasPrimaryMarketPayload && hasLiveMarketContext && (
+            <p className="text-sm text-[#64748B]">Supporting signals are live, but the primary market narrative is still calibrating.</p>
+          )}
+          <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(148,163,184,0.2)' }}>
+            <button
+              type="button"
+              onClick={() => setShowProvenance((prev) => !prev)}
+              className="text-xs flex items-center gap-1"
+              style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}
+              data-testid="market-provenance-toggle"
+            >
+              Evidence chain
+              {showProvenance ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+            {showProvenance && (
+              <div className="mt-2 grid gap-2 sm:grid-cols-2" data-testid="market-provenance-drawer">
+                {provenanceRows.map((item) => (
+                  <div key={item.label} className="rounded-lg px-3 py-2" style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.22)' }}>
+                    <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>{item.label}</p>
+                    <p className="mt-1 text-xs" style={{ color: '#CBD5E1' }}>{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]" data-testid="market-ux-main-grid">

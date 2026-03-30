@@ -49,6 +49,68 @@ async def get_user_emails_supabase(
         return []
 
 
+async def get_user_emails_page_supabase(
+    supabase_client,
+    user_id: str,
+    provider: Optional[str] = None,
+    folder: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> List[Dict[str, Any]]:
+    """Get paginated user emails with optional provider/folder filters."""
+    try:
+        safe_limit = max(1, min(int(limit), 200))
+        safe_offset = max(0, int(offset))
+        query = supabase_client.table("outlook_emails").select("*").eq("user_id", user_id)
+        if provider:
+            query = query.eq("provider", provider)
+        if folder:
+            query = query.eq("folder", folder)
+        result = (
+            query.order("received_date", desc=True)
+            .range(safe_offset, safe_offset + safe_limit - 1)
+            .execute()
+        )
+        return result.data if result.data else []
+    except Exception as e:
+        logger.error(f"Error fetching paginated emails from Supabase: {e}")
+        return []
+
+
+async def list_user_email_folders_supabase(
+    supabase_client,
+    user_id: str,
+    provider: Optional[str] = None,
+    lookback_limit: int = 2000,
+) -> List[Dict[str, Any]]:
+    """List folders available for a user with counts from recent indexed mail."""
+    try:
+        query = (
+            supabase_client.table("outlook_emails")
+            .select("folder,received_date,provider")
+            .eq("user_id", user_id)
+            .order("received_date", desc=True)
+            .limit(max(100, min(int(lookback_limit), 5000)))
+        )
+        if provider:
+            query = query.eq("provider", provider)
+        result = query.execute()
+        rows = result.data or []
+        folder_map: Dict[str, Dict[str, Any]] = {}
+        for row in rows:
+            name = (row.get("folder") or "inbox").strip().lower()
+            rec = folder_map.setdefault(name, {"name": name, "count": 0, "latest_received": None})
+            rec["count"] += 1
+            received = row.get("received_date")
+            if received and (not rec["latest_received"] or str(received) > str(rec["latest_received"])):
+                rec["latest_received"] = received
+        folders = sorted(folder_map.values(), key=lambda item: item["count"], reverse=True)
+        return folders
+    except Exception as e:
+        logger.error(f"Error listing email folders: {e}")
+        return []
+
+
 async def count_user_emails_supabase(supabase_client, user_id: str) -> int:
     """Count user's emails in Supabase"""
     try:

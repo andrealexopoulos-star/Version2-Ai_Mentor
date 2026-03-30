@@ -32,6 +32,14 @@ const MEET_BIQC_ITEMS = [
   { label: 'Alerts & Watchtower', blurb: 'Track operational risk before it compounds', path: '/platform/alerts' },
   { label: 'Automations', blurb: 'Turn decisions into repeatable execution', path: '/platform/automations' },
   { label: 'Integrations Demo', blurb: 'Connect your stack and run on evidence', path: '/platform/integrations-demo' },
+  { label: 'Pricing',   path: '/pricing' },
+  { label: 'Trust',     path: '/trust',   dropdown: 'trust' },
+];
+
+const MEET_BIQC_ITEMS = [
+  { label: 'Platform',                    blurb: 'All flagship pages — see BIQc end-to-end',          path: '/platform' },
+  { label: 'Intelligence & Integrations', blurb: 'How BIQc ingests and acts on your business data',   path: '/intelligence' },
+  { label: 'Soundboard',                  blurb: 'Live AI modes — Boardroom, Finance, Ops and more',  path: '/meet/soundboard' },
 ];
 
 const TrustDropdown = ({ open, onClose }) => {

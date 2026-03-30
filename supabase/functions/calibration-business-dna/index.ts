@@ -21,10 +21,14 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || "";
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
+const QA_BYPASS_AUTH = ["1", "true", "yes"].includes((Deno.env.get("QA_BYPASS_AUTH") || "").toLowerCase());
+const QA_BYPASS_SECRET = Deno.env.get("QA_BYPASS_SECRET") || "";
+const QA_BYPASS_USER_ID = Deno.env.get("QA_BYPASS_USER_ID") || "";
+const QA_BYPASS_EMAIL = Deno.env.get("QA_BYPASS_EMAIL") || "qa@local";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, x-qa-bypass, content-type",
 };
 
 function failureResponse(
@@ -308,12 +312,8 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "No auth" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace("Bearer ", "").trim();
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const token = authHeader.replace("Bearer ", "");
@@ -324,6 +324,31 @@ serve(async (req) => {
         user = data.user;
       }
     } catch { /* service role key or invalid JWT — fall through */ }
+    let user: { id: string; email?: string } | null = null;
+
+    if (token) {
+      const { data: { user: authedUser }, error: authError } = await supabase.auth.getUser(token);
+      if (!authError && authedUser) {
+        user = authedUser;
+      }
+    }
+
+    // QA calibration fast-path: backend proxy may forward service-role bearer token.
+    // Only allow fallback when explicit QA bypass is enabled and user context is pinned.
+    if (!user) {
+      const qaBypassHeader = (req.headers.get("X-QA-Bypass") || "").trim();
+      const usingServiceRoleToken = token.length > 0 && token === SUPABASE_SERVICE_ROLE_KEY;
+      const qaBypassValid = QA_BYPASS_AUTH && QA_BYPASS_SECRET.length > 0 && qaBypassHeader === QA_BYPASS_SECRET;
+      if (qaBypassValid && usingServiceRoleToken && QA_BYPASS_USER_ID) {
+        user = { id: QA_BYPASS_USER_ID, email: QA_BYPASS_EMAIL };
+      }
+    }
+
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const body = await req.json();
 

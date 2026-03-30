@@ -387,7 +387,7 @@ const TermsAndConditions = () => {
                 </p>
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                   <p><strong>Business Intelligence Quotient Centre Pty Ltd</strong></p>
-                  <p>Email: legal@thestrategysquad.com.au</p>
+                  <p>Email: legal@biqc.ai</p>
                   <p>Australia</p>
                 </div>
               </div>

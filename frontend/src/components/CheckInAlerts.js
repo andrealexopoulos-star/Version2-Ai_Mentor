@@ -1,21 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, Video, RefreshCw } from 'lucide-react';
 import { supabase } from '../context/SupabaseAuthContext';
+import { callEdgeFunction } from '../lib/api';
 import { fontFamily } from '../design-system/tokens';
-
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 const callCheckin = async (action, extra = {}) => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return null;
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/checkin-manager`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json', 'apikey': ANON_KEY },
-    body: JSON.stringify({ action, ...extra }),
-  });
-  if (!res.ok) return null;
-  return res.json();
+  return await callEdgeFunction('checkin-manager', { action, ...extra });
 };
 
 export const CheckInAlerts = () => {

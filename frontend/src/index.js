@@ -5,6 +5,17 @@ import "@/App.css";
 import "@/mobile.css";
 import App from "@/App";
 
+if (process.env.NODE_ENV === "production") {
+  // Prevent leaking internal implementation details in end-user browser consoles.
+  /* eslint-disable no-console */
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+  /* eslint-enable no-console */
+}
+
 // ═══════════════════════════════════════════════════════════════
 // LAYER 0: PRE-REACT SCROLL UNLOCK — runs synchronously before CSS paint
 // Inline styles on DOM elements override ALL stylesheets (CSS specificity law).

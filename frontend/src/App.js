@@ -22,6 +22,7 @@ import SiteHomePage from './pages/website/HomePage';
 import SitePlatformPage from './pages/website/PlatformPage';
 import SiteIntelligencePage from './pages/website/IntelligencePage';
 import SiteIntegrationsPage from './pages/website/IntegrationsPage';
+import SoundboardPage from './pages/website/SoundboardPage';
 import SiteTrustLandingPage from './pages/website/TrustLandingPage';
 import AILearningGuarantee from './pages/AILearningGuarantee';
 import BlogPage from './pages/BlogPage';
@@ -47,6 +48,7 @@ import EmailInbox from './pages/EmailInbox';
 import CalendarView from './pages/CalendarView';
 import CalibrationAdvisor from './pages/CalibrationAdvisor';
 // CalibrationQaAccess removed — calibration runs after first signup only
+import CalibrationQaAccess from './pages/CalibrationQaAccess';
 import ForensicCalibration from './pages/ForensicCalibration';
 
 // ── Intelligence pages ────────────────────────────────────────────────────────
@@ -211,6 +213,7 @@ function AppRoutes() {
     const warmup = async () => {
       try {
         await apiClient.get('/health/warmup');
+        await apiClient.post('/edge/functions/warm-cognitive-engine', { payload: {} }).catch(() => {});
       } catch {}
     };
     warmup();
@@ -226,6 +229,7 @@ function AppRoutes() {
         <Route path="/platform" element={<SitePlatformPage />} />
         <Route path="/intelligence" element={<SiteIntelligencePage />} />
         <Route path="/our-integrations" element={<SiteIntegrationsPage />} />
+        <Route path="/meet/soundboard" element={<SoundboardPage />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/trust" element={<SiteTrustLandingPage />} />
         <Route path="/trust/ai-learning-guarantee" element={<AILearningGuarantee />} />
@@ -281,6 +285,7 @@ function AppRoutes() {
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
         <Route path="/calibration" element={<ProtectedRoute><CalibrationAdvisor /></ProtectedRoute>} />
         {/* /calibration-qa removed — calibration is triggered after first signup only */}
+        <Route path="/calibration-qa" element={<CalibrationQaAccess />} />
         <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 
         {/* Subscription */}

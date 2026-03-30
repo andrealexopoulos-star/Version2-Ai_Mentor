@@ -657,7 +657,7 @@ export default function Integrations() {
       return {
         id: String(row?.id || '').trim().toLowerCase(),
         name: row?.name || 'Unknown provider',
-        domain: 'merge.dev',
+        domain: 'integration-network',
         category: primaryCategory,
         desc: row?.description || `Connect ${row?.name || 'provider'} via Merge`,
         type: 'merge_catalog',
