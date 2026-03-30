@@ -28,6 +28,17 @@ export const getAppBaseUrl = () => {
  * wrong server. window.location.origin is ALWAYS correct.
  */
 export const getBackendUrl = () => {
+  const backendUrl = (process.env.REACT_APP_BACKEND_URL || '').trim();
+
+  // On Azure frontend hosts, prefer explicit backend URL wiring.
+  // This avoids drifting to an unrelated same-origin /api upstream.
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const host = window.location.hostname.toLowerCase();
+    if (host.endsWith('.azurewebsites.net') && backendUrl) {
+      return backendUrl.replace(/\/$/, '');
+    }
+  }
+
   // In deployed environments, always prefer the current origin (/api reverse-proxy)
   // to avoid stale build-time backend URLs causing 401/404 mismatches.
   if (typeof window !== 'undefined' && window.location?.origin) {
@@ -36,7 +47,6 @@ export const getBackendUrl = () => {
     }
   }
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
   if (backendUrl) return backendUrl.replace(/\/$/, '');
 
   if (typeof window !== 'undefined' && window.location?.hostname === 'localhost') return 'http://localhost:8000';

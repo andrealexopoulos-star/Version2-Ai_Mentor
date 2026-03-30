@@ -54,13 +54,12 @@ export const StageProgressBar = ({ stage = 'analyzing', progress = null, started
   const [displayPct, setDisplayPct] = useState(5);
   const sc = STAGE_CONFIG[stage] || STAGE_CONFIG.analyzing;
 
-  // If real progress provided, use it; otherwise approximate over 30s
   useEffect(() => {
+    if (stage === 'complete') { setDisplayPct(100); return; }
     if (progress !== null) { setDisplayPct(Math.min(progress, 99)); return; }
     if (!startedAt) { setDisplayPct(5); return; }
     const tick = () => {
       const elapsed = (Date.now() - startedAt) / 1000;
-      // Ease-out curve: 95% at 30s, slows before 100
       const approx = Math.min(95, Math.round(95 * (1 - Math.exp(-elapsed / 18))));
       setDisplayPct(approx);
     };
