@@ -219,21 +219,45 @@ jobs:
 
       - name: Verify frontend image pin
         run: |
-          LIVE_FRONTEND_IMAGE=$(az webapp config container show \
-            --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
-          echo "Live frontend image: ${LIVE_FRONTEND_IMAGE}"
-          test "${LIVE_FRONTEND_IMAGE}" = "DOCKER|${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+          EXPECTED_FRONTEND_IMAGE="DOCKER|${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+          for i in $(seq 1 24); do
+            LIVE_FRONTEND_IMAGE=$(az webapp config container show \
+              --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
+            echo "Live frontend image (attempt ${i}): ${LIVE_FRONTEND_IMAGE}"
+            if [ "${LIVE_FRONTEND_IMAGE}" = "${EXPECTED_FRONTEND_IMAGE}" ]; then
+              echo "Frontend image pin verified."
+              break
+            fi
+            if [ "$i" -eq 24 ]; then
+              echo "Frontend image pin did not converge to expected tag."
+              exit 1
+            fi
+            echo "Frontend image still converging - retrying in 5s"
+            sleep 5
+          done
 
       - name: Verify backend image pin
         run: |
-          LIVE_BACKEND_IMAGE=$(az webapp config container show \
-            --name ${{ env.AZURE_WEBAPP_BACKEND }} \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
-          echo "Live backend image: ${LIVE_BACKEND_IMAGE}"
-          test "${LIVE_BACKEND_IMAGE}" = "DOCKER|${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+          EXPECTED_BACKEND_IMAGE="DOCKER|${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+          for i in $(seq 1 24); do
+            LIVE_BACKEND_IMAGE=$(az webapp config container show \
+              --name ${{ env.AZURE_WEBAPP_BACKEND }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
+            echo "Live backend image (attempt ${i}): ${LIVE_BACKEND_IMAGE}"
+            if [ "${LIVE_BACKEND_IMAGE}" = "${EXPECTED_BACKEND_IMAGE}" ]; then
+              echo "Backend image pin verified."
+              break
+            fi
+            if [ "$i" -eq 24 ]; then
+              echo "Backend image pin did not converge to expected tag."
+              exit 1
+            fi
+            echo "Backend image still converging - retrying in 5s"
+            sleep 5
+          done
 
       - name: Smoke test backend health
         run: |
@@ -253,71 +277,127 @@ jobs:
 
       - name: Smoke test frontend + API routing
         run: |
-          curl --fail --silent --show-error ${{ env.PRODUCTION_URL }} > /tmp/frontend_home.html
-          grep -qi "BIQc" /tmp/frontend_home.html
+          for i in $(seq 1 12); do
+            if curl --fail --silent --show-error "${{ env.PRODUCTION_URL }}" > /tmp/frontend_home.html; then
+              if grep -qi "BIQc" /tmp/frontend_home.html; then
+                echo "Frontend homepage check passed on attempt ${i}"
+                break
+              fi
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Frontend homepage check failed after retries"
+              exit 1
+            fi
+            echo "Frontend homepage not ready yet (attempt ${i}) - retrying in 5s"
+            sleep 5
+          done
 
           # First validate direct frontend app host
-          DIRECT_CAL_CODE=$(curl --silent --output /tmp/direct_calibration_route.html --write-out "%{http_code}" ${{ env.FRONTEND_APP_URL }}/calibration)
-          echo "direct frontend host /calibration HTTP ${DIRECT_CAL_CODE}"
-          if [ "$DIRECT_CAL_CODE" -ne 200 ]; then
-            echo "Expected direct frontend host to serve SPA route /calibration"
-            cat /tmp/direct_calibration_route.html
-            exit 1
-          fi
+          for i in $(seq 1 12); do
+            DIRECT_CAL_CODE=$(curl --silent --output /tmp/direct_calibration_route.html --write-out "%{http_code}" ${{ env.FRONTEND_APP_URL }}/calibration)
+            echo "direct frontend host /calibration HTTP ${DIRECT_CAL_CODE} (attempt ${i})"
+            if [ "$DIRECT_CAL_CODE" -eq 200 ]; then
+              break
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Expected direct frontend host to serve SPA route /calibration"
+              cat /tmp/direct_calibration_route.html
+              exit 1
+            fi
+            sleep 5
+          done
 
-          DIRECT_API_HEALTH_CODE=$(curl --silent --output /tmp/direct_api_health.json --write-out "%{http_code}" ${{ env.FRONTEND_APP_URL }}/api/health)
-          echo "direct frontend host /api/health HTTP ${DIRECT_API_HEALTH_CODE}"
-          if [ "$DIRECT_API_HEALTH_CODE" -ne 200 ]; then
-            echo "Expected direct frontend host to proxy /api/health"
-            cat /tmp/direct_api_health.json
-            exit 1
-          fi
+          for i in $(seq 1 12); do
+            DIRECT_API_HEALTH_CODE=$(curl --silent --output /tmp/direct_api_health.json --write-out "%{http_code}" ${{ env.FRONTEND_APP_URL }}/api/health)
+            echo "direct frontend host /api/health HTTP ${DIRECT_API_HEALTH_CODE} (attempt ${i})"
+            if [ "$DIRECT_API_HEALTH_CODE" -eq 200 ]; then
+              break
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Expected direct frontend host to proxy /api/health"
+              cat /tmp/direct_api_health.json
+              exit 1
+            fi
+            sleep 5
+          done
 
           # Then validate production domain
-          CAL_CODE=$(curl --silent --output /tmp/calibration_route.html --write-out "%{http_code}" ${{ env.PRODUCTION_URL }}/calibration)
-          echo "calibration route HTTP ${CAL_CODE}"
-          if [ "$CAL_CODE" -ne 200 ]; then
-            echo "Expected production domain to serve /calibration"
-            echo "If direct host passed above, this indicates DNS/custom-domain routing drift."
-            cat /tmp/calibration_route.html
-            exit 1
-          fi
-          grep -qi "<html" /tmp/calibration_route.html
+          for i in $(seq 1 12); do
+            CAL_CODE=$(curl --silent --output /tmp/calibration_route.html --write-out "%{http_code}" ${{ env.PRODUCTION_URL }}/calibration)
+            echo "calibration route HTTP ${CAL_CODE} (attempt ${i})"
+            if [ "$CAL_CODE" -eq 200 ] && grep -qi "<html" /tmp/calibration_route.html; then
+              break
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Expected production domain to serve /calibration"
+              echo "If direct host passed above, this indicates DNS/custom-domain routing drift."
+              cat /tmp/calibration_route.html
+              exit 1
+            fi
+            sleep 5
+          done
 
-          API_FRONT_CODE=$(curl --silent --output /tmp/frontend_api_health.json --write-out "%{http_code}" ${{ env.PRODUCTION_URL }}/api/health)
-          echo "frontend-domain /api/health probe HTTP ${API_FRONT_CODE}"
-          if [ "$API_FRONT_CODE" -ne 200 ]; then
-            echo "Expected production domain to proxy /api/health"
-            echo "If direct host passed above, this indicates DNS/custom-domain routing drift."
-            cat /tmp/frontend_api_health.json
-            exit 1
-          fi
+          for i in $(seq 1 12); do
+            API_FRONT_CODE=$(curl --silent --output /tmp/frontend_api_health.json --write-out "%{http_code}" ${{ env.PRODUCTION_URL }}/api/health)
+            echo "frontend-domain /api/health probe HTTP ${API_FRONT_CODE} (attempt ${i})"
+            if [ "$API_FRONT_CODE" -eq 200 ]; then
+              break
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Expected production domain to proxy /api/health"
+              echo "If direct host passed above, this indicates DNS/custom-domain routing drift."
+              cat /tmp/frontend_api_health.json
+              exit 1
+            fi
+            sleep 5
+          done
 
-          CAL_AUTH_CODE=$(curl --silent --output /tmp/cal_status_probe.json --write-out "%{http_code}" ${{ env.PRODUCTION_URL }}/api/calibration/status)
-          echo "frontend-domain /api/calibration/status probe HTTP ${CAL_AUTH_CODE}"
-          if [ "$CAL_AUTH_CODE" -ne 401 ] && [ "$CAL_AUTH_CODE" -ne 403 ]; then
-            echo "Expected auth-gated calibration status (401/403) but got ${CAL_AUTH_CODE}"
-            cat /tmp/cal_status_probe.json
-            exit 1
-          fi
+          for i in $(seq 1 12); do
+            CAL_AUTH_CODE=$(curl --silent --output /tmp/cal_status_probe.json --write-out "%{http_code}" ${{ env.PRODUCTION_URL }}/api/calibration/status)
+            echo "frontend-domain /api/calibration/status probe HTTP ${CAL_AUTH_CODE} (attempt ${i})"
+            if [ "$CAL_AUTH_CODE" -eq 401 ] || [ "$CAL_AUTH_CODE" -eq 403 ]; then
+              break
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Expected auth-gated calibration status (401/403) but got ${CAL_AUTH_CODE}"
+              cat /tmp/cal_status_probe.json
+              exit 1
+            fi
+            sleep 5
+          done
 
-          API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" ${{ env.BACKEND_AUTH_PROBE_URL }})
-          echo "integration-status probe HTTP ${API_CODE}"
-          if [ "$API_CODE" -ne 401 ] && [ "$API_CODE" -ne 403 ]; then
-            echo "Expected auth-gated API response (401/403) but got ${API_CODE}"
-            cat /tmp/api_probe.json
-            exit 1
-          fi
+          for i in $(seq 1 12); do
+            API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" ${{ env.BACKEND_AUTH_PROBE_URL }})
+            echo "integration-status probe HTTP ${API_CODE} (attempt ${i})"
+            if [ "$API_CODE" -eq 401 ] || [ "$API_CODE" -eq 403 ]; then
+              break
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Expected auth-gated API response (401/403) but got ${API_CODE}"
+              cat /tmp/api_probe.json
+              exit 1
+            fi
+            sleep 5
+          done
 
       - name: Verify frontend custom-domain binding
         run: |
-          HOSTNAMES=$(az webapp config hostname list \
-            --webapp-name ${{ env.AZURE_WEBAPP_FRONTEND }} \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "[].name" -o tsv)
-          echo "Frontend hostnames:"
-          echo "$HOSTNAMES"
-          echo "$HOSTNAMES" | grep -q "^biqc.ai$"
+          for i in $(seq 1 12); do
+            HOSTNAMES=$(az webapp config hostname list \
+              --webapp-name ${{ env.AZURE_WEBAPP_FRONTEND }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "[].name" -o tsv)
+            echo "Frontend hostnames (attempt ${i}):"
+            echo "$HOSTNAMES"
+            if echo "$HOSTNAMES" | grep -q "^biqc.ai$"; then
+              break
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Expected custom domain biqc.ai to remain bound to frontend app."
+              exit 1
+            fi
+            sleep 5
+          done
 
       # ── PERMANENT FIX: Enforce Supabase site_url after every deploy ──────
       - name: Lock Supabase site_url to production
