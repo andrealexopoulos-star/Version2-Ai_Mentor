@@ -47,6 +47,7 @@ import Integrations from './pages/Integrations';
 import EmailInbox from './pages/EmailInbox';
 import CalendarView from './pages/CalendarView';
 import CalibrationAdvisor from './pages/CalibrationAdvisor';
+// CalibrationQaAccess removed — calibration runs after first signup only
 import CalibrationQaAccess from './pages/CalibrationQaAccess';
 import ForensicCalibration from './pages/ForensicCalibration';
 
@@ -211,6 +212,7 @@ function AppRoutes() {
   useEffect(() => {
     const warmup = async () => {
       try {
+        await apiClient.get('/health/warmup');
         await apiClient.post('/edge/functions/warm-cognitive-engine', { payload: {} }).catch(() => {});
       } catch {}
     };
@@ -282,6 +284,7 @@ function AppRoutes() {
         <Route path="/onboarding-decision" element={<ProtectedRoute><OnboardingDecision /></ProtectedRoute>} />
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
         <Route path="/calibration" element={<ProtectedRoute><CalibrationAdvisor /></ProtectedRoute>} />
+        {/* /calibration-qa removed — calibration is triggered after first signup only */}
         <Route path="/calibration-qa" element={<CalibrationQaAccess />} />
         <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 

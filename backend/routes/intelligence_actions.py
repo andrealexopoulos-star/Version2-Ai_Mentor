@@ -103,6 +103,9 @@ class SocialHandlesUpdate(BaseModel):
     twitter: Optional[str] = None
     instagram: Optional[str] = None
     facebook: Optional[str] = None
+    youtube: Optional[str] = None
+    tiktok: Optional[str] = None
+    pinterest: Optional[str] = None
 
 
 @router.put("/intelligence/social-handles")

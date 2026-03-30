@@ -1,0 +1,16 @@
+.screenshots
+.cursor
+.git
+assets
+mockups
+tmp_*
+*.png
+*.pyc
+__pycache__
+node_modules
+.env
+.env.*
+supabase_edge_functions
+docs
+memory
+reports

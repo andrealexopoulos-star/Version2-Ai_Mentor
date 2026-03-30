@@ -45,6 +45,15 @@ router = APIRouter()
 EDGE_PROXY_ALLOWLIST = {
     "biqc-insights-cognitive",
     "calibration-psych",
+    "calibration_psych",
+    "calibration-sync",
+    "calibration-engine",
+    "calibration-business-dna",
+    "scrape-business-profile",
+    "business-identity-lookup",
+    "social-enrichment",
+    "deep-web-recon",
+    "competitor-monitor",
     "calibration-sync",
     "calibration-business-dna",
     "scrape-business-profile",
@@ -53,6 +62,10 @@ EDGE_PROXY_ALLOWLIST = {
     "checkin-manager",
     "warm-cognitive-engine",
     "gmail_prod",
+    "market-analysis-ai",
+    "market-signal-scorer",
+    "browse-ai-reviews",
+    "semrush-domain-intel",
 }
 
 
@@ -68,6 +81,11 @@ async def proxy_edge_function(
     current_user: dict = Depends(get_current_user),
 ):
     """Proxy selected edge functions to avoid exposing provider URLs to clients."""
+    proxy_request_id = str(uuid.uuid4())
+    name = (function_name or "").strip()
+    if name not in EDGE_PROXY_ALLOWLIST:
+        raise HTTPException(status_code=403, detail="Edge function not allowed")
+    resolved_name = "calibration-psych" if name == "calibration_psych" else name
     name = (function_name or "").strip()
     if name not in EDGE_PROXY_ALLOWLIST:
         raise HTTPException(status_code=403, detail="Edge function not allowed")
@@ -79,6 +97,47 @@ async def proxy_edge_function(
     if not anon_key:
         raise HTTPException(status_code=503, detail="Edge proxy unavailable")
 
+    inbound_auth = request.headers.get("authorization") or ""
+    outbound_auth = inbound_auth
+    outbound_apikey = anon_key
+    if not outbound_auth.lower().startswith("bearer "):
+        # QA/dev bypass sessions are authenticated at API layer but do not
+        # have a real Supabase access token. In that path, fall back to
+        # service-role auth for internal edge-function forwarding only.
+        qa_header = (request.headers.get("X-QA-Bypass") or "").strip()
+        qa_secret = (os.environ.get("QA_BYPASS_SECRET") or "").strip()
+        dev_header = (request.headers.get("X-Dev-Bypass") or "").strip()
+        dev_secret = (os.environ.get("DEV_BYPASS_SECRET") or "").strip()
+        service_role = (
+            os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+            or os.environ.get("SUPABASE_KEY")
+            or ""
+        ).strip()
+        bypass_verified = (qa_secret and qa_header == qa_secret) or (dev_secret and dev_header == dev_secret)
+        if bypass_verified and service_role:
+            outbound_auth = f"Bearer {service_role}"
+            outbound_apikey = service_role
+        else:
+            raise HTTPException(status_code=401, detail="Missing authorization header")
+
+    endpoint = f"{supabase_url}/functions/v1/{resolved_name}"
+    calibration_run_id = (request.headers.get("X-Calibration-Run-Id") or "").strip()
+    calibration_step = (request.headers.get("X-Calibration-Step") or "").strip()
+    edge_payload = dict(body.payload or {})
+    if current_user and current_user.get("id"):
+        edge_payload.setdefault("user_id", current_user["id"])
+    try:
+        async with httpx.AsyncClient(timeout=90) as client:
+            edge_res = await client.post(
+                endpoint,
+                json=edge_payload,
+                headers={
+                    "Authorization": outbound_auth,
+                    "apikey": outbound_apikey,
+                    "Content-Type": "application/json",
+                    "X-Calibration-Run-Id": calibration_run_id,
+                    "X-Calibration-Step": calibration_step,
+                    "X-Proxy-Request-Id": proxy_request_id,
     inbound_auth = (request.headers.get("authorization") or "").strip()
     proxy_apikey = anon_key
     if not inbound_auth.lower().startswith("bearer "):
@@ -127,6 +186,15 @@ async def proxy_edge_function(
             payload.setdefault("code", "EDGE_FUNCTION_FAILED")
             payload.setdefault("stage", "edge_function")
             payload.setdefault("error", payload.get("detail") or "Edge function request failed")
+
+        if isinstance(payload, dict):
+            payload.setdefault("_proxy", {})
+            payload["_proxy"]["request_id"] = proxy_request_id
+            payload["_proxy"]["function_name"] = resolved_name
+            if calibration_run_id:
+                payload["_proxy"]["calibration_run_id"] = calibration_run_id
+            if calibration_step:
+                payload["_proxy"]["calibration_step"] = calibration_step
 
         return JSONResponse(status_code=edge_res.status_code, content=payload)
     except HTTPException:

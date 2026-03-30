@@ -1,6 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
+import HeroExperienceTabs from '../../components/website/HeroExperienceTabs';
+import ModernIntegrationBanner from '../../components/website/ModernIntegrationBanner';
+import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
+import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle } from 'lucide-react';
 import ModernIntegrationBanner from '../../components/website/ModernIntegrationBanner';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
 import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle, DollarSign, TrendingDown, AlertCircle, FileWarning, Check } from 'lucide-react';
@@ -15,6 +19,7 @@ const GlassCard = ({ children, className = '' }) => (
   </div>
 );
 
+/* ── Stat card — orange-bordered rounded card like Intelligence Diagram ─── */
 const StatCard = ({ stat, body, biqc }) => (
   <div
     className="rounded-2xl p-7 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1"
@@ -139,6 +144,15 @@ const WHAT_YOU_GET_CARDS = [
 const HomePage = () => (
   <WebsiteLayout>
 
+    {/* ══════════════════════════════════════
+        HERO — above the fold
+    ══════════════════════════════════════ */}
+    <section className="relative overflow-hidden" style={{ minHeight: '80vh', background: '#081423' }} data-testid="hero-section">
+
+      {/* Centre spotlight glow */}
+      <div className="absolute inset-0" style={{
+        background: 'radial-gradient(ellipse 80% 55% at 50% 15%, rgba(30,50,80,0.55) 0%, transparent 70%)',
+        zIndex: 2,
     {/* ══════════════════════════════════════════════════════════
         HERO — premium centered, full-bleed dark
     ══════════════════════════════════════════════════════════ */}
@@ -190,6 +204,59 @@ const HomePage = () => (
       {/* Top vignette */}
       <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,122,24,0.3), transparent)' }} />
 
+      {/* Content — split hero */}
+      <div className="relative w-full max-w-[1500px] mx-auto px-6 sm:px-10 lg:px-14"
+        style={{ minHeight: '80vh', zIndex: 3, paddingTop: 66, paddingBottom: 20 }}>
+        <div className="grid gap-10 lg:gap-14 lg:grid-cols-[1.12fr_0.88fr] items-center">
+          <div className="text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6"
+              style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
+              <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#FF7A18', opacity: 0.8 }} />
+              <span className="text-xs font-medium tracking-widest uppercase"
+                style={{ fontFamily: fontFamily.mono, color: '#FF7A18', opacity: 0.8 }}>
+                Australian Owned &amp; Operated
+              </span>
+            </div>
+
+            <h1
+              className="text-[32px] sm:text-[46px] lg:text-[60px] leading-[1.06] tracking-tight"
+              style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}
+            >
+              One intelligence layer for every
+              <br />
+              <span style={{ color: '#C65F2E' }}>decision that matters.</span>
+            </h1>
+            <p className="mt-5 text-base sm:text-lg max-w-2xl leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+              BIQc brings your business systems into one live Intelligence Platform. Helping owners and leaders make faster decisions, evaluate trade-offs clearly, and execute with confidence in realtime.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-7 mb-3 w-full max-w-sm sm:max-w-none">
+              <Link to="/register-supabase"
+                className="w-full sm:w-auto px-10 py-3.5 rounded-xl text-sm font-semibold text-white text-center transition-all hover:brightness-110"
+                style={{ background: 'linear-gradient(135deg, #C65F2E, #A64F26)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 6px 24px rgba(198,95,46,0.28)', minWidth: 180 }}
+                data-testid="hero-cta">
+                Start Free Trial
+              </Link>
+              <Link to="/platform"
+                className="w-full sm:w-auto px-10 py-3.5 rounded-xl text-sm font-semibold text-white text-center transition-all hover:bg-white/5"
+                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.22)', fontFamily: fontFamily.body, fontWeight: 600, minWidth: 180 }}
+                data-testid="hero-learn-more">
+                See How It Works
+              </Link>
+            </div>
+
+            <p className="text-xs mb-4" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+              Already have an account?{' '}
+              <Link to="/login-supabase" className="font-semibold text-white hover:text-[#C65F2E] transition-colors" data-testid="hero-login">Log in</Link>
+              <span style={{ opacity: 0.4 }}> &middot; </span>
+              <span style={{ opacity: 0.8 }}>No credit card required</span>
+            </p>
+
+          </div>
+
+          <div className="w-full flex lg:justify-end">
+            <HeroExperienceTabs />
+          </div>
       {/* ── Hero content ── */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 sm:px-10 text-center" style={{ paddingTop: 96, paddingBottom: 72 }}>
 
@@ -487,6 +554,25 @@ const HomePage = () => (
       </div>
     </section>
 
+    {/* How it all works block under hero */}
+    <section className="pt-8 sm:pt-10 pb-4" style={{ background: '#07121E' }} data-testid="how-it-all-works">
+      <div className="max-w-5xl mx-auto px-6 text-center">
+        <h2
+          className="text-3xl sm:text-4xl lg:text-5xl font-semibold"
+          style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}
+        >
+          How it all works
+        </h2>
+        <p className="mt-3 text-sm sm:text-base max-w-2xl mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          BIQc pulls live signal from every system, runs continuous watchtower checks, and turns complexity into clear boardroom actions.
+        </p>
+      </div>
+    </section>
+
+    <div style={{ background: '#07121E' }}>
+      <IntelligenceDiagram />
+    </div>
+
     <ModernIntegrationBanner />
 
     {/* AI era evidence cards */}
@@ -501,6 +587,12 @@ const HomePage = () => (
           Business leaders make hundreds of decisions every day, and research shows up to{' '}
           <span style={{ color: '#C65F2E', fontWeight: 600 }}>40%</span> of those decisions are made without the right data.
         </p>
+        <div className="w-full max-w-5xl mx-auto px-2 pb-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {STATS.map((item, i) => (
+              <StatCard key={i} {...item} />
+            ))}
+          </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {STATS.map((item, i) => (
             <StatCard key={i} {...item} />

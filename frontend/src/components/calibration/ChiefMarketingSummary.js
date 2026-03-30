@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, AlertTriangle, TrendingUp, Globe, Users, Star, Target, ChevronDown, ChevronUp, CheckCircle2, XCircle, Zap, BarChart3 } from 'lucide-react';
+import { ArrowRight, AlertTriangle, TrendingUp, Globe, Users, Star, Target, ChevronDown, ChevronUp, CheckCircle2, XCircle, Zap, BarChart3, Shield, Activity } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
 
@@ -63,7 +63,7 @@ function buildCommunicationAudit(full) {
       category: 'Pricing Transparency',
       score: full.pricing_model && full.pricing_model !== 'Not available from current data' ? 5 : 2,
       evidence: full.pricing_model && full.pricing_model !== 'Not available from current data' ? `Model detected: ${full.pricing_model}` : 'No pricing information visible on website.',
-      advice: full.pricing_model ? 'Add a starting price or pricing tier page — even a "From $X" reference increases conversion rate by 25-40%.' : 'Consider a transparent pricing or packages page. Price anchoring increases inbound quality.',
+      advice: full.pricing_model ? 'Add a starting price or pricing tier page — even a "From $X" reference reduces friction and improves lead quality.' : 'Consider a transparent pricing or packages page. Price anchoring increases inbound quality.',
     },
     {
       category: 'Call-to-Action Clarity',
@@ -80,13 +80,51 @@ function buildCommunicationAudit(full) {
 function buildGeographicPresence(full) {
   const loc = full.location || full.geographic_focus || null;
   const socials = full.social_media_links || {};
-  const hasLinkedIn = !!(socials.linkedin || full.linkedin_url);
-  const hasFacebook = !!(socials.facebook || full.facebook_url);
-  const hasInstagram = !!(socials.instagram || full.instagram_url);
-  const hasTwitter = !!(socials.twitter || full.twitter_x_url);
+  const handles = full.social_handles || {};
+  const hasLinkedIn = !!(socials.linkedin || full.linkedin_url || handles.linkedin);
+  const hasFacebook = !!(socials.facebook || full.facebook_url || handles.facebook);
+  const hasInstagram = !!(socials.instagram || full.instagram_url || handles.instagram);
+  const hasTwitter = !!(socials.twitter || full.twitter_x_url || handles.twitter || handles.x);
   const activeSocials = [hasLinkedIn && 'LinkedIn', hasFacebook && 'Facebook', hasInstagram && 'Instagram', hasTwitter && 'X/Twitter'].filter(Boolean);
 
-  return { loc, activeSocials, hasSocialPresence: activeSocials.length > 0 };
+  const industry = (full.industry || '').toLowerCase();
+  const model = (full.business_model || '').toLowerCase();
+  const services = full.main_products_services || '';
+  const targetMarket = full.target_market || '';
+
+  const isDigital = /(saas|software|platform|digital|online|cloud|subscription|app)/i.test(`${industry} ${model} ${services}`);
+  const isLocal = /(local|physical|brick|mortar|clinic|salon|restaurant|retail|tradie|plumber|electrician|builder|landscap)/i.test(`${industry} ${model} ${services}`);
+  const isConsulting = /(consult|advisory|agency|professional services|coaching|mentor|strateg)/i.test(`${industry} ${model} ${services}`);
+
+  const expansionRecommendations = [];
+
+  if (isDigital) {
+    expansionRecommendations.push(
+      { region: 'North America (US/Canada)', rationale: 'Largest SaaS/digital market globally. English-speaking reduces localization cost. High average contract values.', evidence: services ? `Current offering "${services.substring(0, 80)}" translates directly to NA buyer expectations.` : 'Digital delivery model supports frictionless NA expansion.' },
+      { region: 'United Kingdom & Europe', rationale: 'Strong B2B digital adoption, especially UK/DACH/Nordics. Similar business culture to AU/NZ.', evidence: targetMarket ? `Target market "${targetMarket.substring(0, 60)}" has direct parallels in UK enterprise.` : 'English-first product can enter UK immediately.' },
+      { region: 'Southeast Asia (SG/MY/PH)', rationale: 'Rapidly growing digital economy. Lower competition density. Strong English business language.', evidence: 'Timezone proximity to AU base supports real-time service delivery.' },
+    );
+  } else if (isLocal) {
+    const region = loc || 'current region';
+    expansionRecommendations.push(
+      { region: `Adjacent suburbs/cities near ${region}`, rationale: 'Expand service radius incrementally. Lowest risk, highest brand trust carryover.', evidence: loc ? `Strong local presence detected in ${loc} — adjacent areas benefit from existing reputation.` : 'Local service model suggests adjacent geographic expansion.' },
+      { region: 'State/territory expansion', rationale: 'Replicate proven local model in similar demographic markets within the same state.', evidence: 'Use Google Business Profile multi-location strategy to dominate local search in new areas.' },
+      { region: 'National franchise/licensing model', rationale: 'Scale proven local playbook through operator partnerships without proportional overhead increase.', evidence: `Service model in ${industry || 'this sector'} has demonstrated franchise scalability in AU market.` },
+    );
+  } else if (isConsulting) {
+    expansionRecommendations.push(
+      { region: 'Remote/national (AU-wide)', rationale: 'Advisory/consulting translates to remote delivery immediately. Expand beyond local geography.', evidence: services ? `"${services.substring(0, 60)}" can be delivered nationally via digital channels.` : 'Consulting model supports immediate national reach.' },
+      { region: 'UK & North America', rationale: 'English-speaking markets with high willingness to pay for specialized advisory.', evidence: targetMarket ? `Target market "${targetMarket.substring(0, 60)}" exists in larger scale in US/UK.` : 'Professional services export well to English-speaking markets.' },
+      { region: 'APAC enterprise partnerships', rationale: 'SG/HK regional hubs value AU-based advisory for cross-border strategy.', evidence: 'APAC expansion via partnership reduces client acquisition cost versus direct entry.' },
+    );
+  } else {
+    expansionRecommendations.push(
+      { region: loc ? `Broader ${loc} metropolitan area` : 'Adjacent regions', rationale: 'Start with geographic adjacency to leverage existing brand awareness.', evidence: 'Incremental geographic growth carries lowest risk and highest trust transfer.' },
+      { region: 'National digital presence', rationale: 'Invest in content marketing and SEO to capture demand beyond local area.', evidence: 'Digital-first lead generation enables national reach without physical expansion.' },
+    );
+  }
+
+  return { loc, activeSocials, hasSocialPresence: activeSocials.length > 0, isDigital, isLocal, isConsulting, expansionRecommendations };
 }
 
 // ── Competitor intelligence ──
@@ -173,6 +211,73 @@ function buildCustomerReviewSignals(full) {
   const hasReviewData = reviewEvidence.length > 0;
   const confidenceBand = hasReviewData ? (reviewEvidence.length >= 3 ? 'medium-high' : 'medium') : 'low';
 
+  const evidenceCount = reviewEvidence.length;
+  const strongEvidence = evidenceCount >= 3;
+  const weakEvidence = evidenceCount > 0 && evidenceCount < 3;
+  const evidenceSummary = reviewEvidence.slice(0, 3).join(', ');
+
+  let impact;
+  if (strongEvidence) {
+    impact = [
+      {
+        fundamental: 'Conversion rate',
+        impact: 'Positive lift expected',
+        mechanism: `Found ${evidenceCount} social-proof signals (${evidenceSummary}) — strong visible trust markers typically support higher visitor-to-enquiry conversion.`,
+      },
+      {
+        fundamental: 'Customer acquisition cost',
+        impact: 'Efficiency gain expected',
+        mechanism: `${evidenceCount} verified proof points reduce the trust gap in paid and organic funnels, lowering cost per qualified lead.`,
+      },
+      {
+        fundamental: 'Gross profit',
+        impact: 'Margin support likely',
+        mechanism: `Multiple proof signals (${evidenceCount} detected) strengthen value-based pricing and reduce discount pressure during sales.`,
+      },
+    ];
+  } else if (weakEvidence) {
+    impact = [
+      {
+        fundamental: 'Conversion rate',
+        impact: 'Modest lift possible',
+        mechanism: `Found ${evidenceCount} proof signal${evidenceCount === 1 ? '' : 's'} (${evidenceSummary}) — limited social proof may partially support conversion but leaves trust gaps.`,
+      },
+      {
+        fundamental: 'Customer acquisition cost',
+        impact: 'Minor efficiency gain',
+        mechanism: `Only ${evidenceCount} visible proof marker${evidenceCount === 1 ? '' : 's'} detected — insufficient density to materially reduce acquisition cost.`,
+      },
+      {
+        fundamental: 'Gross profit',
+        impact: 'Neutral to slight support',
+        mechanism: `Thin proof layer (${evidenceCount} signal${evidenceCount === 1 ? '' : 's'}) provides limited pricing leverage — expanding case studies would strengthen margin.`,
+      },
+    ];
+  } else {
+    impact = [
+      {
+        fundamental: 'Conversion rate',
+        impact: 'Drag risk — no proof detected',
+        mechanism: 'No visible customer reviews, testimonials, or case studies found — prospects lack third-party validation to support purchase decisions.',
+      },
+      {
+        fundamental: 'Customer acquisition cost',
+        impact: 'Elevated cost risk',
+        mechanism: 'No detected social proof means paid campaigns must work harder to build trust, increasing cost per acquisition.',
+      },
+      {
+        fundamental: 'Gross profit',
+        impact: 'Margin pressure risk',
+        mechanism: 'Absence of verifiable proof often forces sales to compensate with discounting. No review footprint detected in this scan.',
+      },
+    ];
+  }
+  const topEvidence = reviewEvidence.slice(0, 3).join(' | ');
+  const depthNarrative = hasReviewData
+    ? `Observed ${reviewEvidence.length} customer-proof marker${reviewEvidence.length === 1 ? '' : 's'} in public footprint${topEvidence ? `: ${topEvidence}.` : '.'} Revenue impact model uses only detected signals and scales confidence to ${confidenceBand}.`
+    : 'No verifiable customer review footprint detected in this scan, so BIQc suppresses deep narrative claims until stronger evidence is observed.';
+
+  return { reviewEvidence, customerReviewSignals, hasReviewData, confidenceBand, impact, depthNarrative };
   const impact = hasReviewData
     ? [
       {
@@ -214,6 +319,87 @@ function buildCustomerReviewSignals(full) {
 
 function buildStaffImpactSignals(staffSignals) {
   const reviewCount = (staffSignals.staffReviewSignals || []).length;
+  const teamMemberCount = (staffSignals.teamMembers || []).length;
+  const hasTeamMembers = teamMemberCount > 0;
+  const hasFounder = Boolean(staffSignals.founderBackground);
+  const hasTeamSize = Boolean(staffSignals.teamSize);
+  const hasAny = staffSignals.hasStaffData;
+
+  const signalParts = [];
+  if (hasTeamMembers) signalParts.push(`${teamMemberCount} named team member${teamMemberCount === 1 ? '' : 's'}`);
+  if (hasTeamSize) signalParts.push(`team size: ${staffSignals.teamSize}`);
+  if (hasFounder) signalParts.push('founder background detected');
+  if (reviewCount > 0) signalParts.push(`${reviewCount} staff review signal${reviewCount === 1 ? '' : 's'}`);
+  const signalSummary = signalParts.join(', ');
+
+  let impact;
+  if (hasAny && (hasTeamMembers || reviewCount > 0)) {
+    impact = [
+      {
+        fundamental: 'Service delivery capacity',
+        impact: hasTeamMembers ? 'Execution continuity supported' : 'Partial visibility only',
+        mechanism: hasTeamMembers
+          ? `${teamMemberCount} named team member${teamMemberCount === 1 ? '' : 's'} detected — visible role structure reduces key-person dependency risk.`
+          : `No named team members found but ${signalSummary} provides partial staffing visibility.`,
+      },
+      {
+        fundamental: 'Revenue retention',
+        impact: reviewCount > 0 ? 'Retention support indicated' : 'Limited retention signal',
+        mechanism: reviewCount > 0
+          ? `${reviewCount} staff review signal${reviewCount === 1 ? '' : 's'} detected — positive team culture markers correlate with consistent client experience.`
+          : `No staff review signals found. Team health is not publicly verifiable — retention impact cannot be assessed from available data.`,
+      },
+      {
+        fundamental: 'Operating profit',
+        impact: reviewCount > 0 && hasTeamMembers ? 'Margin support indicated' : 'Insufficient data for margin assessment',
+        mechanism: reviewCount > 0 && hasTeamMembers
+          ? `Combined evidence (${signalSummary}) suggests manageable team friction — lower rework and escalation costs support operating margin.`
+          : `Only partial team signals found (${signalSummary}). Insufficient evidence to assess margin impact with confidence.`,
+      },
+    ];
+  } else if (hasAny) {
+    impact = [
+      {
+        fundamental: 'Service delivery capacity',
+        impact: 'Partial visibility — risk not quantifiable',
+        mechanism: `Detected: ${signalSummary}. Insufficient structure data to assess delivery continuity with confidence.`,
+      },
+      {
+        fundamental: 'Revenue retention',
+        impact: 'Insufficient data',
+        mechanism: `Only foundational signals found (${signalSummary}). No staff review or team structure data to assess retention impact.`,
+      },
+      {
+        fundamental: 'Operating profit',
+        impact: 'Cannot assess from available signals',
+        mechanism: `Limited staffing evidence (${signalSummary}) does not support a margin impact estimate. More data needed.`,
+      },
+    ];
+  } else {
+    impact = [
+      {
+        fundamental: 'Service delivery capacity',
+        impact: 'Unverified — no signals detected',
+        mechanism: 'No public staffing, team structure, or employee review signals were found in this scan.',
+      },
+      {
+        fundamental: 'Revenue retention',
+        impact: 'Blind spot — no team health data',
+        mechanism: 'Without visible team signals, client experience consistency cannot be assessed from public data.',
+      },
+      {
+        fundamental: 'Operating profit',
+        impact: 'Unknown risk exposure',
+        mechanism: 'No staff data detected. BIQc does not fabricate team dynamics — connect internal HR or review channels to unlock this analysis.',
+      },
+    ];
+  }
+
+  const depthNarrative = hasAny
+    ? `Staff intelligence is derived from ${signalSummary}. Impact assessments are scoped strictly to verified public signals — no assumptions about internal team dynamics.`
+    : 'No public staff-review or structure markers were verified. BIQc reports risk posture only and does not infer hidden team dynamics.';
+
+  return { impact, depthNarrative };
   const hasTeamMembers = (staffSignals.teamMembers || []).length > 0;
   const hasAny = staffSignals.hasStaffData;
 
@@ -292,6 +478,17 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
   const swot = full.swot || {};
   const competitorSwot = Array.isArray(full.competitor_swot) ? full.competitor_swot : [];
   const cmoPriorityActions = Array.isArray(full.cmo_priority_actions) ? full.cmo_priority_actions : [];
+  const fieldProvenance = full._field_provenance || {};
+  const analysisGaps = Array.isArray(full.analysis_gaps) ? full.analysis_gaps : [];
+  const marketIntelScore = typeof full.market_intelligence_score === 'number' ? full.market_intelligence_score : null;
+  const marketTrajectory = full.market_trajectory || '';
+  const marketEvidence = Array.isArray(full.market_evidence) ? full.market_evidence : [];
+  const marketAnalysis = full.market_analysis || null;
+  const deepReconSummary = full.deep_recon_summary || '';
+  const deepReconSignals = Array.isArray(full.deep_recon_signals) ? full.deep_recon_signals : [];
+  const hasDeepRecon = Boolean(deepReconSummary || deepReconSignals.length > 0);
+  const competitorMonitorData = full.competitor_monitor_data || null;
+  const competitorMonitorSummary = full.competitor_monitor_summary || '';
 
   // Business summary paragraphs
   const bizName = full.business_name || wowSummary?.business_name || 'This business';
@@ -408,40 +605,216 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           </div>
         )}
 
+        {/* ── SECTION 2B2: DEEP INTELLIGENCE SIGNALS ── */}
+        {hasDeepRecon && (
+          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #8B5CF640', animation: 'cmsFade 0.92s ease-out' }} data-testid="deep-intelligence-signals">
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="w-4 h-4" style={{ color: '#8B5CF6' }} />
+              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Deep Intelligence Signals</h2>
+            </div>
+            {deepReconSummary && (
+              <p className="text-sm text-[#9FB0C3] leading-relaxed mb-3" style={{ fontFamily: fontFamily.body }}>
+                {deepReconSummary}
+              </p>
+            )}
+            {deepReconSignals.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Detected Signals</p>
+                {deepReconSignals.map((signal, idx) => (
+                  <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    • {typeof signal === 'string' ? signal : (signal?.text || signal?.description || signal?.signal || JSON.stringify(signal))}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── SECTION 2C: CHANNEL & WEBSITE DIAGNOSTICS ── */}
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 0.95s ease-out' }} data-testid="channel-diagnostics">
           <div className="flex items-center gap-2 mb-3">
             <Globe className="w-4 h-4" style={{ color: '#06B6D4' }} />
             <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Website, SEO, Paid & Social Diagnostics</h2>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
+
+            {/* Website Condition */}
             <div>
               <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Website Condition</p>
-              <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                {(websiteHealth.summary || `Status: ${websiteHealth.status || 'unknown'} · Score: ${websiteHealth.score ?? 'n/a'}`)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>SEO</p>
-              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                Score {seoAnalysis.score ?? 'n/a'} · Status {seoAnalysis.status || 'unknown'}
-              </p>
-              {Array.isArray(seoAnalysis.gaps) && seoAnalysis.gaps.length > 0 && (
-                <p className="text-xs text-[#64748B] mt-1" style={{ fontFamily: fontFamily.body }}>{seoAnalysis.gaps.slice(0, 2).join(' ')}</p>
+              {(websiteHealth.score != null || websiteHealth.status) ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    {websiteHealth.score != null && (
+                      <span className="text-sm font-bold" style={{ color: websiteHealth.score >= 75 ? '#10B981' : websiteHealth.score >= 45 ? '#F59E0B' : '#EF4444', fontFamily: fontFamily.mono }}>
+                        {websiteHealth.score}/100
+                      </span>
+                    )}
+                    {websiteHealth.status && (
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{
+                        color: websiteHealth.status === 'strong' ? '#10B981' : websiteHealth.status === 'moderate' ? '#F59E0B' : '#EF4444',
+                        background: (websiteHealth.status === 'strong' ? '#10B981' : websiteHealth.status === 'moderate' ? '#F59E0B' : '#EF4444') + '15',
+                        fontFamily: fontFamily.mono,
+                      }}>
+                        {websiteHealth.status}
+                      </span>
+                    )}
+                  </div>
+                  {websiteHealth.summary && (
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{websiteHealth.summary}</p>
+                  )}
+                  {(websiteHealth.title_tag != null || websiteHealth.meta_description != null || websiteHealth.ssl != null || websiteHealth.mobile_responsive != null) && (
+                    <div className="grid grid-cols-2 gap-1.5 mt-1">
+                      {[
+                        { label: 'Title Tag', val: websiteHealth.title_tag },
+                        { label: 'Meta Description', val: websiteHealth.meta_description },
+                        { label: 'SSL/HTTPS', val: websiteHealth.ssl },
+                        { label: 'Mobile Responsive', val: websiteHealth.mobile_responsive },
+                      ].filter(item => item.val != null).map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5">
+                          {item.val ? <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> : <XCircle className="w-3 h-3 text-[#EF4444]" />}
+                          <span className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : websiteHealth.assessment ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{websiteHealth.assessment}</p>
+              ) : (
+                <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No website health data available.</p>
               )}
             </div>
+
+            {/* SEO */}
+            <div>
+              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>SEO</p>
+              {(seoAnalysis.score != null || seoAnalysis.status) ? (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-3">
+                    {seoAnalysis.score != null && (
+                      <span className="text-sm font-bold" style={{ color: seoAnalysis.score >= 75 ? '#10B981' : seoAnalysis.score >= 45 ? '#F59E0B' : '#EF4444', fontFamily: fontFamily.mono }}>
+                        {seoAnalysis.score}/100
+                      </span>
+                    )}
+                    {seoAnalysis.status && (
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{
+                        color: seoAnalysis.status === 'strong' ? '#10B981' : seoAnalysis.status === 'moderate' ? '#F59E0B' : '#EF4444',
+                        background: (seoAnalysis.status === 'strong' ? '#10B981' : seoAnalysis.status === 'moderate' ? '#F59E0B' : '#EF4444') + '15',
+                        fontFamily: fontFamily.mono,
+                      }}>
+                        {seoAnalysis.status}
+                      </span>
+                    )}
+                  </div>
+                  {Array.isArray(seoAnalysis.strengths) && seoAnalysis.strengths.length > 0 && (
+                    <div className="space-y-0.5">
+                      {seoAnalysis.strengths.slice(0, 4).map((s, idx) => (
+                        <p key={idx} className="text-[11px] text-[#9FB0C3] flex items-center gap-1" style={{ fontFamily: fontFamily.body }}>
+                          <CheckCircle2 className="w-3 h-3 text-[#10B981] shrink-0" /> {s}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {Array.isArray(seoAnalysis.gaps) && seoAnalysis.gaps.length > 0 && (
+                    <div className="space-y-0.5">
+                      {seoAnalysis.gaps.slice(0, 4).map((g, idx) => (
+                        <p key={idx} className="text-[11px] text-[#9FB0C3] flex items-center gap-1" style={{ fontFamily: fontFamily.body }}>
+                          <XCircle className="w-3 h-3 text-[#EF4444] shrink-0" /> {g}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : seoAnalysis.assessment ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{seoAnalysis.assessment}</p>
+              ) : (
+                <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No SEO analysis data available.</p>
+              )}
+              {Array.isArray(seoAnalysis.priority_actions) && seoAnalysis.priority_actions.length > 0 && (
+                <div className="mt-1.5 space-y-0.5">
+                  {seoAnalysis.priority_actions.slice(0, 2).map((a, idx) => (
+                    <p key={idx} className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.body }}>→ {a}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Paid Media */}
             <div>
               <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Paid Media</p>
-              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                {paidAnalysis.assessment || 'No paid media diagnostics available.'}
-              </p>
+              {(paidAnalysis.maturity || paidAnalysis.signals_detected) ? (
+                <div className="space-y-1.5">
+                  {paidAnalysis.maturity && (
+                    <span className="text-xs px-2 py-0.5 rounded-full inline-block" style={{
+                      color: paidAnalysis.maturity === 'active' ? '#10B981' : '#F59E0B',
+                      background: (paidAnalysis.maturity === 'active' ? '#10B981' : '#F59E0B') + '15',
+                      fontFamily: fontFamily.mono,
+                    }}>
+                      {paidAnalysis.maturity}
+                    </span>
+                  )}
+                  {paidAnalysis.assessment && (
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{paidAnalysis.assessment}</p>
+                  )}
+                  {Array.isArray(paidAnalysis.signals_detected) && paidAnalysis.signals_detected.length > 0 && (
+                    <p className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Signals: {paidAnalysis.signals_detected.join(', ')}</p>
+                  )}
+                  {Array.isArray(paidAnalysis.priority_actions) && paidAnalysis.priority_actions.length > 0 && (
+                    <div className="space-y-0.5">
+                      {paidAnalysis.priority_actions.slice(0, 2).map((a, idx) => (
+                        <p key={idx} className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.body }}>→ {a}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : paidAnalysis.assessment ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{paidAnalysis.assessment}</p>
+              ) : paidAnalysis.score != null ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                  Score: {paidAnalysis.score} · {paidAnalysis.status || 'Unknown status'}
+                </p>
+              ) : (
+                <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No paid media diagnostics available.</p>
+              )}
             </div>
+
+            {/* Social Marketing */}
             <div>
               <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Social Marketing</p>
-              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                {socialAnalysis.assessment || 'No social diagnostics available.'}
-              </p>
+              {(socialAnalysis.active_channels || socialAnalysis.channel_count != null) ? (
+                <div className="space-y-1.5">
+                  {Array.isArray(socialAnalysis.active_channels) && socialAnalysis.active_channels.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {socialAnalysis.active_channels.map((ch, idx) => (
+                        <span key={idx} className="text-[11px] px-2 py-0.5 rounded-full" style={{ color: '#06B6D4', background: '#06B6D415', fontFamily: fontFamily.mono }}>{ch}</span>
+                      ))}
+                    </div>
+                  )}
+                  {socialAnalysis.assessment && (
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{socialAnalysis.assessment}</p>
+                  )}
+                  {Array.isArray(socialAnalysis.content_signals_detected) && socialAnalysis.content_signals_detected.length > 0 && (
+                    <p className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Content signals: {socialAnalysis.content_signals_detected.join(', ')}</p>
+                  )}
+                  {Array.isArray(socialAnalysis.priority_actions) && socialAnalysis.priority_actions.length > 0 && (
+                    <div className="space-y-0.5">
+                      {socialAnalysis.priority_actions.slice(0, 2).map((a, idx) => (
+                        <p key={idx} className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.body }}>→ {a}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : socialAnalysis.assessment ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{socialAnalysis.assessment}</p>
+              ) : socialAnalysis.score != null ? (
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                  Score: {socialAnalysis.score} · {socialAnalysis.status || 'Unknown status'}
+                </p>
+              ) : (
+                <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No social diagnostics available.</p>
+              )}
             </div>
+
           </div>
         </div>
 
@@ -485,29 +858,64 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.2s ease-out' }} data-testid="geographic-presence">
           <div className="flex items-center gap-2 mb-3">
             <Globe className="w-4 h-4" style={{ color: '#7C3AED' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Geographic Market Presence</h2>
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Geographic Market Presence & Expansion</h2>
           </div>
+
+          {/* Current presence */}
           {geo.loc ? (
-            <>
-              <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
-                Based on publicly detectable signals, <strong style={{ color: 'var(--biqc-text)' }}>{bizName}</strong> would most likely attract clients in and around <strong style={{ color: 'var(--biqc-text)' }}>{geo.loc}</strong>.
-              </p>
-              {geo.hasSocialPresence ? (
-                <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
-                  Active social presence detected on {geo.activeSocials.join(', ')} — these channels extend reach beyond the primary geographic market and may attract inbound from adjacent regions.
-                </p>
-              ) : (
-                <div className="flex items-start gap-2 p-2.5 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20' }}>
-                  <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B] shrink-0 mt-0.5" />
-                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>No active social media presence detected. Geographic reach is limited to direct website traffic and word of mouth. Social channels would expand acquisition surface significantly.</p>
-                </div>
-              )}
-              {full.geographic_focus && full.geographic_focus !== full.location && (
-                <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>Declared geographic focus: {full.geographic_focus}</p>
-              )}
-            </>
+            <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
+              Based on publicly detectable signals, <strong style={{ color: 'var(--biqc-text)' }}>{bizName}</strong> currently serves clients in and around <strong style={{ color: 'var(--biqc-text)' }}>{geo.loc}</strong>.
+              {full.industry ? ` Operating in the ${full.industry} sector` : ''}{full.business_model ? ` with a ${full.business_model} model.` : '.'}
+            </p>
           ) : (
-            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No location data detected from website or registry. Geographic presence analysis unavailable — BIQc will not assume a market.</p>
+            <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>No location data detected from website or registry.</p>
+          )}
+
+          {geo.hasSocialPresence ? (
+            <p className="text-xs text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
+              Active social presence on {geo.activeSocials.join(', ')} extends reach beyond primary geography.
+            </p>
+          ) : (
+            <div className="flex items-start gap-2 p-2.5 rounded-lg mb-3" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20' }}>
+              <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B] shrink-0 mt-0.5" />
+              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>No active social media presence detected. Geographic reach is limited to direct traffic and word of mouth.</p>
+            </div>
+          )}
+
+          {full.geographic_focus && full.geographic_focus !== full.location && (
+            <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>Declared geographic focus: {full.geographic_focus}</p>
+          )}
+
+          {/* Business type classification */}
+          <div className="p-3 rounded-lg mb-3" style={{ background: '#111A25', border: '1px solid #243140' }}>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#7C3AED', fontFamily: fontFamily.mono }}>Business Type Assessment</p>
+            <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+              {geo.isDigital && 'Digital/SaaS business model detected — global expansion is viable with low marginal cost per new market.'}
+              {geo.isLocal && !geo.isDigital && 'Local/physical service model detected — geographic expansion follows adjacency and replication strategies.'}
+              {geo.isConsulting && !geo.isDigital && !geo.isLocal && 'Consulting/advisory model detected — remote delivery enables national and international reach.'}
+              {!geo.isDigital && !geo.isLocal && !geo.isConsulting && 'General business model — expansion strategy depends on digital capability and service delivery method.'}
+            </p>
+            {full.main_products_services && (
+              <p className="text-[11px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.body }}>
+                Based on offering: "{full.main_products_services.substring(0, 120)}{full.main_products_services.length > 120 ? '...' : ''}"
+              </p>
+            )}
+          </div>
+
+          {/* Expansion recommendations */}
+          {geo.expansionRecommendations.length > 0 && (
+            <div>
+              <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Recommended Expansion Markets</p>
+              <div className="space-y-2">
+                {geo.expansionRecommendations.map((rec, idx) => (
+                  <div key={idx} className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: '#10B981', fontFamily: fontFamily.body }}>{rec.region}</p>
+                    <p className="text-[11px] text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{rec.rationale}</p>
+                    <p className="text-[10px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.mono }}>Evidence: {rec.evidence}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
@@ -568,6 +976,40 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   </p>
                 </div>
               )}
+              {(competitorMonitorSummary || competitorMonitorData) && (
+                <div className="mt-3 p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Competitor Monitor</p>
+                  {competitorMonitorSummary && (
+                    <p className="text-xs text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>
+                      {competitorMonitorSummary}
+                    </p>
+                  )}
+                  {competitorMonitorData && typeof competitorMonitorData === 'object' && (
+                    <div className="space-y-2 mt-2">
+                      {Array.isArray(competitorMonitorData.competitors) && competitorMonitorData.competitors.map((comp, idx) => (
+                        <div key={idx} className="p-2 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                          <p className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>
+                            {comp.name || comp.domain || `Competitor ${idx + 1}`}
+                          </p>
+                          {comp.summary && <p className="text-[11px] text-[#9FB0C3] mt-1" style={{ fontFamily: fontFamily.body }}>{comp.summary}</p>}
+                          {comp.threat_level && <p className="text-[10px] mt-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Threat level: {comp.threat_level}</p>}
+                          {comp.signals && Array.isArray(comp.signals) && comp.signals.length > 0 && (
+                            <p className="text-[11px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.body }}>
+                              Signals: {comp.signals.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                      {competitorMonitorData.summary && !competitorMonitorSummary && (
+                        <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{competitorMonitorData.summary}</p>
+                      )}
+                      {typeof competitorMonitorData === 'string' && (
+                        <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{competitorMonitorData}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           ) : (
             <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No competitor data detected from publicly available sources. BIQc does not assume or fabricate competitor information — run an Exposure Scan to unlock this analysis.</p>
@@ -584,6 +1026,90 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             </span>
           </div>
 
+          {/* Google Reviews + Glassdoor aggregated scores */}
+          {(full.google_reviews?.has_data || full.glassdoor_reviews?.has_data || full.review_aggregation?.has_data) && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
+              {full.google_reviews?.has_data && (
+                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #F59E0B30' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Google Reviews</p>
+                  {full.google_reviews.star_rating != null && (
+                    <p className="text-lg font-bold" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                      {full.google_reviews.star_rating}<span className="text-xs font-normal text-[#64748B]">/5</span>
+                    </p>
+                  )}
+                  {full.google_reviews.review_count != null && (
+                    <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{full.google_reviews.review_count.toLocaleString()} reviews</p>
+                  )}
+                  {!full.google_reviews.star_rating && !full.google_reviews.review_count && full.google_reviews.snippets?.length > 0 && (
+                    <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{full.google_reviews.snippets.length} review signal{full.google_reviews.snippets.length === 1 ? '' : 's'} detected</p>
+                  )}
+                </div>
+              )}
+              {full.glassdoor_reviews?.has_data && (
+                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #8B5CF630' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#8B5CF6', fontFamily: fontFamily.mono }}>Glassdoor</p>
+                  {full.glassdoor_reviews.rating != null && (
+                    <p className="text-lg font-bold" style={{ color: '#8B5CF6', fontFamily: fontFamily.mono }}>
+                      {full.glassdoor_reviews.rating}<span className="text-xs font-normal text-[#64748B]">/5</span>
+                    </p>
+                  )}
+                  {full.glassdoor_reviews.snippets?.length > 0 && (
+                    <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{full.glassdoor_reviews.snippets.length} employee review signal{full.glassdoor_reviews.snippets.length === 1 ? '' : 's'}</p>
+                  )}
+                </div>
+              )}
+              {full.review_aggregation?.has_data && (
+                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #10B98130' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Aggregated</p>
+                  {full.review_aggregation.combined_score != null && (
+                    <p className="text-lg font-bold" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>
+                      {full.review_aggregation.combined_score}<span className="text-xs font-normal text-[#64748B]">/5</span>
+                    </p>
+                  )}
+                  <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    <span style={{ color: '#10B981' }}>{full.review_aggregation.positive_count || 0}</span> positive · <span style={{ color: '#EF4444' }}>{full.review_aggregation.negative_count || 0}</span> negative
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Top 3 recent reviews */}
+          {full.review_aggregation?.top_recent?.length > 0 && (
+            <div className="mb-4">
+              <p className="text-[10px] uppercase tracking-widest mb-1.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Most Recent Review Signals</p>
+              <div className="space-y-1.5">
+                {full.review_aggregation.top_recent.slice(0, 3).map((snippet, idx) => (
+                  <p key={idx} className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+                    "{snippet}"
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Positive vs Negative split */}
+          {(full.google_reviews?.positive?.length > 0 || full.google_reviews?.negative?.length > 0 || full.glassdoor_reviews?.positive?.length > 0 || full.glassdoor_reviews?.negative?.length > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
+              {((full.google_reviews?.positive?.length || 0) + (full.glassdoor_reviews?.positive?.length || 0)) > 0 && (
+                <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Positive Signals</p>
+                  {[...(full.google_reviews?.positive || []), ...(full.glassdoor_reviews?.positive || [])].slice(0, 3).map((s, idx) => (
+                    <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>"{s}"</p>
+                  ))}
+                </div>
+              )}
+              {((full.google_reviews?.negative?.length || 0) + (full.glassdoor_reviews?.negative?.length || 0)) > 0 && (
+                <div className="p-3 rounded-lg" style={{ background: '#EF444408', border: '1px solid #EF444420' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>Negative Signals</p>
+                  {[...(full.google_reviews?.negative || []), ...(full.glassdoor_reviews?.negative || [])].slice(0, 3).map((s, idx) => (
+                    <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>"{s}"</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {customerReviews.reviewEvidence.length > 0 ? (
             <>
               <div className="mb-3">
@@ -597,6 +1123,11 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 </div>
               </div>
             </>
+          ) : !full.google_reviews?.has_data && !full.glassdoor_reviews?.has_data ? (
+            <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>
+              No explicit customer review markers were found in the current public scan.
+            </p>
+          ) : null}
           ) : (
             <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>
               No explicit customer review markers were found in the current public scan.
@@ -614,6 +1145,9 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           </div>
 
           <div className="mt-3 p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Review Intelligence Depth</p>
+            <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+              {customerReviews.depthNarrative}
             <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Depth Preview (Example)</p>
             <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
               Example depth BIQc can provide: "Across 47 public reviews, response-time complaints appeared in 29.8% of negative mentions, correlated with a 14-day sales-cycle extension. Modeled impact: 6-11% conversion drag and 2.1-3.8 point gross-margin compression due to discount-led recovery."
@@ -676,6 +1210,9 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 ))}
               </div>
               <div className="p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Staff Intelligence Depth</p>
+                <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+                  {staffImpact.depthNarrative}
                 <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Depth Preview (Example)</p>
                 <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
                   Example depth BIQc can provide: "Team sentiment declined from neutral to negative over 6 weeks, with repeated workload and escalation markers. Predicted effect: 9-16% delivery-cycle slippage, 4-9% retention risk, and 1.5-3.2 point operating-margin pressure unless staffing bottlenecks are corrected."
@@ -698,14 +1235,179 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               {['strengths', 'weaknesses', 'opportunities', 'threats'].map((key) => (
                 <div key={key} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
                   <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{key}</p>
-                  <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-                    {Array.isArray(swot[key]) && swot[key].length > 0 ? swot[key][0] : 'No verified data yet.'}
-                  </p>
+                  {Array.isArray(swot[key]) && swot[key].length > 0 ? (
+                    <ul className="space-y-1">
+                      {swot[key].map((item, idx) => (
+                        <li key={idx} className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+                          {swot[key].length > 1 ? '• ' : ''}{typeof item === 'string' ? item : (item?.text || item?.description || JSON.stringify(item))}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Insufficient verified data.</p>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
+
+        {/* ── SECTION 5C: MARKET INTELLIGENCE ANALYSIS ── */}
+        {(marketAnalysis || marketIntelScore !== null || marketEvidence.length > 0) && (
+          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #06B6D440', animation: 'cmsFade 1.52s ease-out' }} data-testid="market-intelligence-analysis">
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="w-4 h-4" style={{ color: '#06B6D4' }} />
+              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Market Intelligence Analysis</h2>
+              {marketIntelScore !== null && (
+                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{
+                  color: marketIntelScore >= 70 ? '#10B981' : marketIntelScore >= 40 ? '#F59E0B' : '#EF4444',
+                  background: (marketIntelScore >= 70 ? '#10B981' : marketIntelScore >= 40 ? '#F59E0B' : '#EF4444') + '15',
+                  fontFamily: fontFamily.mono,
+                }}>
+                  score: {marketIntelScore}/100
+                </span>
+              )}
+            </div>
+
+            {marketTrajectory && (
+              <p className="text-xs text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
+                Market trajectory: <strong style={{ color: '#F4F7FA' }}>{marketTrajectory}</strong>
+              </p>
+            )}
+
+            {marketAnalysis && (
+              <div className="space-y-3">
+                {marketAnalysis.analysis_title && (
+                  <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{marketAnalysis.analysis_title}</p>
+                )}
+                {marketAnalysis.market_size && (
+                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Market Size</p>
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      {typeof marketAnalysis.market_size === 'string' ? marketAnalysis.market_size : JSON.stringify(marketAnalysis.market_size)}
+                    </p>
+                  </div>
+                )}
+                {marketAnalysis.competitor_landscape && (
+                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Competitor Landscape</p>
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      {typeof marketAnalysis.competitor_landscape === 'string' ? marketAnalysis.competitor_landscape : JSON.stringify(marketAnalysis.competitor_landscape)}
+                    </p>
+                  </div>
+                )}
+                {marketAnalysis.customer_insight && (
+                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Customer Insight</p>
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      {typeof marketAnalysis.customer_insight === 'string' ? marketAnalysis.customer_insight : JSON.stringify(marketAnalysis.customer_insight)}
+                    </p>
+                  </div>
+                )}
+                {marketAnalysis.revenue_opportunity && (
+                  <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Revenue Opportunity</p>
+                    <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      {typeof marketAnalysis.revenue_opportunity === 'string' ? marketAnalysis.revenue_opportunity : JSON.stringify(marketAnalysis.revenue_opportunity)}
+                    </p>
+                  </div>
+                )}
+                {Array.isArray(marketAnalysis.recommendations) && marketAnalysis.recommendations.length > 0 && (
+                  <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Recommendations</p>
+                    <ul className="space-y-1">
+                      {marketAnalysis.recommendations.map((rec, idx) => (
+                        <li key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>• {typeof rec === 'string' ? rec : (rec?.text || rec?.recommendation || JSON.stringify(rec))}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {Array.isArray(marketAnalysis.risks_to_watch) && marketAnalysis.risks_to_watch.length > 0 && (
+                  <div className="p-3 rounded-lg" style={{ background: '#EF444408', border: '1px solid #EF444420' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>Risks to Watch</p>
+                    <ul className="space-y-1">
+                      {marketAnalysis.risks_to_watch.map((risk, idx) => (
+                        <li key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>• {typeof risk === 'string' ? risk : (risk?.text || risk?.risk || JSON.stringify(risk))}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {marketAnalysis.swot && typeof marketAnalysis.swot === 'object' && Object.keys(marketAnalysis.swot).length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Market SWOT</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {['strengths', 'weaknesses', 'opportunities', 'threats'].map((k) => (
+                        Array.isArray(marketAnalysis.swot[k]) && marketAnalysis.swot[k].length > 0 && (
+                          <div key={k} className="p-2 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{k}</p>
+                            <ul className="space-y-0.5">
+                              {marketAnalysis.swot[k].map((item, idx) => (
+                                <li key={idx} className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>• {typeof item === 'string' ? item : JSON.stringify(item)}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {marketAnalysis.data_quality_note && (
+                  <p className="text-[11px] text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>
+                    Data quality: {marketAnalysis.data_quality_note}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {marketEvidence.length > 0 && (
+              <div className="mt-3">
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Market Evidence Signals</p>
+                <div className="space-y-1">
+                  {marketEvidence.map((ev, idx) => (
+                    <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                      • {typeof ev === 'string' ? ev : (ev?.text || ev?.signal || ev?.description || JSON.stringify(ev))}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!marketAnalysis && marketIntelScore === null && marketEvidence.length === 0 && (
+              <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Insufficient verified data for market intelligence analysis.</p>
+            )}
+          </div>
+        )}
+
+        {/* Data Provenance section removed — internal debugging only */}
+
+        {(marketIntelScore !== null || analysisGaps.length > 0) && (
+          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #F59E0B30', animation: 'cmsFade 1.58s ease-out' }} data-testid="intelligence-quality">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-4 h-4" style={{ color: '#F59E0B' }} />
+              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Intelligence Quality & Gaps</h2>
+            </div>
+            {marketIntelScore !== null && (
+              <p className="text-xs text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>
+                Market intelligence score: <span className="text-[#F4F7FA]">{marketIntelScore}/100</span>{marketTrajectory ? ` (${marketTrajectory})` : ''}.
+              </p>
+            )}
+            {analysisGaps.length > 0 ? (
+              <div className="space-y-1.5">
+                {analysisGaps.slice(0, 6).map((gap, idx) => (
+                  <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    - {gap}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                No critical public-data gaps detected in this scan cycle.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Scan Observability section removed — internal debugging only */}
 
         {/* ── SECTION 6: STRATEGIC RECOMMENDATIONS ── */}
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #10B98120', animation: 'cmsFade 1.6s ease-out' }} data-testid="recommendations">
@@ -729,7 +1431,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               },
               !full.customer_count && {
                 icon: AlertTriangle, color: '#F59E0B',
-                text: 'Add measurable social proof — specific client results with company name, outcome, and timeframe. Generic testimonials have 40% less impact than named case studies.',
+                text: 'Add measurable social proof — specific client results with company name, outcome, and timeframe. Named case studies consistently outperform generic testimonials.',
               },
               !geo.hasSocialPresence && {
                 icon: AlertTriangle, color: '#F59E0B',

@@ -13,10 +13,46 @@ from supabase_client import get_supabase_client, init_supabase
 
 supabase_admin = init_supabase()
 from datetime import datetime
+import re
 
 logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
+
+
+def _is_missing_column_error(exc: Exception) -> bool:
+    text = str(exc or "")
+    return "PGRST204" in text or "Could not find the" in text
+
+
+def _extract_missing_column_name(exc: Exception) -> str:
+    text = str(exc or "")
+    match = re.search(r"'([^']+)' column", text)
+    return (match.group(1) if match else "").strip()
+
+
+def _insert_user_row_resilient(user_data: Dict[str, Any]):
+    """
+    Insert a user row while tolerating schema drift across environments.
+    If optional columns (e.g. company_name/industry) are missing, retry
+    with a minimal payload required for auth bootstrap.
+    """
+    payload = dict(user_data or {})
+    last_exc: Exception | None = None
+    for _ in range(8):
+        try:
+            return supabase_admin.table("users").insert(payload).execute()
+        except Exception as exc:
+            last_exc = exc
+            if not _is_missing_column_error(exc):
+                raise
+            missing_col = _extract_missing_column_name(exc)
+            if not missing_col or missing_col not in payload:
+                break
+            payload.pop(missing_col, None)
+    if last_exc:
+        raise last_exc
+    raise RuntimeError("Failed to insert user row")
 
 def _is_production() -> bool:
     env = (os.environ.get("ENVIRONMENT") or "").strip().lower()
@@ -53,8 +89,21 @@ def _apply_master_admin_overrides(user_data: Dict[str, Any], email: str | None) 
 
 
 def get_supabase_auth_client():
-    """Use a fresh anon/auth client so auth calls never mutate the global service-role client."""
-    return get_supabase_client()
+    """Return a client suitable for auth token introspection.
+
+    Prefer anon-key client. If anon key is unavailable but service-role exists,
+    fall back to the admin client so token verification does not fail-closed as 401.
+    """
+    try:
+        return get_supabase_client()
+    except Exception as anon_err:
+        admin_client = init_supabase()
+        if admin_client is not None:
+            logger.warning(
+                "[Auth] SUPABASE_ANON_KEY unavailable; falling back to service-role client for token verification"
+            )
+            return admin_client
+        raise RuntimeError(f"Supabase auth client unavailable: {anon_err}") from anon_err
 
 # Pydantic Models
 class SignUpRequest(BaseModel):
@@ -128,7 +177,7 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
                             "created_at": existing_by_email.get("created_at") or datetime.utcnow().isoformat(),
                             "updated_at": datetime.utcnow().isoformat()
                         }
-                        supabase_admin.table("users").insert(user_data).execute()
+                        _insert_user_row_resilient(user_data)
                         logger.info(f"Delete+insert merge succeeded for {email}")
                     except Exception as di_err:
                         logger.error(f"Delete+insert also failed ({di_err}), returning existing profile as-is")
@@ -163,7 +212,7 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
             "updated_at": datetime.utcnow().isoformat()
         }
         
-        user_response = supabase_admin.table("users").insert(user_data).execute()
+        user_response = _insert_user_row_resilient(user_data)
         
         if not user_response.data:
             raise HTTPException(status_code=500, detail="Failed to create user profile")
@@ -242,7 +291,12 @@ async def verify_supabase_token(token: str) -> Dict[str, Any]:
             raise HTTPException(status_code=401, detail="Malformed token")
 
         # Get user from Supabase Auth using the access token
-        user_response = get_supabase_auth_client().auth.get_user(token)
+        try:
+            auth_client = get_supabase_auth_client()
+            user_response = auth_client.auth.get_user(token)
+        except RuntimeError as cfg_err:
+            logger.error(f"[Auth] Supabase auth client misconfigured: {cfg_err}")
+            raise HTTPException(status_code=503, detail="Authentication provider is not configured")
 
         if not user_response or not user_response.user:
             raise HTTPException(status_code=401, detail="Invalid or expired token")

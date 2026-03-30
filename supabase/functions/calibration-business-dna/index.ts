@@ -77,7 +77,7 @@ async function scrapeWebsite(url: string): Promise<string> {
       const data = await res.json();
       const md = data.data?.markdown || "";
       // Only return if we got meaningful content (not error pages or empty shells)
-      if (md.length > 200) return md.substring(0, 8000);
+      if (md.length > 200) return md.substring(0, 20000);
     }
   } catch (e) { console.error("[scrape]", e); }
   return "";
@@ -114,7 +114,7 @@ async function fetchWebsiteHtml(url: string): Promise<string> {
     const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "").trim();
     const siteName = (html.match(/<meta[^>]+property=["']og:site_name["'][^>]+content=["']([^"']+)["']/i)?.[1] || "").trim();
     const description = (html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)?.[1] || "").trim();
-    const bodyText = stripHtmlTags(html).slice(0, 12000);
+    const bodyText = stripHtmlTags(html).slice(0, 20000);
 
     return [
       title ? `TITLE: ${title}` : "",
@@ -137,7 +137,7 @@ async function scrapeWebsiteWithKeyPages(baseUrl: string): Promise<string> {
     .map((content, idx) => content ? `--- PAGE: ${pageUrls[idx]} ---\n${content}` : "")
     .filter(Boolean)
     .join("\n\n");
-  return merged.substring(0, 24000);
+  return merged.substring(0, 40000);
 }
 
 function buildScanUrls(baseUrl: string): string[] {
@@ -148,7 +148,7 @@ function buildScanUrls(baseUrl: string): string[] {
 }
 
 // Perplexity deep search — primary intelligence source
-async function deepSearch(query: string, maxTokens = 800): Promise<string> {
+async function deepSearch(query: string, maxTokens = 1000): Promise<string> {
   if (!PERPLEXITY_API_KEY) return "";
   try {
     const res = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -316,6 +316,14 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "").trim();
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const token = authHeader.replace("Bearer ", "");
+    let user: { id: string } | null = null;
+    try {
+      const { data, error: authError } = await supabase.auth.getUser(token);
+      if (!authError && data?.user) {
+        user = data.user;
+      }
+    } catch { /* service role key or invalid JWT — fall through */ }
     let user: { id: string; email?: string } | null = null;
 
     if (token) {
@@ -343,6 +351,19 @@ serve(async (req) => {
     }
 
     const body = await req.json();
+
+    if (!user) {
+      const bodyUserId = body.user_id || body.tenant_id || "";
+      if (bodyUserId) {
+        user = { id: bodyUserId };
+      } else if (token === SUPABASE_SERVICE_ROLE_KEY) {
+        user = { id: "service-role-scan" };
+      } else {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
     const websiteUrl = body.website_url || "";
     const businessDescription = body.business_description || "";
     const businessNameHint = body.business_name_hint || "";
@@ -382,24 +403,24 @@ serve(async (req) => {
           `What is the business at ${domain}? Provide: exact registered business name, trading name, ABN if available, physical address, city, state, country, phone number, email address, industry, business type (Pty Ltd, sole trader, etc), years operating. Be specific and factual. If information is not publicly available, say so.` +
           (businessNameHint ? ` The business may be called "${businessNameHint}".` : '') +
           (locationHint ? ` Located near ${locationHint}.` : ''),
-          600
+          1000
         ),
         deepSearch(
           `What products and services does ${domain} offer? Provide: detailed list of all services/products, pricing model if visible, unique value proposition, competitive advantages, target market, ideal customer profile. Be specific about what they actually do, not generic descriptions.` +
           (businessNameHint ? ` Business name: "${businessNameHint}".` : ''),
-          600
+          1000
         ),
         deepSearch(
           `What is the market position of ${domain}? Provide: geographic focus, business model (B2B/B2C/etc), customer count estimate, revenue range estimate, growth strategy, main business challenges, industry position. Be factual — state what is publicly observable.`,
-          500
+          1000
         ),
         deepSearch(
           `Who runs ${domain}? Provide: founder name and background, key team members and roles, team size, hiring status. Also provide: mission statement, vision, short-term goals, long-term goals if publicly stated on their website or LinkedIn.`,
-          500
+          1000
         ),
         deepSearch(
           `Who are the main competitors of ${domain}? List their top 3-5 competitors in the same industry and geographic area. For each: name, website, what they offer, how they compare. Also: what is ${domain}'s competitive moat — what protects them from competition?`,
-          500
+          1000
         ),
       ]);
 
@@ -424,7 +445,7 @@ serve(async (req) => {
           .filter(Boolean)
           .join("\n\n");
         if (combined) {
-          websiteContent = combined.substring(0, 12000);
+          websiteContent = combined.substring(0, 20000);
           sources.push(`scraped_pages: ${scanUrls.length}`);
         }
       }
@@ -438,7 +459,7 @@ serve(async (req) => {
           .filter(Boolean)
           .join("\n\n");
         if (mergedHtml) {
-          websiteContent = mergedHtml.substring(0, 12000);
+          websiteContent = mergedHtml.substring(0, 20000);
           sources.push(`html_fallback_pages: ${fallbackUrls.length}`);
         }
       }
@@ -461,7 +482,7 @@ serve(async (req) => {
         `Include: likely industry, target market, business model, competitive landscape, growth opportunities, main challenges.` +
         (businessNameHint ? ` Business name: "${businessNameHint}".` : '') +
         (locationHint ? ` Located: ${locationHint}.` : ''),
-        800
+        1000
       );
       if (descResult) { perplexityContent = descResult; sources.push("Perplexity (from description)"); }
     }
@@ -475,8 +496,8 @@ serve(async (req) => {
 
     // STEP 2: AI extraction
     const contextBlock = [
-      perplexityContent ? `PERPLEXITY INTELLIGENCE (PRIMARY SOURCE):\n${perplexityContent.substring(0, 12000)}` : "",
-      websiteContent ? `RAW WEBSITE CONTENT (SUPPLEMENTAL):\n${websiteContent.substring(0, 4000)}` : "",
+      perplexityContent ? `PERPLEXITY INTELLIGENCE (PRIMARY SOURCE):\n${perplexityContent.substring(0, 20000)}` : "",
+      websiteContent ? `RAW WEBSITE CONTENT (SUPPLEMENTAL):\n${websiteContent.substring(0, 12000)}` : "",
       businessDescription ? `OWNER DESCRIPTION:\n${businessDescription}` : "",
       businessNameHint ? `USER HINT - BUSINESS NAME: ${businessNameHint}` : "",
       locationHint ? `USER HINT - LOCATION: ${locationHint}` : "",
@@ -493,7 +514,7 @@ serve(async (req) => {
           { role: "user", content: `Extract the complete Business DNA from this content:\n\n${contextBlock}` },
         ],
         temperature: 0.3,
-        max_tokens: 2500,
+        max_tokens: 8000,
       }),
     });
 
