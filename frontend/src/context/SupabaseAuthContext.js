@@ -500,6 +500,7 @@ export const SupabaseAuthProvider = ({ children }) => {
             // HTML response = likely nginx/proxy error, not a calibration state. Fail-closed.
             calibrationComplete = false;
           } else if (calRes.status === 401 || calRes.status === 403) {
+            // Auth error — session may not have propagated yet. Retry once.
             console.warn(`[CALIBRATION ROUTING] Auth error ${calRes.status} — retrying once`);
             await new Promise(r => setTimeout(r, 1500));
             const retryRes = await fetchWithTimeout(calUrl, {
@@ -513,17 +514,11 @@ export const SupabaseAuthProvider = ({ children }) => {
               const retryCal = await retryRes.json();
               calibrationComplete = retryCal.status === 'COMPLETE';
             } else {
-              // fail-closed: new users with auth issues must go through calibration
               // fail-closed: do not bypass calibration when status cannot be validated
               calibrationComplete = false;
             }
           } else {
             console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status}`);
-            // fail-closed: if calibration status is unavailable, route to calibration
-            calibrationComplete = false;
-          }
-        } catch (e) {
-          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → fail-closed to NEEDS_CALIBRATION`);
             // fail-closed: if calibration status is unavailable, require calibration path.
             calibrationComplete = false;
           }

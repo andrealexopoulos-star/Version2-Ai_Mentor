@@ -16,6 +16,7 @@ const extractFirstName = (raw) => {
 };
 
 const MAX_SCAN_ATTEMPTS_BEFORE_MANUAL = 2;
+const MIN_ANALYZE_DWELL_MS = 12000;
 
 const SCAN_ERROR_MESSAGES = {
   INVALID_WEBSITE_URL: "Website URL looks invalid. Check the domain and try scanning again.",
@@ -69,9 +70,134 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 25000) => {
   }
 };
 
-const createCalibrationRunId = () => {
-  const rand = Math.random().toString(36).slice(2, 8);
-  return `cal-${Date.now()}-${rand}`;
+export const normalizeAbn = (abn) => (abn || "").replace(/\s/g, "");
+
+export const isValidAbn = (abn) => /^\d{11}$/.test(normalizeAbn(abn));
+
+export const normalizeSocialUrl = (url) => {
+  if (!url || typeof url !== "string") return "";
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
+export const SOCIAL_PLATFORMS = ["linkedin", "facebook", "instagram", "twitter", "youtube"];
+export const CALIBRATION_FLOW_SEQUENCE = [
+  "welcome",
+  "analyzing",
+  "abn_validation",
+  "social_enrichment",
+  "identity_verification",
+  "wow_cards",
+  "deep_narrative",
+  "roadmap",
+  "report_generation",
+  "wow_summary",
+  "agent_calibration",
+  "integration_connect",
+  "intelligence-first",
+  "completing",
+];
+
+export const getNextCalibrationState = (state) => {
+  const idx = CALIBRATION_FLOW_SEQUENCE.indexOf(state);
+  if (idx < 0 || idx >= CALIBRATION_FLOW_SEQUENCE.length - 1) return null;
+  return CALIBRATION_FLOW_SEQUENCE[idx + 1];
+};
+
+export const collectSocialMap = (input) => {
+  const out = {};
+  if (!input) return out;
+  for (const platform of SOCIAL_PLATFORMS) out[platform] = "";
+
+  if (Array.isArray(input)) {
+    for (const item of input) {
+      const key = (item?.platform || "").toLowerCase();
+      if (!SOCIAL_PLATFORMS.includes(key)) continue;
+      if (!out[key]) out[key] = normalizeSocialUrl(item?.url || "");
+    }
+    return out;
+  }
+
+  if (typeof input === "object") {
+    for (const [keyRaw, valueRaw] of Object.entries(input)) {
+      const key = String(keyRaw).toLowerCase();
+      const mapped = key === "x" ? "twitter" : key;
+      if (!SOCIAL_PLATFORMS.includes(mapped)) continue;
+      if (!out[mapped]) out[mapped] = normalizeSocialUrl(valueRaw);
+    }
+  }
+  return out;
+};
+
+export const mergeSocialSignals = ({ perplexity, html, search }) => {
+  const p = collectSocialMap(perplexity);
+  const h = collectSocialMap(html);
+  const s = collectSocialMap(search);
+  const merged = { linkedin: "", facebook: "", instagram: "", twitter: "", youtube: "" };
+  let source = "";
+
+  for (const platform of SOCIAL_PLATFORMS) {
+    if (p[platform]) {
+      merged[platform] = p[platform];
+      source = source || "perplexity";
+      continue;
+    }
+    if (h[platform]) {
+      merged[platform] = h[platform];
+      source = source || "html";
+      continue;
+    }
+    if (s[platform]) {
+      merged[platform] = s[platform];
+      source = source || "search";
+    }
+  }
+
+  const filled = SOCIAL_PLATFORMS.filter((k) => !!merged[k]).length;
+  return {
+    ...merged,
+    source: source || "search",
+    social_status: filled === 0 ? "not_detected" : (filled === SOCIAL_PLATFORMS.length ? "verified" : "partial"),
+  };
+};
+
+export const buildAbnIdentityMetadata = ({ lookupResult, abnInputDetected }) => {
+  if (lookupResult?.status === "found") {
+    return {
+      abn_verified: true,
+      abn_source: abnInputDetected ? "website" : "gud_api",
+      legal_name: lookupResult.legal_name || "",
+      entity_status: lookupResult.status || lookupResult.entity_status || "",
+      registered_address: lookupResult.address || "",
+      abn_status: "verified",
+      _abnLookupResult: lookupResult,
+    };
+  }
+
+  if (lookupResult?.status === "ambiguous") {
+    return {
+      abn_verified: false,
+      abn_source: "gud_api",
+      legal_name: "",
+      entity_status: "",
+      registered_address: "",
+      abn_status: "multiple",
+      _abnLookupResult: lookupResult,
+    };
+  }
+
+  return {
+    abn_verified: false,
+    abn_source: abnInputDetected ? "website" : "gud_api",
+    legal_name: "",
+    entity_status: "",
+    registered_address: "",
+    abn_status: "not_found",
+    _abnLookupResult: lookupResult || null,
+  };
+};
+
 const buildExtractionFromDeepEnrichment = (deepEnrichment) => {
   if (!deepEnrichment || typeof deepEnrichment !== "object") return null;
   const hasUsableContent = [
@@ -83,7 +209,9 @@ const buildExtractionFromDeepEnrichment = (deepEnrichment) => {
     deepEnrichment.competitive_advantages,
     deepEnrichment.market_position,
     deepEnrichment.abn,
-  ].some((v) => typeof v === "string" && v.trim().length > 0) || (Array.isArray(deepEnrichment.competitors) && deepEnrichment.competitors.length > 0);
+  ].some((v) => typeof v === "string" && v.trim().length > 0) || (
+    Array.isArray(deepEnrichment.competitors) && deepEnrichment.competitors.length > 0
+  );
 
   if (!hasUsableContent) return null;
 
@@ -114,11 +242,75 @@ const buildExtractionFromDeepEnrichment = (deepEnrichment) => {
   };
 };
 
+const buildExtractionFromScrapeProfile = (scrapeProfile, websiteUrl = "") => {
+  if (!scrapeProfile || typeof scrapeProfile !== "object") return null;
+  const businessName = (scrapeProfile.business_name || "").trim();
+  const description = (
+    scrapeProfile.description ||
+    scrapeProfile.meta_description ||
+    scrapeProfile.h1 ||
+    ""
+  ).trim();
+
+  if (!businessName && !description) return null;
+
+  return {
+    business_name: businessName,
+    description,
+    industry: "",
+    main_products_services: description,
+    target_market: "",
+    unique_value_proposition: "",
+    competitive_advantages: "",
+    market_position: "",
+    competitor_scan_result: "",
+    abn: "",
+    competitors: [],
+    social_media_links: {},
+    trust_signals: [],
+    executive_summary: "",
+    cmo_executive_brief: "",
+    deep_scan_sources: null,
+    _website: websiteUrl,
+  };
+};
+
+const buildExtractionFromUrlFallback = (websiteUrl = "") => {
+  const raw = (websiteUrl || "").trim();
+  let host = raw;
+  try {
+    host = new URL(raw).hostname || raw;
+  } catch {
+    host = raw.replace(/^https?:\/\//i, "").split("/")[0] || raw;
+  }
+  const cleaned = host.replace(/^www\./i, "").trim();
+
+  // Deterministic minimal payload so calibration flow can continue without fabricating facts.
+  return {
+    business_name: "",
+    description: "Insufficient verified data",
+    industry: "",
+    main_products_services: "",
+    target_market: "",
+    unique_value_proposition: "",
+    competitive_advantages: "",
+    market_position: "",
+    competitor_scan_result: "",
+    abn: "",
+    competitors: [],
+    social_media_links: {},
+    trust_signals: [],
+    executive_summary: "",
+    cmo_executive_brief: "",
+    deep_scan_sources: null,
+    _website: cleaned || websiteUrl || "",
+  };
+};
+
 export const useCalibrationState = () => {
   const navigate = useNavigate();
   const { user, session, loading, signOut, clearBootstrapCache } = useSupabaseAuth();
   const supabase = useSupabaseAuth().supabase;
-  const isCalibrationQaRoute = typeof window !== "undefined" && window.location?.pathname === "/calibration-qa";
   const isCalibrationQaRoute = (() => {
     if (typeof window === "undefined") return false;
     const pathname = (window.location?.pathname || "").replace(/\/+$/, "");
@@ -163,54 +355,17 @@ export const useCalibrationState = () => {
   const [lastResponse, setLastResponse] = useState("");
   const [transitioning, setTransitioning] = useState(false);
   const [intelligenceData, setIntelligenceData] = useState(null);
+  const [deepCmoReport, setDeepCmoReport] = useState(null);
+  const [deepCmoReportHistory, setDeepCmoReportHistory] = useState([]);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [abnValidationResult, setAbnValidationResult] = useState(null);
   const initCalled = useRef(false);
-  const calibrationRunIdRef = useRef(createCalibrationRunId());
-  const calibrationTraceRef = useRef([]);
-  const fieldProvenanceRef = useRef({});
 
   const firstName = extractFirstName(
     userName || user?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || ''
   );
   const userEmail = user?.email || session?.user?.email || '';
   const canManualFallback = scanAttemptCount >= MAX_SCAN_ATTEMPTS_BEFORE_MANUAL;
-
-  const recordTrace = (step, functionName, response, ok = true) => {
-    const proxy = response?._proxy || {};
-    calibrationTraceRef.current = [
-      ...calibrationTraceRef.current,
-      {
-        at: new Date().toISOString(),
-        step,
-        function: functionName,
-        ok,
-        request_id: proxy.request_id || null,
-      },
-    ].slice(-40);
-  };
-
-  const applyProvenance = (field, sourceFn, confidence = 0.65) => {
-    if (!field) return;
-    fieldProvenanceRef.current[field] = {
-      source_fn: sourceFn,
-      confidence,
-    };
-  };
-
-  const callEdgeWithTrace = async (functionName, payload = {}, timeout = 45000, step = "unspecified") => {
-    try {
-      const response = await callEdgeFunction(
-        functionName,
-        payload,
-        timeout,
-        { runId: calibrationRunIdRef.current, step }
-      );
-      recordTrace(step, functionName, response, true);
-      return response;
-    } catch (err) {
-      recordTrace(step, functionName, null, false);
-      throw err;
-    }
-  };
 
   const handleSignOut = async () => {
     try {
@@ -266,6 +421,10 @@ export const useCalibrationState = () => {
     setError(null);
     setTransitioning(false);
     setIntelligenceData(null);
+    setDeepCmoReport(null);
+    setDeepCmoReportHistory([]);
+    setIsGeneratingReport(false);
+    setAbnValidationResult(null);
   }, [entry]);
 
   const registerScanFailure = (failure, attemptedUrl, attempts) => {
@@ -278,8 +437,15 @@ export const useCalibrationState = () => {
     setEntry("welcome");
   };
 
+  const ensureAnalyzeDwell = async (startedAtMs) => {
+    const elapsed = Date.now() - (startedAtMs || 0);
+    const remaining = MIN_ANALYZE_DWELL_MS - elapsed;
+    if (remaining > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remaining));
+    }
+  };
+
   const callEdge = async (payload) => {
-    return await callEdgeWithTrace("calibration-psych", payload, 30000, "psych_turn");
     return await callEdgeFunction("calibration-psych", payload, 30000);
   };
 
@@ -292,8 +458,6 @@ export const useCalibrationState = () => {
     setCompleting(true); setEntry("completing"); setRevealPhase(0);
     (async () => {
       try {
-        await callEdgeWithTrace('calibration-sync', {}, 45000, 'calibration_sync').catch(() => {});
-        await callEdgeWithTrace('biqc-insights-cognitive', { refresh: true }, 45000, 'insights_refresh').catch(() => {});
         await callEdgeFunction('calibration-sync', {}).catch(() => {});
         await callEdgeFunction('biqc-insights-cognitive', { refresh: true }).catch(() => {});
       } catch (e) { console.warn('[calibration] Sync failed (non-blocking):', e); }
@@ -382,6 +546,31 @@ export const useCalibrationState = () => {
     return vals.length >= 3;
   };
 
+  const runAbnValidation = async ({ extractedData, edgeSignals, website, currentSignals }) => {
+    const extractedAbn = extractedData?.abn || "";
+    const candidateAbn = Array.isArray(edgeSignals?.abn_candidates) ? edgeSignals.abn_candidates[0] : "";
+    const abnToValidate = isValidAbn(extractedAbn) ? extractedAbn : (isValidAbn(candidateAbn) ? candidateAbn : "");
+    const lookupPayload = abnToValidate
+      ? { abn: abnToValidate }
+      : {
+          business_name_hint: extractedData?.business_name || currentSignals?.businessName || "",
+          location_hint: extractedData?.location || currentSignals?.address || currentSignals?.geo || "",
+          domain: website || "",
+        };
+
+    let lookupResult = null;
+    try {
+      lookupResult = await callEdgeFunction("business-identity-lookup", lookupPayload, 30000);
+    } catch {
+      lookupResult = null;
+    }
+
+    return buildAbnIdentityMetadata({
+      lookupResult,
+      abnInputDetected: !!abnToValidate,
+    });
+  };
+
   // ═══ PHASE 1: Domain Entry + Scan ═══
   const handleAuditSubmit = async (e) => {
     e.preventDefault();
@@ -399,6 +588,7 @@ export const useCalibrationState = () => {
     setIdentityConfidence(null);
     setEditedFields({});
     setError(null); setIsSubmitting(true); setEntry("analyzing");
+    const analyzeStartedAt = Date.now();
     try {
       // Clear potentially contaminated intelligence fields before new calibration scan
       // This prevents cross-business data bleeding from previous calibrations
@@ -423,13 +613,14 @@ export const useCalibrationState = () => {
       let auditData = null;
       let deepEnrichment = null;
       let edgeScanError = null;
+      let scrapeProfile = null;
 
       // FAST PRE-FILL: scrape-business-profile runs instantly (no LLM, pure HTML)
       // Gives users immediate feedback while AI analysis runs
       {
         try {
-          const scrapeData = await callEdgeWithTrace('scrape-business-profile', { url }, 15000, 'scrape_prefill');
           const scrapeData = await callEdgeFunction('scrape-business-profile', { url }, 15000);
+          scrapeProfile = scrapeData;
           if (scrapeData?.business_name || scrapeData?.description) {
             // Instantly pre-fill what we have from HTML
             setIdentitySignals({
@@ -437,14 +628,11 @@ export const useCalibrationState = () => {
               businessName: scrapeData.business_name || '',
               whatYouDo: scrapeData.description || scrapeData.meta_description || '',
             });
-            if (scrapeData.business_name) applyProvenance('business_name', 'scrape-business-profile', 0.8);
-            if (scrapeData.description || scrapeData.meta_description) applyProvenance('main_products_services', 'scrape-business-profile', 0.7);
           }
         } catch { /* non-fatal — AI analysis continues below */ }
       }
 
       try {
-        auditData = await callEdgeWithTrace('calibration-business-dna', { website_url: url }, 90000, 'business_dna');
         auditData = await callEdgeFunction('calibration-business-dna', { website_url: url }, 90000);
           if (auditData?.status === "error" || auditData?.ok === false || auditData?.error_code) {
             const syntheticError = {
@@ -460,47 +648,24 @@ export const useCalibrationState = () => {
             throw syntheticError;
           }
       } catch (scanErr) {
-        registerScanFailure(getScanFailure(scanErr, "WEBSITE_TIMEOUT"), url, attempts);
-        return;
         edgeScanError = scanErr;
       }
 
-      // Backend enrichment orchestrates ALL edge functions (social-enrichment,
-      // deep-web-recon, competitor-monitor, market-analysis-ai, market-signal-scorer)
-      // plus Serper searches and multi-page crawl. No need to call them separately.
-      let socialEnrichment = null;
-      let deepReconData = null;
-      let competitorMonitorData = null;
-
-      // Deep backend enrichment (Trinity + web search + ABN + competitor scan + all edge functions)
+      // Deep backend enrichment (Trinity + web search + ABN + competitor scan)
       try {
-        const deepRes = await apiClient.post('/calibration/enrichment/website', { url, action: 'scan' }, { timeout: 120000 });
-        if (deepRes?.data?.status === 'draft' && deepRes?.data?.enrichment) {
+        const deepRes = await apiClient.post('/calibration/enrichment/website', { url, action: 'scan' });
+        if (deepRes?.data?.enrichment && typeof deepRes.data.enrichment === "object") {
           deepEnrichment = deepRes.data.enrichment;
-          if (deepEnrichment.social_handles) {
-            socialEnrichment = { social_handles: deepEnrichment.social_handles, trust_signals: deepEnrichment.trust_signals || [] };
-          }
-          if (deepEnrichment.deep_recon_summary || deepEnrichment.deep_recon_signals) {
-            deepReconData = { executive_summary: deepEnrichment.deep_recon_summary, signals: deepEnrichment.deep_recon_signals || [], sources: deepEnrichment.sources?.edge_tools?.deep_web_recon ? ['deep-web-recon'] : [] };
-          }
-          if (deepEnrichment.competitor_monitor_summary) {
-            competitorMonitorData = { ok: true, signals: deepEnrichment.competitor_monitor_summary };
-          }
         }
       } catch {
         // non-fatal; continue with edge extraction
       }
 
-      if (auditData?.extracted_data) {
-        const exRaw = auditData.extracted_data;
-        if (auditData?.field_provenance && typeof auditData.field_provenance === 'object') {
-          Object.entries(auditData.field_provenance).forEach(([field, meta]) => {
-            const sourceFn = meta?.source_fn || 'calibration-business-dna';
-            const confidence = typeof meta?.confidence === 'number' ? meta.confidence : 0.7;
-            applyProvenance(field, sourceFn, confidence);
-          });
-        }
-      const exRaw = auditData?.extracted_data || buildExtractionFromDeepEnrichment(deepEnrichment);
+      const exRaw =
+        auditData?.extracted_data ||
+        buildExtractionFromDeepEnrichment(deepEnrichment) ||
+        buildExtractionFromScrapeProfile(scrapeProfile, url) ||
+        buildExtractionFromUrlFallback(url);
       if (exRaw) {
         const ex = {
           ...exRaw,
@@ -516,12 +681,8 @@ export const useCalibrationState = () => {
             competitor_scan_result: deepEnrichment.competitor_analysis || exRaw.competitor_scan_result,
             abn: deepEnrichment.abn || exRaw.abn,
             competitors: Array.isArray(deepEnrichment.competitors) ? deepEnrichment.competitors : (exRaw.competitors || []),
-            social_media_links: (socialEnrichment?.social_handles && Object.keys(socialEnrichment.social_handles).length > 0)
-              ? socialEnrichment.social_handles
-              : (deepEnrichment.social_handles || exRaw.social_media_links || {}),
-            trust_signals: (socialEnrichment?.trust_signals && socialEnrichment.trust_signals.length > 0)
-              ? socialEnrichment.trust_signals
-              : (deepEnrichment.trust_signals || exRaw.trust_signals || []),
+            social_media_links: deepEnrichment.social_handles || exRaw.social_media_links || {},
+            trust_signals: deepEnrichment.trust_signals || exRaw.trust_signals || [],
             executive_summary: deepEnrichment.executive_summary || exRaw.executive_summary || '',
             cmo_executive_brief: deepEnrichment.cmo_executive_brief || exRaw.cmo_executive_brief || '',
             seo_analysis: deepEnrichment.seo_analysis || exRaw.seo_analysis || null,
@@ -532,68 +693,15 @@ export const useCalibrationState = () => {
             competitor_swot: deepEnrichment.competitor_swot || exRaw.competitor_swot || [],
             cmo_priority_actions: deepEnrichment.cmo_priority_actions || exRaw.cmo_priority_actions || [],
             deep_scan_sources: deepEnrichment.sources || null,
-            deep_recon_signals: Array.isArray(deepReconData?.signals) ? deepReconData.signals : [],
-            deep_recon_summary: deepReconData?.executive_summary || '',
-            competitor_monitor_summary: competitorMonitorData?.ok
-              ? `Signals: ${competitorMonitorData.signals || 0}, actions: ${competitorMonitorData.actions || 0}`
-              : '',
-            analysis_gaps: Array.isArray(deepEnrichment.analysis_gaps) ? deepEnrichment.analysis_gaps : [],
-            market_intelligence_score: deepEnrichment.market_intelligence_score ?? null,
-            market_trajectory: deepEnrichment.market_trajectory || '',
-            market_evidence: deepEnrichment.market_evidence || null,
-            google_reviews: deepEnrichment.google_reviews || null,
-            glassdoor_reviews: deepEnrichment.glassdoor_reviews || null,
-            review_aggregation: deepEnrichment.review_aggregation || null,
-            browse_ai_reviews: deepEnrichment.browse_ai_reviews || null,
-            semrush_data: deepEnrichment.semrush_data || null,
-            semrush_competitors: deepEnrichment.semrush_competitors || null,
           } : {}),
         };
 
-        const provenanceSource = deepEnrichment ? 'calibration.enrichment.website' : 'calibration-business-dna';
-        [
-          'business_name',
-          'industry',
-          'main_products_services',
-          'target_market',
-          'unique_value_proposition',
-          'competitive_advantages',
-          'market_position',
-          'competitors',
-          'abn',
-          'social_media_links',
-          'trust_signals',
-          'seo_analysis',
-          'paid_media_analysis',
-          'social_media_analysis',
-          'website_health',
-          'swot',
-          'competitor_swot',
-          'deep_recon_signals',
-          'deep_recon_summary',
-          'competitor_monitor_summary',
-          'analysis_gaps',
-          'market_intelligence_score',
-          'market_trajectory',
-          'market_evidence',
-        ].forEach((k) => {
-          if (ex[k] !== undefined && ex[k] !== null && ex[k] !== '') {
-            applyProvenance(k, provenanceSource, deepEnrichment ? 0.78 : 0.68);
-          }
-        });
-        if (socialEnrichment?.social_handles) applyProvenance('social_media_links', 'social-enrichment', 0.82);
-        if (socialEnrichment?.trust_signals?.length) applyProvenance('trust_signals', 'social-enrichment', 0.75);
-
         const fullExtraction = {
           ...ex,
-          _sources: auditData.data_sources || [],
+          _sources: auditData?.data_sources || [],
           _deep_sources: deepEnrichment?.sources || null,
-          _social_sources: socialEnrichment?.sources || null,
-          _deep_recon_sources: deepReconData?.sources || null,
           _website: url,
-          _generated_at: auditData.generated_at || new Date().toISOString(),
-          _trace: calibrationTraceRef.current,
-          _field_provenance: fieldProvenanceRef.current,
+          _generated_at: auditData?.generated_at || new Date().toISOString(),
         };
 
         const wow = {
@@ -619,7 +727,7 @@ export const useCalibrationState = () => {
         const signals = parseIdentitySignals(ex, url);
 
         // Merge Edge Function's deterministic identity_signals (ABN, phone, email, socials, address)
-        const edgeSignals = auditData.identity_signals || ex._identity_signals || {};
+        const edgeSignals = auditData?.identity_signals || ex._identity_signals || {};
         if (edgeSignals.abn_candidates?.length > 0 && !signals.abn) {
           signals.abn = edgeSignals.abn_candidates[0];
         }
@@ -663,22 +771,38 @@ export const useCalibrationState = () => {
         if (ex.state && !signals.state) signals.state = ex.state;
         if (ex.trading_name) signals.tradingName = ex.trading_name;
 
+        const abnMeta = await runAbnValidation({
+          extractedData: ex,
+          edgeSignals,
+          website: url,
+          currentSignals: signals,
+        });
+        const mergedSocial = mergeSocialSignals({
+          perplexity: ex.social_media_links || {},
+          html: edgeSignals.social_media_links || {},
+          search: deepEnrichment?.social_handles || {},
+        });
+        signals.social_enrichment = mergedSocial;
+        signals.socials = SOCIAL_PLATFORMS
+          .filter((platform) => !!mergedSocial[platform])
+          .map((platform) => ({ platform, url: mergedSocial[platform] }));
+        signals.abn_verified = abnMeta.abn_verified;
+        signals.abn_source = abnMeta.abn_source;
+        signals.legal_name = abnMeta.legal_name;
+        signals.entity_status = abnMeta.entity_status;
+        signals.registered_address = abnMeta.registered_address;
+        signals.abn_status = abnMeta.abn_status;
+        signals._abnLookupResult = abnMeta._abnLookupResult;
+        setAbnValidationResult(abnMeta);
         setIdentitySignals(signals);
         setIdentityConfirmed(false);
         setScanFailure(null);
 
+        await ensureAnalyzeDwell(analyzeStartedAt);
         autoSave(1);
-        // NEW FLOW: Go to identity_verification BEFORE footprint report
-        setEntry("identity_verification");
+        setEntry("abn_validation");
       } else {
-        registerScanFailure(
-          getScanFailure(
-            { response: { status: 422, data: { code: "INSUFFICIENT_PUBLIC_CONTENT", stage: "scan" } } },
-            "INSUFFICIENT_PUBLIC_CONTENT"
-          ),
-          url,
-          attempts
-        );
+        await ensureAnalyzeDwell(analyzeStartedAt);
         if (edgeScanError) {
           registerScanFailure(getScanFailure(edgeScanError, "WEBSITE_TIMEOUT"), url, attempts);
         } else {
@@ -694,6 +818,7 @@ export const useCalibrationState = () => {
         return;
       }
     } catch (err) {
+      await ensureAnalyzeDwell(analyzeStartedAt);
       registerScanFailure(getScanFailure(err), url, attempts);
       return;
     }
@@ -708,9 +833,28 @@ export const useCalibrationState = () => {
       autoSave(1);
       setWowSummary({ what_you_do: summary, who_you_serve: '', what_sets_you_apart: '', biggest_challenges: '', growth_opportunity: '' });
       // Manual entry goes to identity verification with minimal signals
-      setIdentitySignals({ domain: websiteUrl, businessName: '', whatYouDo: summary });
+      setIdentitySignals({
+        domain: websiteUrl,
+        businessName: '',
+        whatYouDo: summary,
+        abn_verified: false,
+        abn_source: "gud_api",
+        legal_name: "",
+        entity_status: "",
+        registered_address: "",
+        abn_status: "not_found",
+        social_enrichment: {
+          linkedin: "",
+          facebook: "",
+          instagram: "",
+          twitter: "",
+          youtube: "",
+          source: "search",
+          social_status: "not_detected",
+        },
+      });
       setIdentityConfirmed(false);
-      setEntry("identity_verification");
+      setEntry("abn_validation");
     } catch { setError("Failed to save. Please try again."); }
     finally { setIsSubmitting(false); }
   };
@@ -736,185 +880,6 @@ export const useCalibrationState = () => {
     setEntry("wow_cards");
   };
 
-  // ═══ PHASE 4: WOW Cards (forensic insight cards) ═══
-  const buildWowCards = () => {
-    const full = wowSummary?._full || {};
-    const seo = full.seo_analysis || {};
-    const swot = full.swot || {};
-    const health = full.website_health || {};
-    const actions = Array.isArray(full.cmo_priority_actions) ? full.cmo_priority_actions : [];
-    const compSwot = Array.isArray(full.competitor_swot) ? full.competitor_swot : [];
-    const competitors = Array.isArray(full.competitors) ? full.competitors : [];
-    const trustSignals = Array.isArray(full.trust_signals) ? full.trust_signals : [];
-    const gaps = Array.isArray(full.analysis_gaps) ? full.analysis_gaps : [];
-    const weaknesses = Array.isArray(swot.weaknesses) ? swot.weaknesses : [];
-    const threats = Array.isArray(swot.threats) ? swot.threats : [];
-
-    const seoGaps = seo.missing_keywords || seo.gaps || seo.issues || '';
-    const ctaIssues = health.cta_issues || health.missing_ctas || '';
-    const conversionSignals = seo.conversion_issues || health.conversion_gaps || '';
-    const revenueClaim = [seoGaps, ctaIssues, conversionSignals]
-      .filter(Boolean).map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join('; ')
-      || weaknesses.slice(0, 2).join('; ')
-      || 'SEO gaps and missing calls-to-action detected in website scan — potential lead leakage identified.';
-
-    const compNames = competitors.map(c => typeof c === 'string' ? c : (c?.name || c?.domain || '')).filter(Boolean);
-    const compStrengths = compSwot.flatMap(c => Array.isArray(c?.strengths) ? c.strengths : []).slice(0, 2);
-    const competitorClaim = compStrengths.length > 0
-      ? `Competitor advantages detected: ${compStrengths.join('; ')}`
-      : compNames.length > 0
-        ? `${compNames.length} competitor(s) identified (${compNames.slice(0, 3).join(', ')}). Positioning gaps visible in SWOT analysis.`
-        : threats.length > 0
-          ? `Market threats identified: ${threats.slice(0, 2).join('; ')}`
-          : 'Competitive landscape scanned — positioning gaps identified relative to market benchmarks.';
-
-    const trustGaps = trustSignals.length > 0
-      ? trustSignals.filter(s => typeof s === 'string' && (s.toLowerCase().includes('missing') || s.toLowerCase().includes('no '))).slice(0, 2)
-      : [];
-    const hiddenClaim = trustGaps.length > 0
-      ? `Trust signal gaps: ${trustGaps.join('; ')}`
-      : gaps.length > 0
-        ? `Analysis gaps detected: ${gaps.slice(0, 2).join('; ')}`
-        : weaknesses.length > 0
-          ? `Hidden weakness: ${weaknesses[0]}`
-          : 'Communication audit revealed trust signal gaps that may affect conversion rates.';
-
-    const quickAction = actions[0];
-    const quickClaim = quickAction
-      ? (typeof quickAction === 'string' ? quickAction : (quickAction.action || quickAction.description || quickAction.title || JSON.stringify(quickAction)))
-      : (Array.isArray(swot.opportunities) && swot.opportunities[0])
-        ? `Quick win opportunity: ${swot.opportunities[0]}`
-        : 'Immediate optimisation opportunities identified from digital footprint analysis.';
-
-    return [
-      {
-        type: 'revenue_leakage',
-        title: 'Revenue Leakage Detected',
-        claim: revenueClaim,
-        evidence: [seo.source, health.source, 'Website scan', 'SEO analysis'].filter(Boolean).join(', ') || 'Website & SEO analysis',
-        confidence: seoGaps || ctaIssues ? 'high' : weaknesses.length > 0 ? 'medium' : 'low',
-        action: 'Review SEO gaps and missing CTAs to plug lead leakage.',
-      },
-      {
-        type: 'competitor_delta',
-        title: 'Competitor Delta Identified',
-        claim: competitorClaim,
-        evidence: compNames.length > 0 ? `Competitor scan: ${compNames.slice(0, 3).join(', ')}` : 'SWOT & market analysis',
-        confidence: compStrengths.length > 0 || compNames.length >= 2 ? 'high' : compNames.length > 0 ? 'medium' : 'low',
-        action: 'Analyse competitor positioning to close strategic gaps.',
-      },
-      {
-        type: 'hidden_issue',
-        title: 'Hidden Issue Discovered',
-        claim: hiddenClaim,
-        evidence: trustGaps.length > 0 ? 'Trust signal audit' : gaps.length > 0 ? 'Analysis gap scan' : 'Communication audit',
-        confidence: trustGaps.length > 0 || gaps.length > 0 ? 'high' : weaknesses.length > 0 ? 'medium' : 'low',
-        action: 'Address trust signal gaps to improve visitor-to-lead conversion.',
-      },
-      {
-        type: 'quick_win',
-        title: 'Immediate Quick Win',
-        claim: quickClaim,
-        evidence: quickAction ? 'CMO priority actions' : 'SWOT opportunities',
-        confidence: quickAction ? 'high' : 'medium',
-        action: 'Implement this quick win within 7 days for immediate impact.',
-      },
-    ];
-  };
-
-  const handleConfirmWowCards = () => {
-    autoSave(2, "IN_PROGRESS");
-    setEntry("strategic_roadmap");
-  };
-
-  // ═══ PHASE 5: Strategic Roadmap (7/30/90) ═══
-  const buildStrategicRoadmap = () => {
-    const full = wowSummary?._full || {};
-    const actions = Array.isArray(full.cmo_priority_actions) ? full.cmo_priority_actions : [];
-    const swot = full.swot || {};
-    const opportunities = Array.isArray(swot.opportunities) ? swot.opportunities : [];
-    const strengths = Array.isArray(swot.strengths) ? swot.strengths : [];
-    const marketPos = full.market_position || '';
-    const trajectory = full.market_trajectory || '';
-    const compAdvantages = full.competitive_advantages || '';
-
-    const normalize = (item) => {
-      if (typeof item === 'string') return item;
-      return item?.action || item?.description || item?.title || item?.text || JSON.stringify(item);
-    };
-
-    const sevenDay = actions.slice(0, 3).map((a, i) => ({
-      action: normalize(a),
-      owner: 'Operator',
-      effort: i === 0 ? 'Low' : 'Medium',
-      kpiShift: 'Conversion uplift within 7 days',
-      confidence: 'high',
-      evidence: 'CMO priority actions',
-    }));
-    if (sevenDay.length === 0) {
-      sevenDay.push({
-        action: 'Audit and fix top 3 website messaging gaps identified in scan',
-        owner: 'Operator',
-        effort: 'Low',
-        kpiShift: 'Improved visitor engagement',
-        confidence: 'medium',
-        evidence: 'Website health analysis',
-      });
-    }
-
-    const thirtyDay = opportunities.slice(0, 3).map((o, i) => ({
-      action: normalize(o),
-      owner: 'Operator',
-      effort: i === 0 ? 'Medium' : 'High',
-      kpiShift: 'Market share growth within 30 days',
-      confidence: opportunities.length >= 2 ? 'high' : 'medium',
-      evidence: 'SWOT opportunities analysis',
-    }));
-    if (thirtyDay.length === 0) {
-      thirtyDay.push({
-        action: 'Develop competitive positioning strategy based on identified market gaps',
-        owner: 'Operator',
-        effort: 'Medium',
-        kpiShift: 'Competitive positioning improvement',
-        confidence: 'medium',
-        evidence: 'Market analysis',
-      });
-    }
-
-    const ninetyDaySources = [
-      marketPos && `Strategic positioning: ${marketPos}`,
-      trajectory && `Market trajectory: ${trajectory}`,
-      compAdvantages && `Leverage advantages: ${compAdvantages}`,
-      ...strengths.slice(0, 2).map(s => `Build on strength: ${normalize(s)}`),
-    ].filter(Boolean);
-
-    const ninetyDay = ninetyDaySources.slice(0, 3).map((item, i) => ({
-      action: item,
-      owner: 'Operator',
-      effort: 'High',
-      kpiShift: 'Strategic market position shift within 90 days',
-      confidence: ninetyDaySources.length >= 2 ? 'high' : 'medium',
-      evidence: 'Strategic positioning & market analysis',
-    }));
-    if (ninetyDay.length === 0) {
-      ninetyDay.push({
-        action: 'Execute full competitive strategy based on calibration intelligence',
-        owner: 'Operator',
-        effort: 'High',
-        kpiShift: 'Sustained market position improvement',
-        confidence: 'medium',
-        evidence: 'Calibration scan bundle',
-      });
-    }
-
-    return { sevenDay, thirtyDay, ninetyDay };
-  };
-
-  const handleConfirmRoadmap = () => {
-    autoSave(2, "IN_PROGRESS");
-    setEntry("wow_summary");
-  };
-
   const handleRegenerateIdentity = async (hints) => {
     setIsRegenerating(true);
     setIdentityConfirmed(false);
@@ -928,37 +893,65 @@ export const useCalibrationState = () => {
     setLastScanUrl(normalizedUrl);
     setScanAttemptCount(attempts);
     setScanFailure(null);
+    const analyzeStartedAt = Date.now();
 
     try {
-      {
-        const auditData = await callEdgeWithTrace('calibration-business-dna', {
       let auditData = null;
       let deepEnrichment = null;
       let edgeScanError = null;
+      let scrapeProfile = null;
       try {
-        auditData = await callEdgeFunction('calibration-business-dna', {
-          website_url: url,
-          business_name_hint: hints?.businessName || hints?.legalName || '',
-          location_hint: hints?.address || hints?.suburb || '',
-          abn_hint: hints?.abn || '',
-        }, 90000, 'business_dna_regenerate');
-        }, 90000);
-        if (auditData?.status === "error" || auditData?.ok === false || auditData?.error_code) {
-          throw {
-            response: {
-              status: 422,
-              data: {
-                code: auditData?.error_code || "UNKNOWN_SCAN_FAILURE",
-                stage: auditData?.stage || "regenerate",
-                details: auditData?.error || "",
+        scrapeProfile = await callEdgeFunction('scrape-business-profile', { url }, 15000);
+      } catch {
+        // non-fatal in regenerate mode
+      }
+      {
+        try {
+          auditData = await callEdgeFunction('calibration-business-dna', {
+            website_url: url,
+            business_name_hint: hints?.businessName || hints?.legalName || '',
+            location_hint: hints?.address || hints?.suburb || '',
+            abn_hint: hints?.abn || '',
+          }, 90000);
+          if (auditData?.status === "error" || auditData?.ok === false || auditData?.error_code) {
+            throw {
+              response: {
+                status: 422,
+                data: {
+                  code: auditData?.error_code || "UNKNOWN_SCAN_FAILURE",
+                  stage: auditData?.stage || "regenerate",
+                  details: auditData?.error || "",
+                },
               },
-            },
-          };
+            };
+          }
+        } catch (scanErr) {
+          edgeScanError = scanErr;
         }
-        if (auditData) {
-          if (auditData?.extracted_data) {
-            const ex = auditData.extracted_data;
-            const fullExtraction = { ...ex, _sources: auditData.data_sources || [], _website: url, _generated_at: new Date().toISOString() };
+      }
+
+      try {
+        const deepRes = await apiClient.post('/calibration/enrichment/website', { url, action: 'scan' });
+        if (deepRes?.data?.enrichment && typeof deepRes.data.enrichment === "object") {
+          deepEnrichment = deepRes.data.enrichment;
+        }
+      } catch {
+        // non-fatal in regenerate mode
+      }
+
+      const ex =
+        auditData?.extracted_data ||
+        buildExtractionFromDeepEnrichment(deepEnrichment) ||
+        buildExtractionFromScrapeProfile(scrapeProfile, url) ||
+        buildExtractionFromUrlFallback(url);
+      if (ex) {
+            const fullExtraction = {
+              ...ex,
+              _sources: auditData?.data_sources || [],
+              _deep_sources: deepEnrichment?.sources || null,
+              _website: url,
+              _generated_at: new Date().toISOString(),
+            };
 
             const wow = {
               business_name: ex.business_name || ex.name || ex.company || '',
@@ -972,9 +965,15 @@ export const useCalibrationState = () => {
             setWowSummary(wow);
 
             const signals = parseIdentitySignals(ex, url);
-            const edgeSignals = auditData.identity_signals || ex._identity_signals || {};
+            const edgeSignals = auditData?.identity_signals || ex._identity_signals || {};
             if (edgeSignals.abn_candidates?.length > 0 && !signals.abn) {
               signals.abn = edgeSignals.abn_candidates[0];
+            }
+            if (deepEnrichment?.abn && !signals.abn) {
+              signals.abn = deepEnrichment.abn;
+            }
+            if (!signals.abn && Array.isArray(deepEnrichment?.abn_candidates) && deepEnrichment.abn_candidates.length > 0) {
+              signals.abn = deepEnrichment.abn_candidates[0];
             }
             if (edgeSignals.phone_numbers?.length > 0 && signals.phones?.length === 0) {
               signals.phones = edgeSignals.phone_numbers;
@@ -997,90 +996,42 @@ export const useCalibrationState = () => {
             if (hints?.businessName || hints?.legalName) signals.businessName = hints.businessName || hints.legalName || signals.businessName;
             if (hints?.address || hints?.suburb) signals.address = hints.address || hints.suburb || signals.address;
             if (hints?.abn) signals.abn = hints.abn || signals.abn;
+            const abnMeta = await runAbnValidation({
+              extractedData: ex,
+              edgeSignals,
+              website: url,
+              currentSignals: signals,
+            });
+            const mergedSocial = mergeSocialSignals({
+              perplexity: ex.social_media_links || {},
+              html: edgeSignals.social_media_links || {},
+              search: deepEnrichment?.social_handles || {},
+            });
+            signals.social_enrichment = mergedSocial;
+            signals.socials = SOCIAL_PLATFORMS
+              .filter((platform) => !!mergedSocial[platform])
+              .map((platform) => ({ platform, url: mergedSocial[platform] }));
+            signals.abn_verified = abnMeta.abn_verified;
+            signals.abn_source = abnMeta.abn_source;
+            signals.legal_name = abnMeta.legal_name;
+            signals.entity_status = abnMeta.entity_status;
+            signals.registered_address = abnMeta.registered_address;
+            signals.abn_status = abnMeta.abn_status;
+            signals._abnLookupResult = abnMeta._abnLookupResult;
+            setAbnValidationResult(abnMeta);
             setIdentitySignals(signals);
-            setEntry("identity_verification");
+            await ensureAnalyzeDwell(analyzeStartedAt);
+            setEntry("abn_validation");
             setScanFailure(null);
             setIsRegenerating(false);
             return;
-          }
-        }
-      } catch (scanErr) {
-        edgeScanError = scanErr;
       }
-
-      try {
-        const deepRes = await apiClient.post('/calibration/enrichment/website', { url, action: 'scan' });
-        if (deepRes?.data?.status === 'draft' && deepRes?.data?.enrichment) {
-          deepEnrichment = deepRes.data.enrichment;
-        }
-      } catch {
-        // non-fatal in regenerate mode
-      }
-
-      const ex = auditData?.extracted_data || buildExtractionFromDeepEnrichment(deepEnrichment);
-      if (ex) {
-        const fullExtraction = {
-          ...ex,
-          _sources: auditData?.data_sources || [],
-          _deep_sources: deepEnrichment?.sources || null,
-          _website: url,
-          _generated_at: new Date().toISOString(),
-        };
-
-        const wow = {
-          business_name: ex.business_name || ex.name || ex.company || '',
-          what_you_do: ex.main_products_services || ex.business_overview || ex.description || ex.about || '',
-          who_you_serve: ex.target_market || ex.ideal_customer_profile || ex.audience || '',
-          what_sets_you_apart: ex.competitive_advantages || ex.unique_value_proposition || ex.differentiators || '',
-          biggest_challenges: ex.main_challenges || ex.key_challenges || ex.challenges || '',
-          growth_opportunity: ex.growth_strategy || ex.industry_position || ex.market_position || '',
-          _full: fullExtraction,
-        };
-        setWowSummary(wow);
-
-        const signals = parseIdentitySignals(ex, url);
-        const edgeSignals = auditData?.identity_signals || ex._identity_signals || {};
-        if (edgeSignals.abn_candidates?.length > 0 && !signals.abn) {
-          signals.abn = edgeSignals.abn_candidates[0];
-        }
-        if (deepEnrichment?.abn && !signals.abn) {
-          signals.abn = deepEnrichment.abn;
-        }
-        if (!signals.abn && Array.isArray(deepEnrichment?.abn_candidates) && deepEnrichment.abn_candidates.length > 0) {
-          signals.abn = deepEnrichment.abn_candidates[0];
-        }
-        if (edgeSignals.phone_numbers?.length > 0 && signals.phones?.length === 0) {
-          signals.phones = edgeSignals.phone_numbers;
-        }
-        if (edgeSignals.email_addresses?.length > 0 && signals.emails?.length === 0) {
-          signals.emails = edgeSignals.email_addresses;
-        }
-        if (edgeSignals.address_candidates?.length > 0 && !signals.address) {
-          signals.address = edgeSignals.address_candidates[0];
-        }
-        if (edgeSignals.geographic_mentions?.length > 0 && !signals.geo) {
-          signals.geo = edgeSignals.geographic_mentions.join(', ');
-        }
-        if (edgeSignals.social_media_links && (!signals.socials || signals.socials.length === 0)) {
-          signals.socials = Object.entries(edgeSignals.social_media_links)
-            .filter(([, socialUrl]) => socialUrl)
-            .map(([platform, socialUrl]) => ({ platform, url: socialUrl }));
-        }
-        // Merge user hints into signals
-        if (hints?.businessName || hints?.legalName) signals.businessName = hints.businessName || hints.legalName || signals.businessName;
-        if (hints?.address || hints?.suburb) signals.address = hints.address || hints.suburb || signals.address;
-        if (hints?.abn) signals.abn = hints.abn || signals.abn;
-        setIdentitySignals(signals);
-        setEntry("identity_verification");
-        setScanFailure(null);
-        setIsRegenerating(false);
-        return;
-      }
-
       if (edgeScanError) {
+        await ensureAnalyzeDwell(analyzeStartedAt);
         registerScanFailure(getScanFailure(edgeScanError, "WEBSITE_TIMEOUT"), url, attempts);
         return;
       }
+      await ensureAnalyzeDwell(analyzeStartedAt);
       registerScanFailure(
         getScanFailure(
           { response: { status: 422, data: { code: "INSUFFICIENT_PUBLIC_CONTENT", stage: "regenerate" } } },
@@ -1091,6 +1042,7 @@ export const useCalibrationState = () => {
       );
       return;
     } catch (err) {
+      await ensureAnalyzeDwell(analyzeStartedAt);
       registerScanFailure(getScanFailure(err), url, attempts);
       return;
     }
@@ -1167,10 +1119,64 @@ export const useCalibrationState = () => {
       autoSave(3);
       setTransitioning(false);
 
+      // Go to agent calibration chat (builds personalised AI agent prompt)
+      // This happens AFTER the CMO report, BEFORE "Here's What BIQc Found"
       fetchIntelligence();
-      setEntry("integration_connect");
+      setEntry("agent_calibration");
     } catch { setTransitioning(false); setError("Calibration engine temporarily unavailable."); }
     finally { setIsSubmitting(false); }
+  };
+
+  const handleAbnValidationContinue = () => {
+    const next = getNextCalibrationState("abn_validation");
+    if (next) setEntry(next);
+  };
+
+  const handleSocialEnrichmentContinue = () => {
+    const next = getNextCalibrationState("social_enrichment");
+    if (next) setEntry(next);
+  };
+
+  const handleContinueWowCards = () => {
+    const next = getNextCalibrationState("wow_cards");
+    if (next) setEntry(next);
+  };
+
+  const handleContinueDeepNarrative = () => {
+    const next = getNextCalibrationState("deep_narrative");
+    if (next) setEntry(next);
+  };
+
+  const handleContinueRoadmap = () => {
+    const next = getNextCalibrationState("roadmap");
+    if (next) setEntry(next);
+  };
+
+  const handleGenerateReportAndContinue = async () => {
+    if (!wowSummary?._full) {
+      setError("Insufficient verified data");
+      return;
+    }
+    setIsGeneratingReport(true);
+    setError(null);
+    try {
+      const payload = {
+        report_type: "deep_cmo",
+        wow_full: wowSummary._full,
+        identity_signals: identitySignals || {},
+      };
+      const report = await apiClient.post("/reports/generate-pdf", payload);
+      setDeepCmoReport(report?.data || null);
+      try {
+        const history = await apiClient.get("/reports/deep-cmo/history");
+        setDeepCmoReportHistory(history?.data?.items || []);
+      } catch {}
+      setEntry("wow_summary");
+    } catch (e) {
+      setError(e?.response?.data?.detail || "Insufficient verified data");
+    } finally {
+      setIsGeneratingReport(false);
+    }
   };
 
   // ═══ PHASE 4c: Agent Calibration Complete → Show Intelligence Snapshot ═══
@@ -1182,20 +1188,6 @@ export const useCalibrationState = () => {
   // ═══ PHASE 5: Snapshot → Dashboard ═══
   const proceedFromIntelligence = async () => {
     await autoSave(9, "COMPLETE");
-    try {
-      await apiClient.post('/calibration/reports/save', {
-        report_type: 'cmo_executive_summary',
-        title: 'CMO Executive Summary',
-        content: wowSummary?._full || {},
-        generated_at: new Date().toISOString(),
-      });
-      await apiClient.post('/calibration/reports/save', {
-        report_type: 'executive_intelligence_snapshot',
-        title: 'Executive Intelligence Snapshot',
-        content: intelligenceData || {},
-        generated_at: new Date().toISOString(),
-      });
-    } catch {}
     triggerComplete();
   };
 
@@ -1268,7 +1260,6 @@ export const useCalibrationState = () => {
 
   const fetchIntelligence = async () => {
     try {
-      const data = await callEdgeWithTrace('biqc-insights-cognitive', {}, 45000, 'intelligence_snapshot');
       const data = await callEdgeFunction('biqc-insights-cognitive', {});
       if (data) {
         setIntelligenceData(data);
@@ -1279,10 +1270,10 @@ export const useCalibrationState = () => {
   // ABN Registry Lookup — calls business-identity-lookup Edge Function
   const handleAbnLookup = async (lookupParams) => {
     try {
-      const data = await callEdgeWithTrace('business-identity-lookup', lookupParams || {}, 30000, 'abn_lookup');
       const data = await callEdgeFunction('business-identity-lookup', lookupParams || {});
       if (data) {
         if (data.status === 'found' || data.status === 'ambiguous') {
+          const abnStatus = data.status === "found" ? "verified" : "multiple";
           // Merge lookup results into identity signals
           setIdentitySignals(prev => ({
             ...prev,
@@ -1291,6 +1282,20 @@ export const useCalibrationState = () => {
             abn: data.abn || prev?.abn || '',
             address: data.address || prev?.address || '',
             state: data.address_state || prev?.state || '',
+            abn_verified: data.status === "found",
+            abn_source: "gud_api",
+            legal_name: data.legal_name || prev?.legal_name || "",
+            entity_status: data.entity_status || prev?.entity_status || "",
+            registered_address: data.address || prev?.registered_address || "",
+            abn_status: abnStatus,
+            _abnLookupResult: data,
+          }));
+        } else if (data.status === "not_found") {
+          setIdentitySignals(prev => ({
+            ...prev,
+            abn_verified: false,
+            abn_source: "gud_api",
+            abn_status: "not_found",
             _abnLookupResult: data,
           }));
         }
@@ -1310,18 +1315,16 @@ export const useCalibrationState = () => {
     selectedOption, setSelectedOption, textValue, setTextValue,
     messages, inputValue, setInputValue,
     currentStep, intelligenceData, fetchIntelligence, proceedFromIntelligence,
-    calibrationRunId: calibrationRunIdRef.current,
-    calibrationTrace: calibrationTraceRef.current,
-    fieldProvenance: fieldProvenanceRef.current,
     scanFailure, scanAttemptCount, canManualFallback,
+    deepCmoReport, deepCmoReportHistory, isGeneratingReport, abnValidationResult,
     // Identity verification
     identitySignals, identityConfirmed, identityConfidence, isRegenerating,
     handleConfirmIdentity, handleRegenerateIdentity, handleRejectIdentity, handleAbnLookup,
-    // WOW cards + strategic roadmap
-    buildWowCards, handleConfirmWowCards,
-    buildStrategicRoadmap, handleConfirmRoadmap,
     handleSignOut, handleAuditSubmit, handleManualSummary,
     handleConfirmWow,
+    handleAbnValidationContinue, handleSocialEnrichmentContinue,
+    handleContinueWowCards, handleContinueDeepNarrative, handleContinueRoadmap,
+    handleGenerateReportAndContinue,
     handleAgentCalibrationComplete, callEdge,
     startEdit, commitEdit,
     startCalibration, handleWizardContinue, handleChatSubmit,
