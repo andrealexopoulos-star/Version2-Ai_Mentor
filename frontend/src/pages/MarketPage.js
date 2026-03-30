@@ -111,7 +111,6 @@ const MarketPage = () => {
       apiClient.get('/snapshot/latest').then(r => r.data?.cognitive ? r.data.cognitive : Promise.reject('no data')),
       apiClient.get('/market-intelligence').then(r => r.data?.cognitive && r.data?.has_data ? r.data.cognitive : Promise.reject('no data')),
       (async () => {
-        const d = await callEdgeFunction('biqc-insights-cognitive', {}, 45000);
         const d = await callEdgeFunction('biqc-insights-cognitive', {});
         if (!d?.cognitive) throw new Error('no cognitive');
         return d.cognitive;
@@ -202,40 +201,6 @@ const MarketPage = () => {
 
   const sendToChat = (msg) => setActionMessage(msg);
 
-  const [showRecalibrateModal, setShowRecalibrateModal] = useState(false);
-  const [recalForm, setRecalForm] = useState({ name: '', email: user?.email || '', message: '' });
-  const [recalSubmitted, setRecalSubmitted] = useState(false);
-  const [recalSubmitting, setRecalSubmitting] = useState(false);
-  const [calibrationDate, setCalibrationDate] = useState(null);
-
-  useEffect(() => {
-    apiClient.get('/calibration/status').then(res => {
-      if (res.data?.completed_at) setCalibrationDate(new Date(res.data.completed_at));
-      else if (res.data?.status === 'COMPLETE') setCalibrationDate(new Date(Date.now() - 86400000));
-    }).catch(() => {});
-  }, []);
-
-  const daysSinceCalibration = calibrationDate ? Math.floor((Date.now() - calibrationDate.getTime()) / 86400000) : null;
-  const canRecalibrate = daysSinceCalibration !== null && daysSinceCalibration >= 30;
-
-  const handleRecalSubmit = async (e) => {
-    e.preventDefault();
-    setRecalSubmitting(true);
-    try {
-      await apiClient.post('/contact/recalibration', {
-        name: recalForm.name,
-        email: recalForm.email,
-        message: recalForm.message || 'I would like to recalibrate my business profile.',
-        days_since_calibration: daysSinceCalibration,
-      });
-      setRecalSubmitted(true);
-    } catch {
-      setRecalSubmitted(true);
-    } finally {
-      setRecalSubmitting(false);
-    }
-  };
-
   // Deep Market Modeling data extraction
   const competitors = c.market?.competitors || mi.competitors || [];
   const saturationScore = mi.misalignment_index != null ? Math.max(0, 100 - mi.misalignment_index) : null;
@@ -277,16 +242,6 @@ const MarketPage = () => {
               <button onClick={() => { setLoading(true); fetchSnapshot().finally(() => setLoading(false)); }} className="p-1.5 rounded-lg hover:bg-white/5" data-testid="market-refresh">
                 <RefreshCw className="w-3.5 h-3.5 text-[#64748B]" />
               </button>
-              {canRecalibrate && (
-                <button
-                  onClick={() => setShowRecalibrateModal(true)}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
-                  style={{ background: '#7C3AED15', color: '#7C3AED', border: '1px solid #7C3AED30' }}
-                  data-testid="recalibrate-btn"
-                >
-                  <RefreshCw className="w-3 h-3" /> Recalibrate
-                </button>
-              )}
             </div>
           </div>
           {interpretation && <p className="text-sm text-[#9FB0C3] leading-relaxed">{interpretation}</p>}
@@ -817,43 +772,6 @@ const MarketPage = () => {
 
         </>}
       </div>
-      {showRecalibrateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { if (!recalSubmitting) setShowRecalibrateModal(false); }}>
-          <div className="w-full max-w-md rounded-2xl p-6 space-y-4 mx-4" style={{ background: 'var(--biqc-surface, #0B1120)', border: '1px solid var(--biqc-border, #1E293B)' }} onClick={e => e.stopPropagation()}>
-            {recalSubmitted ? (
-              <div className="text-center space-y-3 py-4">
-                <CheckCircle2 className="w-10 h-10 mx-auto text-green-400" />
-                <h2 className="text-lg font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Request Received</h2>
-                <p className="text-sm" style={{ color: 'var(--biqc-text-2, #94A3B8)' }}>Our team will be in touch within 24 hours to schedule your recalibration session.</p>
-                <button onClick={() => { setShowRecalibrateModal(false); setRecalSubmitted(false); }} className="mt-3 px-5 py-2 rounded-lg text-sm font-medium text-white" style={{ background: '#FF6A00' }}>Close</button>
-              </div>
-            ) : (
-              <form onSubmit={handleRecalSubmit} className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Request Recalibration</h2>
-                  <p className="text-sm mt-1" style={{ color: 'var(--biqc-text-2, #94A3B8)' }}>Your business profile was calibrated {daysSinceCalibration} days ago. Submit a request and our team will arrange a fresh calibration session.</p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--biqc-text-2, #94A3B8)' }}>Your name</label>
-                  <input value={recalForm.name} onChange={e => setRecalForm(p => ({ ...p, name: e.target.value }))} required className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--biqc-bg, #060B18)', border: '1px solid var(--biqc-border, #1E293B)', color: 'var(--biqc-text, #F4F7FA)' }} placeholder="Full name" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--biqc-text-2, #94A3B8)' }}>Email</label>
-                  <input value={recalForm.email} onChange={e => setRecalForm(p => ({ ...p, email: e.target.value }))} required type="email" className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--biqc-bg, #060B18)', border: '1px solid var(--biqc-border, #1E293B)', color: 'var(--biqc-text, #F4F7FA)' }} placeholder="you@company.com" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--biqc-text-2, #94A3B8)' }}>Message (optional)</label>
-                  <textarea value={recalForm.message} onChange={e => setRecalForm(p => ({ ...p, message: e.target.value }))} rows={3} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={{ background: 'var(--biqc-bg, #060B18)', border: '1px solid var(--biqc-border, #1E293B)', color: 'var(--biqc-text, #F4F7FA)' }} placeholder="Any details about what's changed in your business..." />
-                </div>
-                <div className="flex gap-3 pt-1">
-                  <button type="button" onClick={() => setShowRecalibrateModal(false)} className="flex-1 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--biqc-border, #1E293B)', color: 'var(--biqc-text-2, #94A3B8)' }}>Cancel</button>
-                  <button type="submit" disabled={recalSubmitting} className="flex-1 py-2 rounded-lg text-sm font-medium text-white" style={{ background: '#FF6A00', opacity: recalSubmitting ? 0.6 : 1 }}>{recalSubmitting ? 'Submitting...' : 'Contact Sales'}</button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   );
 };
