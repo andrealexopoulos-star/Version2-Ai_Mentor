@@ -40,6 +40,9 @@ MAX_FILE_SIZE = 10 * 1024 * 1024
 
 RATE_LIMIT_RULES = {
     "/api/auth/supabase/login": {"window": 300, "limit": 5, "detail": "Too many login attempts. Please wait a few minutes before trying again."},
+    "/api/auth/login": {"window": 300, "limit": 5, "detail": "Too many login attempts. Please wait a few minutes before trying again."},
+    "/api/auth/supabase/signup": {"window": 300, "limit": 5, "detail": "Too many signup attempts. Please wait a few minutes before trying again."},
+    "/api/auth/signup": {"window": 300, "limit": 5, "detail": "Too many signup attempts. Please wait a few minutes before trying again."},
     "/api/soundboard/chat": {"window": 300, "limit": 120, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
     "/api/boardroom/respond": {"window": 300, "limit": 20, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
     "/api/voice/war-room/start": {"window": 300, "limit": 10, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},

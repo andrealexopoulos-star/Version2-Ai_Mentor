@@ -76,7 +76,7 @@ serve(async (req) => {
 
     if (!userId) {
       return new Response(JSON.stringify({ error: "user_id required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -177,7 +177,7 @@ serve(async (req) => {
 
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

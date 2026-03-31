@@ -172,7 +172,7 @@ serve(async (req) => {
     if (!url || typeof url !== 'string') {
       return new Response(
         JSON.stringify({ error: 'URL parameter required', status: 'invalid_input' }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -251,7 +251,7 @@ serve(async (req) => {
   } catch (e) {
     return new Response(
       JSON.stringify({ error: 'Internal error', detail: String(e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

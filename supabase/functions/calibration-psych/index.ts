@@ -284,7 +284,7 @@ serve(async (req: Request) => {
     const { message, conversation_history } = await req.json();
     if (!message) {
       return new Response(JSON.stringify({ error: "message required" }), {
-        status: 400,
+        status: 200,
         headers: CORS,
       });
     }

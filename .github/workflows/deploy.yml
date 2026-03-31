@@ -10,6 +10,8 @@ env:
   BACKEND_IMAGE: biqcregistry.azurecr.io/biqc-backend
   IMAGE_TAG: ${{ github.sha }}
   BACKEND_BASE_URL: https://biqc-api.azurewebsites.net
+  FRONTEND_APP_URL: https://biqc-web.azurewebsites.net
+  PRODUCTION_URL: https://biqc.ai
   AZURE_WEBAPP_FRONTEND: biqc-web
   AZURE_WEBAPP_BACKEND: biqc-api
   AZURE_RESOURCE_GROUP: biqc-production
@@ -111,6 +113,7 @@ jobs:
             REACT_APP_RECAPTCHA_MODE=${{ secrets.REACT_APP_RECAPTCHA_MODE }}
             REACT_APP_RECAPTCHA_PROVIDER=${{ secrets.REACT_APP_RECAPTCHA_PROVIDER }}
             REACT_APP_RECAPTCHA_STRICT=${{ secrets.REACT_APP_RECAPTCHA_STRICT }}
+            GENERATE_SOURCEMAP=false
 
       - name: Record frontend image tag
         run: echo "Frontend image = ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}"
@@ -200,12 +203,8 @@ jobs:
             --name ${{ env.AZURE_WEBAPP_BACKEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --settings WEBSITES_PORT=8001 PORT=8001 \
-              RECAPTCHA_PROVIDER=${{ secrets.RECAPTCHA_PROVIDER }} \
-              RECAPTCHA_SECRET_KEY=${{ secrets.RECAPTCHA_SECRET_KEY }} \
-              RECAPTCHA_SITE_KEY=${{ secrets.REACT_APP_RECAPTCHA_SITE_KEY }} \
-              RECAPTCHA_ENTERPRISE_PROJECT_ID=${{ secrets.RECAPTCHA_ENTERPRISE_PROJECT_ID }} \
-              RECAPTCHA_ENTERPRISE_API_KEY=${{ secrets.RECAPTCHA_ENTERPRISE_API_KEY }} \
-              RECAPTCHA_MIN_SCORE=${{ secrets.RECAPTCHA_MIN_SCORE }}
+              ENVIRONMENT=production \
+              PRODUCTION=true
 
       - name: Restart frontend
         run: |
@@ -217,21 +216,45 @@ jobs:
 
       - name: Verify frontend image pin
         run: |
-          LIVE_FRONTEND_IMAGE=$(az webapp config container show \
-            --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
-          echo "Live frontend image: ${LIVE_FRONTEND_IMAGE}"
-          test "${LIVE_FRONTEND_IMAGE}" = "DOCKER|${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+          EXPECTED_FRONTEND_IMAGE="DOCKER|${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+          for i in $(seq 1 24); do
+            LIVE_FRONTEND_IMAGE=$(az webapp config container show \
+              --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
+            echo "Live frontend image (attempt ${i}): ${LIVE_FRONTEND_IMAGE}"
+            if [ "${LIVE_FRONTEND_IMAGE}" = "${EXPECTED_FRONTEND_IMAGE}" ]; then
+              echo "Frontend image pin verified."
+              break
+            fi
+            if [ "$i" -eq 24 ]; then
+              echo "Frontend image pin did not converge to expected tag."
+              exit 1
+            fi
+            echo "Frontend image still converging - retrying in 5s"
+            sleep 5
+          done
 
       - name: Verify backend image pin
         run: |
-          LIVE_BACKEND_IMAGE=$(az webapp config container show \
-            --name ${{ env.AZURE_WEBAPP_BACKEND }} \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
-          echo "Live backend image: ${LIVE_BACKEND_IMAGE}"
-          test "${LIVE_BACKEND_IMAGE}" = "DOCKER|${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+          EXPECTED_BACKEND_IMAGE="DOCKER|${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}"
+          for i in $(seq 1 24); do
+            LIVE_BACKEND_IMAGE=$(az webapp config container show \
+              --name ${{ env.AZURE_WEBAPP_BACKEND }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "[?name=='DOCKER_CUSTOM_IMAGE_NAME'].value | [0]" -o tsv)
+            echo "Live backend image (attempt ${i}): ${LIVE_BACKEND_IMAGE}"
+            if [ "${LIVE_BACKEND_IMAGE}" = "${EXPECTED_BACKEND_IMAGE}" ]; then
+              echo "Backend image pin verified."
+              break
+            fi
+            if [ "$i" -eq 24 ]; then
+              echo "Backend image pin did not converge to expected tag."
+              exit 1
+            fi
+            echo "Backend image still converging - retrying in 5s"
+            sleep 5
+          done
 
       - name: Smoke test backend health
         run: |
@@ -251,16 +274,62 @@ jobs:
 
       - name: Smoke test frontend + API routing
         run: |
-          curl --fail --silent --show-error https://biqc.ai > /tmp/frontend_home.html
-          grep -qi "BIQc" /tmp/frontend_home.html
+          for i in $(seq 1 12); do
+            if curl --fail --silent --show-error "${{ env.PRODUCTION_URL }}" > /tmp/frontend_home.html; then
+              if grep -qi "BIQc" /tmp/frontend_home.html; then
+                echo "Frontend homepage check passed on attempt ${i}"
+                break
+              fi
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Frontend homepage check failed after retries"
+              exit 1
+            fi
+            echo "Frontend homepage not ready yet (attempt ${i}) - retrying in 5s"
+            sleep 5
+          done
 
-          API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" ${{ env.BACKEND_AUTH_PROBE_URL }})
-          echo "integration-status probe HTTP ${API_CODE}"
-          if [ "$API_CODE" -ne 401 ] && [ "$API_CODE" -ne 403 ]; then
-            echo "Expected auth-gated API response (401/403) but got ${API_CODE}"
-            cat /tmp/api_probe.json
-            exit 1
-          fi
+          for i in $(seq 1 12); do
+            PROD_API_HEALTH_CODE=$(curl --silent --output /tmp/prod_api_health.json --write-out "%{http_code}" "${{ env.PRODUCTION_URL }}/api/health")
+            echo "production domain /api/health HTTP ${PROD_API_HEALTH_CODE} (attempt ${i})"
+            if [ "${PROD_API_HEALTH_CODE}" -eq 200 ]; then
+              break
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Expected production domain /api/health to return 200"
+              cat /tmp/prod_api_health.json
+              exit 1
+            fi
+            sleep 5
+          done
+
+          for i in $(seq 1 12); do
+            CAL_STATUS_CODE=$(curl --silent --output /tmp/cal_status_probe.json --write-out "%{http_code}" "${{ env.PRODUCTION_URL }}/api/calibration/status")
+            echo "production domain /api/calibration/status HTTP ${CAL_STATUS_CODE} (attempt ${i})"
+            if [ "$CAL_STATUS_CODE" -eq 401 ] || [ "$CAL_STATUS_CODE" -eq 403 ]; then
+              break
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Expected auth-gated calibration status (401/403)"
+              cat /tmp/cal_status_probe.json
+              exit 1
+            fi
+            sleep 5
+          done
+
+          for i in $(seq 1 12); do
+            API_CODE=$(curl --silent --output /tmp/api_probe.json --write-out "%{http_code}" ${{ env.BACKEND_AUTH_PROBE_URL }})
+            echo "integration-status probe HTTP ${API_CODE} (attempt ${i})"
+            if [ "$API_CODE" -eq 401 ] || [ "$API_CODE" -eq 403 ]; then
+              break
+            fi
+            if [ "$i" -eq 12 ]; then
+              echo "Expected auth-gated API response (401/403) but got ${API_CODE}"
+              cat /tmp/api_probe.json
+              exit 1
+            fi
+            sleep 5
+          done
 
       # ── PERMANENT FIX: Enforce Supabase site_url after every deploy ──────
       - name: Lock Supabase site_url to production

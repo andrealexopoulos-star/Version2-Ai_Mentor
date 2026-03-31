@@ -76,41 +76,80 @@ async def proxy_edge_function(
     current_user: dict = Depends(get_current_user),
 ):
     """Proxy selected edge functions to avoid exposing provider URLs to clients."""
+    def _ok_envelope(
+        *,
+        ok: bool,
+        code: str,
+        error: str = "",
+        stage: str = "proxy",
+        payload: Optional[Dict[str, Any]] = None,
+        http_status: int = 200,
+        function_name_value: str = "",
+    ) -> JSONResponse:
+        body: Dict[str, Any] = payload if isinstance(payload, dict) else {}
+        body.setdefault("ok", ok)
+        body.setdefault("code", code)
+        body.setdefault("stage", stage)
+        if error:
+            body.setdefault("error", error)
+        body.setdefault("_http_status", http_status)
+        body.setdefault("_proxy", {})
+        body["_proxy"]["request_id"] = proxy_request_id
+        body["_proxy"]["function_name"] = function_name_value
+        return JSONResponse(status_code=200, content=body)
+
     proxy_request_id = str(uuid.uuid4())
     name = (function_name or "").strip()
     if name not in EDGE_PROXY_ALLOWLIST:
-        raise HTTPException(status_code=403, detail="Edge function not allowed")
+        return _ok_envelope(
+            ok=False,
+            code="EDGE_FUNCTION_NOT_ALLOWED",
+            error="Edge function not allowed",
+            stage="validation",
+            http_status=403,
+            function_name_value=name,
+        )
     resolved_name = "calibration-psych" if name == "calibration_psych" else name
 
     supabase_url = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
     if not supabase_url:
-        raise HTTPException(status_code=503, detail="Edge proxy unavailable")
+        return _ok_envelope(
+            ok=False,
+            code="EDGE_PROXY_UNAVAILABLE",
+            error="Edge proxy unavailable",
+            stage="proxy",
+            http_status=503,
+            function_name_value=resolved_name,
+        )
     anon_key = (os.environ.get("SUPABASE_ANON_KEY") or "").strip()
     if not anon_key:
-        raise HTTPException(status_code=503, detail="Edge proxy unavailable")
+        return _ok_envelope(
+            ok=False,
+            code="EDGE_PROXY_UNAVAILABLE",
+            error="Edge proxy unavailable",
+            stage="proxy",
+            http_status=503,
+            function_name_value=resolved_name,
+        )
 
-    inbound_auth = request.headers.get("authorization") or ""
-    outbound_auth = inbound_auth
-    outbound_apikey = anon_key
-    if not outbound_auth.lower().startswith("bearer "):
-        # QA/dev bypass sessions are authenticated at API layer but do not
-        # have a real Supabase access token. In that path, fall back to
-        # service-role auth for internal edge-function forwarding only.
-        qa_header = (request.headers.get("X-QA-Bypass") or "").strip()
-        qa_secret = (os.environ.get("QA_BYPASS_SECRET") or "").strip()
-        dev_header = (request.headers.get("X-Dev-Bypass") or "").strip()
-        dev_secret = (os.environ.get("DEV_BYPASS_SECRET") or "").strip()
-        service_role = (
-            os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-            or os.environ.get("SUPABASE_KEY")
-            or ""
-        ).strip()
-        bypass_verified = (qa_secret and qa_header == qa_secret) or (dev_secret and dev_header == dev_secret)
-        if bypass_verified and service_role:
-            outbound_auth = f"Bearer {service_role}"
-            outbound_apikey = service_role
-        else:
-            raise HTTPException(status_code=401, detail="Missing authorization header")
+    # Enforce backend-mediated service-role forwarding so edge reliability
+    # does not depend on client JWT audience/scope differences.
+    service_role = (
+        os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        or os.environ.get("SUPABASE_KEY")
+        or ""
+    ).strip()
+    if not service_role:
+        return _ok_envelope(
+            ok=False,
+            code="EDGE_PROXY_UNAVAILABLE",
+            error="Edge proxy unavailable",
+            stage="proxy",
+            http_status=503,
+            function_name_value=resolved_name,
+        )
+    outbound_auth = f"Bearer {service_role}"
+    outbound_apikey = service_role
 
     endpoint = f"{supabase_url}/functions/v1/{resolved_name}"
     calibration_run_id = (request.headers.get("X-Calibration-Run-Id") or "").strip()
@@ -143,56 +182,78 @@ async def proxy_edge_function(
                     "stage": "proxy",
                 }
         else:
-            payload = {
-                "code": "EDGE_NON_JSON_RESPONSE",
-                "error": edge_res.text[:500] if edge_res.text else "Edge function request failed",
-                "stage": "proxy",
-            }
+            # Some utility functions intentionally return 204/empty body.
+            if edge_res.status_code < 400:
+                payload = {
+                    "ok": True,
+                    "code": "OK",
+                    "stage": "edge_function",
+                    "message": "Edge function completed without JSON payload",
+                }
+            else:
+                payload = {
+                    "code": "EDGE_NON_JSON_RESPONSE",
+                    "error": "Edge function returned a non-JSON response",
+                    "stage": "proxy",
+                }
 
         if edge_res.status_code >= 400 and isinstance(payload, dict):
             payload.setdefault("code", "EDGE_FUNCTION_FAILED")
             payload.setdefault("stage", "edge_function")
             payload.setdefault("error", payload.get("detail") or "Edge function request failed")
 
-        if isinstance(payload, dict):
-            payload.setdefault("_proxy", {})
-            payload["_proxy"]["request_id"] = proxy_request_id
-            payload["_proxy"]["function_name"] = resolved_name
-            if calibration_run_id:
-                payload["_proxy"]["calibration_run_id"] = calibration_run_id
-            if calibration_step:
-                payload["_proxy"]["calibration_step"] = calibration_step
+        if not isinstance(payload, dict):
+            payload = {"data": payload}
 
-        return JSONResponse(status_code=edge_res.status_code, content=payload)
+        payload.setdefault("ok", edge_res.status_code < 400 and payload.get("error") in (None, ""))
+        payload.setdefault("code", "OK" if payload.get("ok") else "EDGE_FUNCTION_FAILED")
+        payload.setdefault("stage", "edge_function")
+        payload.setdefault("_http_status", edge_res.status_code)
+        payload.setdefault("_proxy", {})
+        payload["_proxy"]["request_id"] = proxy_request_id
+        payload["_proxy"]["function_name"] = resolved_name
+        if calibration_run_id:
+            payload["_proxy"]["calibration_run_id"] = calibration_run_id
+        if calibration_step:
+            payload["_proxy"]["calibration_step"] = calibration_step
+
+        return JSONResponse(status_code=200, content=payload)
     except HTTPException:
-        raise
+        return _ok_envelope(
+            ok=False,
+            code="EDGE_PROXY_FAILURE",
+            error="Edge proxy unavailable",
+            stage="proxy",
+            http_status=502,
+            function_name_value=resolved_name,
+        )
     except httpx.TimeoutException:
-        raise HTTPException(
-            status_code=504,
-            detail={
-                "code": "EDGE_FUNCTION_TIMEOUT",
-                "error": "Edge function timed out",
-                "stage": "proxy",
-            },
+        return _ok_envelope(
+            ok=False,
+            code="EDGE_FUNCTION_TIMEOUT",
+            error="Edge function timed out",
+            stage="proxy",
+            http_status=504,
+            function_name_value=resolved_name,
         )
     except httpx.HTTPError:
-        raise HTTPException(
-            status_code=502,
-            detail={
-                "code": "EDGE_FUNCTION_UNAVAILABLE",
-                "error": "Edge function unavailable",
-                "stage": "proxy",
-            },
+        return _ok_envelope(
+            ok=False,
+            code="EDGE_FUNCTION_UNAVAILABLE",
+            error="Edge function unavailable",
+            stage="proxy",
+            http_status=502,
+            function_name_value=resolved_name,
         )
     except Exception as exc:
         logger.warning(f"[edge-proxy] {name} failed for user {current_user.get('id')}: {exc}")
-        raise HTTPException(
-            status_code=502,
-            detail={
-                "code": "EDGE_PROXY_FAILURE",
-                "error": "Edge function unavailable",
-                "stage": "proxy",
-            },
+        return _ok_envelope(
+            ok=False,
+            code="EDGE_PROXY_FAILURE",
+            error="Edge function unavailable",
+            stage="proxy",
+            http_status=502,
+            function_name_value=resolved_name,
         )
 
 

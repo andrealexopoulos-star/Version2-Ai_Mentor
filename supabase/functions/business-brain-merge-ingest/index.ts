@@ -604,7 +604,7 @@ serve(async (req: Request) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unhandled error";
     return new Response(JSON.stringify({ ok: false, error: message }), {
-      status: 500,
+      status: 200,
       headers: { ...CORS, "Content-Type": "application/json" },
     });
   }

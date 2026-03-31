@@ -281,7 +281,7 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
     return new Response(JSON.stringify({ ok: false, error: "Missing authorization header" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -295,7 +295,7 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authError } = await userSb.auth.getUser();
   if (authError || !user) {
     return new Response(JSON.stringify({ ok: false, error: "Authentication failed" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -332,7 +332,7 @@ Deno.serve(async (req) => {
       }
       default:
         return new Response(JSON.stringify({ ok: false, error: `Unknown provider: ${provider}. Supported: gmail, outlook, icloud, imap` }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     }
 
@@ -390,7 +390,7 @@ Deno.serve(async (req) => {
     }
     console.error("[email_priority] Unexpected error:", err);
     return new Response(JSON.stringify({ ok: false, error: err.message || "Internal error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

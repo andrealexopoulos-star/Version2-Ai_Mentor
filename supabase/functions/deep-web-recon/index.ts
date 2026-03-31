@@ -283,7 +283,7 @@ serve(async (req) => {
           ok: false,
           error: "At least one target URL is required (website, linkedin, twitter, etc.)",
         }),
-        { status: 400, headers: corsHeaders },
+        { status: 200, headers: corsHeaders },
       );
     }
 
@@ -389,7 +389,7 @@ serve(async (req) => {
         ai_errors: [...aiErrors, String(err)],
         correlation,
       }),
-      { status: 500, headers: corsHeaders },
+      { status: 200, headers: corsHeaders },
     );
   }
 });

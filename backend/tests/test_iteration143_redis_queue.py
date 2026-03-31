@@ -171,3 +171,66 @@ def test_azure_connection_string_supported(monkeypatch, caplog):
         await runtime.shutdown()
 
     asyncio.run(runner())
+
+
+def test_managed_identity_redis_uses_credential_provider(monkeypatch):
+    monkeypatch.setenv("REDIS_USE_MANAGED_IDENTITY", "true")
+    monkeypatch.setenv("REDIS_URL", "rediss://example.redis.cache.windows.net:6380")
+    monkeypatch.setenv("REDIS_AAD_USERNAME", "00000000-0000-0000-0000-000000000001")
+
+    class FakeMI:
+        def __init__(self, client_id=None):
+            self.client_id = client_id
+
+        async def get_token(self, scope):
+            from azure.core.credentials import AccessToken
+
+            return AccessToken("x", 9999999999)
+
+        async def close(self):
+            return None
+
+    monkeypatch.setattr("azure.identity.aio.ManagedIdentityCredential", FakeMI)
+
+    fake_instance = FakeRedisCtor()
+
+    class FakeRedisFactory:
+        @staticmethod
+        def from_url(*args, **kwargs):
+            raise AssertionError("from_url should not be used for MI URL without password")
+
+        def __call__(self, *args, **kwargs):
+            fake_instance.kwargs = kwargs
+            return fake_instance
+
+    monkeypatch.setattr("biqc_jobs.Redis", FakeRedisFactory())
+
+    runtime = BIQcRedisJobs()
+
+    async def runner():
+        ok = await runtime.initialize()
+        assert ok is True
+        assert fake_instance.kwargs.get("credential_provider") is not None
+        assert fake_instance.kwargs["host"] == "example.redis.cache.windows.net"
+        assert fake_instance.kwargs["ssl"] is True
+        await runtime.shutdown()
+
+    asyncio.run(runner())
+
+
+def test_managed_identity_with_password_prefers_access_key_path(monkeypatch):
+    """REDIS_USE_MANAGED_IDENTITY must not override an explicit Redis access key."""
+    monkeypatch.setenv("REDIS_USE_MANAGED_IDENTITY", "true")
+    monkeypatch.setenv("REDIS_URL", "rediss://:secret@example.redis.cache.windows.net:6380")
+    fake_redis = FakeRedis()
+    monkeypatch.setattr("biqc_jobs.Redis.from_url", lambda *args, **kwargs: fake_redis)
+
+    runtime = BIQcRedisJobs()
+
+    async def runner():
+        ok = await runtime.initialize()
+        assert ok is True
+        assert runtime._redis_mi_provider is None
+        await runtime.shutdown()
+
+    asyncio.run(runner())

@@ -297,7 +297,7 @@ serve(async (req) => {
       const { data: { user } } = await sb.auth.getUser(token);
       if (!user) {
         return new Response(JSON.stringify({ error: "user_id required or authenticate" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       userId = user.id;
@@ -310,7 +310,7 @@ serve(async (req) => {
 
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

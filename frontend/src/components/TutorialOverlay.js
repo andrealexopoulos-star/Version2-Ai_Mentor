@@ -272,6 +272,7 @@ export const useTutorial = (pageKey) => {
   useEffect(() => {
     if (!tutorial || !normalizedPageKey) return;
     if (!shouldShowTutorial(tutorial, user, authState)) return;
+    if (!user || authState !== 'READY') return;
 
     let cancelled = false;
     const check = async () => {

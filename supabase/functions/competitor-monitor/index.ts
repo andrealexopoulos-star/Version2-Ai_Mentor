@@ -262,7 +262,7 @@ serve(async (req) => {
       const { data: { user } } = await sb.auth.getUser(token);
       if (!user) {
         return new Response(JSON.stringify({ error: "user_id required or authenticate via Bearer token" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const result = await monitorUser(sb, user.id);
@@ -277,8 +277,8 @@ serve(async (req) => {
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

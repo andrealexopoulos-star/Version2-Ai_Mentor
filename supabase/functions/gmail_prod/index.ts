@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
 
       if (!user_id || !access_token) {
         return new Response(JSON.stringify({ ok: false, error: "Missing user_id or access_token" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
       if (tokenErr) {
         console.error("[gmail_prod] token write failed:", tokenErr);
         return new Response(JSON.stringify({ ok: false, error: tokenErr.message }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
       const { code, user_id } = body;
       if (!code || !user_id) {
         return new Response(JSON.stringify({ ok: false, error: "Missing code or user_id" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
       });
       if (!tokenRes.ok) {
         return new Response(JSON.stringify({ ok: false, error: "Token exchange failed" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
 
       if (!userId) {
         return new Response(JSON.stringify({ ok: false, error: "Authentication required" }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
@@ -214,7 +214,7 @@ Deno.serve(async (req) => {
     // Single provider status (original response schema preserved)
     if (!authHeader) {
       return new Response(JSON.stringify({ ok: false, connected: false, error: "Missing authorization" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -227,7 +227,7 @@ Deno.serve(async (req) => {
 
     if (!userId) {
       return new Response(JSON.stringify({ ok: false, connected: false, provider: "gmail", error: "Invalid session" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -278,7 +278,7 @@ Deno.serve(async (req) => {
   } catch (err: any) {
     console.error("[gmail_prod] error:", err);
     return new Response(JSON.stringify({ ok: false, error: err.message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

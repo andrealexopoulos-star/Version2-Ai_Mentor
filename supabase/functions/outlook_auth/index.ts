@@ -41,7 +41,7 @@ serve(async (req: Request): Promise<Response> => {
       if (!user_id || !access_token) {
         console.error("[EDGE] Missing required fields", { user_id, has_access_token: !!access_token });
         return new Response(JSON.stringify({ ok: false, error: "Missing user_id or access_token" }), {
-          status: 400,
+          status: 200,
           headers: corsHeaders,
         });
       }
@@ -68,7 +68,7 @@ serve(async (req: Request): Promise<Response> => {
       if (tokenError) {
         console.error("[EDGE] Failed to write tokens:", tokenError);
         return new Response(JSON.stringify({ ok: false, error: `Token write failed: ${tokenError.message}` }), {
-          status: 500,
+          status: 200,
           headers: corsHeaders,
         });
       }
@@ -114,7 +114,7 @@ serve(async (req: Request): Promise<Response> => {
       if (connError) {
         console.error("[EDGE] Failed to write connection state:", connError);
         return new Response(JSON.stringify({ ok: false, error: `Connection write failed: ${connError.message}` }), {
-          status: 500,
+          status: 200,
           headers: corsHeaders,
         });
       }
@@ -133,7 +133,7 @@ serve(async (req: Request): Promise<Response> => {
 
       if (!code || !user_id) {
         return new Response(JSON.stringify({ ok: false, error: "Missing code or user_id" }), {
-          status: 400,
+          status: 200,
           headers: corsHeaders,
         });
       }
@@ -156,7 +156,7 @@ serve(async (req: Request): Promise<Response> => {
 
       if (!tokenResponse.ok) {
         return new Response(JSON.stringify({ ok: false, error: "Token exchange failed" }), {
-          status: 400,
+          status: 200,
           headers: corsHeaders,
         });
       }
@@ -207,7 +207,7 @@ serve(async (req: Request): Promise<Response> => {
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ ok: false, connected: false, provider: "outlook", error_stage: "auth", error_message: "Missing auth" }),
-        { status: 401, headers: corsHeaders }
+        { status: 200, headers: corsHeaders }
       );
     }
 
@@ -221,7 +221,7 @@ serve(async (req: Request): Promise<Response> => {
     if (!user) {
       return new Response(
         JSON.stringify({ ok: false, connected: false, provider: "outlook", error_stage: "auth", error_message: "Invalid token" }),
-        { status: 401, headers: corsHeaders }
+        { status: 200, headers: corsHeaders }
       );
     }
 
@@ -275,7 +275,7 @@ serve(async (req: Request): Promise<Response> => {
     console.error("[EDGE] outlook-auth error:", error);
     return new Response(
       JSON.stringify({ ok: false, connected: false, provider: "outlook", error_stage: "graph_api", error_message: (error as Error).message }),
-      { status: 500, headers: corsHeaders }
+      { status: 200, headers: corsHeaders }
     );
   }
 });

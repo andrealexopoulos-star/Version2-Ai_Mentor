@@ -14,6 +14,16 @@ const CALIB_REPORT_KEY = 'biqc_calibration_report_date';
 const SCAN_REPORT_KEY = 'biqc_scan_report_date';
 const ADVISORY_MEMO_KEY = 'biqc_advisory_memos';
 const REPORT_CYCLE_MS = 30 * 24 * 60 * 60 * 1000;
+const parseJsonSafe = (value, fallback = null) => {
+  if (value == null) return fallback;
+  if (typeof value === 'object') return value;
+  if (typeof value !== 'string') return fallback;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+};
 
 const formatDuration = (seconds = 0) => {
   const mins = Math.floor(seconds / 60);
@@ -109,6 +119,7 @@ const ReportsPage = () => {
   const [events, setEvents] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [advisoryMemos, setAdvisoryMemos] = useState([]);
+  const [marketInsightsReport, setMarketInsightsReport] = useState(null);
 
   const loadReportsData = useCallback(async () => {
     setLoadError(null);
@@ -140,6 +151,15 @@ const ReportsPage = () => {
         setEvents(evData || []);
       } else {
         setEvents([]);
+      }
+
+      try {
+        const profileRes = await apiClient.get('/business-profile');
+        const profile = profileRes?.data || {};
+        const bundle = parseJsonSafe(profile?.competitor_scan_result, null);
+        setMarketInsightsReport(bundle && typeof bundle === 'object' ? bundle : null);
+      } catch {
+        setMarketInsightsReport(null);
       }
     } catch (e) {
       setLoadError(e?.message || 'Unable to load reports data.');
@@ -258,6 +278,35 @@ const ReportsPage = () => {
             </div>
           </Panel>
         )}
+
+        <Panel data-testid="market-insights-report-panel">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="w-4 h-4 text-[#3B82F6]" />
+            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Market Insights Report</h3>
+          </div>
+          {marketInsightsReport ? (
+            <div className="space-y-3">
+              {marketInsightsReport?.forensic_memo && (
+                <div className="rounded-lg p-3" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>CMO Forensic Memo</p>
+                  <p className="text-xs text-[#9FB0C3] mt-1.5 leading-relaxed">{marketInsightsReport.forensic_memo}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-lg p-3" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                  <p className="text-[10px] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>SEO Ranking Summary</p>
+                  <p className="text-xs text-[#CBD5E1] mt-1">{marketInsightsReport?.seo_rank_summary || 'Data not available on free tier.'}</p>
+                </div>
+                <div className="rounded-lg p-3" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                  <p className="text-[10px] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Paid Marketing Summary</p>
+                  <p className="text-xs text-[#CBD5E1] mt-1">{marketInsightsReport?.paid_rank_summary || 'Data not available on free tier.'}</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-[#64748B]">No Market Insights report available yet. Run calibration to generate the CMO report.</p>
+          )}
+        </Panel>
 
         {loading && <PageLoadingState message="Loading intelligence reports..." />}
 

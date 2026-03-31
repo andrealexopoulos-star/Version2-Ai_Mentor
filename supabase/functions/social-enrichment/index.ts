@@ -201,7 +201,7 @@ serve(async (req) => {
     if (!websiteUrl) {
       return new Response(
         JSON.stringify({ ok: false, error: "website_url is required" }),
-        { status: 400, headers: corsHeaders },
+        { status: 200, headers: corsHeaders },
       );
     }
 
@@ -313,7 +313,7 @@ serve(async (req) => {
         ai_errors: [...aiErrors, String(err)],
         correlation,
       }),
-      { status: 500, headers: corsHeaders },
+      { status: 200, headers: corsHeaders },
     );
   }
 });

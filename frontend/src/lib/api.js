@@ -105,11 +105,49 @@ apiClient.interceptors.response.use(
   }
 );
 
-export const callEdgeFunction = async (functionName, payload = {}, timeout = 45000) => {
-  const response = await apiClient.post(
-    `/edge/functions/${encodeURIComponent(functionName)}`,
-    { payload },
-    { timeout }
+export const callEdgeFunction = async (functionName, payload = {}, timeout = 45000, trace = {}) => {
+  const refreshAuthSessionOnce = async () => {
+    try {
+      const { data } = await supabase.auth.refreshSession();
+      return data?.session?.access_token || '';
+    } catch {
+      return '';
+    }
+  };
+  const headers = {};
+  if (trace?.runId) headers['X-Calibration-Run-Id'] = trace.runId;
+  if (trace?.step) headers['X-Calibration-Step'] = trace.step;
+
+  const invoke = async (extraHeaders = {}) => (
+    apiClient.post(
+      `/edge/functions/${encodeURIComponent(functionName)}`,
+      { payload },
+      { timeout, headers: { ...headers, ...extraHeaders } }
+    )
   );
-  return response.data;
+
+  let response = await invoke();
+  let data = response.data;
+
+  // Edge proxy returns HTTP 200 envelopes. Retry once if envelope says unauthorized.
+  const errorText = String(data?.error || data?.detail || '').toLowerCase();
+  const errorCode = String(data?.code || '').toLowerCase();
+  const embeddedStatus = Number(data?._http_status || 0);
+  const isUnauthorizedEnvelope =
+    data?.ok === false &&
+    (
+      embeddedStatus === 401 ||
+      errorCode.includes('unauthorized') ||
+      errorText.includes('unauthorized')
+    );
+
+  if (isUnauthorizedEnvelope) {
+    const freshToken = await refreshAuthSessionOnce();
+    if (freshToken) {
+      response = await invoke({ Authorization: `Bearer ${freshToken}` });
+      data = response.data;
+    }
+  }
+
+  return data;
 };

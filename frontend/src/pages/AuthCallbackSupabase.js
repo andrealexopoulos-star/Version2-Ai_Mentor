@@ -3,6 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../context/SupabaseAuthContext';
 import { getBackendUrl } from '../config/urls';
 
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 6000) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 /**
  * AuthCallbackSupabase — handles both PKCE and implicit OAuth flows.
  *
@@ -38,9 +51,9 @@ const AuthCallbackSupabase = () => {
       try {
         const backendUrl = getBackendUrl();
         const [mergeRes, outlookRes, gmailRes] = await Promise.allSettled([
-          fetch(`${backendUrl}/api/integrations/merge/connected`, { headers }),
-          fetch(`${backendUrl}/api/outlook/status`, { headers }),
-          fetch(`${backendUrl}/api/gmail/status`, { headers }),
+          fetchWithTimeout(`${backendUrl}/api/integrations/merge/connected`, { headers }),
+          fetchWithTimeout(`${backendUrl}/api/outlook/status`, { headers }),
+          fetchWithTimeout(`${backendUrl}/api/gmail/status`, { headers }),
         ]);
 
         let hasConnectedTools = false;
@@ -80,10 +93,15 @@ const AuthCallbackSupabase = () => {
     const handleCallback = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(
+          (window.location.hash || '').startsWith('#')
+            ? window.location.hash.slice(1)
+            : (window.location.hash || '')
+        );
 
         // OAuth provider returned an error
-        const oauthError = params.get('error');
-        const oauthErrorDesc = params.get('error_description');
+        const oauthError = params.get('error') || hashParams.get('error');
+        const oauthErrorDesc = params.get('error_description') || hashParams.get('error_description');
         if (oauthError) {
           console.error('[AuthCallback] OAuth error:', oauthError, oauthErrorDesc);
           if (mounted) {
@@ -100,6 +118,19 @@ const AuthCallbackSupabase = () => {
           if (exchangeError) {
             console.error('[AuthCallback] exchangeCodeForSession error:', exchangeError.message);
             // Don't throw — fall through and try getSession() in case session was set another way
+          }
+        }
+
+        // Fallback for providers that return token fragments directly.
+        const accessToken = params.get('access_token') || hashParams.get('access_token');
+        const refreshToken = params.get('refresh_token') || hashParams.get('refresh_token');
+        if (accessToken && refreshToken) {
+          const { error: setSessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (setSessionError) {
+            console.error('[AuthCallback] setSession error:', setSessionError.message);
           }
         }
 
@@ -125,12 +156,12 @@ const AuthCallbackSupabase = () => {
         });
         authSubscription = subscription;
 
-        // Safety timeout — if nothing fires in 5 s, send to login
+        // Safety timeout — if nothing fires in 10 s, send to login
         safetyTimeout = setTimeout(() => {
           authSubscription?.unsubscribe();
           authSubscription = null;
           if (mounted) navigate('/login-supabase', { replace: true });
-        }, 5000);
+        }, 10000);
 
       } catch (e) {
         console.error('[AuthCallback] Unexpected error:', e.message);

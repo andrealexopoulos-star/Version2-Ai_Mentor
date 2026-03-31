@@ -393,6 +393,7 @@ export const useCalibrationState = () => {
         } catch { /* non-fatal — AI analysis continues below */ }
       }
 
+      let auditError = null;
       try {
         auditData = await callEdgeWithTrace('calibration-business-dna', { website_url: url }, 90000, 'business_dna');
           if (auditData?.status === "error" || auditData?.ok === false || auditData?.error_code) {
@@ -409,8 +410,7 @@ export const useCalibrationState = () => {
             throw syntheticError;
           }
       } catch (scanErr) {
-        registerScanFailure(getScanFailure(scanErr, "WEBSITE_TIMEOUT"), url, attempts);
-        return;
+        auditError = scanErr;
       }
 
       // Backend enrichment orchestrates ALL edge functions (social-enrichment,
@@ -422,7 +422,7 @@ export const useCalibrationState = () => {
 
       // Deep backend enrichment (Trinity + web search + ABN + competitor scan + all edge functions)
       try {
-        const deepRes = await apiClient.post('/calibration/enrichment/website', { url, action: 'scan' }, { timeout: 120000 });
+        const deepRes = await apiClient.post('/enrichment/website', { url, action: 'scan' }, { timeout: 120000 });
         if (deepRes?.data?.status === 'draft' && deepRes?.data?.enrichment) {
           deepEnrichment = deepRes.data.enrichment;
           if (deepEnrichment.social_handles) {
@@ -437,6 +437,20 @@ export const useCalibrationState = () => {
         }
       } catch {
         // non-fatal; continue with edge extraction
+      }
+
+      // Fail-open: if business-dna fails but deep enrichment succeeded,
+      // continue using deep enrichment so calibration can still proceed.
+      if (!auditData?.extracted_data && deepEnrichment && Object.keys(deepEnrichment).length > 0) {
+        auditData = {
+          extracted_data: deepEnrichment,
+          data_sources: [],
+          generated_at: new Date().toISOString(),
+          identity_signals: deepEnrichment.identity_signals || {},
+        };
+      } else if (!auditData?.extracted_data && auditError) {
+        registerScanFailure(getScanFailure(auditError, "WEBSITE_TIMEOUT"), url, attempts);
+        return;
       }
 
       if (auditData?.extracted_data) {

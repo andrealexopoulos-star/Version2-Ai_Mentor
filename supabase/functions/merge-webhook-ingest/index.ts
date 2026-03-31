@@ -109,7 +109,7 @@ serve(async (req: Request) => {
     const providedB64Url = normalizeBase64Url(signatureHeader);
     if (!safeEqualHex(providedSignature, expectedSignature) && expectedB64Url !== providedB64Url) {
       return new Response(JSON.stringify({ ok: false, error: "Invalid webhook signature" }), {
-        status: 401,
+        status: 200,
         headers: { ...CORS, "Content-Type": "application/json" },
       });
     }
@@ -205,7 +205,7 @@ serve(async (req: Request) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unhandled webhook ingest error";
     return new Response(JSON.stringify({ ok: false, error: message }), {
-      status: 500,
+      status: 200,
       headers: { ...CORS, "Content-Type": "application/json" },
     });
   }

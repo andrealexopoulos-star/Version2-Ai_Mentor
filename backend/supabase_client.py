@@ -23,9 +23,9 @@ def _env(key: str, *alt_keys: str) -> str | None:
             return v
     return None
 
-SUPABASE_URL = _env("SUPABASE_URL")
+SUPABASE_URL = _env("SUPABASE_URL", "REACT_APP_SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = _env("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_KEY")
-SUPABASE_ANON_KEY = _env("SUPABASE_ANON_KEY")
+SUPABASE_ANON_KEY = _env("SUPABASE_ANON_KEY", "REACT_APP_SUPABASE_ANON_KEY")
 
 
 def _assert_sdk_integrity(client: Client):

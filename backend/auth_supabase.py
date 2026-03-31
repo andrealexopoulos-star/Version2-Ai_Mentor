@@ -264,7 +264,7 @@ async def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
         response = supabase_admin.table("users").select("*").eq("email", email).execute()
         return response.data[0] if response.data else None
     except Exception as e:
-        print(f"Error fetching user: {e}")
+        logger.warning("Error fetching user by email: %s", e)
         return None
 
 async def get_user_by_id(user_id: str) -> Optional[Dict[str, Any]]:
@@ -275,7 +275,7 @@ async def get_user_by_id(user_id: str) -> Optional[Dict[str, Any]]:
         response = supabase_admin.table("users").select("*").eq("id", user_id).execute()
         return response.data[0] if response.data else None
     except Exception as e:
-        print(f"Error fetching user: {e}")
+        logger.warning("Error fetching user by id: %s", e)
         return None
 
 async def verify_supabase_token(token: str) -> Dict[str, Any]:
@@ -408,7 +408,7 @@ async def signup_with_email(request: SignUpRequest):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Signup error: {e}")
+        logger.error("Signup error: %s", e)
         raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
 
 async def signin_with_email(request: SignInRequest):
@@ -468,7 +468,7 @@ async def signin_with_email(request: SignInRequest):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Login error: {e}")
+        logger.warning("Login error: %s", e)
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
 async def get_oauth_url(provider: str, redirect_to: str = None):
@@ -517,7 +517,7 @@ async def get_oauth_url(provider: str, redirect_to: str = None):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"OAuth URL error: {e}")
+        logger.error("OAuth URL generation error: %s", e)
         raise HTTPException(status_code=500, detail=f"Failed to generate OAuth URL: {str(e)}")
 
 async def get_current_user_from_request(request) -> Dict[str, Any]:

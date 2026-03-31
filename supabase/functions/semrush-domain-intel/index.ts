@@ -105,7 +105,7 @@ serve(async (req) => {
     if (!domain) {
       return new Response(
         JSON.stringify({ ok: false, error: "domain is required" }),
-        { status: 400, headers: corsHeaders },
+        { status: 200, headers: corsHeaders },
       );
     }
 

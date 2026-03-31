@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CheckCircle2, Pencil, RefreshCw, XCircle, Globe, Building2, MapPin, Hash, Mail, Phone, Link2, Shield } from 'lucide-react';
+import { CheckCircle2, Pencil, RefreshCw, XCircle, Globe, Building2, MapPin, Hash, Mail, Phone, Shield } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
 
@@ -31,13 +31,6 @@ function computeIdentityConfidence(signals) {
     reasons.push({ label: 'No ABN found', positive: false });
   }
 
-  if (signals.socials && signals.socials.length > 0) {
-    reasons.push({ label: `${signals.socials.length} social profile(s)`, positive: true });
-    score++;
-  } else {
-    reasons.push({ label: 'No social profiles found', positive: false });
-  }
-
   if (signals.emails && signals.emails.length > 0) {
     const domain = (signals.domain || '').replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
     const match = domain && signals.emails.some(e => e.includes(domain));
@@ -52,19 +45,25 @@ function computeIdentityConfidence(signals) {
     reasons.push({ label: 'No contact email found', positive: false });
   }
 
-  const level = score >= 4 ? 'High' : score >= 2 ? 'Medium' : 'Low';
+  const level = score >= 3 ? 'High' : score >= 2 ? 'Medium' : 'Low';
   return { level, score, reasons };
 }
 
 export function parseIdentitySignals(extractedData, websiteUrl) {
   const d = extractedData || {};
+  const scanSummary = (d.website_scan_summary && typeof d.website_scan_summary === 'object') ? d.website_scan_summary : {};
   const allText = Object.values(d).filter(v => typeof v === 'string').join(' ');
 
   const phonePattern = /[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}/g;
   const phones = [...new Set((allText.match(phonePattern) || []))].slice(0, 3);
 
   const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-  const emails = [...new Set((allText.match(emailPattern) || []))].filter(e => !e.includes('example.com')).slice(0, 3);
+  const emails = [
+    ...new Set([
+      ...(allText.match(emailPattern) || []),
+      ...((Array.isArray(scanSummary.contact_emails_detected) ? scanSummary.contact_emails_detected : [])),
+    ]),
+  ].filter(e => !String(e).includes('example.com')).slice(0, 8);
 
   const abnPattern = /\b\d{2}\s?\d{3}\s?\d{3}\s?\d{3}\b/g;
   const abnMatches = allText.match(abnPattern) || [];
@@ -89,8 +88,8 @@ export function parseIdentitySignals(extractedData, websiteUrl) {
     }
   }
 
-  const address = d.address || d.location || d.headquarters || d.office_address || '';
-  const geo = d.geographic_focus || d.service_area || '';
+  const address = d.address || d.location || d.headquarters || d.office_address || ((Array.isArray(scanSummary.locations_detected) && scanSummary.locations_detected[0]) || '');
+  const geo = d.geographic_focus || d.service_area || (Array.isArray(scanSummary.locations_detected) ? scanSummary.locations_detected.join(', ') : '');
 
   return {
     domain: websiteUrl,
@@ -286,22 +285,6 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
                 </span>
               ))}
             </div>
-          </div>
-
-          <div className="rounded-lg p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <Link2 className="w-3.5 h-3.5 text-[#3B82F6]" />
-              <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Social Links</span>
-            </div>
-            {signals.socials?.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {signals.socials.map((s, i) => (
-                  <span key={i} className="text-xs px-2 py-1 rounded-full" style={{ color: 'var(--biqc-text-2)', background: '#0F172050', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}>
-                    {s.platform}
-                  </span>
-                ))}
-              </div>
-            ) : <span className="text-sm text-[#64748B]">None found</span>}
           </div>
 
           <div className="rounded-lg p-4" style={{ background: confColor + '08', border: `1px solid ${confColor}25` }}>

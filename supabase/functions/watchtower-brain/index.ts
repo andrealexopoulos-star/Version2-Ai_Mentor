@@ -63,7 +63,7 @@ serve(async (req) => {
     const apiKey = Deno.env.get('OPENAI_API_KEY')
     if (!apiKey) {
       return new Response(JSON.stringify({ error: 'OPENAI_API_KEY missing' }), {
-        status: 503,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -100,7 +100,7 @@ serve(async (req) => {
 
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

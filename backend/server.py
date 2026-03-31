@@ -33,10 +33,15 @@ from core.models import (
     BusinessIdentityDomain, MarketDomain, OfferDomain, TeamDomain, StrategyDomain,
     ProfileDomains, ChangeLogEntry, VersionedBusinessProfile,
 )
-app = FastAPI()
 # ═══ LOGGING ═══
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def _is_production_runtime() -> bool:
+    env = (os.environ.get("ENVIRONMENT") or "").strip().lower()
+    prod_flag = (os.environ.get("PRODUCTION") or "").strip().lower()
+    return env == "production" or prod_flag in {"1", "true", "yes"}
 
 # ═══ RUNTIME STATE (LAZY INIT FOR AZURE STARTUP STABILITY) ═══
 supabase_admin = None
@@ -86,7 +91,15 @@ def _initialize_core_runtime() -> None:
         logger.warning("Prompt registry initialization skipped: %s", exc)
 
 # ═══ APP CREATION ═══
-app = FastAPI(title="Strategic Advisor API")
+if _is_production_runtime():
+    app = FastAPI(
+        title="Strategic Advisor API",
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
+else:
+    app = FastAPI(title="Strategic Advisor API")
 configure_middleware(app)
 oauth = configure_oauth()
 

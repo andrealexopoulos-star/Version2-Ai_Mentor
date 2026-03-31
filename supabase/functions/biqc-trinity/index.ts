@@ -111,15 +111,15 @@ Deno.serve(async (req) => {
   });
   const { data: { user }, error: authError } = await userSb.auth.getUser();
   if (authError || !user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
   const userId = user.id;
   let body: any;
-  try { body = await req.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
+  try { body = await req.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
 
   const { message, business_context = "", conversation_id = null, mode_requested = "trinity", agent_id = "boardroom" } = body;
-  if (!message) return new Response(JSON.stringify({ error: "message required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  if (!message) return new Response(JSON.stringify({ error: "message required" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   const startTime = Date.now();
 
@@ -247,7 +247,7 @@ Now synthesize these three perspectives into one cohesive, authoritative executi
   } catch (err: any) {
     console.error("[TRINITY] Error:", err);
     return new Response(JSON.stringify({ error: err.message || "Trinity failed" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
