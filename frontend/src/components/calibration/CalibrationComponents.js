@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { apiClient } from '../../lib/api';
 import { Shield, Lock, Database, RefreshCw, X, ChevronRight, DollarSign, Target, Eye, Zap, Clock, ChevronDown } from 'lucide-react';
 
 const CREAM = '#0F1720';
@@ -135,32 +134,13 @@ export const WelcomeHandshake = ({
 }) => {
   const [phase, setPhase] = useState(initialPhase); // intro | scan
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [handles, setHandles] = useState({ linkedin: '', twitter: '', instagram: '', facebook: '' });
-  const [savingHandles, setSavingHandles] = useState(false);
-  const [handlesSaved, setHandlesSaved] = useState(false);
-
-  const hasAnyHandle = Object.values(handles).some(v => v.trim());
+  
 
   useEffect(() => {
     setPhase(initialPhase === 'scan' ? 'scan' : 'intro');
   }, [initialPhase]);
 
-  const saveHandles = async () => {
-    if (!hasAnyHandle) return;
-    setSavingHandles(true);
-    try {
-      const clean = {};
-      for (const [k, v] of Object.entries(handles)) { if (v.trim()) clean[k] = v.trim(); }
-      await apiClient.put('/intelligence/social-handles', clean);
-      try { await apiClient.post('/intelligence/recon', {}); } catch {}
-      setHandlesSaved(true);
-      setTimeout(() => {}, 800);
-    } catch (e) {
-      console.error('Failed to save handles:', e);
-    } finally {
-      setSavingHandles(false);
-    }
-  };
+  
 
   // ── Phase 1: Intro ──────────────────────────────────────────────────────────
   if (phase === 'intro') {
@@ -281,39 +261,6 @@ export const WelcomeHandshake = ({
                 <span className="text-xs" style={{ color: MUTED, fontFamily: "'JetBrains Mono', monospace" }}>{item}</span>
               </div>
             ))}
-          </div>
-
-          {/* Social handles */}
-          <div className="max-w-md mx-auto mt-8 rounded-xl p-5 text-left" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }} data-testid="social-handles-section">
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: MUTED, fontFamily: "'JetBrains Mono', monospace" }}>Social Intelligence (Optional)</p>
-            <p className="text-xs mb-4" style={{ color: MUTED }}>BIQc will use these for competitor news, staff sentiment, and SWOT signals.</p>
-            <div className="space-y-3">
-              {[
-                { key: 'linkedin', label: 'LinkedIn', placeholder: 'linkedin.com/company/your-company', icon: 'in' },
-                { key: 'twitter', label: 'X (Twitter)', placeholder: '@yourhandle', icon: 'X' },
-                { key: 'instagram', label: 'Instagram', placeholder: '@yourhandle', icon: 'IG' },
-                { key: 'facebook', label: 'Facebook', placeholder: 'facebook.com/yourpage', icon: 'fb' },
-              ].map(s => (
-                <div key={s.key} className="flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{ background: `${AZ}10`, color: AZ }}>{s.icon}</span>
-                  <input type="text" value={handles[s.key]}
-                    onChange={(e) => setHandles(p => ({ ...p, [s.key]: e.target.value }))}
-                    placeholder={s.placeholder}
-                    className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none"
-                    style={{ background: CREAM, border: `1px solid ${CARD_BORDER}`, color: CHARCOAL }}
-                    data-testid={`social-handle-${s.key}`} />
-                </div>
-              ))}
-            </div>
-            {hasAnyHandle && (
-              <button onClick={saveHandles} disabled={savingHandles}
-                className="mt-4 w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
-                style={{ background: handlesSaved ? '#10B981' : AZ, color: '#fff' }}
-                data-testid="save-social-handles-btn">
-                {savingHandles ? 'Saving...' : handlesSaved ? 'Saved' : 'Save & Activate Recon'}
-              </button>
-            )}
           </div>
 
           {canManualFallback && (
