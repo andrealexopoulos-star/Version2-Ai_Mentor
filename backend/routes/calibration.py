@@ -607,7 +607,7 @@ def _parse_glassdoor_reviews(search_result: dict, business_name: str) -> dict:
     }
 
 
-def _aggregate_reviews(google: dict, glassdoor: dict) -> dict:
+def _aggregate_reviews(google: dict, glassdoor: dict, review_search_results: Optional[List[Dict[str, Any]]] = None) -> dict:
     """Combine Google and Glassdoor review signals into a single aggregation."""
     scores = []
     if google.get("star_rating"):
@@ -619,12 +619,28 @@ def _aggregate_reviews(google: dict, glassdoor: dict) -> dict:
     all_positive = (google.get("positive") or []) + (glassdoor.get("positive") or [])
     all_negative = (google.get("negative") or []) + (glassdoor.get("negative") or [])
     all_snippets = (google.get("snippets") or []) + (glassdoor.get("snippets") or [])
+    review_rows = review_search_results if isinstance(review_search_results, list) else []
+    forum_hints: List[str] = []
+    for row in review_rows[:12]:
+        if not isinstance(row, dict):
+            continue
+        title = str(row.get("title") or "").strip()
+        snippet = str(row.get("snippet") or "").strip()
+        link = str(row.get("link") or "").strip()
+        source_blob = " ".join([title, snippet, link]).lower()
+        if not source_blob:
+            continue
+        if any(token in source_blob for token in ("review", "forum", "reddit", "trustpilot", "productreview", "g2", "capterra")):
+            compact = (snippet or title or link)[:220]
+            if compact:
+                forum_hints.append(compact)
+    all_snippets.extend(forum_hints)
 
     return {
         "combined_score": combined_score,
         "positive_count": len(all_positive),
         "negative_count": len(all_negative),
-        "top_recent": all_snippets[:3],
+        "top_recent": all_snippets[:6],
         "has_data": bool(combined_score or all_snippets),
     }
 
@@ -820,8 +836,17 @@ def _build_customer_review_intelligence(
         or customer_score is not None
         or review_count_total_estimate > 0
     )
+    insufficiency_reason = ""
+    if not has_data:
+        if isinstance(browse_payload, dict) and browse_payload.get("error"):
+            insufficiency_reason = "Review-source connector returned an error in this scan window."
+        elif isinstance(browse_payload, dict) and browse_payload.get("ai_errors"):
+            insufficiency_reason = "Review-source retrieval was partially blocked during this scan window."
+        else:
+            insufficiency_reason = "No verifiable review/forum snippets were captured across trusted public sources."
     return {
         "has_data": has_data,
+        "insufficiency_reason": insufficiency_reason,
         "source_truth_only": True,
         "window_months": lookback_months,
         "window_label": f"last {lookback_months} months",
@@ -1769,7 +1794,11 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "results": (glassdoor_review_search.get("results") or []) + (indeed_review_search.get("results") or []),
             }
             glassdoor_reviews = _parse_glassdoor_reviews(merged_employer_results, business_name_hint)
-            review_aggregation = _aggregate_reviews(google_reviews, glassdoor_reviews)
+            review_aggregation = _aggregate_reviews(
+                google_reviews,
+                glassdoor_reviews,
+                review_search.get("results") or [],
+            )
 
             combined_text = "\n\n".join([
                 page_text[:12000],
@@ -1793,6 +1822,9 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "unique_value_proposition, competitive_advantages, competitors, competitor_analysis, market_position, "
                 "abn, social_handles, trust_signals, executive_summary, confidence, "
                 "cmo_executive_brief, seo_analysis, paid_media_analysis, social_media_analysis, website_health, swot, competitor_swot, cmo_priority_actions, customer_review_intelligence, staff_review_intelligence, recommended_keywords, aeo_strategy.\n"
+                "Output must be operator-grade for SMB leaders: tie findings to day-to-day decisions across sales, marketing, finance, operations, HR, and IT where evidence supports it.\n"
+                "Every strategic claim must be source-attributed. If evidence is thin, explicitly state insufficiency rather than generic advice.\n"
+                "For technology providers (for example SMS gateway, communications API, SaaS platform), avoid generic agency language and anchor to product category, buyer type, and competitive position.\n"
                 "For customer_review_intelligence use source-verifiable customer reviews only (platform-attributed, date-bounded to last 12 months when dates are available), include positive and negative signals and operations action plan.\n"
                 "For staff_review_intelligence use source-verifiable evidence only (platform-attributed, date-bounded to last 12 months when dates are available). "
                 "Do not infer unpublished team dynamics.\n"

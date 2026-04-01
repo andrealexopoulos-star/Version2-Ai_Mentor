@@ -503,17 +503,17 @@ export const IdentityBar = ({ email, onSignOut }) => (
 // ── WOW Cards (Phase 4 — Forensic Insight Cards) ───────────────────────────
 
 const CARD_TYPE_META = {
-  revenue_leakage: { icon: DollarSign, color: '#EF4444', gradient: 'linear-gradient(135deg, #1A0505 0%, #2D0A0A 100%)', borderColor: '#7F1D1D' },
-  competitor_delta: { icon: Target, color: '#3B82F6', gradient: 'linear-gradient(135deg, #050A1A 0%, #0A152D 100%)', borderColor: '#1E3A5F' },
-  hidden_issue: { icon: Eye, color: '#A855F7', gradient: 'linear-gradient(135deg, #0F051A 0%, #1A0A2D 100%)', borderColor: '#4C1D95' },
-  quick_win: { icon: Zap, color: '#10B981', gradient: 'linear-gradient(135deg, #031A10 0%, #062D1A 100%)', borderColor: '#064E3B' },
+  revenue_leakage: { icon: DollarSign, color: '#E85D00', gradient: 'linear-gradient(135deg, #111A24 0%, #1A2633 100%)', borderColor: '#2D3B4A' },
+  competitor_delta: { icon: Target, color: '#FF6A00', gradient: 'linear-gradient(135deg, #121B25 0%, #1C2836 100%)', borderColor: '#324252' },
+  hidden_issue: { icon: Eye, color: '#FF7A18', gradient: 'linear-gradient(135deg, #111925 0%, #1A2432 100%)', borderColor: '#30404F' },
+  quick_win: { icon: Zap, color: '#FF8C33', gradient: 'linear-gradient(135deg, #13202C 0%, #1D2B39 100%)', borderColor: '#3A4A5B' },
 };
 
 const ConfidenceBadge = ({ level }) => {
   const colors = {
-    high: { bg: '#064E3B', text: '#34D399', label: 'High Confidence' },
-    medium: { bg: '#78350F', text: '#FBBF24', label: 'Medium Confidence' },
-    low: { bg: '#7F1D1D', text: '#FCA5A5', label: 'Low Confidence' },
+    high: { bg: '#213041', text: '#FF8C33', label: 'High Confidence' },
+    medium: { bg: '#273649', text: '#FF7A18', label: 'Medium Confidence' },
+    low: { bg: '#2B394D', text: '#E85D00', label: 'Low Confidence' },
   };
   const c = colors[level] || colors.medium;
   return (

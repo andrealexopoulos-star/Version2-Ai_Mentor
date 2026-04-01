@@ -500,6 +500,15 @@ export const useCalibrationState = () => {
             market_intelligence_score: deepEnrichment.market_intelligence_score ?? null,
             market_trajectory: deepEnrichment.market_trajectory || '',
             market_evidence: deepEnrichment.market_evidence || null,
+            customer_review_intelligence: deepEnrichment.customer_review_intelligence || exRaw.customer_review_intelligence || null,
+            customer_review_highlights: deepEnrichment.customer_review_highlights || exRaw.customer_review_highlights || null,
+            staff_review_intelligence: deepEnrichment.staff_review_intelligence || exRaw.staff_review_intelligence || null,
+            staff_review_highlights: deepEnrichment.staff_review_highlights || exRaw.staff_review_highlights || null,
+            website_scan_summary: deepEnrichment.website_scan_summary || exRaw.website_scan_summary || null,
+            seo_rank_summary: deepEnrichment.seo_rank_summary || exRaw.seo_rank_summary || '',
+            paid_rank_summary: deepEnrichment.paid_rank_summary || exRaw.paid_rank_summary || '',
+            industry_action_items: deepEnrichment.industry_action_items || exRaw.industry_action_items || [],
+            forensic_memo: deepEnrichment.forensic_memo || exRaw.forensic_memo || '',
             google_reviews: deepEnrichment.google_reviews || null,
             glassdoor_reviews: deepEnrichment.glassdoor_reviews || null,
             review_aggregation: deepEnrichment.review_aggregation || null,
@@ -535,6 +544,15 @@ export const useCalibrationState = () => {
           'market_intelligence_score',
           'market_trajectory',
           'market_evidence',
+          'customer_review_intelligence',
+          'customer_review_highlights',
+          'staff_review_intelligence',
+          'staff_review_highlights',
+          'website_scan_summary',
+          'seo_rank_summary',
+          'paid_rank_summary',
+          'industry_action_items',
+          'forensic_memo',
         ].forEach((k) => {
           if (ex[k] !== undefined && ex[k] !== null && ex[k] !== '') {
             applyProvenance(k, provenanceSource, deepEnrichment ? 0.78 : 0.68);
@@ -695,8 +713,28 @@ export const useCalibrationState = () => {
     const seoGaps = seo.missing_keywords || seo.gaps || seo.issues || '';
     const ctaIssues = health.cta_issues || health.missing_ctas || '';
     const conversionSignals = seo.conversion_issues || health.conversion_gaps || '';
+    const normaliseSignal = (value) => {
+      if (!value) return '';
+      if (Array.isArray(value)) {
+        return value
+          .map((item) => {
+            if (typeof item === 'string') return item;
+            if (item && typeof item === 'object') return item.issue || item.message || item.detail || item.title || '';
+            return '';
+          })
+          .filter(Boolean)
+          .join('; ');
+      }
+      if (typeof value === 'object') {
+        return value.issue || value.message || value.detail || value.title || JSON.stringify(value);
+      }
+      return String(value);
+    };
+
     const revenueClaim = [seoGaps, ctaIssues, conversionSignals]
-      .filter(Boolean).map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join('; ')
+      .map(normaliseSignal)
+      .filter(Boolean)
+      .join('; ')
       || weaknesses.slice(0, 2).join('; ')
       || 'SEO gaps and missing calls-to-action detected in website scan — potential lead leakage identified.';
 

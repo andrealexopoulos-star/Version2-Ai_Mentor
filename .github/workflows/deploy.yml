@@ -606,6 +606,7 @@ jobs:
             echo "- **Frontend URL:** https://biqc.ai"
             echo "- **Backend URL:** ${{ env.BACKEND_BASE_URL }}"
             echo "- **Run URL:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo "- **Zero regression playbook:** \`docs/operations/ZERO_REGRESSION_RELEASE_PLAYBOOK.md\`"
             echo ""
             echo "All verification and smoke-test steps above must pass for this summary to appear."
           } >> "$GITHUB_STEP_SUMMARY"

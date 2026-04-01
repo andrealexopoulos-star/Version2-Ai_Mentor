@@ -2,6 +2,13 @@ import React, { useState } from 'react';
 import { ArrowRight, AlertTriangle, TrendingUp, Globe, Users, Star, Target, ChevronDown, ChevronUp, CheckCircle2, XCircle, Zap, BarChart3, Shield, Activity } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
+const LAVA = '#FF6A00';
+const LAVA_SOFT = '#FF8C33';
+const STEEL_SURFACE = '#111A25';
+const STEEL_BORDER = '#243140';
+const STEEL_MUTED = '#64748B';
+const LAVA_BG = 'rgba(255,106,0,0.08)';
+const LAVA_BORDER = 'rgba(255,106,0,0.24)';
 
 // ── Footprint layers (kept for market presence score) ──
 const LAYERS = [
@@ -306,6 +313,11 @@ function buildCustomerReviewSignals(full) {
   ], 12);
   const sourceLabels = dedupeTextList(Array.isArray(customerIntel.sources) ? customerIntel.sources : [], 8);
   const sourcesTruthOnly = customerIntel.source_truth_only !== false;
+  const insufficiencyReason = String(
+    customerIntel.insufficiency_reason ||
+    customerIntel.no_data_reason ||
+    ''
+  ).trim();
 
   const hasReviewData = Boolean(
     reviewCountLast12Months > 0 ||
@@ -397,7 +409,9 @@ function buildCustomerReviewSignals(full) {
 
   const depthNarrative = hasReviewData
     ? `Customer review intelligence is grounded in ${windowLabel} public evidence (${summaryBits}) from ${sourceLabels.length > 0 ? sourceLabels.join(', ') : 'detected platforms'}. Source-truth policy is ${sourcesTruthOnly ? 'enforced' : 'partial'}, with no inferred or fabricated review claims.`
-    : 'No source-verifiable customer reviews were captured in this scan window, so BIQc suppresses deeper narrative claims until stronger external evidence is available.';
+    : (insufficiencyReason
+      ? `Customer review intelligence is currently constrained: ${insufficiencyReason}. BIQc holds back deeper claims until stronger public evidence is available.`
+      : 'No source-verifiable customer reviews were captured in this scan window, so BIQc suppresses deeper narrative claims until stronger external evidence is available.');
 
   return {
     hasReviewData,
@@ -414,6 +428,7 @@ function buildCustomerReviewSignals(full) {
     platformLabels,
     sourceLabels,
     sourcesTruthOnly,
+    insufficiencyReason,
     positiveSignals,
     negativeSignals,
     actionPlan,
@@ -560,7 +575,6 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
   const competitorSwot = Array.isArray(full.competitor_swot) ? full.competitor_swot : [];
   const cmoPriorityActions = Array.isArray(full.cmo_priority_actions) ? full.cmo_priority_actions : [];
   const fieldProvenance = full._field_provenance || {};
-  const analysisGaps = Array.isArray(full.analysis_gaps) ? full.analysis_gaps : [];
   const marketIntelScore = typeof full.market_intelligence_score === 'number' ? full.market_intelligence_score : null;
   const marketTrajectory = full.market_trajectory || '';
   const marketEvidence = Array.isArray(full.market_evidence) ? full.market_evidence : [];
@@ -617,8 +631,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
 
           {(seoRankSummary || paidRankSummary) ? (
             <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              <strong style={{ color: 'var(--biqc-text)' }}>SEO ranking:</strong> {seoRankSummary || 'Data not available on free tier.'}{' '}
-              <strong style={{ color: 'var(--biqc-text)' }}>Paid marketing:</strong> {paidRankSummary || 'Data not available on free tier.'}
+              <strong style={{ color: 'var(--biqc-text)' }}>SEO ranking:</strong> {seoRankSummary || 'No verified SEO ranking data captured in this scan window.'}{' '}
+              <strong style={{ color: 'var(--biqc-text)' }}>Paid marketing:</strong> {paidRankSummary || 'No verified paid-ranking data captured in this scan window.'}
             </p>
           ) : null}
 
@@ -952,14 +966,14 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         {/* ── SECTION 5: COMPETITIVE INTELLIGENCE ── */}
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.4s ease-out' }} data-testid="competitor-intelligence">
           <div className="flex items-center gap-2 mb-3">
-            <Users className="w-4 h-4" style={{ color: '#EF4444' }} />
+            <Users className="w-4 h-4" style={{ color: LAVA }} />
             <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Competitive Intelligence</h2>
           </div>
           {competitorLeaders.length > 0 && (
             <div className="space-y-2 mb-3">
               {competitorLeaders.slice(0, 3).map((leader, idx) => (
-                <div key={idx} className="p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
-                  <p className="text-xs font-semibold mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.body }}>
+                <div key={idx} className="p-3 rounded-lg" style={{ background: LAVA_BG, border: `1px solid ${LAVA_BORDER}` }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.body }}>
                     #{idx + 1} {leader?.name || `Category leader ${idx + 1}`}
                   </p>
                   <p className="text-[11px] text-[#9FB0C3] mb-1" style={{ fontFamily: fontFamily.body }}>
@@ -983,8 +997,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 </div>
               )}
               {competitors.moat && (
-                <div className="p-3 rounded-lg mb-3" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Competitive Moat</p>
+                <div className="p-3 rounded-lg mb-3" style={{ background: LAVA_BG, border: `1px solid ${LAVA_BORDER}` }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>Competitive Moat</p>
                   <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{competitors.moat.substring(0, 200)}{competitors.moat.length > 200 ? '...' : ''}</p>
                 </div>
               )}
@@ -997,8 +1011,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               {competitorSwot.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {competitorSwot.slice(0, 3).map((c, idx) => (
-                    <div key={idx} className="p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
-                      <p className="text-xs font-semibold mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.body }}>{c.name || `Competitor ${idx + 1}`}</p>
+                    <div key={idx} className="p-3 rounded-lg" style={{ background: LAVA_BG, border: `1px solid ${LAVA_BORDER}` }}>
+                      <p className="text-xs font-semibold mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.body }}>{c.name || `Competitor ${idx + 1}`}</p>
                       {Array.isArray(c.opportunities_against_them) && c.opportunities_against_them.length > 0 && (
                         <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
                           Opportunity: {c.opportunities_against_them[0]}
@@ -1017,8 +1031,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 </div>
               )}
               {competitors.competitorAnalysis && (
-                <div className="mt-3 p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Competitive Pressure Summary</p>
+                <div className="mt-3 p-3 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: STEEL_MUTED, fontFamily: fontFamily.mono }}>Competitive Pressure Summary</p>
                   <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
                     {competitors.competitorAnalysis.substring(0, 280)}
                     {competitors.competitorAnalysis.length > 280 ? '...' : ''}
@@ -1026,8 +1040,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 </div>
               )}
               {(competitorMonitorSummary || competitorMonitorData) && (
-                <div className="mt-3 p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Competitor Monitor</p>
+                <div className="mt-3 p-3 rounded-lg" style={{ background: LAVA_BG, border: `1px solid ${LAVA_BORDER}` }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>Competitor Monitor</p>
                   {competitorMonitorSummary && (
                     <p className="text-xs text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>
                       {competitorMonitorSummary}
@@ -1036,12 +1050,12 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   {competitorMonitorData && typeof competitorMonitorData === 'object' && (
                     <div className="space-y-2 mt-2">
                       {Array.isArray(competitorMonitorData.competitors) && competitorMonitorData.competitors.map((comp, idx) => (
-                        <div key={idx} className="p-2 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                        <div key={idx} className="p-2 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
                           <p className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>
                             {comp.name || comp.domain || `Competitor ${idx + 1}`}
                           </p>
                           {comp.summary && <p className="text-[11px] text-[#9FB0C3] mt-1" style={{ fontFamily: fontFamily.body }}>{comp.summary}</p>}
-                          {comp.threat_level && <p className="text-[10px] mt-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Threat level: {comp.threat_level}</p>}
+                          {comp.threat_level && <p className="text-[10px] mt-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>Threat level: {comp.threat_level}</p>}
                           {comp.signals && Array.isArray(comp.signals) && comp.signals.length > 0 && (
                             <p className="text-[11px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.body }}>
                               Signals: {comp.signals.join(', ')}
@@ -1061,16 +1075,16 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               )}
             </>
           ) : (
-            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Data not available on free tier.</p>
+            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No source-verifiable competitor evidence was captured in this scan window.</p>
           )}
         </div>
 
         {/* ── SECTION 5A: CUSTOMER REVIEW INTELLIGENCE ── */}
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.43s ease-out' }} data-testid="customer-review-intelligence">
           <div className="flex items-center gap-2 mb-3">
-            <Star className="w-4 h-4" style={{ color: '#F59E0B' }} />
+            <Star className="w-4 h-4" style={{ color: LAVA }} />
             <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Customer Review Intelligence</h2>
-            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#F59E0B', background: '#F59E0B15', fontFamily: fontFamily.mono }}>
+            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ color: LAVA_SOFT, background: LAVA_BG, fontFamily: fontFamily.mono }}>
               confidence: {customerReviews.confidenceBand}
             </span>
           </div>
@@ -1079,16 +1093,16 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             <>
               {(Array.isArray(customerReviewHighlights.best_reviews) || Array.isArray(customerReviewHighlights.worst_reviews)) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-3">
-                  <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
-                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Top 3 Best Reviews</p>
+                  <div className="p-3 rounded-lg" style={{ background: LAVA_BG, border: `1px solid ${LAVA_BORDER}` }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>Top 3 Best Reviews</p>
                     {(customerReviewHighlights.best_reviews || []).slice(0, 3).map((item, idx) => (
                       <p key={idx} className="text-[11px] text-[#9FB0C3] mb-1" style={{ fontFamily: fontFamily.body }}>
                         "{item?.review}" -> Action: {item?.action_item}
                       </p>
                     ))}
                   </div>
-                  <div className="p-3 rounded-lg" style={{ background: '#EF444408', border: '1px solid #EF444420' }}>
-                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>Top 3 Worst Reviews</p>
+                  <div className="p-3 rounded-lg" style={{ background: LAVA_BG, border: `1px solid ${LAVA_BORDER}` }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>Top 3 Worst Reviews</p>
                     {(customerReviewHighlights.worst_reviews || []).slice(0, 3).map((item, idx) => (
                       <p key={idx} className="text-[11px] text-[#9FB0C3] mb-1" style={{ fontFamily: fontFamily.body }}>
                         "{item?.review}" -> Action: {item?.action_item}
@@ -1097,8 +1111,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   </div>
                 </div>
               )}
-              <div className="p-3 rounded-lg mb-3" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
-                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>
+              <div className="p-3 rounded-lg mb-3" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>
                   Source-Bounded Window ({customerReviews.windowLabel})
                 </p>
                 <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
@@ -1115,20 +1129,20 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               {(customerReviews.customerScore != null || customerReviews.platforms.length > 0) && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
                   {customerReviews.customerScore != null && (
-                    <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #10B98130' }}>
-                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Blended Customer Score</p>
-                      <p className="text-lg font-bold" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>
+                    <div className="p-3 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${LAVA_BORDER}` }}>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>Blended Customer Score</p>
+                      <p className="text-lg font-bold" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>
                         {customerReviews.customerScore}<span className="text-xs font-normal text-[#64748B]">/5</span>
                       </p>
                     </div>
                   )}
                   {customerReviews.platforms.slice(0, 2).map((platform, idx) => (
-                    <div key={idx} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #F59E0B30' }}>
-                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                    <div key={idx} className="p-3 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>
                         {String(platform?.platform || 'Review source')}
                       </p>
                       {platform?.rating != null && (
-                        <p className="text-lg font-bold" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                        <p className="text-lg font-bold" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>
                           {platform.rating}<span className="text-xs font-normal text-[#64748B]">/5</span>
                         </p>
                       )}
@@ -1156,16 +1170,16 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               {(customerReviews.positiveSignals.length > 0 || customerReviews.negativeSignals.length > 0) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
                   {customerReviews.positiveSignals.length > 0 && (
-                    <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
-                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Positive Signals</p>
+                    <div className="p-3 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>Positive Signals</p>
                       {customerReviews.positiveSignals.slice(0, 4).map((s, idx) => (
                         <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>"{s}"</p>
                       ))}
                     </div>
                   )}
                   {customerReviews.negativeSignals.length > 0 && (
-                    <div className="p-3 rounded-lg" style={{ background: '#EF444408', border: '1px solid #EF444420' }}>
-                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>Negative Signals</p>
+                    <div className="p-3 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>Negative Signals</p>
                       {customerReviews.negativeSignals.slice(0, 4).map((s, idx) => (
                         <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>"{s}"</p>
                       ))}
@@ -1186,8 +1200,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               </div>
 
               {customerReviews.actionPlan.length > 0 && (
-                <div className="mb-4 p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #3B82F640' }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Operations Action Plan</p>
+                <div className="mb-4 p-3 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${LAVA_BORDER}` }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>Operations Action Plan</p>
                   <div className="space-y-1">
                     {customerReviews.actionPlan.slice(0, 4).map((step, idx) => (
                       <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
@@ -1200,13 +1214,15 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             </>
           ) : (
             <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>
-              Data not available on free tier.
+              {customerReviews.insufficiencyReason
+                ? `Insufficient evidence: ${customerReviews.insufficiencyReason}`
+                : 'No source-verifiable customer review evidence was captured in this scan window.'}
             </p>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             {customerReviews.impact.map((row, idx) => (
-              <div key={idx} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+              <div key={idx} className="p-3 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
                 <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{row.fundamental}</p>
                 <p className="text-xs mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{row.impact}</p>
                 <p className="text-[11px] leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{row.mechanism}</p>
@@ -1214,8 +1230,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             ))}
           </div>
 
-          <div className="mt-3 p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
-            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Review Intelligence Depth</p>
+          <div className="mt-3 p-3 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: LAVA_SOFT, fontFamily: fontFamily.mono }}>Review Intelligence Depth</p>
             <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
               {customerReviews.depthNarrative}
             </p>
@@ -1547,32 +1563,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
 
         {/* Data Provenance section removed — internal debugging only */}
 
-        {(marketIntelScore !== null || analysisGaps.length > 0) && (
-          <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #F59E0B30', animation: 'cmsFade 1.58s ease-out' }} data-testid="intelligence-quality">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4" style={{ color: '#F59E0B' }} />
-              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Intelligence Quality & Gaps</h2>
-            </div>
-            {marketIntelScore !== null && (
-              <p className="text-xs text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>
-                Market intelligence score: <span className="text-[#F4F7FA]">{marketIntelScore}/100</span>{marketTrajectory ? ` (${marketTrajectory})` : ''}.
-              </p>
-            )}
-            {analysisGaps.length > 0 ? (
-              <div className="space-y-1.5">
-                {analysisGaps.slice(0, 6).map((gap, idx) => (
-                  <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                    - {gap}
-                  </p>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                No critical public-data gaps detected in this scan cycle.
-              </p>
-            )}
-          </div>
-        )}
+        {/* Intelligence Quality & Gaps removed to reduce cognitive load. */}
 
         {/* Scan Observability section removed — internal debugging only */}
 
