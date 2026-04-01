@@ -1,0 +1,12 @@
+* @andrealexopoulos-star
+
+# Public website (pre-auth) is protected and requires explicit owner review.
+/frontend/src/pages/website/** @andrealexopoulos-star
+/frontend/src/components/website/** @andrealexopoulos-star
+/frontend/src/pages/LoginSupabase.js @andrealexopoulos-star
+/frontend/src/pages/RegisterSupabase.js @andrealexopoulos-star
+/frontend/src/App.js @andrealexopoulos-star
+
+# Deployment guardrails
+/.github/workflows/deploy.yml @andrealexopoulos-star
+/.github/workflows/website-release.yml @andrealexopoulos-star
