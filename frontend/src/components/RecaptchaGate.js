@@ -97,6 +97,7 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
   const actionName = String(action || 'auth').trim() || 'auth';
   const configuredMode = normalizeMode(process.env.REACT_APP_RECAPTCHA_MODE);
   const configuredProvider = normalizeProvider(process.env.REACT_APP_RECAPTCHA_PROVIDER);
+  const forceVisible = String(process.env.REACT_APP_RECAPTCHA_FORCE_VISIBLE || '').toLowerCase() === 'true';
   const containerRef = useRef(null);
   const widgetRef = useRef(null);
   const refreshRef = useRef(null);
@@ -238,12 +239,15 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
 
         const runConfiguredMode = async (provider) => {
           if (configuredMode === MODE_V2) {
-            // Operational safety: keys are often misconfigured as v2 while
-            // actual site keys are v3. Try v3 first, then fall back to v2.
-            try {
-              await tryModeWithProviderFallback(MODE_V3, provider);
-              return true;
-            } catch {}
+            // Allow operators to force visible widget mode for UX certainty.
+            if (!forceVisible) {
+              // Operational safety: keys are often misconfigured as v2 while
+              // actual site keys are v3. Try v3 first, then fall back to v2.
+              try {
+                await tryModeWithProviderFallback(MODE_V3, provider);
+                return true;
+              } catch {}
+            }
             await tryModeWithProviderFallback(MODE_V2, provider);
             return true;
           }
@@ -278,6 +282,10 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
 
         // Auto provider/mode: try standard first, then enterprise.
         if (configuredMode === MODE_V2) {
+          if (forceVisible) {
+            await tryModeWithProviderFallback(MODE_V2, PROVIDER_STANDARD);
+            return;
+          }
           // Resilience: many production incidents are caused by a v3 site key
           // being paired with MODE_V2. Try v3 first, then gracefully fall back.
           try {
@@ -314,7 +322,7 @@ const RecaptchaGate = ({ onTokenChange, onStatusChange, action = 'auth', testId 
       clearRefresh();
       resetWidget();
     };
-  }, [actionName, configuredMode, configuredProvider, onTokenChange, reportStatus, siteKey]);
+  }, [actionName, configuredMode, configuredProvider, forceVisible, onTokenChange, reportStatus, siteKey]);
 
   return (
     <div className="space-y-2" data-testid={testId}>

@@ -18,11 +18,7 @@ const TRUST_ITEMS = [
 
 const NAV_LINKS = [
   { label: 'Meet BIQc', path: '/platform', dropdown: 'meet' },
-  { label: 'Platform', path: '/platform' },
-  { label: 'Intelligence', path: '/intelligence' },
-  { label: 'Integrations', path: '/our-integrations' },
   { label: 'Pricing', path: '/pricing' },
-  { label: 'Blog', path: '/blog' },
   { label: 'Trust', path: '/trust', dropdown: 'trust' },
 ];
 

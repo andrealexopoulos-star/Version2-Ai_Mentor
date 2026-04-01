@@ -132,7 +132,7 @@ const RegisterSupabase = () => {
     } catch (error) {
       const raw = error.message || '';
       if (raw.includes('Supabase is not configured')) {
-        toast.error('Configure authentication variables in frontend/.env first.');
+        toast.error('Configure Supabase in frontend/.env first (see yellow box above).');
         return;
       }
       const msg = raw.toLowerCase();
@@ -203,7 +203,7 @@ const RegisterSupabase = () => {
     } catch (error) {
       const msg = error?.message || '';
       if (msg.includes('Supabase is not configured')) {
-        toast.error('Configure authentication variables in frontend/.env first.');
+        toast.error('Configure Supabase in frontend/.env first (see yellow box above).');
       } else {
         toast.error(`${providerName} signup failed. Please try again.`);
       }
@@ -246,19 +246,8 @@ const RegisterSupabase = () => {
             >
               <p className="font-semibold text-[#FBBF24] mb-1">Local setup required</p>
               <p className="text-[#FDE68A]/90 leading-relaxed">
-                Set required authentication variables in <code className="text-xs bg-black/30 px-1 rounded">frontend/.env</code>, then restart <code className="text-xs bg-black/30 px-1 rounded">npm start</code>.
-              </p>
-            </div>
-          )}
-          {recaptchaDisabled && (
-            <div
-              className="mb-4 rounded-xl border px-4 py-3 text-sm"
-              style={{ borderColor: '#22C55E', background: 'rgba(34,197,94,0.12)', color: '#BBF7D0', fontFamily: fontFamily.body }}
-              data-testid="register-captcha-local-bypass-notice"
-            >
-              <p className="font-semibold text-[#86EFAC] mb-1">Local review mode</p>
-              <p className="text-[#DCFCE7]/90 leading-relaxed">
-                Captcha is disabled for local review via <code className="text-xs bg-black/30 px-1 rounded">REACT_APP_RECAPTCHA_DISABLED=true</code>.
+                Set <code className="text-xs bg-black/30 px-1 rounded">REACT_APP_SUPABASE_URL</code> and{' '}
+                <code className="text-xs bg-black/30 px-1 rounded">REACT_APP_SUPABASE_ANON_KEY</code> in <code className="text-xs bg-black/30 px-1 rounded">frontend/.env</code> (Supabase → Settings → API), then restart <code className="text-xs bg-black/30 px-1 rounded">npm start</code>.
               </p>
             </div>
           )}
