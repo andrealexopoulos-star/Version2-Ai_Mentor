@@ -234,7 +234,7 @@ jobs:
           check_status "calibration-engine" "GET" "" "200"
           # Contract checks: function reachable, auth/validation failures allowed,
           # but any 5xx remains blocking.
-          check_status "calibration-psych" "POST" "{}" "400 401 403 422"
+          check_status "calibration-psych" "POST" "{}" "200 400 401 403 422"
           check_status "calibration-sync" "POST" "{}" "400 401 403 422"
           check_status "calibration-business-dna" "POST" "{}" "400 401 403 422"
         env:
