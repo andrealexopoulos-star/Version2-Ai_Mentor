@@ -96,7 +96,7 @@ async def proxy_edge_function(
         body.setdefault("_proxy", {})
         body["_proxy"]["request_id"] = proxy_request_id
         body["_proxy"]["function_name"] = function_name_value
-        return JSONResponse(status_code=200, content=body)
+        return JSONResponse(status_code=http_status, content=body)
 
     proxy_request_id = str(uuid.uuid4())
     name = (function_name or "").strip()
@@ -217,7 +217,7 @@ async def proxy_edge_function(
         if calibration_step:
             payload["_proxy"]["calibration_step"] = calibration_step
 
-        return JSONResponse(status_code=200, content=payload)
+        return JSONResponse(status_code=edge_res.status_code, content=payload)
     except HTTPException:
         return _ok_envelope(
             ok=False,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Advisor UI Forensic Testing for BIQc Platform
-Target: https://biqc.thestrategysquad.com/advisor
+Target: https://biqc.ai/advisor
 Credentials: andre@thestrategysquad.com.au / MasterMind2025*
 
 Test Checklist 4: Advisor UI forensic checks (logged-in)
@@ -27,7 +27,7 @@ from datetime import datetime
 from playwright.async_api import async_playwright, Page, Browser
 
 # Production Configuration
-BASE_URL = "https://biqc.thestrategysquad.com"
+BASE_URL = "https://biqc.ai"
 TEST_EMAIL = "andre@thestrategysquad.com.au"
 TEST_PASSWORD = "MasterMind2025*"
 

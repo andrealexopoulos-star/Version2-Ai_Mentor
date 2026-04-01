@@ -10,7 +10,7 @@
 This is the LIVE INTERACTIVE audit. Every finding below was verified by actually loading the page in a browser, not inferred from code.
 
 **Test Accounts Used:**
-- `test1234@outlook.com` / `test1234!` — Production (biqc.thestrategysquad.com)
+- `test1234@outlook.com` / `test1234!` — Production (biqc.ai)
 - `andre@thestrategysquad.com.au` / `BIQc_Test_2026!` — Production (FAILED — credentials invalid)
 
 ---

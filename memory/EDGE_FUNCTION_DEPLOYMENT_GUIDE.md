@@ -131,7 +131,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE calibration_schedules;
 ## VERIFICATION CHECKLIST
 
 After deploying:
-1. Sign up as new user on biqc.thestrategysquad.com
+1. Sign up as new user on biqc.ai
 2. Complete calibration flow (Ignition → URL → Analyzing → WOW Summary → CMO Snapshot → Dashboard)
 3. Navigate to /market — should show:
    - System state from cognitive engine

@@ -4,7 +4,7 @@
 **Auditor:** AI Audit Agent (Phase 2)
 **Scope:** Full-stack platform audit against world-class CaaP + UIE standard
 **Sprint:** 33 (Launch Packaging Redesign Correction)
-**Production:** biqc.thestrategysquad.com
+**Production:** biqc.ai
 
 ---
 

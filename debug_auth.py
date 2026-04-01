@@ -8,7 +8,7 @@ import json
 import time
 from datetime import datetime
 
-BASE_URL = "https://biqc.thestrategysquad.com"
+BASE_URL = "https://biqc.ai"
 API_BASE = f"{BASE_URL}/api"
 TEST_EMAIL = "andre@thestrategysquad.com.au"
 TEST_PASSWORD = "MasterMind2025*"

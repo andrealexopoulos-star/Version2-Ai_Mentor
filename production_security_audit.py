@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Production Backend/Security Audit for BIQc Platform
-Target: https://biqc.thestrategysquad.com
+Target: https://biqc.ai
 User: andre@thestrategysquad.com.au / MasterMind2025*
 
 Audit Scope:
@@ -16,14 +16,15 @@ import requests
 import json
 import time
 import uuid
+import os
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
 # Production Configuration
-BASE_URL = "https://biqc.thestrategysquad.com"
+BASE_URL = os.environ.get("BIQC_BASE_URL", "https://biqc.ai")
 API_BASE = f"{BASE_URL}/api"
-TEST_EMAIL = "andre@thestrategysquad.com.au"
-TEST_PASSWORD = "MasterMind2025*"
+TEST_EMAIL = os.environ.get("BIQC_TEST_EMAIL", "andre@thestrategysquad.com.au")
+TEST_PASSWORD = os.environ.get("BIQC_TEST_PASSWORD", "MasterMind2025*")
 
 class ProductionSecurityAuditor:
     def __init__(self):
@@ -603,7 +604,9 @@ def main():
         
         # Save detailed results
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        results_file = f"/app/production_security_audit_results_{timestamp}.json"
+        output_dir = os.environ.get("BIQC_TEST_OUTPUT_DIR", "test_reports")
+        os.makedirs(output_dir, exist_ok=True)
+        results_file = f"{output_dir}/production_security_audit_results_{timestamp}.json"
         
         with open(results_file, 'w') as f:
             json.dump(results, f, indent=2, default=str)

@@ -97,9 +97,9 @@ az webapp config set --resource-group $RESOURCE_GROUP --name $FRONTEND_APP --alw
 # Step 8: Configure custom domain (optional)
 echo ""
 echo "▸ Step 8: Custom domain setup..."
-echo "  To add biqc.thestrategysquad.com:"
+echo "  To add biqc.ai:"
 echo "  1. Go to Azure Portal > $FRONTEND_APP > Custom domains"
-echo "  2. Add custom domain: biqc.thestrategysquad.com"
+echo "  2. Add custom domain: biqc.ai"
 echo "  3. Add CNAME record in your DNS: biqc → ${FRONTEND_APP}.azurewebsites.net"
 echo "  4. Enable free SSL certificate"
 

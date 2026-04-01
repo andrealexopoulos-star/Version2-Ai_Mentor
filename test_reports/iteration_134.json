@@ -2,7 +2,7 @@
   "summary": "PRODUCTION UX FORENSIC AUDIT - Main Intelligence Surfaces. Ruthless scoring against 2026 cognition-platform expectations. 6 routes audited: /advisor, /revenue, /operations, /market, /risk, /compliance. MAJOR SOURCE CLARITY MISMATCH CONFIRMED: Top alert source is native_email/thread_silence but UI wording implies CRM-originated revenue signals.",
   "test_date": "2026-03-14",
   "test_type": "UX Forensic Audit - Intelligence Surfaces",
-  "target_url": "https://biqc.thestrategysquad.com",
+  "target_url": "https://biqc.ai",
   "authentication_result": {
     "status": "SUCCESS",
     "email": "andre@thestrategysquad.com.au"

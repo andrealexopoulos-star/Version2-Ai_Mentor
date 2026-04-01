@@ -3,7 +3,7 @@
 
 ---
 
-## CRITICAL: Fork to `biqc.thestrategysquad.com`
+## CRITICAL: Fork to `biqc.ai`
 
 The next agent MUST fork to the production domain to ensure they work against the latest deployment.
 
@@ -184,4 +184,4 @@ supabase secrets set ABR_GUID=<guid-from-abr.business.gov.au>
 3. **Trust the Handoff** — This document is the source of truth.
 4. **Onboarding Flow is Sacred** — Domain → Identity Verification → Footprint → Snapshot → Dashboard.
 5. **Integration Truth** — No CRM claims without CRM connected. Period.
-6. **Fork to `biqc.thestrategysquad.com`** — Work against production.
+6. **Fork to `biqc.ai`** — Work against production.

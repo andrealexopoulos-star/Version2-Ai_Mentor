@@ -1,5 +1,5 @@
 {
-  "summary": "BIQc Master Forensic Audit - Iteration 104. Comprehensive pre-launch readiness test at https://biqc.thestrategysquad.com. All 5 SMB type signups completed. Calibration Edge Functions CONFIRMED WORKING (major improvement from iteration_103). Outlook OAuth still critically broken. Executive Intelligence Snapshot UI blocker discovered. Dashboard, market, competitive benchmark, settings, integrations pages all load correctly. Mobile nav 5-item bottom bar works. 26 Edge Functions confirmed deployed.",
+  "summary": "BIQc Master Forensic Audit - Iteration 104. Comprehensive pre-launch readiness test at https://biqc.ai. All 5 SMB type signups completed. Calibration Edge Functions CONFIRMED WORKING (major improvement from iteration_103). Outlook OAuth still critically broken. Executive Intelligence Snapshot UI blocker discovered. Dashboard, market, competitive benchmark, settings, integrations pages all load correctly. Mobile nav 5-item bottom bar works. 26 Edge Functions confirmed deployed.",
 
   "test_credentials": {
     "existing": "newtest1@biqctest.io / BIQcTest!2026 (calibration COMPLETE)",
@@ -157,9 +157,9 @@
   ],
 
   "action_items": [
-    "CRITICAL P0: Set AZURE_CLIENT_ID and AZURE_CLIENT_SECRET in production backend env. Set AZURE_REDIRECT_URI=https://biqc.thestrategysquad.com/api/auth/outlook/callback. Register callback URL in Azure AD App Registration.",
+    "CRITICAL P0: Set AZURE_CLIENT_ID and AZURE_CLIENT_SECRET in production backend env. Set AZURE_REDIRECT_URI=https://biqc.ai/api/auth/outlook/callback. Register callback URL in Azure AD App Registration.",
     "CRITICAL P0: Fix Executive Intelligence Snapshot stuck state. Add 30-second timeout fallback in IntelligencePhases.js ExecutiveCMOSnapshot component: if isReady is still false after 30s, show CTA button anyway. Fix: add useEffect timer that sets ctaVisible=true after 30s regardless of isReady status.",
-    "HIGH P1: Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI=https://biqc.thestrategysquad.com/api/auth/gmail/callback in production backend.",
+    "HIGH P1: Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI=https://biqc.ai/api/auth/gmail/callback in production backend.",
     "MEDIUM P2: Deploy updated backend code to production. /api/soundboard/scan-usage and /api/cognition/overview return 404 in production but work locally. Production is behind local codebase.",
     "MEDIUM P2: Improve SoundBoard AI to use calibration data (business name, website, industry, CMO summary) as context even when no external integrations connected. Currently says 'no data sources' ignoring calibration data.",
     "LOW P3: Test camposbeans.com.au with a fresh test account to confirm Phase 4a (Edge Function was working for all 4 other sites tested).",
@@ -195,7 +195,7 @@
   "retest_needed": true,
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "Iteration 104 - Master Forensic Audit. Production: https://biqc.thestrategysquad.com. New Supabase: vwwandhoydemcybltoxz. KEY FIXES NEEDED: (1) Outlook OAuth STILL broken - client_id=None, localhost redirect. (2) Executive Intelligence Snapshot stuck - add timeout fallback for CTA button in IntelligencePhases.js. TEST ACCOUNTS: newtest1@biqctest.io (calibration COMPLETE), hvac/realestate/restaurant/ecommerce/consulting @biqctest.io (all BIQcTest!2026, various calibration states). MAJOR WIN: Calibration Edge Functions now working - snowman/raywhite/koala/mckinsey all return ABN/business name/address. window.confirm() was replaced. No redirect loop. Mobile nav 5-item bar works. Competitive benchmark refresh works. SoundBoard chat works but responses generic. Production backend missing 2 endpoints vs local (/api/soundboard/scan-usage, /api/cognition/overview).",
+  "context_for_next_testing_agent": "Iteration 104 - Master Forensic Audit. Production: https://biqc.ai. New Supabase: vwwandhoydemcybltoxz. KEY FIXES NEEDED: (1) Outlook OAuth STILL broken - client_id=None, localhost redirect. (2) Executive Intelligence Snapshot stuck - add timeout fallback for CTA button in IntelligencePhases.js. TEST ACCOUNTS: newtest1@biqctest.io (calibration COMPLETE), hvac/realestate/restaurant/ecommerce/consulting @biqctest.io (all BIQcTest!2026, various calibration states). MAJOR WIN: Calibration Edge Functions now working - snowman/raywhite/koala/mckinsey all return ABN/business name/address. window.confirm() was replaced. No redirect loop. Mobile nav 5-item bar works. Competitive benchmark refresh works. SoundBoard chat works but responses generic. Production backend missing 2 endpoints vs local (/api/soundboard/scan-usage, /api/cognition/overview).",
 
   "rca_of_issues": {
     "executive_intelligence_snapshot_stuck": {
@@ -207,7 +207,7 @@
     "outlook_oauth_broken": {
       "root_cause": "Production Azure backend missing AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_REDIRECT_URI environment variables. Backend defaults to None/localhost.",
       "evidence": "OAuth URL: client_id=None, redirect_uri=http://localhost:8001/api/auth/outlook/callback",
-      "mitigation": "Set in Azure App Service: AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_REDIRECT_URI=https://biqc.thestrategysquad.com/api/auth/outlook/callback"
+      "mitigation": "Set in Azure App Service: AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_REDIRECT_URI=https://biqc.ai/api/auth/outlook/callback"
     },
     "production_backend_outdated": {
       "root_cause": "Production backend deployment is behind local codebase. /api/soundboard/scan-usage and /api/cognition/overview exist in local routes but not deployed to production Azure backend.",

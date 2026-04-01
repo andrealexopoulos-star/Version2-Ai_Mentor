@@ -4,7 +4,7 @@
 Production Backend Redis Queue Validation for BIQc
 
 This test validates the Redis queue migration against the production backend at:
-https://biqc.thestrategysquad.com
+https://biqc.ai
 
 Target validation:
 1. /api/health, /api/health/workers, and /api/health/detailed Redis state
@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Production configuration
-PRODUCTION_URL = "https://biqc.thestrategysquad.com"
+PRODUCTION_URL = "https://biqc.ai"
 TEST_CREDENTIALS = {
     "email": "andre@thestrategysquad.com.au",
     "password": "MasterMind2025*"

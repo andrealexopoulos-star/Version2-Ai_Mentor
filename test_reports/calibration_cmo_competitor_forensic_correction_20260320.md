@@ -1,6 +1,6 @@
 # Calibration + CMO Report + Competitor Intelligence Forensic Correction
 Date: 2026-03-20  
-Target: `https://biqc.thestrategysquad.com`
+Target: `https://biqc.ai`
 
 This document is a corrective deep review focused only on:
 1) calibration execution fidelity,  

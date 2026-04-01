@@ -8,7 +8,7 @@ import requests
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
 
-BASE_URL = "https://biqc.thestrategysquad.com"
+BASE_URL = "https://biqc.ai"
 PASSWORD = "BIQcTest!2026Z"
 RUN_ID = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
 OUT_DIR = Path("/workspace/.screenshots") / f"deep_calibration_probe_{RUN_ID}"

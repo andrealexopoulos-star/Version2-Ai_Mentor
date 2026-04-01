@@ -21,7 +21,7 @@ def main():
     if backend_tester.auth_token:
         print("\n" + "=" * 60)
         frontend_results = test_frontend_with_auth(
-            "https://biqc.thestrategysquad.com", 
+            "https://biqc.ai", 
             backend_tester.auth_token
         )
     else:

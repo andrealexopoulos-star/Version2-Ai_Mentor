@@ -3,7 +3,7 @@
 
 **Duration:** 45–60 minutes (can be shortened to 20 minutes for executive version)
 **Presenter role:** Product Lead / Solutions Architect
-**Demo environment:** https://biqc.thestrategysquad.com (production) or preview URL
+**Demo environment:** https://biqc.ai (production) or preview URL
 **Test credentials:** andre@thestrategysquad.com.au / BIQc_Test_2026!
 
 ---
@@ -22,7 +22,7 @@
 
 ### 1.1 Landing Page (/)
 
-**NAVIGATE TO:** biqc.thestrategysquad.com
+**NAVIGATE TO:** biqc.ai
 
 **SAY:**
 

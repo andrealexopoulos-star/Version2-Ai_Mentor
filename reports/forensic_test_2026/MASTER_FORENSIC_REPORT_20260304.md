@@ -396,6 +396,6 @@ To complete the full test with super admin accounts, run in order:
 
 ---
 
-*Report generated from live interactive browser testing of production site biqc.thestrategysquad.com*
+*Report generated from live interactive browser testing of production site biqc.ai*
 *Test account: trent-test1@biqc-test.com (Campos Coffee)*
 *Test date: 4 March 2026*

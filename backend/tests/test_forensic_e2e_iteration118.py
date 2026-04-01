@@ -10,7 +10,7 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://biqc.thestrategysquad.com"
+    BASE_URL = "https://biqc.ai"
 
 # QA User credentials from previous iteration
 QA_EMAIL = "cal-loop-416d7f85@biqctest.io"

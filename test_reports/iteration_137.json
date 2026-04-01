@@ -1,7 +1,7 @@
 {
-  "summary": "PRODUCTION UX FORENSIC AUDIT - Remaining Authenticated Routes (Chunk 3). 19 additional routes audited on https://biqc.thestrategysquad.com. All pages load successfully with proper data-testid attributes. Routes covered: /dashboard, /integrations, /calendar, /data-health, /forensic-audit, /reports, /audit-log, /connect-email, /decisions, /diagnosis, /data-center, /intel-centre, /watchtower, /intelligence-baseline, /operator, /market-analysis, /marketing-automation, /ab-testing, /market/calibration. One minor issue: /integrations shows net::ERR_NAME_NOT_RESOLVED for logo.clearbit.com (cosmetic only, page functional).",
+  "summary": "PRODUCTION UX FORENSIC AUDIT - Remaining Authenticated Routes (Chunk 3). 19 additional routes audited on https://biqc.ai. All pages load successfully with proper data-testid attributes. Routes covered: /dashboard, /integrations, /calendar, /data-health, /forensic-audit, /reports, /audit-log, /connect-email, /decisions, /diagnosis, /data-center, /intel-centre, /watchtower, /intelligence-baseline, /operator, /market-analysis, /marketing-automation, /ab-testing, /market/calibration. One minor issue: /integrations shows net::ERR_NAME_NOT_RESOLVED for logo.clearbit.com (cosmetic only, page functional).",
   "test_date": "2026-03-14",
-  "target_url": "https://biqc.thestrategysquad.com",
+  "target_url": "https://biqc.ai",
   "test_type": "Production UX Forensic Audit - Remaining Authenticated Routes",
   "authentication_result": {
     "status": "SUCCESS",
@@ -615,7 +615,7 @@
   },
   "test_credentials": {
     "email": "andre@thestrategysquad.com.au",
-    "production_url": "https://biqc.thestrategysquad.com"
+    "production_url": "https://biqc.ai"
   },
   "retest_needed": false,
   "should_main_agent_self_test": false,

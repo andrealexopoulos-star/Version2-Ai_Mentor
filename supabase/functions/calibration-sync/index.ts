@@ -102,27 +102,46 @@ Country: ${bp?.target_country || "Australia"}`;
       }),
     });
 
-    let extracted: Record<string, any> = {};
-    if (aiRes.ok) {
-      const aiData = await aiRes.json();
-      const raw = aiData.choices?.[0]?.message?.content || "{}";
-      const usage = aiData.usage || {};
-      try { extracted = JSON.parse(raw); } catch { extracted = {}; }
-
-      // Track usage
-      try {
-        await sb.from("usage_tracking").insert({
-          user_id: userId,
-          function_name: "calibration-sync",
-          api_provider: "openai",
-          model: "gpt-4o-mini",
-          tokens_in: usage.prompt_tokens || 0,
-          tokens_out: usage.completion_tokens || 0,
-          cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,
-          called_at: new Date().toISOString(),
-        });
-      } catch {}
+    if (!aiRes.ok) {
+      const detail = await aiRes.text().catch(() => "");
+      return new Response(JSON.stringify({
+        error: "AI extraction failed",
+        code: "AI_EXTRACTION_FAILED",
+        detail: detail?.slice(0, 400) || null,
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+    const aiData = await aiRes.json();
+    const raw = aiData.choices?.[0]?.message?.content || "{}";
+    const usage = aiData.usage || {};
+    let extracted: Record<string, any> = {};
+    try {
+      extracted = JSON.parse(raw);
+    } catch {
+      return new Response(JSON.stringify({
+        error: "AI response parse failed",
+        code: "AI_RESPONSE_PARSE_FAILED",
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Track usage
+    try {
+      await sb.from("usage_tracking").insert({
+        user_id: userId,
+        function_name: "calibration-sync",
+        api_provider: "openai",
+        model: "gpt-4o-mini",
+        tokens_in: usage.prompt_tokens || 0,
+        tokens_out: usage.completion_tokens || 0,
+        cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,
+        called_at: new Date().toISOString(),
+      });
+    } catch {}
 
     // Merge: only fill in NULL fields (don't overwrite existing data)
     const updates: Record<string, any> = {};

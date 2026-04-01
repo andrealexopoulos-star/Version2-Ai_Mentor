@@ -122,20 +122,31 @@ export const callEdgeFunction = async (functionName, payload = {}, timeout = 450
     apiClient.post(
       `/edge/functions/${encodeURIComponent(functionName)}`,
       { payload },
-      { timeout, headers: { ...headers, ...extraHeaders } }
+      {
+        timeout,
+        headers: { ...headers, ...extraHeaders },
+        // Preserve edge/proxy HTTP truth and handle it in this wrapper.
+        validateStatus: () => true,
+      }
     )
   );
 
   let response = await invoke();
   let data = response.data;
+  if (!data || typeof data !== 'object') {
+    data = {};
+  }
+  if (!data._http_status) {
+    data._http_status = Number(response.status || 0);
+  }
 
-  // Edge proxy returns HTTP 200 envelopes. Retry once if envelope says unauthorized.
+  // Retry once if proxy/edge reports unauthorized via status or envelope.
   const errorText = String(data?.error || data?.detail || '').toLowerCase();
   const errorCode = String(data?.code || '').toLowerCase();
-  const embeddedStatus = Number(data?._http_status || 0);
+  const embeddedStatus = Number(data?._http_status || response.status || 0);
   const isUnauthorizedEnvelope =
-    data?.ok === false &&
     (
+      response.status === 401 ||
       embeddedStatus === 401 ||
       errorCode.includes('unauthorized') ||
       errorText.includes('unauthorized')
@@ -146,6 +157,12 @@ export const callEdgeFunction = async (functionName, payload = {}, timeout = 450
     if (freshToken) {
       response = await invoke({ Authorization: `Bearer ${freshToken}` });
       data = response.data;
+      if (!data || typeof data !== 'object') {
+        data = {};
+      }
+      if (!data._http_status) {
+        data._http_status = Number(response.status || 0);
+      }
     }
   }
 

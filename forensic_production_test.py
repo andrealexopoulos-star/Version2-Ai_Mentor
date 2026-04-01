@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Production Forensic Testing for BIQc Platform
-Target: https://biqc.thestrategysquad.com
+Target: https://biqc.ai
 Credentials: Set via env BIQC_TEST_EMAIL and BIQC_TEST_PASSWORD (never commit real credentials).
 Scope: Backend + Frontend with priority on Advisor/Business Brain correctness
 
@@ -23,7 +23,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 # Production Configuration — use env vars; never hardcode credentials
-BASE_URL = os.environ.get("BIQC_TEST_BASE_URL", "https://biqc.thestrategysquad.com")
+BASE_URL = os.environ.get("BIQC_TEST_BASE_URL", "https://biqc.ai")
 TEST_EMAIL = os.environ.get("BIQC_TEST_EMAIL", "").strip()
 TEST_PASSWORD = os.environ.get("BIQC_TEST_PASSWORD", "").strip()
 

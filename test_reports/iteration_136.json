@@ -1,7 +1,7 @@
 {
-  "summary": "PRODUCTION UX FORENSIC AUDIT COMPLETE - Supporting/Admin/Document/Analysis Pages + Platform Demo Pages. All 22 routes audited on https://biqc.thestrategysquad.com. Core pages (business-profile, settings, documents, analysis, sop-generator, competitive-benchmark, marketing-intelligence, exposure-scan) functional with proper form elements, tabs, CTAs. Platform demo pages (login, overview, revenue, alerts, automations, integrations-demo) well-designed with excellent proactive intelligence visualisation. All 5 industry demo pages (msp, construction, consulting, agency, saas) loaded successfully with industry-specific metrics and Executive Memo insights.",
+  "summary": "PRODUCTION UX FORENSIC AUDIT COMPLETE - Supporting/Admin/Document/Analysis Pages + Platform Demo Pages. All 22 routes audited on https://biqc.ai. Core pages (business-profile, settings, documents, analysis, sop-generator, competitive-benchmark, marketing-intelligence, exposure-scan) functional with proper form elements, tabs, CTAs. Platform demo pages (login, overview, revenue, alerts, automations, integrations-demo) well-designed with excellent proactive intelligence visualisation. All 5 industry demo pages (msp, construction, consulting, agency, saas) loaded successfully with industry-specific metrics and Executive Memo insights.",
   "test_date": "2026-03-14",
-  "target_url": "https://biqc.thestrategysquad.com",
+  "target_url": "https://biqc.ai",
   "test_type": "Production UX Forensic Audit - Chunk 2 (Supporting/Admin/Analysis/Demo Pages)",
   "authentication_result": {
     "status": "SUCCESS",
@@ -448,7 +448,7 @@
   },
   "test_credentials": {
     "email": "andre@thestrategysquad.com.au",
-    "production_url": "https://biqc.thestrategysquad.com"
+    "production_url": "https://biqc.ai"
   },
   "retest_needed": false,
   "should_main_agent_self_test": false,

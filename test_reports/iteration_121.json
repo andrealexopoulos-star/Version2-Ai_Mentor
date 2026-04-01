@@ -1,7 +1,7 @@
 {
-  "summary": "Forensic UX Audit of Production BIQc (biqc.thestrategysquad.com) - Soundboard & Onboarding Flows. CRITICAL BUG FOUND: Session persistence issues cause repeated logouts during page navigation. Unable to fully test Soundboard due to session drops.",
+  "summary": "Forensic UX Audit of Production BIQc (biqc.ai) - Soundboard & Onboarding Flows. CRITICAL BUG FOUND: Session persistence issues cause repeated logouts during page navigation. Unable to fully test Soundboard due to session drops.",
   "test_date": "2026-03-13",
-  "production_url": "https://biqc.thestrategysquad.com",
+  "production_url": "https://biqc.ai",
   "tests_performed": {
     "test1_soundboard_via_magic_link": "BLOCKED - Magic link token expired/one-time use",
     "test2_signup_and_onboarding": "PARTIAL - Signup successful but session lost during calibration flow",
@@ -167,7 +167,7 @@
   "should_main_agent_self_test": false,
   "context_for_next_testing_agent": "CRITICAL: Production has session persistence bug. After login, session drops within seconds when navigating pages. Unable to test Soundboard prompt handling, calibration flow, or any authenticated features. The bug appears to be related to Supabase auth token not persisting across React Router navigation. Recommend debugging SupabaseAuthContext.js and checking localStorage/sessionStorage token handling. Test credentials: cal-loop-416d7f85@biqctest.io / BIQcTest!2026Z",
   "rca_of_issue": {
-    "problem": "Session persistence failure on production biqc.thestrategysquad.com",
+    "problem": "Session persistence failure on production biqc.ai",
     "symptoms": [
       "User logs in successfully, redirected to /advisor",
       "Within 2-5 seconds of any navigation or page interaction, session is lost",

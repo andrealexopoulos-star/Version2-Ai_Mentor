@@ -7,7 +7,7 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 
-BASE_URL = "https://biqc.thestrategysquad.com"
+BASE_URL = "https://biqc.ai"
 FALLBACK_EMAIL = "andre@thestrategysquad.com.au"
 FALLBACK_PASSWORD = "MasterMind2025*"
 OUT_DIR = Path(".screenshots")

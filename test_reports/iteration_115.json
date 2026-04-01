@@ -1,5 +1,5 @@
 {
-  "summary": "Comprehensive forensic audit of BIQc platform (https://biqc.thestrategysquad.com) for user Andre (andre@thestrategysquad.com.au). Tested every page, every sidebar section, all tabs on advisor page, soundboard AI, integrations connected tab, and more. Authentication via dynamically generated Supabase magic links (service role). Total 27 pages/sections tested with screenshots. CRITICAL FINDING: HubSpot CRM and Xero Accounting are NOT connected despite brief claiming they are — integration_accounts Supabase table has 0 records. Only Outlook Email (outlook) is connected. This explains 'CRM not connected' and 'Accounting not connected' on every page.",
+  "summary": "Comprehensive forensic audit of BIQc platform (https://biqc.ai) for user Andre (andre@thestrategysquad.com.au). Tested every page, every sidebar section, all tabs on advisor page, soundboard AI, integrations connected tab, and more. Authentication via dynamically generated Supabase magic links (service role). Total 27 pages/sections tested with screenshots. CRITICAL FINDING: HubSpot CRM and Xero Accounting are NOT connected despite brief claiming they are — integration_accounts Supabase table has 0 records. Only Outlook Email (outlook) is connected. This explains 'CRM not connected' and 'Accounting not connected' on every page.",
 
   "authentication_notes": {
     "method": "Supabase Admin generate_link API with service role key",
@@ -448,7 +448,7 @@
   "retest_needed": true,
   "main_agent_can_self_test": false,
 
-  "context_for_next_testing_agent": "Testing environment: Production https://biqc.thestrategysquad.com with real Supabase (vwwandhoydemcybltoxz.supabase.co). Auth: Use Supabase Admin API (service_role_key in backend/.env) to generate fresh magic links for andre@thestrategysquad.com.au. User Supabase ID: 9b13615a-b772-4b6c-a851-17bdddda9fdf. CRITICAL: HubSpot and Xero NOT connected — integration_accounts table has 0 records in Supabase. MERGE_API_KEY=CONFIGURED_IN_AZURE blocks Merge API connections. Only Outlook email is connected (email_connections table). War Room page shows broken greeting 'Good , .'. Priority Inbox has 401 errors. All screenshots in /app/.screenshots/. 27+ pages tested and documented.",
+  "context_for_next_testing_agent": "Testing environment: Production https://biqc.ai with real Supabase (vwwandhoydemcybltoxz.supabase.co). Auth: Use Supabase Admin API (service_role_key in backend/.env) to generate fresh magic links for andre@thestrategysquad.com.au. User Supabase ID: 9b13615a-b772-4b6c-a851-17bdddda9fdf. CRITICAL: HubSpot and Xero NOT connected — integration_accounts table has 0 records in Supabase. MERGE_API_KEY=CONFIGURED_IN_AZURE blocks Merge API connections. Only Outlook email is connected (email_connections table). War Room page shows broken greeting 'Good , .'. Priority Inbox has 401 errors. All screenshots in /app/.screenshots/. 27+ pages tested and documented.",
 
   "rca_of_issues": {
     "hubspot_xero_not_connected": {

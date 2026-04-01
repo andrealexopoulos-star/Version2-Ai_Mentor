@@ -1,6 +1,6 @@
 """
 Iteration 130 - Production Retest after OpenAI key reset and War Room payload fix
-Tests production URL: https://biqc.thestrategysquad.com
+Tests production URL: https://biqc.ai
 """
 import pytest
 import requests
@@ -8,7 +8,7 @@ import os
 import time
 
 # Production URL as specified in credentials
-BASE_URL = "https://biqc.thestrategysquad.com"
+BASE_URL = "https://biqc.ai"
 TEST_EMAIL = "andre@thestrategysquad.com.au"
 TEST_PASSWORD = "MasterMind2025*"
 

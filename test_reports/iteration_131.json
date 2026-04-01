@@ -1,7 +1,7 @@
 {
-  "summary": "FORENSIC 60-TURN BENCHMARK RETEST - Production URL https://biqc.thestrategysquad.com. RESULTS: Soundboard PASS (5/5 = 100%), Board Room PASS (3/3 = 100%), War Room FAIL (0/3 = 0%). War Room consistently returns 'Unable to process.' error - Edge Function strategic-console-ai failing in production. Authentication and core platform working.",
+  "summary": "FORENSIC 60-TURN BENCHMARK RETEST - Production URL https://biqc.ai. RESULTS: Soundboard PASS (5/5 = 100%), Board Room PASS (3/3 = 100%), War Room FAIL (0/3 = 0%). War Room consistently returns 'Unable to process.' error - Edge Function strategic-console-ai failing in production. Authentication and core platform working.",
   "test_date": "2026-03-14",
-  "target_url": "https://biqc.thestrategysquad.com",
+  "target_url": "https://biqc.ai",
   "test_type": "Forensic 60-turn consecutive Q&A benchmark retest",
   "authentication_result": {
     "method": "email/password via Supabase",
@@ -164,7 +164,7 @@
   "test_credentials": {
     "email": "andre@thestrategysquad.com.au",
     "password": "MasterMind2025*",
-    "production_url": "https://biqc.thestrategysquad.com"
+    "production_url": "https://biqc.ai"
   },
   "seed_data_creation": "None - using existing Andre account data",
   "retest_needed": true,
@@ -192,7 +192,7 @@
         "Edge Function call at line 492-503 in boardroom.py is reaching the function but getting error response"
       ],
       "reproduction_steps": [
-        "1. Login as andre@thestrategysquad.com.au on https://biqc.thestrategysquad.com",
+        "1. Login as andre@thestrategysquad.com.au on https://biqc.ai",
         "2. Navigate to /war-room",
         "3. Type any question and click send",
         "4. Observe 'Unable to process.' response"

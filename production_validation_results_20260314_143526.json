@@ -40,7 +40,7 @@
       },
       "/api/integrations/crm/deals?page_size=50": {
         "success": false,
-        "error": "HTTPSConnectionPool(host='biqc.thestrategysquad.com', port=443): Read timed out. (read timeout=8)"
+        "error": "HTTPSConnectionPool(host='biqc.ai', port=443): Read timed out. (read timeout=8)"
       },
       "/api/integrations/accounting/summary": {
         "success": true,

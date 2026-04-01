@@ -4,7 +4,7 @@
 ```
 beta.thestrategysquad.com → Azure App Service (biqc-beta)
                           → Same Supabase database as prod
-                          → Separate from biqc.thestrategysquad.com (prod)
+                          → Separate from biqc.ai (prod)
 ```
 
 ## Steps (10 minutes)
@@ -54,7 +54,7 @@ Dashboard → Authentication → URL Configuration → Add:
 
 ### Result
 ```
-PRODUCTION: biqc.thestrategysquad.com    → biqc-api    (stable, :latest tag)
+PRODUCTION: biqc.ai    → biqc-api    (stable, :latest tag)
 BETA/DEV:   beta.thestrategysquad.com    → biqc-beta   (testing, :beta tag)
 DATABASE:   Same Supabase instance       → shared data for testing
 ```

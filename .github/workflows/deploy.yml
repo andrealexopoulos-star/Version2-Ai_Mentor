@@ -76,6 +76,15 @@ jobs:
             cat /tmp/website_changes.txt
           fi
 
+      - name: Enforce approval for protected website changes (blocking)
+        run: |
+          if [ "${{ steps.scan.outputs.website_changed }}" = "true" ] && [ "${{ steps.scan.outputs.website_approved }}" != "true" ]; then
+            echo "Blocked: protected website files changed without [website-approved] in commit message."
+            echo "Add [website-approved] after explicit website QA sign-off, then re-run deployment."
+            exit 1
+          fi
+          echo "Website deployment gate passed."
+
   # ─── TEST ───────────────────────────────────────────────────────────────
   test:
     name: Run Tests
@@ -134,11 +143,92 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           JWT_SECRET_KEY: test-secret-key
 
+  # ─── PRE-PROD FORENSIC GATE (BLOCKING) ───────────────────────────────────
+  preprod-forensic-gate:
+    name: Pre-Prod Forensic Gate
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - name: Validate required release secrets are present
+        run: |
+          missing=0
+          for name in \
+            REACT_APP_SUPABASE_URL \
+            SUPABASE_SERVICE_ROLE_KEY \
+            REACT_APP_SUPABASE_ANON_KEY \
+            OPENAI_API_KEY \
+            AZURE_CREDENTIALS \
+            ACR_USERNAME \
+            ACR_PASSWORD \
+            SUPABASE_ACCESS_TOKEN
+          do
+            val="$(printenv "$name" || true)"
+            if [ -z "$val" ]; then
+              echo "Missing required secret: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Pre-prod forensic gate failed: missing required secrets."
+            exit 1
+          fi
+        env:
+          REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Probe critical edge functions for non-5xx contracts
+        run: |
+          set -euo pipefail
+          BASE="${{ secrets.REACT_APP_SUPABASE_URL }}/functions/v1"
+          AUTH="Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+          APIKEY="apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+
+          check_status() {
+            local name="$1"
+            local method="$2"
+            local payload="${3:-}"
+            local allowed="$4"
+            local code
+            local out
+
+            out="/tmp/edge_${name}.json"
+            if [ "$method" = "GET" ]; then
+              code="$(curl --silent --show-error --output "$out" --write-out "%{http_code}" \
+                -H "$AUTH" -H "$APIKEY" "${BASE}/${name}")"
+            else
+              code="$(curl --silent --show-error --output "$out" --write-out "%{http_code}" \
+                -X POST -H "$AUTH" -H "$APIKEY" -H "Content-Type: application/json" \
+                -d "$payload" "${BASE}/${name}")"
+            fi
+
+            echo "${name} ${method} -> HTTP ${code}"
+            echo "Allowed: ${allowed}"
+            if ! echo " ${allowed} " | grep -q " ${code} "; then
+              echo "Unexpected status from ${name}: ${code}"
+              cat "$out" || true
+              exit 1
+            fi
+          }
+
+          # Health endpoint must be live.
+          check_status "calibration-engine" "GET" "" "200"
+          # Contract checks: function reachable, not internal crash.
+          check_status "calibration-psych" "POST" "{}" "400"
+          check_status "calibration-sync" "POST" "{}" "401"
+          check_status "calibration-business-dna" "POST" "{}" "400 422"
+
   # ─── BUILD & PUSH FRONTEND ───────────────────────────────────────────────
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
-    needs: [test, website-change-gate]
+    needs: [test, website-change-gate, preprod-forensic-gate]
 
     steps:
       - name: Checkout code
@@ -186,7 +276,7 @@ jobs:
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
-    needs: [test]
+    needs: [test, preprod-forensic-gate]
 
     steps:
       - name: Checkout code
