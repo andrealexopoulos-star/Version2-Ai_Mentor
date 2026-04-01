@@ -28,7 +28,6 @@ const STATUS_MAP = {
   DRIFT: { label: 'Slipping', color: '#F59E0B', bg: '#F59E0B08', b: '#F59E0B25' },
   COMPRESSION: { label: 'Under Pressure', color: '#FF6A00', bg: '#FF6A0008', b: '#FF6A0025' },
   CRITICAL: { label: 'At Risk', color: '#EF4444', bg: '#EF444408', b: '#EF444425' },
-  UNKNOWN: { label: 'Waiting for data', color: '#64748B', bg: '#64748B12', b: '#64748B2A' },
 };
 
 const GaugeMeter = ({ value, label, suffix = '%', thresholds = [30, 60, 80] }) => {
@@ -58,7 +57,6 @@ const MarketPage = () => {
   const [gapsOpen, setGapsOpen] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
   const [activeTab, setActiveTab] = useState('intelligence');
-  const [showProvenance, setShowProvenance] = useState(false);
   const [reports, setReports] = useState([]);
   const [watchtower, setWatchtower] = useState(null);
   const [pressure, setPressure] = useState(null);
@@ -111,7 +109,7 @@ const MarketPage = () => {
       apiClient.get('/snapshot/latest').then(r => r.data?.cognitive ? r.data.cognitive : Promise.reject('no data')),
       apiClient.get('/market-intelligence').then(r => r.data?.cognitive && r.data?.has_data ? r.data.cognitive : Promise.reject('no data')),
       (async () => {
-        const d = await callEdgeFunction('biqc-insights-cognitive', {});
+        const d = await callEdgeFunction('biqc-insights-cognitive', {}, 45000);
         if (!d?.cognitive) throw new Error('no cognitive');
         return d.cognitive;
       })(),
@@ -131,9 +129,9 @@ const MarketPage = () => {
 
   const c = snapshot || {};
   const stateStatus = typeof c.system_state === 'object' ? c.system_state?.status : c.system_state;
-  const rawConfidence = typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level;
+  const confidence = typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level;
   const interpretation = typeof c.system_state === 'object' ? c.system_state?.interpretation : null;
-  const st = STATUS_MAP[stateStatus] || STATUS_MAP.UNKNOWN;
+  const st = STATUS_MAP[stateStatus] || STATUS_MAP.STABLE;
   const memo = c.executive_memo || c.memo || '';
   const alignment = c.alignment?.narrative || '';
   const goalProb = c.market_intelligence?.probability_of_goal_achievement || c.probability_of_goal_achievement;
@@ -161,7 +159,7 @@ const MarketPage = () => {
   const pressureAvailable = Boolean(pressure?.pressures && Object.keys(pressure.pressures).length > 0);
   const freshnessAvailable = Boolean(freshness?.freshness && Object.keys(freshness.freshness).length > 0);
   const watchtowerAvailable = Boolean(
-    (!watchtower?.error && Array.isArray(watchtower?.events) && watchtower.events.length > 0)
+    (!watchtower?.error && Array.isArray(watchtower?.events))
     || (watchtower?.positions && Object.keys(watchtower.positions).length > 0)
   );
   const marketPressureSummary = pressureAvailable
@@ -177,8 +175,7 @@ const MarketPage = () => {
         .map(([domain, value]) => `${domain}: ${value.status}`)
         .join(' · ')
     : null;
-  const hasPrimaryMarketPayload = Boolean(snapshot || cognitionMarket);
-  const hasLiveMarketContext = Boolean(hasPrimaryMarketPayload || watchtowerAvailable || pressureAvailable || freshnessAvailable);
+  const hasLiveMarketContext = Boolean(snapshot || cognitionMarket || watchtowerAvailable || pressureAvailable || freshnessAvailable);
 
   const toConfidencePct = (raw) => {
     if (raw == null) return undefined;
@@ -186,20 +183,46 @@ const MarketPage = () => {
     if (!Number.isFinite(n)) return undefined;
     return n > 0 && n <= 1 ? n * 100 : n;
   };
-  const normalizedBannerConfidence = toConfidencePct(rawConfidence);
   const marketIntelLineage = cognitionMarket?.lineage ?? c?.lineage;
   const marketIntelFreshness = cognitionMarket?.data_freshness ?? c?.data_freshness;
   const marketIntelConfidence = toConfidencePct(cognitionMarket?.confidence_score ?? c?.confidence_score)
     ?? toConfidencePct(typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level);
-  const provenanceRows = [
-    { label: 'Primary narrative', value: hasPrimaryMarketPayload ? 'Live' : 'Calibrating' },
-    { label: 'Watchtower feed', value: watchtowerAvailable ? 'Live' : (watchtowerMessage || 'Unavailable') },
-    { label: 'Pressure calibration', value: pressureAvailable ? (marketPressureSummary || 'Live') : (pressureMessage || 'Unavailable') },
-    { label: 'Evidence freshness', value: freshnessAvailable ? (freshnessSummary || 'Live') : (freshnessMessage || 'Unavailable') },
-    { label: 'Confidence', value: marketIntelConfidence != null ? `${Math.round(marketIntelConfidence)}%` : 'Unknown' },
-  ];
 
   const sendToChat = (msg) => setActionMessage(msg);
+
+  const [showRecalibrateModal, setShowRecalibrateModal] = useState(false);
+  const [recalForm, setRecalForm] = useState({ name: '', email: user?.email || '', message: '' });
+  const [recalSubmitted, setRecalSubmitted] = useState(false);
+  const [recalSubmitting, setRecalSubmitting] = useState(false);
+  const [calibrationDate, setCalibrationDate] = useState(null);
+
+  useEffect(() => {
+    apiClient.get('/calibration/status').then(res => {
+      if (res.data?.completed_at) setCalibrationDate(new Date(res.data.completed_at));
+      else if (res.data?.status === 'COMPLETE') setCalibrationDate(new Date(Date.now() - 86400000));
+    }).catch(() => {});
+  }, []);
+
+  const daysSinceCalibration = calibrationDate ? Math.floor((Date.now() - calibrationDate.getTime()) / 86400000) : null;
+  const canRecalibrate = daysSinceCalibration !== null && daysSinceCalibration >= 30;
+
+  const handleRecalSubmit = async (e) => {
+    e.preventDefault();
+    setRecalSubmitting(true);
+    try {
+      await apiClient.post('/contact/recalibration', {
+        name: recalForm.name,
+        email: recalForm.email,
+        message: recalForm.message || 'I would like to recalibrate my business profile.',
+        days_since_calibration: daysSinceCalibration,
+      });
+      setRecalSubmitted(true);
+    } catch {
+      setRecalSubmitted(true);
+    } finally {
+      setRecalSubmitting(false);
+    }
+  };
 
   // Deep Market Modeling data extraction
   const competitors = c.market?.competitors || mi.competitors || [];
@@ -229,48 +252,27 @@ const MarketPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full" style={{ background: st.color, boxShadow: `0 0 12px ${st.color}50` }} />
-              <span className="text-lg font-bold" style={{ color: st.color, fontFamily: fontFamily.display }}>
-                {hasPrimaryMarketPayload ? st.label : 'Waiting for data'}
-              </span>
+              <span className="text-lg font-bold" style={{ color: st.color, fontFamily: fontFamily.display }}>{hasLiveMarketContext ? st.label : 'Waiting for data'}</span>
             </div>
             <div className="flex items-center gap-2">
-              {normalizedBannerConfidence != null && hasPrimaryMarketPayload && (
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: st.color, background: `${st.color}15`, fontFamily: fontFamily.mono }}>
-                  {Math.round(normalizedBannerConfidence)}% confidence
-                </span>
-              )}
+              {confidence && <span className="text-xs px-2 py-0.5 rounded-full" style={{ color: st.color, background: `${st.color}15`, fontFamily: fontFamily.mono }}>{confidence}% confidence</span>}
               <button onClick={() => { setLoading(true); fetchSnapshot().finally(() => setLoading(false)); }} className="p-1.5 rounded-lg hover:bg-white/5" data-testid="market-refresh">
                 <RefreshCw className="w-3.5 h-3.5 text-[#64748B]" />
               </button>
+              {canRecalibrate && (
+                <button
+                  onClick={() => setShowRecalibrateModal(true)}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
+                  style={{ background: '#7C3AED15', color: '#7C3AED', border: '1px solid #7C3AED30' }}
+                  data-testid="recalibrate-btn"
+                >
+                  <RefreshCw className="w-3 h-3" /> Recalibrate
+                </button>
+              )}
             </div>
           </div>
           {interpretation && <p className="text-sm text-[#9FB0C3] leading-relaxed">{interpretation}</p>}
           {!hasLiveMarketContext && <p className="text-sm text-[#64748B]">Connect your tools and complete calibration to see where your business stands.</p>}
-          {!hasPrimaryMarketPayload && hasLiveMarketContext && (
-            <p className="text-sm text-[#64748B]">Supporting signals are live, but the primary market narrative is still calibrating.</p>
-          )}
-          <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(148,163,184,0.2)' }}>
-            <button
-              type="button"
-              onClick={() => setShowProvenance((prev) => !prev)}
-              className="text-xs flex items-center gap-1"
-              style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}
-              data-testid="market-provenance-toggle"
-            >
-              Evidence chain
-              {showProvenance ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            </button>
-            {showProvenance && (
-              <div className="mt-2 grid gap-2 sm:grid-cols-2" data-testid="market-provenance-drawer">
-                {provenanceRows.map((item) => (
-                  <div key={item.label} className="rounded-lg px-3 py-2" style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.22)' }}>
-                    <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>{item.label}</p>
-                    <p className="mt-1 text-xs" style={{ color: '#CBD5E1' }}>{item.value}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]" data-testid="market-ux-main-grid">
@@ -772,6 +774,43 @@ const MarketPage = () => {
 
         </>}
       </div>
+      {showRecalibrateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { if (!recalSubmitting) setShowRecalibrateModal(false); }}>
+          <div className="w-full max-w-md rounded-2xl p-6 space-y-4 mx-4" style={{ background: 'var(--biqc-surface, #0B1120)', border: '1px solid var(--biqc-border, #1E293B)' }} onClick={e => e.stopPropagation()}>
+            {recalSubmitted ? (
+              <div className="text-center space-y-3 py-4">
+                <CheckCircle2 className="w-10 h-10 mx-auto text-green-400" />
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Request Received</h2>
+                <p className="text-sm" style={{ color: 'var(--biqc-text-2, #94A3B8)' }}>Our team will be in touch within 24 hours to schedule your recalibration session.</p>
+                <button onClick={() => { setShowRecalibrateModal(false); setRecalSubmitted(false); }} className="mt-3 px-5 py-2 rounded-lg text-sm font-medium text-white" style={{ background: '#FF6A00' }}>Close</button>
+              </div>
+            ) : (
+              <form onSubmit={handleRecalSubmit} className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>Request Recalibration</h2>
+                  <p className="text-sm mt-1" style={{ color: 'var(--biqc-text-2, #94A3B8)' }}>Your business profile was calibrated {daysSinceCalibration} days ago. Submit a request and our team will arrange a fresh calibration session.</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--biqc-text-2, #94A3B8)' }}>Your name</label>
+                  <input value={recalForm.name} onChange={e => setRecalForm(p => ({ ...p, name: e.target.value }))} required className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--biqc-bg, #060B18)', border: '1px solid var(--biqc-border, #1E293B)', color: 'var(--biqc-text, #F4F7FA)' }} placeholder="Full name" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--biqc-text-2, #94A3B8)' }}>Email</label>
+                  <input value={recalForm.email} onChange={e => setRecalForm(p => ({ ...p, email: e.target.value }))} required type="email" className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--biqc-bg, #060B18)', border: '1px solid var(--biqc-border, #1E293B)', color: 'var(--biqc-text, #F4F7FA)' }} placeholder="you@company.com" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium block mb-1" style={{ color: 'var(--biqc-text-2, #94A3B8)' }}>Message (optional)</label>
+                  <textarea value={recalForm.message} onChange={e => setRecalForm(p => ({ ...p, message: e.target.value }))} rows={3} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={{ background: 'var(--biqc-bg, #060B18)', border: '1px solid var(--biqc-border, #1E293B)', color: 'var(--biqc-text, #F4F7FA)' }} placeholder="Any details about what's changed in your business..." />
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => setShowRecalibrateModal(false)} className="flex-1 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--biqc-border, #1E293B)', color: 'var(--biqc-text-2, #94A3B8)' }}>Cancel</button>
+                  <button type="submit" disabled={recalSubmitting} className="flex-1 py-2 rounded-lg text-sm font-medium text-white" style={{ background: '#FF6A00', opacity: recalSubmitting ? 0.6 : 1 }}>{recalSubmitting ? 'Submitting...' : 'Contact Sales'}</button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

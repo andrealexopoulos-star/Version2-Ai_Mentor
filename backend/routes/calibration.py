@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone, timedelta
 import asyncio
-import os
 import uuid
 import re
 import json
@@ -871,8 +870,7 @@ async def skip_calibration(current_user: dict = Depends(get_current_user)):
     """Super admin only — skip calibration entirely and mark as complete."""
     user_role = current_user.get("role", "user")
     user_email = current_user.get("email", "")
-    founder_email = (os.environ.get("BIQC_MASTER_ADMIN_EMAIL") or "").strip().lower()
-    if user_role not in ("superadmin", "admin") and (not founder_email or user_email.strip().lower() != founder_email):
+    if user_role not in ("superadmin", "admin") and user_email != "andre@thestrategysquad.com.au":
         raise HTTPException(status_code=403, detail="Super admin only")
     
     user_id = current_user["id"]
