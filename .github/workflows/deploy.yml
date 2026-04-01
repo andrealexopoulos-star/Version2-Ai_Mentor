@@ -150,6 +150,11 @@ jobs:
     needs: [test]
 
     steps:
+      - name: Gate version marker
+        run: |
+          echo "FORENSIC_GATE_VERSION=v4"
+          echo "GITHUB_SHA=${GITHUB_SHA}"
+
       - name: Validate required release secrets are present
         run: |
           missing=0
