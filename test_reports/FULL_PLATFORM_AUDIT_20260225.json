@@ -1,5 +1,5 @@
 {
-  "domain_lock": "biqc.thestrategysquad.com",
+  "domain_lock": "biqc.ai",
   "environments_tested": ["desktop_browser"],
   "environments_not_testable": ["desktop_app (PWA)", "mobile_browser", "mobile_app (PWA)"],
   "limitation": "Playwright cannot simulate installed PWA or real Android device. Desktop browser fully tested. Mobile viewport CSS verified via code audit. PWA manifest verified via fetch. Real device testing requires manual verification.",

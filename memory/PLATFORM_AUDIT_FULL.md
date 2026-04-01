@@ -288,7 +288,7 @@
 | `DB_NAME=test_database` in `.env` | `/app/backend/.env` | Paired with MONGO_URL — unused | 🟢 Low — delete the variable |
 | Emergent LLM Key (`EMERGENT_LLM_KEY`) | `/app/backend/.env` | Used for OpenAI/Claude calls via emergentintegrations library. Must be replaced with direct `OPENAI_API_KEY` for self-hosting. | 🟡 Medium — replace emergentintegrations library calls with direct SDK calls |
 | `emergentintegrations` Python library | `requirements.txt` | Emergent-proprietary LLM wrapper. Needs to be replaced with `openai`, `anthropic` direct SDKs. | 🟡 Medium — audit all imports and replace |
-| `preview.emergentagent.com` references | `frontend/.env` (REACT_APP_BACKEND_URL) | Points to Emergent preview environment. Must be replaced with `biqc.thestrategysquad.com` for production. | 🟢 Low — already correct in production |
+| `preview.emergentagent.com` references | `frontend/.env` (REACT_APP_BACKEND_URL) | Points to Emergent preview environment. Must be replaced with `biqc.ai` for production. | 🟢 Low — already correct in production |
 | Supervisor process management | `/etc/supervisor/conf.d/` | Emergent uses supervisord to manage frontend/backend. Self-hosted would use Docker Compose or Azure App Service start scripts. | 🟡 Medium — handled by Azure App Service in production |
 
 ---

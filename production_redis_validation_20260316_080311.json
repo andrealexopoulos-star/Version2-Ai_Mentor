@@ -1,6 +1,6 @@
 {
   "test_summary": {
-    "target": "https://biqc.thestrategysquad.com",
+    "target": "https://biqc.ai",
     "duration_seconds": 35.1,
     "total_tests": 10,
     "passed": 10,

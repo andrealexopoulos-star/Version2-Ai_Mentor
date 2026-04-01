@@ -1,7 +1,7 @@
 {
   "summary": "PRODUCTION UX FORENSIC AUDIT - Execution and Advisor-Action Surfaces. Tested /soundboard, /war-room, /board-room, /alerts, /actions, /automations, /email-inbox, /ops-advisory. All pages loading correctly. Comprehensive UX scoring provided for cognitive load, source clarity, actionability, repetitive blocks, proactive intelligence, workflow automation, feedback/control, mental-model fit, and accessibility.",
   "test_date": "2026-03-14",
-  "target_url": "https://biqc.thestrategysquad.com",
+  "target_url": "https://biqc.ai",
   "test_type": "Production UX Forensic Audit - Frontend Only",
   "authentication_result": {
     "status": "SUCCESS",

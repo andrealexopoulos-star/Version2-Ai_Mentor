@@ -9,7 +9,7 @@
 ```
 Your Computer → GitHub → Azure Container Registry → Azure App Service (Always-On)
                                                           ↓
-                                                    biqc.thestrategysquad.com
+                                                    biqc.ai
                                                           ↓
                                                     Supabase (Database stays as-is)
 ```
@@ -370,7 +370,7 @@ Press Ctrl+C to stop watching logs.
 
 ---
 
-## PHASE 9: CUSTOM DOMAIN (biqc.thestrategysquad.com)
+## PHASE 9: CUSTOM DOMAIN (biqc.ai)
 
 ### 9.1 Add DNS Record
 
@@ -387,18 +387,18 @@ Go to your DNS provider (where thestrategysquad.com is managed — likely GoDadd
 az webapp config hostname add \
   --resource-group biqc-production \
   --webapp-name biqc-web \
-  --hostname biqc.thestrategysquad.com
+  --hostname biqc.ai
 ```
 
 ### 9.3 Enable Free SSL Certificate
 
 1. Azure Portal → `biqc-web` → **Custom domains**
-2. Click on `biqc.thestrategysquad.com`
+2. Click on `biqc.ai`
 3. Click **Add binding**
 4. Select **App Service Managed Certificate (Free)**
 5. Click **Create**
 
-After 5-10 minutes, your site will be live at `https://biqc.thestrategysquad.com` with SSL.
+After 5-10 minutes, your site will be live at `https://biqc.ai` with SSL.
 
 ---
 
@@ -410,8 +410,8 @@ Open these URLs and check:
 |-----|----------|
 | `https://biqc-web.azurewebsites.net` | BIQc homepage loads |
 | `https://biqc-api.azurewebsites.net/api/health` | `{"status": "ok"}` |
-| `https://biqc.thestrategysquad.com` | BIQc homepage (after DNS) |
-| `https://biqc.thestrategysquad.com/login-supabase` | Login page |
+| `https://biqc.ai` | BIQc homepage (after DNS) |
+| `https://biqc.ai/login-supabase` | Login page |
 
 ---
 

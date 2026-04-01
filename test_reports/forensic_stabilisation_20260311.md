@@ -1,7 +1,7 @@
 # BIQc Forensic Stabilisation Audit Report
 ## Date: March 11, 2026
 ## Auditor: Execution Agent
-## Platform: https://biqc.thestrategysquad.com
+## Platform: https://biqc.ai
 
 ---
 
@@ -14,7 +14,7 @@ Per the Master Agent Execution Prompt:
 
 ## SECTION 1: PUBLIC WEBSITE — EVIDENCE CONFIRMED ✅
 
-### 1.1 Login Page (biqc.thestrategysquad.com/login-supabase)
+### 1.1 Login Page (biqc.ai/login-supabase)
 **STATUS: PASS ✅**
 - Screenshot: fa_login.png
 - "Welcome back" heading visible ✅
@@ -29,7 +29,7 @@ Per the Master Agent Execution Prompt:
 - AES-256 Encryption, Real-time Signals, Zero Leakage, Australian Hosted badges ✅
 - **Error handling**: "Invalid email or password. Please check your credentials." — styled correctly with icon ✅
 
-### 1.2 Reset Password Page (biqc.thestrategysquad.com/reset-password)
+### 1.2 Reset Password Page (biqc.ai/reset-password)
 **STATUS: PASS ✅**
 - Screenshot: fa_reset.png
 - "Reset your password" heading ✅
@@ -38,7 +38,7 @@ Per the Master Agent Execution Prompt:
 - "Back to sign in" link ✅
 - Form data-testid=reset-form confirmed present ✅
 
-### 1.3 Homepage (biqc.thestrategysquad.com)
+### 1.3 Homepage (biqc.ai)
 **STATUS: PASS ✅**
 - Screenshot: fa_home.png
 - H1: "A Single Intelligence Layer Across All Business Systems" ✅
@@ -55,7 +55,7 @@ Per the Master Agent Execution Prompt:
 - **Grey line REMOVED** ✅ — Tab bar has no border-bottom, only orange underline on active tab
 - "Start free trial" CTA at end of Pipeline ✅
 
-### 1.5 Public Integrations Page (biqc.thestrategysquad.com/our-integrations)
+### 1.5 Public Integrations Page (biqc.ai/our-integrations)
 **STATUS: PASS ✅**
 - Screenshots: fa_integrations_public.png, fa_footer.png
 - **H1: "500+ Integrations"** ✅ — Large font (H1 level, text-4xl+)
@@ -125,7 +125,7 @@ Per the Master Agent Execution Prompt:
 - /revenue — "Connect CRM" (EXPECTED: HubSpot was lost in DB purge — user needs to reconnect)
 - /operations — "Connect integrations" (same)
 - Advisor Money tab — "Accounting not connected" (Xero lost in purge)
-- **ROOT CAUSE CONFIRMED:** `integration_accounts` table has 0 records — HubSpot/Xero must be reconnected at biqc.thestrategysquad.com/integrations
+- **ROOT CAUSE CONFIRMED:** `integration_accounts` table has 0 records — HubSpot/Xero must be reconnected at biqc.ai/integrations
 
 ### 3.2 Knowledge Base footer link — NOT VERIFIED
 - Footer shows "Knowledge Base" link
@@ -166,13 +166,13 @@ Per the Master Agent Execution Prompt:
 ## EVIDENCE FILES
 | Screenshot | Content | URL Visible |
 |---|---|---|
-| fa_login.png | Login page full | biqc.thestrategysquad.com/login-supabase ✅ |
-| fa_reset.png | Reset password form | biqc.thestrategysquad.com/reset-password ✅ |
-| fa_home.png | Homepage hero | biqc.thestrategysquad.com ✅ |
-| fa_hiw_default.png | HowItWorks "Why BIQc" tab | biqc.thestrategysquad.com/#how-it-works ✅ |
-| fa_hiw_tabs.png | Pipeline + Business Signals | biqc.thestrategysquad.com ✅ |
-| fa_integrations_public.png | 500+ Integrations page | biqc.thestrategysquad.com/our-integrations ✅ |
-| fa_footer.png | Footer with all links | biqc.thestrategysquad.com/our-integrations ✅ |
-| fa_app_landing.png | Login error state | biqc.thestrategysquad.com/login-supabase ✅ |
+| fa_login.png | Login page full | biqc.ai/login-supabase ✅ |
+| fa_reset.png | Reset password form | biqc.ai/reset-password ✅ |
+| fa_home.png | Homepage hero | biqc.ai ✅ |
+| fa_hiw_default.png | HowItWorks "Why BIQc" tab | biqc.ai/#how-it-works ✅ |
+| fa_hiw_tabs.png | Pipeline + Business Signals | biqc.ai ✅ |
+| fa_integrations_public.png | 500+ Integrations page | biqc.ai/our-integrations ✅ |
+| fa_footer.png | Footer with all links | biqc.ai/our-integrations ✅ |
+| fa_app_landing.png | Login error state | biqc.ai/login-supabase ✅ |
 
 **Previous audit screenshots:** /app/.screenshots/ (27 screenshots from iteration_115 test)

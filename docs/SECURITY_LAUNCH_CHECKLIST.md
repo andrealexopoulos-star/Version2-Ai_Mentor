@@ -1,6 +1,6 @@
 # BIQc Production Security & Launch Checklist
 
-Use this checklist before launching **biqc.thestrategysquad.com** (or any production deployment). It covers IP hardening, security headers, auth, and common vulnerability fixes.
+Use this checklist before launching **biqc.ai** (or any production deployment). It covers IP hardening, security headers, auth, and common vulnerability fixes.
 
 ---
 
@@ -32,7 +32,7 @@ The FastAPI app already sends these via `NoCacheAPIMiddleware` in `backend/core/
 
 ## 3. CORS & Network
 
-- [ ] **CORS**: Backend allows origins via regex: `thestrategysquad.com`, `preview.emergentagent.com`, and `localhost:3000`. Optional: set `CORS_ALLOW_ORIGINS=https://biqc.thestrategysquad.com` for an explicit list.
+- [ ] **CORS**: Backend allows origins via regex: `thestrategysquad.com`, `preview.emergentagent.com`, and `localhost:3000`. Optional: set `CORS_ALLOW_ORIGINS=https://biqc.ai` for an explicit list.
 - [ ] **HTTPS**: Serve the app only over HTTPS. Enforce redirect HTTP → HTTPS at the proxy/load balancer.
 - [ ] **Firewall / IP hardening**: Restrict admin or sensitive endpoints by IP if required; use WAF rules (e.g. Azure WAF) for DDoS and common attacks.
 
@@ -57,7 +57,7 @@ The FastAPI app already sends these via `NoCacheAPIMiddleware` in `backend/core/
 
 ## 6. Optional: Supabase Edge Functions
 
-Edge functions use `Access-Control-Allow-Origin: *` for CORS. For stricter hardening, consider restricting to your app origin (e.g. `https://biqc.thestrategysquad.com`) when deploying to production.
+Edge functions use `Access-Control-Allow-Origin: *` for CORS. For stricter hardening, consider restricting to your app origin (e.g. `https://biqc.ai`) when deploying to production.
 
 ---
 

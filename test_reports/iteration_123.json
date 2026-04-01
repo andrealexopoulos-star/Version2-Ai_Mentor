@@ -1,13 +1,13 @@
 {
   "summary": "FORENSIC SOUNDBOARD TEST BLOCKED - Andre magic link authentication failed. Token was already consumed or expired. Unable to proceed with 100-turn consecutive conversation test.",
   "test_date": "2026-03-13",
-  "target_url": "https://biqc.thestrategysquad.com",
+  "target_url": "https://biqc.ai",
   "test_type": "Production forensic Soundboard 100-turn conversation test",
   "authentication_attempt": {
-    "magic_link_provided": "https://vwwandhoydemcybltoxz.supabase.co/auth/v1/verify?token=19b05da85284d677fd5e1fc78043b59d8e81e4299f604de4503141f6&type=magiclink&redirect_to=https://biqc.thestrategysquad.com",
+    "magic_link_provided": "https://vwwandhoydemcybltoxz.supabase.co/auth/v1/verify?token=19b05da85284d677fd5e1fc78043b59d8e81e4299f604de4503141f6&type=magiclink&redirect_to=https://biqc.ai",
     "result": "FAILED",
     "reason": "Magic link token was already consumed or expired",
-    "observed_behavior": "Magic link redirected to https://biqc.thestrategysquad.com/# (landing page) instead of authenticated session. Attempting to navigate to /soundboard resulted in redirect to /login-supabase",
+    "observed_behavior": "Magic link redirected to https://biqc.ai/# (landing page) instead of authenticated session. Attempting to navigate to /soundboard resulted in redirect to /login-supabase",
     "timestamp": "2026-03-13T10:44:41Z"
   },
   "test_execution_status": "BLOCKED",
@@ -43,7 +43,7 @@
   },
   "retest_needed": true,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Andre magic link provided was expired/consumed. Production target https://biqc.thestrategysquad.com requires fresh authentication credentials. The 100-turn forensic Soundboard test cannot proceed without valid Andre session. Magic links are one-time use and have expiration windows.",
+  "context_for_next_testing_agent": "Andre magic link provided was expired/consumed. Production target https://biqc.ai requires fresh authentication credentials. The 100-turn forensic Soundboard test cannot proceed without valid Andre session. Magic links are one-time use and have expiration windows.",
   "evidence": {
     "screenshot_1": ".screenshots/andre_auth_step1.png - Shows landing page after magic link redirect",
     "screenshot_2": ".screenshots/andre_soundboard_check.png - Shows login page when attempting to access /soundboard"

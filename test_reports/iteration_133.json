@@ -1,7 +1,7 @@
 {
-  "summary": "PRODUCTION FORENSIC VALIDATION COMPLETE - https://biqc.thestrategysquad.com. ALL CRITICAL ISSUES FROM ITERATION 132 NOW FIXED. War Room Q&A working (readable answers in UI), Ops Advisory working (recommendations loading), Documents working (no API 500), Priority Inbox working (priority sections with real Outlook data). Weekly Check-In banner correctly positioned in SoundBoard panel under Forensic Market Exposure.",
+  "summary": "PRODUCTION FORENSIC VALIDATION COMPLETE - https://biqc.ai. ALL CRITICAL ISSUES FROM ITERATION 132 NOW FIXED. War Room Q&A working (readable answers in UI), Ops Advisory working (recommendations loading), Documents working (no API 500), Priority Inbox working (priority sections with real Outlook data). Weekly Check-In banner correctly positioned in SoundBoard panel under Forensic Market Exposure.",
   "test_date": "2026-03-14",
-  "target_url": "https://biqc.thestrategysquad.com",
+  "target_url": "https://biqc.ai",
   "test_type": "Production Forensic Validation (Post-Fix Retest)",
   "authentication_result": {
     "status": "SUCCESS",
@@ -96,7 +96,7 @@
   "action_items": [],
   "test_credentials": {
     "email": "andre@thestrategysquad.com.au",
-    "production_url": "https://biqc.thestrategysquad.com"
+    "production_url": "https://biqc.ai"
   },
   "retest_needed": false,
   "should_main_agent_self_test": false,

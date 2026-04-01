@@ -5,7 +5,7 @@
     "mobile_stability_score": 58,
     "reset_password_score": 0,
     "edge_load_stability_score": 35,
-    "domain": "biqc.thestrategysquad.com",
+    "domain": "biqc.ai",
     "user": "andre@thestrategysquad.com.au",
     "audit_date": "2026-02-24",
     "deployment_confirmed": true
@@ -29,7 +29,7 @@
       "route": "/market, /advisor",
       "device": "ALL",
       "issue": "biqc-insights-cognitive Edge Function returns HTTP 401 on EVERY call from production. Console logs show: 'Failed to load resource: the server responded with a status of 401 () at https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/biqc-insights-cognitive'. This means the Edge Function is rejecting the access token.",
-      "reproduction": "1. Login to biqc.thestrategysquad.com. 2. Navigate to /market or /advisor. 3. Open browser console. 4. Observe repeated 401 errors from biqc-insights-cognitive.",
+      "reproduction": "1. Login to biqc.ai. 2. Navigate to /market or /advisor. 3. Open browser console. 4. Observe repeated 401 errors from biqc-insights-cognitive.",
       "risk": "CRITICAL",
       "root_cause": "Possible: (a) Edge Function not deployed with latest code, (b) Supabase auth JWT verification failing, (c) ANON_KEY mismatch between frontend and Edge Function, (d) Edge Function expects service_role token but receives user token.",
       "impact": "The entire cognitive engine is non-functional on production. Market page falls back to /api/market-intelligence backend endpoint. Action Plan, competitive signals, industry trends — all from Edge Function — are unavailable."
@@ -43,7 +43,7 @@
       "route": "/api/auth/supabase/me",
       "device": "ALL",
       "issue": "Backend /api/auth/supabase/me returns HTTP 520 (Cloudflare 'Web server returning unknown error'). This is the user profile endpoint used by ProtectedRoute for admin checks.",
-      "reproduction": "Console logs show: 'Failed to load resource: the server responded with a status of 520 () at https://biqc.thestrategysquad.com/api/auth/supabase/me'. Multiple occurrences per page load.",
+      "reproduction": "Console logs show: 'Failed to load resource: the server responded with a status of 520 () at https://biqc.ai/api/auth/supabase/me'. Multiple occurrences per page load.",
       "risk": "HIGH",
       "root_cause": "Backend server may be hitting an unhandled exception or timeout when processing the /me endpoint. The 520 is a Cloudflare error indicating the origin server responded with something unexpected.",
       "impact": "Admin role detection may fail intermittently. Users may not see admin-specific features (Super Admin panel, Forensic Calibration access)."
@@ -204,11 +204,11 @@
   "reproduction_steps": [
     {
       "finding": "CRIT-001",
-      "steps": ["Go to https://biqc.thestrategysquad.com/login-supabase", "Look for 'Forgot Password' link", "None exists", "Search codebase for resetPassword — 0 results"]
+      "steps": ["Go to https://biqc.ai/login-supabase", "Look for 'Forgot Password' link", "None exists", "Search codebase for resetPassword — 0 results"]
     },
     {
       "finding": "CRIT-002",
-      "steps": ["Login to https://biqc.thestrategysquad.com", "Navigate to /market", "Open browser DevTools → Console", "Observe: 'Failed to load resource: 401' from biqc-insights-cognitive", "Repeat on /advisor — same 401"]
+      "steps": ["Login to https://biqc.ai", "Navigate to /market", "Open browser DevTools → Console", "Observe: 'Failed to load resource: 401' from biqc-insights-cognitive", "Repeat on /advisor — same 401"]
     },
     {
       "finding": "HIGH-001",

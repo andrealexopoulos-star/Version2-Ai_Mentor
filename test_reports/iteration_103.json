@@ -1,5 +1,5 @@
 {
-  "summary": "BIQc production go-live readiness test at https://biqc.thestrategysquad.com. Tested all 10 Phase 1 critical flows: auth, signup, calibration journey, advisor, and connect email. Production is on NEW Supabase (vwwandhoydemcybltoxz). Critical OAuth Outlook/Gmail blocker found: client_id=None and redirect_uri=localhost:8001.",
+  "summary": "BIQc production go-live readiness test at https://biqc.ai. Tested all 10 Phase 1 critical flows: auth, signup, calibration journey, advisor, and connect email. Production is on NEW Supabase (vwwandhoydemcybltoxz). Critical OAuth Outlook/Gmail blocker found: client_id=None and redirect_uri=localhost:8001.",
 
   "test_credentials": {
     "email": "newtest1@biqctest.io",
@@ -12,7 +12,7 @@
     "critical": [
       {
         "endpoint": "/api/auth/outlook/login",
-        "issue": "Microsoft OAuth redirect URL contains client_id=None and redirect_uri=http://localhost:8001/api/auth/outlook/callback. Azure Client ID not configured in production environment. OAuth callback redirects to localhost instead of https://biqc.thestrategysquad.com/api/auth/outlook/callback. Connect Outlook is COMPLETELY BROKEN in production.",
+        "issue": "Microsoft OAuth redirect URL contains client_id=None and redirect_uri=http://localhost:8001/api/auth/outlook/callback. Azure Client ID not configured in production environment. OAuth callback redirects to localhost instead of https://biqc.ai/api/auth/outlook/callback. Connect Outlook is COMPLETELY BROKEN in production.",
         "priority": "CRITICAL",
         "evidence": "Captured URL: login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=None&redirect_uri=http%3A%2F%2Flocalhost%3A8001%2Fapi%2Fauth%2Foutlook%2Fcallback"
       },
@@ -62,9 +62,9 @@
   },
 
   "test_results_by_requirement": {
-    "1_homepage": "PASS - https://biqc.thestrategysquad.com loads, hero section visible, nav and CTAs present",
+    "1_homepage": "PASS - https://biqc.ai loads, hero section visible, nav and CTAs present",
     "2_login_page": "PASS - /login-supabase loads, email/password form visible, Google and Microsoft OAuth buttons present",
-    "3_oauth_redirect_check": "PASS - Microsoft OAuth redirect contains vwwandhoydemcybltoxz (NEW Supabase). JWT ref also confirms new Supabase. OAuth redirects to biqc.thestrategysquad.com (NOT beta.thestrategysquad.com). CORRECT.",
+    "3_oauth_redirect_check": "PASS - Microsoft OAuth redirect contains vwwandhoydemcybltoxz (NEW Supabase). JWT ref also confirms new Supabase. OAuth redirects to biqc.ai (NOT beta.thestrategysquad.com). CORRECT.",
     "4_new_user_signup": "PASS - newtest1@biqctest.io registered successfully. Email confirmation toast appears but doesn't block session.",
     "5_calibration_routing": "PASS - After signup, user redirected to /calibration automatically",
     "6_calibration_flow": "PARTIAL - URL input shows, form submits with www.camposbeans.com.au, BUT scan falls back to manual summary (Edge Function returns no extracted_data on new Supabase). Manual summary path works.",
@@ -77,13 +77,13 @@
   "critical_findings": {
     "supabase_confirmed_new": true,
     "supabase_ref": "vwwandhoydemcybltoxz",
-    "oauth_redirect_target": "biqc.thestrategysquad.com (CORRECT)",
+    "oauth_redirect_target": "biqc.ai (CORRECT)",
     "old_supabase_detected": false,
     "beta_domain_detected": false,
     "redirect_loop_detected": false,
     "email_confirmation_on": true,
     "outlook_oauth_client_id": "None (BROKEN)",
-    "outlook_redirect_uri": "http://localhost:8001/api/auth/outlook/callback (BROKEN - should be https://biqc.thestrategysquad.com/api/auth/outlook/callback)"
+    "outlook_redirect_uri": "http://localhost:8001/api/auth/outlook/callback (BROKEN - should be https://biqc.ai/api/auth/outlook/callback)"
   },
 
   "test_report_links": [
@@ -91,8 +91,8 @@
   ],
 
   "action_items": [
-    "CRITICAL: Set AZURE_CLIENT_ID (and AZURE_CLIENT_SECRET) environment variable on production backend (biqc.thestrategysquad.com Azure deployment). Currently client_id=None causing OAuth to fail.",
-    "CRITICAL: Set AZURE_REDIRECT_URI to https://biqc.thestrategysquad.com/api/auth/outlook/callback in production backend. Currently defaults to localhost:8001.",
+    "CRITICAL: Set AZURE_CLIENT_ID (and AZURE_CLIENT_SECRET) environment variable on production backend (biqc.ai Azure deployment). Currently client_id=None causing OAuth to fail.",
+    "CRITICAL: Set AZURE_REDIRECT_URI to https://biqc.ai/api/auth/outlook/callback in production backend. Currently defaults to localhost:8001.",
     "CRITICAL: Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET + GOOGLE_REDIRECT_URI to production values for Gmail OAuth.",
     "HIGH: Deploy calibration-business-dna Edge Function to new Supabase (vwwandhoydemcybltoxz). Currently all calibration scans fail and fall back to manual summary, degrading onboarding UX significantly.",
     "MEDIUM: Replace window.confirm() with inline UI confirmation in ForensicIdentityCard.js line 141. Native browser dialogs are poor UX, especially when ALL users get Low confidence due to Edge Function issues.",
@@ -120,13 +120,13 @@
   "retest_needed": true,
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "This is iteration 103. Production URL: https://biqc.thestrategysquad.com. Test user: newtest1@biqctest.io / BIQcTest!2026 (calibration marked COMPLETE via POST /api/console/state with step=9, status=COMPLETE). Key issues: (1) Outlook/Gmail OAuth broken - client_id=None and redirect_uri=localhost:8001 in production backend (2) Calibration Edge Functions not deployed on new Supabase - all scans fall back to manual summary. When retesting: use [data-testid='tutorial-done-btn'] to dismiss tutorial modals. Accept window.confirm() dialogs with page.on('dialog', ...). New Supabase vwwandhoydemcybltoxz confirmed active. No redirect loop. Advisor and market pages load correctly.",
+  "context_for_next_testing_agent": "This is iteration 103. Production URL: https://biqc.ai. Test user: newtest1@biqctest.io / BIQcTest!2026 (calibration marked COMPLETE via POST /api/console/state with step=9, status=COMPLETE). Key issues: (1) Outlook/Gmail OAuth broken - client_id=None and redirect_uri=localhost:8001 in production backend (2) Calibration Edge Functions not deployed on new Supabase - all scans fall back to manual summary. When retesting: use [data-testid='tutorial-done-btn'] to dismiss tutorial modals. Accept window.confirm() dialogs with page.on('dialog', ...). New Supabase vwwandhoydemcybltoxz confirmed active. No redirect loop. Advisor and market pages load correctly.",
 
   "rca_of_issues": {
     "outlook_oauth_broken": {
       "root_cause": "Production backend Azure deployment is missing AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_REDIRECT_URI environment variables. The backend defaults to None/localhost for these values.",
       "evidence": "OAuth URL: client_id=None, redirect_uri=http://localhost:8001/api/auth/outlook/callback",
-      "mitigation": "Set AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_REDIRECT_URI=https://biqc.thestrategysquad.com/api/auth/outlook/callback in Azure App Service environment variables. Also register the production callback URL in Azure AD App Registration."
+      "mitigation": "Set AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_REDIRECT_URI=https://biqc.ai/api/auth/outlook/callback in Azure App Service environment variables. Also register the production callback URL in Azure AD App Registration."
     },
     "calibration_scan_degraded": {
       "root_cause": "Supabase Edge Function 'calibration-business-dna' not deployed or not returning extracted_data on new Supabase instance vwwandhoydemcybltoxz. Manual testing confirmed all URL scans return empty data.",

@@ -1677,14 +1677,86 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             data_freshness=contract_meta.get("data_freshness", "unknown"),
             connected_sources=(contract_meta.get("lineage") or {}).get("connected_sources", {}),
         )
+        blocked_reply = (
+            f"I need a bit more context about your business before I can give you specific advice. "
+            f"I'm currently working with {coverage_pct}% data coverage — not enough to deliver accurate guidance.\n\n"
+            f"To unlock personalised intelligence, please complete: {missing_list}. "
+            "It takes about 3 minutes and makes every response significantly more useful."
+        )
+
+        # Persist blocked interactions so conversation retrieval remains consistent.
+        now_iso = now_dt.isoformat()
+        requested_mode = getattr(req, "mode", "auto")
+        if req.conversation_id and conversation:
+            blocked_conversation_id = req.conversation_id
+            sb.table("soundboard_conversations").update({
+                "updated_at": now_iso,
+                "mode_requested": requested_mode,
+                "mode_effective": "auto",
+                "last_model_used": "guardrail/blocked",
+                "contract_version": CONTRACT_VERSION,
+            }).eq("id", blocked_conversation_id).eq("user_id", user_id).execute()
+        else:
+            # Preserve client conversation ids so retrieval endpoints stay stable.
+            blocked_conversation_id = req.conversation_id or str(uuid.uuid4())
+            sb.table("soundboard_conversations").insert({
+                "id": blocked_conversation_id,
+                "user_id": user_id,
+                "title": (req.message[:40] if req.message else "New Conversation"),
+                "mode_requested": requested_mode,
+                "mode_effective": "auto",
+                "last_model_used": "guardrail/blocked",
+                "contract_version": CONTRACT_VERSION,
+                "created_at": now_iso,
+                "updated_at": now_iso,
+            }).execute()
+
+        try:
+            sb.table("soundboard_messages").insert([
+                {
+                    "conversation_id": blocked_conversation_id,
+                    "user_id": user_id,
+                    "role": "user",
+                    "content": req.message,
+                    "timestamp": now_iso,
+                },
+                {
+                    "conversation_id": blocked_conversation_id,
+                    "user_id": user_id,
+                    "role": "assistant",
+                    "content": blocked_reply,
+                    "timestamp": now_iso,
+                    "metadata": {
+                        "mode_effective": "auto",
+                        "contract_version": CONTRACT_VERSION,
+                        "guardrail": "BLOCKED",
+                    },
+                },
+            ]).execute()
+        except Exception:
+            pass
+
+        blocked_actions = [
+            {
+                "label": "Complete calibration now",
+                "action": "open_calibration",
+                "prompt": "Open calibration and complete the missing critical business profile fields.",
+            },
+            {
+                "label": "Show missing profile fields",
+                "action": "show_missing_fields",
+                "prompt": f"Show exactly which critical fields are missing and why each one improves advisor accuracy ({coverage_pct}% coverage now).",
+            },
+        ]
         return {
-            "reply": f"I need a bit more context about your business before I can give you specific advice. I'm currently working with {coverage_pct}% data coverage — not enough to deliver accurate guidance.\n\nTo unlock personalised intelligence, please complete: {missing_list}. It takes about 3 minutes and makes every response significantly more useful.",
+            "reply": blocked_reply,
             "guardrail": "BLOCKED",
             "coverage_pct": coverage_pct,
             "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:8]],
             "context_fields": context_fields,
             "live_signals": live_signal_count,
-            "conversation_id": req.conversation_id,
+            "conversation_id": blocked_conversation_id,
+            "suggested_actions": blocked_actions,
             "evidence_pack": evidence_pack,
             "soundboard_contract": blocked_contract,
             **contract_meta,
@@ -2127,7 +2199,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 "contract_version": CONTRACT_VERSION,
             }).eq("id", conversation_id).eq("user_id", user_id).execute()
         else:
-            conversation_id = str(uuid.uuid4())
+            # Keep caller-provided ids deterministic for conversation continuity.
+            conversation_id = req.conversation_id or str(uuid.uuid4())
             conv_insert = sb.table("soundboard_conversations").insert({
                 "id": conversation_id,
                 "user_id": user_id,

@@ -1,6 +1,6 @@
 # BIQc Forensic 10x Signup + Capability Audit
 Date: 2026-03-20  
-Target: `https://biqc.thestrategysquad.com`  
+Target: `https://biqc.ai`  
 Branch Context: `origin/main` and working branch point to the same HEAD commit (`1e98a0d9` at audit time).
 
 ---

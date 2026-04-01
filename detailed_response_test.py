@@ -15,7 +15,7 @@ import httpx
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-PRODUCTION_URL = "https://biqc.thestrategysquad.com"
+PRODUCTION_URL = "https://biqc.ai"
 TEST_CREDENTIALS = {
     "email": "andre@thestrategysquad.com.au",
     "password": "MasterMind2025*"

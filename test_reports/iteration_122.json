@@ -114,7 +114,7 @@
   "context_for_next_testing_agent": "Preview environment (biqc-hardened.preview.emergentagent.com) is stable. Session persistence fixed. Soundboard mode toggle works correctly with Trinity locked for non-Pro users. Signup and calibration flows work without RLS errors. Tutorial overlay may require 'Learn later' click during automated testing.",
   "potential_fixes_bypassed_in_last_retest": {
     "p0_critical": [
-      "Run fresh Andre magic-link forensic test on production (biqc.thestrategysquad.com) after latest deploy to confirm parity with preview",
+      "Run fresh Andre magic-link forensic test on production (biqc.ai) after latest deploy to confirm parity with preview",
       "Enforce Trinity entitlement at backend (reject mode=trinity for non-Pro/Enterprise even if frontend is bypassed)",
       "Add Soundboard stuck-state guard (timeout -> degraded fallback response) to avoid prolonged 'Thinking...'",
       "Define and enforce Trinity quality contract (specificity, evidence grounding, actionability) before marking responses premium-grade",

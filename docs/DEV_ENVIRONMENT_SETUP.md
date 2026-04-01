@@ -23,7 +23,7 @@ git checkout -b dev
 git push -u origin dev
 ```
 
-- **main** (or **production**): what runs on biqc.thestrategysquad.com.  
+- **main** (or **production**): what runs on biqc.ai.  
 - **dev**: where you develop; CI can run tests here; when stable, merge to main.
 
 ---

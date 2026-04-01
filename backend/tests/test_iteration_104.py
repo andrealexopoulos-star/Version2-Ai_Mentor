@@ -1,12 +1,12 @@
 """
 BIQc Production API Tests - Iteration 104
-Tests for all critical endpoints on https://biqc.thestrategysquad.com
+Tests for all critical endpoints on https://biqc.ai
 """
 import pytest
 import requests
 import os
 
-BASE_URL = "https://biqc.thestrategysquad.com"
+BASE_URL = "https://biqc.ai"
 
 # ─── AUTH HELPERS ────────────────────────────────────────────
 def get_auth_token(email="newtest1@biqctest.io", password="BIQcTest!2026"):

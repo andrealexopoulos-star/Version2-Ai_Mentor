@@ -1,6 +1,6 @@
-# Live Forensic Validation — biqc.thestrategysquad.com
+# Live Forensic Validation — biqc.ai
 Date: 2026-03-20 (16:13 UTC)  
-Environment tested: **live production URL** `https://biqc.thestrategysquad.com`
+Environment tested: **live production URL** `https://biqc.ai`
 
 ---
 

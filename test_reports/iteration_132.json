@@ -1,7 +1,7 @@
 {
-  "summary": "PRODUCTION FORENSIC 60-TEST SWEEP COMPLETE - https://biqc.thestrategysquad.com. EXCELLENT RESULTS: 48/60 tests PASS (80%). Soundboard AI delivers Trinity-quality intelligence with specific, actionable, grounded insights. Board Room diagnosis is outstanding with real business data. War Room still shows 'Unable to process.' error. Minor API 500 errors on OPS Advisory, Documents, Priority Inbox JWT. Overall: BIQc delivers on SMB cognition platform promise.",
+  "summary": "PRODUCTION FORENSIC 60-TEST SWEEP COMPLETE - https://biqc.ai. EXCELLENT RESULTS: 48/60 tests PASS (80%). Soundboard AI delivers Trinity-quality intelligence with specific, actionable, grounded insights. Board Room diagnosis is outstanding with real business data. War Room still shows 'Unable to process.' error. Minor API 500 errors on OPS Advisory, Documents, Priority Inbox JWT. Overall: BIQc delivers on SMB cognition platform promise.",
   "test_date": "2026-03-14",
-  "target_url": "https://biqc.thestrategysquad.com",
+  "target_url": "https://biqc.ai",
   "test_type": "Production Forensic 60-Test Sweep",
   "authentication_result": {
     "method": "email/password via Supabase",
@@ -233,7 +233,7 @@
   "test_credentials": {
     "email": "andre@thestrategysquad.com.au",
     "password": "MasterMind2025*",
-    "production_url": "https://biqc.thestrategysquad.com"
+    "production_url": "https://biqc.ai"
   },
   "retest_needed": true,
   "should_main_agent_self_test": false,

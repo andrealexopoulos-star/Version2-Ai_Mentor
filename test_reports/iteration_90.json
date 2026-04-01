@@ -1,7 +1,7 @@
 {
   "summary": "Phase B Cognition Integration Testing - Iteration 90. Tested all required features: homepage, login, calibration flow, and internal pages (Phase B). All critical flows working. Internal pages redirect to /calibration for uncalibrated test account (expected). No JS crashes detected. Build compiles with only ESLint warnings (not errors).",
   "test_scope": {
-    "environment": "production: https://biqc.thestrategysquad.com",
+    "environment": "production: https://biqc.ai",
     "credentials": "test1234@outlook.com / test1234!",
     "testing_type": "frontend only",
     "iteration": 90

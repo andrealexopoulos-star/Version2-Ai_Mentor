@@ -5,7 +5,7 @@ from playwright.async_api import async_playwright
 
 
 async def main():
-    base = os.getenv("BIQC_BASE_URL", "https://biqc.thestrategysquad.com")
+    base = os.getenv("BIQC_BASE_URL", "https://biqc.ai")
     email = os.getenv("BIQC_LOGIN_EMAIL", "andre@thestrategysquad.com.au")
     password = os.getenv("BIQC_LOGIN_PASSWORD", "test1234***")
 

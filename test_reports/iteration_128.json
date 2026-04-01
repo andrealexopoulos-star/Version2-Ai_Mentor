@@ -1,7 +1,7 @@
 {
-  "summary": "FORENSIC QUALITY TEST - ALL MODULES BLOCKED BY API KEY ERRORS. Production URL: https://biqc.thestrategysquad.com. Authentication with Andre works. Soundboard shows OPENAI_API_KEY rejected errors for all queries. War Room shows 'product_or_service is required' validation errors. Board Room inaccessible due to session loss on navigation. 60-consecutive target NOT MET for any module.",
+  "summary": "FORENSIC QUALITY TEST - ALL MODULES BLOCKED BY API KEY ERRORS. Production URL: https://biqc.ai. Authentication with Andre works. Soundboard shows OPENAI_API_KEY rejected errors for all queries. War Room shows 'product_or_service is required' validation errors. Board Room inaccessible due to session loss on navigation. 60-consecutive target NOT MET for any module.",
   "test_date": "2026-03-13",
-  "target_url": "https://biqc.thestrategysquad.com",
+  "target_url": "https://biqc.ai",
   "test_type": "Forensic 60-turn consecutive Q&A benchmark",
   "authentication_result": {
     "method": "email/password via Supabase",
@@ -145,7 +145,7 @@
     "soundboard_rca": {
       "root_cause": "Production OPENAI_API_KEY environment variable is invalid or expired",
       "reproduction_steps": [
-        "1. Login as andre@thestrategysquad.com.au on https://biqc.thestrategysquad.com",
+        "1. Login as andre@thestrategysquad.com.au on https://biqc.ai",
         "2. Navigate to /advisor dashboard",
         "3. Send any question in the Soundboard panel",
         "4. Observe error: 'OpenAI rejected the configured API key'"

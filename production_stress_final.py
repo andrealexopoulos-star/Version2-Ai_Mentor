@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Production Backend Stress Test - CORRECTED
-Target: https://biqc.thestrategysquad.com
+Target: https://biqc.ai
 """
 
 import requests
@@ -11,7 +11,7 @@ import uuid
 import statistics
 from datetime import datetime
 
-BASE_URL = "https://biqc.thestrategysquad.com"
+BASE_URL = "https://biqc.ai"
 API_BASE = f"{BASE_URL}/api"
 TEST_EMAIL = "andre@thestrategysquad.com.au"
 TEST_PASSWORD = "MasterMind2025*"

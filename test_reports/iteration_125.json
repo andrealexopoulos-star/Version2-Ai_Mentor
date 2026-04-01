@@ -1,7 +1,7 @@
 {
   "summary": "FORENSIC SOUNDBOARD 100-TURN TEST - BLOCKED BY BACKEND API ERROR. Authentication with Andre email/password works. Soundboard panel functional. Partial pass rate (20%) due to Google AI API key rejection error in production. When OpenAI path succeeds, responses are data-grounded and high-quality.",
   "test_date": "2026-03-13",
-  "target_url": "https://biqc.thestrategysquad.com",
+  "target_url": "https://biqc.ai",
   "test_type": "Production forensic Soundboard 100-turn conversation test",
   "authentication_result": {
     "method": "email/password",
@@ -113,7 +113,7 @@
   "rca_of_the_issue": {
     "root_cause": "Production GOOGLE_API_KEY environment variable is either missing, expired, or invalid",
     "reproduction_steps": [
-      "1. Login as andre@thestrategysquad.com.au on https://biqc.thestrategysquad.com",
+      "1. Login as andre@thestrategysquad.com.au on https://biqc.ai",
       "2. Navigate to advisor dashboard",
       "3. Send any question to Soundboard panel",
       "4. Observe error: 'Gemini chat failed across fallback models: Google AI rejected the configured API key'"
