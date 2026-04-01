@@ -1,0 +1,13 @@
+.git
+.github
+.cursor
+node_modules
+frontend/node_modules
+backend/.venv
+**/__pycache__
+**/*.pyc
+.screenshots
+reports
+test_reports
+_backups
+*.zip

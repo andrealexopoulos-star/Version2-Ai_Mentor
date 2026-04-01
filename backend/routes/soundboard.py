@@ -244,21 +244,23 @@ def _humanize_contract_response(
 
     if agent_id == "boardroom":
         narrative = (
-            f"{opening} {priority}. "
-            f"Boardroom consensus is to {decision}. "
-            f"We can move two ways: {pathways}. "
-            f"For control, keep this KPI front and centre: {kpi_note}. "
-            f"If we delay, {risk}."
+            f"{opening}\n\n"
+            f"What happened: {priority}.\n"
+            f"What this means: Boardroom consensus is to {decision}.\n"
+            f"Options: {pathways}.\n"
+            f"Do now: {kpi_note}.\n"
+            f"If delayed: {risk}."
         )
     else:
         narrative = (
-            f"{opening} {priority}. "
-            f"My recommendation is to {decision}. "
-            f"You've got two practical options: {pathways}. "
-            f"Keep one KPI in view this week: {kpi_note}. "
-            f"If this waits, {risk}."
+            f"{opening}\n\n"
+            f"What happened: {priority}.\n"
+            f"What this means: {decision}.\n"
+            f"Options: {pathways}.\n"
+            f"Do now: {kpi_note}.\n"
+            f"If delayed: {risk}."
         )
-    return _limit_to_executive_length(narrative, max_sentences=6)
+    return _limit_to_executive_length(narrative, max_sentences=10)
 
 
 def _build_specificity_fallback(*, profile: Dict[str, Any], top_concerns: List[Dict[str, Any]], coverage_pct: float, live_signal_count: int) -> str:
@@ -1808,6 +1810,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         'document': ['create a document', 'write a document', 'draft a document', 'generate a document'],
         'report': ['create a report', 'generate a report', 'write a report', 'produce a report'],
         'social_image': ['create a social', 'design a post', 'social media image', 'create an image', 'generate an image'],
+        'sop': ['create sop', 'generate sop', 'standard operating procedure', 'write sop'],
+        'code': ['write code', 'generate code', 'create script', 'build script', 'create code'],
+        'video_brief': ['create video', 'generate video brief', 'video script', 'video concept', 'video storyboard'],
     }
     detected_file_type = None
     msg_lower = clean_message.lower()
@@ -1853,8 +1858,13 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                     'generated_by': 'soundboard', 'source_conversation_id': req.conversation_id or '',
                     'metadata': {'prompt': clean_message[:200]},
                 }).execute()
+                artifact_label = {
+                    "sop": "SOP",
+                    "code": "code draft",
+                    "video_brief": "video brief",
+                }.get(detected_file_type, detected_file_type)
                 return {
-                    "reply": f"I've generated your {detected_file_type}. You can download it below or find it in your Reports tab.\n\n{content[:500]}{'...' if len(content) > 500 else ''}",
+                    "reply": f"I've generated your {artifact_label}. You can download it below or find it in your Reports tab.\n\n{content[:500]}{'...' if len(content) > 500 else ''}",
                     "file": {"name": fname, "type": detected_file_type, "download_url": download_url, "size": len(file_bytes)},
                     "conversation_id": req.conversation_id,
                 }

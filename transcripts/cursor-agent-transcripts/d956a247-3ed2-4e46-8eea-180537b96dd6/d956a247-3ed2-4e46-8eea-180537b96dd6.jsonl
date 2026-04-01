@@ -1,0 +1,2 @@
+{"role":"user","message":{"content":[{"type":"text","text":"<user_query>\ndid you see the last chat \n</user_query>"}]}}
+{"role":"assistant","message":{"content":[{"type":"text","text":"I can only see this current conversation by default, not your previous chats automatically.\n\nIf you want, I can pull the latest saved transcript and summarize it for you."}]}}

@@ -64,6 +64,8 @@ const MarketPage = () => {
   const [pressure, setPressure] = useState(null);
   const [freshness, setFreshness] = useState(null);
   const [cognitionMarket, setCognitionMarket] = useState(null);
+  const [scanUsage, setScanUsage] = useState(null);
+  const [recordingForensic, setRecordingForensic] = useState(false);
   const { status: integrationStatus } = useIntegrationStatus();
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
@@ -99,6 +101,9 @@ const MarketPage = () => {
       if (res.data && res.data.status !== 'MIGRATION_REQUIRED') {
         setCognitionMarket(res.data);
       }
+    }).catch(() => {});
+    apiClient.get('/soundboard/scan-usage').then((res) => {
+      if (res.data) setScanUsage(res.data);
     }).catch(() => {});
   }, []);
 
@@ -200,6 +205,22 @@ const MarketPage = () => {
   ];
 
   const sendToChat = (msg) => setActionMessage(msg);
+  const forensicCanRun = !scanUsage || scanUsage?.forensic_calibration?.can_run;
+  const forensicDaysUntil = scanUsage?.forensic_calibration?.days_until_next || 0;
+  const isPaid = Boolean(scanUsage?.is_paid);
+  const startForensicCalibration = async () => {
+    if (!forensicCanRun && !isPaid) return;
+    if (!isPaid) {
+      setRecordingForensic(true);
+      try {
+        await apiClient.post('/soundboard/record-scan', { feature_name: 'forensic_calibration' });
+        const latest = await apiClient.get('/soundboard/scan-usage');
+        if (latest?.data) setScanUsage(latest.data);
+      } catch {}
+      setRecordingForensic(false);
+    }
+    navigate('/market/calibration');
+  };
 
   // Deep Market Modeling data extraction
   const competitors = c.market?.competitors || mi.competitors || [];
@@ -389,9 +410,26 @@ const MarketPage = () => {
               <p className="text-xs text-[#9FB0C3] leading-relaxed">{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
               <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--biqc-border)' }}>
                 <span className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Full reports available under Governance → Reports</span>
-                <button onClick={() => navigate('/reports')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded hover:bg-white/5 transition-colors" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
-                  View Reports <ArrowRight className="w-3 h-3" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={startForensicCalibration}
+                    disabled={!forensicCanRun && !isPaid}
+                    className="flex items-center gap-1 text-[10px] px-2 py-1 rounded transition-colors"
+                    style={{
+                      color: !forensicCanRun && !isPaid ? '#64748B' : '#3B82F6',
+                      border: `1px solid ${!forensicCanRun && !isPaid ? '#243140' : '#3B82F640'}`,
+                      fontFamily: fontFamily.mono,
+                      cursor: !forensicCanRun && !isPaid ? 'not-allowed' : 'pointer',
+                    }}
+                    data-testid="market-intelligence-calibration-cta"
+                  >
+                    {recordingForensic ? 'Recording...' : (!forensicCanRun && !isPaid ? `Calibration (${forensicDaysUntil}d)` : 'Run Full Calibration')}
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                  <button onClick={() => navigate('/reports')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded hover:bg-white/5 transition-colors" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                    View Reports <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             </Panel>
           )}

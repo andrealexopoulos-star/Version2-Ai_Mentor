@@ -148,7 +148,7 @@ class AppErrorBoundary extends React.Component {
   }
 }
 
-// Public Route — redirect authenticated users to advisor
+// Public Route — redirect authenticated users to Ask BIQc
 const PublicRoute = ({ children }) => {
   const { user, session, loading, authState } = useSupabaseAuth();
   const recentLoginTs = (() => {
@@ -162,8 +162,8 @@ const PublicRoute = ({ children }) => {
   if (authState === AUTH_STATE.LOADING || loading) return <LoadingScreen />;
   if (!user && !session && recentLoginTs && Date.now() - recentLoginTs < 20000) return <LoadingScreen />;
   const isAuthenticated = user || session;
-  if (isAuthenticated && authState === AUTH_STATE.NEEDS_CALIBRATION) return <Navigate to="/calibration" replace />;
-  if (isAuthenticated) return <Navigate to="/advisor" replace />;
+  if (isAuthenticated && authState === AUTH_STATE.NEEDS_CALIBRATION) return <Navigate to="/ask-biqc" replace />;
+  if (isAuthenticated) return <Navigate to="/ask-biqc" replace />;
   return children;
 };
 
@@ -304,7 +304,8 @@ function AppRoutes() {
         <Route path="/alerts" element={<ProtectedRoute><AlertsPageAuth /></ProtectedRoute>} />
         <Route path="/actions" element={<ProtectedRoute><ActionsPage /></ProtectedRoute>} />
         <Route path="/automations" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="automations"><AutomationsPageAuth /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/soundboard" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
+        <Route path="/ask-biqc" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
+        <Route path="/soundboard" element={<Navigate to="/ask-biqc" replace />} />
         <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
         <Route path="/war-room" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="war-room"><WarRoomPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/board-room" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="boardroom"><BoardRoomPage /></LaunchRoute></ProtectedRoute>} />

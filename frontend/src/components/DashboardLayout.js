@@ -122,7 +122,11 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const [notifications, setNotifications] = useState({ total: 0, high: 0 });
   const [showNotifications, setShowNotifications] = useState(false);
   const [notificationsList, setNotificationsList] = useState([]);
-  const hideEmbeddedSoundboard = location.pathname === '/soundboard' || location.pathname.startsWith('/soundboard/');
+  const hideEmbeddedSoundboard =
+    location.pathname === '/ask-biqc' ||
+    location.pathname.startsWith('/ask-biqc/') ||
+    location.pathname === '/soundboard' ||
+    location.pathname.startsWith('/soundboard/');
 
   useEffect(() => { localStorage.setItem('sidebar-collapsed', sidebarCollapsed); }, [sidebarCollapsed]);
   useEffect(() => { localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(sidebarWidthPx)); }, [sidebarWidthPx]);
@@ -261,7 +265,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
 
   const navSections = [
     { id: 'overview', label: 'BIQc Overview', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [] },
-    { id: 'soundboard', label: 'Soundboard', path: '/soundboard', icon: MessageSquare, items: [] },
+    { id: 'soundboard', label: 'Ask BIQc', path: '/ask-biqc', icon: MessageSquare, items: [] },
     { id: 'priority-inbox', label: 'Email Priority Inbox', path: '/email-inbox', icon: Inbox, items: [] },
     { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [] },
     { id: 'market', label: 'Market & Position', path: '/market', icon: Radar, items: [] },
@@ -662,7 +666,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           </div>
         </main>
 
-        {/* Desktop Soundboard Panel — hidden on dedicated /soundboard route */}
+        {/* Desktop Ask BIQc Panel — hidden on dedicated chat route */}
         {!hideEmbeddedSoundboard && (
           <aside className="hidden lg:flex shrink-0 flex-col relative" style={{ width: `${soundboardWidthPx}px`, background: 'var(--biqc-bg-input, #0A1018)', borderLeft: '1px solid var(--biqc-border, #243140)', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
             <div
@@ -691,7 +695,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             <div className="fixed inset-0 bg-black/60 z-[1200]" onClick={() => setSbOpen(false)} />
             <div className="fixed inset-0 z-[1201] flex flex-col" style={{ background: 'var(--biqc-bg-input, #0A1018)' }}>
               <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SoundBoard</span>
+                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Ask BIQc</span>
                 <button onClick={() => setSbOpen(false)} className="p-2 rounded-lg hover:bg-white/5"><X className="w-5 h-5 text-[#64748B]" /></button>
               </div>
               <div className="flex-1 overflow-hidden">

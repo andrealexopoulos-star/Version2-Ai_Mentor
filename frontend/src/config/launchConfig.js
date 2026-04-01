@@ -1,5 +1,6 @@
 export const FREE_LAUNCH_ROUTES = [
   '/advisor',
+  '/ask-biqc',
   '/soundboard',
   '/email-inbox',
   '/calendar',

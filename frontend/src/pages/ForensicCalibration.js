@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
-import { isPrivilegedUser } from '../lib/privilegedUser';
 import { apiClient } from '../lib/api';
-import { ArrowRight, ArrowLeft, CheckCircle2, Eye, Lock, AlertTriangle, TrendingUp, Shield, Target } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, Eye, AlertTriangle, TrendingUp, Shield, Target } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 
 
@@ -31,8 +30,7 @@ const ForensicCalibration = () => {
   const [submitting, setSubmitting] = useState(false);
   const [existingResult, setExistingResult] = useState(null);
   const [loadingExisting, setLoadingExisting] = useState(true);
-
-  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
+  const [submitError, setSubmitError] = useState('');
 
   // Check for existing calibration on mount
   useEffect(() => {
@@ -44,21 +42,6 @@ const ForensicCalibration = () => {
     };
     fetchExisting();
   }, []);
-
-  if (!isSuperAdmin) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="text-center max-w-md">
-            <Lock className="w-12 h-12 text-[#64748B] mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>Coming Soon</h1>
-            <p className="text-sm text-[#9FB0C3] mb-6">Forensic Market Calibration will be available in the Pro plan.</p>
-            <button onClick={() => navigate('/market')} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="forensic-back-btn">Back to Market</button>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   if (loadingExisting) return <DashboardLayout><div className="flex items-center justify-center min-h-[60vh]"><div className="w-6 h-6 border-2 border-[#FF6A00] border-t-transparent rounded-full animate-spin" /></div></DashboardLayout>;
 
@@ -72,10 +55,14 @@ const ForensicCalibration = () => {
 
     if (step >= QUESTIONS.length - 1) {
       setSubmitting(true);
+      setSubmitError('');
       try {
         const res = await apiClient.post('/forensic/calibration', { answers: updated });
         setResult(res.data);
-      } catch { setResult({ composite_score: 0, risk_profile: 'Error', risk_color: '#EF4444', dimensions: {}, signals: [{ type: 'critical', text: 'Scoring failed. Please try again.' }] }); }
+      } catch (error) {
+        const detail = error?.response?.data?.detail;
+        setSubmitError(typeof detail === 'string' && detail.trim() ? detail : 'Scoring failed. Please try again.');
+      }
       finally { setSubmitting(false); }
       return;
     }
@@ -166,6 +153,11 @@ const ForensicCalibration = () => {
 
         <div className="mb-8">
           <p className="text-xl font-bold text-[#F4F7FA] mb-6" style={{ fontFamily: fontFamily.display }}>{q.question}</p>
+          {submitError && (
+            <div className="mb-4 rounded-xl px-4 py-3" style={{ border: '1px solid #EF444450', background: '#EF444415' }} data-testid="forensic-submit-error">
+              <p className="text-xs text-[#FCA5A5]">{submitError}</p>
+            </div>
+          )}
           <div className="space-y-3">
             {q.options.map((opt, i) => {
               const isSelected = selected === opt;

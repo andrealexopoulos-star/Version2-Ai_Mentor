@@ -110,6 +110,13 @@ const buildAdvisorAssistantMessage = (context) => {
   };
 };
 
+const CREATE_RAIL_ACTIONS = [
+  { id: 'sop', label: 'SOP', prompt: 'Create an SOP from my current business context with owners, timing, and KPIs.' },
+  { id: 'code', label: 'Code', prompt: 'Generate code implementation steps and starter code for this business workflow request.' },
+  { id: 'image', label: 'Image', prompt: 'Create an image concept brief and generation prompt for this campaign idea.' },
+  { id: 'video', label: 'Video', prompt: 'Create a video brief with script, storyboard, and CTA based on this objective.' },
+];
+
 
 const MySoundBoard = () => {
   const location = useLocation();
@@ -739,10 +746,10 @@ const MySoundBoard = () => {
 
             <div className="flex-1 min-w-0">
               <h1 className="text-lg md:text-xl font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                MySoundBoard
+                Ask BIQc
               </h1>
               <p className="text-xs md:text-sm truncate hidden md:block" style={{ color: 'var(--text-muted)' }}>
-                Your thinking partner for clarity
+                Connected intelligence workspace
               </p>
             </div>
 
@@ -820,7 +827,7 @@ const MySoundBoard = () => {
               <PageErrorState
                 error={conversationsError}
                 onRetry={fetchConversations}
-                moduleName="Soundboard"
+                moduleName="Ask BIQc"
               />
             </div>
           ) : (
@@ -852,10 +859,10 @@ const MySoundBoard = () => {
                     <MessageSquare className="w-7 h-7" style={{ color: 'var(--accent-primary)' }} />
                   </div>
                   <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                    {firstName ? `${firstName}, what do you want to tackle?` : 'Ask anything about your business'}
+                    {firstName ? `${firstName}, what do you want to solve first?` : 'Ask BIQc anything about your business'}
                   </p>
                   <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-                    {advisorHandoff ? 'or choose a BIQc next move below' : 'pick a prompt or type your own'}
+                    {advisorHandoff ? 'or choose a BIQc next move below' : 'Use a proven prompt or write your own'}
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center max-w-sm mx-auto">
                     {(advisorHandoff ? buildAdvisorSuggestedOptions(advisorHandoff) : ["What's the one thing I should focus on?", 'Summarise my risks', 'Show me my pipeline', "How's my revenue looking?", 'Analyse Inbox vs Sent vs Deleted for risk signals', 'Give me cross-integration analytics from Merge data'].map((q) => ({ label: q, prompt: q }))).map((q) => (
@@ -880,13 +887,13 @@ const MySoundBoard = () => {
                         }`}
                         style={{
                           background: message.role === 'user' 
-                            ? 'var(--accent-primary)' 
+                            ? 'rgba(255,106,0,0.15)' 
                             : 'var(--bg-card)',
                           color: message.role === 'user' 
-                            ? 'white' 
+                            ? '#F4F7FA' 
                             : 'var(--text-primary)',
                           border: message.role === 'user' 
-                            ? 'none' 
+                            ? '1px solid rgba(255,106,0,0.35)' 
                             : '1px solid var(--border-light)'
                         }}
                       >
@@ -1029,7 +1036,7 @@ const MySoundBoard = () => {
                             <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                           </div>
                           <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                            {showBoardroomViz ? `${activeBoardroomCheck.role}: ${activeBoardroomCheck.line}` : 'Thinking...'}
+                            {showBoardroomViz ? `${activeBoardroomCheck.role}: ${activeBoardroomCheck.line}` : 'Thinking with your connected context...'}
                           </span>
                         </div>
                         {showBoardroomViz && (
@@ -1089,6 +1096,21 @@ const MySoundBoard = () => {
                   </button>
                 </div>
               )}
+              <div className="px-1 mb-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {CREATE_RAIL_ACTIONS.map((action) => (
+                    <button
+                      key={action.id}
+                      onClick={() => sendMessage(action.prompt, advisorHandoff)}
+                      className="px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all hover:brightness-110"
+                      style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.25)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                      data-testid={`ask-biqc-create-${action.id}`}
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="px-1 mb-2 relative" data-testid="soundboard-mode-toggle-wrapper">
                 <div className="flex flex-wrap items-center gap-2">
                   <button
@@ -1241,7 +1263,7 @@ const MySoundBoard = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "Share what's on your mind..."}
+                  placeholder={attachedFile ? `Ask BIQc about ${attachedFile.name}...` : "Message Ask BIQc..."}
                   className="flex-1 resize-none bg-transparent outline-none text-sm"
                   style={{ color: 'var(--text-primary)', minHeight: '24px', maxHeight: '120px' }}
                   rows={1}
@@ -1259,7 +1281,8 @@ const MySoundBoard = () => {
                 <Button
                   onClick={() => sendMessage()}
                   disabled={(!input.trim() && !attachedFile) || loading}
-                  className="btn-primary p-2"
+                  className="p-2 rounded-xl transition-all hover:brightness-110"
+                  style={{ background: '#FF6A00' }}
                   data-testid="send-message-btn"
                 >
                   <Send className="w-4 h-4" />

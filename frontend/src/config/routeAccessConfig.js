@@ -12,6 +12,7 @@ const ROUTE_ACCESS_MAP = {
   '/connect-email': { minTier: 'free', launchType: 'free' },
   '/data-health': { minTier: 'free', launchType: 'free' },
   '/competitive-benchmark': { minTier: 'free', launchType: 'free' },
+  '/ask-biqc': { minTier: 'free', launchType: 'free' },
   '/soundboard': { minTier: 'free', launchType: 'free' },
   '/email-inbox': { minTier: 'free', launchType: 'free' },
   '/calendar': { minTier: 'free', launchType: 'free' },

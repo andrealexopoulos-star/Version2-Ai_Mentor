@@ -20,7 +20,7 @@ from core.llm_router import llm_trinity_chat
 from core.helpers import serper_search, scrape_url_text
 from routes.deps import (
     get_current_user, get_current_user_from_request,
-    get_sb, logger, cognitive_core,
+    get_sb, logger, cognitive_core, _normalize_subscription_tier,
 )
 from supabase_client import safe_query_single
 from prompt_registry import get_prompt
@@ -2104,6 +2104,7 @@ FORENSIC_WEIGHTS = {
     "pricing": {"weight": 1.1, "labels": ["Low", "Moderate", "Confident", "Data-driven"]},
     "channel": {"weight": 1.2, "labels": ["Single", "Dependent", "Diversified", "Highly Diversified"]},
 }
+FORENSIC_FREE_COOLDOWN_DAYS = 30
 
 
 class ForensicAnswer(BaseModel):
@@ -2132,6 +2133,26 @@ async def submit_forensic_calibration(
         answers = payload.answers
         if not answers or len(answers) == 0:
             raise HTTPException(status_code=400, detail="No answers provided")
+        tier = _normalize_subscription_tier(current_user.get("subscription_tier"))
+        is_paid = tier in {"starter", "super_admin"}
+        if not is_paid:
+            usage = get_sb().table("user_feature_usage").select("last_used_at").eq("user_id", user_id).eq("feature_name", "forensic_calibration").maybe_single().execute()
+            usage_row = usage.data if usage else None
+            last_used_at = (usage_row or {}).get("last_used_at")
+            if last_used_at:
+                try:
+                    used_at = datetime.fromisoformat(str(last_used_at).replace("Z", "+00:00"))
+                    elapsed_days = (datetime.now(timezone.utc) - used_at).total_seconds() / 86400
+                    if elapsed_days < FORENSIC_FREE_COOLDOWN_DAYS:
+                        days_until = max(1, int(FORENSIC_FREE_COOLDOWN_DAYS - elapsed_days))
+                        raise HTTPException(
+                            status_code=429,
+                            detail=f"Forensic calibration is available once every {FORENSIC_FREE_COOLDOWN_DAYS} days on free tier. Try again in {days_until} day(s).",
+                        )
+                except HTTPException:
+                    raise
+                except Exception:
+                    pass
 
         # Compute weighted scores
         dimension_scores = {}
@@ -2222,6 +2243,27 @@ async def submit_forensic_calibration(
                 get_sb().table("business_profiles").update({"forensic_calibration": result, "updated_at": now_iso}).eq("user_id", user_id).execute()
         except Exception as e:
             logger.warning(f"[forensic] business_profiles write failed: {e}")
+
+        # Record usage for free-tier cooldown enforcement and visibility in /soundboard/scan-usage.
+        try:
+            existing_usage = get_sb().table("user_feature_usage").select("id,total_runs").eq("user_id", user_id).eq("feature_name", "forensic_calibration").maybe_single().execute()
+            usage_row = existing_usage.data if existing_usage else None
+            if usage_row:
+                get_sb().table("user_feature_usage").update({
+                    "last_used_at": now_iso,
+                    "total_runs": int(usage_row.get("total_runs") or 0) + 1,
+                    "updated_at": now_iso,
+                }).eq("id", usage_row["id"]).execute()
+            else:
+                get_sb().table("user_feature_usage").insert({
+                    "user_id": user_id,
+                    "feature_name": "forensic_calibration",
+                    "last_used_at": now_iso,
+                    "total_runs": 1,
+                    "updated_at": now_iso,
+                }).execute()
+        except Exception as e:
+            logger.warning(f"[forensic] usage write failed: {e}")
 
         logger.info(f"[forensic] Scored user {user_id}: composite={composite}, risk={risk_profile}")
         return result
