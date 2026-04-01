@@ -93,13 +93,8 @@ function buildCommunicationAudit(full) {
 // ── Geographic presence analysis ──
 function buildGeographicPresence(full) {
   const loc = full.location || full.geographic_focus || null;
-  const socials = full.social_media_links || {};
-  const handles = full.social_handles || {};
-  const hasLinkedIn = !!(socials.linkedin || full.linkedin_url || handles.linkedin);
-  const hasFacebook = !!(socials.facebook || full.facebook_url || handles.facebook);
-  const hasInstagram = !!(socials.instagram || full.instagram_url || handles.instagram);
-  const hasTwitter = !!(socials.twitter || full.twitter_x_url || handles.twitter || handles.x);
-  const activeSocials = [hasLinkedIn && 'LinkedIn', hasFacebook && 'Facebook', hasInstagram && 'Instagram', hasTwitter && 'X/Twitter'].filter(Boolean);
+  // Social handles are intentionally excluded from calibration UI output.
+  const activeSocials = [];
 
   const industry = (full.industry || '').toLowerCase();
   const model = (full.business_model || '').toLowerCase();
@@ -1608,10 +1603,6 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 icon: AlertTriangle, color: '#F59E0B',
                 text: 'Add measurable social proof — specific client results with company name, outcome, and timeframe. Named case studies consistently outperform generic testimonials.',
               },
-              !geo.hasSocialPresence && {
-                icon: AlertTriangle, color: '#F59E0B',
-                text: 'No active social media presence detected. Establish at least one channel aligned to your target market to expand geographic acquisition surface.',
-              },
               geo.loc && !full.geographic_focus && {
                 icon: CheckCircle2, color: '#10B981',
                 text: `Local presence detected in ${geo.loc}. Ensure Google Business Profile is claimed and verified — this is the highest-ROI local acquisition lever.`,
@@ -1622,7 +1613,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{rec.text}</p>
               </div>
             ))}
-            {[!full.unique_value_proposition, !full.pricing_model, !full.customer_count, !geo.hasSocialPresence].filter(Boolean).length === 0 && (
+            {[!full.unique_value_proposition, !full.pricing_model, !full.customer_count].filter(Boolean).length === 0 && (
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#10B981]" />
                 <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Core digital presence signals are in place. Focus on conversion rate optimisation and competitor differentiation.</p>

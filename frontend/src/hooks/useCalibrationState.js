@@ -425,8 +425,9 @@ export const useCalibrationState = () => {
         const deepRes = await apiClient.post('/enrichment/website', { url, action: 'scan' }, { timeout: 120000 });
         if (deepRes?.data?.status === 'draft' && deepRes?.data?.enrichment) {
           deepEnrichment = deepRes.data.enrichment;
-          if (deepEnrichment.social_handles) {
-            socialEnrichment = { social_handles: deepEnrichment.social_handles, trust_signals: deepEnrichment.trust_signals || [] };
+          // Keep trust signals but do not surface social handles in calibration output.
+          if (deepEnrichment.trust_signals) {
+            socialEnrichment = { trust_signals: deepEnrichment.trust_signals || [] };
           }
           if (deepEnrichment.deep_recon_summary || deepEnrichment.deep_recon_signals) {
             deepReconData = { executive_summary: deepEnrichment.deep_recon_summary, signals: deepEnrichment.deep_recon_signals || [], sources: deepEnrichment.sources?.edge_tools?.deep_web_recon ? ['deep-web-recon'] : [] };
@@ -476,9 +477,7 @@ export const useCalibrationState = () => {
             competitor_scan_result: deepEnrichment.competitor_analysis || exRaw.competitor_scan_result,
             abn: deepEnrichment.abn || exRaw.abn,
             competitors: Array.isArray(deepEnrichment.competitors) ? deepEnrichment.competitors : (exRaw.competitors || []),
-            social_media_links: (socialEnrichment?.social_handles && Object.keys(socialEnrichment.social_handles).length > 0)
-              ? socialEnrichment.social_handles
-              : (deepEnrichment.social_handles || exRaw.social_media_links || {}),
+            social_media_links: {},
             trust_signals: (socialEnrichment?.trust_signals && socialEnrichment.trust_signals.length > 0)
               ? socialEnrichment.trust_signals
               : (deepEnrichment.trust_signals || exRaw.trust_signals || []),
@@ -541,7 +540,6 @@ export const useCalibrationState = () => {
             applyProvenance(k, provenanceSource, deepEnrichment ? 0.78 : 0.68);
           }
         });
-        if (socialEnrichment?.social_handles) applyProvenance('social_media_links', 'social-enrichment', 0.82);
         if (socialEnrichment?.trust_signals?.length) applyProvenance('trust_signals', 'social-enrichment', 0.75);
 
         const fullExtraction = {
@@ -601,11 +599,7 @@ export const useCalibrationState = () => {
         if (edgeSignals.geographic_mentions?.length > 0 && !signals.geo) {
           signals.geo = edgeSignals.geographic_mentions.join(', ');
         }
-        if (edgeSignals.social_media_links && (!signals.socials || signals.socials.length === 0)) {
-          signals.socials = Object.entries(edgeSignals.social_media_links)
-            .filter(([, url]) => url)
-            .map(([platform, url]) => ({ platform, url }));
-        }
+        signals.socials = [];
         // Merge AI-extracted identity fields
         if (ex.contact_email && signals.emails?.length === 0) {
           signals.emails = [ex.contact_email];
@@ -930,11 +924,7 @@ export const useCalibrationState = () => {
             if (edgeSignals.geographic_mentions?.length > 0 && !signals.geo) {
               signals.geo = edgeSignals.geographic_mentions.join(', ');
             }
-            if (edgeSignals.social_media_links && (!signals.socials || signals.socials.length === 0)) {
-              signals.socials = Object.entries(edgeSignals.social_media_links)
-                .filter(([, socialUrl]) => socialUrl)
-                .map(([platform, socialUrl]) => ({ platform, url: socialUrl }));
-            }
+            signals.socials = [];
             // Merge user hints into signals
             if (hints?.businessName || hints?.legalName) signals.businessName = hints.businessName || hints.legalName || signals.businessName;
             if (hints?.address || hints?.suburb) signals.address = hints.address || hints.suburb || signals.address;
