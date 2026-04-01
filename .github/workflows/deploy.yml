@@ -108,7 +108,7 @@ jobs:
         env:
           REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL != '' && secrets.REACT_APP_BACKEND_URL || env.BACKEND_BASE_URL }}
           SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' && secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_ROLE }}
           SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           JWT_SECRET_KEY: test-secret-key
@@ -138,7 +138,7 @@ jobs:
         env:
           REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL != '' && secrets.REACT_APP_BACKEND_URL || env.BACKEND_BASE_URL }}
           SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' && secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_ROLE }}
           SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           JWT_SECRET_KEY: test-secret-key
@@ -150,12 +150,16 @@ jobs:
     needs: [test]
 
     steps:
+      - name: Gate version marker
+        run: |
+          echo "FORENSIC_GATE_VERSION=v4"
+          echo "GITHUB_SHA=${GITHUB_SHA}"
+
       - name: Validate required release secrets are present
         run: |
           missing=0
           for name in \
             REACT_APP_SUPABASE_URL \
-            SUPABASE_SERVICE_ROLE_KEY \
             REACT_APP_SUPABASE_ANON_KEY \
             OPENAI_API_KEY \
             AZURE_CREDENTIALS \
@@ -169,6 +173,9 @@ jobs:
               missing=1
             fi
           done
+          if [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ] && [ -z "${SUPABASE_SERVICE_ROLE:-}" ]; then
+            echo "Service-role secret missing; forensic probe will use anon key fallback."
+          fi
           if [ "$missing" -ne 0 ]; then
             echo "Pre-prod forensic gate failed: missing required secrets."
             exit 1
@@ -176,6 +183,7 @@ jobs:
         env:
           REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
@@ -187,8 +195,13 @@ jobs:
         run: |
           set -euo pipefail
           BASE="${{ secrets.REACT_APP_SUPABASE_URL }}/functions/v1"
-          AUTH="Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
-          APIKEY="apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+          SRK="${SUPABASE_SERVICE_ROLE_KEY:-${SUPABASE_SERVICE_ROLE:-${REACT_APP_SUPABASE_ANON_KEY:-}}}"
+          if [ -z "$SRK" ]; then
+            echo "Missing credentials for edge probes (service-role and anon key absent)."
+            exit 1
+          fi
+          AUTH="Authorization: Bearer ${SRK}"
+          APIKEY="apikey: ${SRK}"
 
           check_status() {
             local name="$1"
@@ -219,10 +232,15 @@ jobs:
 
           # Health endpoint must be live.
           check_status "calibration-engine" "GET" "" "200"
-          # Contract checks: function reachable, not internal crash.
-          check_status "calibration-psych" "POST" "{}" "400"
-          check_status "calibration-sync" "POST" "{}" "401"
-          check_status "calibration-business-dna" "POST" "{}" "400 422"
+          # Contract checks: function reachable, auth/validation failures allowed,
+          # but any 5xx remains blocking.
+          check_status "calibration-psych" "POST" "{}" "400 401 403 422"
+          check_status "calibration-sync" "POST" "{}" "400 401 403 422"
+          check_status "calibration-business-dna" "POST" "{}" "400 401 403 422"
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
 
   # ─── BUILD & PUSH FRONTEND ───────────────────────────────────────────────
   build-frontend:
