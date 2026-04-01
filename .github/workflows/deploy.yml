@@ -108,7 +108,7 @@ jobs:
         env:
           REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL != '' && secrets.REACT_APP_BACKEND_URL || env.BACKEND_BASE_URL }}
           SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' && secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_ROLE }}
           SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           JWT_SECRET_KEY: test-secret-key
@@ -138,7 +138,7 @@ jobs:
         env:
           REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL != '' && secrets.REACT_APP_BACKEND_URL || env.BACKEND_BASE_URL }}
           SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' && secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_ROLE }}
           SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           JWT_SECRET_KEY: test-secret-key
@@ -155,7 +155,6 @@ jobs:
           missing=0
           for name in \
             REACT_APP_SUPABASE_URL \
-            SUPABASE_SERVICE_ROLE_KEY \
             REACT_APP_SUPABASE_ANON_KEY \
             OPENAI_API_KEY \
             AZURE_CREDENTIALS \
@@ -169,6 +168,10 @@ jobs:
               missing=1
             fi
           done
+          if [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ] && [ -z "${SUPABASE_SERVICE_ROLE:-}" ]; then
+            echo "Missing required secret: SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SERVICE_ROLE fallback)"
+            missing=1
+          fi
           if [ "$missing" -ne 0 ]; then
             echo "Pre-prod forensic gate failed: missing required secrets."
             exit 1
@@ -176,6 +179,7 @@ jobs:
         env:
           REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
@@ -187,8 +191,13 @@ jobs:
         run: |
           set -euo pipefail
           BASE="${{ secrets.REACT_APP_SUPABASE_URL }}/functions/v1"
-          AUTH="Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
-          APIKEY="apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+          SRK="${SUPABASE_SERVICE_ROLE_KEY:-${SUPABASE_SERVICE_ROLE:-}}"
+          if [ -z "$SRK" ]; then
+            echo "Missing service role secret for edge probes."
+            exit 1
+          fi
+          AUTH="Authorization: Bearer ${SRK}"
+          APIKEY="apikey: ${SRK}"
 
           check_status() {
             local name="$1"
@@ -224,6 +233,9 @@ jobs:
           check_status "calibration-psych" "POST" "{}" "400 401 403 422"
           check_status "calibration-sync" "POST" "{}" "400 401 403 422"
           check_status "calibration-business-dna" "POST" "{}" "400 401 403 422"
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
 
   # ─── BUILD & PUSH FRONTEND ───────────────────────────────────────────────
   build-frontend:
