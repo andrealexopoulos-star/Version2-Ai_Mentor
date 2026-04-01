@@ -387,6 +387,126 @@ def _extract_sentence_with_keywords(text: str, keywords: List[str]) -> str:
     return ""
 
 
+def _extract_contact_emails(text: str, limit: int = 20) -> List[str]:
+    if not text:
+        return []
+    emails = re.findall(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}", text)
+    out: List[str] = []
+    seen = set()
+    blocked = {"example.com", "domain.com", "email.com"}
+    for raw in emails:
+        email = raw.strip().lower()
+        if not email or any(b in email for b in blocked):
+            continue
+        if email in seen:
+            continue
+        seen.add(email)
+        out.append(email)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _extract_location_mentions(text: str, limit: int = 8) -> List[str]:
+    if not text:
+        return []
+    cleaned = re.sub(r"\s+", " ", text)
+    patterns = [
+        r"\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){0,2},\s(?:NSW|VIC|QLD|WA|SA|TAS|NT|ACT))\b",
+        r"\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){0,2},\s(?:Australia|New Zealand|United Kingdom|United States|Canada|Singapore))\b",
+    ]
+    out: List[str] = []
+    seen = set()
+    for pattern in patterns:
+        for match in re.findall(pattern, cleaned):
+            loc = str(match).strip()
+            key = loc.lower()
+            if not loc or key in seen:
+                continue
+            seen.add(key)
+            out.append(loc)
+            if len(out) >= limit:
+                return out
+    return out
+
+
+def _build_competitor_leaders(enrichment: Dict[str, Any], semrush_intel: Dict[str, Any]) -> List[Dict[str, Any]]:
+    leaders: List[Dict[str, Any]] = []
+    semrush_comp = (((semrush_intel or {}).get("competitor_analysis") or {}).get("organic_competitors") or [])
+    for item in semrush_comp[:3]:
+        if not isinstance(item, dict):
+            continue
+        domain = str(item.get("domain") or "").strip()
+        if not domain:
+            continue
+        common_keywords = item.get("common_keywords") or item.get("Cr")
+        leaders.append({
+            "name": domain,
+            "why_leading": f"Strong organic footprint with {common_keywords or 'high'} shared category keywords.",
+            "what_to_learn": [
+                "Publish tightly themed service pages around commercial-intent search terms.",
+                "Strengthen category proof assets (case studies, quantified outcomes, named clients).",
+            ],
+        })
+    if leaders:
+        return leaders
+    fallback = []
+    for name in (enrichment.get("competitors") or [])[:3]:
+        fallback.append({
+            "name": name,
+            "why_leading": "Visible in competitive search results for your category.",
+            "what_to_learn": [
+                "Sharpen page-level messaging by outcome and buyer segment.",
+                "Benchmark offer packaging and CTA clarity against this competitor monthly.",
+            ],
+        })
+    return fallback
+
+
+def _build_industry_action_items(industry: str, seo: Dict[str, Any], paid: Dict[str, Any]) -> List[str]:
+    sector = (industry or "").strip() or "your industry"
+    seo_status = seo.get("status") or "mixed"
+    paid_state = paid.get("maturity") or "unknown"
+    return [
+        f"SEO: Build a {sector}-specific topic cluster (service pages + FAQ schema + local intent pages) to improve rankings from current {seo_status} visibility.",
+        f"Demand capture: Run one tightly scoped paid campaign per core offer with conversion tracking and negative-keyword control to lift performance from current {paid_state} maturity.",
+    ]
+
+
+def _build_customer_review_highlights(customer_intel: Dict[str, Any]) -> Dict[str, Any]:
+    positives = customer_intel.get("positive_signals") or []
+    negatives = customer_intel.get("negative_signals") or []
+    action_plan = customer_intel.get("action_plan") or []
+    best = [{"review": v, "action_item": "Amplify this proof in service pages and sales proposals."} for v in positives[:3]]
+    worst = []
+    for idx, value in enumerate(negatives[:3]):
+        worst.append({
+            "review": value,
+            "action_item": action_plan[idx] if idx < len(action_plan) else "Assign an owner, root-cause the issue, and publish a fix timeline.",
+        })
+    return {"best_reviews": best, "worst_reviews": worst}
+
+
+def _build_staff_review_highlights(staff_intel: Dict[str, Any]) -> Dict[str, Any]:
+    platforms = staff_intel.get("platforms") or []
+    positives = staff_intel.get("positive_signals") or []
+    negatives = staff_intel.get("negative_signals") or []
+    action_plan = staff_intel.get("action_plan") or []
+    glassdoor_score = None
+    for platform in platforms:
+        if not isinstance(platform, dict):
+            continue
+        if str(platform.get("platform") or "").lower() == "glassdoor" and isinstance(platform.get("rating"), (int, float)):
+            glassdoor_score = float(platform.get("rating"))
+            break
+    return {
+        "glassdoor_score": glassdoor_score,
+        "top_positive_reviews": positives[:3],
+        "top_negative_reviews": [{"review": v, "action_item": action_plan[idx] if idx < len(action_plan) else "Address this issue with a 30-day team operations plan."} for idx, v in enumerate(negatives[:3])],
+        "free_tier_message": "Data not available on free tier" if not platforms and not positives and not negatives else "",
+    }
+
+
 def _parse_google_reviews(search_result: dict, business_name: str) -> dict:
     """Extract star ratings, review counts, and snippets from customer review sites."""
     results = search_result.get("results") or []
@@ -506,6 +626,373 @@ def _aggregate_reviews(google: dict, glassdoor: dict) -> dict:
         "negative_count": len(all_negative),
         "top_recent": all_snippets[:3],
         "has_data": bool(combined_score or all_snippets),
+    }
+
+
+def _parse_review_date_to_utc(value: str) -> Optional[datetime]:
+    if not value:
+        return None
+    raw = str(value).strip()
+    if not raw:
+        return None
+    candidates = [raw]
+    if raw.endswith("Z"):
+        candidates.append(raw.replace("Z", "+00:00"))
+    for candidate in candidates:
+        try:
+            parsed = datetime.fromisoformat(candidate)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.astimezone(timezone.utc)
+        except Exception:
+            continue
+    return None
+
+
+def _derive_customer_action_plan(negative_signals: List[str]) -> List[str]:
+    corpus = " ".join([(s or "").lower() for s in negative_signals])
+    actions: List[str] = []
+
+    def _append_if(condition: bool, action: str) -> None:
+        if condition and action not in actions:
+            actions.append(action)
+
+    _append_if(
+        bool(re.search(r"slow|wait|delay|late|delivery|shipping|turnaround", corpus)),
+        "Set response and fulfilment SLAs, then review weekly breach reports with operations leads.",
+    )
+    _append_if(
+        bool(re.search(r"quality|defect|broken|error|issue|fault|refund|return", corpus)),
+        "Run a weekly root-cause quality review and track corrective actions to closure within 14 days.",
+    )
+    _append_if(
+        bool(re.search(r"support|service|rude|unhelpful|communication|follow up", corpus)),
+        "Rebuild customer support playbooks with escalation paths, QA scoring, and coaching for frontline teams.",
+    )
+    _append_if(
+        bool(re.search(r"price|pricing|expensive|cost|value|overpriced|hidden fee", corpus)),
+        "Audit pricing transparency and expectation-setting across sales, checkout, and post-sale communications.",
+    )
+    _append_if(
+        bool(re.search(r"booking|appointment|website|checkout|payment|billing", corpus)),
+        "Instrument booking and payment friction points and assign owners to reduce customer effort in the purchase journey.",
+    )
+    if not actions and negative_signals:
+        actions.append("Convert recurring customer complaints into an operations backlog with named owners, deadlines, and monthly verification.")
+    return actions[:4]
+
+
+def _build_customer_review_intelligence(
+    google_reviews: dict,
+    review_aggregation: dict,
+    browse_ai_reviews: dict,
+    lookback_months: int = 12,
+) -> Dict[str, Any]:
+    now_utc = datetime.now(timezone.utc)
+    cutoff = now_utc - timedelta(days=lookback_months * 30)
+    browse_payload = browse_ai_reviews if isinstance(browse_ai_reviews, dict) else {}
+    aggregated = browse_payload.get("aggregated") if isinstance(browse_payload.get("aggregated"), dict) else {}
+    customer_reviews = browse_payload.get("customer_reviews") if isinstance(browse_payload.get("customer_reviews"), list) else []
+
+    platforms: List[Dict[str, Any]] = []
+    positive_signals: List[str] = []
+    negative_signals: List[str] = []
+    evidence: List[str] = []
+    last_12_months_count = 0
+    undated_count = 0
+    scores: List[float] = []
+    dated_events: List[Dict[str, Any]] = []
+    undated_events: List[str] = []
+
+    for platform_blob in customer_reviews:
+        if not isinstance(platform_blob, dict):
+            continue
+        platform = str(platform_blob.get("platform") or "customer_reviews").strip().lower()
+        rating = platform_blob.get("rating")
+        if isinstance(rating, (int, float)) and 0 < float(rating) <= 5:
+            scores.append(float(rating))
+        review_items = platform_blob.get("reviews") if isinstance(platform_blob.get("reviews"), list) else []
+        platform_last_12 = 0
+        platform_undated = 0
+
+        for rv in review_items:
+            if not isinstance(rv, dict):
+                continue
+            text = str(rv.get("text") or "").strip()
+            if not text:
+                continue
+            sentiment = str(rv.get("sentiment") or "").strip().lower()
+            parsed_date = _parse_review_date_to_utc(str(rv.get("date") or ""))
+            label = f"[{platform}] {text[:220]}"
+
+            if parsed_date:
+                if parsed_date < cutoff:
+                    continue
+                platform_last_12 += 1
+                last_12_months_count += 1
+                dated = parsed_date.date().isoformat()
+                evidence.append(f"{label} ({dated})")
+                dated_events.append({"label": label, "date": parsed_date})
+            else:
+                platform_undated += 1
+                undated_count += 1
+                evidence.append(f"{label} (date not verified)")
+                undated_events.append(label)
+
+            if sentiment == "negative":
+                negative_signals.append(label)
+            elif sentiment == "positive":
+                positive_signals.append(label)
+
+        review_count = platform_blob.get("review_count")
+        normalized_count = int(review_count) if isinstance(review_count, (int, float)) else len(review_items)
+        platforms.append({
+            "platform": platform,
+            "rating": float(rating) if isinstance(rating, (int, float)) else None,
+            "review_count": max(0, normalized_count),
+            "last_12_months_count": platform_last_12,
+            "undated_count": platform_undated,
+            "url": platform_blob.get("url") or "",
+        })
+
+    if not positive_signals:
+        positive_signals.extend((aggregated.get("top_positive") or [])[:8])
+    if not negative_signals:
+        negative_signals.extend((aggregated.get("top_negative") or [])[:8])
+    if not evidence:
+        evidence.extend((aggregated.get("top_recent") or [])[:8])
+
+    if not positive_signals and isinstance(google_reviews, dict):
+        positive_signals.extend((google_reviews.get("positive") or [])[:6])
+    if not negative_signals and isinstance(google_reviews, dict):
+        negative_signals.extend((google_reviews.get("negative") or [])[:6])
+    if not evidence and isinstance(google_reviews, dict):
+        evidence.extend((google_reviews.get("snippets") or [])[:8])
+
+    dedup_sources = []
+    seen_sources = set()
+    source_candidates = [p.get("platform") for p in platforms] + (aggregated.get("customer_sources") or []) + (google_reviews.get("sources") or [])
+    for item in source_candidates:
+        src = str(item or "").strip()
+        if not src:
+            continue
+        key = src.lower()
+        if key in seen_sources:
+            continue
+        seen_sources.add(key)
+        dedup_sources.append(src)
+
+    customer_score = round(sum(scores) / len(scores), 1) if scores else None
+    if customer_score is None and isinstance(aggregated.get("customer_score"), (int, float)):
+        customer_score = round(float(aggregated.get("customer_score")), 1)
+    if customer_score is None and isinstance(review_aggregation, dict) and isinstance(review_aggregation.get("combined_score"), (int, float)):
+        customer_score = round(float(review_aggregation.get("combined_score")), 1)
+    if customer_score is None and isinstance(google_reviews, dict) and isinstance(google_reviews.get("star_rating"), (int, float)):
+        customer_score = round(float(google_reviews.get("star_rating")), 1)
+
+    positive_signals = list(dict.fromkeys([str(x).strip() for x in positive_signals if str(x).strip()]))[:10]
+    negative_signals = list(dict.fromkeys([str(x).strip() for x in negative_signals if str(x).strip()]))[:10]
+    evidence = list(dict.fromkeys([str(x).strip() for x in evidence if str(x).strip()]))[:12]
+    dated_events = sorted(dated_events, key=lambda item: item["date"], reverse=True)
+    top_recent = [f"{item['label']} ({item['date'].date().isoformat()})" for item in dated_events[:6]]
+    if len(top_recent) < 6:
+        top_recent.extend([f"{label} (date not verified)" for label in undated_events[: max(0, 6 - len(top_recent))]])
+    if not top_recent:
+        top_recent = (review_aggregation.get("top_recent") or [])[:6] if isinstance(review_aggregation, dict) else []
+    top_recent = list(dict.fromkeys([str(x).strip() for x in top_recent if str(x).strip()]))[:6]
+
+    action_plan = _derive_customer_action_plan(negative_signals)
+    if isinstance(aggregated.get("customer_action_themes"), list):
+        action_plan.extend([str(x).strip() for x in aggregated.get("customer_action_themes") if str(x).strip()])
+    action_plan = list(dict.fromkeys(action_plan))[:5]
+
+    review_count_total_estimate = sum(max(0, int(p.get("review_count") or 0)) for p in platforms)
+    if review_count_total_estimate == 0 and isinstance(aggregated.get("customer_count"), (int, float)):
+        review_count_total_estimate = max(0, int(aggregated.get("customer_count") or 0))
+    if review_count_total_estimate == 0 and isinstance(google_reviews, dict) and isinstance(google_reviews.get("review_count"), (int, float)):
+        review_count_total_estimate = max(0, int(google_reviews.get("review_count") or 0))
+
+    has_data = bool(
+        platforms
+        or positive_signals
+        or negative_signals
+        or evidence
+        or customer_score is not None
+        or review_count_total_estimate > 0
+    )
+    return {
+        "has_data": has_data,
+        "source_truth_only": True,
+        "window_months": lookback_months,
+        "window_label": f"last {lookback_months} months",
+        "window_start": cutoff.date().isoformat(),
+        "window_end": now_utc.date().isoformat(),
+        "review_count_last_12_months": last_12_months_count,
+        "undated_review_count": undated_count,
+        "review_count_total_estimate": review_count_total_estimate,
+        "scores_available": bool(customer_score is not None),
+        "customer_score": customer_score,
+        "platforms": platforms[:8],
+        "sources": dedup_sources[:8],
+        "positive_count": len(positive_signals),
+        "negative_count": len(negative_signals),
+        "positive_signals": positive_signals,
+        "negative_signals": negative_signals,
+        "action_plan": action_plan,
+        "top_recent": top_recent,
+        "evidence": evidence,
+    }
+
+
+def _derive_staff_action_plan(negative_signals: List[str]) -> List[str]:
+    corpus = " ".join([(s or "").lower() for s in negative_signals])
+    actions: List[str] = []
+
+    def _append_if(condition: bool, action: str) -> None:
+        if condition and action not in actions:
+            actions.append(action)
+
+    _append_if(
+        bool(re.search(r"manager|management|leadership|communication", corpus)),
+        "Run a 30-day leadership cadence reset: weekly manager 1:1s, escalation SLAs, and transparent team updates.",
+    )
+    _append_if(
+        bool(re.search(r"overwork|burnout|workload|long hours|pressure", corpus)),
+        "Implement capacity planning and workload balancing to reduce burnout risk and delivery errors.",
+    )
+    _append_if(
+        bool(re.search(r"salary|pay|underpaid|compensation|benefits", corpus)),
+        "Benchmark compensation against market medians and publish progression criteria for role levels.",
+    )
+    _append_if(
+        bool(re.search(r"culture|toxic|turnover|attrition|no growth|career", corpus)),
+        "Launch a 90-day retention plan with stay interviews, growth pathways, and manager accountability metrics.",
+    )
+    _append_if(
+        bool(re.search(r"onboarding|training|support|tools|process", corpus)),
+        "Upgrade onboarding and SOP coverage so role expectations and support channels are explicit from day one.",
+    )
+    if not actions and negative_signals:
+        actions.append("Convert recurring staff pain points into a tracked operations improvement backlog with owners and deadlines.")
+    return actions[:4]
+
+
+def _build_staff_review_intelligence(glassdoor_reviews: dict, browse_ai_reviews: dict, lookback_months: int = 12) -> Dict[str, Any]:
+    now_utc = datetime.now(timezone.utc)
+    cutoff = now_utc - timedelta(days=lookback_months * 30)
+    browse_payload = browse_ai_reviews if isinstance(browse_ai_reviews, dict) else {}
+    aggregated = browse_payload.get("aggregated") if isinstance(browse_payload.get("aggregated"), dict) else {}
+    staff_reviews = browse_payload.get("staff_reviews") if isinstance(browse_payload.get("staff_reviews"), list) else []
+
+    platforms: List[Dict[str, Any]] = []
+    positive_signals: List[str] = []
+    negative_signals: List[str] = []
+    evidence: List[str] = []
+    last_12_months_count = 0
+    undated_count = 0
+    scores: List[float] = []
+
+    for platform_blob in staff_reviews:
+        if not isinstance(platform_blob, dict):
+            continue
+        platform = str(platform_blob.get("platform") or "staff_reviews").strip().lower()
+        rating = platform_blob.get("rating")
+        if isinstance(rating, (int, float)) and 0 < float(rating) <= 5:
+            scores.append(float(rating))
+        review_items = platform_blob.get("reviews") if isinstance(platform_blob.get("reviews"), list) else []
+        platform_last_12 = 0
+        platform_undated = 0
+
+        for rv in review_items:
+            if not isinstance(rv, dict):
+                continue
+            text = str(rv.get("text") or "").strip()
+            if not text:
+                continue
+            sentiment = str(rv.get("sentiment") or "").strip().lower()
+            parsed_date = _parse_review_date_to_utc(str(rv.get("date") or ""))
+            if parsed_date:
+                if parsed_date < cutoff:
+                    continue
+                platform_last_12 += 1
+                last_12_months_count += 1
+                label = f"[{platform}] {text[:220]}"
+                evidence.append(f"{label} ({parsed_date.date().isoformat()})")
+                if sentiment == "negative":
+                    negative_signals.append(label)
+                elif sentiment == "positive":
+                    positive_signals.append(label)
+            else:
+                platform_undated += 1
+                undated_count += 1
+                label = f"[{platform}] {text[:220]}"
+                evidence.append(f"{label} (date not verified)")
+                if sentiment == "negative":
+                    negative_signals.append(label)
+                elif sentiment == "positive":
+                    positive_signals.append(label)
+
+        review_count = platform_blob.get("review_count")
+        normalized_count = int(review_count) if isinstance(review_count, (int, float)) else len(review_items)
+        platforms.append({
+            "platform": platform,
+            "rating": float(rating) if isinstance(rating, (int, float)) else None,
+            "review_count": max(0, normalized_count),
+            "last_12_months_count": platform_last_12,
+            "undated_count": platform_undated,
+            "url": platform_blob.get("url") or "",
+        })
+
+    if not positive_signals:
+        positive_signals.extend((aggregated.get("top_staff_positive") or [])[:5])
+    if not negative_signals:
+        negative_signals.extend((aggregated.get("top_staff_negative") or [])[:5])
+
+    if not positive_signals and isinstance(glassdoor_reviews, dict):
+        positive_signals.extend((glassdoor_reviews.get("positive") or [])[:4])
+    if not negative_signals and isinstance(glassdoor_reviews, dict):
+        negative_signals.extend((glassdoor_reviews.get("negative") or [])[:4])
+    if not evidence and isinstance(glassdoor_reviews, dict):
+        evidence.extend((glassdoor_reviews.get("snippets") or [])[:6])
+
+    dedup_sources = []
+    seen_sources = set()
+    for item in platforms:
+        src = str(item.get("platform") or "").strip()
+        if not src or src in seen_sources:
+            continue
+        seen_sources.add(src)
+        dedup_sources.append(src)
+
+    staff_score = round(sum(scores) / len(scores), 1) if scores else None
+    if staff_score is None and isinstance(aggregated.get("staff_score"), (int, float)):
+        staff_score = round(float(aggregated.get("staff_score")), 1)
+    if staff_score is None and isinstance(glassdoor_reviews, dict) and isinstance(glassdoor_reviews.get("rating"), (int, float)):
+        staff_score = round(float(glassdoor_reviews.get("rating")), 1)
+
+    positive_signals = list(dict.fromkeys([str(x).strip() for x in positive_signals if str(x).strip()]))[:6]
+    negative_signals = list(dict.fromkeys([str(x).strip() for x in negative_signals if str(x).strip()]))[:6]
+    evidence = list(dict.fromkeys([str(x).strip() for x in evidence if str(x).strip()]))[:8]
+    action_plan = _derive_staff_action_plan(negative_signals)
+
+    has_data = bool(platforms or positive_signals or negative_signals or evidence or staff_score is not None)
+    return {
+        "has_data": has_data,
+        "source_truth_only": True,
+        "window_months": lookback_months,
+        "window_label": f"last {lookback_months} months",
+        "window_start": cutoff.date().isoformat(),
+        "window_end": now_utc.date().isoformat(),
+        "review_count_last_12_months": last_12_months_count,
+        "undated_review_count": undated_count,
+        "scores_available": bool(staff_score is not None),
+        "staff_score": staff_score,
+        "platforms": platforms[:6],
+        "sources": dedup_sources[:6],
+        "positive_signals": positive_signals,
+        "negative_signals": negative_signals,
+        "action_plan": action_plan,
+        "evidence": evidence,
     }
 
 
@@ -1203,9 +1690,13 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 }
 
             seed_page = await _fetch_html_and_text(url, timeout=20)
+            if not isinstance(seed_page, dict):
+                seed_page = {"html": str(seed_page or ""), "text": str(seed_page or "")}
             page_text = seed_page.get("text") or ""
             raw_html = seed_page.get("html") or ""
             crawl_context = await _crawl_site_context(url, raw_html, max_pages=10)
+            if not isinstance(crawl_context, dict):
+                crawl_context = {"pages": [], "text": ""}
             crawled_pages = crawl_context.get("pages") or []
             crawled_text = crawl_context.get("text") or ""
 
@@ -1218,32 +1709,60 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             competitor_query = f'"{business_name_hint}" competitors australia {page_title or ""}'.strip()
             company_query = f"site:{domain} company profile services about"
             abn_query = f"{domain} ABN"
-            linkedin_query = f'"{business_name_hint}" LinkedIn'
-            instagram_query = f'"{business_name_hint}" Instagram'
-            facebook_query = f'"{business_name_hint}" Facebook'
-            twitter_query = f'"{business_name_hint}" Twitter OR X'
+            location_query = f'"{business_name_hint}" locations office address "{domain}"'
+            contact_query = f'"{business_name_hint}" contact email "{domain}"'
             review_query = f'"{business_name_hint}" reviews testimonials case study'
             review_google_query = f'site:google.com/maps OR site:trustpilot.com OR site:productreview.com.au "{business_name_hint}" reviews rating'
             review_glassdoor_query = f'site:glassdoor.com.au OR site:glassdoor.com OR site:seek.com.au "{business_name_hint}" reviews rating employees'
             review_indeed_query = f'"{business_name_hint}" employee reviews rating site:indeed.com OR site:glassdoor.com'
 
-            (company_search, competitor_search, abn_search,
-             linkedin_search, instagram_search, facebook_search,
-             twitter_search, review_search,
+            (company_search, competitor_search, abn_search, location_search, contact_search, review_search,
              google_review_search, glassdoor_review_search,
              indeed_review_search) = await asyncio.gather(
                 serper_search(company_query, gl="au", hl="en", num=10),
                 serper_search(competitor_query, gl="au", hl="en", num=10),
                 serper_search(abn_query, gl="au", hl="en", num=10),
-                serper_search(linkedin_query, gl="au", hl="en", num=10),
-                serper_search(instagram_query, gl="au", hl="en", num=10),
-                serper_search(facebook_query, gl="au", hl="en", num=10),
-                serper_search(twitter_query, gl="au", hl="en", num=10),
+                serper_search(location_query, gl="au", hl="en", num=10),
+                serper_search(contact_query, gl="us", hl="en", num=20),
                 serper_search(review_query, gl="au", hl="en", num=10),
                 serper_search(review_google_query, num=10),
                 serper_search(review_glassdoor_query, num=10),
                 serper_search(review_indeed_query, num=10),
             )
+            def _ensure_search_payload(value):
+                if isinstance(value, dict):
+                    return value
+                if isinstance(value, list):
+                    return {"results": value}
+                return {"results": [], "error": f"invalid_payload:{type(value).__name__}"}
+
+            company_search = _ensure_search_payload(company_search)
+            competitor_search = _ensure_search_payload(competitor_search)
+            abn_search = _ensure_search_payload(abn_search)
+            location_search = _ensure_search_payload(location_search)
+            contact_search = _ensure_search_payload(contact_search)
+            review_search = _ensure_search_payload(review_search)
+            google_review_search = _ensure_search_payload(google_review_search)
+            glassdoor_review_search = _ensure_search_payload(glassdoor_review_search)
+            indeed_review_search = _ensure_search_payload(indeed_review_search)
+            for search_payload in (
+                company_search,
+                competitor_search,
+                abn_search,
+                location_search,
+                contact_search,
+                review_search,
+                google_review_search,
+                glassdoor_review_search,
+                indeed_review_search,
+            ):
+                normalized_rows = []
+                for row in (search_payload.get("results") or []):
+                    if isinstance(row, dict):
+                        normalized_rows.append(row)
+                    elif isinstance(row, str):
+                        normalized_rows.append({"title": "", "snippet": row, "link": ""})
+                search_payload["results"] = normalized_rows
 
             google_reviews = _parse_google_reviews(google_review_search, business_name_hint)
             merged_employer_results = {
@@ -1258,6 +1777,8 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (company_search.get("results") or [])]),
                 "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (competitor_search.get("results") or [])]),
                 "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (abn_search.get("results") or [])]),
+                "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (location_search.get("results") or [])]),
+                "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (contact_search.get("results") or [])]),
                 "\n".join([f"- {r.get('title')}: {r.get('snippet')}" for r in (review_search.get("results") or [])]),
                 "\n".join([f"- Google Review: {r.get('snippet', '')}" for r in (google_review_search.get("results") or [])]),
                 "\n".join([f"- Glassdoor: {r.get('snippet', '')}" for r in (glassdoor_review_search.get("results") or [])]),
@@ -1271,7 +1792,10 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "Return JSON keys: business_name, description, industry, main_products_services, target_market, "
                 "unique_value_proposition, competitive_advantages, competitors, competitor_analysis, market_position, "
                 "abn, social_handles, trust_signals, executive_summary, confidence, "
-                "cmo_executive_brief, seo_analysis, paid_media_analysis, social_media_analysis, website_health, swot, competitor_swot, cmo_priority_actions.\n"
+                "cmo_executive_brief, seo_analysis, paid_media_analysis, social_media_analysis, website_health, swot, competitor_swot, cmo_priority_actions, customer_review_intelligence, staff_review_intelligence, recommended_keywords, aeo_strategy.\n"
+                "For customer_review_intelligence use source-verifiable customer reviews only (platform-attributed, date-bounded to last 12 months when dates are available), include positive and negative signals and operations action plan.\n"
+                "For staff_review_intelligence use source-verifiable evidence only (platform-attributed, date-bounded to last 12 months when dates are available). "
+                "Do not infer unpublished team dynamics.\n"
                 "If unknown, return empty string. competitors must be array of names.\n\n"
                 f"DATA:\n{combined_text[:18000]}"
             )
@@ -1313,6 +1837,8 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "swot": {},
                 "competitor_swot": [],
                 "cmo_priority_actions": [],
+                "customer_review_intelligence": {},
+                "staff_review_intelligence": {},
                 "google_reviews": google_reviews,
                 "glassdoor_reviews": glassdoor_reviews,
                 "review_aggregation": review_aggregation,
@@ -1320,15 +1846,12 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "company": company_search.get("results") or [],
                     "competitors": competitor_search.get("results") or [],
                     "abn": abn_search.get("results") or [],
+                    "locations": location_search.get("results") or [],
+                    "contacts": contact_search.get("results") or [],
                     "reviews": review_search.get("results") or [],
                     "google_reviews": google_review_search.get("results") or [],
                     "glassdoor_reviews": glassdoor_review_search.get("results") or [],
-                    "social_search": {
-                        "linkedin": linkedin_search.get("results") or [],
-                        "instagram": instagram_search.get("results") or [],
-                        "facebook": facebook_search.get("results") or [],
-                        "twitter": twitter_search.get("results") or [],
-                    },
+                    "indeed_reviews": indeed_review_search.get("results") or [],
                     "crawled_pages": crawled_pages,
                 },
             }
@@ -1359,10 +1882,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             }
             social_link_corpus = "\n".join([
                 combined_text,
-                "\n".join([(r.get("link") or "") for r in (linkedin_search.get("results") or [])]),
-                "\n".join([(r.get("link") or "") for r in (instagram_search.get("results") or [])]),
-                "\n".join([(r.get("link") or "") for r in (facebook_search.get("results") or [])]),
-                "\n".join([(r.get("link") or "") for r in (twitter_search.get("results") or [])]),
+                "\n".join([(r.get("link") or "") for r in (contact_search.get("results") or [])]),
             ])
             for platform, pattern in social_patterns.items():
                 if not enrichment["social_handles"].get(platform):
@@ -1376,8 +1896,14 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             # Edge intelligence orchestration: check cache, then fire uncached tools in parallel.
             async def _cached_edge(fn_name, payload_dict, auth):
                 hit = await get_edge_result(fn_name, scan_domain)
-                if hit:
+                if isinstance(hit, dict):
                     return hit
+                if hit is not None:
+                    logger.warning(
+                        "[enrichment/website] ignoring non-dict cached edge payload for %s (%s)",
+                        fn_name,
+                        type(hit).__name__,
+                    )
                 result = await _call_edge_function(fn_name, payload_dict, auth_header=auth)
                 if isinstance(result, dict) and not result.get("error"):
                     asyncio.create_task(set_edge_result(fn_name, scan_domain, result))
@@ -1408,6 +1934,13 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if isinstance(market_scorer, Exception): market_scorer = {"error": str(market_scorer)}
             if isinstance(browse_ai_reviews, Exception): browse_ai_reviews = {"error": str(browse_ai_reviews)}
             if isinstance(semrush_intel, Exception): semrush_intel = {"error": str(semrush_intel)}
+            if not isinstance(deep_recon, dict): deep_recon = {"error": f"invalid_payload:{type(deep_recon).__name__}"}
+            if not isinstance(social_enrichment, dict): social_enrichment = {"error": f"invalid_payload:{type(social_enrichment).__name__}"}
+            if not isinstance(competitor_monitor, dict): competitor_monitor = {"error": f"invalid_payload:{type(competitor_monitor).__name__}"}
+            if not isinstance(market_analysis, dict): market_analysis = {"error": f"invalid_payload:{type(market_analysis).__name__}"}
+            if not isinstance(market_scorer, dict): market_scorer = {"error": f"invalid_payload:{type(market_scorer).__name__}"}
+            if not isinstance(browse_ai_reviews, dict): browse_ai_reviews = {"error": f"invalid_payload:{type(browse_ai_reviews).__name__}"}
+            if not isinstance(semrush_intel, dict): semrush_intel = {"error": f"invalid_payload:{type(semrush_intel).__name__}"}
 
             ai_errors = []
             if isinstance(deep_recon, dict) and deep_recon.get("error"):
@@ -1445,18 +1978,31 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 if agg.get("top_negative"):
                     enrichment.setdefault("google_reviews", {}).setdefault("negative", []).extend(agg["top_negative"][:3])
                     enrichment["google_reviews"]["has_data"] = True
+                if agg.get("top_staff_positive"):
+                    enrichment.setdefault("glassdoor_reviews", {}).setdefault("positive", []).extend((agg.get("top_staff_positive") or [])[:3])
+                if agg.get("top_staff_negative"):
+                    enrichment.setdefault("glassdoor_reviews", {}).setdefault("negative", []).extend((agg.get("top_staff_negative") or [])[:3])
                 if agg.get("customer_count"):
                     enrichment.setdefault("google_reviews", {})["review_count"] = agg["customer_count"]
                 if browse_ai_reviews.get("customer_reviews"):
                     all_snippets = []
                     for cr in browse_ai_reviews["customer_reviews"]:
+                        if not isinstance(cr, dict):
+                            continue
                         for rv in (cr.get("reviews") or [])[:5]:
+                            if not isinstance(rv, dict):
+                                continue
                             all_snippets.append(f"[{cr.get('platform', 'review')}] {rv.get('text', '')[:200]}")
                     enrichment.setdefault("google_reviews", {}).setdefault("snippets", []).extend(all_snippets[:5])
+                    enrichment["google_reviews"]["has_data"] = True
                 if browse_ai_reviews.get("staff_reviews"):
                     all_staff_snippets = []
                     for sr in browse_ai_reviews["staff_reviews"]:
+                        if not isinstance(sr, dict):
+                            continue
                         for rv in (sr.get("reviews") or [])[:5]:
+                            if not isinstance(rv, dict):
+                                continue
                             all_staff_snippets.append(f"[{sr.get('platform', 'employer')}] {rv.get('text', '')[:200]}")
                     enrichment.setdefault("glassdoor_reviews", {}).setdefault("snippets", []).extend(all_staff_snippets[:5])
                     enrichment["glassdoor_reviews"]["has_data"] = True
@@ -1464,9 +2010,63 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     "combined_score": agg.get("customer_score"),
                     "positive_count": len(agg.get("top_positive") or []),
                     "negative_count": len(agg.get("top_negative") or []),
-                    "top_recent": (agg.get("top_positive") or [])[:2] + (agg.get("top_negative") or [])[:1],
-                    "has_data": bool(agg.get("customer_score") or agg.get("top_positive")),
+                    "top_recent": (agg.get("top_recent") or [])[:3] or ((agg.get("top_positive") or [])[:2] + (agg.get("top_negative") or [])[:1]),
+                    "has_data": bool(
+                        agg.get("customer_score")
+                        or agg.get("top_positive")
+                        or agg.get("top_negative")
+                        or agg.get("top_recent")
+                    ),
                 })
+
+            enrichment["customer_review_intelligence"] = _build_customer_review_intelligence(
+                enrichment.get("google_reviews") or {},
+                enrichment.get("review_aggregation") or {},
+                enrichment.get("browse_ai_reviews") or {},
+                lookback_months=12,
+            )
+
+            customer_intel = enrichment.get("customer_review_intelligence") if isinstance(enrichment.get("customer_review_intelligence"), dict) else {}
+            if customer_intel:
+                enrichment.setdefault("review_aggregation", {}).update({
+                    "combined_score": customer_intel.get("customer_score"),
+                    "positive_count": customer_intel.get("positive_count"),
+                    "negative_count": customer_intel.get("negative_count"),
+                    "top_recent": (customer_intel.get("top_recent") or [])[:3],
+                    "has_data": bool(customer_intel.get("has_data")),
+                })
+
+            enrichment["staff_review_intelligence"] = _build_staff_review_intelligence(
+                enrichment.get("glassdoor_reviews") or {},
+                enrichment.get("browse_ai_reviews") or {},
+                lookback_months=12,
+            )
+
+            contact_corpus = "\n".join([
+                combined_text,
+                "\n".join([str(r.get("snippet") or "") for r in (contact_search.get("results") or [])]),
+                "\n".join([str(r.get("snippet") or "") for r in (company_search.get("results") or [])]),
+            ])
+            detected_emails = _extract_contact_emails(contact_corpus, limit=20)
+            location_corpus = "\n".join([
+                combined_text,
+                "\n".join([str(r.get("snippet") or "") for r in (location_search.get("results") or [])]),
+                "\n".join([str(r.get("snippet") or "") for r in (company_search.get("results") or [])]),
+            ])
+            detected_locations = _extract_location_mentions(location_corpus, limit=10)
+            if not detected_locations and enrichment.get("target_market"):
+                detected_locations = [str(enrichment.get("target_market"))]
+
+            enrichment["website_scan_summary"] = {
+                "domain": domain,
+                "full_business_name": enrichment.get("business_name") or business_name_hint,
+                "abn": enrichment.get("abn") or (abn_candidates[0] if abn_candidates else ""),
+                "locations_detected": detected_locations,
+                "contact_emails_detected": detected_emails,
+                "pages_scanned_count": 1 + len(crawled_pages),
+                "pages_scanned": [url] + [p.get("url") for p in crawled_pages if isinstance(p, dict) and p.get("url")],
+                "scan_scope": "website pages + public search signals",
+            }
 
             social_edge_handles = (social_enrichment or {}).get("social_handles") or {}
             if isinstance(social_edge_handles, dict):
@@ -1479,7 +2079,18 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             deep_signals = (deep_recon or {}).get("signals") or []
             if isinstance(deep_signals, list) and deep_signals:
                 enrichment["trust_signals"] = (enrichment.get("trust_signals") or []) + [
-                    s.get("summary", "") for s in deep_signals if isinstance(s, dict) and s.get("summary")
+                    (
+                        s.get("summary")
+                        or s.get("text")
+                        or s.get("evidence")
+                        or ""
+                    )
+                    for s in deep_signals
+                    if isinstance(s, dict) and (
+                        s.get("summary")
+                        or s.get("text")
+                        or s.get("evidence")
+                    )
                 ]
                 enrichment["deep_recon_summary"] = (deep_recon or {}).get("executive_summary", "")
                 enrichment["deep_recon_signals"] = deep_signals[:8]
@@ -1641,6 +2252,67 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                     enrichment["competitors"] = merged[:10]
                 enrichment["semrush_data"] = semrush_intel
 
+            seo_current = enrichment.get("seo_analysis") or {}
+            paid_current = enrichment.get("paid_media_analysis") or {}
+            top_organic_keywords = seo_current.get("top_organic_keywords") or []
+            top_paid_keywords = paid_current.get("top_paid_keywords") or []
+            recommended_keywords = []
+            for row in top_organic_keywords[:8]:
+                if isinstance(row, dict):
+                    kw = str(row.get("keyword") or "").strip()
+                    if kw:
+                        recommended_keywords.append(kw)
+            if len(recommended_keywords) < 8:
+                for row in top_paid_keywords[:6]:
+                    if isinstance(row, dict):
+                        kw = str(row.get("keyword") or "").strip()
+                        if kw:
+                            recommended_keywords.append(kw)
+            if not recommended_keywords and enrichment.get("main_products_services"):
+                recommended_keywords = [p.strip() for p in re.split(r"[;,]", str(enrichment.get("main_products_services"))) if p.strip()][:6]
+            recommended_keywords = list(dict.fromkeys(recommended_keywords))[:10]
+
+            seo_rank_summary = (
+                f"SEMrush rank {seo_current.get('semrush_rank')}, ~{seo_current.get('organic_keywords') or 0} ranking keywords, "
+                f"~{seo_current.get('organic_traffic') or 0} monthly organic visits."
+                if seo_current.get("semrush_rank") or seo_current.get("organic_keywords") or seo_current.get("organic_traffic")
+                else "SEO ranking data not available on free tier."
+            )
+            paid_rank_summary = (
+                f"~{paid_current.get('adwords_keywords') or 0} paid keywords, ~{paid_current.get('adwords_traffic') or 0} monthly paid visits, "
+                f"estimated spend ${paid_current.get('adwords_cost_usd') or 0}."
+                if paid_current.get("adwords_keywords") is not None or paid_current.get("adwords_traffic") is not None
+                else "Paid marketing ranking data not available on free tier."
+            )
+
+            enrichment["recommended_keywords"] = recommended_keywords
+            enrichment["aeo_strategy"] = [
+                "Publish service-page FAQs with concise, answer-first structure and FAQ schema markup.",
+                "Create one evidence-backed answer page per high-intent keyword cluster to improve AI answer engine coverage.",
+                "Use structured headings (problem -> proof -> outcome -> CTA) to improve retrieval and snippet extraction quality.",
+            ]
+            enrichment["seo_rank_summary"] = seo_rank_summary
+            enrichment["paid_rank_summary"] = paid_rank_summary
+            enrichment["industry_action_items"] = _build_industry_action_items(
+                str(enrichment.get("industry") or ""),
+                seo_current if isinstance(seo_current, dict) else {},
+                paid_current if isinstance(paid_current, dict) else {},
+            )
+            enrichment["competitor_leaders"] = _build_competitor_leaders(enrichment, semrush_intel if isinstance(semrush_intel, dict) else {})
+            enrichment["customer_review_highlights"] = _build_customer_review_highlights(
+                enrichment.get("customer_review_intelligence") if isinstance(enrichment.get("customer_review_intelligence"), dict) else {}
+            )
+            enrichment["staff_review_highlights"] = _build_staff_review_highlights(
+                enrichment.get("staff_review_intelligence") if isinstance(enrichment.get("staff_review_intelligence"), dict) else {}
+            )
+            if not enrichment.get("forensic_memo"):
+                enrichment["forensic_memo"] = (
+                    f"Forensic Marketing Memo: {enrichment.get('business_name') or 'This business'} appears to operate in "
+                    f"{enrichment.get('industry') or 'an undefined category'} and offers {enrichment.get('main_products_services') or 'services not clearly stated'}. "
+                    f"Current SEO position: {seo_rank_summary} Current paid position: {paid_rank_summary} "
+                    f"Priority should focus on keyword-cluster authority, evidence-led conversion assets, and offer-page clarity."
+                )
+
             try:
                 enrichment.setdefault("sources", {})
                 enrichment["sources"]["edge_tools"] = {
@@ -1664,11 +2336,53 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         "ok": isinstance(market_scorer, dict) and not market_scorer.get("error"),
                         "status": (market_scorer or {}).get("_http_status"),
                     } if 'market_scorer' in locals() else {"ok": False},
+                    "browse_ai_reviews": {
+                        "ok": isinstance(browse_ai_reviews, dict) and not browse_ai_reviews.get("error"),
+                        "status": (browse_ai_reviews or {}).get("_http_status"),
+                    } if 'browse_ai_reviews' in locals() else {"ok": False},
+                    "semrush_domain_intel": {
+                        "ok": isinstance(semrush_intel, dict) and not semrush_intel.get("error"),
+                        "status": (semrush_intel or {}).get("_http_status"),
+                    } if 'semrush_intel' in locals() else {"ok": False},
                 }
             except Exception:
                 pass
 
             enrichment["ai_errors"] = ai_errors
+
+            try:
+                profile = await get_business_profile_supabase(get_sb(), user_id)
+                if profile and profile.get("id"):
+                    profile_update = {
+                        "website": url,
+                        "business_name": enrichment.get("business_name") or profile.get("business_name") or "",
+                        "industry": enrichment.get("industry") or profile.get("industry") or "",
+                        "abn": enrichment.get("abn") or profile.get("abn") or "",
+                        "location": (
+                            (enrichment.get("website_scan_summary") or {}).get("locations_detected") or [profile.get("location") or ""]
+                        )[0],
+                        "main_products_services": enrichment.get("main_products_services") or profile.get("main_products_services") or "",
+                        "target_market": enrichment.get("target_market") or profile.get("target_market") or "",
+                        "social_handles": enrichment.get("social_handles") or {},
+                        "executive_summary": enrichment.get("forensic_memo") or enrichment.get("cmo_executive_brief") or enrichment.get("executive_summary") or "",
+                        "competitor_scan_result": json.dumps({
+                            "website_scan_summary": enrichment.get("website_scan_summary"),
+                            "forensic_memo": enrichment.get("forensic_memo"),
+                            "seo_rank_summary": enrichment.get("seo_rank_summary"),
+                            "paid_rank_summary": enrichment.get("paid_rank_summary"),
+                            "recommended_keywords": enrichment.get("recommended_keywords"),
+                            "aeo_strategy": enrichment.get("aeo_strategy"),
+                            "industry_action_items": enrichment.get("industry_action_items"),
+                            "competitor_leaders": enrichment.get("competitor_leaders"),
+                            "customer_review_highlights": enrichment.get("customer_review_highlights"),
+                            "staff_review_highlights": enrichment.get("staff_review_highlights"),
+                            "generated_at": datetime.now(timezone.utc).isoformat(),
+                        }),
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                    get_sb().table("business_profiles").update(profile_update).eq("id", profile["id"]).execute()
+            except Exception as profile_error:
+                logger.warning(f"[enrichment/website] Could not persist scan bundle to business profile: {profile_error}")
 
             asyncio.create_task(set_domain_scan(scan_domain, enrichment))
 
@@ -1680,7 +2394,46 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             }
         except Exception as e:
             logger.error(f"[enrichment/website] Scan failed: {e}")
-            return {"status": "error", "message": f"Failed to scan: {str(e)[:100]}"}
+            fallback_domain = normalize_domain(url)
+            fallback_name = fallback_domain.split(".")[0].replace("-", " ").title() if fallback_domain else "Business"
+            fallback_page_text = str(locals().get("page_text") or "")
+            fallback_title = str(locals().get("page_title") or "")
+            fallback_description = str(locals().get("meta_description") or "")
+            fallback_enrichment = {
+                "business_name": str(locals().get("business_name_hint") or fallback_name),
+                "title": fallback_title,
+                "description": fallback_description,
+                "industry": "",
+                "main_products_services": _extract_sentence_with_keywords(
+                    fallback_page_text,
+                    ["service", "solution", "product", "advisory", "consulting", "support"],
+                ),
+                "target_market": "",
+                "unique_value_proposition": "",
+                "competitive_advantages": "",
+                "competitors": [],
+                "abn": "",
+                "social_handles": {},
+                "trust_signals": [],
+                "website_scan_summary": {
+                    "domain": fallback_domain,
+                    "full_business_name": str(locals().get("business_name_hint") or fallback_name),
+                    "abn": "",
+                    "locations_detected": [],
+                    "contact_emails_detected": [],
+                    "pages_scanned_count": 1,
+                    "pages_scanned": [url],
+                    "scan_scope": "website page baseline",
+                },
+                "analysis_gaps": ["Deep scan partially unavailable on this run; showing baseline extraction."],
+                "sources": {"errors": [{"stage": "scan", "error": str(e)[:140]}]},
+            }
+            return {
+                "status": "draft",
+                "url": url,
+                "enrichment": fallback_enrichment,
+                "message": "Deep scan partially unavailable; baseline website extraction returned.",
+            }
 
     elif payload.action == "commit":
         try:

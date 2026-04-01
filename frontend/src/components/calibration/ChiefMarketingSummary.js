@@ -40,6 +40,16 @@ function computeOverall(layers, data) {
 
 // ── UI/UX Communication Audit (scored from extracted data) ──
 function buildCommunicationAudit(full) {
+  const serviceText = full.main_products_services || '';
+  const serviceItems = serviceText
+    .split(/[;,]/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+  const outcomeLanguage = /(increase|reduce|improve|grow|save|faster|roi|revenue|profit|conversion|quality)/i.test(serviceText);
+  const customerIntel = full.customer_review_intelligence && typeof full.customer_review_intelligence === 'object'
+    ? full.customer_review_intelligence
+    : {};
+  const reviewEvidenceCount = Number(customerIntel.review_count_last_12_months || 0) + Number(customerIntel.undated_review_count || 0);
   const checks = [
     {
       category: 'Value Proposition Clarity',
@@ -49,14 +59,18 @@ function buildCommunicationAudit(full) {
     },
     {
       category: 'Products & Services Communication',
-      score: full.main_products_services && full.main_products_services.length > 30 ? 6 : full.main_products_services ? 4 : 2,
-      evidence: full.main_products_services ? `Detected: "${full.main_products_services.substring(0, 100)}${full.main_products_services.length > 100 ? '...' : ''}"` : 'Products and services not clearly described on website.',
-      advice: 'List each service with a specific outcome or deliverable. Avoid capability language ("we provide") — use result language ("you get").',
+      score: serviceItems.length >= 4 && outcomeLanguage ? 8 : serviceItems.length >= 2 ? 6 : serviceText ? 4 : 2,
+      evidence: serviceText
+        ? `Detected ${serviceItems.length || 1} service line(s). Outcome language ${outcomeLanguage ? 'present' : 'missing'} in core offer copy.`
+        : 'Products and services not clearly described on website.',
+      advice: 'Define each product/service as: buyer type -> outcome -> timeframe -> proof asset. Add one CTA per offer block.',
     },
     {
       category: 'Social Proof & Trust',
-      score: full.customer_count ? 6 : full.team_size && full.founder_background ? 4 : 2,
-      evidence: full.customer_count ? `Client count reference detected.` : full.founder_background ? 'Founder background visible — client proof not detected.' : 'No social proof, testimonials, or client count detected.',
+      score: reviewEvidenceCount >= 8 ? 8 : reviewEvidenceCount >= 3 ? 6 : full.customer_count ? 5 : full.team_size && full.founder_background ? 4 : 2,
+      evidence: reviewEvidenceCount > 0
+        ? `${reviewEvidenceCount} public review signal(s) detected across external platforms.`
+        : (full.customer_count ? 'Client count reference detected.' : full.founder_background ? 'Founder background visible — client proof not detected.' : 'No social proof, testimonials, or client count detected.'),
       advice: 'Add 3 specific client results (not generic testimonials) with company name, measurable outcome, and timeframe.',
     },
     {
@@ -159,6 +173,21 @@ function buildCompetitorInsights(full) {
   };
 }
 
+function dedupeTextList(values, limit = 8) {
+  const seen = new Set();
+  const out = [];
+  for (const value of values || []) {
+    const text = String(value || '').trim();
+    if (!text) continue;
+    const key = text.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(text);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 function buildStaffSignals(full) {
   const teamMembers = Array.isArray(full.team_members) ? full.team_members : [];
   const teamSize = full.team_size || '';
@@ -174,129 +203,253 @@ function buildStaffSignals(full) {
       return '';
     })
     .filter(Boolean);
-  const staffReviewSignals = trustSignals.filter((signal) =>
-    /(glassdoor|indeed|seek|employee|staff|team review|culture)/i.test(signal)
+  const staffReviewSignals = trustSignals.filter((signal) => /(glassdoor|indeed|seek|employee|staff|team review|culture)/i.test(signal));
+  const staffIntel = (full.staff_review_intelligence && typeof full.staff_review_intelligence === 'object')
+    ? full.staff_review_intelligence
+    : {};
+  const browseStaffReviews = Array.isArray(full?.browse_ai_reviews?.staff_reviews) ? full.browse_ai_reviews.staff_reviews : [];
+  const platforms = Array.isArray(staffIntel.platforms) ? staffIntel.platforms : [];
+  const platformLabels = dedupeTextList([
+    ...platforms.map((p) => p?.platform),
+    ...browseStaffReviews.map((p) => p?.platform),
+    ...(Array.isArray(staffIntel.sources) ? staffIntel.sources : []),
+  ], 6);
+  const positiveSignals = dedupeTextList([
+    ...(Array.isArray(staffIntel.positive_signals) ? staffIntel.positive_signals : []),
+    ...(Array.isArray(full?.glassdoor_reviews?.positive) ? full.glassdoor_reviews.positive : []),
+  ], 6);
+  const negativeSignals = dedupeTextList([
+    ...(Array.isArray(staffIntel.negative_signals) ? staffIntel.negative_signals : []),
+    ...(Array.isArray(full?.glassdoor_reviews?.negative) ? full.glassdoor_reviews.negative : []),
+  ], 6);
+  const actionPlan = dedupeTextList([
+    ...(Array.isArray(staffIntel.action_plan) ? staffIntel.action_plan : []),
+  ], 5);
+  const evidence = dedupeTextList([
+    ...(Array.isArray(staffIntel.evidence) ? staffIntel.evidence : []),
+    ...(Array.isArray(full?.glassdoor_reviews?.snippets) ? full.glassdoor_reviews.snippets : []),
+  ], 8);
+  const reviewCountLast12Months = Number(staffIntel.review_count_last_12_months) || 0;
+  const undatedReviewCount = Number(staffIntel.undated_review_count) || 0;
+  const staffScore = (typeof staffIntel.staff_score === 'number')
+    ? staffIntel.staff_score
+    : (typeof full?.glassdoor_reviews?.rating === 'number' ? full.glassdoor_reviews.rating : null);
+  const windowLabel = staffIntel.window_label || 'last 12 months';
+  const hasStaffReviewIntel = Boolean(
+    reviewCountLast12Months > 0 ||
+    undatedReviewCount > 0 ||
+    positiveSignals.length > 0 ||
+    negativeSignals.length > 0 ||
+    evidence.length > 0 ||
+    platformLabels.length > 0 ||
+    staffScore !== null
   );
   const hasStaffData = Boolean(
     teamMembers.length > 0 ||
     teamSize ||
     founderBackground ||
-    staffReviewSignals.length > 0
+    staffReviewSignals.length > 0 ||
+    hasStaffReviewIntel
   );
-  return { teamMembers, teamSize, founderBackground, staffReviewSignals, hasStaffData };
+  return {
+    teamMembers,
+    teamSize,
+    founderBackground,
+    staffReviewSignals,
+    hasStaffData,
+    hasStaffReviewIntel,
+    reviewCountLast12Months,
+    undatedReviewCount,
+    staffScore,
+    windowLabel,
+    platformLabels,
+    positiveSignals,
+    negativeSignals,
+    actionPlan,
+    evidence,
+    sourcesTruthOnly: staffIntel.source_truth_only !== false,
+    platforms,
+  };
 }
 
 function buildCustomerReviewSignals(full) {
-  const trustSignalsRaw = Array.isArray(full.trust_signals) ? full.trust_signals : [];
-  const trustSignals = trustSignalsRaw
-    .map((item) => {
-      if (!item) return '';
-      if (typeof item === 'string') return item.trim();
-      if (typeof item === 'object') return (item.signal || item.title || item.label || item.text || '').toString().trim();
-      return '';
-    })
-    .filter(Boolean);
+  const customerIntel = (full.customer_review_intelligence && typeof full.customer_review_intelligence === 'object')
+    ? full.customer_review_intelligence
+    : {};
+  const windowLabel = customerIntel.window_label || 'last 12 months';
+  const reviewCountLast12Months = Number(customerIntel.review_count_last_12_months) || 0;
+  const undatedReviewCount = Number(customerIntel.undated_review_count) || 0;
+  const reviewCountTotalEstimate = Number(customerIntel.review_count_total_estimate)
+    || Number(full?.google_reviews?.review_count)
+    || 0;
+  const customerScore = (typeof customerIntel.customer_score === 'number')
+    ? customerIntel.customer_score
+    : (typeof full?.review_aggregation?.combined_score === 'number'
+      ? full.review_aggregation.combined_score
+      : (typeof full?.google_reviews?.star_rating === 'number' ? full.google_reviews.star_rating : null));
+  const platforms = Array.isArray(customerIntel.platforms) ? customerIntel.platforms : [];
+  const platformLabels = dedupeTextList(platforms.map((p) => p?.platform), 8);
+  const positiveSignals = dedupeTextList([
+    ...(Array.isArray(customerIntel.positive_signals) ? customerIntel.positive_signals : []),
+    ...(Array.isArray(full?.google_reviews?.positive) ? full.google_reviews.positive : []),
+  ], 10);
+  const negativeSignals = dedupeTextList([
+    ...(Array.isArray(customerIntel.negative_signals) ? customerIntel.negative_signals : []),
+    ...(Array.isArray(full?.google_reviews?.negative) ? full.google_reviews.negative : []),
+  ], 10);
+  const topRecent = dedupeTextList([
+    ...(Array.isArray(customerIntel.top_recent) ? customerIntel.top_recent : []),
+    ...(Array.isArray(full?.review_aggregation?.top_recent) ? full.review_aggregation.top_recent : []),
+  ], 6);
+  const actionPlan = dedupeTextList([
+    ...(Array.isArray(customerIntel.action_plan) ? customerIntel.action_plan : []),
+  ], 6);
+  const reviewEvidence = dedupeTextList([
+    ...(Array.isArray(customerIntel.evidence) ? customerIntel.evidence : []),
+    ...topRecent,
+    ...(Array.isArray(full?.google_reviews?.snippets) ? full.google_reviews.snippets : []),
+  ], 12);
+  const sourceLabels = dedupeTextList(Array.isArray(customerIntel.sources) ? customerIntel.sources : [], 8);
+  const sourcesTruthOnly = customerIntel.source_truth_only !== false;
 
-  const customerReviewSignals = trustSignals.filter((signal) =>
-    /(testimonial|case stud|review|google review|productreview|rating|social proof)/i.test(signal)
+  const hasReviewData = Boolean(
+    reviewCountLast12Months > 0 ||
+    undatedReviewCount > 0 ||
+    reviewCountTotalEstimate > 0 ||
+    customerScore !== null ||
+    positiveSignals.length > 0 ||
+    negativeSignals.length > 0 ||
+    reviewEvidence.length > 0 ||
+    platforms.length > 0
   );
 
-  const reviewEvidence = [
-    ...(full.customer_count ? [`Client count signal: ${full.customer_count}`] : []),
-    ...(full.case_studies ? ['Case studies detected in public footprint'] : []),
-    ...(full.testimonials ? ['Testimonials detected in public footprint'] : []),
-    ...customerReviewSignals,
-  ].filter(Boolean);
+  let confidenceBand = 'low';
+  if (reviewCountLast12Months >= 12) confidenceBand = 'high';
+  else if (reviewCountLast12Months >= 4) confidenceBand = 'medium-high';
+  else if (reviewCountLast12Months >= 1) confidenceBand = 'medium';
+  else if (undatedReviewCount > 0 || reviewEvidence.length > 0) confidenceBand = 'medium-low';
 
-  const hasReviewData = reviewEvidence.length > 0;
-  const confidenceBand = hasReviewData ? (reviewEvidence.length >= 3 ? 'medium-high' : 'medium') : 'low';
-
-  const evidenceCount = reviewEvidence.length;
-  const strongEvidence = evidenceCount >= 3;
-  const weakEvidence = evidenceCount > 0 && evidenceCount < 3;
-  const evidenceSummary = reviewEvidence.slice(0, 3).join(', ');
+  const netSentiment = positiveSignals.length - negativeSignals.length;
+  const pressureLevel = negativeSignals.length >= 5 ? 'high' : negativeSignals.length >= 2 ? 'moderate' : 'low';
+  const recentVolume = reviewCountLast12Months + undatedReviewCount;
+  const summaryBits = [
+    `${reviewCountLast12Months} dated`,
+    `${undatedReviewCount} undated`,
+    `${positiveSignals.length} positive`,
+    `${negativeSignals.length} negative`,
+  ].join(', ');
 
   let impact;
-  if (strongEvidence) {
+  if (!hasReviewData) {
     impact = [
       {
         fundamental: 'Conversion rate',
-        impact: 'Positive lift expected',
-        mechanism: `Found ${evidenceCount} social-proof signals (${evidenceSummary}) — strong visible trust markers typically support higher visitor-to-enquiry conversion.`,
+        impact: 'Unverified',
+        mechanism: 'No source-verifiable customer review evidence was captured from current public sources.',
       },
       {
         fundamental: 'Customer acquisition cost',
-        impact: 'Efficiency gain expected',
-        mechanism: `${evidenceCount} verified proof points reduce the trust gap in paid and organic funnels, lowering cost per qualified lead.`,
+        impact: 'Risk of inefficiency',
+        mechanism: 'Without review evidence, trust-building burden shifts to paid media and sales conversations.',
       },
       {
-        fundamental: 'Gross profit',
-        impact: 'Margin support likely',
-        mechanism: `Multiple proof signals (${evidenceCount} detected) strengthen value-based pricing and reduce discount pressure during sales.`,
+        fundamental: 'Operating margin',
+        impact: 'Blind spot',
+        mechanism: 'No complaint trend data means operations cannot prioritise fixes based on external customer voice.',
       },
     ];
-  } else if (weakEvidence) {
+  } else if (negativeSignals.length > positiveSignals.length) {
     impact = [
       {
         fundamental: 'Conversion rate',
-        impact: 'Modest lift possible',
-        mechanism: `Found ${evidenceCount} proof signal${evidenceCount === 1 ? '' : 's'} (${evidenceSummary}) — limited social proof may partially support conversion but leaves trust gaps.`,
+        impact: 'Downside pressure',
+        mechanism: `Recent review mix is net negative (${summaryBits}), which can suppress enquiry conversion.`,
       },
       {
         fundamental: 'Customer acquisition cost',
-        impact: 'Minor efficiency gain',
-        mechanism: `Only ${evidenceCount} visible proof marker${evidenceCount === 1 ? '' : 's'} detected — insufficient density to materially reduce acquisition cost.`,
+        impact: 'Cost pressure',
+        mechanism: `Negative proof density is ${pressureLevel}; paid campaigns may need higher spend to offset trust friction.`,
       },
       {
-        fundamental: 'Gross profit',
-        impact: 'Neutral to slight support',
-        mechanism: `Thin proof layer (${evidenceCount} signal${evidenceCount === 1 ? '' : 's'}) provides limited pricing leverage — expanding case studies would strengthen margin.`,
+        fundamental: 'Operating margin',
+        impact: 'Fixable with execution',
+        mechanism: actionPlan.length > 0
+          ? `Operational recovery path identified: ${actionPlan[0]}`
+          : 'Complaint themes indicate operational leakage that can be reduced through structured service-quality fixes.',
       },
     ];
   } else {
     impact = [
       {
         fundamental: 'Conversion rate',
-        impact: 'Drag risk — no proof detected',
-        mechanism: 'No visible customer reviews, testimonials, or case studies found — prospects lack third-party validation to support purchase decisions.',
+        impact: 'Supportive',
+        mechanism: `Review mix is net positive (${summaryBits}), strengthening purchase confidence in-market.`,
       },
       {
         fundamental: 'Customer acquisition cost',
-        impact: 'Elevated cost risk',
-        mechanism: 'No detected social proof means paid campaigns must work harder to build trust, increasing cost per acquisition.',
+        impact: 'Efficiency support',
+        mechanism: `${recentVolume} customer review signal${recentVolume === 1 ? '' : 's'} increase trust transfer across paid and organic funnels.`,
       },
       {
-        fundamental: 'Gross profit',
-        impact: 'Margin pressure risk',
-        mechanism: 'Absence of verifiable proof often forces sales to compensate with discounting. No review footprint detected in this scan.',
+        fundamental: 'Operating margin',
+        impact: netSentiment > 0 ? 'Stable to improving' : 'Monitor closely',
+        mechanism: actionPlan.length > 0
+          ? `Even with positive sentiment, focus on recurring issues: ${actionPlan[0]}`
+          : 'Sentiment trend is currently manageable; maintain structured review-response and issue-resolution cadence.',
       },
     ];
   }
-  const topEvidence = reviewEvidence.slice(0, 3).join(' | ');
-  const depthNarrative = hasReviewData
-    ? `Observed ${reviewEvidence.length} customer-proof marker${reviewEvidence.length === 1 ? '' : 's'} in public footprint${topEvidence ? `: ${topEvidence}.` : '.'} Revenue impact model uses only detected signals and scales confidence to ${confidenceBand}.`
-    : 'No verifiable customer review footprint detected in this scan, so BIQc suppresses deep narrative claims until stronger evidence is observed.';
 
-  return { reviewEvidence, customerReviewSignals, hasReviewData, confidenceBand, impact, depthNarrative };
+  const depthNarrative = hasReviewData
+    ? `Customer review intelligence is grounded in ${windowLabel} public evidence (${summaryBits}) from ${sourceLabels.length > 0 ? sourceLabels.join(', ') : 'detected platforms'}. Source-truth policy is ${sourcesTruthOnly ? 'enforced' : 'partial'}, with no inferred or fabricated review claims.`
+    : 'No source-verifiable customer reviews were captured in this scan window, so BIQc suppresses deeper narrative claims until stronger external evidence is available.';
+
+  return {
+    hasReviewData,
+    confidenceBand,
+    reviewEvidence,
+    impact,
+    depthNarrative,
+    windowLabel,
+    reviewCountLast12Months,
+    undatedReviewCount,
+    reviewCountTotalEstimate,
+    customerScore,
+    platforms,
+    platformLabels,
+    sourceLabels,
+    sourcesTruthOnly,
+    positiveSignals,
+    negativeSignals,
+    actionPlan,
+    topRecent,
+  };
 }
 
 function buildStaffImpactSignals(staffSignals) {
-  const reviewCount = (staffSignals.staffReviewSignals || []).length;
+  const reviewCount = Number(staffSignals.reviewCountLast12Months) || 0;
+  const undatedCount = Number(staffSignals.undatedReviewCount) || 0;
   const teamMemberCount = (staffSignals.teamMembers || []).length;
   const hasTeamMembers = teamMemberCount > 0;
   const hasFounder = Boolean(staffSignals.founderBackground);
   const hasTeamSize = Boolean(staffSignals.teamSize);
+  const hasReviewIntel = Boolean(staffSignals.hasStaffReviewIntel);
+  const positiveCount = (staffSignals.positiveSignals || []).length;
+  const negativeCount = (staffSignals.negativeSignals || []).length;
+  const scoreAvailable = typeof staffSignals.staffScore === 'number';
   const hasAny = staffSignals.hasStaffData;
 
   const signalParts = [];
   if (hasTeamMembers) signalParts.push(`${teamMemberCount} named team member${teamMemberCount === 1 ? '' : 's'}`);
   if (hasTeamSize) signalParts.push(`team size: ${staffSignals.teamSize}`);
   if (hasFounder) signalParts.push('founder background detected');
-  if (reviewCount > 0) signalParts.push(`${reviewCount} staff review signal${reviewCount === 1 ? '' : 's'}`);
+  if (reviewCount > 0) signalParts.push(`${reviewCount} dated staff review${reviewCount === 1 ? '' : 's'} in ${staffSignals.windowLabel || 'last 12 months'}`);
+  if (undatedCount > 0) signalParts.push(`${undatedCount} undated staff mention${undatedCount === 1 ? '' : 's'}`);
+  if (scoreAvailable) signalParts.push(`staff score ${staffSignals.staffScore}/5`);
   const signalSummary = signalParts.join(', ');
 
   let impact;
-  if (hasAny && (hasTeamMembers || reviewCount > 0)) {
+  if (hasAny && (hasTeamMembers || hasReviewIntel)) {
     impact = [
       {
         fundamental: 'Service delivery capacity',
@@ -307,16 +460,16 @@ function buildStaffImpactSignals(staffSignals) {
       },
       {
         fundamental: 'Revenue retention',
-        impact: reviewCount > 0 ? 'Retention support indicated' : 'Limited retention signal',
-        mechanism: reviewCount > 0
-          ? `${reviewCount} staff review signal${reviewCount === 1 ? '' : 's'} detected — positive team culture markers correlate with consistent client experience.`
-          : `No staff review signals found. Team health is not publicly verifiable — retention impact cannot be assessed from available data.`,
+        impact: hasReviewIntel ? 'Retention support measurable' : 'Limited retention signal',
+        mechanism: hasReviewIntel
+          ? `${reviewCount} dated and ${undatedCount} undated staff review signal${(reviewCount + undatedCount) === 1 ? '' : 's'} detected (${positiveCount} positive, ${negativeCount} negative) — retention view is grounded in external review evidence.`
+          : `No staff review intelligence found. Team health is not publicly verifiable — retention impact cannot be assessed from available data.`,
       },
       {
         fundamental: 'Operating profit',
-        impact: reviewCount > 0 && hasTeamMembers ? 'Margin support indicated' : 'Insufficient data for margin assessment',
-        mechanism: reviewCount > 0 && hasTeamMembers
-          ? `Combined evidence (${signalSummary}) suggests manageable team friction — lower rework and escalation costs support operating margin.`
+        impact: hasReviewIntel && hasTeamMembers ? 'Margin support indicated' : 'Insufficient data for margin assessment',
+        mechanism: hasReviewIntel && hasTeamMembers
+          ? `Combined evidence (${signalSummary}) suggests where team friction is manageable vs rising — this informs rework risk and operating margin pressure.`
           : `Only partial team signals found (${signalSummary}). Insufficient evidence to assess margin impact with confidence.`,
       },
     ];
@@ -359,7 +512,7 @@ function buildStaffImpactSignals(staffSignals) {
   }
 
   const depthNarrative = hasAny
-    ? `Staff intelligence is derived from ${signalSummary}. Impact assessments are scoped strictly to verified public signals — no assumptions about internal team dynamics.`
+    ? `Staff intelligence is derived from ${signalSummary}. Impact assessments are scoped strictly to source-verifiable public signals — no assumptions about internal team dynamics.`
     : 'No public staff-review or structure markers were verified. BIQc reports risk posture only and does not infer hidden team dynamics.';
 
   return { impact, depthNarrative };
@@ -394,6 +547,16 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
   const customerReviews = buildCustomerReviewSignals(full);
   const staffImpact = buildStaffImpactSignals(staff);
   const cmoExecutiveBrief = full.cmo_executive_brief || full.executive_summary || '';
+  const forensicMemo = full.forensic_memo || '';
+  const websiteScanSummary = (full.website_scan_summary && typeof full.website_scan_summary === 'object') ? full.website_scan_summary : {};
+  const seoRankSummary = full.seo_rank_summary || '';
+  const paidRankSummary = full.paid_rank_summary || '';
+  const recommendedKeywords = Array.isArray(full.recommended_keywords) ? full.recommended_keywords : [];
+  const aeoStrategy = Array.isArray(full.aeo_strategy) ? full.aeo_strategy : [];
+  const industryActionItems = Array.isArray(full.industry_action_items) ? full.industry_action_items : [];
+  const competitorLeaders = Array.isArray(full.competitor_leaders) ? full.competitor_leaders : [];
+  const customerReviewHighlights = (full.customer_review_highlights && typeof full.customer_review_highlights === 'object') ? full.customer_review_highlights : {};
+  const staffReviewHighlights = (full.staff_review_highlights && typeof full.staff_review_highlights === 'object') ? full.staff_review_highlights : {};
   const websiteHealth = full.website_health || {};
   const seoAnalysis = full.seo_analysis || {};
   const paidAnalysis = full.paid_media_analysis || {};
@@ -417,11 +580,6 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
   const bizName = full.business_name || wowSummary?.business_name || 'This business';
   const industry = full.industry || '';
   const whatYouDo = full.main_products_services || wowSummary?.what_you_do || '';
-  const whoYouServe = full.target_market || full.ideal_customer_profile || wowSummary?.who_you_serve || '';
-  const model = full.business_model || '';
-  const uvp = full.unique_value_proposition || wowSummary?.what_sets_you_apart || '';
-  const challenges = full.main_challenges || wowSummary?.biggest_challenges || '';
-  const growth = full.growth_strategy || wowSummary?.growth_opportunity || '';
 
   return (
     <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="chief-marketing-summary">
@@ -442,46 +600,65 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           </p>
         </div>
 
-        {/* ── SECTION 1: BUSINESS SUMMARY ── */}
+        {/* ── SECTION 1: FORENSIC MEMO ── */}
         <div className="rounded-xl p-6 space-y-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 0.6s ease-out' }} data-testid="business-summary">
           <div className="flex items-center gap-2 mb-1">
             <Target className="w-4 h-4" style={{ color: '#FF6A00' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Business Intelligence Summary</h2>
+            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Forensic Marketing Memo</h2>
           </div>
+
+          {forensicMemo ? (
+            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+              {forensicMemo}
+            </p>
+          ) : null}
 
           {whatYouDo ? (
             <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
               <strong style={{ color: 'var(--biqc-text)' }}>{bizName}</strong>
-              {industry ? ` operates in the ${industry} sector` : ''}.
-              {whatYouDo ? ` ${whatYouDo}.` : ''}
+              {industry ? ` operates in the ${industry} sector` : ''}. {whatYouDo}.
             </p>
           ) : null}
 
-          {whoYouServe ? (
+          {(seoRankSummary || paidRankSummary) ? (
             <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              Their primary market is <strong style={{ color: 'var(--biqc-text)' }}>{whoYouServe}</strong>{model ? `, operating on a ${model} model` : ''}.
+              <strong style={{ color: 'var(--biqc-text)' }}>SEO ranking:</strong> {seoRankSummary || 'Data not available on free tier.'}{' '}
+              <strong style={{ color: 'var(--biqc-text)' }}>Paid marketing:</strong> {paidRankSummary || 'Data not available on free tier.'}
             </p>
           ) : null}
 
-          {uvp ? (
-            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              Their stated competitive position: <em style={{ color: 'var(--biqc-text)' }}>"{uvp.substring(0, 180)}{uvp.length > 180 ? '...' : ''}"</em>
+          {recommendedKeywords.length > 0 && (
+            <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+              <strong style={{ color: 'var(--biqc-text)' }}>Priority keywords:</strong> {recommendedKeywords.slice(0, 8).join(' · ')}
             </p>
-          ) : null}
+          )}
 
-          {challenges ? (
-            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              Key challenges identified: {challenges.substring(0, 160)}{challenges.length > 160 ? '...' : ''}
-            </p>
-          ) : null}
+          {aeoStrategy.length > 0 && (
+            <div className="space-y-1">
+              {aeoStrategy.slice(0, 3).map((line, idx) => (
+                <p key={idx} className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+                  - {line}
+                </p>
+              ))}
+            </div>
+          )}
 
-          {growth ? (
-            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              Growth focus: {growth.substring(0, 160)}{growth.length > 160 ? '...' : ''}
-            </p>
-          ) : null}
+          {websiteScanSummary && Object.keys(websiteScanSummary).length > 0 && (
+            <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Website Scan Coverage</p>
+              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                ABN: {websiteScanSummary.abn || 'Data not available on free tier'} · Full business name: {websiteScanSummary.full_business_name || bizName}
+              </p>
+              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                Locations: {(websiteScanSummary.locations_detected || []).length > 0 ? websiteScanSummary.locations_detected.slice(0, 3).join(', ') : 'Data not available on free tier'}
+              </p>
+              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                Contact emails: {(websiteScanSummary.contact_emails_detected || []).length > 0 ? websiteScanSummary.contact_emails_detected.slice(0, 5).join(', ') : 'Data not available on free tier'}
+              </p>
+            </div>
+          )}
 
-          {!whatYouDo && !whoYouServe && !uvp && (
+          {!forensicMemo && !whatYouDo && !seoRankSummary && (
             <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Insufficient website data to generate business summary. Manual profile completion recommended.</p>
           )}
         </div>
@@ -777,77 +954,31 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           </div>
         </div>
 
-        {/* ── SECTION 4: GEOGRAPHIC MARKET PRESENCE ── */}
-        <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.2s ease-out' }} data-testid="geographic-presence">
-          <div className="flex items-center gap-2 mb-3">
-            <Globe className="w-4 h-4" style={{ color: '#7C3AED' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Geographic Market Presence & Expansion</h2>
-          </div>
-
-          {/* Current presence */}
-          {geo.loc ? (
-            <p className="text-sm text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
-              Based on publicly detectable signals, <strong style={{ color: 'var(--biqc-text)' }}>{bizName}</strong> currently serves clients in and around <strong style={{ color: 'var(--biqc-text)' }}>{geo.loc}</strong>.
-              {full.industry ? ` Operating in the ${full.industry} sector` : ''}{full.business_model ? ` with a ${full.business_model} model.` : '.'}
-            </p>
-          ) : (
-            <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>No location data detected from website or registry.</p>
-          )}
-
-          {geo.hasSocialPresence ? (
-            <p className="text-xs text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
-              Active social presence on {geo.activeSocials.join(', ')} extends reach beyond primary geography.
-            </p>
-          ) : (
-            <div className="flex items-start gap-2 p-2.5 rounded-lg mb-3" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20' }}>
-              <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B] shrink-0 mt-0.5" />
-              <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>No active social media presence detected. Geographic reach is limited to direct traffic and word of mouth.</p>
-            </div>
-          )}
-
-          {full.geographic_focus && full.geographic_focus !== full.location && (
-            <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>Declared geographic focus: {full.geographic_focus}</p>
-          )}
-
-          {/* Business type classification */}
-          <div className="p-3 rounded-lg mb-3" style={{ background: '#111A25', border: '1px solid #243140' }}>
-            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#7C3AED', fontFamily: fontFamily.mono }}>Business Type Assessment</p>
-            <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-              {geo.isDigital && 'Digital/SaaS business model detected — global expansion is viable with low marginal cost per new market.'}
-              {geo.isLocal && !geo.isDigital && 'Local/physical service model detected — geographic expansion follows adjacency and replication strategies.'}
-              {geo.isConsulting && !geo.isDigital && !geo.isLocal && 'Consulting/advisory model detected — remote delivery enables national and international reach.'}
-              {!geo.isDigital && !geo.isLocal && !geo.isConsulting && 'General business model — expansion strategy depends on digital capability and service delivery method.'}
-            </p>
-            {full.main_products_services && (
-              <p className="text-[11px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.body }}>
-                Based on offering: "{full.main_products_services.substring(0, 120)}{full.main_products_services.length > 120 ? '...' : ''}"
-              </p>
-            )}
-          </div>
-
-          {/* Expansion recommendations */}
-          {geo.expansionRecommendations.length > 0 && (
-            <div>
-              <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Recommended Expansion Markets</p>
-              <div className="space-y-2">
-                {geo.expansionRecommendations.map((rec, idx) => (
-                  <div key={idx} className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
-                    <p className="text-xs font-semibold mb-1" style={{ color: '#10B981', fontFamily: fontFamily.body }}>{rec.region}</p>
-                    <p className="text-[11px] text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{rec.rationale}</p>
-                    <p className="text-[10px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.mono }}>Evidence: {rec.evidence}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* ── SECTION 5: COMPETITIVE INTELLIGENCE ── */}
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.4s ease-out' }} data-testid="competitor-intelligence">
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-4 h-4" style={{ color: '#EF4444' }} />
             <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Competitive Intelligence</h2>
           </div>
+          {competitorLeaders.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {competitorLeaders.slice(0, 3).map((leader, idx) => (
+                <div key={idx} className="p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.body }}>
+                    #{idx + 1} {leader?.name || `Category leader ${idx + 1}`}
+                  </p>
+                  <p className="text-[11px] text-[#9FB0C3] mb-1" style={{ fontFamily: fontFamily.body }}>
+                    {leader?.why_leading || 'Visibility leader in this category.'}
+                  </p>
+                  {Array.isArray(leader?.what_to_learn) && leader.what_to_learn.length > 0 && (
+                    <p className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.body }}>
+                      Learnings: {leader.what_to_learn.slice(0, 2).join(' · ')}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           {competitors.hasCompetitorData ? (
             <>
               {competitors.competitiveAdvantages && (
@@ -935,7 +1066,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               )}
             </>
           ) : (
-            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No competitor data detected from publicly available sources. BIQc does not assume or fabricate competitor information — run an Exposure Scan to unlock this analysis.</p>
+            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Data not available on free tier.</p>
           )}
         </div>
 
@@ -949,108 +1080,134 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             </span>
           </div>
 
-          {/* Google Reviews + Glassdoor aggregated scores */}
-          {(full.google_reviews?.has_data || full.glassdoor_reviews?.has_data || full.review_aggregation?.has_data) && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
-              {full.google_reviews?.has_data && (
-                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #F59E0B30' }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Google Reviews</p>
-                  {full.google_reviews.star_rating != null && (
-                    <p className="text-lg font-bold" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
-                      {full.google_reviews.star_rating}<span className="text-xs font-normal text-[#64748B]">/5</span>
-                    </p>
-                  )}
-                  {full.google_reviews.review_count != null && (
-                    <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{full.google_reviews.review_count.toLocaleString()} reviews</p>
-                  )}
-                  {!full.google_reviews.star_rating && !full.google_reviews.review_count && full.google_reviews.snippets?.length > 0 && (
-                    <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{full.google_reviews.snippets.length} review signal{full.google_reviews.snippets.length === 1 ? '' : 's'} detected</p>
-                  )}
-                </div>
-              )}
-              {full.glassdoor_reviews?.has_data && (
-                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #8B5CF630' }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#8B5CF6', fontFamily: fontFamily.mono }}>Glassdoor</p>
-                  {full.glassdoor_reviews.rating != null && (
-                    <p className="text-lg font-bold" style={{ color: '#8B5CF6', fontFamily: fontFamily.mono }}>
-                      {full.glassdoor_reviews.rating}<span className="text-xs font-normal text-[#64748B]">/5</span>
-                    </p>
-                  )}
-                  {full.glassdoor_reviews.snippets?.length > 0 && (
-                    <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{full.glassdoor_reviews.snippets.length} employee review signal{full.glassdoor_reviews.snippets.length === 1 ? '' : 's'}</p>
-                  )}
-                </div>
-              )}
-              {full.review_aggregation?.has_data && (
-                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #10B98130' }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Aggregated</p>
-                  {full.review_aggregation.combined_score != null && (
-                    <p className="text-lg font-bold" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>
-                      {full.review_aggregation.combined_score}<span className="text-xs font-normal text-[#64748B]">/5</span>
-                    </p>
-                  )}
-                  <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
-                    <span style={{ color: '#10B981' }}>{full.review_aggregation.positive_count || 0}</span> positive · <span style={{ color: '#EF4444' }}>{full.review_aggregation.negative_count || 0}</span> negative
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Top 3 recent reviews */}
-          {full.review_aggregation?.top_recent?.length > 0 && (
-            <div className="mb-4">
-              <p className="text-[10px] uppercase tracking-widest mb-1.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Most Recent Review Signals</p>
-              <div className="space-y-1.5">
-                {full.review_aggregation.top_recent.slice(0, 3).map((snippet, idx) => (
-                  <p key={idx} className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-                    "{snippet}"
-                  </p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Positive vs Negative split */}
-          {(full.google_reviews?.positive?.length > 0 || full.google_reviews?.negative?.length > 0 || full.glassdoor_reviews?.positive?.length > 0 || full.glassdoor_reviews?.negative?.length > 0) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
-              {((full.google_reviews?.positive?.length || 0) + (full.glassdoor_reviews?.positive?.length || 0)) > 0 && (
-                <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Positive Signals</p>
-                  {[...(full.google_reviews?.positive || []), ...(full.glassdoor_reviews?.positive || [])].slice(0, 3).map((s, idx) => (
-                    <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>"{s}"</p>
-                  ))}
-                </div>
-              )}
-              {((full.google_reviews?.negative?.length || 0) + (full.glassdoor_reviews?.negative?.length || 0)) > 0 && (
-                <div className="p-3 rounded-lg" style={{ background: '#EF444408', border: '1px solid #EF444420' }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>Negative Signals</p>
-                  {[...(full.google_reviews?.negative || []), ...(full.glassdoor_reviews?.negative || [])].slice(0, 3).map((s, idx) => (
-                    <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>"{s}"</p>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {customerReviews.reviewEvidence.length > 0 ? (
+          {customerReviews.hasReviewData ? (
             <>
+              {(Array.isArray(customerReviewHighlights.best_reviews) || Array.isArray(customerReviewHighlights.worst_reviews)) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-3">
+                  <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Top 3 Best Reviews</p>
+                    {(customerReviewHighlights.best_reviews || []).slice(0, 3).map((item, idx) => (
+                      <p key={idx} className="text-[11px] text-[#9FB0C3] mb-1" style={{ fontFamily: fontFamily.body }}>
+                        "{item?.review}" -> Action: {item?.action_item}
+                      </p>
+                    ))}
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ background: '#EF444408', border: '1px solid #EF444420' }}>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>Top 3 Worst Reviews</p>
+                    {(customerReviewHighlights.worst_reviews || []).slice(0, 3).map((item, idx) => (
+                      <p key={idx} className="text-[11px] text-[#9FB0C3] mb-1" style={{ fontFamily: fontFamily.body }}>
+                        "{item?.review}" -> Action: {item?.action_item}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="p-3 rounded-lg mb-3" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+                <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>
+                  Source-Bounded Window ({customerReviews.windowLabel})
+                </p>
+                <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                  {customerReviews.reviewCountLast12Months} dated review signal{customerReviews.reviewCountLast12Months === 1 ? '' : 's'}
+                  {customerReviews.undatedReviewCount > 0 ? ` · ${customerReviews.undatedReviewCount} undated mention${customerReviews.undatedReviewCount === 1 ? '' : 's'}` : ''}
+                  {customerReviews.reviewCountTotalEstimate > 0 ? ` · estimated ${customerReviews.reviewCountTotalEstimate.toLocaleString()} total public reviews` : ''}
+                </p>
+                <p className="text-[11px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.mono }}>
+                  Source truth only: {customerReviews.sourcesTruthOnly ? 'yes' : 'partial'}
+                  {customerReviews.sourceLabels.length > 0 ? ` · platforms: ${customerReviews.sourceLabels.join(', ')}` : ''}
+                </p>
+              </div>
+
+              {(customerReviews.customerScore != null || customerReviews.platforms.length > 0) && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
+                  {customerReviews.customerScore != null && (
+                    <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #10B98130' }}>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Blended Customer Score</p>
+                      <p className="text-lg font-bold" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>
+                        {customerReviews.customerScore}<span className="text-xs font-normal text-[#64748B]">/5</span>
+                      </p>
+                    </div>
+                  )}
+                  {customerReviews.platforms.slice(0, 2).map((platform, idx) => (
+                    <div key={idx} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #F59E0B30' }}>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                        {String(platform?.platform || 'Review source')}
+                      </p>
+                      {platform?.rating != null && (
+                        <p className="text-lg font-bold" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                          {platform.rating}<span className="text-xs font-normal text-[#64748B]">/5</span>
+                        </p>
+                      )}
+                      <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                        {Number(platform?.review_count) || 0} reviews · {Number(platform?.last_12_months_count) || 0} dated
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {customerReviews.topRecent.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-[10px] uppercase tracking-widest mb-1.5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Most Recent Review Signals</p>
+                  <div className="space-y-1.5">
+                    {customerReviews.topRecent.slice(0, 4).map((snippet, idx) => (
+                      <p key={idx} className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+                        "{snippet}"
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(customerReviews.positiveSignals.length > 0 || customerReviews.negativeSignals.length > 0) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
+                  {customerReviews.positiveSignals.length > 0 && (
+                    <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Positive Signals</p>
+                      {customerReviews.positiveSignals.slice(0, 4).map((s, idx) => (
+                        <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>"{s}"</p>
+                      ))}
+                    </div>
+                  )}
+                  {customerReviews.negativeSignals.length > 0 && (
+                    <div className="p-3 rounded-lg" style={{ background: '#EF444408', border: '1px solid #EF444420' }}>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>Negative Signals</p>
+                      {customerReviews.negativeSignals.slice(0, 4).map((s, idx) => (
+                        <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>"{s}"</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="mb-3">
                 <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Explicit Public Review Evidence</p>
                 <div className="space-y-1.5">
-                  {customerReviews.reviewEvidence.slice(0, 5).map((signal, idx) => (
+                  {customerReviews.reviewEvidence.slice(0, 6).map((signal, idx) => (
                     <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
                       - {signal}
                     </p>
                   ))}
                 </div>
               </div>
+
+              {customerReviews.actionPlan.length > 0 && (
+                <div className="mb-4 p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #3B82F640' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Operations Action Plan</p>
+                  <div className="space-y-1">
+                    {customerReviews.actionPlan.slice(0, 4).map((step, idx) => (
+                      <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                        {idx + 1}. {step}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
-          ) : !full.google_reviews?.has_data && !full.glassdoor_reviews?.has_data ? (
+          ) : (
             <p className="text-xs text-[#64748B] mb-3" style={{ fontFamily: fontFamily.mono }}>
-              No explicit customer review markers were found in the current public scan.
+              Data not available on free tier.
             </p>
-          ) : null}
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
             {customerReviews.impact.map((row, idx) => (
@@ -1078,6 +1235,40 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           </div>
           {staff.hasStaffData ? (
             <div className="space-y-3">
+              {(staffReviewHighlights.glassdoor_score != null || (staffReviewHighlights.top_positive_reviews || []).length > 0 || (staffReviewHighlights.top_negative_reviews || []).length > 0) && (
+                <div className="p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Glassdoor & Employer Review Scan</p>
+                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    Glassdoor score: {staffReviewHighlights.glassdoor_score != null ? `${staffReviewHighlights.glassdoor_score}/5` : 'Data not available on free tier'}
+                  </p>
+                  {(staffReviewHighlights.top_positive_reviews || []).slice(0, 3).map((txt, idx) => (
+                    <p key={`pos-${idx}`} className="text-[11px] text-[#9FB0C3] mt-1" style={{ fontFamily: fontFamily.body }}>
+                      Positive: "{txt}"
+                    </p>
+                  ))}
+                  {(staffReviewHighlights.top_negative_reviews || []).slice(0, 3).map((item, idx) => (
+                    <p key={`neg-${idx}`} className="text-[11px] text-[#9FB0C3] mt-1" style={{ fontFamily: fontFamily.body }}>
+                      Negative: "{item?.review}" -> Action: {item?.action_item}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {staff.hasStaffReviewIntel && (
+                <div className="p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>
+                    Staff Review Intelligence ({staff.windowLabel || 'last 12 months'})
+                  </p>
+                  <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    {staff.reviewCountLast12Months} dated review signal{staff.reviewCountLast12Months === 1 ? '' : 's'}
+                    {staff.undatedReviewCount > 0 ? ` · ${staff.undatedReviewCount} undated mention${staff.undatedReviewCount === 1 ? '' : 's'}` : ''}
+                    {staff.staffScore != null ? ` · blended staff score ${staff.staffScore}/5` : ''}
+                  </p>
+                  <p className="text-[11px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.mono }}>
+                    Source truth only: {staff.sourcesTruthOnly ? 'yes' : 'partial'}
+                    {staff.platformLabels.length > 0 ? ` · platforms: ${staff.platformLabels.join(', ')}` : ''}
+                  </p>
+                </div>
+              )}
               {(staff.teamSize || staff.teamMembers.length > 0) && (
                 <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
                   Team footprint: {staff.teamSize || `${staff.teamMembers.length} named team member${staff.teamMembers.length === 1 ? '' : 's'} detected`}.
@@ -1103,6 +1294,25 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   </p>
                 </div>
               )}
+              {staff.platforms.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {staff.platforms.slice(0, 3).map((p, idx) => (
+                    <div key={idx} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #3B82F630' }}>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>
+                        {String(p?.platform || 'Staff source')}
+                      </p>
+                      {p?.rating != null && (
+                        <p className="text-lg font-bold" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>
+                          {p.rating}<span className="text-xs font-normal text-[#64748B]">/5</span>
+                        </p>
+                      )}
+                      <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                        {Number(p?.last_12_months_count) || 0} dated · {Number(p?.undated_count) || 0} undated
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
               {staff.staffReviewSignals.length > 0 && (
                 <div>
                   <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Staff Review Signals</p>
@@ -1110,6 +1320,42 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                     {staff.staffReviewSignals.slice(0, 4).map((signal, idx) => (
                       <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
                         - {signal}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(staff.positiveSignals.length > 0 || staff.negativeSignals.length > 0) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {staff.positiveSignals.length > 0 && (
+                    <div className="p-3 rounded-lg" style={{ background: '#10B98108', border: '1px solid #10B98120' }}>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Positive Staff Signals</p>
+                      {staff.positiveSignals.slice(0, 3).map((signal, idx) => (
+                        <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>
+                          "{signal}"
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {staff.negativeSignals.length > 0 && (
+                    <div className="p-3 rounded-lg" style={{ background: '#EF444408', border: '1px solid #EF444420' }}>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>Negative Staff Signals</p>
+                      {staff.negativeSignals.slice(0, 3).map((signal, idx) => (
+                        <p key={idx} className="text-[11px] text-[#9FB0C3] leading-relaxed mb-1" style={{ fontFamily: fontFamily.body }}>
+                          "{signal}"
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {staff.actionPlan.length > 0 && (
+                <div className="p-3 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Operations Action Plan</p>
+                  <div className="space-y-1.5">
+                    {staff.actionPlan.slice(0, 4).map((action, idx) => (
+                      <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                        - {action}
                       </p>
                     ))}
                   </div>
@@ -1124,6 +1370,18 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   </div>
                 ))}
               </div>
+              {staff.evidence.length > 0 && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Source Evidence</p>
+                  <div className="space-y-1.5">
+                    {staff.evidence.slice(0, 5).map((signal, idx) => (
+                      <p key={idx} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                        - {signal}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="p-3 rounded-lg" style={{ background: '#3B82F608', border: '1px solid #3B82F620' }}>
                 <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>Staff Intelligence Depth</p>
                 <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
@@ -1132,7 +1390,9 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               </div>
             </div>
           ) : (
-            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No staff review or team structure signals were detected from public sources yet. Add LinkedIn and review channels to strengthen this layer.</p>
+            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+              {(staffReviewHighlights.free_tier_message || 'Data not available on free tier')}.
+            </p>
           )}
         </div>
 
@@ -1329,6 +1589,9 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           </div>
           <div className="space-y-3">
             {[
+              ...industryActionItems.slice(0, 2).map((text) => ({
+                icon: CheckCircle2, color: '#10B981', text,
+              })),
               !full.unique_value_proposition && {
                 icon: XCircle, color: '#EF4444',
                 text: 'Add a clear outcome-based value proposition above the fold. Current website does not communicate measurable results.',
