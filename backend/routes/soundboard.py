@@ -41,6 +41,9 @@ router = APIRouter()
 
 SOUNDBOARD_V3_ENABLED = (os.environ.get("SOUNDBOARD_V3_ENABLED", "true").strip().lower() in {"1", "true", "yes"})
 SOUNDBOARD_BOARDROOM_ORCH_ENABLED = (os.environ.get("SOUNDBOARD_BOARDROOM_ORCH_ENABLED", "true").strip().lower() in {"1", "true", "yes"})
+SOUNDBOARD_HISTORY_LIMIT = int(os.environ.get("SOUNDBOARD_HISTORY_LIMIT", "50"))
+SOUNDBOARD_CONTEXT_MESSAGES_LIMIT = int(os.environ.get("SOUNDBOARD_CONTEXT_MESSAGES_LIMIT", "24"))
+SOUNDBOARD_BOARDROOM_CONTEXT_LIMIT = int(os.environ.get("SOUNDBOARD_BOARDROOM_CONTEXT_LIMIT", "16"))
 
 
 def _call_cognition_for_soundboard(sb, user_id):
@@ -820,7 +823,7 @@ async def _call_openai_with_fallback(api_key: str, system_message: str, clean_me
 
     client = _openai.AsyncOpenAI(api_key=api_key)
     formatted_messages = [{"role": "system", "content": system_message}]
-    for message in (messages_history or [])[-12:]:
+    for message in (messages_history or [])[-SOUNDBOARD_CONTEXT_MESSAGES_LIMIT:]:
         formatted_messages.append({"role": message.get("role", "user"), "content": message.get("content", "")})
     formatted_messages.append({"role": "user", "content": clean_message})
 
@@ -1087,7 +1090,7 @@ async def _run_boardroom_orchestration(
                     api_key=openai_key,
                     system_message=role_system,
                     clean_message=clean_message,
-                    messages_history=messages_history[-8:],
+                    messages_history=messages_history[-SOUNDBOARD_BOARDROOM_CONTEXT_LIMIT:],
                     model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
                     reasoning=True,
                 )
@@ -1247,12 +1250,12 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         try:
             history_result = sb.table("soundboard_messages").select(
                 "role, content, timestamp"
-            ).eq("conversation_id", conversation["id"]).eq("user_id", user_id).order("timestamp", desc=True).limit(20).execute()
+            ).eq("conversation_id", conversation["id"]).eq("user_id", user_id).order("timestamp", desc=True).limit(SOUNDBOARD_HISTORY_LIMIT).execute()
             history_rows = list(reversed(history_result.data or []))
             messages_history = [{"role": row.get("role"), "content": row.get("content")} for row in history_rows]
         except Exception:
             # Backward compatibility when soundboard_messages table is unavailable.
-            messages_history = (conversation.get("messages", [])[-20:]) if isinstance(conversation.get("messages"), list) else []
+            messages_history = (conversation.get("messages", [])[-SOUNDBOARD_HISTORY_LIMIT:]) if isinstance(conversation.get("messages"), list) else []
 
     # Cognitive Core context
     core_context = await cognitive_core.get_context_for_agent(user_id, "MySoundboard")
@@ -1441,6 +1444,13 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     rev: Dict[str, Any] = {}
     risk: Dict[str, Any] = {}
     people: Dict[str, Any] = {}
+    coverage_window = {
+        "coverage_start": None,
+        "coverage_end": None,
+        "last_sync_at": None,
+        "missing_periods": [],
+        "confidence_impact": "unknown",
+    }
 
     # FIRST: Inject observation_events (cached signals from emission layer)
     try:
@@ -1450,6 +1460,19 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
         obs_events = obs_result.data or []
         if obs_events:
+            obs_times = []
+            for evt in obs_events:
+                raw = evt.get("observed_at")
+                if not raw:
+                    continue
+                try:
+                    obs_times.append(datetime.fromisoformat(str(raw).replace("Z", "+00:00")))
+                except Exception:
+                    continue
+            if obs_times:
+                coverage_window["coverage_start"] = min(obs_times).isoformat()
+                coverage_window["coverage_end"] = max(obs_times).isoformat()
+                coverage_window["last_sync_at"] = max(obs_times).isoformat()
             integration_context += f"\n═══ YOUR LIVE BUSINESS SIGNALS ({len(obs_events)} detected) ═══\n"
             integration_context += "IMPORTANT: These are REAL signals from the user's connected CRM and accounting systems. You MUST reference these specific signals in your response. Do NOT say you don't have access to their data.\n\n"
 
@@ -1496,6 +1519,25 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     try:
         from routes.unified_intelligence import _fetch_all_integration_data, _compute_revenue_signals, _compute_risk_signals, _compute_people_signals
         all_data = await _fetch_all_integration_data(sb, user_id)
+        cw = (all_data or {}).get("coverage_window") or {}
+        crm_cov = cw.get("crm") or {}
+        acc_cov = cw.get("accounting") or {}
+        starts = [x for x in [crm_cov.get("start"), acc_cov.get("start"), coverage_window.get("coverage_start")] if x]
+        ends = [x for x in [crm_cov.get("end"), acc_cov.get("end"), coverage_window.get("coverage_end")] if x]
+        if starts:
+            coverage_window["coverage_start"] = min(starts)
+        if ends:
+            coverage_window["coverage_end"] = max(ends)
+            coverage_window["last_sync_at"] = max(ends)
+        if (all_data.get("crm", {}).get("history_meta", {}).get("truncated")
+                or all_data.get("accounting", {}).get("history_meta", {}).get("truncated")):
+            coverage_window["missing_periods"] = ["Historical pages exceed current retrieval window; additional backfill required."]
+        if coverage_pct >= 80:
+            coverage_window["confidence_impact"] = "low"
+        elif coverage_pct >= 50:
+            coverage_window["confidence_impact"] = "medium"
+        else:
+            coverage_window["confidence_impact"] = "high"
         
         # Integration status
         connected_list = [k for k, v in {'CRM': all_data['crm']['connected'], 'Accounting': all_data['accounting']['connected'], 'Email': all_data['email']['connected'], 'Marketing': all_data['marketing']['connected']}.items() if v]
@@ -1752,6 +1794,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "reply": blocked_reply,
             "guardrail": "BLOCKED",
             "coverage_pct": coverage_pct,
+            "coverage_window": coverage_window,
             "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:8]],
             "context_fields": context_fields,
             "live_signals": live_signal_count,
@@ -2339,6 +2382,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "boardroom_status": "orchestrated" if effective_agent_id == "boardroom" and boardroom_trace else ("requested_no_trace" if effective_agent_id == "boardroom" else "not_requested"),
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
+            "coverage_window": coverage_window,
             "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:6]] if guardrail_status == "DEGRADED" else [],
             "evidence_pack": evidence_pack,
             "soundboard_contract": soundboard_contract,
@@ -2384,6 +2428,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "conversation_id": req.conversation_id,
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
+            "coverage_window": coverage_window,
             "provider_error": str(e),
             "mode_effective": mode,
             "evidence_pack": evidence_pack,
@@ -2431,6 +2476,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "conversation_id": req.conversation_id,
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
+            "coverage_window": coverage_window,
             "runtime_error": str(e),
             "mode_effective": mode,
             "evidence_pack": evidence_pack,

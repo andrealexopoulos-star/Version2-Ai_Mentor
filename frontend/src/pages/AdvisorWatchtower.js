@@ -1260,9 +1260,9 @@ export default function AdvisorWatchtower() {
         const derivedProviders = [
           { id: 'auto', label: 'Auto (based on connected tools)', available: Boolean(ticketingProvider || outlookExchangeReady || googleWorkspaceReady) },
           { id: 'manual', label: 'Manual follow-up', available: true },
-          { id: 'jira', label: 'Jira (via Merge)', available: ticketingProvider?.includes('jira') || false },
-          { id: 'asana', label: 'Asana (via Merge)', available: ticketingProvider?.includes('asana') || false },
-          { id: 'merge-ticketing', label: 'Connected Ticketing Tool (via Merge)', available: Boolean(ticketingProvider) },
+          { id: 'jira', label: 'Jira (via Connector Hub)', available: ticketingProvider?.includes('jira') || false },
+          { id: 'asana', label: 'Asana (via Connector Hub)', available: ticketingProvider?.includes('asana') || false },
+          { id: 'unified-ticketing', label: 'Connected Ticketing Tool (via Connector Hub)', available: Boolean(ticketingProvider) },
           { id: 'outlook-exchange', label: 'Outlook / Exchange', available: outlookExchangeReady },
           { id: 'google-calendar', label: 'Google Calendar', available: googleWorkspaceReady },
         ];
@@ -1281,7 +1281,7 @@ export default function AdvisorWatchtower() {
         setDelegateProviderHealthLoaded(true);
 
         const recommended = ticketingProvider
-          ? 'merge-ticketing'
+          ? 'unified-ticketing'
           : outlookExchangeReady
             ? 'outlook-exchange'
             : googleWorkspaceReady
@@ -1297,7 +1297,7 @@ export default function AdvisorWatchtower() {
           return [
             { id: 'auto', label: 'Auto (based on connected tools)', available: false },
             { id: 'manual', label: 'Manual follow-up', available: true },
-            { id: 'merge-ticketing', label: 'Merge Ticketing', available: false },
+            { id: 'unified-ticketing', label: 'Unified Ticketing Connector', available: false },
             { id: 'outlook-exchange', label: 'Outlook / Exchange', available: false },
             { id: 'google-calendar', label: 'Google Calendar', available: false },
           ];

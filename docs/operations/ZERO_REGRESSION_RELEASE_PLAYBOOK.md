@@ -2,6 +2,10 @@
 
 This playbook is the mandatory standard for releasing BIQc without website or platform regression.
 
+Related operating documents:
+- `docs/operations/ZD_ZR_ZA_MANAGER.md`
+- `docs/operations/UNIFIED_PLATFORM_AUDIT_EXECUTION_BLUEPRINT.md`
+
 ## Release Objective
 
 Deliver production changes with:
@@ -9,6 +13,7 @@ Deliver production changes with:
 - no calibration or intelligence contract regression,
 - no auth/routing regression,
 - no silent edge-function failure regression.
+- no un-attributed high-impact advisor recommendation.
 
 ## Non-Negotiable Gates
 

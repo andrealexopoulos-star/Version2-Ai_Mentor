@@ -16,7 +16,7 @@ import {
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
   TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
   ClipboardList, MessageSquare, Lock, Eye, Megaphone, FlaskConical,
-  BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox
+  BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox, CreditCard
 } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
 import { resolveTier, getRouteAccess } from '../lib/tierResolver';
@@ -254,6 +254,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     { icon: BookOpen, label: 'SOP Generator', path: '/sop-generator' },
     { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
     { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
+    { icon: CreditCard, label: 'Billing', path: '/billing' },
     { icon: Activity, label: 'Operations', path: '/operations' },
     { icon: BarChart3, label: 'Marketing Intelligence', path: '/marketing-intelligence' },
     { icon: MessageSquare, label: 'Boardroom', path: '/board-room' },

@@ -27,6 +27,7 @@ from typing import Dict, List, Optional, Any
 from uuid import uuid4
 import logging
 import json
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,8 @@ CANCELLATION_CLUSTER_MIN = 2
 CANCELLATION_CLUSTER_WINDOW_DAYS = 7
 # Meeting overload: weekly baseline multiplier
 MEETING_OVERLOAD_MULTIPLIER = 1.5
+EMISSION_PAGE_SIZE = int(os.environ.get("MERGE_EMISSION_PAGE_SIZE", "200"))
+EMISSION_MAX_PAGES = int(os.environ.get("MERGE_EMISSION_MAX_PAGES", "5"))
 
 
 class MergeEmissionLayer:
@@ -55,6 +58,19 @@ class MergeEmissionLayer:
     def __init__(self, supabase_client, merge_client):
         self.supabase = supabase_client
         self.merge = merge_client
+
+    async def _fetch_all_pages(self, fetch_method, account_token: str) -> List[Dict[str, Any]]:
+        """Cursor-crawl merge collections for broader history coverage."""
+        cursor = None
+        rows: List[Dict[str, Any]] = []
+        for _ in range(EMISSION_MAX_PAGES):
+            page = await fetch_method(account_token=account_token, cursor=cursor, page_size=EMISSION_PAGE_SIZE)
+            batch = page.get("results", []) or []
+            rows.extend(batch)
+            cursor = page.get("next")
+            if not cursor or not batch:
+                break
+        return rows
 
     async def run_emission(self, user_id: str, account_id: str) -> Dict[str, Any]:
         """
@@ -96,8 +112,7 @@ class MergeEmissionLayer:
         emitted = []
 
         try:
-            data = await self.merge.get_deals(account_token=account_token, page_size=200)
-            opportunities = data.get("results", [])
+            opportunities = await self._fetch_all_pages(self.merge.get_deals, account_token)
         except Exception as e:
             logger.warning(f"[emission] CRM read failed: {e}")
             return emitted
@@ -186,8 +201,7 @@ class MergeEmissionLayer:
         emitted = []
 
         try:
-            data = await self.merge.get_invoices(account_token=account_token, page_size=200)
-            invoices = data.get("results", [])
+            invoices = await self._fetch_all_pages(self.merge.get_invoices, account_token)
         except Exception as e:
             logger.warning(f"[emission] Accounting read failed: {e}")
             return emitted
@@ -237,8 +251,7 @@ class MergeEmissionLayer:
 
         # ─── CASH BURN ACCELERATION ──────────────────────────────
         try:
-            payments_data = await self.merge.get_payments(account_token=account_token, page_size=200)
-            payments = payments_data.get("results", [])
+            payments = await self._fetch_all_pages(self.merge.get_payments, account_token)
 
             if len(payments) >= 4:
                 mid = len(payments) // 2
@@ -274,8 +287,7 @@ class MergeEmissionLayer:
             # Fetch payments if not already loaded
             margin_payments = []
             try:
-                margin_data = await self.merge.get_payments(account_token=account_token, page_size=200)
-                margin_payments = margin_data.get("results", [])
+                margin_payments = await self._fetch_all_pages(self.merge.get_payments, account_token)
             except Exception:
                 pass
 

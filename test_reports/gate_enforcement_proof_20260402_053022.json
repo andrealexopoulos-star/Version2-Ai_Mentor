@@ -1,0 +1,45 @@
+{
+  "generated_at": "2026-04-02T05:30:22.031049+00:00",
+  "max_evidence_age_minutes": 120,
+  "proof_passed": true,
+  "stage_checks": [
+    {
+      "stage": "PR",
+      "gate": "website_change_gate",
+      "passed": true
+    },
+    {
+      "stage": "PRE_MERGE",
+      "gate": "preprod_forensic_gate",
+      "passed": true
+    },
+    {
+      "stage": "PRE_DEPLOY",
+      "gate": "finance_and_white_label_invariant",
+      "passed": true
+    },
+    {
+      "stage": "POST_DEPLOY",
+      "gate": "evidence_freshness_integrity",
+      "passed": true
+    }
+  ],
+  "evidence": {
+    "zd_zr_za": {
+      "path": "test_reports/zd_zr_za_manager_20260402_052916.json",
+      "generated_at": "2026-04-02T05:29:17.024825+00:00",
+      "age_minutes": 1.08,
+      "is_fresh": true,
+      "sha256": "0d7b2838a48d6fa25fdbb565a6ddfe95d2bcb63727c8b59c3104be9caa96f8bc",
+      "size_bytes": 243998
+    },
+    "cfo_golden": {
+      "path": "test_reports/cfo_golden_harness_20260402_053000.json",
+      "generated_at": "2026-04-02T05:30:00.654419+00:00",
+      "age_minutes": 0.36,
+      "is_fresh": true,
+      "sha256": "46b0f245cebb657c8778183a3d04015470178d30550f51e153d77fb975d91235",
+      "size_bytes": 3503
+    }
+  }
+}
