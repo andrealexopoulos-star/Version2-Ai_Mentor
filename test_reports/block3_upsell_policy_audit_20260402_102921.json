@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-04-02T10:29:21.763349+00:00",
+  "suite_passed": true,
+  "static_checks": {
+    "has_incident_classifier": true,
+    "has_capability_gap_classifier": true,
+    "has_conversion_enforcer": true,
+    "has_role_policy_block": true,
+    "has_no_upsell_critical_context": true,
+    "returns_upsell_flags": true
+  },
+  "behavior_checks": {
+    "incident_strips_upgrade_line": true,
+    "explicit_gap_keeps_upgrade_line": true
+  },
+  "samples": {
+    "incident_input": "Immediate action: isolate impacted workflows.\nUpgrade to Growth plan to unlock enhanced controls.\nCollect evidence and notify stakeholders.",
+    "incident_output": "Immediate action: isolate impacted workflows.\nCollect evidence and notify stakeholders.",
+    "explicit_gap_input": "You asked about plan limits.\nUpgrade to the next tier for additional integrations.",
+    "explicit_gap_output": "You asked about plan limits.\nUpgrade to the next tier for additional integrations."
+  }
+}
