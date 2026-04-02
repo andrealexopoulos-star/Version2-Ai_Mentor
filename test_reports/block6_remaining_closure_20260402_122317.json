@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-04-02T12:23:17.374885+00:00",
+  "passed": true,
+  "failure_codes": [],
+  "checks": {
+    "main_contains_release_marker": true,
+    "cmo_disclaimer_removed": true,
+    "serp_wording_removed_or_sanitized": true,
+    "coverage_window_visible_panel": true,
+    "coverage_window_visible_full_page": true,
+    "conversion_guardrails_present": true,
+    "role_policy_present": true,
+    "post_release_guard_passed": true,
+    "final_closure_passed": true,
+    "post_release_guard_fresh": true,
+    "final_closure_fresh": true,
+    "github_actions_main_not_failed": true
+  },
+  "context": {
+    "origin_main_head": "9842d3bcc9c82926854fc3a4ab4c137ba934d211",
+    "origin_main_log": "9842d3bc Ops/zero drop block 1 (#212)\n05f3cfaf Ops/zero drop block 1 (#211)\ndb9522bb Trigger redeploy after cancelled run (no website changes). (#210)",
+    "guard_artifact": "test_reports/block4_post_release_guard_20260402_122121.json",
+    "closure_artifact": "test_reports/block5_final_closure_pack_20260402_122121.json",
+    "guard_age_minutes": 1.94,
+    "closure_age_minutes": 1.94,
+    "github_actions_main": {
+      "checked": false,
+      "ok": true,
+      "status": "unavailable",
+      "conclusion": null,
+      "run_id": null,
+      "html_url": null
+    }
+  }
+}

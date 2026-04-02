@@ -1,0 +1,28 @@
+{
+  "generated_at": "2026-04-02T12:21:21.021770+00:00",
+  "passed": true,
+  "failure_codes": [],
+  "checks": {
+    "forensic_regression_passed": true,
+    "canary_shadow_passed": true,
+    "readiness_signoff_passed": true,
+    "release_index_ready": true,
+    "forensic_fresh": true,
+    "canary_fresh": true,
+    "signoff_fresh": true,
+    "website_change_gate_present": true,
+    "preprod_forensic_gate_present": true,
+    "post_release_guard_documented": true,
+    "rollback_documented": true
+  },
+  "artifact_refs": {
+    "forensic": "test_reports/block3_forensic_regression_20260402_121309.json",
+    "canary": "test_reports/block3_canary_finance_shadow_20260402_121309.json",
+    "signoff": "test_reports/block3_readiness_pack_signoff_20260402_121316.json",
+    "release_index": "test_reports/release_evidence_index_20260402_121316.json"
+  },
+  "policy": {
+    "max_age_minutes": 180,
+    "guard_mode": "monitoring_and_auto_rollback_must_remain_active"
+  }
+}
