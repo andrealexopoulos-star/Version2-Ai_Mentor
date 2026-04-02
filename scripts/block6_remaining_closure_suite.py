@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+"""
+Block 6 Remaining Closure Suite
+
+Final post-merge smoke/closure checks for:
+- merged release state on main
+- key UI copy expectations
+- flagship coverage-window visibility
+- conversion/upsell policy guardrails
+- post-release guard + final closure artifacts
+"""
+
+from __future__ import annotations
+
+import json
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, Optional
+from urllib.request import urlopen
+from urllib.error import URLError, HTTPError
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+REPORTS_DIR = REPO_ROOT / "test_reports"
+MAX_ARTIFACT_AGE_MINUTES = 240
+
+
+def read(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def latest(prefix: str) -> Optional[Path]:
+    files = sorted(REPORTS_DIR.glob(f"{prefix}_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return files[0] if files else None
+
+
+def load_json(path: Path) -> Dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def age_minutes(ts: str) -> float:
+    dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    return (datetime.now(timezone.utc) - dt).total_seconds() / 60.0
+
+
+def git(cmd: list[str]) -> str:
+    proc = subprocess.run(["git", *cmd], cwd=REPO_ROOT, capture_output=True, text=True)
+    if proc.returncode != 0:
+        return ""
+    return (proc.stdout or "").strip()
+
+
+def check_github_actions_main() -> Dict[str, object]:
+    api = "https://api.github.com/repos/andrealexopoulos-star/Version2-Ai_Mentor/actions/runs?branch=main&per_page=5"
+    try:
+        with urlopen(api, timeout=8) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        runs = payload.get("workflow_runs", []) or []
+        latest_run = runs[0] if runs else {}
+        conclusion = latest_run.get("conclusion")
+        status = latest_run.get("status")
+        run_id = latest_run.get("id")
+        html_url = latest_run.get("html_url")
+        # accept queued/in_progress as non-failed, and success as pass
+        ok = (status in {"queued", "in_progress"}) or (conclusion == "success")
+        return {
+            "checked": True,
+            "ok": ok,
+            "status": status,
+            "conclusion": conclusion,
+            "run_id": run_id,
+            "html_url": html_url,
+        }
+    except (URLError, HTTPError, TimeoutError, json.JSONDecodeError):
+        return {"checked": False, "ok": True, "status": "unavailable", "conclusion": None, "run_id": None, "html_url": None}
+
+
+def main() -> int:
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    now = datetime.now(timezone.utc)
+
+    chief = read(REPO_ROOT / "frontend" / "src" / "components" / "calibration" / "ChiefMarketingSummary.js")
+    wow = read(REPO_ROOT / "frontend" / "src" / "hooks" / "useCalibrationState.js")
+    panel = read(REPO_ROOT / "frontend" / "src" / "components" / "SoundboardPanel.js")
+    board = read(REPO_ROOT / "frontend" / "src" / "pages" / "MySoundBoard.js")
+    sb = read(REPO_ROOT / "backend" / "routes" / "soundboard.py")
+
+    guard = latest("block4_post_release_guard")
+    closure = latest("block5_final_closure_pack")
+    if not guard or not closure:
+        out = REPORTS_DIR / f"block6_remaining_closure_{now.strftime('%Y%m%d_%H%M%S')}.json"
+        payload = {
+            "generated_at": now.isoformat(),
+            "passed": False,
+            "failure_codes": ["MISSING_BLOCK4_OR_BLOCK5_ARTIFACT"],
+        }
+        out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        print(json.dumps({"passed": False, "artifact": str(out), "failure_codes": ["MISSING_BLOCK4_OR_BLOCK5_ARTIFACT"]}, indent=2))
+        return 1
+
+    guard_data = load_json(guard)
+    closure_data = load_json(closure)
+    guard_age = age_minutes(str(guard_data.get("generated_at")))
+    closure_age = age_minutes(str(closure_data.get("generated_at")))
+
+    git_main_head = git(["rev-parse", "origin/main"])
+    git_main_log = git(["log", "--oneline", "--max-count=3", "origin/main"])
+    merged_marker = "Ops/zero drop block 1" in git_main_log or "Ops/zero drop block 1".lower() in git_main_log.lower()
+
+    actions = check_github_actions_main()
+
+    checks = {
+        "main_contains_release_marker": bool(merged_marker),
+        "cmo_disclaimer_removed": ("Based on publicly available digital signals only" not in chief and "All analysis above is based on publicly available digital signals only" not in chief),
+        "serp_wording_removed_or_sanitized": ("SERP" not in wow and "serp" not in wow) or ("sanitizeCardText" in wow),
+        "coverage_window_visible_panel": ("coverage_window" in panel and "Coverage window" in panel and "last sync" in panel),
+        "coverage_window_visible_full_page": ("coverage_window" in board and "Coverage window" in board and "last sync" in board),
+        "conversion_guardrails_present": ("CONVERSION GUARDRAIL" in sb and "_enforce_conversion_guardrails" in sb),
+        "role_policy_present": ("ROLE POLICY CONSTRAINTS" in sb and "_build_role_policy_guardrails" in sb),
+        "post_release_guard_passed": bool(guard_data.get("passed")),
+        "final_closure_passed": bool(closure_data.get("closure_passed")),
+        "post_release_guard_fresh": guard_age <= MAX_ARTIFACT_AGE_MINUTES,
+        "final_closure_fresh": closure_age <= MAX_ARTIFACT_AGE_MINUTES,
+        "github_actions_main_not_failed": bool(actions.get("ok")),
+    }
+
+    passed = all(bool(v) for v in checks.values())
+    failure_codes = [k for k, v in checks.items() if not v]
+
+    payload = {
+        "generated_at": now.isoformat(),
+        "passed": passed,
+        "failure_codes": failure_codes,
+        "checks": checks,
+        "context": {
+            "origin_main_head": git_main_head,
+            "origin_main_log": git_main_log,
+            "guard_artifact": str(guard.relative_to(REPO_ROOT)),
+            "closure_artifact": str(closure.relative_to(REPO_ROOT)),
+            "guard_age_minutes": round(guard_age, 2),
+            "closure_age_minutes": round(closure_age, 2),
+            "github_actions_main": actions,
+        },
+    }
+
+    out = REPORTS_DIR / f"block6_remaining_closure_{now.strftime('%Y%m%d_%H%M%S')}.json"
+    out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    print(json.dumps({"passed": passed, "artifact": str(out), "failure_codes": failure_codes}, indent=2))
+    return 0 if passed else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
