@@ -339,7 +339,11 @@ const MySoundBoard = () => {
       setLoading(true);
       const response = await apiClient.get(`/soundboard/conversations/${conversationId}`);
       setActiveConversation(conversationId);
-      setMessages(response.data.messages || []);
+      const mapped = (response.data.messages || []).map((m) => ({
+        ...m,
+        coverage_window: m.coverage_window || m?.metadata?.coverage_window,
+      }));
+      setMessages(mapped);
     } catch (error) {
       toast.error('Failed to load conversation');
     } finally {
@@ -409,7 +413,7 @@ const MySoundBoard = () => {
       } : {};
       if (!advisorContext) intelligenceContext.request_scope = requestScope;
 
-      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage, agent_name, boardroom_trace, boardroom_status, evidence_pack, soundboard_contract, advisory_slots;
+      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage, agent_name, boardroom_trace, boardroom_status, evidence_pack, soundboard_contract, advisory_slots, coverage_window;
 
       const response = await apiClient.post(
         '/soundboard/chat',
@@ -440,6 +444,7 @@ const MySoundBoard = () => {
         evidence_pack,
         soundboard_contract,
         advisory_slots,
+        coverage_window,
       } = response.data);
 
       const replyTrimmed = typeof reply === 'string' ? reply.trim() : '';
@@ -469,6 +474,7 @@ const MySoundBoard = () => {
         evidence_pack,
         soundboard_contract,
         advisory_slots,
+        coverage_window,
       };
       if (generatedFile) assistantMsg.file = generatedFile;
       setMessages(prev => [...prev, assistantMsg]);
@@ -929,6 +935,22 @@ const MySoundBoard = () => {
                                 {source.source} {source.freshness ? `(${source.freshness})` : ''}
                               </span>
                             ))}
+                          </div>
+                        )}
+                        {message.role === 'assistant' && message.coverage_window && (
+                          <div className="mt-2 rounded-lg p-2" style={{ border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.45)' }}>
+                            <p className="text-[10px] mb-1" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Coverage window</p>
+                            <p className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }}>
+                              {(message.coverage_window.coverage_start || 'n/a')} -> {(message.coverage_window.coverage_end || 'n/a')}
+                            </p>
+                            <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
+                              last sync: {message.coverage_window.last_sync_at || 'n/a'} · impact: {message.coverage_window.confidence_impact || 'unknown'}
+                            </p>
+                            {Array.isArray(message.coverage_window.missing_periods) && message.coverage_window.missing_periods.length > 0 && (
+                              <p className="text-[10px]" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                                gap: {message.coverage_window.missing_periods[0]}
+                              </p>
+                            )}
                           </div>
                         )}
                         {message.role === 'assistant' && message.boardroom_trace?.phases?.length > 0 && (

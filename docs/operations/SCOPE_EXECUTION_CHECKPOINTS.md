@@ -15,6 +15,11 @@ Format: `PASS|FAIL` · `gate_id` · `failure_code(if fail)` · `artifact`
 - PASS · `GATE-ENFORCEMENT-PR-PREMERGE-PREDEPLOY-POSTDEPLOY-01` · `-` · `test_reports/gate_enforcement_proof_20260402_053022.json`
 - PASS · `NO-P0-REGRESSION-01` · `-` · `test_reports/zd_zr_za_manager_20260402_052916.json`
 - PASS · `RELEASE-EVIDENCE-INDEX-01` · `-` · `docs/operations/RELEASE_EVIDENCE_INDEX_2026-04-02.md`
+- PASS · `BLOCK2-ROLE-POLICY-01` · `-` · `backend/routes/soundboard.py` (CFO strictness, risk/legal boundary, CEO abstraction constraints)
+- PASS · `BLOCK2-CONVERSION-GUARDRAIL-01` · `-` · `backend/routes/soundboard.py` (no upsell for incident/risk/compliance; explicit-gap-only upsell)
+- PASS · `BLOCK2-COVERAGE-UI-01` · `-` · `frontend/src/pages/MySoundBoard.js` (coverage window rendered on full advisor surface)
+- PASS · `BLOCK2-LINEAGE-CLASSIFICATION-01` · `-` · `test_reports/zd_zr_za_manager_20260402_101741.json` (`expected-unlinked=19`, `unexpected-unlinked=0`)
+- PASS · `BLOCK2-EVIDENCE-INDEX-01` · `-` · `test_reports/release_evidence_index_20260402_101741.json`
 
 ## Current Open Items
 

@@ -731,6 +731,12 @@ export const useCalibrationState = () => {
       return String(value);
     };
 
+    const sanitizeCardText = (value) => String(value || '')
+      .replace(/\bSERP\/paid visibility\b/gi, 'search visibility')
+      .replace(/\bSERP\b/gi, 'search')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+
     const revenueClaim = [seoGaps, ctaIssues, conversionSignals]
       .map(normaliseSignal)
       .filter(Boolean)
@@ -799,7 +805,12 @@ export const useCalibrationState = () => {
         confidence: quickAction ? 'high' : 'medium',
         action: 'Implement this quick win within 7 days for immediate impact.',
       },
-    ];
+    ].map((card) => ({
+      ...card,
+      claim: sanitizeCardText(card.claim),
+      evidence: sanitizeCardText(card.evidence),
+      action: sanitizeCardText(card.action),
+    }));
   };
 
   const handleConfirmWowCards = () => {

@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-04-02T10:29:21.666862+00:00",
+  "policy": {
+    "freshness_max_age_minutes": 180,
+    "release_invariant": "block_if_any_gate_fails"
+  },
+  "gates": {
+    "WL-P0-03": true,
+    "CFO-GOLDEN-TEST-01": true,
+    "GATE-ENFORCEMENT-01": true,
+    "EVIDENCE-FRESHNESS-01": true,
+    "LINEAGE-COVERAGE-01": true,
+    "BLOCK2-LINEAGE-CLASSIFICATION-01": true
+  },
+  "artifacts": {
+    "zd_zr_za": {
+      "path": "test_reports/zd_zr_za_manager_20260402_102921.json",
+      "generated_at": "2026-04-02T10:29:21.570563+00:00",
+      "sha256": "94744a043c90c3f423e9e00ad1ad911db21eb4507aa39fd2d2dda64c7d672b8b",
+      "size_bytes": 485633,
+      "age_minutes": 0.0,
+      "is_fresh": true
+    },
+    "cfo_golden": {
+      "path": "test_reports/cfo_golden_harness_20260402_102921.json",
+      "generated_at": "2026-04-02T10:29:21.606926+00:00",
+      "sha256": "ca786f4c550394d34711b4b346ca6614a14efa43ec53583d5aeb2a073836b763",
+      "size_bytes": 3503,
+      "age_minutes": 0.0,
+      "is_fresh": true
+    },
+    "gate_enforcement": {
+      "path": "test_reports/gate_enforcement_proof_20260402_102921.json",
+      "generated_at": "2026-04-02T10:29:21.637571+00:00",
+      "sha256": "0e9bc36dd2c5eb8b6c37eeff6b7ab51372061e5a74791359f95e220de4d6cd18",
+      "size_bytes": 1202,
+      "age_minutes": 0.0,
+      "is_fresh": true
+    }
+  },
+  "source_summaries": {
+    "zd_zr_za": {
+      "frontend_routes": 113,
+      "frontend_route_lineage_entries": 113,
+      "lineage_routes_with_backend_links": 94,
+      "lineage_expected_unlinked_routes": 19,
+      "lineage_unexpected_unlinked_routes": 0,
+      "backend_endpoints": 338,
+      "edge_functions": 32,
+      "vendor_leak_hits": 533,
+      "likely_visible_vendor_leak_hits": 0,
+      "vendor_terms_with_hits": [
+        "merge",
+        "supabase"
+      ],
+      "vendor_terms_with_likely_visible_hits": [],
+      "forensic_gate_version": "v6",
+      "website_change_gate_present": true,
+      "preprod_forensic_gate_present": true
+    },
+    "cfo_golden": {
+      "suite_passed": true,
+      "tests_total": 4,
+      "tests_passed": 4
+    },
+    "gate_enforcement": {
+      "proof_passed": true,
+      "stage_checks": [
+        {
+          "stage": "PR",
+          "gate": "website_change_gate",
+          "passed": true
+        },
+        {
+          "stage": "PRE_MERGE",
+          "gate": "preprod_forensic_gate",
+          "passed": true
+        },
+        {
+          "stage": "PRE_DEPLOY",
+          "gate": "finance_and_white_label_invariant",
+          "passed": true
+        },
+        {
+          "stage": "POST_DEPLOY",
+          "gate": "evidence_freshness_integrity",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "release_ready": true
+}

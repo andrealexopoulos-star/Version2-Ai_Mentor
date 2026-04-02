@@ -752,6 +752,96 @@ def _coerce_request_scope(req: SoundboardChatRequest, message: str) -> Dict[str,
     }
 
 
+def _effective_agent_key(agent_id: Optional[str], intent_domain: str) -> str:
+    if agent_id and agent_id != "auto":
+        return str(agent_id).lower().strip()
+    return str(intent_domain or "general").lower().strip()
+
+
+def _build_role_policy_guardrails(agent_id: Optional[str], intent_domain: str) -> str:
+    agent_key = _effective_agent_key(agent_id, intent_domain)
+    if agent_key == "finance":
+        return (
+            "[ROLE POLICY — CFO STRICTNESS]\n"
+            "- Use numeric evidence first; do not round away material variance.\n"
+            "- Mark assumptions explicitly as assumptions.\n"
+            "- Do not provide legal advice; handoff legal interpretations to Risk/Legal.\n"
+        )
+    if agent_key in {"risk", "compliance"}:
+        return (
+            "[ROLE POLICY — RISK / LEGAL BOUNDARY]\n"
+            "- Keep compliance guidance factual and control-oriented.\n"
+            "- Do not provide definitive legal counsel language.\n"
+            "- State when external legal review is required before action.\n"
+        )
+    if agent_key in {"strategy", "planning", "boardroom", "general"}:
+        return (
+            "[ROLE POLICY — CEO/BOARDROOM ABSTRACTION]\n"
+            "- Keep strategic framing concise and decision-oriented.\n"
+            "- Link each recommendation to measurable business outcomes.\n"
+            "- Avoid over-technical implementation detail unless requested.\n"
+        )
+    return ""
+
+
+def _is_incident_or_compliance_query(intent_domain: str, intent_action: str, message: str) -> bool:
+    text = f"{intent_domain} {intent_action} {message}".lower()
+    triggers = (
+        "incident",
+        "breach",
+        "outage",
+        "security",
+        "compliance",
+        "audit",
+        "regulatory",
+        "legal",
+        "risk",
+    )
+    return any(t in text for t in triggers)
+
+
+def _has_explicit_capability_gap_request(message: str) -> bool:
+    text = (message or "").lower()
+    patterns = (
+        "upgrade",
+        "tier",
+        "plan",
+        "pricing",
+        "why can't",
+        "why can’t",
+        "feature limit",
+        "capability gap",
+        "connect integration",
+        "missing integration",
+    )
+    return any(p in text for p in patterns)
+
+
+def _enforce_conversion_guardrails(response: str, *, allow_upsell: bool) -> str:
+    if not isinstance(response, str) or not response.strip():
+        return response
+    if allow_upsell:
+        return response
+    blocked_terms = (
+        "upgrade",
+        "plan",
+        "tier",
+        "subscription",
+        "more features",
+        "unlock",
+        "biqc foundation",
+        "paywall",
+    )
+    kept_lines: List[str] = []
+    for line in response.splitlines():
+        lower = line.lower()
+        if any(term in lower for term in blocked_terms):
+            continue
+        kept_lines.append(line)
+    sanitized = "\n".join(kept_lines).strip()
+    return sanitized or response
+
+
 def _resolve_model_route(mode: str, intent_domain: str, intent_action: str, complexity: str, has_openai: bool, has_google: bool) -> tuple[str, List[str], str, str]:
     if not has_openai and not has_google:
         raise RuntimeError("AI provider keys are not configured. Add a valid OPENAI_API_KEY and/or GOOGLE_API_KEY in the backend environment to restore Soundboard replies.")
@@ -1692,6 +1782,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         intent_domain=intent_domain,
         intent_action=intent_action,
     ) if SOUNDBOARD_V3_ENABLED else {}
+    incident_or_compliance = _is_incident_or_compliance_query(intent_domain, intent_action, clean_message)
+    explicit_capability_gap = _has_explicit_capability_gap_request(clean_message)
+    allow_upsell = (not incident_or_compliance) and explicit_capability_gap
 
     # If live integrations are connected, do not hard-block strategic responses.
     # Degrade gracefully and keep responses grounded in connected evidence.
@@ -1795,6 +1888,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "guardrail": "BLOCKED",
             "coverage_pct": coverage_pct,
             "coverage_window": coverage_window,
+            "incident_or_compliance": incident_or_compliance,
+            "explicit_capability_gap": explicit_capability_gap,
+            "upsell_allowed": allow_upsell,
             "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:8]],
             "context_fields": context_fields,
             "live_signals": live_signal_count,
@@ -2022,6 +2118,29 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     agent_persona = _get_agent_persona(agent_id, intent_domain)
     if agent_persona:
         system_message += "\n\n═══ ACTIVE AGENT (respond in this role) ═══\n" + agent_persona
+    role_policy_injection = _build_role_policy_guardrails(agent_id, intent_domain)
+    if role_policy_injection:
+        system_message += "\n\n═══ ROLE POLICY CONSTRAINTS (MANDATORY) ═══\n" + role_policy_injection
+
+    incident_or_compliance = _is_incident_or_compliance_query(intent_domain, intent_action, clean_message)
+    explicit_capability_gap = _has_explicit_capability_gap_request(clean_message)
+    allow_upsell = (not incident_or_compliance) and explicit_capability_gap
+    if incident_or_compliance:
+        system_message += (
+            "\n\n[CONVERSION GUARDRAIL — CRITICAL CONTEXT]\n"
+            "Do NOT include upgrades, tier prompts, or commercial upsell language.\n"
+            "Focus only on risk/incident/compliance containment, evidence, and actions.\n"
+        )
+    elif not explicit_capability_gap:
+        system_message += (
+            "\n\n[CONVERSION GUARDRAIL]\n"
+            "Do NOT include upgrade or pricing prompts unless the user explicitly asks about capability limits.\n"
+        )
+    else:
+        system_message += (
+            "\n\n[CONVERSION GUARDRAIL — EXPLICIT GAP REQUEST]\n"
+            "If you mention an upgrade path, state the exact capability gap and transparent rationale.\n"
+        )
     effective_agent_id = agent_id if (agent_id and agent_id != "auto") else intent_domain
     effective_agent = SOUNDBOARD_AGENTS.get(effective_agent_id) or SOUNDBOARD_AGENTS["general"]
     effective_agent_name = effective_agent.get("name", "Strategic Advisor")
@@ -2145,6 +2264,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             response = sanitise_output(response)
         else:
             response = sanitise_output(_polish_response(str(response)))
+        response = _enforce_conversion_guardrails(response, allow_upsell=allow_upsell)
 
         lowered = response.lower()
         disclaimer_markers = [
@@ -2383,6 +2503,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "coverage_window": coverage_window,
+            "incident_or_compliance": incident_or_compliance,
+            "explicit_capability_gap": explicit_capability_gap,
+            "upsell_allowed": allow_upsell,
             "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:6]] if guardrail_status == "DEGRADED" else [],
             "evidence_pack": evidence_pack,
             "soundboard_contract": soundboard_contract,
@@ -2429,6 +2552,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "coverage_window": coverage_window,
+            "incident_or_compliance": incident_or_compliance,
+            "explicit_capability_gap": explicit_capability_gap,
+            "upsell_allowed": allow_upsell,
             "provider_error": str(e),
             "mode_effective": mode,
             "evidence_pack": evidence_pack,
@@ -2477,6 +2603,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "coverage_window": coverage_window,
+            "incident_or_compliance": incident_or_compliance,
+            "explicit_capability_gap": explicit_capability_gap,
+            "upsell_allowed": allow_upsell,
             "runtime_error": str(e),
             "mode_effective": mode,
             "evidence_pack": evidence_pack,

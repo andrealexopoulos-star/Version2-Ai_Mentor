@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-04-02T10:29:21.800307+00:00",
+  "signoff_passed": true,
+  "checks": {
+    "forensic_regression": true,
+    "canary_finance_shadow": true,
+    "smb_founder_journeys": true,
+    "upsell_policy_audit": true,
+    "release_evidence_index": true
+  },
+  "artifacts": {
+    "forensic_regression": {
+      "path": "test_reports/block3_forensic_regression_20260402_102921.json",
+      "sha256": "e21440db458aa4b0df3b075cfa73d7bab74be0525333d8abfc6a085c598c9b08",
+      "generated_at": "2026-04-02T10:29:21.380746+00:00"
+    },
+    "canary_finance_shadow": {
+      "path": "test_reports/block3_canary_finance_shadow_20260402_102921.json",
+      "sha256": "bf8491f4c217167d467feccfd385e33c85c18a83045d50dc2c4bf6e3e117ff3f",
+      "generated_at": "2026-04-02T10:29:21.712639+00:00"
+    },
+    "smb_founder_journeys": {
+      "path": "test_reports/block3_smb_founder_journeys_20260402_102921.json",
+      "sha256": "e91c317273c473673594bf8e1469e61b5b9f3e3faeaed4260b9a84370ef42987",
+      "generated_at": "2026-04-02T10:29:21.738530+00:00"
+    },
+    "upsell_policy_audit": {
+      "path": "test_reports/block3_upsell_policy_audit_20260402_102921.json",
+      "sha256": "37922da5d893de0f7d560e39b9e31bd09b1a6b182894271757edce1b03f3583b",
+      "generated_at": "2026-04-02T10:29:21.763349+00:00"
+    },
+    "release_evidence_index": {
+      "path": "test_reports/release_evidence_index_20260402_102921.json",
+      "sha256": "448d77ac63f27da0ce7d3790af0df456d8b12873370cf413d21687261bbf6feb",
+      "generated_at": "2026-04-02T10:29:21.666862+00:00"
+    }
+  },
+  "decision": "READY_FOR_CONDITIONAL_FINAL_APPROVAL"
+}
