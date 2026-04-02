@@ -604,9 +604,6 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>
             {bizName}
           </h1>
-          <p className="text-sm text-[#64748B] max-w-md mx-auto" style={{ fontFamily: fontFamily.body }}>
-            Based on publicly available digital signals only. No internal data assumed. No hallucination.
-          </p>
         </div>
 
         {/* ── SECTION 1: FORENSIC MEMO ── */}
@@ -1617,13 +1614,6 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               </div>
             ))}
           </div>
-        </div>
-
-        {/* ── NO DATA DISCLAIMER ── */}
-        <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg)', border: '1px solid #24314050', animation: 'cmsFade 1.8s ease-out' }}>
-          <p className="text-xs text-[#64748B] leading-relaxed" style={{ fontFamily: fontFamily.mono }}>
-            All analysis above is based on publicly available digital signals only. No internal revenue, lead, or performance data has been assumed. Connect your integrations to unlock verified internal intelligence.
-          </p>
         </div>
 
         {/* ── CTA ── */}
