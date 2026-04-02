@@ -290,6 +290,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           lineage: res.data.lineage,
           suggested_actions: res.data.suggested_actions,
           advisory_slots: res.data.advisory_slots,
+          coverage_window: res.data.coverage_window,
         };
         if (res.data?.agent_name) assistantMsg.agent_name = res.data.agent_name;
         if (res.data?.file) assistantMsg.file = res.data.file;
@@ -372,6 +373,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         lineage: m.lineage,
         suggested_actions: m.suggested_actions,
         advisory_slots: m.advisory_slots || m?.metadata?.advisory_slots,
+        coverage_window: m.coverage_window || m?.metadata?.coverage_window,
       })));
     } catch {
       setMessages([]);
@@ -535,22 +537,43 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[90%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed`}
+            <div className={`max-w-[92%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm`}
               style={{
-                background: msg.role === 'user' ? '#FF6A00' : '#141C26',
-                color: msg.role === 'user' ? 'white' : '#D1D5DB',
-                border: msg.role === 'user' ? 'none' : '1px solid #243140',
+                background: msg.role === 'user' ? '#FF6A00' : '#0F1720',
+                color: msg.role === 'user' ? 'white' : '#E2E8F0',
+                border: msg.role === 'user' ? 'none' : '1px solid #223246',
                 fontFamily: fontFamily.body,
                 whiteSpace: 'pre-line',
                 borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
               }}>
-              {msg.role === 'assistant' && msg.agent_name && (
-                <p className="text-[10px] font-medium mb-1" style={{ color: '#60A5FA', fontFamily: fontFamily.mono }}>
-                  {msg.agent_name}
-                </p>
+              {msg.role === 'assistant' && (
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: 'rgba(255,106,0,0.16)' }}>
+                    <MessageSquare className="w-3 h-3 text-[#FF6A00]" />
+                  </div>
+                  <p className="text-[10px] font-medium" style={{ color: '#93C5FD', fontFamily: fontFamily.mono }}>
+                    {msg.agent_name || 'BIQc Advisor'}
+                  </p>
+                </div>
               )}
               {msg.type === 'integration_prompt' && <Database className="w-3.5 h-3.5 text-[#F59E0B] inline mr-1.5 -mt-0.5" />}
               {normalizeMessageContent(msg.content ?? msg.text)}
+              {msg.coverage_window && (
+                <div className="mt-2 rounded-lg px-2 py-1.5" style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)' }}>
+                  <p className="text-[9px] uppercase tracking-wider mb-1" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Coverage window</p>
+                  <p className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }}>
+                    {msg.coverage_window.coverage_start || 'n/a'} → {msg.coverage_window.coverage_end || 'n/a'}
+                  </p>
+                  <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
+                    last sync: {msg.coverage_window.last_sync_at || 'n/a'} · confidence impact: {msg.coverage_window.confidence_impact || 'unknown'}
+                  </p>
+                  {Array.isArray(msg.coverage_window.missing_periods) && msg.coverage_window.missing_periods.length > 0 && (
+                    <p className="text-[10px]" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                      gap: {msg.coverage_window.missing_periods[0]}
+                    </p>
+                  )}
+                </div>
+              )}
               {msg.evidence_pack?.sources?.length > 0 && (
                 <div className="flex gap-1 mt-2 flex-wrap">
                   {msg.evidence_pack.sources.slice(0, 4).map((s) => (

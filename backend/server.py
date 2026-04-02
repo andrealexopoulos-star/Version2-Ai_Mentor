@@ -362,6 +362,9 @@ api_router.include_router(engagement_engine_router)
 from routes.stripe_payments import router as stripe_payments_router
 api_router.include_router(stripe_payments_router)
 
+from routes.billing import router as billing_router
+api_router.include_router(billing_router)
+
 from routes.spine_api import router as spine_api_router
 api_router.include_router(spine_api_router)
 

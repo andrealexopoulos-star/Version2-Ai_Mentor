@@ -106,6 +106,7 @@ import DecisionsPage from './pages/DecisionsPage';
 import OnboardingWizard from './pages/OnboardingWizard';
 import OnboardingDecision from './pages/OnboardingDecision';
 import UpgradePage from './pages/UpgradePage';
+import BillingPage from './pages/BillingPage';
 
 // ── Conditional imports (pages that may not exist) ────────────────────────────
 let CognitiveV2Mockup, LoadingPreview, CalibrationPreview, AuthDebug, GmailTest, OutlookTest, ProfileImport;
@@ -313,6 +314,7 @@ function AppRoutes() {
 
         {/* Paid routes */}
         <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="revenue"><RevenuePage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/billing" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="billing"><BillingPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="operations"><OperationsPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/risk" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="risk-workforce"><RiskPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="compliance"><CompliancePage /></LaunchRoute></ProtectedRoute>} />

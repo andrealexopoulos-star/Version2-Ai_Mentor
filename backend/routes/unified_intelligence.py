@@ -7,6 +7,7 @@ This is the core of Cognition-as-a-Platform.
 """
 import logging
 import asyncio
+import os
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends
@@ -18,6 +19,64 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 from routes.auth import get_current_user
+
+MERGE_HISTORY_PAGE_SIZE = int(os.environ.get("MERGE_HISTORY_PAGE_SIZE", "100"))
+MERGE_HISTORY_MAX_PAGES = int(os.environ.get("MERGE_HISTORY_MAX_PAGES", "5"))
+
+
+async def _fetch_merge_collection(
+    merge_client: Any,
+    method_name: str,
+    account_token: str,
+    *,
+    page_size: int = MERGE_HISTORY_PAGE_SIZE,
+    max_pages: int = MERGE_HISTORY_MAX_PAGES,
+) -> Dict[str, Any]:
+    """Cursor-crawl Merge collections for deeper history windows."""
+    method = getattr(merge_client, method_name)
+    cursor = None
+    rows: List[Dict[str, Any]] = []
+    pages_fetched = 0
+    truncated = False
+
+    for _ in range(max_pages):
+        page = await method(account_token=account_token, cursor=cursor, page_size=page_size)
+        pages_fetched += 1
+        batch = page.get("results", []) or []
+        rows.extend(batch)
+        cursor = page.get("next")
+        if not cursor or not batch:
+            break
+    if cursor:
+        truncated = True
+
+    return {
+        "rows": rows,
+        "pages_fetched": pages_fetched,
+        "truncated": truncated,
+        "next_cursor": cursor,
+    }
+
+
+def _collection_date_window(rows: List[Dict[str, Any]], keys: List[str]) -> Dict[str, Optional[str]]:
+    dates: List[datetime] = []
+    for row in rows:
+        for key in keys:
+            value = row.get(key)
+            if not value:
+                continue
+            try:
+                parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+                dates.append(parsed)
+                break
+            except Exception:
+                continue
+    if not dates:
+        return {"start": None, "end": None}
+    return {
+        "start": min(dates).isoformat(),
+        "end": max(dates).isoformat(),
+    }
 
 
 async def _brain_page_summary(sb, current_user: dict, page_name: str) -> List[Dict[str, Any]]:
@@ -135,6 +194,10 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
         'profile': None,
         'snapshot': None,
         'live_signals': [],
+        'coverage_window': {
+            'crm': {"start": None, "end": None},
+            'accounting': {"start": None, "end": None},
+        },
         '_cache': {'cache_hit': False, 'source_key': cache_key},
     }
 
@@ -169,15 +232,21 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
     if 'crm' in accounts:
         try:
             from merge_client import MergeClient
-            import os
-            mc = MergeClient(api_key=os.environ.get('MERGE_API_KEY', ''))
+            mc = MergeClient(merge_api_key=os.environ.get('MERGE_API_KEY', ''))
             token = accounts['crm']['account_token']
-
-            deals = await mc.get_deals(account_token=token, page_size=20)
-            data['crm']['deals'] = deals.get('results', [])
-
-            contacts = await mc.get_contacts(account_token=token, page_size=10)
-            data['crm']['contacts'] = contacts.get('results', [])
+            deals = await _fetch_merge_collection(mc, "get_deals", token)
+            contacts = await _fetch_merge_collection(mc, "get_contacts", token)
+            data['crm']['deals'] = deals.get('rows', [])
+            data['crm']['contacts'] = contacts.get('rows', [])
+            data['crm']['history_meta'] = {
+                "deals_pages_fetched": deals.get("pages_fetched", 0),
+                "contacts_pages_fetched": contacts.get("pages_fetched", 0),
+                "truncated": bool(deals.get("truncated") or contacts.get("truncated")),
+            }
+            data['coverage_window']['crm'] = _collection_date_window(
+                data['crm']['deals'],
+                ['close_date', 'last_modified_at', 'remote_updated_at', 'created_at', 'remote_created_at'],
+            )
         except Exception as e:
             logger.debug(f"CRM fetch: {e}")
 
@@ -185,15 +254,21 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
     if 'accounting' in accounts:
         try:
             from merge_client import MergeClient
-            import os
-            mc = MergeClient(api_key=os.environ.get('MERGE_API_KEY', ''))
+            mc = MergeClient(merge_api_key=os.environ.get('MERGE_API_KEY', ''))
             token = accounts['accounting']['account_token']
-
-            invoices = await mc.get_invoices(account_token=token, page_size=10)
-            data['accounting']['invoices'] = invoices.get('results', [])
-
-            payments = await mc.get_payments(account_token=token, page_size=10)
-            data['accounting']['payments'] = payments.get('results', [])
+            invoices = await _fetch_merge_collection(mc, "get_invoices", token)
+            payments = await _fetch_merge_collection(mc, "get_payments", token)
+            data['accounting']['invoices'] = invoices.get('rows', [])
+            data['accounting']['payments'] = payments.get('rows', [])
+            data['accounting']['history_meta'] = {
+                "invoices_pages_fetched": invoices.get("pages_fetched", 0),
+                "payments_pages_fetched": payments.get("pages_fetched", 0),
+                "truncated": bool(invoices.get("truncated") or payments.get("truncated")),
+            }
+            data['coverage_window']['accounting'] = _collection_date_window(
+                data['accounting']['invoices'],
+                ['issue_date', 'invoice_date', 'due_date', 'updated_at', 'remote_updated_at', 'created_at', 'remote_created_at'],
+            )
         except Exception as e:
             logger.debug(f"Accounting fetch: {e}")
 

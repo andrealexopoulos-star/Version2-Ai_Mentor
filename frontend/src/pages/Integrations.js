@@ -659,7 +659,7 @@ export default function Integrations() {
         name: row?.name || 'Unknown provider',
         domain: 'integration-network',
         category: primaryCategory,
-        desc: row?.description || `Connect ${row?.name || 'provider'} via Merge`,
+        desc: row?.description || `Connect ${row?.name || 'provider'} through BIQc Connector Hub`,
         type: 'merge_catalog',
         mergeCategories,
       };
@@ -790,7 +790,7 @@ export default function Integrations() {
             </div>
             {searchTerm && (
               <p className="text-[11px]" style={{ color: '#64748B' }}>
-                Search includes BIQc connectors plus the live Merge integration catalog.
+                Search includes BIQc connectors plus the live unified integration catalog.
               </p>
             )}
           </div>
@@ -818,7 +818,7 @@ export default function Integrations() {
                   isStale={isMergeStale(integration)}
                   truthState={truthStateForIntegration(integration)}
                   truthReason={truthReasonForIntegration(integration)}
-                  badge={integration.type === 'coming_soon' ? 'Coming soon' : integration.type === 'gmail' || integration.type === 'outlook' || integration.type === 'gcal' || integration.type === 'outlook_cal' ? 'OAuth' : 'Merge'}
+                  badge={integration.type === 'coming_soon' ? 'Coming soon' : integration.type === 'gmail' || integration.type === 'outlook' || integration.type === 'gcal' || integration.type === 'outlook_cal' ? 'OAuth' : 'Connector'}
                   comingSoon={integration.type === 'coming_soon'}
                 />
               ))}
