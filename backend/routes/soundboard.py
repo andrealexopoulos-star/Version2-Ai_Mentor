@@ -4,9 +4,10 @@ Extracted from server.py. Prompts loaded from Supabase system_prompts table.
 Instrumented with Intelligence Spine LLM logging.
 """
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 import asyncio
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, AsyncGenerator
 from datetime import datetime, timezone
 import uuid
 import logging
@@ -840,6 +841,11 @@ def _enforce_conversion_guardrails(response: str, *, allow_upsell: bool) -> str:
         kept_lines.append(line)
     sanitized = "\n".join(kept_lines).strip()
     return sanitized or response
+
+
+def _sse_event(event_type: str, payload: Dict[str, Any]) -> str:
+    body = {"type": event_type, **payload}
+    return f"data: {json.dumps(body, ensure_ascii=False)}\n\n"
 
 
 def _resolve_model_route(mode: str, intent_domain: str, intent_action: str, complexity: str, has_openai: bool, has_google: bool) -> tuple[str, List[str], str, str]:
@@ -2615,6 +2621,30 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "advisory_slots": fallback_slots,
             **contract_meta,
         }
+
+
+@router.post("/soundboard/chat/stream")
+async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict = Depends(get_current_user)):
+    """
+    SSE stream wrapper for Soundboard replies.
+    Produces delta events for progressive UI rendering, then a final event with metadata.
+    """
+    result = await soundboard_chat(req, current_user)
+    reply = str(result.get("reply") or "")
+
+    async def event_stream() -> AsyncGenerator[str, None]:
+        yield _sse_event("start", {"conversation_id": result.get("conversation_id")})
+        if not reply:
+            yield _sse_event("final", {"payload": result})
+            return
+        chunk_size = 20
+        for i in range(0, len(reply), chunk_size):
+            chunk = reply[i : i + chunk_size]
+            yield _sse_event("delta", {"text": chunk})
+            await asyncio.sleep(0.01)
+        yield _sse_event("final", {"payload": result})
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @router.patch("/soundboard/conversations/{conversation_id}")

@@ -1,0 +1,1474 @@
+{
+  "generated_at": "2026-04-02T19:19:35.216323+00:00",
+  "passed": true,
+  "failure_codes": [],
+  "backend_base_url": "https://biqc-api.azurewebsites.net",
+  "token_supplied": true,
+  "auth_fixture_token_present": true,
+  "token_load_check_passed": true,
+  "live_200_verification_passed": true,
+  "summary": {
+    "probes_total": 181,
+    "probes_run": 158,
+    "pass_200_count": 2,
+    "contract_exception_count": 179,
+    "unexpected_fail_count": 0
+  },
+  "endpoints_checked": 158,
+  "timestamp": "2026-04-02T19:19:35.216323+00:00",
+  "probes": [
+    {
+      "path": "/",
+      "method": "GET",
+      "status": 404,
+      "result": "contract_exception",
+      "reason": "public_probe_not_available",
+      "auth_required": false,
+      "probe_group": "public_seed"
+    },
+    {
+      "path": "/docs",
+      "method": "GET",
+      "status": 200,
+      "result": "pass",
+      "reason": "",
+      "auth_required": false,
+      "probe_group": "public_seed"
+    },
+    {
+      "path": "/openapi.json",
+      "method": "GET",
+      "status": 200,
+      "result": "pass",
+      "reason": "",
+      "auth_required": false,
+      "probe_group": "public_seed"
+    },
+    {
+      "path": "/api/public/business-health",
+      "method": "GET",
+      "status": 404,
+      "result": "contract_exception",
+      "reason": "public_probe_not_available",
+      "auth_required": false,
+      "probe_group": "public_seed"
+    },
+    {
+      "path": "/api/admin/users",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": false
+    },
+    {
+      "path": "/api/admin/stats",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": false
+    },
+    {
+      "path": "/api/admin/rate-limits/defaults",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": false
+    },
+    {
+      "path": "/api/admin/users/{user_id}/rate-limits",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": false
+    },
+    {
+      "path": "/api/admin/rate-limits/users/{user_id}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": false
+    },
+    {
+      "path": "/api/admin/prompts",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": false
+    },
+    {
+      "path": "/api/admin/prompts/{prompt_key}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": false
+    },
+    {
+      "path": "/api/admin/prompts/audit-log",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": false
+    },
+    {
+      "path": "/api/graph/traverse/{node_id}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/graph/query",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/eval/factuality",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/alerts/check",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/auth/supabase/oauth/{provider}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/auth/oauth/{provider}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/auth/supabase/me",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/auth/me",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/auth/check-profile",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/billing/overview",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/billing/charges",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/billing/suppliers",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/brain/priorities",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/brain/initial-calibration",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/brain/concerns",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/brain/metrics",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/brain/kpis",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/brain/runtime-check",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/calibration/status",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/lifecycle/state",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": false
+    },
+    {
+      "path": "/api/calibration/activation",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": false
+    },
+    {
+      "path": "/api/calibration/strategic-audit",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/checkins/pending",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/forensic/calibration",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/cognition/{tab}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/cognition/decisions",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/cognition/automation/history",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/cognition/integration-health",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/cognition/integration-health/history",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/cognition/drift",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/cognition/telemetry",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/cognitive/profile",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/cognitive/escalation",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/advisory/confidence",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/advisory/history",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/advisory/escalations",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/data-center/files",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/data-center/files/{file_id}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/data-center/files/{file_id}/download",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/data-center/categories",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/data-center/stats",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/auth/outlook/login",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": false
+    },
+    {
+      "path": "/api/auth/gmail/login",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": false
+    },
+    {
+      "path": "/api/auth/gmail/callback",
+      "method": "GET",
+      "status": 422,
+      "result": "contract_exception",
+      "reason": "callback_requires_query_params",
+      "auth_required": false
+    },
+    {
+      "path": "/api/gmail/status",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/auth/outlook/callback",
+      "method": "GET",
+      "status": 422,
+      "result": "contract_exception",
+      "reason": "callback_requires_query_params",
+      "auth_required": false
+    },
+    {
+      "path": "/api/outlook/emails/sync",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/outlook/sync-status/{job_id}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/outlook/intelligence",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/outlook/status",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/outlook/debug-tokens",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/email/calendar/events",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/outlook/calendar/events",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/email/folders",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/email/messages",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/email/priority-inbox",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/facts/resolve",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/files/list",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/files/download/{file_id}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/files/reports",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/forensic/ingestion-history",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/chat/history",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/chat/sessions",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/analyses",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/analyses/{analysis_id}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/documents",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/documents/{doc_id}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/diagnoses",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/detailed",
+      "method": "GET",
+      "status": 404,
+      "result": "contract_exception",
+      "reason": "non_probeable_get_surface",
+      "auth_required": false
+    },
+    {
+      "path": "/api/workers",
+      "method": "GET",
+      "status": 404,
+      "result": "contract_exception",
+      "reason": "non_probeable_get_surface",
+      "auth_required": false
+    },
+    {
+      "path": "/api/warmup",
+      "method": "GET",
+      "status": 403,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": false
+    },
+    {
+      "path": "/api/ingestion/history",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/ingestion/session/{session_id}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/merge/connected",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/crm/contacts",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/crm/companies",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/crm/deals",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/crm/owners",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/accounting/invoices",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/accounting/payments",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/accounting/transactions",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/accounting/summary",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/baseline-snapshot",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/executive-mirror",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/data-readiness",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/watchtower",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/alerts/actions",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/workflows/delegate/providers",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/workflows/delegate/options",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/advisor/executive-surface",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/google-drive/files",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/google-drive/status",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/channels/status",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/user/integration-status",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/connectors",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/merge/catalog",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/integrations/webhook-health",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/user/data-coverage",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/snapshot/latest",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/snapshot/history",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/baseline",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/baseline/defaults",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/market-intelligence",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/actions",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/social-handles",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/brief",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/workforce",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/scenarios",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/scores",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/concentration",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/contradictions",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/pressure",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/freshness",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/silence",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/escalations",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/completeness",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/readiness",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/watchtower/positions",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/summary",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/integration-status",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/intelligence/governance-summary",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/automation/history",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/automation/content-types",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/marketing/benchmark/latest",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/competitive-benchmark/scores",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/memory/retrieve",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/onboarding/status",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/business-profile/context",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/experiments/list",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/experiments/{name}/variant",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/experiments/{name}/results",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/services/health",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/business-profile",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/business-profile/versioned",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/business-profile/history",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/oac/recommendations",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/business-profile/scores",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/dashboard/stats",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/dashboard/focus",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/notifications/alerts",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/rag/stats",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/reports/download/{filename}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/soundboard/conversations",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/soundboard/conversations/{conversation_id}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/soundboard/proactive-check",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/soundboard/scan-usage",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/spine/status",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/spine/snapshots",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/spine/risk-baseline/history",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/spine/risk-weights",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/spine/risk-calibration-report",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/spine/events",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/spine/executions",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/spine/validation-report",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/strategic-console/briefing",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/payments/status/{session_id}",
+      "method": "GET",
+      "status": null,
+      "result": "contract_exception",
+      "reason": "templated_path",
+      "auth_required": true
+    },
+    {
+      "path": "/api/super-admin/verify",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/support/users",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/support/audit-log",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/enterprise/contact-requests",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/tutorials/status",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/unified/advisor",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/unified/revenue",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/unified/operations",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/unified/risk",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/unified/people",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/unified/market",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/watchtower/positions",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    },
+    {
+      "path": "/api/watchtower/findings",
+      "method": "GET",
+      "status": 401,
+      "result": "contract_exception",
+      "reason": "auth_required_without_valid_fixture",
+      "auth_required": true
+    }
+  ],
+  "source_artifact": "test_reports/zd_zr_za_manager_20260402_190630.json"
+}

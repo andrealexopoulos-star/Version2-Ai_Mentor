@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
+import { getBackendUrl } from '../config/urls';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
@@ -113,7 +114,7 @@ const buildAdvisorAssistantMessage = (context) => {
 
 const MySoundBoard = () => {
   const location = useLocation();
-  const { user } = useSupabaseAuth();
+  const { user, session } = useSupabaseAuth();
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
   const { isChatOpen, openChat, closeAll, activeDrawer } = useMobileDrawer();
   const [conversations, setConversations] = useState([]);
@@ -358,7 +359,50 @@ const MySoundBoard = () => {
     inputRef.current?.focus();
   };
 
-  const sendMessage = async (messageOverride = null, contextOverride = null) => {
+  const streamSoundboardChat = async (payload, { onDelta } = {}) => {
+    const token = session?.access_token;
+    if (!token) throw new Error('Missing session token for streaming chat');
+    const res = await fetch(`${getBackendUrl()}/api/soundboard/chat/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok || !res.body) {
+      const text = await res.text().catch(() => '');
+      throw new Error(text || `Streaming request failed (${res.status})`);
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let finalPayload = null;
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split('\n\n');
+      buffer = events.pop() || '';
+      for (const rawEvent of events) {
+        const line = rawEvent.split('\n').find((l) => l.startsWith('data: '));
+        if (!line) continue;
+        try {
+          const evt = JSON.parse(line.slice(6));
+          if (evt.type === 'delta' && typeof evt.text === 'string') {
+            onDelta?.(evt.text);
+          } else if (evt.type === 'final' && evt.payload) {
+            finalPayload = evt.payload;
+          }
+        } catch {
+          // Ignore malformed event chunks and continue stream.
+        }
+      }
+    }
+    return finalPayload;
+  };
+
+  const sendMessage = async (messageOverride = null, contextOverride = null, traceOptions = null) => {
     // React button clicks pass a synthetic event as first argument when onClick
     // is set directly to this function. Ignore that event object.
     if (messageOverride && typeof messageOverride === 'object' && typeof messageOverride.preventDefault === 'function') {
@@ -414,18 +458,28 @@ const MySoundBoard = () => {
       if (!advisorContext) intelligenceContext.request_scope = requestScope;
 
       let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage, agent_name, boardroom_trace, boardroom_status, evidence_pack, soundboard_contract, advisory_slots, coverage_window;
+      const traceRootId = traceOptions?.trace_root_id || `trace-${Date.now()}`;
+      const responseVersion = Number(traceOptions?.response_version || 1);
+      const placeholderId = `stream-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      setMessages((prev) => [...prev, { id: placeholderId, role: 'assistant', content: '', streaming: true, trace_root_id: traceRootId, response_version: responseVersion }]);
 
-      const response = await apiClient.post(
-        '/soundboard/chat',
-        {
-          message: fullMessage,
-          conversation_id: activeConversation,
-          intelligence_context: intelligenceContext,
-          mode: currentMode.backend_mode,
-          agent_id: selectedAgent || 'auto',
+      const requestPayload = {
+        message: fullMessage,
+        conversation_id: activeConversation,
+        intelligence_context: intelligenceContext,
+        mode: currentMode.backend_mode,
+        agent_id: selectedAgent || 'auto',
+      };
+      const streamedPayload = await streamSoundboardChat(requestPayload, {
+        onDelta: (deltaText) => {
+          setMessages((prev) => prev.map((m) => (
+            m.id === placeholderId
+              ? { ...m, content: `${m.content || ''}${deltaText}` }
+              : m
+          )));
         },
-        { timeout: SOUNDBOARD_CHAT_TIMEOUT_MS },
-      );
+      });
+      const responseData = streamedPayload || (await apiClient.post('/soundboard/chat', requestPayload, { timeout: SOUNDBOARD_CHAT_TIMEOUT_MS })).data;
       ({
         reply,
         conversation_id,
@@ -445,16 +499,19 @@ const MySoundBoard = () => {
         soundboard_contract,
         advisory_slots,
         coverage_window,
-      } = response.data);
+      } = responseData);
 
       const replyTrimmed = typeof reply === 'string' ? reply.trim() : '';
       if (!replyTrimmed) {
         const hint =
-          response.data?.runtime_error ||
-          response.data?.provider_error ||
-          response.data?.detail ||
+          responseData?.runtime_error ||
+          responseData?.provider_error ||
+          responseData?.detail ||
           'Empty reply from server. Try Normal mode or retry.';
-        setMessages(prev => [...prev, { role: 'assistant', content: String(hint) }]);
+        setMessages((prev) => [
+          ...prev.filter((m) => m.id !== placeholderId),
+          { role: 'assistant', content: String(hint) },
+        ]);
         return;
       }
 
@@ -475,9 +532,11 @@ const MySoundBoard = () => {
         soundboard_contract,
         advisory_slots,
         coverage_window,
+        trace_root_id: traceRootId,
+        response_version: responseVersion,
       };
       if (generatedFile) assistantMsg.file = generatedFile;
-      setMessages(prev => [...prev, assistantMsg]);
+      setMessages((prev) => prev.map((m) => (m.id === placeholderId ? assistantMsg : m)));
       
       if (!activeConversation && conversation_id) {
         setActiveConversation(conversation_id);
@@ -500,7 +559,7 @@ const MySoundBoard = () => {
       const errorMessage = getSoundboardErrorMessage(error);
       toast.error(errorMessage);
       setMessages((prev) => [
-        ...prev,
+        ...prev.filter((m) => !m.streaming),
         {
           role: 'assistant',
           content: `I hit a send error: ${errorMessage}\n\nPlease retry. If this repeats, switch to Normal mode and try again.`,
@@ -902,6 +961,42 @@ const MySoundBoard = () => {
                         <p className="whitespace-pre-wrap text-sm leading-relaxed">
                           {normalizeMessageContent(message.content)}
                         </p>
+                        {message.role === 'user' && (
+                          <div className="mt-2">
+                            <button
+                              onClick={() => {
+                                setInput(message.content || '');
+                                inputRef.current?.focus();
+                              }}
+                              className="text-[10px] px-2 py-1 rounded-md"
+                              style={{ background: 'rgba(148,163,184,0.12)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                            >
+                              Edit & resend
+                            </button>
+                          </div>
+                        )}
+                        {message.role === 'assistant' && (
+                          <div className="mt-2">
+                            <button
+                              onClick={() => {
+                                const prevUser = [...messages.slice(0, index)].reverse().find((m) => m.role === 'user' && typeof m.content === 'string' && m.content.trim());
+                                if (!prevUser) return;
+                                sendMessage(
+                                  prevUser.content,
+                                  advisorHandoff,
+                                  {
+                                    trace_root_id: message.trace_root_id || `trace-${Date.now()}`,
+                                    response_version: Number(message.response_version || 1) + 1,
+                                  },
+                                );
+                              }}
+                              className="text-[10px] px-2 py-1 rounded-md"
+                              style={{ background: 'rgba(59,130,246,0.12)', color: '#93C5FD', fontFamily: fontFamily.mono }}
+                            >
+                              Regenerate
+                            </button>
+                          </div>
+                        )}
                         {/* Proactive next-action suggestions */}
                         {message.role === 'assistant' && message.suggested_actions?.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">
@@ -1016,6 +1111,14 @@ const MySoundBoard = () => {
                                 title={message.advisory_slots.kpi_note}
                               >
                                 KPI note
+                              </span>
+                            )}
+                            {typeof message.response_version === 'number' && message.response_version > 1 && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.5 rounded"
+                                style={{ background: 'rgba(148,163,184,0.12)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                              >
+                                v{message.response_version}
                               </span>
                             )}
                           </div>

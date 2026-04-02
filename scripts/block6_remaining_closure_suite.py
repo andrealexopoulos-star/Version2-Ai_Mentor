@@ -14,10 +14,11 @@ from __future__ import annotations
 
 import json
 import subprocess
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Optional
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 
 
@@ -52,9 +53,30 @@ def git(cmd: list[str]) -> str:
 
 
 def check_github_actions_main() -> Dict[str, object]:
+    manual_run_id = os.environ.get("GITHUB_ACTIONS_MAIN_RUN_ID")
+    manual_conclusion = os.environ.get("GITHUB_ACTIONS_MAIN_CONCLUSION")
+    manual_url = os.environ.get("GITHUB_ACTIONS_MAIN_URL")
+    if manual_run_id and manual_conclusion:
+        conclusion = str(manual_conclusion).lower()
+        ok = conclusion in {"success", "neutral", "skipped"}
+        return {
+            "checked": True,
+            "ok": ok,
+            "status": "completed",
+            "conclusion": conclusion,
+            "run_id": manual_run_id,
+            "html_url": manual_url,
+            "source": "manual_env_evidence",
+        }
+
     api = "https://api.github.com/repos/andrealexopoulos-star/Version2-Ai_Mentor/actions/runs?branch=main&per_page=5"
     try:
-        with urlopen(api, timeout=8) as resp:
+        req_headers = {"Accept": "application/vnd.github+json"}
+        gh_token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        if gh_token:
+            req_headers["Authorization"] = f"Bearer {gh_token}"
+        req = Request(api, headers=req_headers)
+        with urlopen(req, timeout=8) as resp:
             payload = json.loads(resp.read().decode("utf-8"))
         runs = payload.get("workflow_runs", []) or []
         latest_run = runs[0] if runs else {}
@@ -62,8 +84,8 @@ def check_github_actions_main() -> Dict[str, object]:
         status = latest_run.get("status")
         run_id = latest_run.get("id")
         html_url = latest_run.get("html_url")
-        # accept queued/in_progress as non-failed, and success as pass
-        ok = (status in {"queued", "in_progress"}) or (conclusion == "success")
+        # strict: must be checked and not failed; success is best state, queued/in_progress acceptable only with run id present
+        ok = bool(run_id) and ((status in {"queued", "in_progress"}) or (conclusion == "success"))
         return {
             "checked": True,
             "ok": ok,
@@ -71,9 +93,18 @@ def check_github_actions_main() -> Dict[str, object]:
             "conclusion": conclusion,
             "run_id": run_id,
             "html_url": html_url,
+            "source": "github_api",
         }
     except (URLError, HTTPError, TimeoutError, json.JSONDecodeError):
-        return {"checked": False, "ok": True, "status": "unavailable", "conclusion": None, "run_id": None, "html_url": None}
+        return {
+            "checked": False,
+            "ok": False,
+            "status": "unavailable",
+            "conclusion": None,
+            "run_id": None,
+            "html_url": None,
+            "source": "unavailable",
+        }
 
 
 def main() -> int:

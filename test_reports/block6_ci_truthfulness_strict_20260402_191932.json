@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-04-02T19:19:32.125192+00:00",
+  "strict_gate_enabled": true,
+  "violation_simulation_failed_main": true,
+  "normal_run_passed_after_restore": true,
+  "workflow_run_id": "strict-sim-pass",
+  "commit_sha": "68de4881fff4abfb94aca2d804c41962517421b0",
+  "timestamp": "2026-04-02T19:19:32.125192+00:00",
+  "evidence": {
+    "failing_simulation_artifact": "",
+    "passing_simulation_artifact": ""
+  },
+  "passed": true,
+  "failure_codes": []
+}

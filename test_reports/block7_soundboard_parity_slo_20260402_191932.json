@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-04-02T19:19:32.463111+00:00",
+  "passed": true,
+  "failure_codes": [],
+  "checks": {
+    "streaming_endpoint_present": true,
+    "streaming_ui_present": true,
+    "edit_and_regenerate_controls_present": true,
+    "traceable_response_versions_present": true,
+    "coverage_window_visible": true,
+    "source_citations_visible": true,
+    "latency_budget_timeout_le_120s": true,
+    "reliability_retry_copy_present": true,
+    "guardrails_still_present": true
+  },
+  "slo": {
+    "timeout_ms": 120000,
+    "target_timeout_ms_max": 120000
+  }
+}

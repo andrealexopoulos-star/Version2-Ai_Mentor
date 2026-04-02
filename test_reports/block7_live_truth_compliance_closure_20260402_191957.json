@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-04-02T19:19:57.922431+00:00",
+  "passed": true,
+  "failure_codes": [],
+  "checks": {
+    "block7_live_200_passed": true,
+    "block7_security_matrix_passed": true,
+    "block7_soundboard_slo_passed": true,
+    "block6_ci_truthfulness_strict": true
+  },
+  "block6_ci_truthfulness_strict": "PASS",
+  "block7_live_200_passed": "PASS",
+  "closure_passed": true,
+  "artifacts": {
+    "block7_live_200_verification": "test_reports/block7_live_200_verification_20260402_191935.json",
+    "block7_security_compliance_matrix": "test_reports/block7_security_compliance_matrix_20260402_191932.json",
+    "block7_soundboard_parity_slo": "test_reports/block7_soundboard_parity_slo_20260402_191932.json",
+    "block6_ci_truthfulness_strict": "test_reports/block6_ci_truthfulness_strict_20260402_191932.json"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-04-02T19:19:32.294159+00:00",
+  "passed": true,
+  "failure_codes": [],
+  "global_controls": {
+    "oauth_or_oidc_present": true,
+    "token_storage_server_side": true,
+    "https_enforced_urls": true,
+    "no_hardcoded_keys_pattern": true,
+    "rbac_least_privilege_presence": true,
+    "rate_limit_control_present": true,
+    "retry_or_resilience_present": true,
+    "audit_logging_present": true
+  },
+  "integrations_matrix": [
+    {
+      "integration": "Email/Calendar (Google/Microsoft)",
+      "auth": true,
+      "token_handling": true,
+      "encryption_https": true,
+      "rbac": true,
+      "rate_limit": true,
+      "retry": true,
+      "audit": true
+    },
+    {
+      "integration": "Merge CRM/Accounting/HRIS/ATS/Ticketing/File",
+      "auth": true,
+      "token_handling": true,
+      "encryption_https": true,
+      "rbac": true,
+      "rate_limit": true,
+      "retry": true,
+      "audit": true
+    },
+    {
+      "integration": "Stripe/Xero Billing Surfaces",
+      "auth": true,
+      "token_handling": true,
+      "encryption_https": true,
+      "rbac": true,
+      "rate_limit": true,
+      "retry": true,
+      "audit": true
+    }
+  ],
+  "mandatory_controls": [
+    "oauth_or_oidc_present",
+    "token_storage_server_side",
+    "https_enforced_urls",
+    "no_hardcoded_keys_pattern",
+    "rbac_least_privilege_presence",
+    "rate_limit_control_present",
+    "retry_or_resilience_present",
+    "audit_logging_present"
+  ]
+}
