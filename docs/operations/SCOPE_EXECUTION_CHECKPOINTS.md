@@ -20,6 +20,13 @@ Format: `PASS|FAIL` · `gate_id` · `failure_code(if fail)` · `artifact`
 - PASS · `BLOCK2-COVERAGE-UI-01` · `-` · `frontend/src/pages/MySoundBoard.js` (coverage window rendered on full advisor surface)
 - PASS · `BLOCK2-LINEAGE-CLASSIFICATION-01` · `-` · `test_reports/zd_zr_za_manager_20260402_101741.json` (`expected-unlinked=19`, `unexpected-unlinked=0`)
 - PASS · `BLOCK2-EVIDENCE-INDEX-01` · `-` · `test_reports/release_evidence_index_20260402_101741.json`
+- PASS · `BLOCK3-FORENSIC-REGRESSION-01` · `-` · `test_reports/block3_forensic_regression_20260402_121309.json`
+- PASS · `BLOCK3-CANARY-FINANCE-SHADOW-01` · `-` · `test_reports/block3_canary_finance_shadow_20260402_121309.json`
+- PASS · `BLOCK3-SMB-FOUNDER-JOURNEYS-01` · `-` · `test_reports/block3_smb_founder_journeys_20260402_121309.json`
+- PASS · `BLOCK3-UPSell-POLICY-AUDIT-01` · `-` · `test_reports/block3_upsell_policy_audit_20260402_121309.json`
+- PASS · `BLOCK3-READINESS-PACK-SIGNOFF-01` · `-` · `test_reports/block3_readiness_pack_signoff_20260402_121316.json`
+- PASS · `BLOCK4-POST-RELEASE-GUARD-01` · `-` · `test_reports/block4_post_release_guard_20260402_121404.json`
+- PASS · `BLOCK5-FINAL-CLOSURE-PACK-01` · `-` · `test_reports/block5_final_closure_pack_20260402_121529.json`
 
 ## Current Open Items
 

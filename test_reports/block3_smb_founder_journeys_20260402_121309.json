@@ -1,0 +1,69 @@
+{
+  "generated_at": "2026-04-02T12:13:09.543047+00:00",
+  "suite_passed": true,
+  "personas_total": 4,
+  "decision_job_coverage_passed": true,
+  "coverage_window_visible": true,
+  "persona_checks": [
+    {
+      "persona": "Consulting founder",
+      "jobs": [
+        "protect cash runway",
+        "stabilize pipeline conversion",
+        "forecast next-quarter staffing"
+      ],
+      "mapped_domains": [
+        "finance",
+        "sales",
+        "hr"
+      ],
+      "covered": true
+    },
+    {
+      "persona": "Agency owner",
+      "jobs": [
+        "optimize campaign ROI",
+        "reduce client churn risk",
+        "sequence weekly operating priorities"
+      ],
+      "mapped_domains": [
+        "marketing",
+        "risk",
+        "planning"
+      ],
+      "covered": true
+    },
+    {
+      "persona": "Retail operator",
+      "jobs": [
+        "watch payable pressure",
+        "identify demand shifts",
+        "handle compliance incidents quickly"
+      ],
+      "mapped_domains": [
+        "planning",
+        "planning",
+        "risk"
+      ],
+      "covered": true
+    },
+    {
+      "persona": "SaaS founder",
+      "jobs": [
+        "improve MRR quality",
+        "diagnose revenue leakage",
+        "prioritize strategic bets with confidence"
+      ],
+      "mapped_domains": [
+        "planning",
+        "planning",
+        "planning"
+      ],
+      "covered": true
+    }
+  ],
+  "ui_evidence": {
+    "panel_has_coverage_window": true,
+    "board_has_coverage_window": true
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-04-02T12:15:29.690788+00:00",
+  "closure_passed": true,
+  "failure_codes": [],
+  "checks": {
+    "block3_forensic_regression_passed": true,
+    "block3_forensic_regression_fresh": true,
+    "block3_canary_finance_shadow_passed": true,
+    "block3_canary_finance_shadow_fresh": true,
+    "block3_smb_founder_journeys_passed": true,
+    "block3_smb_founder_journeys_fresh": true,
+    "block3_upsell_policy_audit_passed": true,
+    "block3_upsell_policy_audit_fresh": true,
+    "block3_readiness_pack_signoff_passed": true,
+    "block3_readiness_pack_signoff_fresh": true,
+    "block4_post_release_guard_passed": true,
+    "block4_post_release_guard_fresh": true,
+    "release_evidence_index_passed": true,
+    "release_evidence_index_fresh": true,
+    "continuous_ops_lock": true
+  },
+  "artifacts": {
+    "block3_forensic_regression": {
+      "path": "test_reports/block3_forensic_regression_20260402_121309.json",
+      "sha256": "70e1b3b3b511b485963ce6a98561eefc7bd787890f45dcfb5a3fccb66d5e0b70",
+      "generated_at": "2026-04-02T12:13:09.546292+00:00",
+      "age_minutes": 2.34,
+      "fresh": true,
+      "passed": true
+    },
+    "block3_canary_finance_shadow": {
+      "path": "test_reports/block3_canary_finance_shadow_20260402_121309.json",
+      "sha256": "b0b3e0d316b0f3f9d62c31b5a210d13f05e03395fe2c1cffe270a2dfd2e6ca44",
+      "generated_at": "2026-04-02T12:13:09.548694+00:00",
+      "age_minutes": 2.34,
+      "fresh": true,
+      "passed": true
+    },
+    "block3_smb_founder_journeys": {
+      "path": "test_reports/block3_smb_founder_journeys_20260402_121309.json",
+      "sha256": "672f08166884115c2f07ff1fe2bf72461d3900362d2a7e6c34e17f5d26d19bc4",
+      "generated_at": "2026-04-02T12:13:09.543047+00:00",
+      "age_minutes": 2.34,
+      "fresh": true,
+      "passed": true
+    },
+    "block3_upsell_policy_audit": {
+      "path": "test_reports/block3_upsell_policy_audit_20260402_121309.json",
+      "sha256": "2cbddf0c18d8a4284be2a01bc9e5be9d9ffac7a56744cf36fce1a9dd58ce5211",
+      "generated_at": "2026-04-02T12:13:09.543058+00:00",
+      "age_minutes": 2.34,
+      "fresh": true,
+      "passed": true
+    },
+    "block3_readiness_pack_signoff": {
+      "path": "test_reports/block3_readiness_pack_signoff_20260402_121316.json",
+      "sha256": "645c81a29d3cf79ac98202ff416ebb16c2912015ec266294c61c402659c43aea",
+      "generated_at": "2026-04-02T12:13:16.426440+00:00",
+      "age_minutes": 2.22,
+      "fresh": true,
+      "passed": true
+    },
+    "block4_post_release_guard": {
+      "path": "test_reports/block4_post_release_guard_20260402_121404.json",
+      "sha256": "ac2dd566eb1b4b8b6430425f323e22f2cbf9a0688246a239c0700c7116fae8e4",
+      "generated_at": "2026-04-02T12:14:04.238963+00:00",
+      "age_minutes": 1.42,
+      "fresh": true,
+      "passed": true
+    },
+    "release_evidence_index": {
+      "path": "test_reports/release_evidence_index_20260402_121316.json",
+      "sha256": "bac4c1611fbdc6766ad4aa8a1e91423ab2f18a59621f672d3e3c7fa88b4d5a8b",
+      "generated_at": "2026-04-02T12:13:16.457704+00:00",
+      "age_minutes": 2.22,
+      "fresh": true,
+      "passed": true
+    }
+  },
+  "decision": "FINAL_CLOSURE_READY"
+}

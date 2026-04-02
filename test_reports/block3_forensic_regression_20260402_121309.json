@@ -1,0 +1,71 @@
+{
+  "generated_at": "2026-04-02T12:13:09.546292+00:00",
+  "passed": true,
+  "failure_codes": [],
+  "controls": {
+    "commands_ok": true,
+    "white_label_visible_leaks_zero": true,
+    "cfo_suite_passed": true,
+    "gate_proof_passed": true,
+    "release_ready": true,
+    "protected_website_changes": true
+  },
+  "artifact_refs": {
+    "zd_zr_za": "test_reports/zd_zr_za_manager_20260402_121309.json",
+    "cfo_golden": "test_reports/cfo_golden_harness_20260402_121309.json",
+    "gate_enforcement": "test_reports/gate_enforcement_proof_20260402_121309.json",
+    "release_index": "test_reports/release_evidence_index_20260402_121309.json"
+  },
+  "protected_website_changed_files": [],
+  "runs": [
+    {
+      "command": "python3 -m py_compile backend/routes/soundboard.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "python3 -m py_compile scripts/zd_zr_za_manager.py scripts/release_evidence_index_builder.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "python3 scripts/zd_zr_za_manager.py",
+      "exit_code": 0,
+      "stdout": "[zd-zr-za] Evidence written: /Users/andreasalexopoulos/.cursor/worktrees/Version2-Ai_Mentor/dug/test_reports/zd_zr_za_manager_20260402_121309.json\n{\n  \"frontend_routes\": 113,\n  \"frontend_route_lineage_entries\": 113,\n  \"lineage_routes_with_backend_links\": 94,\n  \"lineage_expected_unlinked_routes\": 19,\n  \"lineage_unexpected_unlinked_routes\": 0,\n  \"backend_endpoints\": 338,\n  \"edge_functions\": 32,\n  \"vendor_leak_hits\": 533,\n  \"likely_visible_vendor_leak_hits\": 0,\n  \"vendor_terms_with_hits\": [\n    \"merge\",\n    \"supabase\"\n  ],\n  \"vendor_terms_with_likely_visible_hits\": [],\n  \"forensic_gate_version\": \"v6\",\n  \"website_change_gate_present\": true,\n  \"preprod_forensic_gate_present\": true\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "python3 scripts/cfo_golden_test_harness.py",
+      "exit_code": 0,
+      "stdout": "{\n  \"suite_passed\": true,\n  \"artifact\": \"/Users/andreasalexopoulos/.cursor/worktrees/Version2-Ai_Mentor/dug/test_reports/cfo_golden_harness_20260402_121309.json\"\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "python3 scripts/gate_enforcement_proof.py",
+      "exit_code": 0,
+      "stdout": "{\n  \"proof_passed\": true,\n  \"artifact\": \"/Users/andreasalexopoulos/.cursor/worktrees/Version2-Ai_Mentor/dug/test_reports/gate_enforcement_proof_20260402_121309.json\"\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "python3 scripts/release_evidence_index_builder.py",
+      "exit_code": 0,
+      "stdout": "{\n  \"release_ready\": true,\n  \"artifact\": \"/Users/andreasalexopoulos/.cursor/worktrees/Version2-Ai_Mentor/dug/test_reports/release_evidence_index_20260402_121309.json\"\n}\n",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "git diff --name-only origin/main...HEAD",
+      "exit_code": 0,
+      "stdout": "backend/routes/soundboard.py\ndocs/operations/SCOPE_EXECUTION_CHECKPOINTS.md\nfrontend/src/components/calibration/ChiefMarketingSummary.js\nfrontend/src/hooks/useCalibrationState.js\nfrontend/src/pages/MySoundBoard.js\nscripts/block3_canary_finance_shadow.py\nscripts/block3_forensic_regression.py\nscripts/block3_readiness_pack_signoff.py\nscripts/block3_smb_founder_journeys.py\nscripts/block3_upsell_policy_audit.py\nscripts/release_evidence_index_builder.py\nscripts/zd_zr_za_manager.py\ntest_reports/block3_canary_finance_shadow_20260402_102921.json\ntest_reports/block3_forensic_regression_20260402_102921.json\ntest_reports/block3_readiness_pack_signoff_20260402_102921.json\ntest_reports/block3_smb_founder_journeys_20260402_102921.json\ntest_reports/block3_upsell_policy_audit_20260402_102921.json\ntest_reports/cfo_golden_harness_20260402_102921.json\ntest_reports/gate_enforcement_proof_20260402_102921.json\ntest_reports/release_evidence_index_20260402_102921.json\ntest_reports/zd_zr_za_manager_20260402_102921.json\n",
+      "stderr": "",
+      "passed": true
+    }
+  ]
+}

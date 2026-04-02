@@ -1,0 +1,147 @@
+{
+  "generated_at": "2026-04-02T12:13:09.775164+00:00",
+  "policy_reference": "docs/operations/UNIFIED_PLATFORM_AUDIT_EXECUTION_BLUEPRINT.md",
+  "thresholds": {
+    "revenue_pipeline": {
+      "pct": 0.5,
+      "abs_aud": 500,
+      "count_delta": null
+    },
+    "overdue_invoice": {
+      "pct": 0.25,
+      "abs_aud": null,
+      "count_delta": 1
+    },
+    "supplier_payables": {
+      "pct": 0.5,
+      "abs_aud": 500,
+      "count_delta": null
+    },
+    "cash_flow": {
+      "pct": 1.0,
+      "abs_aud": 1000,
+      "count_delta": null
+    }
+  },
+  "drift_sla_hours": {
+    "P0": 4,
+    "P1": 24,
+    "P2": 120
+  },
+  "suite_passed": true,
+  "tests_total": 4,
+  "tests_passed": 4,
+  "results": [
+    {
+      "id": "golden-pass-001",
+      "severity": "P0",
+      "expected_blocked": false,
+      "actual_blocked": false,
+      "passed": true,
+      "evidence_complete": true,
+      "evidence_age_hours": 1.2,
+      "unresolved_drift_hours": 1.0,
+      "metrics": [
+        {
+          "metric": "revenue_pipeline",
+          "source": 100000,
+          "card": 100250,
+          "pct_variance": 0.25,
+          "abs_delta_aud": 250,
+          "count_delta": null,
+          "passed": true
+        },
+        {
+          "metric": "overdue_invoice",
+          "source": 40000,
+          "card": 40080,
+          "pct_variance": 0.2,
+          "abs_delta_aud": 80,
+          "count_delta": 0,
+          "passed": true
+        },
+        {
+          "metric": "supplier_payables",
+          "source": 50000,
+          "card": 50100,
+          "pct_variance": 0.2,
+          "abs_delta_aud": 100,
+          "count_delta": null,
+          "passed": true
+        },
+        {
+          "metric": "cash_flow",
+          "source": 250000,
+          "card": 250900,
+          "pct_variance": 0.36,
+          "abs_delta_aud": 900,
+          "count_delta": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "golden-drift-breach-002",
+      "severity": "P0",
+      "expected_blocked": true,
+      "actual_blocked": true,
+      "passed": true,
+      "evidence_complete": true,
+      "evidence_age_hours": 2.0,
+      "unresolved_drift_hours": 5.2,
+      "metrics": [
+        {
+          "metric": "revenue_pipeline",
+          "source": 100000,
+          "card": 100300,
+          "pct_variance": 0.3,
+          "abs_delta_aud": 300,
+          "count_delta": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "golden-reconciliation-breach-003",
+      "severity": "P0",
+      "expected_blocked": true,
+      "actual_blocked": true,
+      "passed": true,
+      "evidence_complete": true,
+      "evidence_age_hours": 0.8,
+      "unresolved_drift_hours": 1.0,
+      "metrics": [
+        {
+          "metric": "revenue_pipeline",
+          "source": 100000,
+          "card": 102000,
+          "pct_variance": 2.0,
+          "abs_delta_aud": 2000,
+          "count_delta": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "golden-evidence-integrity-004",
+      "severity": "P1",
+      "expected_blocked": true,
+      "actual_blocked": true,
+      "passed": true,
+      "evidence_complete": false,
+      "evidence_age_hours": 26.5,
+      "unresolved_drift_hours": 1.0,
+      "metrics": [
+        {
+          "metric": "supplier_payables",
+          "source": 45000,
+          "card": 45100,
+          "pct_variance": 0.2222,
+          "abs_delta_aud": 100,
+          "count_delta": null,
+          "passed": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "generated_at": "2026-04-02T12:13:09.548694+00:00",
+  "suite_passed": true,
+  "scenarios_total": 3,
+  "scenarios_passed": 3,
+  "results": [
+    {
+      "id": "canary-pass",
+      "expected": "PASS",
+      "actual": "PASS",
+      "passed": true,
+      "drift_hours": 0.0,
+      "metrics": [
+        {
+          "metric": "revenue_pipeline",
+          "pct_delta": 0.3,
+          "abs_delta_aud": 300,
+          "count_delta": null,
+          "passed": true
+        },
+        {
+          "metric": "overdue_invoice",
+          "pct_delta": 0.12,
+          "abs_delta_aud": 60,
+          "count_delta": 0,
+          "passed": true
+        },
+        {
+          "metric": "supplier_payables",
+          "pct_delta": 0.2857,
+          "abs_delta_aud": 200,
+          "count_delta": null,
+          "passed": true
+        },
+        {
+          "metric": "cash_flow",
+          "pct_delta": 0.5,
+          "abs_delta_aud": 900,
+          "count_delta": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "canary-p1-degrade",
+      "expected": "P1_DEGRADE",
+      "actual": "P1_DEGRADE",
+      "passed": true,
+      "drift_hours": 1.5,
+      "metrics": [
+        {
+          "metric": "revenue_pipeline",
+          "pct_delta": 0.375,
+          "abs_delta_aud": 450,
+          "count_delta": null,
+          "passed": true
+        },
+        {
+          "metric": "supplier_payables",
+          "pct_delta": 0.3333,
+          "abs_delta_aud": 200,
+          "count_delta": null,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "canary-p0-block",
+      "expected": "P0_BLOCK",
+      "actual": "P0_BLOCK",
+      "passed": true,
+      "drift_hours": 0.5,
+      "metrics": [
+        {
+          "metric": "revenue_pipeline",
+          "pct_delta": 2.5,
+          "abs_delta_aud": 2500,
+          "count_delta": null,
+          "passed": false
+        },
+        {
+          "metric": "overdue_invoice",
+          "pct_delta": 1.0,
+          "abs_delta_aud": 400,
+          "count_delta": 4,
+          "passed": false
+        }
+      ]
+    }
+  ]
+}
