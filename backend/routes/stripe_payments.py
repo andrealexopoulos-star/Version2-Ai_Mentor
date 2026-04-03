@@ -23,7 +23,7 @@ PLANS = {
     "starter": {
         "amount": 34900,
         "currency": "aud",
-        "name": "BIQc Foundation",
+        "name": "BIQc Starter",
         "tier": "starter",
         "interval": "month",
     },
@@ -42,17 +42,24 @@ PLANS = {
         "interval": "month",
     },
     "professional": {
-        "amount": 34900,
+        "amount": 69900,
         "currency": "aud",
-        "name": "BIQc Foundation",
-        "tier": "starter",
+        "name": "BIQc Pro",
+        "tier": "pro",
+        "interval": "month",
+    },
+    "pro": {
+        "amount": 69900,
+        "currency": "aud",
+        "name": "BIQc Pro",
+        "tier": "pro",
         "interval": "month",
     },
     "enterprise": {
-        "amount": 34900,
+        "amount": 149900,
         "currency": "aud",
-        "name": "BIQc Foundation",
-        "tier": "starter",
+        "name": "BIQc Enterprise",
+        "tier": "enterprise",
         "interval": "month",
     },
 }
@@ -120,8 +127,14 @@ def _normalize_tier(tier: Optional[str]) -> str:
     value = (tier or "free").strip().lower()
     if value in {"superadmin", "super_admin"}:
         return "super_admin"
-    if value in {"starter", "foundation", "growth", "professional", "enterprise", "custom", "pro"}:
+    if value in {"starter", "foundation", "growth"}:
         return "starter"
+    if value in {"professional", "pro"}:
+        return "pro"
+    if value == "enterprise":
+        return "enterprise"
+    if value in {"custom", "custom_build"}:
+        return "custom_build"
     return "free"
 
 

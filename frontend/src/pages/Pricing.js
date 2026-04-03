@@ -30,16 +30,16 @@ export default function Pricing() {
       <section className="px-6 pt-32 pb-12 text-center">
         <div className="mx-auto max-w-3xl">
           <h1 className="font-bold text-4xl md:text-6xl" style={{ fontFamily: fontFamily.display }}>
-            One free launch tier.<br />One paid operating tier.
+            One free launch tier.<br />Three paid operating tiers.
           </h1>
           <p className="mt-5 text-base md:text-lg" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
-            Launch fast with the core BIQc surfaces for free. Upgrade to BIQc Foundation when you need deeper operating control.
+            Launch fast with the core BIQc surfaces for free, then scale through Starter, Pro, and Enterprise. Custom Build is available for contracted overlays.
           </p>
         </div>
       </section>
 
       <section className="px-6 pb-10">
-        <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2 xl:grid-cols-3">
           {PRICING_TIERS.map((plan) => (
             <div key={plan.id} className="rounded-[28px] border p-7" style={{ background: '#141C26', borderColor: plan.popular ? 'rgba(255,106,0,0.35)' : '#243140', boxShadow: plan.popular ? '0 0 32px rgba(255,106,0,0.12)' : 'none' }} data-testid={`plan-${plan.id}`}>
               <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: plan.color, fontFamily: fontFamily.mono }}>{plan.subtitle}</p>
@@ -62,13 +62,17 @@ export default function Pricing() {
                     navigate('/register-supabase');
                     return;
                   }
+                  if (plan.id === 'custom_build') {
+                    navigate('/contact?source=pricing&feature=custom-build');
+                    return;
+                  }
                   navigate(user ? '/subscribe' : '/register-supabase');
                 }}
                 className="mt-8 h-12 w-full rounded-2xl text-white"
                 style={{ background: plan.id === 'free' ? '#243140' : '#FF6A00', fontFamily: fontFamily.body }}
                 data-testid={`cta-${plan.id}`}
               >
-                {plan.id === 'free' ? 'Start Free' : 'Start with Free, then Upgrade'} <ArrowRight className="ml-2 h-4 w-4" />
+                {plan.id === 'free' ? 'Start Free' : plan.id === 'custom_build' ? 'Contact Sales' : 'Start with Free, then Upgrade'} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           ))}
@@ -79,7 +83,7 @@ export default function Pricing() {
         <div className="mx-auto max-w-5xl rounded-[28px] border p-6 sm:p-8" style={{ background: '#0F1720', borderColor: '#243140' }}>
           <div className="flex flex-wrap items-center gap-3">
             <Shield className="h-5 w-5" style={{ color: '#FF6A00' }} />
-            <p className="text-sm" style={{ color: '#9FB0C3' }}>Australian hosted · sovereign posture · email-only free tier · one commercial paid tier for expedited launch</p>
+            <p className="text-sm" style={{ color: '#9FB0C3' }}>Australian hosted · sovereign posture · client-facing Free tier · Starter/Pro/Enterprise + Custom Build roadmap</p>
           </div>
         </div>
       </section>

@@ -374,6 +374,9 @@ api_router.include_router(ux_feedback_router)
 from routes.deferred_integrations import router as deferred_integrations_router
 api_router.include_router(deferred_integrations_router)
 
+from routes.scope_checkpoints import router as scope_checkpoints_router
+api_router.include_router(scope_checkpoints_router)
+
 from routes.spine_api import router as spine_api_router
 api_router.include_router(spine_api_router)
 

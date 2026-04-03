@@ -1,0 +1,36 @@
+module,route,launch_type,min_tier,free_limit,starter_limit,pro_limit,enterprise_limit,custom_build_policy,primary_supplier_dependency,cost_risk,status
+BIQc Overview,/advisor,free,free,core access,core access,core access,core access,contract override allowed,Supabase+OpenAI,low,active
+Ask BIQc,/soundboard,free,free,baseline query window,expanded context and monthly caps,priority routing and higher caps,highest caps and governance controls,contract-specific model and limits,OpenAI/Anthropic/Perplexity,high,active
+Inbox,/email-inbox,free,free,basic categorization,priority categories and deeper summaries,higher volume and advanced triage,org-level policy routing,custom taxonomy and automations,Microsoft/Google,medium,active
+Calendar,/calendar,free,free,basic sync and summaries,enhanced event intelligence,higher processing limits,org-wide policy views,custom calendars and workflows,Microsoft/Google,medium,active
+Market & Position,/market,free,free,baseline market signal,deeper trend windows,multi-segment comparison,enterprise benchmarking packs,custom market model overlays,SEMrush/Serper/BrowseAI,high,active
+Competitive Benchmark,/competitive-benchmark,free,free,baseline benchmark,expanded benchmark detail,multi-competitor trend analysis,enterprise reporting,custom benchmark schema,SEMrush/Serper,high,active
+Business DNA,/business-profile,free,free,profile baseline,expanded profile intelligence,team and role overlays,org hierarchy overlays,custom data model mapping,Supabase,low,active
+Actions,/actions,free,free,basic action queue,more actions and owners,higher throughput and workflow depth,enterprise orchestration and policy controls,custom action pipelines,Supabase,medium,active
+Alerts,/alerts,free,free,basic alert feed,expanded alerts and escalation controls,priority signal handling,governance-aligned alerting,custom alert contracts,Supabase,medium,active
+Data Health,/data-health,free,free,basic completeness checks,expanded freshness checks,deeper lineage and anomaly ranges,enterprise-grade quality controls,custom health policies,Supabase+Merge,medium,active
+Connectors,/integrations,free,free,1 connector baseline,up to 5 connectors,up to 15 connectors,up to 30 connectors,contract-specific connector count,Merge,high,active
+BIQc Foundation Hub,/biqc-foundation,foundation,starter,n/a,starter package entry,pro upsell path,enterprise upsell path,custom package mapping,Stripe,low,active
+Exposure Scan,/exposure-scan,foundation,starter,locked,included,included,included,contract override,Search vendors,medium,active
+Marketing Auto,/marketing-automation,foundation,starter,locked,included,broader automation depth,enterprise policy automation,custom automation playbooks,OpenAI+vendor data,high,active_beta
+Reports,/reports,foundation,starter,locked,included,scheduled advanced reporting,enterprise reporting governance,custom report contracts,Supabase+LLM,medium,active
+Decision Tracker,/decisions,foundation,starter,locked,included,expanded workflow linkage,enterprise audit controls,custom decision schema,Supabase,low,active
+Ingestion Audit,/forensic-audit,foundation,starter,locked,included,expanded ingestion diagnostics,enterprise assurance controls,custom audit depth,Supabase+edge functions,medium,active
+Revenue,/revenue,foundation,starter,locked,included,deeper forecasting surfaces,enterprise finance governance,custom finance overlays,Merge+Accounting,high,active
+Billing,/billing,foundation,starter,locked,included,advanced billing analytics,enterprise billing controls,custom commercial overlays,Stripe+Merge,medium,active
+Operations,/operations,foundation,starter,locked,included,deeper operation orchestration,enterprise controls and hierarchy,custom operations model,Merge+events,medium,active
+Marketing Intelligence,/marketing-intelligence,foundation,starter,locked,included,expanded intelligence breadth,enterprise intelligence governance,custom intelligence packs,SEMrush+LLM,high,active
+Boardroom,/board-room,foundation,starter,locked,included,deeper strategic synthesis,enterprise board governance narratives,custom board framing,OpenAI+watchtower,high,active
+Risk & Workforce,/risk,waitlist,pro,locked,staged,graduation candidate,graduation candidate,contract launch option,Supabase+LLM,medium,partial
+Compliance,/compliance,waitlist,pro,locked,staged,graduation candidate,graduation candidate,contract launch option,Supabase+LLM,medium,partial
+War Room,/war-room,waitlist,pro,locked,staged,graduation candidate,graduation candidate,contract launch option,OpenAI,high,partial
+Automations,/automations,waitlist,pro,locked,staged,graduation candidate,graduation candidate,contract launch option,workflow engines,medium,partial
+Analysis,/analysis,waitlist,pro,locked,staged,graduation candidate,graduation candidate,contract launch option,OpenAI,high,partial
+Diagnosis,/diagnosis,waitlist,pro,locked,staged,graduation candidate,graduation candidate,contract launch option,OpenAI,high,partial
+Documents Library,/documents,waitlist,pro,locked,staged,graduation candidate,graduation candidate,contract launch option,Storage providers,medium,partial
+Intel Centre,/intel-centre,waitlist,pro,locked,staged,graduation candidate,graduation candidate,contract launch option,watchtower stack,medium,partial
+Watchtower,/watchtower,waitlist,enterprise,locked,staged,staged,graduation candidate,contract launch option,watchtower stack,medium,partial
+Data Center,/data-center,waitlist,enterprise,locked,staged,staged,graduation candidate,contract launch option,File integrations,medium,partial
+Operator Intelligence,/operator,waitlist,enterprise,locked,staged,staged,graduation candidate,contract launch option,watchtower stack,medium,partial
+Market Analysis,/market-analysis,waitlist,pro,locked,staged,graduation candidate,graduation candidate,contract launch option,SEMrush/Serper,high,partial
+Ops Advisory Centre,/ops-advisory,waitlist,pro,locked,staged,graduation candidate,graduation candidate,contract launch option,watchtower stack,medium,partial

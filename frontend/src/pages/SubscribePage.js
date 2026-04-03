@@ -18,8 +18,8 @@ const FEATURE_LABELS = {
   '/forensic-audit': 'Ingestion Audit',
 };
 
-// Use canonical pricing — excludes 'free' and 'super_admin' from payment plans
-const PLANS = PRICING_TIERS.filter(t => t.id === 'starter');
+// Checkout-visible plans: paid tiers that can be self-served.
+const PLANS = PRICING_TIERS.filter((t) => ['starter', 'pro', 'enterprise'].includes(t.id));
 
 const SubscribePage = () => {
   const { user } = useSupabaseAuth();
@@ -109,7 +109,7 @@ const SubscribePage = () => {
           <Lock className="w-6 h-6 text-[#FF6A00]" />
         </div>
         {featureLabel && <p className="text-xs text-[#FF6A00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
-        <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Upgrade to BIQc Foundation</h1>
+        <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Choose your paid BIQc tier</h1>
         <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#F4F7FA] capitalize">{currentTier}</strong></p>
         <p className="mt-2 text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>
           Transparent billing: shown amount is charged exactly as displayed. No hidden onboarding or compliance fees.
@@ -127,7 +127,7 @@ const SubscribePage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 max-w-3xl w-full mb-8">
+      <div className="grid grid-cols-1 gap-6 max-w-4xl w-full mb-8 md:grid-cols-3">
         {PLANS.map(plan => {
           const isCurrent = plan.id === currentTier;
           return (
@@ -164,6 +164,23 @@ const SubscribePage = () => {
             </div>
           );
         })}
+      </div>
+
+      <div className="w-full max-w-4xl mb-8 rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Custom Build</p>
+        <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <p className="text-sm text-[#9FB0C3]">
+            Need bespoke module packaging, custom entitlements, or contracted integration delivery?
+          </p>
+          <button
+            onClick={() => window.location.assign('/contact?source=subscribe&feature=custom-build')}
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
+            style={{ background: '#10B981', fontFamily: fontFamily.body }}
+            data-testid="contact-custom-build"
+          >
+            Contact for Custom Build
+          </button>
+        </div>
       </div>
 
       <Link to="/advisor" className="text-xs text-[#64748B] hover:text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Back to Intelligence Platform</Link>

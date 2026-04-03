@@ -9,8 +9,8 @@ export const PRICING_TIERS = [
     color: '#64748B',
     features: [
       'BIQc Overview',
-      'Soundboard',
-      'Priority Inbox',
+      'Ask BIQc',
+      'Inbox',
       'Calendar',
       'Market & Position',
       'Business DNA',
@@ -24,8 +24,8 @@ export const PRICING_TIERS = [
   },
   {
     id: 'starter',
-    name: 'BIQc Foundation',
-    subtitle: 'Full launch tier',
+    name: 'Starter',
+    subtitle: 'BIQc Foundation package',
     price: '$349',
     priceNum: 349,
     period: '/month',
@@ -34,6 +34,7 @@ export const PRICING_TIERS = [
     recommended: true,
     features: [
       'Everything in Free',
+      'BIQc Foundation package',
       'Exposure Scan',
       'Marketing Auto',
       'Reports',
@@ -48,13 +49,63 @@ export const PRICING_TIERS = [
       'Up to 5 integrations',
     ],
   },
+  {
+    id: 'pro',
+    name: 'Pro',
+    subtitle: 'Scale operating intelligence',
+    price: '$699',
+    priceNum: 699,
+    period: '/month',
+    color: '#3B82F6',
+    features: [
+      'Everything in Starter',
+      'Higher monthly limits for core modules',
+      'Priority model routing and deeper analysis windows',
+      'Advanced reporting cadence',
+      'Expanded connector allowance',
+    ],
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    subtitle: 'Governed enterprise control',
+    price: '$1,499',
+    priceNum: 1499,
+    period: '/month',
+    color: '#8B5CF6',
+    features: [
+      'Everything in Pro',
+      'Enterprise governance controls',
+      'Higher reliability and support commitments',
+      'Expanded organizational limits',
+      'Executive rollout and enablement',
+    ],
+  },
+  {
+    id: 'custom_build',
+    name: 'Custom Build',
+    subtitle: 'Contracted build and entitlement overlay',
+    price: 'Custom',
+    priceNum: null,
+    period: '',
+    color: '#10B981',
+    features: [
+      'Everything in Enterprise',
+      'Custom entitlement overlays',
+      'Tailored module packaging',
+      'Contracted integration and delivery plan',
+      'Commercial terms by scope',
+    ],
+  },
 ];
 
-/** Resolve plan id to display tier. Only free and starter (BIQc Foundation) exist; legacy DB values map to starter. */
+/** Resolve plan id to display tier with legacy aliases preserved. */
 export const getTierByPlanId = (id) => {
-  if (id === 'super_admin') return PRICING_TIERS[1];
-  if (id === 'starter') return PRICING_TIERS[1];
-  if (['foundation', 'growth', 'professional', 'enterprise', 'custom', 'pro'].includes(id)) return PRICING_TIERS[1];
+  if (id === 'super_admin') return PRICING_TIERS.find((tier) => tier.id === 'enterprise') || PRICING_TIERS[2];
+  if (id === 'starter' || id === 'foundation' || id === 'growth') return PRICING_TIERS.find((tier) => tier.id === 'starter') || PRICING_TIERS[1];
+  if (id === 'professional' || id === 'pro') return PRICING_TIERS.find((tier) => tier.id === 'pro') || PRICING_TIERS[2];
+  if (id === 'enterprise') return PRICING_TIERS.find((tier) => tier.id === 'enterprise') || PRICING_TIERS[3];
+  if (id === 'custom' || id === 'custom_build') return PRICING_TIERS.find((tier) => tier.id === 'custom_build') || PRICING_TIERS[4];
   return PRICING_TIERS.find((tier) => tier.id === id) || PRICING_TIERS[0];
 };
 

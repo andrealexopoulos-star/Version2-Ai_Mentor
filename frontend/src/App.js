@@ -109,6 +109,7 @@ import UpgradePage from './pages/UpgradePage';
 import BillingPage from './pages/BillingPage';
 import AdminPricingPage from './pages/AdminPricingPage';
 import AdminUxFeedbackPage from './pages/AdminUxFeedbackPage';
+import AdminScopeCheckpointsPage from './pages/AdminScopeCheckpointsPage';
 
 // ── Conditional imports (pages that may not exist) ────────────────────────────
 let CognitiveV2Mockup, LoadingPreview, CalibrationPreview, AuthDebug, GmailTest, OutlookTest, ProfileImport;
@@ -217,6 +218,11 @@ function AppRoutes() {
   );
 
   useEffect(() => {
+    const warmupEnabled =
+      (process.env.NODE_ENV !== 'production')
+      || ((process.env.REACT_APP_ENABLE_WARMUP || '').toLowerCase() === 'true');
+    if (!warmupEnabled) return undefined;
+
     const warmup = async () => {
       try {
         await apiClient.get('/health/warmup');
@@ -358,6 +364,7 @@ function AppRoutes() {
         <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/pricing" element={<ProtectedRoute adminOnly><AdminPricingPage /></ProtectedRoute>} />
         <Route path="/admin/ux-feedback" element={<ProtectedRoute adminOnly><AdminUxFeedbackPage /></ProtectedRoute>} />
+        <Route path="/admin/scope-checkpoints" element={<ProtectedRoute adminOnly><AdminScopeCheckpointsPage /></ProtectedRoute>} />
         <Route path="/admin/prompt-lab" element={<ProtectedRoute adminOnly><PromptLab /></ProtectedRoute>} />
         <Route path="/support-admin" element={<ProtectedRoute adminOnly><SupportConsolePage /></ProtectedRoute>} />
         <Route path="/observability" element={<ProtectedRoute adminOnly><ObservabilityPage /></ProtectedRoute>} />

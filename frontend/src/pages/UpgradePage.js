@@ -4,37 +4,44 @@ import { ArrowRight, Check, CheckCircle2, Loader2, Lock } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { apiClient } from '../lib/api';
 import { TIER_FEATURES } from '../config/tiers';
+import { PRICING_TIERS } from '../config/pricingTiers';
 import { toast } from 'sonner';
 import { trackGoogleTagEvent } from '../lib/analytics';
 
 export default function UpgradePage({ success = false }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [selectedTier, setSelectedTier] = useState('starter');
 
   const handleUpgrade = async () => {
     setLoading(true);
     try {
+      const selectedPlan = PRICING_TIERS.find((tier) => tier.id === selectedTier);
+      if (!selectedPlan || selectedTier === 'custom_build') {
+        navigate('/contact?source=upgrade&feature=custom-build');
+        return;
+      }
       trackGoogleTagEvent('begin_checkout', {
-        plan_name: 'BIQc Foundation',
-        plan_tier: 'starter',
-        value: 349,
+        plan_name: selectedPlan.name,
+        plan_tier: selectedTier,
+        value: selectedPlan.priceNum || 0,
         currency: 'AUD',
       });
       trackGoogleTagEvent('biqc_foundation_purchase_click', {
-        plan_name: 'BIQc Foundation',
-        value: 349,
+        plan_name: selectedPlan.name,
+        value: selectedPlan.priceNum || 0,
         currency: 'AUD',
       });
 
       const res = await apiClient.post('/stripe/create-checkout-session', {
-        tier: 'starter',
+        tier: selectedTier,
         success_url: `${window.location.origin}/upgrade/success`,
         cancel_url: `${window.location.origin}/upgrade`,
       });
       if (res.data?.url) {
         trackGoogleTagEvent('biqc_foundation_checkout_redirect', {
-          plan_name: 'BIQc Foundation',
-          value: 349,
+          plan_name: selectedPlan.name,
+          value: selectedPlan.priceNum || 0,
           currency: 'AUD',
         });
         window.location.href = res.data.url;
@@ -95,22 +102,38 @@ export default function UpgradePage({ success = false }) {
             <Lock className="h-4 w-4" style={{ color: '#FF6A00' }} />
             <span className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Upgrade required</span>
           </div>
-          <h1 className="mt-6 text-4xl sm:text-5xl" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Unlock BIQc Foundation</h1>
+          <h1 className="mt-6 text-4xl sm:text-5xl" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>Unlock paid BIQc tiers</h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base" style={{ color: '#9FB0C3' }}>
-            One paid tier. Everything in Free, plus the deeper operating modules for revenue, operations, marketing, Boardroom visibility, governance, and up to 5 integrations.
+            Choose Starter, Pro, or Enterprise based on required depth. Custom Build is available for contracted integrations and entitlements.
           </p>
         </div>
 
-        <div className="mx-auto max-w-2xl rounded-[28px] border p-8" style={{ background: 'rgba(20,28,38,0.95)', borderColor: 'rgba(255,106,0,0.24)' }}>
-          <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>BIQc Foundation</p>
-          <div className="mt-3 flex items-end gap-2">
-            <span className="text-5xl" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>$349</span>
-            <span className="pb-2 text-sm" style={{ color: '#64748B' }}>/month</span>
-          </div>
-          <p className="mt-3 text-sm" style={{ color: '#9FB0C3' }}>For teams ready to move beyond email-only free access into deeper strategic and operating control.</p>
+        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-3">
+          {PRICING_TIERS.filter((tier) => ['starter', 'pro', 'enterprise'].includes(tier.id)).map((tier) => (
+            <button
+              key={tier.id}
+              onClick={() => setSelectedTier(tier.id)}
+              className="rounded-2xl border p-5 text-left"
+              style={{
+                background: 'rgba(20,28,38,0.95)',
+                borderColor: selectedTier === tier.id ? tier.color : '#243140',
+              }}
+              data-testid={`upgrade-select-${tier.id}`}
+            >
+              <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: tier.color, fontFamily: fontFamily.mono }}>{tier.name}</p>
+              <div className="mt-2 flex items-end gap-2">
+                <span className="text-4xl" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{tier.price}</span>
+                <span className="pb-1 text-sm" style={{ color: '#64748B' }}>{tier.period}</span>
+              </div>
+              <p className="mt-2 text-xs" style={{ color: '#9FB0C3' }}>{tier.subtitle}</p>
+            </button>
+          ))}
+        </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            {TIER_FEATURES.starter.map((feature) => (
+        <div className="mx-auto max-w-5xl rounded-[28px] border p-8" style={{ background: 'rgba(20,28,38,0.95)', borderColor: 'rgba(255,106,0,0.24)' }}>
+          <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{selectedTier.toUpperCase()} included capabilities</p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {(TIER_FEATURES[selectedTier] || TIER_FEATURES.starter).map((feature) => (
               <div key={feature} className="flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: '#243140', color: '#C9D5E2' }}>
                 <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: '#FF6A00' }} />
                 <span>{feature}</span>
@@ -125,8 +148,16 @@ export default function UpgradePage({ success = false }) {
             style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
             data-testid="upgrade-starter"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Upgrade to BIQc Foundation'}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : `Upgrade to ${selectedTier[0].toUpperCase()}${selectedTier.slice(1)}`}
             {!loading && <ArrowRight className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={() => navigate('/contact?source=upgrade&feature=custom-build')}
+            className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-2xl border text-sm font-semibold"
+            style={{ borderColor: '#10B98140', color: '#10B981', fontFamily: fontFamily.body }}
+            data-testid="upgrade-custom-build"
+          >
+            Need Custom Build?
           </button>
         </div>
 

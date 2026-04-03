@@ -74,6 +74,37 @@ const createCalibrationRunId = () => {
   return `cal-${Date.now()}-${rand}`;
 };
 
+const RESUME_KEY = "biqc_resume_after_oauth";
+
+const getOAuthResumeTarget = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    const step = params.get("step");
+    if (step === "integration_connect") {
+      return "integration_connect";
+    }
+  } catch {}
+  try {
+    const stored = sessionStorage.getItem(RESUME_KEY);
+    if (stored === "integration_connect") return stored;
+  } catch {}
+  return null;
+};
+
+const clearOAuthResumeTarget = () => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(RESUME_KEY);
+  } catch {}
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    if (params.has("step") || params.has("outlook_connected") || params.has("gmail_connected")) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  } catch {}
+};
+
 export const useCalibrationState = () => {
   const navigate = useNavigate();
   const { user, session, loading, signOut, clearBootstrapCache } = useSupabaseAuth();
@@ -315,6 +346,7 @@ export const useCalibrationState = () => {
   };
 
   const detectState = async () => {
+    const oauthResumeTarget = getOAuthResumeTarget();
     try {
       const res = await apiClient.get('/calibration/status');
       const d = res.data;
@@ -324,8 +356,20 @@ export const useCalibrationState = () => {
         try { clearBootstrapCache(); } catch {}
         navigate('/market', { replace: true }); return;
       }
+      if (oauthResumeTarget === "integration_connect") {
+        clearOAuthResumeTarget();
+        setEntry("integration_connect");
+        return;
+      }
       setEntry("ignition");
-    } catch { setEntry("ignition"); }
+    } catch {
+      if (oauthResumeTarget === "integration_connect") {
+        clearOAuthResumeTarget();
+        setEntry("integration_connect");
+        return;
+      }
+      setEntry("ignition");
+    }
   };
 
   const isWowSufficient = (wow) => {

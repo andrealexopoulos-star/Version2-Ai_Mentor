@@ -20,19 +20,25 @@ logger = logging.getLogger(__name__)
 # ═══ SUPER ADMIN — IMMUTABLE, EMAIL-BASED ═══
 SUPER_ADMIN_EMAIL = MASTER_ADMIN_EMAIL
 
-# ═══ TIER DEFINITIONS — Only free, starter (BIQc Foundation), super_admin ═══
-TIERS = ['free', 'starter', 'super_admin']
+# ═══ TIER DEFINITIONS — free + 3 paid + custom build + super_admin ═══
+TIERS = ['free', 'starter', 'pro', 'enterprise', 'custom_build', 'super_admin']
 
 BRAIN_METRIC_LIMITS = {
     'free': 10,
     'starter': 50,
-    'super_admin': 100,
+    'pro': 75,
+    'enterprise': 100,
+    'custom_build': 120,
+    'super_admin': 200,
 }
 
 BRAIN_PLAN_LABELS = {
     'free': 'Free',
-    'starter': 'Foundation',
-    'super_admin': 'Foundation',
+    'starter': 'Starter',
+    'pro': 'Pro',
+    'enterprise': 'Enterprise',
+    'custom_build': 'Custom Build',
+    'super_admin': 'Enterprise',
 }
 
 # ═══ ROUTE ACCESS MAP ═══
@@ -90,8 +96,14 @@ ROUTE_ACCESS = {
 
     # ADMIN — super admin only
     '/admin': 'super_admin',
+    '/admin/scope-checkpoints': 'super_admin',
+    '/admin/pricing': 'super_admin',
+    '/admin/ux-feedback': 'super_admin',
+    '/admin/prompt-lab': 'super_admin',
     '/auth-debug': 'super_admin',
     '/prompt-lab': 'super_admin',
+    '/support-admin': 'super_admin',
+    '/observability': 'super_admin',
 }
 
 # ═══ API ACCESS MAP ═══
@@ -181,8 +193,14 @@ def resolve_tier(user: dict) -> str:
 
     # Database tier
     db_tier = (user.get('subscription_tier') or 'free').lower().strip()
-    if db_tier in {'foundation', 'growth', 'starter', 'professional', 'enterprise', 'custom'}:
+    if db_tier in {'foundation', 'growth', 'starter'}:
         return 'starter'
+    if db_tier in {'professional', 'pro'}:
+        return 'pro'
+    if db_tier in {'enterprise'}:
+        return 'enterprise'
+    if db_tier in {'custom', 'custom_build'}:
+        return 'custom_build'
     if db_tier in TIERS:
         return db_tier
 
@@ -190,10 +208,16 @@ def resolve_tier(user: dict) -> str:
 
 
 def tier_rank(tier: str) -> int:
-    """Numeric rank for tier comparison. Only free (0), starter (1), super_admin (99). Legacy DB values map to starter rank."""
+    """Numeric rank for tier comparison with legacy aliases mapped safely."""
     if tier == 'super_admin':
         return 99
-    if tier in ('starter', 'foundation', 'growth', 'professional', 'enterprise', 'custom', 'pro'):
+    if tier in ('custom_build', 'custom'):
+        return 4
+    if tier == 'enterprise':
+        return 3
+    if tier in ('pro', 'professional'):
+        return 2
+    if tier in ('starter', 'foundation', 'growth'):
         return 1
     return 0
 
@@ -282,9 +306,15 @@ def filter_email_categories(user: dict) -> list:
 
 
 def get_usage_limits(tier: str) -> dict:
-    """Get monthly usage limits for tier. Only free, starter (BIQc Foundation), super_admin."""
+    """Get monthly usage limits for tier."""
     if tier == 'super_admin':
         return {'snapshots': 999, 'audits': 999}
+    if tier == 'custom_build':
+        return {'snapshots': 300, 'audits': 120}
+    if tier == 'enterprise':
+        return {'snapshots': 120, 'audits': 60}
+    if tier == 'pro':
+        return {'snapshots': 60, 'audits': 25}
     if tier == 'free':
         return {'snapshots': 3, 'audits': 1}
     if tier == 'starter':
@@ -298,8 +328,15 @@ def get_brain_metric_limit(user_or_tier) -> int:
         tier = resolve_tier(user_or_tier)
     else:
         tier = str(user_or_tier or 'free').lower().strip()
-        if tier not in BRAIN_METRIC_LIMITS and tier in {'foundation', 'growth', 'professional', 'enterprise', 'custom'}:
-            tier = 'starter'
+        if tier not in BRAIN_METRIC_LIMITS:
+            if tier in {'foundation', 'growth'}:
+                tier = 'starter'
+            elif tier in {'professional', 'pro'}:
+                tier = 'pro'
+            elif tier == 'enterprise':
+                tier = 'enterprise'
+            elif tier in {'custom', 'custom_build'}:
+                tier = 'custom_build'
     return BRAIN_METRIC_LIMITS.get(tier, BRAIN_METRIC_LIMITS['free'])
 
 
@@ -309,6 +346,13 @@ def get_brain_plan_label(user_or_tier) -> str:
         tier = resolve_tier(user_or_tier)
     else:
         tier = str(user_or_tier or 'free').lower().strip()
-        if tier not in BRAIN_PLAN_LABELS and tier in {'foundation', 'growth', 'professional', 'enterprise', 'custom'}:
-            tier = 'starter'
+        if tier not in BRAIN_PLAN_LABELS:
+            if tier in {'foundation', 'growth'}:
+                tier = 'starter'
+            elif tier in {'professional', 'pro'}:
+                tier = 'pro'
+            elif tier == 'enterprise':
+                tier = 'enterprise'
+            elif tier in {'custom', 'custom_build'}:
+                tier = 'custom_build'
     return BRAIN_PLAN_LABELS.get(tier, 'Free')

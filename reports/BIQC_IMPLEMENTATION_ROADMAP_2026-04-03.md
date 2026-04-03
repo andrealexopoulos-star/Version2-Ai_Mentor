@@ -128,3 +128,13 @@ Acceptance criteria:
 - No lock-state behavior changes without parity tests (desktop/mobile).
 - No pricing behavior changes without rollback plan and audit log coverage.
 
+---
+
+## Tier Hardening Carry-Forward (2026-04-03)
+- Canonical policy target is now `Free + Starter + Pro + Enterprise + Custom Build`.
+- `BIQc Foundation` remains Starter package entry; `More Features` remains staged graduation surface.
+- Scope continuity is anchored to:
+  - `docs/operations/SCOPE_EXECUTION_CHECKPOINTS.md`
+  - `docs/operations/BLOCK_CONTINUITY_PROTOCOL_2026-04-03.md`
+- Admin visibility for current blocks is exposed at `/admin/scope-checkpoints` (API: `/api/admin/scope-checkpoints`).
+

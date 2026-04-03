@@ -182,15 +182,18 @@ const Advisor = () => {
         const accountingConnected = accountingRows && accountingRows.length > 0;
         const accountingConnectedAt = accountingConnected ? accountingRows[0].connected_at : null;
         
-        // Calendar check would go here (not implemented yet)
-        const calendarConnected = false;
+        // Calendar is considered connected when Outlook/Gmail is connected.
+        // This reflects current product behavior where calendar intelligence
+        // rides on the same OAuth provider connection.
+        const calendarConnected = emailConnected && (emailProvider === 'outlook' || emailProvider === 'gmail');
+        const calendarConnectedAt = calendarConnected ? emailConnectedAt : null;
         
         // Check if we have any actual data/signal
         const hasData = emailConnected;
         
         setIntegrationData({
           email: { connected: emailConnected, provider: emailProvider, connectedAt: emailConnectedAt },
-          calendar: { connected: calendarConnected, connectedAt: null },
+          calendar: { connected: calendarConnected, connectedAt: calendarConnectedAt },
           crm: { connected: crmConnected, connectedAt: crmConnectedAt },
           accounting: { connected: accountingConnected, connectedAt: accountingConnectedAt },
           dataPresent: hasData
@@ -445,6 +448,33 @@ const Advisor = () => {
     window.location.reload();
   };
 
+  const sourceCards = [
+    {
+      key: 'email',
+      label: 'Email',
+      connected: integrationData.email?.connected,
+      detail: integrationData.email?.connected ? (integrationData.email?.provider || 'Connected') : 'Not connected',
+    },
+    {
+      key: 'calendar',
+      label: 'Calendar',
+      connected: integrationData.calendar?.connected,
+      detail: integrationData.calendar?.connected ? 'Connected via provider' : 'Not connected',
+    },
+    {
+      key: 'crm',
+      label: 'CRM',
+      connected: integrationData.crm?.connected,
+      detail: integrationData.crm?.connected ? 'Connected' : 'Not connected',
+    },
+    {
+      key: 'accounting',
+      label: 'Accounting',
+      connected: integrationData.accounting?.connected,
+      detail: integrationData.accounting?.connected ? 'Connected' : 'Not connected',
+    },
+  ];
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -466,6 +496,36 @@ const Advisor = () => {
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
+        </div>
+
+        {/* Connector visibility strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {sourceCards.map((card) => (
+            <div
+              key={card.key}
+              className="p-3 rounded-xl border"
+              style={{
+                background: 'var(--bg-card)',
+                borderColor: 'var(--border-light)',
+              }}
+            >
+              <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                {card.label}
+              </p>
+              <div className="mt-1 flex items-center gap-2">
+                <span
+                  className="inline-flex w-2 h-2 rounded-full"
+                  style={{ background: card.connected ? '#10B981' : '#64748B' }}
+                />
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  {card.connected ? 'Connected' : 'Disconnected'}
+                </p>
+              </div>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                {card.detail}
+              </p>
+            </div>
+          ))}
         </div>
 
         {/* PRIMARY NARRATIVE TEXT AREA */}

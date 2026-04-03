@@ -38,6 +38,11 @@ from supabase_drive_helpers import (
     get_user_drive_files, count_user_drive_files,
 )
 from biqc_jobs import enqueue_job
+from integration_status_cache import (
+    get_cached_integration_status,
+    set_cached_integration_status,
+    invalidate_cached_integration_status,
+)
 from tier_resolver import resolve_tier
 
 router = APIRouter()
@@ -705,6 +710,7 @@ async def exchange_merge_account_token(
             )
         except Exception:
             pass
+        await invalidate_cached_integration_status(user_id)
 
         return {
             "success": True,
@@ -863,7 +869,7 @@ async def disconnect_merge_integration(request: Request, payload: MergeDisconnec
             }).execute()
         except Exception as gov_err:
             logger.warning(f"⚠️ Governance disconnect event failed: {gov_err}")
-        
+        await invalidate_cached_integration_status(user_id)
         return {"ok": True, "provider": payload.provider, "deleted_count": len(rows_to_delete)}
     except HTTPException:
         raise
@@ -896,6 +902,7 @@ async def refresh_merge_token(request: Request, payload: dict = None):
         }).eq("user_id", user_id).eq("provider", provider).execute()
 
         logger.info(f"[merge/refresh-token] Marked {provider} for re-auth for {user_id}")
+        await invalidate_cached_integration_status(user_id)
         return {"ok": True, "action": "relink_required", "provider": provider}
     except Exception as e:
         logger.error(f"[merge/refresh-token] Error: {e}")
@@ -2879,11 +2886,19 @@ async def google_drive_status(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
     
     # Check for integration
-    integrations = await get_user_merge_integrations(
-        supabase_admin,
-        user_id,
-        integration_category="file_storage"
-    )
+    try:
+        integrations = await get_user_merge_integrations(
+            get_sb(),
+            user_id,
+            integration_category="file_storage"
+        )
+    except Exception as e:
+        logger.warning("[google-drive/status] merge lookup failed: %s", e)
+        return {
+            "connected": False,
+            "files_count": 0,
+            "status": "unavailable",
+        }
     
     drive_integration = next(
         (i for i in integrations if i.get("integration_slug") == "google_drive"),
@@ -2925,6 +2940,7 @@ async def google_drive_disconnect(current_user: dict = Depends(get_current_user)
         ).eq("source", "google_drive").execute()
 
         logger.info(f"[google-drive/disconnect] Disconnected for {user_id}")
+        await invalidate_cached_integration_status(user_id)
         return {"ok": True, "message": "Google Drive disconnected successfully"}
     except Exception as e:
         logger.error(f"[google-drive/disconnect] Error: {e}")
@@ -3081,6 +3097,9 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
     Returns connected status, record counts, last sync time, and error messages.
     """
     user_id = current_user["id"]
+    cached = await get_cached_integration_status(user_id)
+    if cached:
+        return cached
     sb = get_sb()
     live_truth = get_live_integration_truth(sb, user_id)
     integrations = []
@@ -3154,11 +3173,13 @@ async def get_user_integration_status(current_user: dict = Depends(get_current_u
         "last_signal_at": observation_state.get("last_signal_at"),
     }
 
-    return {
+    payload = {
         "integrations": integrations,
         "canonical_truth": canonical_truth,
         "total_connected": canonical_truth.get("total_connected", 0),
     }
+    await set_cached_integration_status(user_id, payload)
+    return payload
 
 
 @router.get("/integrations/connectors")
@@ -3477,6 +3498,7 @@ async def merge_webhook_receive(request: Request):
     received = 0
     duplicate = 0
     ignored = 0
+    touched_tenants = set()
 
     for row in raw_events or []:
         event = row if isinstance(row, dict) else {}
@@ -3502,6 +3524,7 @@ async def merge_webhook_receive(request: Request):
                 ignored += 1
                 continue
             tenant_id = str(int_resp.data["user_id"])
+            touched_tenants.add(tenant_id)
         except Exception:
             ignored += 1
             continue
@@ -3533,6 +3556,9 @@ async def merge_webhook_receive(request: Request):
             else:
                 logger.warning(f"[merge-webhook] Insert failed: {e}")
                 ignored += 1
+
+    for tenant_id in touched_tenants:
+        await invalidate_cached_integration_status(tenant_id)
 
     return JSONResponse(content={
         "ok": True,
@@ -3620,6 +3646,7 @@ async def sync_integration_status_counts(current_user: dict = Depends(get_curren
     from merge_client import get_merge_client
 
     user_id = current_user["id"]
+    await invalidate_cached_integration_status(user_id)
     results = []
     merge_client = get_merge_client()
 
@@ -3684,6 +3711,7 @@ async def sync_integration_status_counts(current_user: dict = Depends(get_curren
     except Exception as e:
         logger.warning(f"[sync] Email failed: {e}")
 
+    await invalidate_cached_integration_status(user_id)
     return {
         "success": True,
         "synced": results,

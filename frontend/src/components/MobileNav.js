@@ -11,7 +11,7 @@ import { isPrivilegedUser } from '../lib/privilegedUser';
 // ── Primary 5-tab bar ─────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { id: 'pulse',   label: 'Overview', icon: LayoutDashboard, path: '/advisor' },
-  { id: 'soundboard', label: 'Soundboard', icon: MessageSquare, path: '/soundboard' },
+  { id: 'soundboard', label: 'Ask BIQc', icon: MessageSquare, path: '/soundboard' },
   { id: 'inbox',   label: 'Inbox',    icon: Inbox,      path: '/email-inbox' },
   { id: 'alerts',  label: 'Alerts',   icon: Bell,            path: '/alerts' },
   { id: 'more',    label: 'More',     icon: MoreHorizontal,  path: null },
@@ -94,7 +94,7 @@ const MobileNav = () => {
             { label: 'Reports', icon: FileText, path: '/reports' },
             { label: 'Revenue', icon: TrendingUp, path: '/revenue' },
             { label: 'Operations', icon: Activity, path: '/operations' },
-            { label: 'Marketing Intel', icon: BarChart3, path: '/marketing-intelligence' },
+            { label: 'Marketing Intelligence', icon: BarChart3, path: '/marketing-intelligence' },
             { label: 'Boardroom', icon: MessageSquare, path: '/board-room' },
           ]
         : [
