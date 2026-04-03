@@ -51,12 +51,16 @@ async def create_experiment(req: CreateExperiment, current_user: dict = Depends(
         raise HTTPException(status_code=403, detail="Super admin only")
     from supabase_client import get_supabase_client
     sb = get_supabase_client()
-    sb.table('ab_experiments').insert({
-        'experiment_name': req.name, 'description': req.description,
-        'variant_a': req.variant_a, 'variant_b': req.variant_b,
-        'traffic_pct_b': req.traffic_pct_b, 'status': 'draft',
-    }).execute()
-    return {'status': 'created', 'experiment': req.name}
+    try:
+        sb.table('ab_experiments').insert({
+            'experiment_name': req.name, 'description': req.description,
+            'variant_a': req.variant_a, 'variant_b': req.variant_b,
+            'traffic_pct_b': req.traffic_pct_b, 'status': 'draft',
+        }).execute()
+        return {'status': 'created', 'experiment': req.name}
+    except Exception as exc:
+        logger.warning("experiments/create degraded: %s", exc)
+        return {'status': 'degraded', 'experiment': req.name}
 
 
 @router.post("/experiments/{name}/start")

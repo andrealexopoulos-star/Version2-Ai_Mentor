@@ -60,7 +60,11 @@ def _check_openai():
 @router.get("/detailed")
 async def detailed_health():
     """Comprehensive health check of all services and workers."""
-    _require_non_production()
+    if _is_production():
+        return {
+            "status": "unavailable_in_production",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
     checks = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "api": {"status": "healthy"},

@@ -816,7 +816,11 @@ async def disconnect_merge_integration(request: Request, payload: MergeDisconnec
                 rows_to_delete.append(row)
 
         if not rows_to_delete:
-            raise HTTPException(status_code=404, detail="Integration record not found for disconnect")
+            return {
+                "success": True,
+                "message": "Integration already disconnected",
+                "rows_deleted": 0,
+            }
 
         row_ids = [row["id"] for row in rows_to_delete if row.get("id")]
         if row_ids:
@@ -1068,6 +1072,16 @@ async def get_crm_companies(
     except Exception as e:
         logger.error(f"❌ Error fetching companies: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/integrations/crm/company")
+async def get_crm_company_alias(
+    cursor: Optional[str] = None,
+    page_size: int = 100,
+    current_user: dict = Depends(get_current_user),
+):
+    """Compatibility alias for singular company endpoint used by older clients."""
+    return await get_crm_companies(cursor=cursor, page_size=page_size, current_user=current_user)
 
 
 @router.get("/integrations/crm/deals")
@@ -2058,7 +2072,12 @@ async def execute_delegate_workflow(
     )
 
     if provider_used == "manual":
-        raise HTTPException(status_code=409, detail="No connected delegate provider found. Connect Jira/Asana via Merge or Outlook/Exchange.")
+        return {
+            "success": False,
+            "provider_used": "manual",
+            "status": "provider_not_connected",
+            "message": "Connect Jira/Asana via Merge or Outlook/Exchange to enable delegation.",
+        }
 
     external_reference = None
     execution_detail: Dict[str, Any] = {"provider": provider_used}
