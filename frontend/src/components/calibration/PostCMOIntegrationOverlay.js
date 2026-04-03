@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowRight, X, CheckCircle2, Zap, Link2 } from 'lucide-react';
 import { supabase } from '../../context/SupabaseAuthContext';
 import { getBackendUrl } from '../../config/urls';
@@ -90,8 +90,55 @@ const INTEGRATIONS = [
 
 const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
   const [connected, setConnected] = useState([]);
+  const [connectedEmail, setConnectedEmail] = useState('');
+  const [statusLoading, setStatusLoading] = useState(true);
   const [connecting, setConnecting] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadConnectionStatus = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) {
+          if (mounted) setConnected([]);
+          return;
+        }
+        const { data: rows } = await supabase
+          .from('email_connections')
+          .select('provider, connected, connected_email')
+          .eq('user_id', session.user.id);
+
+        const providers = (rows || []).filter((row) => row?.connected !== false);
+        const connectedIds = [];
+        let emailLabel = '';
+        providers.forEach((row) => {
+          const provider = String(row?.provider || '').toLowerCase();
+          if (provider === 'outlook') {
+            connectedIds.push('outlook', 'exchange');
+          }
+          if (provider === 'gmail') {
+            connectedIds.push('gmail');
+          }
+          if (!emailLabel && row?.connected_email) {
+            emailLabel = row.connected_email;
+          }
+        });
+        if (mounted) {
+          setConnected(Array.from(new Set(connectedIds)));
+          setConnectedEmail(emailLabel);
+        }
+      } catch {
+        if (mounted) setConnected([]);
+      } finally {
+        if (mounted) setStatusLoading(false);
+      }
+    };
+    loadConnectionStatus();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleConnect = async (integration) => {
     if (integration.authType === 'coming_soon') {
@@ -111,6 +158,9 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
 
       const backendUrl = getBackendUrl();
       const returnTo = '/calibration?step=integration_connect'; // return here, step param resumes integration overlay
+      try {
+        sessionStorage.setItem('biqc_resume_after_oauth', 'integration_connect');
+      } catch {}
 
       if (integration.authType === 'gmail') {
         window.location.href = `${backendUrl}/api/auth/gmail/login?token=${session.access_token}&returnTo=${encodeURIComponent(returnTo)}`;
@@ -170,6 +220,11 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
           <p className="text-sm max-w-sm mx-auto leading-relaxed mb-3" style={{ color: 'var(--biqc-text-2, #9FB0C3)', fontFamily: fontFamily.body }}>
             Connect your email to activate priority inbox, calendar intelligence and client signals. Takes 30 seconds.
           </p>
+          {!statusLoading && connected.length > 0 && (
+            <p className="text-xs mb-3" style={{ color: '#10B981', fontFamily: fontFamily.body }}>
+              Connected now: {connected.includes('outlook') ? 'Outlook + Calendar' : 'Email'}{connectedEmail ? ` (${connectedEmail})` : ''}
+            </p>
+          )}
           <div className="flex flex-wrap items-center justify-center gap-3 text-[10px]" style={{ fontFamily: fontFamily.mono, color: '#64748B' }}>
             {['30 seconds to connect', 'Read-only access', 'Revoke anytime'].map(t => (
               <span key={t} className="flex items-center gap-1">
@@ -189,7 +244,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
               <button
                 key={intg.id}
                 onClick={() => handleConnect(intg)}
-                disabled={isConnecting}
+                disabled={isConnecting || isConnected}
                 onMouseEnter={() => setHoveredId(intg.id)}
                 onMouseLeave={() => setHoveredId(null)}
                 className="relative flex items-start gap-3 p-4 rounded-xl text-left transition-all"
@@ -200,7 +255,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
                   transform: hoveredId === intg.id && !isConnecting ? 'translateY(-2px)' : 'none',
                   boxShadow: hoveredId === intg.id ? `0 8px 24px ${intg.color}15` : 'none',
                   opacity: isComingSoon ? 0.6 : 1,
-                  cursor: isConnecting ? 'wait' : 'pointer',
+                  cursor: (isConnecting || isConnected) ? 'default' : 'pointer',
                 }}
                 data-testid={`connect-email-${intg.id}`}>
                 {isConnected && (

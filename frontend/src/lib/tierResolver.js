@@ -6,14 +6,17 @@
 import { getRouteAccess } from '../config/routeAccessConfig';
 import { MASTER_ADMIN_EMAIL as SUPER_ADMIN_EMAIL, isPrivilegedUser } from './privilegedUser';
 
-// Only free, starter (BIQc Foundation), super_admin. Legacy DB values map to starter in resolveTier.
-const TIERS = ['free', 'starter', 'super_admin'];
-export const TIER_RANK = { free: 0, starter: 1, super_admin: 99 };
-// Legacy tier names (no longer sold) still resolve to paid rank for hasAccess when DB returns them
+// Canonical tiers: free + 3 paid + custom build + super_admin.
+const TIERS = ['free', 'starter', 'pro', 'enterprise', 'custom_build', 'super_admin'];
+export const TIER_RANK = { free: 0, starter: 1, pro: 2, enterprise: 3, custom_build: 4, super_admin: 99 };
+// Legacy tier names still resolve to paid rank for compatibility.
 const LEGACY_PAID_RANK = 1;
 function rankForTier(tier) {
   if (TIER_RANK[tier] !== undefined) return TIER_RANK[tier];
-  if (['foundation', 'growth', 'professional', 'enterprise', 'custom', 'pro'].includes(tier)) return LEGACY_PAID_RANK;
+  if (['foundation', 'growth'].includes(tier)) return LEGACY_PAID_RANK;
+  if (tier === 'professional' || tier === 'pro') return TIER_RANK.pro;
+  if (tier === 'enterprise') return TIER_RANK.enterprise;
+  if (tier === 'custom') return TIER_RANK.custom_build;
   return 0;
 }
 
@@ -34,9 +37,11 @@ export function resolveTier(user) {
   const role = (user.role || '').toLowerCase();
   if (role === 'superadmin' || role === 'super_admin' || role === 'admin') return 'super_admin';
   const dbTier = (user.subscription_tier || user.tier || 'free').toLowerCase();
-  if (dbTier === 'starter') return 'starter';
+  if (dbTier === 'starter' || dbTier === 'foundation' || dbTier === 'growth') return 'starter';
+  if (dbTier === 'pro' || dbTier === 'professional') return 'pro';
+  if (dbTier === 'enterprise') return 'enterprise';
+  if (dbTier === 'custom' || dbTier === 'custom_build') return 'custom_build';
   if (dbTier === 'super_admin') return 'super_admin';
-  if (['foundation', 'growth', 'professional', 'enterprise', 'custom', 'pro'].includes(dbTier)) return 'starter';
   return dbTier === 'free' ? 'free' : 'free';
 }
 

@@ -17,24 +17,32 @@ import { fontFamily } from '../design-system/tokens';
 import { resolveTier } from '../lib/tierResolver';
 import { isPrivilegedUser } from '../lib/privilegedUser';
 
-// ── Clearbit logo with dark fallback ─────────────────────────────────────────
+// ── Deterministic local connector badge (no external DNS dependency) ───────
 const Logo = ({ domain, name, size = 36 }) => {
-  const [err, setErr] = useState(false);
-  if (err) {
-    return (
-      <div className="flex items-center justify-center rounded-lg font-bold flex-shrink-0"
-        style={{ width: size, height: size, background: 'var(--biqc-bg-elevated, #1A2332)', border: '1px solid var(--biqc-border, #243140)', color: '#9FB0C3', fontSize: size * 0.3, fontFamily: fontFamily.mono }}>
-        {name.slice(0, 2).toUpperCase()}
-      </div>
-    );
-  }
+  const seed = `${domain || ''}:${name || ''}`;
+  const hash = Array.from(seed).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const hue = hash % 360;
+  const initials = (name || '?')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || '?';
   return (
-    <div className="bg-white rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
-      style={{ width: size, height: size, boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>
-      <img src={`https://logo.clearbit.com/${domain}`} alt={name}
-        style={{ width: size - 8, height: size - 8, objectFit: 'contain' }}
-        loading="lazy"
-        onError={() => setErr(true)} />
+    <div
+      className="flex items-center justify-center rounded-lg font-bold flex-shrink-0"
+      aria-label={name}
+      style={{
+        width: size,
+        height: size,
+        background: `linear-gradient(135deg, hsla(${hue}, 70%, 45%, 0.28), hsla(${(hue + 40) % 360}, 70%, 38%, 0.28))`,
+        border: '1px solid var(--biqc-border, #243140)',
+        color: '#E2E8F0',
+        fontSize: size * 0.3,
+        fontFamily: fontFamily.mono,
+      }}
+    >
+      {initials}
     </div>
   );
 };

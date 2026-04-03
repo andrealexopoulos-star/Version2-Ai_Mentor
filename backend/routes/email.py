@@ -48,6 +48,7 @@ from supabase_intelligence_helpers import (
 )
 from config.urls import get_backend_url, get_frontend_url
 from biqc_jobs import enqueue_job
+from integration_status_cache import invalidate_cached_integration_status
 from tier_resolver import resolve_tier
 
 router = APIRouter()
@@ -766,6 +767,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
                 on_conflict="user_id,provider"
             ).execute()
             logger.info("✅ email_connections updated for Gmail")
+            await invalidate_cached_integration_status(user_id)
         except Exception as e:
             logger.error(f"❌ Failed to store Gmail tokens: {e}")
             return RedirectResponse(url=f"{frontend_url}{return_to}?gmail_error=storage_failed")
@@ -833,6 +835,8 @@ async def gmail_disconnect(current_user: dict = Depends(get_current_user)):
         
         # Delete Gmail connection
         get_sb().table("gmail_connections").delete().eq("user_id", user_id).execute()
+        get_sb().table("email_connections").delete().eq("user_id", user_id).eq("provider", "gmail").execute()
+        await invalidate_cached_integration_status(user_id)
         
         logger.info(f"Gmail disconnected for user: {user_id}")
         
@@ -993,6 +997,7 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
             on_conflict="user_id,provider"
         ).execute()
         logger.info("✅ email_connections updated for Outlook")
+        await invalidate_cached_integration_status(user_id)
     except Exception as e:
         logger.error(f"❌ Failed to store Outlook tokens: {e}")
         return RedirectResponse(url=f"{frontend_url}{return_to}?outlook_error=storage_failed")
@@ -1846,6 +1851,12 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
             logger.info(f"Deleted Outlook tokens from m365_tokens for user {user_id}")
         except Exception as e:
             logger.warning(f"Could not delete from m365_tokens: {e}")
+
+        # Delete canonical email connection row
+        try:
+            get_sb().table("email_connections").delete().eq("user_id", user_id).eq("provider", "outlook").execute()
+        except Exception as e:
+            logger.warning(f"Could not delete from email_connections: {e}")
         
         # Delete all synced emails from Supabase
         deleted_emails = await delete_user_emails_supabase(get_sb(), user_id)
@@ -1858,6 +1869,7 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
         # Delete mirrored calendar events to prevent stale entries after reconnect.
         deleted_calendar_events = await delete_user_calendar_events_supabase(get_sb(), user_id)
         logger.info(f"Deleted {deleted_calendar_events} calendar events for user {user_id}")
+        await invalidate_cached_integration_status(user_id)
         
         return {
             "success": True,

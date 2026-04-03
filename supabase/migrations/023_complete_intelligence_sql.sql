@@ -577,12 +577,12 @@ BEGIN
     IF v_profile.location IS NOT NULL AND v_profile.location != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
     IF v_profile.abn IS NOT NULL AND v_profile.abn != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
     IF v_profile.target_market IS NOT NULL AND v_profile.target_market != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
-    IF v_profile.mission IS NOT NULL AND v_profile.mission != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
-    IF v_profile.vision IS NOT NULL AND v_profile.vision != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
+    IF v_profile.mission_statement IS NOT NULL AND v_profile.mission_statement != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
+    IF v_profile.vision_statement IS NOT NULL AND v_profile.vision_statement != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
     IF v_profile.short_term_goals IS NOT NULL AND v_profile.short_term_goals != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
     IF v_profile.long_term_goals IS NOT NULL AND v_profile.long_term_goals != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
-    IF v_profile.products_services IS NOT NULL AND v_profile.products_services != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
-    IF v_profile.competitive_advantage IS NOT NULL AND v_profile.competitive_advantage != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
+    IF v_profile.main_products_services IS NOT NULL AND v_profile.main_products_services != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
+    IF v_profile.competitive_advantages IS NOT NULL AND v_profile.competitive_advantages != '' THEN v_filled_fields := v_filled_fields + 1; END IF;
 
     -- Check source_map coverage
     IF v_profile.source_map IS NOT NULL THEN
@@ -894,5 +894,30 @@ GRANT EXECUTE ON FUNCTION compute_watchtower_positions(UUID) TO authenticated;
 
 -- Escalation history RLS
 ALTER TABLE escalation_history ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users read own escalation_history" ON escalation_history FOR SELECT USING (true);
-CREATE POLICY "Service manages escalation_history" ON escalation_history FOR ALL USING (true) WITH CHECK (true);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'escalation_history'
+          AND policyname = 'Users read own escalation_history'
+    ) THEN
+        CREATE POLICY "Users read own escalation_history"
+            ON escalation_history
+            FOR SELECT
+            USING (true);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'escalation_history'
+          AND policyname = 'Service manages escalation_history'
+    ) THEN
+        CREATE POLICY "Service manages escalation_history"
+            ON escalation_history
+            FOR ALL
+            USING (true)
+            WITH CHECK (true);
+    END IF;
+END $$;

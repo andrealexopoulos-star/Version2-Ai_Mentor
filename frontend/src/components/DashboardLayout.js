@@ -265,8 +265,8 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
 
   const navSections = [
     { id: 'overview', label: 'BIQc Overview', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [] },
-    { id: 'soundboard', label: 'Soundboard', path: '/soundboard', icon: MessageSquare, items: [] },
-    { id: 'priority-inbox', label: 'Email Priority Inbox', path: '/email-inbox', icon: Inbox, items: [] },
+    { id: 'soundboard', label: 'Ask BIQc', path: '/soundboard', icon: MessageSquare, items: [] },
+    { id: 'priority-inbox', label: 'Inbox', path: '/email-inbox', icon: Inbox, items: [] },
     { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [] },
     { id: 'market', label: 'Market & Position', path: '/market', icon: Radar, items: [] },
     { id: 'benchmark', label: 'Competitive Benchmark', path: '/competitive-benchmark', icon: Target, items: [] },
@@ -288,6 +288,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
         { icon: Settings, label: 'Admin Dashboard', path: '/admin' },
         { icon: CreditCard, label: 'Pricing Control', path: '/admin/pricing' },
         { icon: Bell, label: 'UX Feedback', path: '/admin/ux-feedback' },
+        { icon: ClipboardList, label: 'Scope Checkpoints', path: '/admin/scope-checkpoints' },
         { icon: Activity, label: 'Data Center', path: '/data-center' },
         { icon: BookOpen, label: 'Knowledge Base', path: '/knowledge-base' },
         { icon: Activity, label: 'Observability', path: '/observability' },

@@ -54,6 +54,12 @@ const ROUTE_ACCESS_MAP = {
   '/ab-testing': { minTier: 'starter', featureKey: 'watchtower', launchType: 'waitlist' },
   // Admin
   '/admin': { minTier: 'super_admin', launchType: 'free' },
+  '/admin/scope-checkpoints': { minTier: 'super_admin', launchType: 'free' },
+  '/admin/pricing': { minTier: 'super_admin', launchType: 'free' },
+  '/admin/ux-feedback': { minTier: 'super_admin', launchType: 'free' },
+  '/admin/prompt-lab': { minTier: 'super_admin', launchType: 'free' },
+  '/support-admin': { minTier: 'super_admin', launchType: 'free' },
+  '/observability': { minTier: 'super_admin', launchType: 'free' },
   '/auth-debug': { minTier: 'super_admin', launchType: 'free' },
 };
 

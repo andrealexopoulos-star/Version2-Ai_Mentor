@@ -21,6 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 REPORTS_DIR = REPO_ROOT / "test_reports"
 DEFAULT_BACKEND_BASE_URL = "https://biqc-api.azurewebsites.net"
 TIMEOUT_SECONDS = 8
+RETRY_TIMEOUT_SECONDS = 18
 MAX_ENDPOINT_PROBES = 180
 
 
@@ -34,21 +35,29 @@ def load_json(path: Path) -> Dict:
 
 
 def http_probe(url: str, token: str | None = None) -> Tuple[int, str]:
-    req = urllib.request.Request(url=url, method="GET")
-    if token:
-        req.add_header("Authorization", f"Bearer {token}")
-    try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
-            return int(resp.status), ""
-    except urllib.error.HTTPError as e:
-        body = ""
+    def _single_probe(timeout_seconds: int) -> Tuple[int, str]:
+        req = urllib.request.Request(url=url, method="GET")
+        if token:
+            req.add_header("Authorization", f"Bearer {token}")
         try:
-            body = (e.read() or b"").decode("utf-8", errors="ignore")[:200]
-        except Exception:
+            with urllib.request.urlopen(req, timeout=timeout_seconds) as resp:
+                return int(resp.status), ""
+        except urllib.error.HTTPError as e:
             body = ""
-        return int(e.code), body
-    except Exception as e:  # noqa: BLE001
-        return 0, str(e)[:200]
+            try:
+                body = (e.read() or b"").decode("utf-8", errors="ignore")[:300]
+            except Exception:
+                body = ""
+            return int(e.code), body
+        except Exception as e:  # noqa: BLE001
+            return 0, str(e)[:200]
+
+    status, detail = _single_probe(TIMEOUT_SECONDS)
+    if status != 0:
+        return status, detail
+    if "timed out" in detail.lower():
+        return _single_probe(RETRY_TIMEOUT_SECONDS)
+    return status, detail
 
 
 def main() -> int:
@@ -124,6 +133,9 @@ def main() -> int:
         elif status == 422 and "/callback" in path:
             result = "contract_exception"
             reason = "callback_requires_query_params"
+        elif status == 422 and "Field required" in detail:
+            result = "contract_exception"
+            reason = "query_params_required"
         elif status in {404, 405}:
             result = "contract_exception"
             reason = "non_probeable_get_surface"
@@ -142,9 +154,19 @@ def main() -> int:
     pass_count = sum(1 for p in probes if p["result"] == "pass")
     exception_count = sum(1 for p in probes if p["result"] == "contract_exception")
     fail_items = [p for p in probes if p["result"] == "fail"]
+    auth_required_200_count = sum(
+        1
+        for p in probes
+        if p.get("auth_required") and p.get("status") == 200
+    )
 
     # strict pass: authenticated fixture required for full card/integration verification.
-    passed = bool(token) and (len(fail_items) == 0) and (pass_count > 0)
+    passed = (
+        bool(token)
+        and (len(fail_items) == 0)
+        and (pass_count > 0)
+        and (auth_required_200_count > 0)
+    )
     failure_codes: List[str] = []
     if fail_items:
         failure_codes.append("LIVE_ENDPOINT_PROBE_FAILURES")
@@ -152,6 +174,8 @@ def main() -> int:
         failure_codes.append("NO_LIVE_200_PROBES")
     if not token:
         failure_codes.append("MISSING_AUTH_FIXTURE_TOKEN")
+    if token and auth_required_200_count == 0:
+        failure_codes.append("INVALID_AUTH_FIXTURE_TOKEN")
 
     payload = {
         "generated_at": now.isoformat(),
@@ -166,6 +190,7 @@ def main() -> int:
             "probes_total": len(probes),
             "probes_run": covered,
             "pass_200_count": pass_count,
+            "auth_required_200_count": auth_required_200_count,
             "contract_exception_count": exception_count,
             "unexpected_fail_count": len(fail_items),
         },
