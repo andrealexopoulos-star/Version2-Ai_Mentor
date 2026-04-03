@@ -242,7 +242,7 @@ jobs:
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
 
-  # ─── RELEASE EVIDENCE REFRESH (BLOCKING) ─────────────────────────────────
+  # ─── RELEASE EVIDENCE REFRESH (TEMPORARY ADVISORY) ───────────────────────
   release-evidence-refresh:
     name: Release Evidence Refresh
     runs-on: ubuntu-latest
@@ -272,8 +272,25 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Refresh release evidence chain
-        run: python3 scripts/run_release_evidence_refresh.py
+      - name: Refresh release evidence chain (advisory)
+        run: |
+          set +e
+          python3 scripts/run_release_evidence_refresh.py
+          EXIT_CODE=$?
+          set -e
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            echo "WARNING: release evidence refresh failed (temporary advisory mode)."
+            echo "WARNING: deployment is proceeding while this gate is non-blocking."
+            {
+              echo "## Advisory Gate Warning"
+              echo ""
+              echo "- Gate: \`release-evidence-refresh\`"
+              echo "- Status: \`failed (advisory)\`"
+              echo "- Exit code: \`${EXIT_CODE}\`"
+              echo "- Action: rotate/fix Supabase telemetry token scope and re-enable blocking mode."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit 0
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROD_PROJECT_REF: vwwandhoydemcybltoxz
