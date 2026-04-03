@@ -260,7 +260,7 @@ jobs:
       - name: Install Supabase CLI
         run: |
           set -euo pipefail
-          VERSION="v2.34.3"
+          VERSION="v2.84.2"
           ARCHIVE="supabase_linux_amd64.tar.gz"
           curl -L "https://github.com/supabase/cli/releases/download/${VERSION}/${ARCHIVE}" -o /tmp/supabase.tar.gz
           tar -xzf /tmp/supabase.tar.gz -C /tmp

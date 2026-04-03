@@ -11,6 +11,8 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -74,6 +76,18 @@ def extract_json_blob(raw: str) -> Any:
     return json.loads(raw[start:])
 
 
+def extract_rows(payload: Any) -> List[Dict[str, Any]]:
+    if isinstance(payload, dict):
+        rows = payload.get("rows")
+        if isinstance(rows, list):
+            return rows
+        if isinstance(payload.get("result"), dict) and isinstance(payload["result"].get("rows"), list):
+            return payload["result"]["rows"]
+    if isinstance(payload, list):
+        return payload
+    raise RuntimeError("unsupported query response payload shape")
+
+
 def classify_metric(value: float, warn: float, hard: float) -> str:
     if value >= hard:
         return "hard_breach"
@@ -87,33 +101,61 @@ def supabase_query(sql: str) -> Dict[str, Any]:
     if not res.ok:
         raise RuntimeError(f"supabase query failed: {res.stderr.strip() or res.error or 'unknown error'}")
     payload = extract_json_blob(res.stdout)
-    rows = payload.get("rows") or []
+    rows = extract_rows(payload)
     if not rows:
         raise RuntimeError("supabase query returned no rows")
     return rows[0]
 
 
+def supabase_query_via_management_api(sql: str, access_token: str) -> Dict[str, Any]:
+    url = f"https://api.supabase.com/v1/projects/{SUPABASE_PROD_PROJECT_REF}/database/query"
+    body = json.dumps({"query": sql}).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        details = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"supabase management query failed ({exc.code}): {details}") from exc
+    except Exception as exc:
+        raise RuntimeError(f"supabase management query failed: {exc}") from exc
+
+    payload = json.loads(raw)
+    rows = extract_rows(payload)
+    if not rows:
+        raise RuntimeError("supabase management query returned no rows")
+    return rows[0]
+
+
 def collect_supabase_prod() -> Dict[str, Any]:
     access_token = os.environ.get("SUPABASE_ACCESS_TOKEN", "").strip()
-    if access_token:
-        login = run_cmd(["supabase", "login", "--token", access_token])
-        if not login.ok:
-            raise RuntimeError(
-                f"supabase login failed: {login.stderr.strip() or login.stdout.strip() or login.error or 'unknown error'}"
-            )
+    use_management_api = bool(access_token)
+    if use_management_api:
+        query_fn = lambda sql: supabase_query_via_management_api(sql, access_token)
+    else:
+        version = run_cmd(["supabase", "--version"])
+        if not version.ok:
+            raise RuntimeError("supabase CLI not available and SUPABASE_ACCESS_TOKEN is not set")
+        temp_dir = REPO_ROOT / "supabase" / ".temp"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        (temp_dir / "project-ref").write_text(f"{SUPABASE_PROD_PROJECT_REF}\n", encoding="utf-8")
+        query_fn = supabase_query
 
-    # Ensure --linked has a deterministic project ref in ephemeral CI runners.
-    temp_dir = REPO_ROOT / "supabase" / ".temp"
-    temp_dir.mkdir(parents=True, exist_ok=True)
-    (temp_dir / "project-ref").write_text(f"{SUPABASE_PROD_PROJECT_REF}\n", encoding="utf-8")
-
-    db_row = supabase_query("select pg_database_size(current_database()) as bytes;")
-    mau_row = supabase_query(
+    db_row = query_fn("select pg_database_size(current_database()) as bytes;")
+    mau_row = query_fn(
         "select count(*)::int as total_users, "
         "count(*) filter (where last_sign_in_at >= date_trunc('month', now()))::int as mau_current_month "
         "from auth.users;"
     )
-    storage_row = supabase_query(
+    storage_row = query_fn(
         "select coalesce(sum((metadata->>'size')::bigint),0) as storage_object_bytes, "
         "count(*)::int as object_count from storage.objects;"
     )
@@ -158,6 +200,7 @@ def collect_supabase_prod() -> Dict[str, Any]:
         "notes": [
             "Egress and billing overage line items require Supabase billing export/dashboard integration.",
         ],
+        "query_mode": "management_api" if use_management_api else "cli_linked_query",
     }
 
 
@@ -266,7 +309,16 @@ def main() -> int:
 
     out = REPORTS_DIR / f"prod_supplier_telemetry_snapshot_{now.strftime('%Y%m%d_%H%M%S')}.json"
     out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    print(json.dumps({"passed": payload["passed"], "artifact": str(out), "failure_codes": payload["failure_codes"]}, indent=2))
+    summary = {
+        "passed": payload["passed"],
+        "artifact": str(out),
+        "failure_codes": payload["failure_codes"],
+    }
+    if payload.get("supabase_error"):
+        summary["supabase_error"] = payload["supabase_error"]
+    if payload.get("azure_error"):
+        summary["azure_error"] = payload["azure_error"]
+    print(json.dumps(summary, indent=2))
     return 0 if payload["passed"] else 1
 
 
