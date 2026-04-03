@@ -308,15 +308,22 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const isActive = useCallback((path) => location.pathname === path || location.pathname.startsWith(`${path}/`), [location.pathname]);
   const getLockedRedirect = useCallback((path) => {
     const config = getRouteAccess(path);
+    const required = config?.minTier || TIERS[requiredTier(path)]?.id || 'starter';
+    const baseParams = new URLSearchParams({
+      from: path,
+      required,
+      launch: config?.launchType || 'foundation',
+    });
+    if (config?.featureKey) {
+      baseParams.set('feature', config.featureKey);
+    }
     if (config?.launchType === 'waitlist') {
-      const feature = config.featureKey ? `?feature=${encodeURIComponent(config.featureKey)}` : '';
-      return `/more-features${feature}`;
+      return `/more-features?${baseParams.toString()}`;
     }
     if (config?.launchType === 'foundation' || config?.launchType === 'paid') {
-      const feature = config.featureKey ? `?feature=${encodeURIComponent(config.featureKey)}` : '';
-      return `/biqc-foundation${feature}`;
+      return `/biqc-foundation?${baseParams.toString()}`;
     }
-    return '/upgrade';
+    return `/upgrade?${baseParams.toString()}`;
   }, []);
   const currentPageLabel = useMemo(() => {
     for (const section of visibleSections) {

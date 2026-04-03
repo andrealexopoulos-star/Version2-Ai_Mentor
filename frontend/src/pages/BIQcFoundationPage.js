@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Lock, Shield } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import UnifiedModuleCard from '../components/UnifiedModuleCard';
 import { FOUNDATION_FEATURES } from '../config/launchConfig';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
@@ -13,6 +14,8 @@ export default function BIQcFoundationPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useSupabaseAuth();
   const selectedKey = searchParams.get('feature');
+  const fromRoute = searchParams.get('from');
+  const requiredTier = searchParams.get('required');
   const tier = resolveTier(user);
   const hasFoundationAccess = isPrivilegedUser(user) || tier !== 'free';
 
@@ -53,6 +56,11 @@ export default function BIQcFoundationPage() {
                   <p className="mt-1 text-2xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>$349 / month</p>
                 </div>
                 <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(15,23,42,0.42)' }}>
+                  <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Annual option</p>
+                  <p className="mt-1 text-2xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>$3,490 / year</p>
+                  <p className="mt-1 text-[11px]" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>2 months equivalent discount. No hidden fees.</p>
+                </div>
+                <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(15,23,42,0.42)' }}>
                   <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Product description</p>
                   <p className="mt-1 max-w-xl text-sm" style={{ color: 'var(--biqc-text-2)' }}>AI operating layer for visibility, decision support, execution control, Boardroom context, and up to 5 integrations.</p>
                 </div>
@@ -80,6 +88,22 @@ export default function BIQcFoundationPage() {
             </div>
           </div>
         </section>
+
+        {fromRoute && !hasFoundationAccess && (
+          <section
+            className="rounded-2xl border px-4 py-3"
+            style={{ borderColor: 'rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.08)' }}
+            data-testid="biqc-foundation-gate-explainer"
+          >
+            <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+              Access transparency
+            </p>
+            <p className="mt-1 text-sm" style={{ color: '#E2E8F0' }}>
+              <strong>{fromRoute}</strong> requires the <strong>{requiredTier || 'starter'}</strong> tier.
+              Upgrade unlocks deeper module capability and higher monthly limits with no hidden access behavior.
+            </p>
+          </section>
+        )}
 
         {selectedFeature && (
           <section className="rounded-[26px] border p-6 sm:p-8" style={{ borderColor: 'rgba(255,106,0,0.24)', background: 'rgba(255,106,0,0.05)' }} data-testid={`biqc-foundation-feature-detail-${selectedFeature.key}`}>
@@ -150,38 +174,24 @@ export default function BIQcFoundationPage() {
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {FOUNDATION_FEATURES.map((feature) => (
-              <article key={feature.key} className="rounded-[24px] border p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_44px_rgba(5,10,20,0.32)]" style={{ borderColor: selectedKey === feature.key ? 'rgba(255,106,0,0.45)' : 'var(--biqc-border)', background: selectedKey === feature.key ? 'rgba(255,106,0,0.05)' : 'var(--biqc-bg-card)' }} data-testid={`biqc-foundation-card-${feature.key}`}>
-                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{feature.title}</p>
-                <p className="mt-3 text-sm leading-7" style={{ color: 'var(--biqc-text-2)' }}>{feature.summary}</p>
-                <div className="mt-4 space-y-2">
-                  {feature.whatItDoes.slice(0, 2).map((line) => (
-                    <div key={line} className="flex items-start gap-2 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
-                      <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: '#FF6A00' }} />
-                      <span>{line}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSearchParams({ feature: feature.key })}
-                    className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                    style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}
-                    data-testid={`biqc-foundation-learn-${feature.key}`}
-                  >
-                    View detail <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
-                  {hasFoundationAccess && (
-                    <button
-                      onClick={() => navigate(feature.route)}
-                      className="inline-flex min-h-[40px] items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-white"
-                      style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
-                      data-testid={`biqc-foundation-open-card-${feature.key}`}
-                    >
-                      Open
-                    </button>
-                  )}
-                </div>
-              </article>
+              <UnifiedModuleCard
+                key={feature.key}
+                title={feature.title}
+                valueStatement={feature.summary}
+                status={hasFoundationAccess ? 'active' : 'foundation'}
+                lockReason={hasFoundationAccess ? '' : 'Locked on Free tier. Upgrade to BIQc Foundation for full depth and higher monthly limits.'}
+                bullets={feature.whatItDoes}
+                usage={{
+                  label: 'Monthly included runs',
+                  used: hasFoundationAccess ? 2 : 0,
+                  limit: hasFoundationAccess ? 20 : 3,
+                }}
+                secondaryLabel="View detail"
+                onSecondary={() => setSearchParams({ feature: feature.key })}
+                primaryLabel={hasFoundationAccess ? 'Open module' : 'Unlock Foundation'}
+                onPrimary={() => navigate(hasFoundationAccess ? feature.route : '/upgrade')}
+                testId={`biqc-foundation-card-${feature.key}`}
+              />
             ))}
           </div>
         </section>

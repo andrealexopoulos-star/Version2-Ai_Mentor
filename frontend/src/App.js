@@ -192,14 +192,20 @@ const LaunchRoute = ({ children, access, featureKey = null }) => {
   const routeConfig = getRouteAccess(location.pathname);
   const effectiveAccess = access || routeConfig?.launchType || 'free';
   const key = featureKey || routeConfig?.featureKey || '';
+  const gateParams = new URLSearchParams({
+    from: location.pathname,
+    required: routeConfig?.minTier || (effectiveAccess === 'waitlist' ? 'starter' : 'starter'),
+    launch: effectiveAccess,
+  });
+  if (key) gateParams.set('feature', key);
 
   if (authState === AUTH_STATE.LOADING || loading) return <LoadingScreen />;
   if (!user && !session) return <Navigate to="/login-supabase" replace />;
   if ((effectiveAccess === 'paid' || effectiveAccess === 'foundation') && !hasPaidAccess) {
-    return <Navigate to={`/biqc-foundation${key ? `?feature=${encodeURIComponent(key)}` : ''}`} replace />;
+    return <Navigate to={`/biqc-foundation?${gateParams.toString()}`} replace />;
   }
   if (effectiveAccess === 'waitlist' && !privileged) {
-    return <Navigate to={`/more-features${key ? `?feature=${encodeURIComponent(key)}` : ''}`} replace />;
+    return <Navigate to={`/more-features?${gateParams.toString()}`} replace />;
   }
   return children;
 };

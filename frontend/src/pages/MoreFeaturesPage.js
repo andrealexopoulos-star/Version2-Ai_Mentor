@@ -1,18 +1,21 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Sparkles, Lock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { WAITLIST_FEATURES } from '../config/launchConfig';
 import { fontFamily } from '../design-system/tokens';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
 import { isPrivilegedUser } from '../lib/privilegedUser';
+import UnifiedModuleCard from '../components/UnifiedModuleCard';
 
 export default function MoreFeaturesPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useSupabaseAuth();
   const highlighted = searchParams.get('feature');
+  const fromRoute = searchParams.get('from');
+  const requiredTier = searchParams.get('required');
   const hasPlatformOverride = isPrivilegedUser(user) || resolveTier(user) === 'super_admin';
 
   const grouped = useMemo(() => {
@@ -64,6 +67,22 @@ export default function MoreFeaturesPage() {
             </div>
           </div>
         </section>
+
+        {fromRoute && !hasPlatformOverride && (
+          <section
+            className="rounded-2xl border px-4 py-3"
+            style={{ borderColor: 'rgba(59,130,246,0.4)', background: 'rgba(59,130,246,0.08)' }}
+            data-testid="more-features-gate-explainer"
+          >
+            <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#60A5FA', fontFamily: fontFamily.mono }}>
+              Access transparency
+            </p>
+            <p className="mt-1 text-sm" style={{ color: '#E2E8F0' }}>
+              <strong>{fromRoute}</strong> is staged beyond your current tier ({requiredTier || 'starter'}).
+              You can review value now and join the waitlist before the module is promoted to live access.
+            </p>
+          </section>
+        )}
 
         {selectedFeature && (
           <section className="rounded-[26px] border p-6 sm:p-8" style={{ borderColor: 'rgba(255,106,0,0.24)', background: 'rgba(255,106,0,0.05)' }} data-testid={`waitlist-feature-detail-${selectedFeature.key}`}>
@@ -129,64 +148,22 @@ export default function MoreFeaturesPage() {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {features.map((feature) => {
                 return (
-                  <article
+                  <div
                     key={feature.key}
-                    className="rounded-[24px] border p-5 transition-all"
-                    style={{
-                      borderColor: highlighted === feature.key ? 'rgba(255,106,0,0.45)' : 'var(--biqc-border)',
-                      background: highlighted === feature.key ? 'rgba(255,106,0,0.06)' : 'var(--biqc-bg-card)',
-                    }}
-                    data-testid={`waitlist-feature-card-${feature.key}`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="inline-flex items-center gap-2 rounded-full px-2.5 py-1" style={{ background: 'rgba(255,106,0,0.08)', color: '#FF6A00' }}>
-                          <Lock className="h-3 w-3" />
-                          <span className="text-[10px] uppercase tracking-[0.12em]" style={{ fontFamily: fontFamily.mono }}>{hasPlatformOverride ? 'Direct access' : 'Waitlist'}</span>
-                        </div>
-                        <h2 className="mt-3 text-xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{feature.title}</h2>
-                        <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }}>{feature.about}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 space-y-2" data-testid={`waitlist-feature-details-${feature.key}`}>
-                      {feature.features.slice(0, 2).map((item) => (
-                        <div key={item} className="rounded-xl px-3 py-2 text-sm" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--biqc-text-2)' }}>
-                          {item}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-3">
-                      <button
-                        onClick={() => openFeature(feature)}
-                        className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold hover:bg-white/5"
-                        style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.body }}
-                        data-testid={`waitlist-feature-open-detail-${feature.key}`}
-                      >
-                        View detail <ArrowRight className="h-4 w-4" />
-                      </button>
-                      {hasPlatformOverride ? (
-                        <button
-                          onClick={() => navigate(feature.route)}
-                          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-                          style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
-                          data-testid={`waitlist-feature-open-direct-${feature.key}`}
-                        >
-                          Open module
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => goToWaitlist(feature)}
-                          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-                          style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
-                          data-testid={`waitlist-feature-join-${feature.key}`}
-                        >
-                          Join waitlist
-                        </button>
-                      )}
-                    </div>
-                  </article>
+                    <UnifiedModuleCard
+                      title={feature.title}
+                      valueStatement={feature.about}
+                      status={hasPlatformOverride ? 'active' : 'waitlist'}
+                      lockReason={hasPlatformOverride ? '' : 'Not hidden: this module is intentionally staged post-foundation. Join waitlist to influence release priority.'}
+                      bullets={feature.features}
+                      secondaryLabel="View detail"
+                      onSecondary={() => openFeature(feature)}
+                      primaryLabel={hasPlatformOverride ? 'Open module' : 'Join waitlist'}
+                      onPrimary={() => (hasPlatformOverride ? navigate(feature.route) : goToWaitlist(feature))}
+                      testId={`waitlist-feature-card-${feature.key}`}
+                    />
+                  </div>
                 );
               })}
             </div>

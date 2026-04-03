@@ -111,6 +111,20 @@ const SubscribePage = () => {
         {featureLabel && <p className="text-xs text-[#FF6A00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
         <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Upgrade to BIQc Foundation</h1>
         <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#F4F7FA] capitalize">{currentTier}</strong></p>
+        <p className="mt-2 text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>
+          Transparent billing: shown amount is charged exactly as displayed. No hidden onboarding or compliance fees.
+        </p>
+      </div>
+
+      <div className="w-full max-w-3xl mb-6 rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Checkout flow</p>
+        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
+          {['Select plan', 'Review amount', 'Secure payment auth', 'Activation confirmation'].map((step, idx) => (
+            <div key={step} className="rounded-lg border px-3 py-2 text-xs" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1' }}>
+              <span style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{idx + 1}.</span> {step}
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 max-w-3xl w-full mb-8">
