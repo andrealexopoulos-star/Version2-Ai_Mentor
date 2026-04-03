@@ -47,7 +47,7 @@ class CmdResult:
 
 def run_cmd(command: List[str]) -> CmdResult:
     try:
-        proc = subprocess.run(command, capture_output=True, text=True, check=False)
+        proc = subprocess.run(command, cwd=REPO_ROOT, capture_output=True, text=True, check=False)
         return CmdResult(
             ok=proc.returncode == 0,
             command=" ".join(command),
@@ -94,9 +94,18 @@ def supabase_query(sql: str) -> Dict[str, Any]:
 
 
 def collect_supabase_prod() -> Dict[str, Any]:
-    link = run_cmd(["supabase", "link", "--project-ref", SUPABASE_PROD_PROJECT_REF])
-    if not link.ok:
-        raise RuntimeError(f"supabase link failed: {link.stderr.strip() or link.error or 'unknown error'}")
+    access_token = os.environ.get("SUPABASE_ACCESS_TOKEN", "").strip()
+    if access_token:
+        login = run_cmd(["supabase", "login", "--token", access_token])
+        if not login.ok:
+            raise RuntimeError(
+                f"supabase login failed: {login.stderr.strip() or login.stdout.strip() or login.error or 'unknown error'}"
+            )
+
+    # Ensure --linked has a deterministic project ref in ephemeral CI runners.
+    temp_dir = REPO_ROOT / "supabase" / ".temp"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    (temp_dir / "project-ref").write_text(f"{SUPABASE_PROD_PROJECT_REF}\n", encoding="utf-8")
 
     db_row = supabase_query("select pg_database_size(current_database()) as bytes;")
     mau_row = supabase_query(

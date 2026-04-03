@@ -48,6 +48,7 @@ def main() -> int:
         ("feature_tier_parity_gate", [sys.executable, "scripts/feature_tier_parity_gate.py"]),
         ("feature_tier_matrix_consistency_gate", [sys.executable, "scripts/feature_tier_matrix_consistency_gate.py"]),
         ("prod_supplier_telemetry_snapshot", [sys.executable, "scripts/prod_supplier_telemetry_snapshot.py"]),
+        ("ephemeral_artifact_guard", [sys.executable, "scripts/ephemeral_artifact_guard.py"]),
         ("release_evidence_index_builder", [sys.executable, "scripts/release_evidence_index_builder.py"]),
     ]
 

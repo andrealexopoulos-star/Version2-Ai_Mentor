@@ -71,7 +71,16 @@ def main() -> int:
     tier_parity_path = latest_report("feature_tier_parity_gate")
     matrix_consistency_path = latest_report("feature_tier_matrix_consistency_gate")
     supplier_path = latest_report("prod_supplier_telemetry_snapshot")
-    if not (zd_path and cfo_path and gate_path and tier_parity_path and matrix_consistency_path and supplier_path):
+    ephemeral_guard_path = latest_report("ephemeral_artifact_guard")
+    if not (
+        zd_path
+        and cfo_path
+        and gate_path
+        and tier_parity_path
+        and matrix_consistency_path
+        and supplier_path
+        and ephemeral_guard_path
+    ):
         print("Missing required evidence artifacts.")
         return 2
 
@@ -81,6 +90,7 @@ def main() -> int:
     tier_parity_payload = load_json(tier_parity_path)
     matrix_consistency_payload = load_json(matrix_consistency_path)
     supplier_payload = load_json(supplier_path)
+    ephemeral_guard_payload = load_json(ephemeral_guard_path)
 
     artifacts = {
         "zd_zr_za": describe_artifact(zd_path),
@@ -89,6 +99,7 @@ def main() -> int:
         "feature_tier_parity": describe_artifact(tier_parity_path),
         "feature_tier_matrix_consistency": describe_artifact(matrix_consistency_path),
         "prod_supplier_telemetry": describe_artifact(supplier_path),
+        "ephemeral_artifact_guard": describe_artifact(ephemeral_guard_path),
     }
 
     gate_status = {
@@ -98,6 +109,7 @@ def main() -> int:
         "TIER-PARITY-PROD-01": bool(tier_parity_payload.get("passed")),
         "FEATURE-TIER-MATRIX-CONSISTENCY-01": bool(matrix_consistency_payload.get("passed")),
         "SUPPLIER-TELEMETRY-PROD-01": bool(supplier_payload.get("passed")),
+        "EPHEMERAL-ARTIFACT-GUARD-01": bool(ephemeral_guard_payload.get("passed")),
         "EVIDENCE-FRESHNESS-01": all(item["is_fresh"] for item in artifacts.values()),
         "LINEAGE-COVERAGE-01": zd_payload.get("summary", {}).get("frontend_route_lineage_entries", 0) > 0,
         "BLOCK2-LINEAGE-CLASSIFICATION-01": zd_payload.get("summary", {}).get("lineage_unexpected_unlinked_routes", 1) == 0,
@@ -137,6 +149,11 @@ def main() -> int:
                 "passed": supplier_payload.get("passed"),
                 "failure_codes": supplier_payload.get("failure_codes", []),
                 "mode": supplier_payload.get("mode"),
+            },
+            "ephemeral_artifact_guard": {
+                "passed": ephemeral_guard_payload.get("passed"),
+                "failure_code": ephemeral_guard_payload.get("failure_code"),
+                "tracked_blocked_paths": ephemeral_guard_payload.get("tracked_blocked_paths", []),
             },
         },
         "release_ready": all(gate_status.values()),

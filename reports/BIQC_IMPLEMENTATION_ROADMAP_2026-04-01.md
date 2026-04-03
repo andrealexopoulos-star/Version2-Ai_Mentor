@@ -19,6 +19,10 @@ Goal: execute post-review follow-up tasks without regression
 - Create a named branch from `origin/main` and attach worktree.
 - Add local ignore policy for `supabase/.temp/*` and local marker files.
 - Add CI guard that fails if ephemeral temp files are staged.
+- Implemented guard chain extension:
+  - script `scripts/ephemeral_artifact_guard.py`
+  - release refresh step `ephemeral_artifact_guard` in `scripts/run_release_evidence_refresh.py`
+  - release gate `EPHEMERAL-ARTIFACT-GUARD-01` in `scripts/release_evidence_index_builder.py`
 
 ### A2. Merge reconciliation checklist
 - Verify `git rev-parse HEAD == git rev-parse origin/main` for tracked code.
