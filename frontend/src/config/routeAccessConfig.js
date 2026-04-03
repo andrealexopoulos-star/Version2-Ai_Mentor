@@ -34,6 +34,7 @@ const ROUTE_ACCESS_MAP = {
   '/operations': { minTier: 'starter', featureKey: 'operations', launchType: 'foundation' },
   '/marketing-intelligence': { minTier: 'starter', featureKey: 'marketing-intelligence', launchType: 'foundation' },
   '/board-room': { minTier: 'starter', featureKey: 'boardroom', launchType: 'foundation' },
+  '/billing': { minTier: 'starter', featureKey: 'billing', launchType: 'foundation' },
   // Waitlist
   '/risk': { minTier: 'starter', featureKey: 'risk-workforce', launchType: 'waitlist' },
   '/compliance': { minTier: 'starter', featureKey: 'compliance', launchType: 'waitlist' },

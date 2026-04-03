@@ -122,6 +122,9 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const [notifications, setNotifications] = useState({ total: 0, high: 0 });
   const [showNotifications, setShowNotifications] = useState(false);
   const [notificationsList, setNotificationsList] = useState([]);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackForm, setFeedbackForm] = useState({ rating: 8, sentiment: 'positive', message: '' });
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const hideEmbeddedSoundboard = location.pathname === '/soundboard' || location.pathname.startsWith('/soundboard/');
 
   useEffect(() => { localStorage.setItem('sidebar-collapsed', sidebarCollapsed); }, [sidebarCollapsed]);
@@ -283,6 +286,8 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       id: 'admin', label: 'Admin', items: [
         { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
         { icon: Settings, label: 'Admin Dashboard', path: '/admin' },
+        { icon: CreditCard, label: 'Pricing Control', path: '/admin/pricing' },
+        { icon: Bell, label: 'UX Feedback', path: '/admin/ux-feedback' },
         { icon: Activity, label: 'Data Center', path: '/data-center' },
         { icon: BookOpen, label: 'Knowledge Base', path: '/knowledge-base' },
         { icon: Activity, label: 'Observability', path: '/observability' },
@@ -343,6 +348,27 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const startSoundboardResize = (event) => {
     event.preventDefault();
     setActiveResizeTarget('soundboard');
+  };
+
+  const submitFeedback = async () => {
+    if (feedbackSubmitting) return;
+    setFeedbackSubmitting(true);
+    try {
+      await apiClient.post('/ux-feedback/events', {
+        route: location.pathname,
+        feedback_type: 'ui_feedback',
+        rating: Number(feedbackForm.rating || 0) || null,
+        sentiment: feedbackForm.sentiment || null,
+        message: feedbackForm.message || null,
+        metadata: { source: 'dashboard_feedback_fab' },
+      });
+      setFeedbackOpen(false);
+      setFeedbackForm({ rating: 8, sentiment: 'positive', message: '' });
+    } catch {
+      // ignore; non-blocking UI
+    } finally {
+      setFeedbackSubmitting(false);
+    }
   };
 
   return (
@@ -706,6 +732,72 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       {/* Mobile Bottom Navigation */}
       <MobileNav />
 
+      {/* UX Feedback FAB */}
+      <button
+        onClick={() => setFeedbackOpen(true)}
+        className="fixed bottom-20 left-4 z-40 px-3 py-2 rounded-full text-xs"
+        style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#9FB0C3', fontFamily: fontFamily.mono }}
+        data-testid="ux-feedback-fab"
+      >
+        Feedback
+      </button>
+
+      {feedbackOpen && (
+        <>
+          <div className="fixed inset-0 z-[1200] bg-black/50" onClick={() => setFeedbackOpen(false)} />
+          <div className="fixed z-[1201] w-[min(460px,92vw)] p-4 rounded-xl" style={{ ...cardStyleFromTheme(), right: 16, bottom: 84 }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Quick UX Feedback</span>
+              <button onClick={() => setFeedbackOpen(false)} className="text-[#64748B]">✕</button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <label className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                Rating (1-10)
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={feedbackForm.rating}
+                  onChange={(e) => setFeedbackForm((p) => ({ ...p, rating: e.target.value }))}
+                  style={inputStyleFromTheme()}
+                />
+              </label>
+              <label className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                Sentiment
+                <select
+                  value={feedbackForm.sentiment}
+                  onChange={(e) => setFeedbackForm((p) => ({ ...p, sentiment: e.target.value }))}
+                  style={inputStyleFromTheme()}
+                >
+                  <option value="positive">positive</option>
+                  <option value="neutral">neutral</option>
+                  <option value="negative">negative</option>
+                </select>
+              </label>
+            </div>
+            <label className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+              Message
+              <textarea
+                value={feedbackForm.message}
+                onChange={(e) => setFeedbackForm((p) => ({ ...p, message: e.target.value }))}
+                style={{ ...inputStyleFromTheme(), minHeight: 76 }}
+                placeholder="What should be improved?"
+              />
+            </label>
+            <div className="flex justify-end mt-2">
+              <button
+                onClick={submitFeedback}
+                disabled={feedbackSubmitting}
+                className="px-3 py-2 rounded-lg text-xs"
+                style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: fontFamily.mono }}
+              >
+                {feedbackSubmitting ? 'Sending...' : 'Send feedback'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* First Login Notification */}
       <FirstLoginNotification />
 
@@ -716,3 +808,21 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
 };
 
 export default DashboardLayout;
+
+function cardStyleFromTheme() {
+  return { background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' };
+}
+
+function inputStyleFromTheme() {
+  return {
+    width: '100%',
+    marginTop: 4,
+    padding: '8px 10px',
+    borderRadius: 8,
+    background: 'var(--biqc-bg)',
+    border: '1px solid var(--biqc-border)',
+    color: 'var(--biqc-text)',
+    fontFamily: fontFamily.mono,
+    fontSize: 12,
+  };
+}

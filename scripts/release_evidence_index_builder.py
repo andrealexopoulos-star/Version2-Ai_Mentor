@@ -68,24 +68,36 @@ def main() -> int:
     zd_path = latest_report("zd_zr_za_manager")
     cfo_path = latest_report("cfo_golden_harness")
     gate_path = latest_report("gate_enforcement_proof")
-    if not (zd_path and cfo_path and gate_path):
+    tier_parity_path = latest_report("feature_tier_parity_gate")
+    matrix_consistency_path = latest_report("feature_tier_matrix_consistency_gate")
+    supplier_path = latest_report("prod_supplier_telemetry_snapshot")
+    if not (zd_path and cfo_path and gate_path and tier_parity_path and matrix_consistency_path and supplier_path):
         print("Missing required evidence artifacts.")
         return 2
 
     zd_payload = load_json(zd_path)
     cfo_payload = load_json(cfo_path)
     gate_payload = load_json(gate_path)
+    tier_parity_payload = load_json(tier_parity_path)
+    matrix_consistency_payload = load_json(matrix_consistency_path)
+    supplier_payload = load_json(supplier_path)
 
     artifacts = {
         "zd_zr_za": describe_artifact(zd_path),
         "cfo_golden": describe_artifact(cfo_path),
         "gate_enforcement": describe_artifact(gate_path),
+        "feature_tier_parity": describe_artifact(tier_parity_path),
+        "feature_tier_matrix_consistency": describe_artifact(matrix_consistency_path),
+        "prod_supplier_telemetry": describe_artifact(supplier_path),
     }
 
     gate_status = {
         "WL-P0-03": zd_payload.get("summary", {}).get("likely_visible_vendor_leak_hits", 999) == 0,
         "CFO-GOLDEN-TEST-01": bool(cfo_payload.get("suite_passed")),
         "GATE-ENFORCEMENT-01": bool(gate_payload.get("proof_passed")),
+        "TIER-PARITY-PROD-01": bool(tier_parity_payload.get("passed")),
+        "FEATURE-TIER-MATRIX-CONSISTENCY-01": bool(matrix_consistency_payload.get("passed")),
+        "SUPPLIER-TELEMETRY-PROD-01": bool(supplier_payload.get("passed")),
         "EVIDENCE-FRESHNESS-01": all(item["is_fresh"] for item in artifacts.values()),
         "LINEAGE-COVERAGE-01": zd_payload.get("summary", {}).get("frontend_route_lineage_entries", 0) > 0,
         "BLOCK2-LINEAGE-CLASSIFICATION-01": zd_payload.get("summary", {}).get("lineage_unexpected_unlinked_routes", 1) == 0,
@@ -109,6 +121,22 @@ def main() -> int:
             "gate_enforcement": {
                 "proof_passed": gate_payload.get("proof_passed"),
                 "stage_checks": gate_payload.get("stage_checks", []),
+            },
+            "feature_tier_parity": {
+                "passed": tier_parity_payload.get("passed"),
+                "failure_codes": tier_parity_payload.get("failure_codes", []),
+                "counts": tier_parity_payload.get("counts", {}),
+            },
+            "feature_tier_matrix_consistency": {
+                "passed": matrix_consistency_payload.get("passed"),
+                "failure_codes": matrix_consistency_payload.get("failure_codes", []),
+                "checked_routes": matrix_consistency_payload.get("checked_routes"),
+                "mismatch_count": matrix_consistency_payload.get("mismatch_count"),
+            },
+            "prod_supplier_telemetry": {
+                "passed": supplier_payload.get("passed"),
+                "failure_codes": supplier_payload.get("failure_codes", []),
+                "mode": supplier_payload.get("mode"),
             },
         },
         "release_ready": all(gate_status.values()),

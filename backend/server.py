@@ -302,6 +302,9 @@ api_router.include_router(integrations_router)
 from routes.admin import router as admin_router
 api_router.include_router(admin_router)
 
+from routes.pricing_admin import router as pricing_admin_router
+api_router.include_router(pricing_admin_router)
+
 from routes.watchtower import router as watchtower_router
 api_router.include_router(watchtower_router)
 
@@ -364,6 +367,12 @@ api_router.include_router(stripe_payments_router)
 
 from routes.billing import router as billing_router
 api_router.include_router(billing_router)
+
+from routes.ux_feedback import router as ux_feedback_router
+api_router.include_router(ux_feedback_router)
+
+from routes.deferred_integrations import router as deferred_integrations_router
+api_router.include_router(deferred_integrations_router)
 
 from routes.spine_api import router as spine_api_router
 api_router.include_router(spine_api_router)

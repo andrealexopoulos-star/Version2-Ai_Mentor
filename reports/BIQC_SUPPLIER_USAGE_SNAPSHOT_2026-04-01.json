@@ -1,0 +1,52 @@
+{
+  "captured_at": "2026-04-01",
+  "branch_parity": {
+    "head_sha": "98ad2e025f492a593b104de42d6cf113e07cb822",
+    "origin_main_sha": "98ad2e025f492a593b104de42d6cf113e07cb822",
+    "tracked_divergence": false
+  },
+  "supabase": {
+    "main_prod": {
+      "project_ref": "vwwandhoydemcybltoxz",
+      "database_size_bytes": 47664275,
+      "storage_object_bytes": 1266004,
+      "storage_object_count": 1,
+      "mau_current_month": 12,
+      "total_users": 22
+    },
+    "local_dev": {
+      "project_ref": "xdqwclwsgksbapxmwjaq",
+      "database_size_bytes": 20925587,
+      "storage_object_bytes": 0,
+      "storage_object_count": 0,
+      "mau_current_month": 0,
+      "total_users": 14
+    },
+    "notes": [
+      "Network egress and paid-overage billing details are not available from the SQL telemetry queries used in this snapshot.",
+      "Dashboard/API billing export ingestion is required for complete egress telemetry."
+    ]
+  },
+  "azure": {
+    "function_apps": [],
+    "app_service_plans": [
+      {
+        "name": "biqc-plan",
+        "resource_group": "biqc-production",
+        "sku": "P3v2",
+        "tier": "PremiumV2",
+        "workers": 2
+      },
+      {
+        "name": "ASP-biqcbetawebgroup-bbc2",
+        "resource_group": "biqc-beta-web_group",
+        "sku": "P0v3",
+        "tier": "Premium0V3",
+        "workers": 1
+      }
+    ],
+    "consumption_usage_records_count_april_window": 143,
+    "consumption_pretax_cost_available": false,
+    "assessment": "FunctionApp cold-start and runtime limit analysis is not applicable to the current deployment topology because no Function Apps are present."
+  }
+}

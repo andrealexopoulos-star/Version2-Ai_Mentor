@@ -1,0 +1,136 @@
+{
+  "generated_at": "2026-04-03T00:00:00Z",
+  "context": {
+    "github_authenticated": true,
+    "supabase_authenticated": true,
+    "supabase_org_id": "flttnjqdwjgoccozqsqw",
+    "supabase_linked_project_ref": "vwwandhoydemcybltoxz",
+    "azure_authenticated": true,
+    "azure_subscription_id": "57d9a89b-4db8-4d17-8112-f3221346d684",
+    "azure_subscription_name": "Azure subscription 1"
+  },
+  "github_actions": {
+    "branch": "main",
+    "latest_runs": [
+      {
+        "run_id": 23918102194,
+        "workflow": "Build & Deploy BIQc",
+        "status": "completed",
+        "conclusion": "success",
+        "updated_at": "2026-04-02T19:33:01Z"
+      },
+      {
+        "run_id": 23900337331,
+        "workflow": "Build & Deploy BIQc",
+        "status": "completed",
+        "conclusion": "success",
+        "updated_at": "2026-04-02T12:32:16Z"
+      }
+    ]
+  },
+  "supabase": {
+    "projects_visible": 4,
+    "projects": [
+      {
+        "ref": "vwwandhoydemcybltoxz",
+        "name": "BIQc - Produt",
+        "region": "ap-southeast-2",
+        "status": "ACTIVE_HEALTHY",
+        "linked": true
+      },
+      {
+        "ref": "xdqwclwsgksbapxmwjaq",
+        "name": "biqc-dev-20260325",
+        "region": "ap-southeast-2",
+        "status": "ACTIVE_HEALTHY",
+        "linked": false
+      }
+    ],
+    "quota_visibility": "partial_cli_only"
+  },
+  "azure": {
+    "resource_groups": [
+      "VirtualNetwork",
+      "biqc-production",
+      "WebApp",
+      "biqc-beta-web_group"
+    ],
+    "web_apps": [
+      "biqc-api",
+      "biqc-web",
+      "biqc-worker",
+      "biqc-api-dev",
+      "biqc-web-dev",
+      "biqc-worker-dev",
+      "biqc-beta-web"
+    ],
+    "app_service_plans": [
+      {
+        "name": "biqc-plan",
+        "sku": "P3v2",
+        "tier": "PremiumV2"
+      },
+      {
+        "name": "ASP-biqcbetawebgroup-bbc2",
+        "sku": "P0v3",
+        "tier": "Premium0V3"
+      }
+    ],
+    "function_apps_detected": 0
+  },
+  "vendor_probes": {
+    "stripe": {
+      "key_present": true,
+      "probe_status": 200,
+      "secret_source": "biqc-api-stripe-api-key"
+    },
+    "openai": {
+      "key_present": true,
+      "probe_status": 200,
+      "secret_source": "biqc-api-openai-api-key"
+    },
+    "anthropic": {
+      "key_present": true,
+      "probe_status": 200,
+      "secret_source": "biqc-api-anthropic-api-key"
+    },
+    "perplexity": {
+      "key_present": true,
+      "probe_status": 200,
+      "secret_source": "biqc-api-perplexity-api-key"
+    },
+    "firecrawl": {
+      "key_present": true,
+      "probe_status": 404,
+      "secret_source": "biqc-api-firecrawl-api-key",
+      "note": "endpoint contract likely changed; key still present"
+    },
+    "serper": {
+      "key_present": true,
+      "probe_status": 200,
+      "secret_source": "biqc-api-serper-api-key"
+    },
+    "semrush": {
+      "key_present": true,
+      "probe_status": 200,
+      "secret_source": "biqc-api-dev-semrush-api-key"
+    },
+    "browse_ai": {
+      "key_present": true,
+      "probe_status": null,
+      "secret_source": "biqc-api-dev-browse-ai-api-key",
+      "note": "no stable public health endpoint in current implementation"
+    },
+    "merge": {
+      "key_present": true,
+      "probe_status": null,
+      "secret_source": "biqc-api-merge-api-key",
+      "note": "robust probe requires per-account X-Account-Token"
+    },
+    "xero": {
+      "included_in_run": false,
+      "reason": "deferred per operator instruction"
+    }
+  }
+}
+

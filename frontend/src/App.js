@@ -107,6 +107,8 @@ import OnboardingWizard from './pages/OnboardingWizard';
 import OnboardingDecision from './pages/OnboardingDecision';
 import UpgradePage from './pages/UpgradePage';
 import BillingPage from './pages/BillingPage';
+import AdminPricingPage from './pages/AdminPricingPage';
+import AdminUxFeedbackPage from './pages/AdminUxFeedbackPage';
 
 // ── Conditional imports (pages that may not exist) ────────────────────────────
 let CognitiveV2Mockup, LoadingPreview, CalibrationPreview, AuthDebug, GmailTest, OutlookTest, ProfileImport;
@@ -348,6 +350,8 @@ function AppRoutes() {
 
         {/* Admin */}
         <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/pricing" element={<ProtectedRoute adminOnly><AdminPricingPage /></ProtectedRoute>} />
+        <Route path="/admin/ux-feedback" element={<ProtectedRoute adminOnly><AdminUxFeedbackPage /></ProtectedRoute>} />
         <Route path="/admin/prompt-lab" element={<ProtectedRoute adminOnly><PromptLab /></ProtectedRoute>} />
         <Route path="/support-admin" element={<ProtectedRoute adminOnly><SupportConsolePage /></ProtectedRoute>} />
         <Route path="/observability" element={<ProtectedRoute adminOnly><ObservabilityPage /></ProtectedRoute>} />

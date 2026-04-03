@@ -1,0 +1,39 @@
+module,route_or_surface,current_access_class,min_tier,launch_type,usage_limit,primary_supplier_dependency,status,notes
+BIQc Overview,/advisor,free,free,free,n/a,Supabase+OpenAI,active,Primary command center
+Soundboard,/soundboard,free,free,free,mode-specific,OpenAI/Anthropic/Perplexity,active,Advanced modes policy-constrained
+Email Priority Inbox,/email-inbox,free,free,free,n/a,Microsoft/Google,active,Provider token freshness sensitive
+Calendar,/calendar,free,free,free,n/a,Microsoft/Google,active,Sync continuity required
+Market Position,/market,free,free,free,n/a,SEMrush/Serper/BrowseAI,active,Sub-feature quality varies by integration depth
+Competitive Benchmark,/competitive-benchmark,free,free,free,n/a,SEMrush/Serper,active,Depends on external search vendors
+Business DNA,/business-profile,free,free,free,n/a,Supabase,active,Versioning present
+Actions,/actions,free,free,free,n/a,Supabase,active,Execution layer
+Alerts,/alerts,free,free,free,n/a,Supabase,active,Notification subscriptions
+Data Health,/data-health,free,free,free,n/a,Supabase+Merge,active,Completeness checks
+Integrations,/integrations,free,free,free,connector count by tier,Merge,active,Single integration for free baseline
+Foundation Hub,/biqc-foundation,paid-entry,starter,foundation,n/a,Stripe,active,Upgrade path
+Exposure Scan,/exposure-scan,paid,starter,foundation,n/a,Search vendors,active,Shown in foundation menu
+Marketing Automation,/marketing-automation,paid,starter,foundation,n/a,OpenAI+vendor data,active_beta,Operational maturity varies
+Reports,/reports,paid,starter,foundation,n/a,Supabase+LLM,active,Foundation capability
+Decision Tracker,/decisions,paid,starter,foundation,n/a,Supabase,active,Decision memory surface
+Forensic Audit,/forensic-audit,paid,starter,foundation,n/a,Supabase+edge functions,active,Governance workflow
+Revenue,/revenue,paid,starter,foundation,n/a,Merge+Accounting,active,Finance critical surface
+Billing,/billing,paid,starter,paid,n/a,Stripe+Merge/Xero,active,Route gated via LaunchRoute
+Operations,/operations,paid,starter,foundation,n/a,Merge+events,active,Core paid module
+Marketing Intelligence,/marketing-intelligence,paid,starter,foundation,n/a,SEMrush+LLM,active,Paid strategic intelligence
+Boardroom,/board-room,paid,starter,foundation,n/a,OpenAI+watchtower,active,Executive synthesis
+Risk,/risk,waitlist,starter,waitlist,n/a,Supabase+LLM,partial,Waitlist-gated
+Compliance,/compliance,waitlist,starter,waitlist,n/a,Supabase+LLM,partial,Waitlist-gated
+War Room,/war-room,waitlist,starter,waitlist,n/a,OpenAI,partial,Waitlist-gated
+Automations,/automations,waitlist,starter,waitlist,n/a,workflow engines,partial,Waitlist-gated
+Analysis,/analysis,waitlist,starter,waitlist,n/a,OpenAI,partial,Waitlist-gated
+Diagnosis,/diagnosis,waitlist,starter,waitlist,n/a,OpenAI,partial,Waitlist-gated
+Documents,/documents,waitlist,starter,waitlist,n/a,Storage providers,partial,Waitlist-gated
+Data Center,/data-center,waitlist,starter,waitlist,n/a,File integrations,partial,Waitlist-gated
+Intel Centre,/intel-centre,waitlist,starter,waitlist,n/a,watchtower stack,partial,Waitlist-gated
+Watchtower,/watchtower,waitlist,starter,waitlist,n/a,watchtower stack,partial,Waitlist-gated
+Operator Dashboard,/operator,waitlist,starter,waitlist,n/a,watchtower stack,partial,Waitlist-gated
+AB Testing,/ab-testing,waitlist,starter,waitlist,n/a,admin stack,partial,Currently exposed via admin section too
+Admin Dashboard,/admin,admin,super_admin,free,n/a,Supabase+internal tools,active,Privileged only
+Prompt Lab,/admin/prompt-lab,admin,super_admin,free,n/a,LLM config,active,Privileged only
+Support Console,/support-admin,admin,super_admin,free,n/a,operations tooling,active,Privileged only
+Observability,/observability,admin,super_admin,free,n/a,telemetry stack,active,Privileged only

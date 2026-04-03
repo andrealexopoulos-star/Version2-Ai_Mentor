@@ -242,11 +242,47 @@ jobs:
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
 
+  # ─── RELEASE EVIDENCE REFRESH (BLOCKING) ─────────────────────────────────
+  release-evidence-refresh:
+    name: Release Evidence Refresh
+    runs-on: ubuntu-latest
+    needs: [preprod-forensic-gate]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Supabase CLI
+        run: |
+          set -euo pipefail
+          VERSION="v2.34.3"
+          ARCHIVE="supabase_linux_amd64.tar.gz"
+          curl -L "https://github.com/supabase/cli/releases/download/${VERSION}/${ARCHIVE}" -o /tmp/supabase.tar.gz
+          tar -xzf /tmp/supabase.tar.gz -C /tmp
+          sudo mv /tmp/supabase /usr/local/bin/supabase
+          supabase --version
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Refresh release evidence chain
+        run: python3 scripts/run_release_evidence_refresh.py
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROD_PROJECT_REF: vwwandhoydemcybltoxz
+
   # ─── BUILD & PUSH FRONTEND ───────────────────────────────────────────────
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
-    needs: [test, website-change-gate, preprod-forensic-gate]
+    needs: [test, website-change-gate, preprod-forensic-gate, release-evidence-refresh]
 
     steps:
       - name: Checkout code
@@ -294,7 +330,7 @@ jobs:
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
-    needs: [test, preprod-forensic-gate]
+    needs: [test, preprod-forensic-gate, release-evidence-refresh]
 
     steps:
       - name: Checkout code

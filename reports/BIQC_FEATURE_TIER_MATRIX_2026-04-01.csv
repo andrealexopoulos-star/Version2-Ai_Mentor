@@ -1,0 +1,30 @@
+module,route_or_surface,current_access_class,min_tier,launch_type,usage_limit,quota_threshold,overage_pricing,primary_supplier_dependency,status,notes
+BIQc Overview,/advisor,free,free,free,n/a,n/a,n/a,Supabase+OpenAI,active,Primary command center
+Soundboard,/soundboard,free,free,free,mode usage policy,"Supabase prod thresholds: MAU warn 40k hard 50k; DB warn 1GiB hard 2GiB; storage warn 8GiB hard 10GiB","Supabase paid overages apply by plan for MAU/egress/storage",OpenAI/Anthropic/Perplexity,active,Flagship advisor surface
+Integrations,/integrations,free,free,free,1-connector baseline in free,Merge connector volume constrained by supplier tier,Merge overage and connector-tier pricing per linked account,Merge,active,Connector-depth upgrades driven by capability gaps
+Email Inbox,/email-inbox,free,free,free,n/a,OAuth provider rate limits,Provider API quota overages per vendor terms,Microsoft/Google,active,Token freshness critical
+Calendar,/calendar,free,free,free,n/a,OAuth provider rate limits,Provider API quota overages per vendor terms,Microsoft/Google,active,Sync lag monitored
+Competitive Benchmark,/competitive-benchmark,free,free,free,n/a,Search credits and API quotas,Vendor request overages billed per request by plan,SEMrush+Serper,active,Requires supplier spend guardrails
+Market Position,/market,free,free,free,n/a,Search credits and API quotas,Vendor request overages billed per request by plan,SEMrush+Serper+BrowseAI,active,Quality varies by source depth
+Business DNA,/business-profile,free,free,free,n/a,"Supabase DB threshold tracking via prod telemetry snapshot (warn 1GiB, hard 2GiB)",Supabase storage/egress overage on paid tiers,Supabase,active,Version history retained
+Data Health,/data-health,free,free,free,n/a,"Supabase MAU+storage monitored via SUPPLIER-TELEMETRY-PROD-01 gate",Supabase paid compute/storage overage,Supabase+Merge,active,Completeness checks
+Actions,/actions,free,free,free,n/a,"Supabase MAU threshold warn 40k hard 50k (prod gate)",Supabase overage by plan,Supabase,active,Execution orchestration
+Alerts,/alerts,free,free,free,n/a,Azure Monitor alert rule volume,Azure Monitor charges per rule/action at scale,Azure Monitor,active,Alert policy tuning required
+Exposure Scan,/exposure-scan,paid,starter,foundation,n/a,Search/API quota envelopes,Overage billed by search vendor request tiers,Search vendors,active,Starter-gated
+Marketing Automation,/marketing-automation,paid,starter,foundation,n/a,LLM token + vendor API budgets,Overage billed by token/request unit,OpenAI+supplier APIs,active_beta,Needs strict budget ceilings
+Reports,/reports,paid,starter,foundation,n/a,Supabase storage and render compute,Supabase overage and vendor token costs,Supabase+LLM,active,Starter-gated
+Decision Tracker,/decisions,paid,starter,foundation,n/a,Supabase data growth,Supabase paid storage overage,Supabase,active,Starter-gated
+Forensic Audit,/forensic-audit,paid,starter,foundation,n/a,Edge function and API invocation budgets,Supabase compute/network overage,Supabase+edge functions,active,Critical governance surface
+Revenue,/revenue,paid,starter,foundation,n/a,Accounting API quotas + data sync lag,Merge tier overages by linked accounts,Merge+Accounting,active,Finance critical
+Billing,/billing,paid,starter,paid,n/a,Stripe billing events and accounting sync volume,Stripe transaction fees + connector overages,Stripe+Merge/Xero,active,Unified billing surface
+Operations,/operations,paid,starter,foundation,n/a,Event ingestion and compute budgets,Supabase/Azure overage by plan,Supabase+Merge,active,Starter-gated
+Marketing Intelligence,/marketing-intelligence,paid,starter,foundation,n/a,LLM and search budget thresholds,Token/request overage by vendor plan,SEMrush+LLM,active,Starter-gated
+Boardroom,/board-room,paid,starter,foundation,n/a,LLM token and latency SLO thresholds,Model token overage per vendor pricing,OpenAI+watchtower,active,Executive synthesis
+Risk,/risk,waitlist,starter,waitlist,n/a,Compliance workflow throughput thresholds,n/a until GA,Supabase+LLM,partial,Waitlist placeholder retained
+Compliance,/compliance,waitlist,starter,waitlist,n/a,Compliance workflow throughput thresholds,n/a until GA,Supabase+LLM,partial,Waitlist placeholder retained
+War Room,/war-room,waitlist,starter,waitlist,n/a,LLM token + persistence thresholds,n/a until GA,OpenAI,partial,Waitlist placeholder retained
+Data Center,/data-center,waitlist,starter,waitlist,n/a,"Supabase storage warn 8GiB hard 10GiB (prod telemetry)",Supabase paid storage/egress overage,File integrations,partial,Waitlist placeholder retained
+Documents,/documents,waitlist,starter,waitlist,n/a,"Supabase storage warn 8GiB hard 10GiB (prod telemetry)",Supabase paid storage/egress overage,Storage providers,partial,Waitlist placeholder retained
+Xero Direct Connector,placeholder-xero-direct,deferred,n/a,deferred,n/a,Accounting sync depth and API call volume,TBD after integration scoping,Xero,deferred,Deferred placeholder to prevent planning omission
+BrowseAI Deep Enrichment,placeholder-browseai-deep,deferred,n/a,deferred,n/a,Task-run volume and crawl credits,TBD after endpoint contract validation,BrowseAI,deferred,Deferred placeholder pending stable health probe
+Firecrawl Contracted Crawl,placeholder-firecrawl-contract,deferred,n/a,deferred,n/a,Crawl-credit and endpoint contract threshold,TBD after endpoint alignment,Firecrawl,deferred,Deferred placeholder pending endpoint normalization
