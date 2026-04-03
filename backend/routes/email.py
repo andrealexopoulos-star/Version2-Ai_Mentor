@@ -1836,7 +1836,7 @@ async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
     # Check if Outlook is connected
     tokens = await get_outlook_tokens(user_id)
     if not tokens:
-        raise HTTPException(status_code=400, detail="Outlook is not connected")
+        return {"success": True, "message": "Outlook already disconnected", "deleted_emails": 0, "deleted_jobs": 0, "deleted_calendar_events": 0}
     
     try:
         # Delete tokens from both tables (Edge Function uses outlook_oauth_tokens, legacy uses m365_tokens)
@@ -2118,7 +2118,11 @@ async def create_calendar_event(
     """Create a follow-up event in Outlook Calendar."""
     tokens = await get_outlook_tokens(current_user["id"])
     if not tokens:
-        raise HTTPException(status_code=400, detail="Outlook not connected")
+        return {
+            "status": "outlook_not_connected",
+            "created": False,
+            "message": "Connect Outlook to create calendar events.",
+        }
 
     access_token = tokens.get("access_token")
     refresh_token = tokens.get("refresh_token")
@@ -2580,7 +2584,7 @@ async def send_recommended_reply(
     if not message:
         message = await find_email_by_graph_message_id_supabase(get_sb(), user_id, payload.email_id)
     if not message or message.get("user_id") != user_id:
-        raise HTTPException(status_code=404, detail="Email not found")
+        return {"status": "email_not_found", "manual_send_required": True}
 
     from_address = (message.get("from_address") or "").strip()
     if not from_address:
@@ -2645,23 +2649,37 @@ async def reclassify_priority_email(
     if not email_id:
         raise HTTPException(status_code=400, detail="email_id is required")
 
-    result = (
-        get_sb()
-        .table("priority_inbox")
-        .update({"user_override": level, "updated_at": datetime.now(timezone.utc).isoformat()})
-        .eq("user_id", user_id)
-        .eq("provider", provider)
-        .eq("email_id", email_id)
-        .execute()
-    )
-    if not result.data:
-        raise HTTPException(status_code=404, detail="Priority inbox row not found")
-    return {
-        "status": "ok",
-        "email_id": email_id,
-        "provider": provider,
-        "user_override": level,
-    }
+    try:
+        result = (
+            get_sb()
+            .table("priority_inbox")
+            .update({"user_override": level, "updated_at": datetime.now(timezone.utc).isoformat()})
+            .eq("user_id", user_id)
+            .eq("provider", provider)
+            .eq("email_id", email_id)
+            .execute()
+        )
+        if not result.data:
+            return {
+                "status": "priority_row_not_found",
+                "email_id": email_id,
+                "provider": provider,
+                "user_override": level,
+            }
+        return {
+            "status": "ok",
+            "email_id": email_id,
+            "provider": provider,
+            "user_override": level,
+        }
+    except Exception as exc:
+        logger.warning("priority reclassify degraded for %s/%s: %s", provider, email_id, exc)
+        return {
+            "status": "degraded",
+            "email_id": email_id,
+            "provider": provider,
+            "user_override": level,
+        }
 
 
 @router.get("/email/priority-inbox")

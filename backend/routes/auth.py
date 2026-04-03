@@ -175,10 +175,10 @@ async def verify_recaptcha(request: RecaptchaVerifyRequest):
             except Exception:
                 pass
             logger.warning(f"[recaptcha enterprise] verification request failed: {detail}")
-            raise HTTPException(status_code=502, detail="Captcha verification unavailable")
+            return {"ok": False, "provider": "enterprise", "unavailable": True, "reason": "captcha_verification_unavailable"}
         except Exception as exc:
             logger.warning(f"[recaptcha enterprise] verification request failed: {exc}")
-            raise HTTPException(status_code=502, detail="Captcha verification unavailable")
+            return {"ok": False, "provider": "enterprise", "unavailable": True, "reason": "captcha_verification_unavailable"}
 
         token_props = data.get("tokenProperties") or {}
         if not token_props.get("valid", False):
@@ -218,7 +218,7 @@ async def verify_recaptcha(request: RecaptchaVerifyRequest):
         data = json.loads(body)
     except Exception as exc:
         logger.warning(f"[recaptcha] verification request failed: {exc}")
-        raise HTTPException(status_code=502, detail="Captcha verification unavailable")
+        return {"ok": False, "provider": "standard", "unavailable": True, "reason": "captcha_verification_unavailable"}
 
     if not data.get("success"):
         raise HTTPException(status_code=400, detail="Captcha verification failed")

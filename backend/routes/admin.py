@@ -394,6 +394,8 @@ async def list_prompts(admin: dict = Depends(get_super_admin)):
 @router.get("/admin/prompts/{prompt_key}")
 async def get_prompt_detail(prompt_key: str, admin: dict = Depends(get_super_admin)):
     """Get full prompt content by key."""
+    if prompt_key == "audit-log":
+        return await get_prompt_audit_log(admin)
     sb = get_sb()
     result = sb.table("system_prompts").select("*").eq("prompt_key", prompt_key).maybe_single().execute()
     if not result or not result.data:
