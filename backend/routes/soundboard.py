@@ -2082,6 +2082,16 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     mailbox_scope = request_scope.get("mailbox_scope", {})
     mailbox_requested = any(mailbox_scope.values())
     wants_integration_analytics = bool(request_scope.get("wants_integration_analytics"))
+    from routes.deps import check_rate_limit
+    requested_mode = getattr(req, "mode", "auto")
+    report_grade_request = request_looks_report_grade or _is_report_grade_request(clean_message)
+    tier_for_contract = (current_user.get("subscription_tier") or profile.get("subscription_tier") or "free")
+    is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin"}
+    mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
+    feature = "trinity_daily" if mode == "trinity" else "soundboard_daily"
+    preflight_checked = bool((req.intelligence_context or {}).get("_rate_limit_checked"))
+    if not preflight_checked:
+        await check_rate_limit(user_id, feature, get_sb())
 
     # Scope-aware intent override for inbox/sent/deleted and merge analytics prompts.
     if mailbox_requested:
@@ -2398,16 +2408,6 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         except Exception as e:
             logger.warning(f"File generation in SoundBoard failed: {e}")
             # Fall through to normal chat response
-
-    # ═══ RATE LIMITING per subscription tier ═══
-    from routes.deps import check_rate_limit, AI_MODELS
-    requested_mode = getattr(req, 'mode', 'auto')
-    report_grade_request = request_looks_report_grade or _is_report_grade_request(clean_message)
-    tier_for_contract = (current_user.get("subscription_tier") or profile.get("subscription_tier") or "free")
-    is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin", "admin"}
-    mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
-    feature = 'trinity_daily' if mode == 'trinity' else 'soundboard_daily'
-    await check_rate_limit(user_id, feature, get_sb())
 
     # ═══ HYBRID MODEL ROUTING — Direct provider keys only ═══
     # OpenAI: Uses your OPENAI_API_KEY directly (already in Azure/Supabase/GitHub)
@@ -3216,8 +3216,26 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
     Produces delta events for progressive UI rendering, then a final event with metadata.
     """
     trace_id = str(uuid.uuid4())
+    from guardrails import sanitise_input
+    from routes.deps import check_rate_limit
+    sanitised = sanitise_input(req.message)
+    requested_mode = getattr(req, "mode", "auto")
+    tier_for_contract = (current_user.get("subscription_tier") or "free")
+    is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin"}
+    mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
+    feature = "trinity_daily" if mode == "trinity" else "soundboard_daily"
+    if not sanitised.get("blocked"):
+        await check_rate_limit(current_user["id"], feature, get_sb())
+        req.intelligence_context = dict(req.intelligence_context or {})
+        req.intelligence_context["_rate_limit_checked"] = True
 
     async def event_stream() -> AsyncGenerator[str, None]:
+        if sanitised.get("blocked"):
+            yield _sse_event("start", {"conversation_id": req.conversation_id, "trace_id": trace_id, "stream_mode": "synthetic"})
+            result = {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
+            yield _sse_event("final", {"payload": result})
+            return
+        clean_message = sanitised.get("text") or str(req.message or "")
         can_live_stream = _has_configured_key(OPENAI_KEY)
         yield _sse_event(
             "start",
@@ -3243,13 +3261,16 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
                         messages_history = []
                 async for event in _iterate_openai_stream_with_tools(
                     api_key=OPENAI_KEY,
-                    clean_message=str(req.message or ""),
+                    clean_message=clean_message,
                     messages_history=messages_history,
                     sb=sb,
                     user_id=current_user["id"],
                 ):
                     if event.get("type") == "done":
                         break
+                    if event.get("type") == "delta":
+                        # Keep parity with the authoritative persisted response from soundboard_chat.
+                        continue
                     yield _sse_event(event.get("type"), event.get("payload") or {})
 
             result = await soundboard_chat(req, current_user)
@@ -3540,7 +3561,18 @@ async def get_scan_usage(current_user: dict = Depends(get_current_user)):
     except Exception:
         pass
 
-    tier_rank = {"free": 0, "starter": 1, "professional": 2, "growth": 3, "enterprise": 3, "super_admin": 99}
+    tier_rank = {
+        "free": 0,
+        "starter": 1,
+        "foundation": 1,
+        "growth": 1,
+        "professional": 1,
+        "pro": 1,
+        "enterprise": 1,
+        "custom": 1,
+        "custom_build": 1,
+        "super_admin": 99,
+    }
     is_paid = tier_rank.get(subscription_tier, 0) >= 1
 
     # Fetch usage records from Supabase

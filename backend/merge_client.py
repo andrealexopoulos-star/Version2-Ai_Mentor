@@ -11,6 +11,7 @@ RULES:
 """
 
 import os
+import hashlib
 import httpx
 from typing import Optional, Dict, Any, List
 from fastapi import HTTPException
@@ -76,8 +77,9 @@ class MergeClient:
             "X-Account-Token": account_token
         }
         
+        token_fingerprint = hashlib.sha256(str(account_token or "").encode("utf-8")).hexdigest()[:12]
         logger.info(f"📡 Merge API: {method} {endpoint}")
-        logger.info(f"   Using account_token: {account_token[:20]}...")
+        logger.info(f"   Token fingerprint: {token_fingerprint}")
         
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:

@@ -144,7 +144,16 @@ def _normalize_subscription_tier(tier: str | None) -> str:
     tier_value = (tier or "free").lower().strip()
     if tier_value in ("superadmin", "super_admin"):
         return "super_admin"
-    if tier_value in ("foundation", "growth", "starter", "professional", "enterprise", "custom"):
+    if tier_value in (
+        "foundation",
+        "growth",
+        "starter",
+        "professional",
+        "pro",
+        "enterprise",
+        "custom",
+        "custom_build",
+    ):
         return "starter"
     return tier_value if tier_value in TIER_RATE_LIMIT_DEFAULTS else "free"
 

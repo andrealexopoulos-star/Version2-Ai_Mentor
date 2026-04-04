@@ -110,6 +110,24 @@ export default function AskBiqcAssistantResponse({
           ))}
         </div>
       )}
+      {showDetails
+        && retrievalContract.answer_grade
+        && retrievalContract.answer_grade !== 'FULL'
+        && Array.isArray(message.coverage_window?.missing_periods)
+        && message.coverage_window.missing_periods.length > 0
+        && onSuggestedAction && (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => onSuggestedAction('Rerun this request with a deeper historical window, include pagination/backfill status per connector, and provide a report with explicit data gaps.')}
+              className={`${compact ? 'px-2.5 py-1 text-[10px]' : 'px-3 py-1.5 text-xs'} rounded-lg font-medium transition-all hover:brightness-110`}
+              style={{ background: 'rgba(59,130,246,0.14)', border: '1px solid rgba(59,130,246,0.35)', color: '#93C5FD', fontFamily: fontFamily.mono }}
+              data-testid={`${actionTestIdPrefix}-rerun-deeper-window`}
+            >
+              Rerun with deeper window
+            </button>
+          </div>
+        )}
 
       {message.intent?.domain && message.intent.domain !== 'general' && (
         <div className="mt-2">
@@ -206,11 +224,18 @@ export default function AskBiqcAssistantResponse({
           <p className={`${compact ? 'text-[9px]' : 'text-[10px]'} mb-1`} style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
             Contradictions
           </p>
-          {forensicReport.contradictions.slice(0, 3).map((item, index) => (
-            <p key={`forensic-contradiction-${index}`} className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }}>
-              - {item.role || 'source'}: {item.contradiction || 'n/a'}
-            </p>
-          ))}
+          <div className="grid gap-1">
+            <div className="grid grid-cols-[110px_1fr] gap-2 text-[9px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
+              <span>Role</span>
+              <span>Conflict</span>
+            </div>
+            {forensicReport.contradictions.slice(0, 4).map((item, index) => (
+              <div key={`forensic-contradiction-${index}`} className="grid grid-cols-[110px_1fr] gap-2 text-[10px]" style={{ color: '#CBD5E1' }}>
+                <span style={{ fontFamily: fontFamily.mono }}>{item.role || 'source'}</span>
+                <span>{item.contradiction || 'n/a'}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
