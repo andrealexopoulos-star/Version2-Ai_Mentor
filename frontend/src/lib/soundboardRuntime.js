@@ -77,6 +77,7 @@ export function buildAskBiqcRequestPayload({
   intelligenceContext = {},
   mode = 'auto',
   agentId = 'auto',
+  forensicReportMode = false,
 }) {
   return {
     message,
@@ -84,6 +85,7 @@ export function buildAskBiqcRequestPayload({
     intelligence_context: intelligenceContext,
     mode,
     agent_id: agentId || 'auto',
+    forensic_report_mode: Boolean(forensicReportMode),
   };
 }
 

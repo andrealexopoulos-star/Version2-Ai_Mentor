@@ -111,6 +111,7 @@ const MySoundBoard = () => {
   const [chatColumnMaxWidth, setChatColumnMaxWidth] = useState(768);
   const [selectedMode, setSelectedMode] = useState('auto');
   const [selectedAgent, setSelectedAgent] = useState('auto');
+  const [deepForensicRun, setDeepForensicRun] = useState(false);
   const [advisorHandoff, setAdvisorHandoff] = useState(() => {
     try {
       const fromState = location.state?.advisorSoundboardContext;
@@ -404,6 +405,7 @@ const MySoundBoard = () => {
         intelligenceContext,
         mode: currentMode.backend_mode,
         agentId: selectedAgent || 'auto',
+        forensicReportMode: deepForensicRun,
       });
 
       const turnResult = await runAskBiqcTurn({
@@ -1103,6 +1105,16 @@ const MySoundBoard = () => {
                         </div>
                       )}
                     </div>
+                    <label className="flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold"
+                      style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#C7D2FE', fontFamily: fontFamily.mono }}>
+                      <input
+                        type="checkbox"
+                        checked={deepForensicRun}
+                        onChange={(event) => setDeepForensicRun(Boolean(event.target.checked))}
+                        data-testid="soundboard-deep-forensic-toggle"
+                      />
+                      Deep forensic run
+                    </label>
                   </div>
                 )}
               </div>

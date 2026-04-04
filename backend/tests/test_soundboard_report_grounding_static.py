@@ -27,8 +27,8 @@ def test_soundboard_requires_window_depth_for_report_readiness():
 
 def test_soundboard_has_honest_report_grounding_block_copy():
     content = _read(SOUNDBOARD_PATH)
-    assert "I can't truthfully generate a board report from live connector evidence yet." in content
-    assert "defensible 12-month board pack" in content
+    assert "Provisional 12-month report (best available data):" in content
+    assert "strongest report possible from current data" in content
 
 
 def test_soundboard_returns_report_grounding_flags():
@@ -74,7 +74,13 @@ def test_edge_query_uses_openai_compatible_model():
 
 def test_soundboard_stream_contract_emits_extended_events():
     content = _read(SOUNDBOARD_PATH)
-    assert 'stream_mode": "synthetic"' in content
-    assert '_sse_event("tool_start"' in content
+    assert 'else "synthetic"' in content
+    assert 'stream_mode": "live_openai"' in content
+    assert '"tool_start"' in content
     assert '"tool_result"' in content
     assert '_sse_event("error"' in content
+
+
+def test_soundboard_conversation_detail_preserves_forensic_artifacts():
+    content = _read(SOUNDBOARD_PATH)
+    assert "role, content, timestamp, evidence_pack, boardroom_trace, metadata" in content

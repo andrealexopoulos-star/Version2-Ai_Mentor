@@ -411,17 +411,33 @@ def _build_forensic_report_payload(
             {
                 "ref": f"S{idx + 1}",
                 "source": source.get("source"),
+                "source_id": source.get("id"),
                 "freshness": source.get("freshness"),
+                "confidence": source.get("confidence"),
                 "summary": source.get("summary"),
             }
         )
     contradictions = []
+    for item in sorted(((boardroom_trace or {}).get("deliberations") or []), key=lambda entry: str(entry.get("role") or "")):
+        analysis_text = str(item.get("analysis") or "")
+        contradiction_line = None
+        for line in analysis_text.splitlines():
+            if "contradiction" in line.lower():
+                contradiction_line = line.strip(" -:\t")
+                break
+        if contradiction_line:
+            contradictions.append(
+                {
+                    "role": str(item.get("role") or "unknown"),
+                    "contradiction": contradiction_line[:380],
+                }
+            )
     challenge = ((boardroom_trace or {}).get("challenge") or {}).get("summary")
-    if challenge:
+    if challenge and not contradictions:
         contradictions.append(
             {
-                "from": "boardroom_challenge",
-                "detail": str(challenge)[:700],
+                "role": "boardroom_challenge",
+                "contradiction": str(challenge)[:380],
             }
         )
     degraded_reason = None
@@ -434,7 +450,7 @@ def _build_forensic_report_payload(
         "version": FORENSIC_REPORT_MODE_VERSION,
         "citations_enforced": bool(report_grade_request and grounded_report_ready),
         "citations": refs[:8],
-        "contradictions": contradictions,
+        "contradictions": contradictions[:8],
         "degraded_reason": degraded_reason,
     }
 
@@ -446,11 +462,11 @@ def _build_report_grounding_block(*, connected_sources: List[str], coverage_pct:
     missing = coverage_window.get("missing_periods") or []
     missing_text = f" Gaps detected: {missing[0]}" if missing else ""
     return (
-        "I can't truthfully generate a board report from live connector evidence yet. "
-        f"Connected systems visible in this turn: {connected_label}. "
-        f"Current grounded data window: {window_start} to {window_end}. "
+        "Provisional 12-month report (best available data): "
+        f"Connected systems in this turn: {connected_label}. "
+        f"Current grounded window: {window_start} to {window_end}. "
         f"Live signals available: {live_signal_count}.{missing_text} "
-        "I need report-grade facts from the connected systems before I can produce a defensible 12-month board pack."
+        "I have produced the strongest report possible from current data and flagged where extra history is still needed."
     )
 
 
@@ -1567,7 +1583,7 @@ async def get_soundboard_conversation_detail(conversation_id: str, current_user:
     conversation = result.data[0]
     try:
         messages_result = sb.table("soundboard_messages").select(
-            "role, content, timestamp"
+            "role, content, timestamp, evidence_pack, boardroom_trace, metadata"
         ).eq("conversation_id", conversation_id).eq("user_id", current_user["id"]).order("timestamp", desc=False).execute()
         messages = messages_result.data or []
     except Exception:
@@ -2632,12 +2648,13 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 )
                 if enabled
             ]
-            response = _build_report_grounding_block(
+            fallback_report = _build_report_grounding_block(
                 connected_sources=connected_sources,
                 coverage_pct=coverage_pct,
                 coverage_window=coverage_window,
                 live_signal_count=live_signal_count,
             )
+            response = f"{response}\n\n{fallback_report}".strip()
             guardrail_status = "DEGRADED"
             missing_fields = list(missing_fields or []) + [{
                 "key": "grounded_report_facts",
@@ -3041,6 +3058,157 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         }
 
 
+async def _execute_stream_tool_call(sb, user_id: str, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+    if tool_name == "get_connector_snapshot":
+        domains = {"crm": False, "accounting": False, "email": False, "calendar": False, "custom": False}
+        try:
+            accounts = sb.table("integration_accounts").select("category, status, provider_name").eq("user_id", user_id).limit(120).execute()
+            for row in (accounts.data or []):
+                if str(row.get("status") or "").lower() not in {"connected", "active"}:
+                    continue
+                category = str(row.get("category") or "").lower()
+                if category in domains:
+                    domains[category] = True
+                elif category:
+                    domains["custom"] = True
+        except Exception:
+            pass
+        try:
+            email_rows = sb.table("email_connections").select("id").eq("user_id", user_id).limit(1).execute()
+            if email_rows.data:
+                domains["email"] = True
+        except Exception:
+            pass
+        return {"connected_domains": domains}
+
+    if tool_name == "get_recent_signals":
+        limit = max(1, min(int(arguments.get("limit", 8) or 8), 20))
+        try:
+            obs = (
+                sb.table("observation_events")
+                .select("signal_name,domain,severity,entity,metric,observed_at")
+                .eq("user_id", user_id)
+                .order("observed_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
+            return {"signals": obs.data or [], "signals_count": len(obs.data or [])}
+        except Exception as exc:
+            return {"signals": [], "signals_count": 0, "error": str(exc)[:180]}
+
+    return {"error": f"Unknown tool: {tool_name}"}
+
+
+async def _iterate_openai_stream_with_tools(
+    *,
+    api_key: str,
+    clean_message: str,
+    messages_history: List[Dict[str, Any]],
+    sb,
+    user_id: str,
+) -> AsyncGenerator[Dict[str, Any], None]:
+    import openai as _openai
+
+    client = _openai.AsyncOpenAI(api_key=api_key)
+    model = "gpt-4o-mini"
+    tool_definitions = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_connector_snapshot",
+                "description": "Return currently connected business domains for this tenant.",
+                "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_recent_signals",
+                "description": "Return recent observation signals for this tenant.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"limit": {"type": "integer", "minimum": 1, "maximum": 20}},
+                    "required": [],
+                    "additionalProperties": False,
+                },
+            },
+        },
+    ]
+    formatted_messages: List[Dict[str, Any]] = [
+        {
+            "role": "system",
+            "content": (
+                "You are Ask BIQc. Respond directly to the user request in plain language. "
+                "When needed, call tools first, then produce a concise answer."
+            ),
+        }
+    ]
+    for message in (messages_history or [])[-8:]:
+        formatted_messages.append({"role": message.get("role", "user"), "content": message.get("content", "")})
+    formatted_messages.append({"role": "user", "content": clean_message})
+
+    first_completion = await client.chat.completions.create(
+        model=model,
+        messages=formatted_messages,
+        tools=tool_definitions,
+        tool_choice="auto",
+        max_tokens=800,
+    )
+    first_message = first_completion.choices[0].message
+    tool_calls = list(first_message.tool_calls or [])
+    if tool_calls:
+        formatted_messages.append(
+            {
+                "role": "assistant",
+                "content": first_message.content or "",
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments or "{}",
+                        },
+                    }
+                    for tc in tool_calls
+                ],
+            }
+        )
+        for call in tool_calls:
+            args = {}
+            try:
+                args = json.loads(call.function.arguments or "{}")
+            except Exception:
+                args = {}
+            yield {"type": "tool_start", "payload": {"call_id": call.id, "name": call.function.name, "arguments": args}}
+            result = await _execute_stream_tool_call(sb, user_id, call.function.name, args)
+            yield {
+                "type": "tool_result",
+                "payload": {
+                    "call_id": call.id,
+                    "name": call.function.name,
+                    "ok": not bool(result.get("error")),
+                    "result_preview": json.dumps(result)[:180],
+                },
+            }
+            formatted_messages.append({"role": "tool", "tool_call_id": call.id, "content": json.dumps(result)})
+
+    stream = await client.chat.completions.create(
+        model=model,
+        messages=formatted_messages,
+        max_tokens=2000,
+        stream=True,
+    )
+    reply_parts: List[str] = []
+    async for chunk in stream:
+        delta = chunk.choices[0].delta
+        text = delta.content or ""
+        if text:
+            reply_parts.append(text)
+            yield {"type": "delta", "payload": {"text": text}}
+    yield {"type": "done", "payload": {"reply": "".join(reply_parts), "model": model}}
+
+
 @router.post("/soundboard/chat/stream")
 async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict = Depends(get_current_user)):
     """
@@ -3050,28 +3218,49 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
     trace_id = str(uuid.uuid4())
 
     async def event_stream() -> AsyncGenerator[str, None]:
-        yield _sse_event("start", {"conversation_id": req.conversation_id, "trace_id": trace_id, "stream_mode": "synthetic"})
+        can_live_stream = _has_configured_key(OPENAI_KEY)
+        yield _sse_event(
+            "start",
+            {
+                "conversation_id": req.conversation_id,
+                "trace_id": trace_id,
+                "stream_mode": "live_openai" if can_live_stream else "synthetic",
+            },
+        )
         try:
+            if can_live_stream:
+                sb = get_sb()
+                conversation = None
+                messages_history: List[Dict[str, Any]] = []
+                if req.conversation_id:
+                    conv = sb.table("soundboard_conversations").select("*").eq("id", req.conversation_id).eq("user_id", current_user["id"]).limit(1).execute()
+                    conversation = (conv.data or [None])[0]
+                if conversation:
+                    try:
+                        history = sb.table("soundboard_messages").select("role,content,timestamp").eq("conversation_id", req.conversation_id).eq("user_id", current_user["id"]).order("timestamp", desc=False).limit(8).execute()
+                        messages_history = history.data or []
+                    except Exception:
+                        messages_history = []
+                async for event in _iterate_openai_stream_with_tools(
+                    api_key=OPENAI_KEY,
+                    clean_message=str(req.message or ""),
+                    messages_history=messages_history,
+                    sb=sb,
+                    user_id=current_user["id"],
+                ):
+                    if event.get("type") == "done":
+                        break
+                    yield _sse_event(event.get("type"), event.get("payload") or {})
+
             result = await soundboard_chat(req, current_user)
-            for idx, phase in enumerate(((result.get("boardroom_trace") or {}).get("phases") or [])[:6]):
-                call_id = f"phase-{idx}"
-                yield _sse_event("tool_start", {"call_id": call_id, "name": phase.get("phase") or "boardroom_phase"})
-                yield _sse_event(
-                    "tool_result",
-                    {
-                        "call_id": call_id,
-                        "name": phase.get("phase") or "boardroom_phase",
-                        "ok": str(phase.get("status") or "ok").lower() != "error",
-                        "result_preview": f"{phase.get('role') or 'agent'}:{phase.get('status') or 'ok'}",
-                    },
-                )
-            reply = str(result.get("reply") or "")
-            if reply:
-                chunk_size = 20
-                for i in range(0, len(reply), chunk_size):
-                    chunk = reply[i : i + chunk_size]
-                    yield _sse_event("delta", {"text": chunk})
-                    await asyncio.sleep(0.01)
+            if not can_live_stream:
+                reply = str(result.get("reply") or "")
+                if reply:
+                    chunk_size = 20
+                    for i in range(0, len(reply), chunk_size):
+                        chunk = reply[i : i + chunk_size]
+                        yield _sse_event("delta", {"text": chunk})
+                        await asyncio.sleep(0.01)
             yield _sse_event("final", {"payload": result})
         except Exception as exc:
             yield _sse_event("error", {"message": str(exc)[:240], "code": "STREAM_RUNTIME_ERROR", "trace_id": trace_id})

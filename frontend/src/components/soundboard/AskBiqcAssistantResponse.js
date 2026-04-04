@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Database, Download } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 import { normalizeMessageContent } from '../../lib/soundboardPolicy';
@@ -39,6 +39,28 @@ export default function AskBiqcAssistantResponse({
   );
   const retrievalContract = message.retrieval_contract || {};
   const forensicReport = message.forensic_report || {};
+  const [showDetails, setShowDetails] = useState(false);
+  const hasAdvancedDetails = Boolean(
+    evidenceSources.length > 0
+    || message.coverage_window
+    || message.boardroom_trace?.phases?.length
+    || message.boardroom_status === 'fallback_error'
+    || (forensicReport.mode_active && retrievalContract.answer_grade)
+    || (Array.isArray(forensicReport.contradictions) && forensicReport.contradictions.length > 0)
+    || directSources.length > 0
+    || confidencePercent != null
+    || typeof message.data_sources_count === 'number'
+    || message.data_freshness
+    || retrievalContract.retrieval_mode
+    || retrievalContract.answer_grade
+    || retrievalContract.history_truncated
+    || Number(retrievalContract.crm_pages_fetched || 0) > 0
+    || Number(retrievalContract.accounting_pages_fetched || 0) > 0
+    || retrievalContract.materialization_attempted
+    || message.advisory_slots?.kpi_note
+    || (typeof message.response_version === 'number' && message.response_version > 1)
+    || (Array.isArray(forensicReport.citations) && forensicReport.citations.length > 0)
+  );
 
   return (
     <>
@@ -60,6 +82,16 @@ export default function AskBiqcAssistantResponse({
         onRegenerate={onRegenerate}
         testIdPrefix={actionTestIdPrefix}
       />
+      {hasAdvancedDetails && (
+        <button
+          type="button"
+          className="mt-2 text-[10px] underline-offset-2 hover:underline"
+          style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}
+          onClick={() => setShowDetails((value) => !value)}
+        >
+          {showDetails ? 'Hide details' : 'Show details'}
+        </button>
+      )}
 
       {message.suggested_actions?.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
@@ -87,7 +119,7 @@ export default function AskBiqcAssistantResponse({
         </div>
       )}
 
-      {evidenceSources.length > 0 && (
+      {showDetails && evidenceSources.length > 0 && (
         <div className={`mt-2 flex flex-wrap ${compact ? 'gap-1' : 'gap-1.5'}`} data-testid={evidenceTestId}>
           {evidenceSources.slice(0, 5).map((source) => (
             <Chip
@@ -100,7 +132,7 @@ export default function AskBiqcAssistantResponse({
         </div>
       )}
 
-      {message.coverage_window && (
+      {showDetails && message.coverage_window && (
         <div
           className={`${compact ? 'mt-2 rounded-lg px-2 py-1.5' : 'mt-2 rounded-lg p-2'}`}
           style={{
@@ -125,7 +157,7 @@ export default function AskBiqcAssistantResponse({
         </div>
       )}
 
-      {message.boardroom_trace?.phases?.length > 0 && (
+      {showDetails && message.boardroom_trace?.phases?.length > 0 && (
         <div
           className={compact ? 'flex gap-1 mt-2 flex-wrap' : 'mt-2 rounded-lg p-2'}
           style={compact ? undefined : { border: '1px solid rgba(59,130,246,0.25)', background: 'rgba(2,6,23,0.45)' }}
@@ -151,21 +183,21 @@ export default function AskBiqcAssistantResponse({
         </div>
       )}
 
-      {message.boardroom_status === 'fallback_error' && (
+      {showDetails && message.boardroom_status === 'fallback_error' && (
         <div className="mt-2">
           <Chip style={{ background: compact ? '#F59E0B15' : 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>
             Boardroom degraded mode
           </Chip>
         </div>
       )}
-      {forensicReport.mode_active && retrievalContract.answer_grade && retrievalContract.answer_grade !== 'FULL' && (
+      {showDetails && forensicReport.mode_active && retrievalContract.answer_grade && retrievalContract.answer_grade !== 'FULL' && (
         <div className="mt-2" data-testid="ask-biqc-forensic-banner">
           <Chip style={{ background: 'rgba(245,158,11,0.18)', color: '#FCD34D' }}>
             Forensic report limited: {retrievalContract.answer_grade}
           </Chip>
         </div>
       )}
-      {Array.isArray(forensicReport.contradictions) && forensicReport.contradictions.length > 0 && (
+      {showDetails && Array.isArray(forensicReport.contradictions) && forensicReport.contradictions.length > 0 && (
         <div
           className={`${compact ? 'mt-2 rounded-lg px-2 py-1.5' : 'mt-2 rounded-lg p-2'}`}
           style={{ background: 'rgba(2,6,23,0.42)', border: '1px solid rgba(148,163,184,0.2)' }}
@@ -176,13 +208,13 @@ export default function AskBiqcAssistantResponse({
           </p>
           {forensicReport.contradictions.slice(0, 3).map((item, index) => (
             <p key={`forensic-contradiction-${index}`} className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }}>
-              - {item.from || 'source'}: {item.detail || 'n/a'}
+              - {item.role || 'source'}: {item.contradiction || 'n/a'}
             </p>
           ))}
         </div>
       )}
 
-      {directSources.length > 0 && compact && (
+      {showDetails && directSources.length > 0 && compact && (
         <div className="flex gap-1 mt-2 flex-wrap">
           {directSources.map((source, index) => (
             <Chip key={`${source}-${index}`} style={{ background: '#10B98110', color: '#10B981' }}>
@@ -192,7 +224,8 @@ export default function AskBiqcAssistantResponse({
         </div>
       )}
 
-      <div className="mt-2 flex flex-wrap gap-1.5" data-testid={metadataTestId}>
+      {showDetails && (
+        <div className="mt-2 flex flex-wrap gap-1.5" data-testid={metadataTestId}>
         {confidencePercent != null && (
           <Chip
             style={{ background: 'rgba(16,185,129,0.12)', color: '#10B981' }}
@@ -306,13 +339,25 @@ export default function AskBiqcAssistantResponse({
             v{message.response_version}
           </Chip>
         )}
-      </div>
-      {Array.isArray(forensicReport.citations) && forensicReport.citations.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5" data-testid="ask-biqc-forensic-citations">
+        </div>
+      )}
+      {showDetails && Array.isArray(forensicReport.citations) && forensicReport.citations.length > 0 && (
+        <div className="mt-2 grid gap-1.5" data-testid="ask-biqc-forensic-citations">
           {forensicReport.citations.slice(0, compact ? 3 : 5).map((citation, index) => (
-            <Chip key={`forensic-citation-${index}`} style={{ background: 'rgba(99,102,241,0.14)', color: '#C7D2FE' }}>
-              {citation.ref || `S${index + 1}`} {citation.source || 'source'}
-            </Chip>
+            <div
+              key={`forensic-citation-${index}`}
+              className="rounded px-2 py-1.5"
+              style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)' }}
+            >
+              <p className="text-[10px]" style={{ color: '#C7D2FE', fontFamily: fontFamily.mono }}>
+                {citation.ref || `S${index + 1}`} · {citation.source || 'source'} {citation.source_id ? `(${citation.source_id})` : ''}
+              </p>
+              {citation.summary && (
+                <p className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.body }}>
+                  {citation.summary}
+                </p>
+              )}
+            </div>
           ))}
         </div>
       )}

@@ -48,6 +48,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [showAdvancedControls, setShowAdvancedControls] = useState(false);
   const [selectedMode, setSelectedMode] = useState('auto');
   const [selectedAgent, setSelectedAgent] = useState('auto');
+  const [deepForensicRun, setDeepForensicRun] = useState(false);
   const [boardroomNarrationIndex, setBoardroomNarrationIndex] = useState(0);
   const [boardroomProgress, setBoardroomProgress] = useState(12);
   const [showHistory, setShowHistory] = useState(false);
@@ -247,6 +248,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         },
         mode: activeMode?.backend_mode || 'auto',
         agentId: selectedAgent || 'auto',
+        forensicReportMode: deepForensicRun,
       });
 
       const turnResult = await runAskBiqcTurn({
@@ -778,6 +780,18 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   </div>
                 )}
               </div>
+              <label
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+                style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#C7D2FE', fontFamily: fontFamily.mono }}
+              >
+                <input
+                  type="checkbox"
+                  checked={deepForensicRun}
+                  onChange={(event) => setDeepForensicRun(Boolean(event.target.checked))}
+                  data-testid="soundboard-panel-deep-forensic-toggle"
+                />
+                Deep forensic
+              </label>
             </div>
           )}
         </div>

@@ -64,3 +64,6 @@ def test_soundboard_surfaces_render_retrieval_contract():
     assert "forensic_report: responseData.forensic_report" in runtime
     assert "forensicReport.citations" in response_component
     assert "ask-biqc-forensic-contradictions" in response_component
+    assert "forensic_report_mode: Boolean(forensicReportMode)" in runtime
+    assert "soundboard-deep-forensic-toggle" in my_soundboard
+    assert "soundboard-panel-deep-forensic-toggle" in panel
