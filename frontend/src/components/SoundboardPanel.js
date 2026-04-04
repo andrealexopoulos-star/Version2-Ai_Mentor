@@ -1,76 +1,43 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, Database, CheckCircle2, XCircle, Plus, Trash2, Download, FileText, Zap, Eye } from 'lucide-react';
-import { apiClient, callEdgeFunction } from '../lib/api';
+import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, CheckCircle2, XCircle, Plus, Trash2, FileText, Zap, Eye } from 'lucide-react';
+import { apiClient } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { trackEvent, EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
 import DataCoverageGate from './DataCoverageGate';
 import { CheckInAlerts } from './CheckInAlerts';
 import { fontFamily } from '../design-system/tokens';
-import { getSoundboardPolicy, normalizeMessageContent } from '../lib/soundboardPolicy';
+import { toast } from 'sonner';
+import { getSoundboardPolicy, normalizeMessageContent, SOUND_BOARD_MODES } from '../lib/soundboardPolicy';
+import { deriveSoundboardRequestScope } from '../lib/soundboardQueryRouting';
+import {
+  appendAskBiqcDelta,
+  buildAskBiqcComposedMessage,
+  buildAskBiqcComposerDraftFromAnswer,
+  buildAskBiqcRequestPayload,
+  buildBoardroomChecks,
+  copyAskBiqcText,
+  createAskBiqcPlaceholder,
+  findPreviousAskBiqcUserPrompt,
+  getAskBiqcCoverageGate,
+  getAskBiqcMessageText,
+  getSoundboardErrorMessage,
+  markAskBiqcStreamingStopped,
+  removeAskBiqcPlaceholder,
+  replaceAskBiqcPlaceholder,
+  resolveAskBiqcTrace,
+  runAskBiqcTurn,
+} from '../lib/soundboardRuntime';
 import VoiceChat from './VoiceChat';
+import AskBiqcMessageActions from './soundboard/AskBiqcMessageActions';
+import AskBiqcAssistantResponse from './soundboard/AskBiqcAssistantResponse';
+import AskBiqcSessionLineage from './soundboard/AskBiqcSessionLineage';
 import BoardroomCouncilCard from './soundboard/BoardroomCouncilCard';
-import LineageBadge from './LineageBadge';
 
 
 // Data query detection — ONLY route to integration Edge Function for EXPLICIT data retrieval requests.
 // Must NOT intercept strategic advisory questions that happen to mention business terms.
-const DATA_QUERY_PATTERNS = [
-  /^show me (my )?(pipeline|deals|invoices|revenue|leads|contacts|spend)/i,
-  /^what (is|was|are) (my |our )?(total |current )?(pipeline|revenue|spend|overdue|outstanding)/i,
-  /^how much (did|have|has|do)/i,
-  /^how many (deals|leads|contacts|invoices|clients)/i,
-  /^(list|give me|pull up) (my |our )?(deals|invoices|pipeline|leads|contacts)/i,
-  /^what('s| is) (my |our )?(pipeline value|revenue figure|total spend)/i,
-  /analy[sz]e.*\b(inbox|sent|deleted|trash)\b/i,
-  /cross[- ]integration analytics/i,
-  /(merge|integration).*(insights|analytics|analysis)/i,
-];
-function isDataQuery(msg) {
-  const lower = msg.trim().toLowerCase();
-  // Only match explicit data retrieval requests — not strategic questions
-  return DATA_QUERY_PATTERNS.some(pattern => pattern.test(lower));
-}
-
 const SCAN_USAGE_CACHE_KEY = 'biqc_scan_usage_cache';
 const SCAN_USAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-const getSoundboardErrorMessage = (error) => {
-  const detail = error?.response?.data?.detail;
-  if (typeof detail === 'string' && detail.trim()) return detail;
-  const reply = error?.response?.data?.reply;
-  if (typeof reply === 'string' && reply.trim()) return reply;
-  return 'Connection issue. Try again.';
-};
-
-const buildBoardroomChecks = (connectedSources = [], evidenceSources = []) => {
-  const normalized = new Set(
-    [...connectedSources, ...evidenceSources]
-      .map((v) => String(v || '').toLowerCase().trim())
-      .filter(Boolean)
-  );
-  const hasCRM = normalized.has('crm');
-  const hasAccounting = normalized.has('accounting');
-  const hasEmail = normalized.has('email');
-  const hasMarket = ['market', 'google_ads', 'ads', 'competitor', 'web'].some((key) => normalized.has(key));
-
-  const steps = [
-    { role: 'CEO', line: 'Checking strategic priorities and growth pressure...' },
-    hasCRM
-      ? { role: 'CEO', line: 'Checking CRM pipeline momentum and stalled deals...' }
-      : { role: 'COO', line: 'Checking execution cadence from available business signals...' },
-    hasAccounting
-      ? { role: 'Finance Manager', line: 'Checking overdue invoices, cash timing, and runway...' }
-      : { role: 'Finance Manager', line: 'Checking cash risk assumptions from calibration and activity patterns...' },
-    hasEmail
-      ? { role: 'COO', line: 'Checking inbox response lag and escalation patterns...' }
-      : { role: 'HR', line: 'Checking team load and decision bottlenecks from current evidence...' },
-  ];
-  if (hasMarket) {
-    steps.push({ role: 'Marketing Manager', line: 'Checking Google Ads and market demand signals...' });
-  }
-  steps.push({ role: 'CCO', line: 'Aligning boardroom views into one clear recommendation...' });
-  return steps;
-};
 
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [input, setInput] = useState('');
@@ -98,13 +65,6 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || '';
   const policy = getSoundboardPolicy(user);
 
-  const BIQC_MODES = [
-    { id: 'auto', label: 'BIQc Auto', desc: 'Smart mode — BIQc picks the best approach for your question', icon: '⚡', backend_mode: 'auto', minTier: 'free' },
-    { id: 'normal', label: 'Normal', desc: 'Default paid conversation mode', icon: '◉', backend_mode: 'normal', minTier: 'starter' },
-    { id: 'thinking', label: 'Deep Thinking', desc: 'High-depth strategic reasoning mode', icon: '🧠', backend_mode: 'thinking', minTier: 'starter' },
-    { id: 'pro', label: 'Pro Analysis', desc: 'Expanded multi-domain executive analysis', icon: '✦', backend_mode: 'pro', minTier: 'starter' },
-    { id: 'trinity', label: 'BIQc Trinity', desc: 'Consensus intelligence across BIQc cognition pathways and BIQc model pathways', icon: '◈', backend_mode: 'trinity', minTier: 'starter' },
-  ];
   const BIQC_AGENTS = [
     { id: 'auto', label: 'Auto', shortDesc: 'Pick specialist by question', icon: '⚡' },
     { id: 'boardroom', label: 'Boardroom', shortDesc: 'CEO/Finance/Marketing/Ops/Risk council', icon: '🏛️' },
@@ -119,18 +79,22 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
   const { isPaidUser, canUseTrinity } = policy;
   const minTierRank = { free: 0, starter: 1 };
-  const availableModes = BIQC_MODES.filter((mode) => {
+  const availableModes = SOUND_BOARD_MODES.filter((mode) => {
     if (policy.privileged) return true;
     if (mode.id === 'trinity') return canUseTrinity;
     return policy.tierRank >= (minTierRank[mode.minTier] ?? 0);
   });
-  const activeMode = availableModes.find((mode) => mode.id === selectedMode) || availableModes[0] || BIQC_MODES[0];
+  const activeMode = availableModes.find((mode) => mode.id === selectedMode) || availableModes[0] || SOUND_BOARD_MODES[0];
   const activeAgent = BIQC_AGENTS.find((agent) => agent.id === selectedAgent) || BIQC_AGENTS[0];
   const showBoardroomViz = selectedAgent === 'boardroom';
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const boardroomConnectedSources = useMemo(() => {
     const fromContract = latestAssistantMessage?.soundboard_contract?.connected_sources;
     if (Array.isArray(fromContract)) return fromContract;
+    if (latestAssistantMessage?.lineage?.connected_sources_list) return latestAssistantMessage.lineage.connected_sources_list;
+    if (latestAssistantMessage?.lineage?.connected_sources && typeof latestAssistantMessage.lineage.connected_sources === 'object') {
+      return Object.keys(latestAssistantMessage.lineage.connected_sources).filter((k) => latestAssistantMessage.lineage.connected_sources[k]);
+    }
     if (Array.isArray(latestAssistantMessage?.connected_sources)) return latestAssistantMessage.connected_sources;
     return [];
   }, [latestAssistantMessage]);
@@ -150,7 +114,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       competitor: 'Competitor',
     };
     const unique = [...new Set([...boardroomConnectedSources, ...boardroomEvidenceSources].map((v) => String(v || '').toLowerCase().trim()).filter(Boolean))];
-    return unique.map((key) => sourceLabelMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())).slice(0, 4);
+    return unique.map((key) => sourceLabelMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())).slice(0, 5);
   }, [boardroomConnectedSources, boardroomEvidenceSources]);
   const boardroomChecks = useMemo(
     () => buildBoardroomChecks(boardroomConnectedSources, boardroomEvidenceSources),
@@ -161,6 +125,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const inputRef = useRef(null);
   const scrollRef = useRef(null);
   const fileRef = useRef(null);
+  const streamAbortRef = useRef(null);
 
   useEffect(() => {
     if (!loading || !showBoardroomViz) {
@@ -244,90 +209,104 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     }
   }, [actionMessage]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const queryIntegrationData = async (query) => {
-    try {
-      const token = session?.access_token;
-      if (!token) return null;
-      return await callEdgeFunction('query-integrations-data', { query });
-    } catch {}
-    return null;
-  };
+  const stopStreaming = useCallback(() => {
+    streamAbortRef.current?.abort();
+    streamAbortRef.current = null;
+    setLoading(false);
+    setMessages((prev) => markAskBiqcStreamingStopped(prev, { includeText: true }));
+  }, []);
 
-  const executeMessage = async (userMsg, fullMessage) => {
+  const handleCopyAssistantMessage = useCallback(async (message) => {
+    const copied = await copyAskBiqcText(getAskBiqcMessageText(message));
+    if (copied) {
+      toast.success('Ask BIQc response copied to clipboard.');
+      return;
+    }
+    toast.error('Failed to copy Ask BIQc response.');
+  }, []);
+
+  const handleUseAnswerInComposer = useCallback((message) => {
+    setInput(buildAskBiqcComposerDraftFromAnswer(getAskBiqcMessageText(message)));
+    inputRef.current?.focus();
+  }, []);
+
+  const executeMessage = async (userMsg, fullMessage, traceOptions = null) => {
     const msgToSend = fullMessage || userMsg;
     setLoading(true);
     try {
-      if (isDataQuery(msgToSend)) {
-        const result = await queryIntegrationData(msgToSend);
-        if (result?.status === 'not_connected') {
-          setMessages(prev => [...prev, { role: 'assistant', text: result.message, content: result.message, type: 'integration_prompt' }]);
-          setLoading(false);
-          return;
-        }
-        if (result?.status === 'answered') {
-          setMessages(prev => [...prev, { role: 'assistant', text: result.answer, content: result.answer, sources: result.data_sources }]);
-          setLoading(false);
-          return;
-        }
-      }
-      const res = await apiClient.post('/soundboard/chat', {
+      const { traceRootId, responseVersion } = resolveAskBiqcTrace(traceOptions);
+      const placeholder = createAskBiqcPlaceholder({ traceRootId, responseVersion, includeText: true });
+      const placeholderId = placeholder.id;
+      setMessages((prev) => [...prev, placeholder]);
+
+      const requestPayload = buildAskBiqcRequestPayload({
         message: msgToSend,
-        conversation_id: activeConvId,
+        conversationId: activeConvId,
+        intelligenceContext: {
+          request_scope: deriveSoundboardRequestScope(msgToSend),
+        },
         mode: activeMode?.backend_mode || 'auto',
-        agent_id: selectedAgent || 'auto',
+        agentId: selectedAgent || 'auto',
       });
-      if (res.data?.reply) {
-        const assistantMsg = {
-          role: 'assistant',
-          text: res.data.reply,
-          content: res.data.reply,
-          intent: res.data.intent,
-          boardroom_trace: res.data.boardroom_trace,
-          boardroom_status: res.data.boardroom_status,
-          evidence_pack: res.data.evidence_pack,
-          soundboard_contract: res.data.soundboard_contract,
-          model_used: res.data.model_used,
-          confidence_score: res.data.confidence_score,
-          data_freshness: res.data.data_freshness,
-          data_sources_count: res.data.data_sources_count,
-          lineage: res.data.lineage,
-          suggested_actions: res.data.suggested_actions,
-          advisory_slots: res.data.advisory_slots,
-          coverage_window: res.data.coverage_window,
-        };
-        if (res.data?.agent_name) assistantMsg.agent_name = res.data.agent_name;
-        if (res.data?.file) assistantMsg.file = res.data.file;
-        setMessages(prev => [...prev, assistantMsg]);
-        if (res.data.conversation_id && !activeConvId) {
-          setActiveConvId(res.data.conversation_id);
-          setConversations(prev => [{ id: res.data.conversation_id, title: res.data.conversation_title || 'New chat', updated_at: new Date().toISOString() }, ...prev]);
-        }
 
-        // ── Coverage gate + telemetry ──
-        const guardrail = res.data?.guardrail;
-        const coveragePct = res.data?.coverage_pct ?? null;
-        const missingFields = res.data?.missing_fields || [];
+      const turnResult = await runAskBiqcTurn({
+        sessionToken: session?.access_token,
+        message: msgToSend,
+        requestPayload,
+        traceRootId,
+        responseVersion,
+        streamAbortRef,
+        includeText: true,
+        logPrefix: 'soundboard_panel',
+        onDelta: (deltaText) => {
+          setMessages((prev) => appendAskBiqcDelta(prev, placeholderId, deltaText, { includeText: true }));
+        },
+      });
 
-        if (guardrail) {
-          // Emit telemetry
-          const eventName = guardrail === 'BLOCKED' ? 'ai_response_blocked'
-            : guardrail === 'DEGRADED' ? 'ai_response_degraded' : 'ai_response_full';
-          trackEvent(eventName, { coverage_pct: coveragePct, missing_count: missingFields.length });
+      const coverageState = turnResult.coverageGate || getAskBiqcCoverageGate(turnResult.responseData);
+      if (turnResult.responseData?.guardrail) {
+        const eventName = turnResult.responseData.guardrail === 'BLOCKED'
+          ? 'ai_response_blocked'
+          : turnResult.responseData.guardrail === 'DEGRADED'
+            ? 'ai_response_degraded'
+            : 'ai_response_full';
+        trackEvent(eventName, {
+          coverage_pct: turnResult.responseData?.coverage_pct ?? null,
+          missing_count: (turnResult.responseData?.missing_fields || []).length,
+        });
+      }
+      setCoverageGate(coverageState);
 
-          if (guardrail === 'BLOCKED') {
-            setCoverageGate({ guardrail: 'BLOCKED', coveragePct, missingFields });
-          } else if (guardrail === 'DEGRADED') {
-            setCoverageGate({ guardrail: 'DEGRADED', coveragePct, missingFields });
-          } else {
-            setCoverageGate(null);
-          }
-        }
+      if (turnResult.kind === 'empty') {
+        setMessages((prev) => [
+          ...removeAskBiqcPlaceholder(prev, placeholderId),
+          turnResult.assistantMessage,
+        ]);
+        return;
+      }
+
+      setMessages((prev) => replaceAskBiqcPlaceholder(prev, placeholderId, turnResult.assistantMessage));
+      if (turnResult.responseData?.conversation_id && !activeConvId) {
+        setActiveConvId(turnResult.responseData.conversation_id);
+        setConversations((prev) => [
+          {
+            id: turnResult.responseData.conversation_id,
+            title: turnResult.responseData.conversation_title || 'New chat',
+            updated_at: new Date().toISOString(),
+          },
+          ...prev,
+        ]);
       }
     } catch (error) {
-      const errText = getSoundboardErrorMessage(error);
-      setMessages(prev => [...prev, { role: 'assistant', text: errText, content: errText }]);
+      streamAbortRef.current = null;
+      if (error?.name === 'AbortError') {
+        return;
+      }
+      const errText = getSoundboardErrorMessage(error, 'Connection issue. Try again.');
+      setMessages(prev => [...prev.filter((m) => !m.streaming), { role: 'assistant', text: errText, content: errText }]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const sendMessage = async () => {
@@ -335,23 +314,16 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     const userMsg = input.trim();
     setInput('');
 
-    let fullMessage = userMsg;
-    let displayText = userMsg;
-    if (attachedFile) {
-      if (attachedFile.type === 'text' && attachedFile.content) {
-        const preview = attachedFile.content.slice(0, 3000);
-        fullMessage = `${userMsg ? userMsg + '\n\n' : ''}Attached file: ${attachedFile.name}\n\nContent:\n${preview}${attachedFile.content.length > 3000 ? '\n\n[...truncated]' : ''}`;
-        displayText = userMsg || `Analysing: ${attachedFile.name}`;
-      } else {
-        fullMessage = `${userMsg ? userMsg + '\n\n' : ''}File attached: ${attachedFile.name} (${attachedFile.hint || 'describe what you need'})`;
-        displayText = userMsg || `Attached: ${attachedFile.name}`;
-      }
-      setAttachedFile(null);
-    }
+    const currentAttachment = attachedFile;
+    const { fullMessage, displayMessage: displayText } = buildAskBiqcComposedMessage({
+      userMessage: userMsg,
+      attachedFile: currentAttachment,
+    });
+    if (currentAttachment) setAttachedFile(null);
 
     if (!fullMessage.trim()) return;
     setMessages(prev => [...prev, { role: 'user', text: displayText, content: displayText }]);
-    trackEvent(EVENTS.SOUNDBOARD_QUERY, { message_length: fullMessage.length, has_attachment: !!attachedFile });
+    trackEvent(EVENTS.SOUNDBOARD_QUERY, { message_length: fullMessage.length, has_attachment: !!currentAttachment });
     trackOnceForUser(EVENTS.ACTIVATION_FIRST_SOUNDBOARD_USE, user?.id, { entrypoint: 'soundboard_panel' });
     trackActivationStep('first_soundboard_use', { entrypoint: 'soundboard_panel' });
     await executeMessage(displayText, fullMessage);
@@ -364,7 +336,10 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     trackEvent(EVENTS.SOUNDBOARD_QUERY, { message_length: nextPrompt.length, has_attachment: false, source: 'suggested_action' });
     trackOnceForUser(EVENTS.ACTIVATION_FIRST_SOUNDBOARD_USE, user?.id, { entrypoint: 'soundboard_panel' });
     trackActivationStep('first_soundboard_use', { entrypoint: 'soundboard_panel' });
-    await executeMessage(nextPrompt, nextPrompt);
+    await executeMessage(nextPrompt, nextPrompt, {
+      trace_root_id: `trace-${Date.now()}`,
+      response_version: 1,
+    });
   };
 
   const loadConversation = async (conv) => {
@@ -427,7 +402,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#FF6A0020' }}>
             <MessageSquare className="w-3.5 h-3.5 text-[#FF6A00]" />
           </div>
-          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SoundBoard</span>
+          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Ask BIQc</span>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setShowHistory(!showHistory)} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" data-testid="sb-history-btn">
@@ -522,20 +497,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-4" style={{ minHeight: 0 }}>
-        {messages.length > 0 && latestAssistantMessage && (latestAssistantMessage.lineage || latestAssistantMessage.data_freshness || latestAssistantMessage.confidence_score != null) && (
-          <div className="mb-1" data-testid="soundboard-panel-session-lineage">
-            <LineageBadge
-              lineage={latestAssistantMessage.lineage}
-              data_freshness={latestAssistantMessage.data_freshness}
-              confidence_score={typeof latestAssistantMessage.confidence_score === 'number'
-                ? (latestAssistantMessage.confidence_score > 0 && latestAssistantMessage.confidence_score <= 1
-                  ? latestAssistantMessage.confidence_score * 100
-                  : latestAssistantMessage.confidence_score)
-                : undefined}
-              compact
-            />
-          </div>
-        )}
+        <AskBiqcSessionLineage
+          latestAssistantMessage={latestAssistantMessage}
+          compact
+          className="mb-1"
+          testId="soundboard-panel-session-lineage"
+        />
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: '#FF6A0015' }}>
@@ -554,7 +521,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 'How is my cash flow?',
                 'What are my biggest risks?',
               ].map(q => (
-                <button key={q} onClick={() => setInput(q)}
+                <button key={q} onClick={() => submitSuggestedAction(q)}
                   className="text-[11px] px-3 py-2 rounded-lg transition-all hover:bg-[#FF6A00]/10 hover:border-[#FF6A00]/30"
                   style={{ background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}>
                   {q}
@@ -575,145 +542,43 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 whiteSpace: 'pre-line',
                 borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
               }}>
-              {msg.role === 'assistant' && (
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: 'rgba(255,106,0,0.16)' }}>
-                    <MessageSquare className="w-3 h-3 text-[#FF6A00]" />
-                  </div>
-                  <p className="text-[10px] font-medium" style={{ color: '#93C5FD', fontFamily: fontFamily.mono }}>
-                    {msg.agent_name || 'BIQc Advisor'}
-                  </p>
-                </div>
-              )}
-              {msg.type === 'integration_prompt' && <Database className="w-3.5 h-3.5 text-[#F59E0B] inline mr-1.5 -mt-0.5" />}
-              {normalizeMessageContent(msg.content ?? msg.text)}
-              {msg.role === 'assistant' && msg.suggested_actions?.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {msg.suggested_actions.map((action, idx) => (
-                    <button
-                      key={`${action.action || action.label || 'action'}-${idx}`}
-                      type="button"
-                      onClick={() => submitSuggestedAction(action.prompt || action.label)}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all hover:brightness-110 flex items-center gap-1.5"
-                      style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.25)', color: '#FF6A00', fontFamily: fontFamily.mono }}
-                      data-testid={`soundboard-panel-suggested-action-${idx}`}
-                    >
-                      <span>→</span>
-                      <span>{action.label || action.prompt}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {msg.role === 'assistant' && msg.intent?.domain && msg.intent.domain !== 'general' && (
-                <div className="mt-2">
-                  <span
-                    className="text-[9px] px-1.5 py-0.5 rounded"
-                    style={{ background: 'rgba(255,255,255,0.05)', color: '#64748B', fontFamily: fontFamily.mono }}
-                  >
-                    {msg.intent.domain.toUpperCase()} · {msg.model_used || 'AI'}
-                  </span>
-                </div>
-              )}
-              {msg.coverage_window && (
-                <div className="mt-2 rounded-lg px-2 py-1.5" style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)' }}>
-                  <p className="text-[9px] uppercase tracking-wider mb-1" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Coverage window</p>
-                  <p className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }}>
-                    {msg.coverage_window.coverage_start || 'n/a'} → {msg.coverage_window.coverage_end || 'n/a'}
-                  </p>
-                  <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
-                    last sync: {msg.coverage_window.last_sync_at || 'n/a'} · confidence impact: {msg.coverage_window.confidence_impact || 'unknown'}
-                  </p>
-                  {Array.isArray(msg.coverage_window.missing_periods) && msg.coverage_window.missing_periods.length > 0 && (
-                    <p className="text-[10px]" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
-                      gap: {msg.coverage_window.missing_periods[0]}
-                    </p>
-                  )}
-                </div>
-              )}
-              {msg.evidence_pack?.sources?.length > 0 && (
-                <div className="flex gap-1 mt-2 flex-wrap">
-                  {msg.evidence_pack.sources.slice(0, 4).map((s) => (
-                    <span key={s.id || s.source} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#8B5CF610', color: '#A78BFA', fontFamily: fontFamily.mono }}>
-                      {s.source}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {msg.boardroom_trace?.phases?.length > 0 && (
-                <div className="flex gap-1 mt-2 flex-wrap">
-                  {msg.boardroom_trace.phases.slice(0, 4).map((phase, idx) => (
-                    <span key={`${phase.phase}-${phase.role || idx}`} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#3B82F615', color: '#93C5FD', fontFamily: fontFamily.mono }}>
-                      {phase.phase}{phase.role ? `:${phase.role}` : ''} {phase.status || 'ok'}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {msg.boardroom_status === 'fallback_error' && (
-                <div className="mt-2">
-                  <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#F59E0B15', color: '#F59E0B', fontFamily: fontFamily.mono }}>
-                    Boardroom degraded mode
-                  </span>
-                </div>
-              )}
-              {msg.sources?.length > 0 && (
-                <div className="flex gap-1 mt-2 flex-wrap">
-                  {msg.sources.map((s, j) => (
-                    <span key={j} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#10B98110', color: '#10B981', fontFamily: fontFamily.mono }}>{s}</span>
-                  ))}
-                </div>
-              )}
-              {msg.role === 'assistant' && (
-                <div className="mt-2 flex flex-wrap gap-1.5" data-testid="soundboard-panel-response-metadata-row">
-                  {typeof msg.confidence_score === 'number' && (
-                    <span
-                      className="text-[9px] px-1.5 py-0.5 rounded"
-                      style={{ background: 'rgba(16,185,129,0.12)', color: '#10B981', fontFamily: fontFamily.mono }}
-                      data-testid="soundboard-panel-response-confidence-chip"
-                    >
-                      confidence {((msg.confidence_score > 0 && msg.confidence_score <= 1 ? msg.confidence_score * 100 : msg.confidence_score)).toFixed(0)}%
-                    </span>
-                  )}
-                  {typeof msg.data_sources_count === 'number' && (
-                    <span
-                      className="text-[9px] px-1.5 py-0.5 rounded"
-                      style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA', fontFamily: fontFamily.mono }}
-                      data-testid="soundboard-panel-response-sources-chip"
-                    >
-                      {msg.data_sources_count} sources
-                    </span>
-                  )}
-                  {msg.data_freshness && (
-                    <span
-                      className="text-[9px] px-1.5 py-0.5 rounded"
-                      style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B', fontFamily: fontFamily.mono }}
-                      data-testid="soundboard-panel-response-freshness-chip"
-                    >
-                      freshness {msg.data_freshness}
-                    </span>
-                  )}
-                  {msg.advisory_slots?.kpi_note && (
-                    <span
-                      className="text-[9px] px-1.5 py-0.5 rounded"
-                      style={{ background: '#8B5CF615', color: '#C4B5FD', fontFamily: fontFamily.mono }}
-                      title={msg.advisory_slots.kpi_note}
-                      data-testid="soundboard-panel-response-kpi-chip"
-                    >
-                      KPI note
-                    </span>
-                  )}
-                </div>
-              )}
-              {/* File download card */}
-              {msg.file && (
-                <a href={msg.file.download_url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg"
-                  style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', textDecoration: 'none' }}>
-                  <Download className="w-3.5 h-3.5 text-[#FF6A00] shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold truncate" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{msg.file.name}</p>
-                    <p className="text-[9px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{msg.file.type} · {Math.round((msg.file.size || 0) / 1024)}KB</p>
-                  </div>
-                </a>
+              {msg.role === 'assistant' ? (
+                <AskBiqcAssistantResponse
+                  message={msg}
+                  compact
+                  onCopy={() => handleCopyAssistantMessage(msg)}
+                  onUseInComposer={() => handleUseAnswerInComposer(msg)}
+                  onRegenerate={() => {
+                    const previousUserPrompt = findPreviousAskBiqcUserPrompt(messages, i);
+                    if (!previousUserPrompt) return;
+                    setMessages((prev) => [...prev, { role: 'user', text: previousUserPrompt, content: previousUserPrompt }]);
+                    executeMessage(
+                      previousUserPrompt,
+                      previousUserPrompt,
+                      {
+                        trace_root_id: msg.trace_root_id || `trace-${Date.now()}`,
+                        response_version: Number(msg.response_version || 1) + 1,
+                      },
+                    );
+                  }}
+                  onSuggestedAction={(prompt) => submitSuggestedAction(prompt)}
+                  actionTestIdPrefix="ask-biqc-panel-message-action"
+                  metadataTestId="soundboard-panel-response-metadata-row"
+                  evidenceTestId="soundboard-panel-evidence-row"
+                />
+              ) : (
+                <>
+                  <p>{normalizeMessageContent(msg.content ?? msg.text)}</p>
+                  <AskBiqcMessageActions
+                    role={msg.role}
+                    compact
+                    onEdit={() => {
+                      setInput(getAskBiqcMessageText(msg));
+                      inputRef.current?.focus();
+                    }}
+                    testIdPrefix="ask-biqc-panel-message-action"
+                  />
+                </>
               )}
             </div>
           </div>
@@ -935,6 +800,17 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             onClick={() => setShowVoiceChat(true)}>
             <Video className="w-4 h-4 text-[#64748B]" />
           </button>
+          {loading && (
+            <button
+              onClick={stopStreaming}
+              className="p-2 rounded-xl shrink-0 transition-all hover:bg-red-500/10"
+              style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.24)' }}
+              data-testid="sb-stop"
+              aria-label="Stop Ask BIQc response"
+            >
+              <X className="w-4 h-4 text-red-400" />
+            </button>
+          )}
           <textarea
             ref={inputRef}
             value={input}

@@ -52,7 +52,7 @@ export const DailyBriefCard = () => {
               setBrief({
                 priority_domain: highPriority?.domain || 'general',
                 priority_message: highPriority?.title || cognitive.executive_memo?.substring(0, 120) || 'Review your business intelligence.',
-                suggested_action: highPriority?.recommendation || 'Open your SoundBoard for detailed analysis.',
+                suggested_action: highPriority?.recommendation || 'Open Ask BIQc for detailed analysis.',
                 alerts_count: rq.length,
                 truth_states: {
                   crm: cognitive?.integrations?.crm_state || null,

@@ -213,6 +213,78 @@ def _extract_last_assistant_message(messages_history: List[Dict[str, Any]]) -> s
     return ""
 
 
+def _format_history_for_prompt(messages_history: List[Dict[str, Any]], *, limit: int) -> str:
+    lines = []
+    for message in (messages_history or [])[-limit:]:
+        role = str(message.get("role") or "user").strip().lower()
+        content = str(message.get("content") or "").strip()
+        if not content:
+            continue
+        label = "Assistant" if role == "assistant" else "User"
+        lines.append(f"{label}: {content}")
+    return "\n".join(lines)
+
+
+def _is_report_grade_request(message: str) -> bool:
+    text = str(message or "").lower()
+    report_terms = [
+        "board report",
+        "board pack",
+        "board summary",
+        "performance report",
+        "monthly report",
+        "quarterly report",
+        "last 12 months",
+        "past 12 months",
+        "12 month",
+    ]
+    return any(term in text for term in report_terms)
+
+
+def _has_grounded_report_facts(*, rev: Dict[str, Any], risk: Dict[str, Any], obs_events: List[Dict[str, Any]]) -> bool:
+    if obs_events:
+        return True
+    if float((rev or {}).get("pipeline_total") or 0) > 0:
+        return True
+    if int((rev or {}).get("stalled_deals") or 0) > 0:
+        return True
+    if bool((rev or {}).get("overdue_invoices")):
+        return True
+    if str((risk or {}).get("overall_risk") or "").lower() not in {"", "low", "unknown", "none"}:
+        return True
+    return False
+
+
+def _report_window_meets_target(coverage_window: Dict[str, Any], *, min_days: int = 330) -> bool:
+    start_raw = (coverage_window or {}).get("coverage_start")
+    end_raw = (coverage_window or {}).get("coverage_end")
+    if not start_raw or not end_raw:
+        return False
+    try:
+        start_dt = datetime.fromisoformat(str(start_raw).replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(str(end_raw).replace("Z", "+00:00"))
+    except Exception:
+        return False
+    if end_dt < start_dt:
+        return False
+    return (end_dt - start_dt).days >= min_days
+
+
+def _build_report_grounding_block(*, connected_sources: List[str], coverage_pct: float, coverage_window: Dict[str, Any], live_signal_count: int) -> str:
+    connected_label = ", ".join(connected_sources) if connected_sources else "no connected systems"
+    window_start = coverage_window.get("coverage_start") or "unknown"
+    window_end = coverage_window.get("coverage_end") or "unknown"
+    missing = coverage_window.get("missing_periods") or []
+    missing_text = f" Gaps detected: {missing[0]}" if missing else ""
+    return (
+        "I can't truthfully generate a board report from live connector evidence yet. "
+        f"Connected systems visible in this turn: {connected_label}. "
+        f"Current grounded data window: {window_start} to {window_end}. "
+        f"Live signals available: {live_signal_count}.{missing_text} "
+        "I need report-grade facts from the connected systems before I can produce a defensible 12-month board pack."
+    )
+
+
 def _limit_to_executive_length(text: str, max_sentences: int = 6) -> str:
     draft = str(text or "").strip()
     if not draft:
@@ -955,13 +1027,18 @@ async def _call_openai_with_fallback(api_key: str, system_message: str, clean_me
     raise RuntimeError(f"OpenAI chat failed across fallback models: {last_error}")
 
 
-async def _call_gemini_with_fallback(api_key: str, system_message: str, clean_message: str, model_candidates: List[str]) -> tuple[str, str]:
+async def _call_gemini_with_fallback(api_key: str, system_message: str, clean_message: str, messages_history: List[Dict[str, Any]], model_candidates: List[str]) -> tuple[str, str]:
     import httpx as _httpx
 
     if not _has_configured_key(api_key):
         raise RuntimeError("GOOGLE_API_KEY is not configured. Add a valid Google AI key to restore Gemini-powered Soundboard replies.")
 
     last_error = None
+    history_block = _format_history_for_prompt(messages_history, limit=SOUNDBOARD_CONTEXT_MESSAGES_LIMIT)
+    prompt_text = f"{system_message}\n\n"
+    if history_block:
+        prompt_text += f"[RECENT CONVERSATION]\n{history_block}\n\n"
+    prompt_text += f"[CURRENT USER MESSAGE]\n{clean_message}"
     async with _httpx.AsyncClient(timeout=30) as client:
         for candidate in model_candidates:
             try:
@@ -970,7 +1047,7 @@ async def _call_gemini_with_fallback(api_key: str, system_message: str, clean_me
                     f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent",
                     params={"key": api_key},
                     json={
-                        "contents": [{"parts": [{"text": f"{system_message}\n\n{clean_message}"}]}],
+                        "contents": [{"parts": [{"text": prompt_text}]}],
                         "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.7},
                     },
                 )
@@ -1004,17 +1081,19 @@ async def _call_gemini_with_fallback(api_key: str, system_message: str, clean_me
     raise RuntimeError(f"Gemini chat failed across fallback models: {last_error}")
 
 
-async def _call_anthropic_with_fallback(api_key: str, system_message: str, clean_message: str, model_candidates: List[str]) -> tuple[str, str]:
+async def _call_anthropic_with_fallback(api_key: str, system_message: str, clean_message: str, messages_history: List[Dict[str, Any]], model_candidates: List[str]) -> tuple[str, str]:
     import httpx as _httpx
 
     if not _has_configured_key(api_key):
         raise RuntimeError("ANTHROPIC_API_KEY is not configured. Add a valid Anthropic key to enable Trinity reasoning.")
 
+    history_block = _format_history_for_prompt(messages_history, limit=SOUNDBOARD_CONTEXT_MESSAGES_LIMIT)
+    user_content = clean_message if not history_block else f"[RECENT CONVERSATION]\n{history_block}\n\n[CURRENT USER MESSAGE]\n{clean_message}"
     payload_base = {
         "temperature": 0.45,
         "max_tokens": 1800,
         "system": system_message,
-        "messages": [{"role": "user", "content": clean_message}],
+        "messages": [{"role": "user", "content": user_content}],
     }
 
     last_error = ""
@@ -1094,6 +1173,7 @@ async def _call_trinity_orchestration(
             api_key=google_key,
             system_message=system_message,
             clean_message=clean_message,
+            messages_history=messages_history,
             model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
         ))
 
@@ -1102,6 +1182,7 @@ async def _call_trinity_orchestration(
             api_key=anthropic_key,
             system_message=system_message,
             clean_message=clean_message,
+            messages_history=messages_history,
             model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
         ))
 
@@ -1195,6 +1276,7 @@ async def _run_boardroom_orchestration(
                     api_key=anthropic_key,
                     system_message=role_system,
                     clean_message=clean_message,
+                    messages_history=messages_history[-SOUNDBOARD_BOARDROOM_CONTEXT_LIMIT:],
                     model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
                 )
             else:
@@ -1202,6 +1284,7 @@ async def _run_boardroom_orchestration(
                     api_key=google_key,
                     system_message=role_system,
                     clean_message=clean_message,
+                    messages_history=messages_history[-SOUNDBOARD_BOARDROOM_CONTEXT_LIMIT:],
                     model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
                 )
             deliberations.append({"role": role_key, "analysis": role_text, "model": role_model})
@@ -1233,6 +1316,7 @@ async def _run_boardroom_orchestration(
             api_key=anthropic_key,
             system_message=challenge_system,
             clean_message=challenge_prompt,
+            messages_history=[],
             model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
         )
     else:
@@ -1240,6 +1324,7 @@ async def _run_boardroom_orchestration(
             api_key=google_key,
             system_message=challenge_system,
             clean_message=challenge_prompt,
+            messages_history=[],
             model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
         )
     phase_trace.append({"phase": "challenge", "status": "ok", "model": challenge_model})
@@ -2082,6 +2167,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # ═══ RATE LIMITING per subscription tier ═══
     from routes.deps import check_rate_limit, AI_MODELS
     requested_mode = getattr(req, 'mode', 'auto')
+    report_grade_request = _is_report_grade_request(clean_message)
     tier_for_contract = (current_user.get("subscription_tier") or profile.get("subscription_tier") or "free")
     is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin", "admin"}
     mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
@@ -2312,6 +2398,36 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 )
             response = sanitise_output(response)
 
+        grounded_report_ready = (
+            _has_grounded_report_facts(rev=rev, risk=risk, obs_events=obs_events)
+            and _report_window_meets_target(coverage_window, min_days=330)
+            and not bool((coverage_window or {}).get("missing_periods"))
+        )
+        if report_grade_request and not grounded_report_ready:
+            connected_sources = [
+                name
+                for name, enabled in (
+                    ("CRM", has_crm),
+                    ("Accounting", has_accounting),
+                    ("Email", has_email),
+                )
+                if enabled
+            ]
+            response = _build_report_grounding_block(
+                connected_sources=connected_sources,
+                coverage_pct=coverage_pct,
+                coverage_window=coverage_window,
+                live_signal_count=live_signal_count,
+            )
+            guardrail_status = "DEGRADED"
+            missing_fields = list(missing_fields or []) + [{
+                "key": "grounded_report_facts",
+                "label": "Grounded report facts",
+                "path": "/integrations",
+                "critical": True,
+            }]
+            response = sanitise_output(response)
+
         clean_lower = clean_message.strip().lower()
         greeting_only = clean_lower in {"hi", "hey", "hello", "yo", "good morning", "good afternoon", "good evening"}
         should_enforce_contract = not greeting_only and len(clean_message.split()) >= 4
@@ -2509,6 +2625,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "coverage_window": coverage_window,
+            "grounded_report_ready": grounded_report_ready,
+            "report_grade_request": report_grade_request,
             "incident_or_compliance": incident_or_compliance,
             "explicit_capability_gap": explicit_capability_gap,
             "upsell_allowed": allow_upsell,

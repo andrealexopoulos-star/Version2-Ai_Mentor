@@ -766,7 +766,7 @@ const MarketPage = () => {
                   <div className="flex items-center gap-2"><FileText className="w-4 h-4 text-[#FF6A00]" /><span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{r.type}</span></div>
                   <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{new Date(r.date).toLocaleDateString()}</span>
                 </div>
-                <div className="flex items-center gap-1 mt-2"><MessageSquare className="w-3 h-3 text-[#FF6A00]" /><span className="text-[10px] text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>Discuss in SoundBoard</span></div>
+                <div className="flex items-center gap-1 mt-2"><MessageSquare className="w-3 h-3 text-[#FF6A00]" /><span className="text-[10px] text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>Discuss in Ask BIQc</span></div>
               </div>
             ))}
           </div>

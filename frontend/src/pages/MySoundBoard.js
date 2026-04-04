@@ -1,85 +1,48 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
-import { getBackendUrl } from '../config/urls';
 import { useMobileDrawer } from '../context/MobileDrawerContext';
 import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import VoiceChat from '../components/VoiceChat';
 import BoardroomCouncilCard from '../components/soundboard/BoardroomCouncilCard';
+import AskBiqcAssistantResponse from '../components/soundboard/AskBiqcAssistantResponse';
+import AskBiqcMessageActions from '../components/soundboard/AskBiqcMessageActions';
+import AskBiqcSessionLineage from '../components/soundboard/AskBiqcSessionLineage';
 import DataCoverageGate from '../components/DataCoverageGate';
 import { fontFamily } from "../design-system/tokens";
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { getSoundboardPolicy, normalizeMessageContent, SOUND_BOARD_MODES } from '../lib/soundboardPolicy';
-import LineageBadge from '../components/LineageBadge';
+import { deriveSoundboardRequestScope } from '../lib/soundboardQueryRouting';
+import {
+  SOUNDBOARD_CHAT_TIMEOUT_MS,
+  appendAskBiqcDelta,
+  buildAskBiqcComposedMessage,
+  buildAskBiqcComposerDraftFromAnswer,
+  buildAskBiqcRequestPayload,
+  buildBoardroomChecks,
+  copyAskBiqcText,
+  createAskBiqcPlaceholder,
+  findPreviousAskBiqcUserPrompt,
+  getAskBiqcCoverageGate,
+  getAskBiqcMessageText,
+  getSoundboardErrorMessage,
+  markAskBiqcStreamingStopped,
+  removeAskBiqcPlaceholder,
+  replaceAskBiqcPlaceholder,
+  resolveAskBiqcTrace,
+  runAskBiqcTurn,
+} from '../lib/soundboardRuntime';
 import { useLocation } from 'react-router-dom';
 import { EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
 import {
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
   Loader2, ChevronLeft, ChevronRight, MoreVertical, Video, Phone,
-  Paperclip, FileText, Download, Zap, Eye, Clock
+  Paperclip, FileText, Zap, Eye, Clock
 } from 'lucide-react';
 
-const SOUNDBOARD_CHAT_TIMEOUT_MS = 120000;
 const SOUNDBOARD_LAYOUT_KEY = 'biqc_soundboard_layout_v2';
-const buildBoardroomChecks = (connectedSources = [], evidenceSources = []) => {
-  const normalized = new Set(
-    [...connectedSources, ...evidenceSources]
-      .map((v) => String(v || '').toLowerCase().trim())
-      .filter(Boolean)
-  );
-  const hasCRM = normalized.has('crm');
-  const hasAccounting = normalized.has('accounting');
-  const hasEmail = normalized.has('email');
-  const hasMarket = ['market', 'google_ads', 'ads', 'competitor', 'web'].some((key) => normalized.has(key));
-
-  const steps = [
-    { role: 'CEO', line: 'Checking strategic priorities and growth pressure...' },
-    hasCRM
-      ? { role: 'CEO', line: 'Checking CRM pipeline momentum and stalled deals...' }
-      : { role: 'COO', line: 'Checking execution cadence from available business signals...' },
-    hasAccounting
-      ? { role: 'Finance Manager', line: 'Checking overdue invoices, cash timing, and runway...' }
-      : { role: 'Finance Manager', line: 'Checking cash risk assumptions from calibration and activity patterns...' },
-    hasEmail
-      ? { role: 'COO', line: 'Checking inbox response lag and escalation patterns...' }
-      : { role: 'HR', line: 'Checking team load and decision bottlenecks from current evidence...' },
-  ];
-  if (hasMarket) {
-    steps.push({ role: 'Marketing Manager', line: 'Checking Google Ads and market demand signals...' });
-  }
-  steps.push({ role: 'CCO', line: 'Aligning boardroom views into one clear recommendation...' });
-  return steps;
-};
-
-const deriveRequestScope = (message = '') => {
-  const text = String(message || '').toLowerCase();
-  return {
-    mailbox_scope: {
-      inbox: /\binbox\b/.test(text),
-      sent: /\bsent\b/.test(text) || /\bsent items\b/.test(text),
-      deleted: /\bdeleted\b/.test(text) || /\btrash\b/.test(text),
-    },
-    wants_integration_analytics: /(merge|integration|insight|analytics|trend|breakdown|compare)/.test(text),
-  };
-};
-
-const getSoundboardErrorMessage = (error) => {
-  if (error?.code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('timeout')) {
-    return 'Reply timed out — try Normal mode or wait and retry (Trinity can take over a minute).';
-  }
-  if (String(error?.message || '').includes('API returned HTML instead of JSON')) {
-    return 'Soundboard request was routed incorrectly (HTML returned instead of API JSON). Refresh and try again.';
-  }
-  const detail = error?.response?.data?.detail;
-  if (typeof detail === 'string' && detail.trim()) return detail;
-  const reply = error?.response?.data?.reply;
-  if (typeof reply === 'string' && reply.trim()) return reply;
-  if (typeof error?.message === 'string' && error.message.trim()) return error.message;
-  return 'Failed to send message';
-};
-
 const buildAdvisorSuggestedOptions = (context) => {
   if (!context) return [];
   const action = context.actionBrief || context.actionNow || 'decide the next action';
@@ -186,6 +149,7 @@ const MySoundBoard = () => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileRef = useRef(null);
+  const streamAbortRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
 
   const layoutStorageKey = user?.id ? `${SOUNDBOARD_LAYOUT_KEY}_${user.id}` : SOUNDBOARD_LAYOUT_KEY;
@@ -361,48 +325,26 @@ const MySoundBoard = () => {
     inputRef.current?.focus();
   };
 
-  const streamSoundboardChat = async (payload, { onDelta } = {}) => {
-    const token = session?.access_token;
-    if (!token) throw new Error('Missing session token for streaming chat');
-    const res = await fetch(`${getBackendUrl()}/api/soundboard/chat/stream`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok || !res.body) {
-      const text = await res.text().catch(() => '');
-      throw new Error(text || `Streaming request failed (${res.status})`);
+  const stopStreaming = useCallback(() => {
+    streamAbortRef.current?.abort();
+    streamAbortRef.current = null;
+    setLoading(false);
+    setMessages((prev) => markAskBiqcStreamingStopped(prev));
+  }, []);
+
+  const handleCopyAssistantMessage = useCallback(async (message) => {
+    const copied = await copyAskBiqcText(getAskBiqcMessageText(message));
+    if (copied) {
+      toast.success('Ask BIQc response copied to clipboard.');
+      return;
     }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let buffer = '';
-    let finalPayload = null;
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const events = buffer.split('\n\n');
-      buffer = events.pop() || '';
-      for (const rawEvent of events) {
-        const line = rawEvent.split('\n').find((l) => l.startsWith('data: '));
-        if (!line) continue;
-        try {
-          const evt = JSON.parse(line.slice(6));
-          if (evt.type === 'delta' && typeof evt.text === 'string') {
-            onDelta?.(evt.text);
-          } else if (evt.type === 'final' && evt.payload) {
-            finalPayload = evt.payload;
-          }
-        } catch {
-          // Ignore malformed event chunks and continue stream.
-        }
-      }
-    }
-    return finalPayload;
-  };
+    toast.error('Failed to copy Ask BIQc response.');
+  }, []);
+
+  const handleUseAnswerInComposer = useCallback((message) => {
+    setInput(buildAskBiqcComposerDraftFromAnswer(getAskBiqcMessageText(message)));
+    inputRef.current?.focus();
+  }, []);
 
   const sendMessage = async (messageOverride = null, contextOverride = null, traceOptions = null) => {
     // React button clicks pass a synthetic event as first argument when onClick
@@ -415,22 +357,12 @@ const MySoundBoard = () => {
 
     const userMessage = String(messageOverride ?? input ?? '').trim();
     if (!messageOverride) setInput('');
-
-    // Build full message including file content
-    let fullMessage = userMessage;
-    let displayContent = userMessage;
-    if (!messageOverride && attachedFile) {
-      if (attachedFile.type === 'text' && attachedFile.content) {
-        const preview = attachedFile.content.slice(0, 3000);
-        const truncated = attachedFile.content.length > 3000;
-        fullMessage = `${userMessage ? userMessage + '\n\n' : ''}Attached file: ${attachedFile.name}\n\nContent:\n${preview}${truncated ? '\n\n[...truncated]' : ''}`;
-        displayContent = userMessage || `Analysing: ${attachedFile.name}`;
-      } else {
-        fullMessage = `${userMessage ? userMessage + '\n\n' : ''}File attached: ${attachedFile.name} (${attachedFile.hint || 'describe what you need'})`;
-        displayContent = userMessage || `Attached: ${attachedFile.name}`;
-      }
-      setAttachedFile(null);
-    }
+    const attachedFileForTurn = !messageOverride ? attachedFile : null;
+    const { fullMessage, displayMessage: displayContent } = buildAskBiqcComposedMessage({
+      userMessage,
+      attachedFile: attachedFileForTurn,
+    });
+    if (attachedFileForTurn) setAttachedFile(null);
 
     if (!fullMessage.trim()) return;
     setMessages(prev => [...prev, { role: 'user', content: displayContent }]);
@@ -441,7 +373,7 @@ const MySoundBoard = () => {
     try {
       const currentMode = SOUND_BOARD_MODES.find(m => m.id === selectedMode) || SOUND_BOARD_MODES[0];
       const advisorContext = contextOverride || advisorHandoff || null;
-      const requestScope = deriveRequestScope(fullMessage);
+      const requestScope = deriveSoundboardRequestScope(fullMessage);
       const intelligenceContext = advisorContext ? {
         advisor_handoff: {
           title: advisorContext.title,
@@ -459,100 +391,47 @@ const MySoundBoard = () => {
       } : {};
       if (!advisorContext) intelligenceContext.request_scope = requestScope;
 
-      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage, agent_name, boardroom_trace, boardroom_status, evidence_pack, soundboard_contract, advisory_slots, coverage_window, guardrail, coverage_pct, missing_fields;
-      const traceRootId = traceOptions?.trace_root_id || `trace-${Date.now()}`;
-      const responseVersion = Number(traceOptions?.response_version || 1);
-      const placeholderId = `stream-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      setMessages((prev) => [...prev, { id: placeholderId, role: 'assistant', content: '', streaming: true, trace_root_id: traceRootId, response_version: responseVersion }]);
+      const { traceRootId, responseVersion } = resolveAskBiqcTrace(traceOptions);
+      const placeholder = createAskBiqcPlaceholder({ traceRootId, responseVersion });
+      let placeholderId = placeholder.id;
+      setMessages((prev) => [...prev, placeholder]);
 
-      const requestPayload = {
+      const requestPayload = buildAskBiqcRequestPayload({
         message: fullMessage,
-        conversation_id: activeConversation,
-        intelligence_context: intelligenceContext,
+        conversationId: activeConversation,
+        intelligenceContext,
         mode: currentMode.backend_mode,
-        agent_id: selectedAgent || 'auto',
-      };
-      const streamedPayload = await streamSoundboardChat(requestPayload, {
+        agentId: selectedAgent || 'auto',
+      });
+
+      const turnResult = await runAskBiqcTurn({
+        sessionToken: session?.access_token,
+        message: fullMessage,
+        requestPayload,
+        traceRootId,
+        responseVersion,
+        streamAbortRef,
+        requestTimeoutMs: SOUNDBOARD_CHAT_TIMEOUT_MS,
+        logPrefix: 'mysoundboard',
         onDelta: (deltaText) => {
-          setMessages((prev) => prev.map((m) => (
-            m.id === placeholderId
-              ? { ...m, content: `${m.content || ''}${deltaText}` }
-              : m
-          )));
+          setMessages((prev) => appendAskBiqcDelta(prev, placeholderId, deltaText));
         },
       });
-      const responseData = streamedPayload || (await apiClient.post('/soundboard/chat', requestPayload, { timeout: SOUNDBOARD_CHAT_TIMEOUT_MS })).data;
-      ({
-        reply,
-        conversation_id,
-        conversation_title,
-        file: generatedFile,
-        suggested_actions,
-        intent,
-        model_used,
-        confidence_score,
-        data_sources_count,
-        data_freshness,
-        lineage,
-        agent_name,
-        boardroom_trace,
-        boardroom_status,
-        evidence_pack,
-        soundboard_contract,
-        advisory_slots,
-        coverage_window,
-        guardrail,
-        coverage_pct,
-        missing_fields,
-      } = responseData);
 
-      if (guardrail === 'BLOCKED' || guardrail === 'DEGRADED') {
-        setCoverageGate({
-          guardrail,
-          coveragePct: coverage_pct ?? null,
-          missingFields: Array.isArray(missing_fields) ? missing_fields : [],
-        });
-      } else {
-        setCoverageGate(null);
-      }
+      setCoverageGate(turnResult.coverageGate || getAskBiqcCoverageGate(turnResult.responseData));
 
-      const replyTrimmed = typeof reply === 'string' ? reply.trim() : '';
-      if (!replyTrimmed) {
-        const hint =
-          responseData?.runtime_error ||
-          responseData?.provider_error ||
-          responseData?.detail ||
-          'Empty reply from server. Try Normal mode or retry.';
+      if (turnResult.kind === 'empty') {
         setMessages((prev) => [
-          ...prev.filter((m) => m.id !== placeholderId),
-          { role: 'assistant', content: String(hint) },
+          ...removeAskBiqcPlaceholder(prev, placeholderId),
+          turnResult.assistantMessage,
         ]);
         return;
       }
 
-      const assistantMsg = {
-        role: 'assistant',
-        content: reply,
-        suggested_actions: suggested_actions || [],
-        intent,
-        agent_name: agent_name || undefined,
-        model_used,
-        confidence_score,
-        data_sources_count,
-        data_freshness,
-        lineage,
-        boardroom_trace,
-        boardroom_status,
-        evidence_pack,
-        soundboard_contract,
-        advisory_slots,
-        coverage_window,
-        trace_root_id: traceRootId,
-        response_version: responseVersion,
-      };
-      if (generatedFile) assistantMsg.file = generatedFile;
-      setMessages((prev) => prev.map((m) => (m.id === placeholderId ? assistantMsg : m)));
-      
+      setMessages((prev) => replaceAskBiqcPlaceholder(prev, placeholderId, turnResult.assistantMessage));
+
+      const conversation_id = turnResult.responseData?.conversation_id;
+      const conversation_title = turnResult.responseData?.conversation_title;
       if (!activeConversation && conversation_id) {
         setActiveConversation(conversation_id);
         setConversations(prev => [{
@@ -571,6 +450,10 @@ const MySoundBoard = () => {
         setAdvisorHandoff(advisorContext);
       }
     } catch (error) {
+      streamAbortRef.current = null;
+      if (error?.name === 'AbortError') {
+        return;
+      }
       const errorMessage = getSoundboardErrorMessage(error);
       toast.error(errorMessage);
       setMessages((prev) => [
@@ -819,10 +702,10 @@ const MySoundBoard = () => {
 
             <div className="flex-1 min-w-0">
               <h1 className="text-lg md:text-xl font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                MySoundBoard
+                Ask BIQc
               </h1>
               <p className="text-xs md:text-sm truncate hidden md:block" style={{ color: 'var(--text-muted)' }}>
-                Your thinking partner for clarity
+                Your AI workspace for grounded business decisions
               </p>
             </div>
 
@@ -893,6 +776,16 @@ const MySoundBoard = () => {
               <Video className="w-5 h-5 md:w-4 md:h-4" />
               <span className="hidden md:inline text-sm font-medium">Start Voice Call</span>
             </button>
+            {loading && (
+              <button
+                onClick={stopStreaming}
+                className="bg-red-600/90 hover:bg-red-600 text-white rounded-lg p-2 md:px-4 md:py-2 flex items-center gap-2 flex-shrink-0"
+                aria-label="Stop Ask BIQc response"
+              >
+                <X className="w-5 h-5 md:w-4 md:h-4" />
+                <span className="hidden md:inline text-sm font-medium">Stop</span>
+              </button>
+            )}
           </div>
 
           {!loadingConversations && conversationsError ? (
@@ -900,7 +793,7 @@ const MySoundBoard = () => {
               <PageErrorState
                 error={conversationsError}
                 onRetry={fetchConversations}
-                moduleName="Soundboard"
+                moduleName="Ask BIQc"
               />
             </div>
           ) : (
@@ -908,20 +801,12 @@ const MySoundBoard = () => {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
             <div className="mx-auto px-6 py-6" style={{ maxWidth: `${chatColumnMaxWidth}px` }}>
-              {messages.length > 0 && latestAssistantMessage && (latestAssistantMessage.lineage || latestAssistantMessage.data_freshness || latestAssistantMessage.confidence_score != null) && (
-                <div className="mb-4" data-testid="soundboard-session-lineage">
-                  <LineageBadge
-                    lineage={latestAssistantMessage.lineage}
-                    data_freshness={latestAssistantMessage.data_freshness}
-                    confidence_score={typeof latestAssistantMessage.confidence_score === 'number'
-                      ? (latestAssistantMessage.confidence_score > 0 && latestAssistantMessage.confidence_score <= 1
-                        ? latestAssistantMessage.confidence_score * 100
-                        : latestAssistantMessage.confidence_score)
-                      : undefined}
-                    compact
-                  />
-                </div>
-              )}
+              <AskBiqcSessionLineage
+                latestAssistantMessage={latestAssistantMessage}
+                compact
+                className="mb-4"
+                testId="soundboard-session-lineage"
+              />
 
               {messages.length === 0 ? (
                 <div className="text-center py-12 px-4">
@@ -970,187 +855,42 @@ const MySoundBoard = () => {
                             : '1px solid var(--border-light)'
                         }}
                       >
-                        {message.role === 'assistant' && message.agent_name && (
-                          <p className="text-[10px] font-medium mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>{message.agent_name}</p>
-                        )}
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                          {normalizeMessageContent(message.content)}
-                        </p>
-                        {message.role === 'user' && (
-                          <div className="mt-2">
-                            <button
-                              onClick={() => {
-                                setInput(message.content || '');
+                        {message.role === 'assistant' ? (
+                          <AskBiqcAssistantResponse
+                            message={message}
+                            onCopy={() => handleCopyAssistantMessage(message)}
+                            onUseInComposer={() => handleUseAnswerInComposer(message)}
+                            onRegenerate={() => {
+                              const previousUserPrompt = findPreviousAskBiqcUserPrompt(messages, index);
+                              if (!previousUserPrompt) return;
+                              sendMessage(
+                                previousUserPrompt,
+                                advisorHandoff,
+                                {
+                                  trace_root_id: message.trace_root_id || `trace-${Date.now()}`,
+                                  response_version: Number(message.response_version || 1) + 1,
+                                },
+                              );
+                            }}
+                            onSuggestedAction={(prompt) => sendMessage(prompt, advisorHandoff)}
+                            actionTestIdPrefix="ask-biqc-page-message-action"
+                            metadataTestId="soundboard-response-metadata-row"
+                            evidenceTestId="soundboard-evidence-row"
+                          />
+                        ) : (
+                          <>
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                              {normalizeMessageContent(message.content)}
+                            </p>
+                            <AskBiqcMessageActions
+                              role={message.role}
+                              onEdit={() => {
+                                setInput(getAskBiqcMessageText(message));
                                 inputRef.current?.focus();
                               }}
-                              className="text-[10px] px-2 py-1 rounded-md"
-                              style={{ background: 'rgba(148,163,184,0.12)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                            >
-                              Edit & resend
-                            </button>
-                          </div>
-                        )}
-                        {message.role === 'assistant' && (
-                          <div className="mt-2">
-                            <button
-                              onClick={() => {
-                                const prevUser = [...messages.slice(0, index)].reverse().find((m) => m.role === 'user' && typeof m.content === 'string' && m.content.trim());
-                                if (!prevUser) return;
-                                sendMessage(
-                                  prevUser.content,
-                                  advisorHandoff,
-                                  {
-                                    trace_root_id: message.trace_root_id || `trace-${Date.now()}`,
-                                    response_version: Number(message.response_version || 1) + 1,
-                                  },
-                                );
-                              }}
-                              className="text-[10px] px-2 py-1 rounded-md"
-                              style={{ background: 'rgba(59,130,246,0.12)', color: '#93C5FD', fontFamily: fontFamily.mono }}
-                            >
-                              Regenerate
-                            </button>
-                          </div>
-                        )}
-                        {/* Proactive next-action suggestions */}
-                        {message.role === 'assistant' && message.suggested_actions?.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {message.suggested_actions.map((action, i) => (
-                              <button key={i}
-                                onClick={() => sendMessage(action.prompt || action.label, advisorHandoff)}
-                                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 flex items-center gap-1.5"
-                                style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.25)', color: '#FF6A00', fontFamily: fontFamily.mono }}>
-                                <span>→</span> {action.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        {/* Intent badge */}
-                        {message.role === 'assistant' && message.intent?.domain && message.intent.domain !== 'general' && (
-                          <div className="mt-2">
-                            <span className="text-[9px] px-1.5 py-0.5 rounded"
-                              style={{ background: 'rgba(255,255,255,0.05)', color: '#4A5568', fontFamily: fontFamily.mono }}>
-                              {message.intent.domain.toUpperCase()} · {message.model_used || 'AI'}
-                            </span>
-                          </div>
-                        )}
-                        {message.role === 'assistant' && message.evidence_pack?.sources?.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1.5" data-testid="soundboard-evidence-row">
-                            {message.evidence_pack.sources.slice(0, 5).map((source) => (
-                              <span
-                                key={source.id || source.source}
-                                className="text-[9px] px-1.5 py-0.5 rounded"
-                                style={{ background: 'rgba(139,92,246,0.12)', color: '#A78BFA', fontFamily: fontFamily.mono }}
-                              >
-                                {source.source} {source.freshness ? `(${source.freshness})` : ''}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        {message.role === 'assistant' && message.coverage_window && (
-                          <div className="mt-2 rounded-lg p-2" style={{ border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.45)' }}>
-                            <p className="text-[10px] mb-1" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Coverage window</p>
-                            <p className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }}>
-                              {(message.coverage_window.coverage_start || 'n/a')} -> {(message.coverage_window.coverage_end || 'n/a')}
-                            </p>
-                            <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
-                              last sync: {message.coverage_window.last_sync_at || 'n/a'} · impact: {message.coverage_window.confidence_impact || 'unknown'}
-                            </p>
-                            {Array.isArray(message.coverage_window.missing_periods) && message.coverage_window.missing_periods.length > 0 && (
-                              <p className="text-[10px]" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
-                                gap: {message.coverage_window.missing_periods[0]}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                        {message.role === 'assistant' && message.boardroom_trace?.phases?.length > 0 && (
-                          <div className="mt-2 rounded-lg p-2" style={{ border: '1px solid rgba(59,130,246,0.25)', background: 'rgba(2,6,23,0.45)' }}>
-                            <p className="text-[10px] mb-1" style={{ color: '#60A5FA', fontFamily: fontFamily.mono }}>Boardroom orchestration</p>
-                            <div className="flex flex-wrap gap-1">
-                              {message.boardroom_trace.phases.slice(0, 6).map((phase, phaseIdx) => (
-                                <span
-                                  key={`${phase.phase}-${phase.role || phaseIdx}`}
-                                  className="text-[9px] px-1.5 py-0.5 rounded"
-                                  style={{ background: 'rgba(59,130,246,0.16)', color: '#BFDBFE', fontFamily: fontFamily.mono }}
-                                >
-                                  {phase.phase}{phase.role ? `:${phase.role}` : ''} {phase.status || 'ok'}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {message.role === 'assistant' && message.boardroom_status === 'fallback_error' && (
-                          <div className="mt-2">
-                            <span
-                              className="text-[9px] px-1.5 py-0.5 rounded"
-                              style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B', fontFamily: fontFamily.mono }}
-                            >
-                              Boardroom degraded mode
-                            </span>
-                          </div>
-                        )}
-                        {message.role === 'assistant' && (
-                          <div className="mt-2 flex flex-wrap gap-1.5" data-testid="soundboard-response-metadata-row">
-                            {typeof message.confidence_score === 'number' && (
-                              <span
-                                className="text-[9px] px-1.5 py-0.5 rounded"
-                                style={{ background: 'rgba(16,185,129,0.12)', color: '#10B981', fontFamily: fontFamily.mono }}
-                                data-testid="soundboard-response-confidence-chip"
-                              >
-                                confidence {(message.confidence_score * 100).toFixed(0)}%
-                              </span>
-                            )}
-                            {typeof message.data_sources_count === 'number' && (
-                              <span
-                                className="text-[9px] px-1.5 py-0.5 rounded"
-                                style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA', fontFamily: fontFamily.mono }}
-                                data-testid="soundboard-response-sources-chip"
-                              >
-                                {message.data_sources_count} sources
-                              </span>
-                            )}
-                            {message.data_freshness && (
-                              <span
-                                className="text-[9px] px-1.5 py-0.5 rounded"
-                                style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B', fontFamily: fontFamily.mono }}
-                                data-testid="soundboard-response-freshness-chip"
-                              >
-                                freshness {message.data_freshness}
-                              </span>
-                            )}
-                            {message.advisory_slots?.kpi_note && (
-                              <span
-                                className="text-[9px] px-1.5 py-0.5 rounded"
-                                style={{ background: 'rgba(139,92,246,0.12)', color: '#C4B5FD', fontFamily: fontFamily.mono }}
-                                data-testid="soundboard-response-kpi-chip"
-                                title={message.advisory_slots.kpi_note}
-                              >
-                                KPI note
-                              </span>
-                            )}
-                            {typeof message.response_version === 'number' && message.response_version > 1 && (
-                              <span
-                                className="text-[9px] px-1.5 py-0.5 rounded"
-                                style={{ background: 'rgba(148,163,184,0.12)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
-                              >
-                                v{message.response_version}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        {/* File download card when backend generates a file */}
-                        {message.file && (
-                          <a href={message.file.download_url} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg hover:brightness-110 transition-all"
-                            style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', textDecoration: 'none' }}>
-                            <Download className="w-3.5 h-3.5 shrink-0" style={{ color: '#FF6A00' }} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold truncate" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{message.file.name}</p>
-                              <p className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: fontFamily.mono }}>
-                                {message.file.type} · {Math.round((message.file.size || 0) / 1024)}KB
-                              </p>
-                            </div>
-                          </a>
+                              testIdPrefix="ask-biqc-page-message-action"
+                            />
+                          </>
                         )}
                       </div>
                     </div>

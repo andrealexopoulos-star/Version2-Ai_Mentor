@@ -42,6 +42,19 @@ async function fetchMerge(token: string, endpoint: string, limit = 50) {
 function classifyQuery(query: string): { type: string; sources: string[] } {
   const q = query.toLowerCase();
 
+  if (
+    q.includes('board report') ||
+    q.includes('board pack') ||
+    q.includes('board summary') ||
+    q.includes('performance report') ||
+    q.includes('executive report') ||
+    q.includes('last 12 months') ||
+    q.includes('past 12 months') ||
+    q.includes('12 month')
+  ) {
+    return { type: 'executive_report', sources: ['crm', 'accounting', 'email', 'internal'] };
+  }
+
   if (q.includes('pipeline') || q.includes('deal') || q.includes('opportunity') || q.includes('sales'))
     return { type: 'crm_pipeline', sources: ['crm'] };
   if (q.includes('contact') || q.includes('client') || q.includes('customer') || q.includes('lead'))
@@ -94,6 +107,18 @@ serve(async (req) => {
 
     // Classify the query
     const classification = classifyQuery(query);
+
+    // Board / executive report requests must use the deeper backend runtime.
+    // This edge function is intentionally limited to direct factual data queries.
+    if (classification.type === 'executive_report') {
+      return new Response(JSON.stringify({
+        status: 'defer_to_soundboard',
+        query_type: classification.type,
+        message: 'Report-grade requests require the full BIQc Soundboard runtime so coverage, lineage, and missing periods can be checked before an answer is produced.',
+        data_sources: [],
+        raw_data: null,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // Get user's integrations
     const { data: integrations } = await supabase.from("integration_accounts")
@@ -223,7 +248,7 @@ Rules:
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gemini-3-flash-preview",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: answerPrompt }],
         temperature: 0.3,
         max_tokens: 500,

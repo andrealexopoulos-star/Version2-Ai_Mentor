@@ -194,7 +194,7 @@ const OnboardingWizard = () => {
       await apiClient.post('/onboarding/complete');
       markOnboardingComplete();
       trackActivationStep('onboarding_complete', { entrypoint: 'onboarding_wizard' });
-      toast.success('Profile completed! Start your first Soundboard briefing.');
+      toast.success('Profile completed! Start your first Ask BIQc briefing.');
       navigate('/soundboard', { replace: true, state: { fromOnboarding: true, firstValuePath: true } });
     } catch (error) {
       toast.error('Failed to complete setup');

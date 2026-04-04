@@ -182,7 +182,7 @@ export const ProactiveInsightBubble = () => {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-110"
               style={{ background: '#FF6A00', color: 'white', fontFamily: fontFamily.body }}
               data-testid="proactive-ask-soundboard">
-              Ask Soundboard <ArrowRight className="w-3 h-3" />
+              Ask BIQc <ArrowRight className="w-3 h-3" />
             </button>
             <button onClick={() => handleDismiss()}
               className="px-3 py-1.5 rounded-lg text-xs transition-all"

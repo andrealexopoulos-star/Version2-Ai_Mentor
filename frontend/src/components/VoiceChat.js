@@ -408,7 +408,7 @@ const VoiceChat = ({ onClose, onSwitchToText }) => {
             {/* Name tag */}
             <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg">
               <p className="text-white font-medium text-center text-sm sm:text-base">Strategic Advisor</p>
-              <p className="text-white/60 text-xs text-center">MySoundBoard</p>
+              <p className="text-white/60 text-xs text-center">Ask BIQc</p>
             </div>
             
             {/* Audio visualizer when speaking */}

@@ -704,7 +704,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
               className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-white/10"
               onMouseDown={startSoundboardResize}
               role="separator"
-              aria-label="Resize soundboard panel"
+              aria-label="Resize Ask BIQc panel"
               data-testid="soundboard-resize-handle"
             />
             <SoundboardPanel actionMessage={actionMessage} onActionConsumed={onActionConsumed} />
@@ -726,7 +726,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             <div className="fixed inset-0 bg-black/60 z-[1200]" onClick={() => setSbOpen(false)} />
             <div className="fixed inset-0 z-[1201] flex flex-col" style={{ background: 'var(--biqc-bg-input, #0A1018)' }}>
               <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SoundBoard</span>
+                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Ask BIQc</span>
                 <button onClick={() => setSbOpen(false)} className="p-2 rounded-lg hover:bg-white/5"><X className="w-5 h-5 text-[#64748B]" /></button>
               </div>
               <div className="flex-1 overflow-hidden">

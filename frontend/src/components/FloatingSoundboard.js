@@ -3,15 +3,7 @@ import { MessageSquare, X, Send, Lightbulb, Database, CheckCircle2, XCircle, Pap
 import { apiClient, callEdgeFunction } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { fontFamily } from '../design-system/tokens';
-
-// Detect if a message is a data query (needs integration data)
-const DATA_QUERY_PATTERNS = [
-  /^show me (my )?(pipeline|deals|invoices|revenue|leads|contacts|spend)/i,
-  /^what (is|was|are) (my |our )?(total |current )?(pipeline|revenue|spend|overdue|outstanding)/i,
-  /^how much (did|have|has|do)/i,
-  /^how many (deals|leads|contacts|invoices|clients)/i,
-  /^(list|give me|pull up) (my |our )?(deals|invoices|pipeline|leads|contacts)/i,
-];
+import { shouldUseGroundedDataQuery } from '../lib/soundboardQueryRouting';
 
 const getSoundboardErrorMessage = (error) => {
   const detail = error?.response?.data?.detail;
@@ -20,10 +12,6 @@ const getSoundboardErrorMessage = (error) => {
   if (typeof reply === 'string' && reply.trim()) return reply;
   return "I'm having trouble connecting. Try again in a moment.";
 };
-function isDataQuery(msg) {
-  const lower = msg.trim().toLowerCase();
-  return DATA_QUERY_PATTERNS.some(pattern => pattern.test(lower));
-}
 
 // Detect if a message is a BNA update request
 const BNA_PATTERNS = [
@@ -238,7 +226,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       }
 
       // Check if it's a data query — route to Edge Function
-      if (isDataQuery(fullMessage)) {
+      if (shouldUseGroundedDataQuery(fullMessage)) {
         const result = await queryIntegrationData(fullMessage);
         if (result) {
           if (result.status === 'not_connected') {
@@ -310,7 +298,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
             <Lightbulb className="w-4 h-4 text-[#FF6A00]" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SoundBoard</h3>
+            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Ask BIQc</h3>
             <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Brainstorm on your data</p>
           </div>
         </div>
