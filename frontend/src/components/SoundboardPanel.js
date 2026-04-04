@@ -9,6 +9,7 @@ import { fontFamily } from '../design-system/tokens';
 import { getSoundboardPolicy, normalizeMessageContent } from '../lib/soundboardPolicy';
 import VoiceChat from './VoiceChat';
 import BoardroomCouncilCard from './soundboard/BoardroomCouncilCard';
+import LineageBadge from './LineageBadge';
 
 
 // Data query detection — ONLY route to integration Edge Function for EXPLICIT data retrieval requests.
@@ -280,10 +281,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           role: 'assistant',
           text: res.data.reply,
           content: res.data.reply,
+          intent: res.data.intent,
           boardroom_trace: res.data.boardroom_trace,
           boardroom_status: res.data.boardroom_status,
           evidence_pack: res.data.evidence_pack,
           soundboard_contract: res.data.soundboard_contract,
+          model_used: res.data.model_used,
           confidence_score: res.data.confidence_score,
           data_freshness: res.data.data_freshness,
           data_sources_count: res.data.data_sources_count,
@@ -354,6 +357,16 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     await executeMessage(displayText, fullMessage);
   };
 
+  const submitSuggestedAction = async (prompt) => {
+    const nextPrompt = String(prompt || '').trim();
+    if (!nextPrompt || loading) return;
+    setMessages(prev => [...prev, { role: 'user', text: nextPrompt, content: nextPrompt }]);
+    trackEvent(EVENTS.SOUNDBOARD_QUERY, { message_length: nextPrompt.length, has_attachment: false, source: 'suggested_action' });
+    trackOnceForUser(EVENTS.ACTIVATION_FIRST_SOUNDBOARD_USE, user?.id, { entrypoint: 'soundboard_panel' });
+    trackActivationStep('first_soundboard_use', { entrypoint: 'soundboard_panel' });
+    await executeMessage(nextPrompt, nextPrompt);
+  };
+
   const loadConversation = async (conv) => {
     setShowHistory(false);
     setActiveConvId(conv.id);
@@ -363,10 +376,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         role: m.role,
         text: m.content,
         content: m.content,
+        intent: m.intent || m?.metadata?.intent,
         evidence_pack: m.evidence_pack,
         boardroom_trace: m.boardroom_trace,
         boardroom_status: m.boardroom_status || m?.metadata?.boardroom_status,
         soundboard_contract: m.soundboard_contract,
+        model_used: m.model_used,
         confidence_score: m.confidence_score,
         data_freshness: m.data_freshness,
         data_sources_count: m.data_sources_count,
@@ -507,6 +522,20 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-4" style={{ minHeight: 0 }}>
+        {messages.length > 0 && latestAssistantMessage && (latestAssistantMessage.lineage || latestAssistantMessage.data_freshness || latestAssistantMessage.confidence_score != null) && (
+          <div className="mb-1" data-testid="soundboard-panel-session-lineage">
+            <LineageBadge
+              lineage={latestAssistantMessage.lineage}
+              data_freshness={latestAssistantMessage.data_freshness}
+              confidence_score={typeof latestAssistantMessage.confidence_score === 'number'
+                ? (latestAssistantMessage.confidence_score > 0 && latestAssistantMessage.confidence_score <= 1
+                  ? latestAssistantMessage.confidence_score * 100
+                  : latestAssistantMessage.confidence_score)
+                : undefined}
+              compact
+            />
+          </div>
+        )}
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: '#FF6A0015' }}>
@@ -558,6 +587,33 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               )}
               {msg.type === 'integration_prompt' && <Database className="w-3.5 h-3.5 text-[#F59E0B] inline mr-1.5 -mt-0.5" />}
               {normalizeMessageContent(msg.content ?? msg.text)}
+              {msg.role === 'assistant' && msg.suggested_actions?.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {msg.suggested_actions.map((action, idx) => (
+                    <button
+                      key={`${action.action || action.label || 'action'}-${idx}`}
+                      type="button"
+                      onClick={() => submitSuggestedAction(action.prompt || action.label)}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all hover:brightness-110 flex items-center gap-1.5"
+                      style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.25)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                      data-testid={`soundboard-panel-suggested-action-${idx}`}
+                    >
+                      <span>→</span>
+                      <span>{action.label || action.prompt}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {msg.role === 'assistant' && msg.intent?.domain && msg.intent.domain !== 'general' && (
+                <div className="mt-2">
+                  <span
+                    className="text-[9px] px-1.5 py-0.5 rounded"
+                    style={{ background: 'rgba(255,255,255,0.05)', color: '#64748B', fontFamily: fontFamily.mono }}
+                  >
+                    {msg.intent.domain.toUpperCase()} · {msg.model_used || 'AI'}
+                  </span>
+                </div>
+              )}
               {msg.coverage_window && (
                 <div className="mt-2 rounded-lg px-2 py-1.5" style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)' }}>
                   <p className="text-[9px] uppercase tracking-wider mb-1" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Coverage window</p>
@@ -606,15 +662,45 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   ))}
                 </div>
               )}
-              {msg.advisory_slots?.kpi_note && (
-                <div className="mt-2">
-                  <span
-                    className="text-[9px] px-1.5 py-0.5 rounded"
-                    style={{ background: '#8B5CF615', color: '#C4B5FD', fontFamily: fontFamily.mono }}
-                    title={msg.advisory_slots.kpi_note}
-                  >
-                    KPI note
-                  </span>
+              {msg.role === 'assistant' && (
+                <div className="mt-2 flex flex-wrap gap-1.5" data-testid="soundboard-panel-response-metadata-row">
+                  {typeof msg.confidence_score === 'number' && (
+                    <span
+                      className="text-[9px] px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(16,185,129,0.12)', color: '#10B981', fontFamily: fontFamily.mono }}
+                      data-testid="soundboard-panel-response-confidence-chip"
+                    >
+                      confidence {((msg.confidence_score > 0 && msg.confidence_score <= 1 ? msg.confidence_score * 100 : msg.confidence_score)).toFixed(0)}%
+                    </span>
+                  )}
+                  {typeof msg.data_sources_count === 'number' && (
+                    <span
+                      className="text-[9px] px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA', fontFamily: fontFamily.mono }}
+                      data-testid="soundboard-panel-response-sources-chip"
+                    >
+                      {msg.data_sources_count} sources
+                    </span>
+                  )}
+                  {msg.data_freshness && (
+                    <span
+                      className="text-[9px] px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B', fontFamily: fontFamily.mono }}
+                      data-testid="soundboard-panel-response-freshness-chip"
+                    >
+                      freshness {msg.data_freshness}
+                    </span>
+                  )}
+                  {msg.advisory_slots?.kpi_note && (
+                    <span
+                      className="text-[9px] px-1.5 py-0.5 rounded"
+                      style={{ background: '#8B5CF615', color: '#C4B5FD', fontFamily: fontFamily.mono }}
+                      title={msg.advisory_slots.kpi_note}
+                      data-testid="soundboard-panel-response-kpi-chip"
+                    >
+                      KPI note
+                    </span>
+                  )}
                 </div>
               )}
               {/* File download card */}
