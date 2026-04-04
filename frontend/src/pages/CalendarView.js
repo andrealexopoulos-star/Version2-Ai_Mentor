@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState } from '../components/PageStateComponents';
+import SemanticContractBanner from '../components/SemanticContractBanner';
 
 const CalendarView = () => {
   const location = useLocation();
@@ -22,6 +23,7 @@ const CalendarView = () => {
   const [calendarMeta, setCalendarMeta] = useState(null);
   const [draftSaving, setDraftSaving] = useState(false);
   const [calendarProvider, setCalendarProvider] = useState('outlook');
+  const [calendarContract, setCalendarContract] = useState(null);
   const [advisorDraft, setAdvisorDraft] = useState(() => {
     let initial = location.state?.advisorFollowUp || null;
     if (!initial) {
@@ -93,6 +95,7 @@ const CalendarView = () => {
           : Promise.resolve({ data: { message: 'Gmail intelligence calibration in progress.' } }),
       ]);
       setEvents(eventsRes.data?.events || []);
+      setCalendarContract(eventsRes.data || null);
       setCalendarMeta({
         total: eventsRes.data?.total ?? 0,
         dateRange: eventsRes.data?.date_range || null,
@@ -325,6 +328,12 @@ const CalendarView = () => {
         </div>
 
         {/* Stats Cards */}
+        {calendarContract && (
+          <SemanticContractBanner
+            payload={calendarContract}
+            title="Calendar semantic state"
+          />
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div 
             className="p-5 rounded-xl"

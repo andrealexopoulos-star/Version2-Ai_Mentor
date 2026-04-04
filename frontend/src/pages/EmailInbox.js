@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
+import SemanticContractBanner from '../components/SemanticContractBanner';
 
 const EmailInbox = () => {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ const EmailInbox = () => {
   const [folderMessages, setFolderMessages] = useState([]);
   const [loadingFolders, setLoadingFolders] = useState(false);
   const [sendingReply, setSendingReply] = useState(false);
+  const [priorityContract, setPriorityContract] = useState(null);
 
   useEffect(() => {
     checkConnections();
@@ -161,6 +163,7 @@ const EmailInbox = () => {
       let fetchErrMsg = null;
       try {
         const existing = await apiClient.get('/email/priority-inbox');
+        setPriorityContract(existing?.data || null);
         latest = normalizePriorityPayload(existing.data, { from_cache: false });
       } catch (error) {
         console.error('Priority inbox existing fetch failed:', error?.response?.data || error.message);
@@ -170,6 +173,7 @@ const EmailInbox = () => {
       if (!latest) {
         try {
           const analyzed = await apiClient.post('/email/analyze-priority');
+          setPriorityContract(analyzed?.data || null);
           latest = normalizePriorityPayload(analyzed.data, { from_cache: false, analyzed_at: new Date().toISOString() });
         } catch (error) {
           console.error('Priority inbox analysis failed:', error?.response?.data || error.message);
@@ -960,6 +964,12 @@ const EmailInbox = () => {
               </button>
             )}
           </div>
+        )}
+        {priorityContract && (
+          <SemanticContractBanner
+            payload={priorityContract}
+            title="Priority Inbox semantic state"
+          />
         )}
         {activeProvider && (
           <div className="grid gap-3 lg:grid-cols-[minmax(220px,0.38fr)_minmax(0,1fr)]" data-testid="priority-inbox-folder-grid">
