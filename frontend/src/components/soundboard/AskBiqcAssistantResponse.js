@@ -28,39 +28,41 @@ export default function AskBiqcAssistantResponse({
   metadataTestId = 'ask-biqc-response-metadata-row',
   evidenceTestId = 'ask-biqc-evidence-row',
 }) {
-  if (!message || message.role !== 'assistant') return null;
+  const [showDetails, setShowDetails] = useState(false);
+  const safeMessage = message && typeof message === 'object' ? message : {};
+  const role = safeMessage.role;
 
-  const confidencePercent = normalizeAskBiqcConfidencePercent(message.confidence_score);
-  const evidenceSources = (message.evidence_pack?.sources || []).filter(
+  const confidencePercent = normalizeAskBiqcConfidencePercent(safeMessage.confidence_score);
+  const evidenceSources = (safeMessage.evidence_pack?.sources || []).filter(
     (source) => String(source?.source || '').trim().toLowerCase() !== 'unknown'
   );
-  const directSources = (message.sources || []).filter(
+  const directSources = (safeMessage.sources || []).filter(
     (source) => String(source || '').trim().toLowerCase() !== 'unknown'
   );
-  const retrievalContract = message.retrieval_contract || {};
-  const forensicReport = message.forensic_report || {};
-  const [showDetails, setShowDetails] = useState(false);
+  const retrievalContract = safeMessage.retrieval_contract || {};
+  const forensicReport = safeMessage.forensic_report || {};
   const hasAdvancedDetails = Boolean(
     evidenceSources.length > 0
-    || message.coverage_window
-    || message.boardroom_trace?.phases?.length
-    || message.boardroom_status === 'fallback_error'
+    || safeMessage.coverage_window
+    || safeMessage.boardroom_trace?.phases?.length
+    || safeMessage.boardroom_status === 'fallback_error'
     || (forensicReport.mode_active && retrievalContract.answer_grade)
     || (Array.isArray(forensicReport.contradictions) && forensicReport.contradictions.length > 0)
     || directSources.length > 0
     || confidencePercent != null
-    || typeof message.data_sources_count === 'number'
-    || message.data_freshness
+    || typeof safeMessage.data_sources_count === 'number'
+    || safeMessage.data_freshness
     || retrievalContract.retrieval_mode
     || retrievalContract.answer_grade
     || retrievalContract.history_truncated
     || Number(retrievalContract.crm_pages_fetched || 0) > 0
     || Number(retrievalContract.accounting_pages_fetched || 0) > 0
     || retrievalContract.materialization_attempted
-    || message.advisory_slots?.kpi_note
-    || (typeof message.response_version === 'number' && message.response_version > 1)
+    || safeMessage.advisory_slots?.kpi_note
+    || (typeof safeMessage.response_version === 'number' && safeMessage.response_version > 1)
     || (Array.isArray(forensicReport.citations) && forensicReport.citations.length > 0)
   );
+  if (role !== 'assistant') return null;
 
   return (
     <>
