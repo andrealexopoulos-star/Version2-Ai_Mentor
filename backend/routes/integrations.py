@@ -69,6 +69,40 @@ EDGE_PROXY_ALLOWLIST = {
 }
 
 
+def _semantic_contract(
+    *,
+    data_status: str,
+    confidence_score: float,
+    confidence_reason: str,
+    coverage_start: Optional[str] = None,
+    coverage_end: Optional[str] = None,
+    freshness_hours: Optional[int] = None,
+    source_lineage: Optional[List[Dict[str, Any]]] = None,
+    next_best_actions: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    return {
+        "data_status": data_status,
+        "confidence_score": round(max(0.0, min(1.0, float(confidence_score))), 3),
+        "confidence_reason": confidence_reason,
+        "coverage_window": {
+            "start": coverage_start,
+            "end": coverage_end,
+            "freshness_hours": freshness_hours,
+        },
+        "source_lineage": source_lineage or [],
+        "next_best_actions": next_best_actions or [],
+    }
+
+
+def _safe_parse_dt(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
 class EdgeProxyRequest(BaseModel):
     payload: Dict[str, Any] = {}
 
@@ -1757,6 +1791,26 @@ async def get_watchtower_events(
 
         logger.info(f"✅ Watchtower state fetched for user {user_id}: {len(events)} events")
 
+        computed_at = _safe_parse_dt((positions or {}).get("computed_at"))
+        freshness_hours: Optional[int] = None
+        if computed_at:
+            freshness_hours = int(max(0, (datetime.now(timezone.utc) - computed_at).total_seconds() // 3600))
+        has_payload = bool((positions or {}).get("positions") or events)
+        data_status = "ready" if has_payload else "empty"
+        confidence = 0.8 if has_payload else 0.3
+        confidence_reason = "Watchtower positions and grounded events are available." if has_payload else "No grounded events or computed watchtower positions are available yet."
+        next_actions: List[str] = []
+        if not has_payload:
+            next_actions = [
+                "Connect additional integrations and run sync.",
+                "Trigger ingestion and watchtower analysis.",
+            ]
+        elif freshness_hours is not None and freshness_hours > 24:
+            data_status = "stale"
+            confidence = 0.62
+            confidence_reason = "Watchtower output is older than 24 hours."
+            next_actions = ["Refresh watchtower analysis."]
+
         return {
             "status": "computed",
             "has_data": bool((positions or {}).get("positions") or events),
@@ -1764,6 +1818,15 @@ async def get_watchtower_events(
             "events": events,
             "count": len(events),
             "computed_at": (positions or {}).get("computed_at"),
+            **_semantic_contract(
+                data_status=data_status,
+                confidence_score=confidence,
+                confidence_reason=confidence_reason,
+                coverage_end=computed_at.isoformat() if computed_at else None,
+                freshness_hours=freshness_hours,
+                source_lineage=[{"connector": "watchtower", "endpoint": "/intelligence/watchtower"}],
+                next_best_actions=next_actions,
+            ),
         }
     except HTTPException:
         raise

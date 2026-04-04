@@ -9,7 +9,7 @@ import time
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any, Dict, List
 from intelligence_live_truth import get_live_integration_truth, get_latest_snapshot_context, get_recent_observation_events, build_watchtower_events
 
 logger = logging.getLogger(__name__)
@@ -46,6 +46,40 @@ def _call_rpc(sb, fn_name: str, params: dict) -> dict:
     except Exception as e:
         error_msg = str(e)
         return {'status': 'error', 'error': error_msg}
+
+
+def _safe_parse_dt(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def _semantic_contract(
+    *,
+    data_status: str,
+    confidence_score: float,
+    confidence_reason: str,
+    coverage_start: Optional[str] = None,
+    coverage_end: Optional[str] = None,
+    freshness_hours: Optional[int] = None,
+    source_lineage: Optional[List[Dict[str, Any]]] = None,
+    next_best_actions: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    return {
+        "data_status": data_status,
+        "confidence_score": round(max(0.0, min(1.0, float(confidence_score))), 3),
+        "confidence_reason": confidence_reason,
+        "coverage_window": {
+            "start": coverage_start,
+            "end": coverage_end,
+            "freshness_hours": freshness_hours,
+        },
+        "source_lineage": source_lineage or [],
+        "next_best_actions": next_best_actions or [],
+    }
 
 
 def _overlay_live_truth(sb, tenant_id: str, tab: str, result: dict) -> dict:
@@ -97,6 +131,45 @@ def _overlay_live_truth(sb, tenant_id: str, tab: str, result: dict) -> dict:
     elif tab == 'risk':
         tab_data['accounting_required'] = not integrations['accounting']
 
+    snapshot_dt = _safe_parse_dt(enriched.get("snapshot_generated_at"))
+    signal_dt = _safe_parse_dt(enriched.get("last_signal_at"))
+    coverage_start = snapshot_dt.isoformat() if snapshot_dt else None
+    coverage_end = signal_dt.isoformat() if signal_dt else coverage_start
+    freshness_hours: Optional[int] = None
+    if coverage_end:
+        ref_dt = _safe_parse_dt(coverage_end)
+        if ref_dt:
+            freshness_hours = int(max(0, (datetime.now(timezone.utc) - ref_dt).total_seconds() // 3600))
+
+    live_signal_count = int(enriched.get("live_signal_count") or 0)
+    has_payload = bool(enriched.get("tab_data") or enriched.get("top_alerts") or live_signal_count > 0)
+    data_status = "ready" if has_payload else "empty"
+    confidence = 0.8 if has_payload else 0.35
+    reason = "Cognition contract contains integrated signals and tab payload." if has_payload else "Cognition contract has no integrated signals yet."
+    actions: List[str] = []
+    if not has_payload:
+        actions = [
+            "Connect and sync CRM, email, and accounting sources.",
+            "Run calibration to generate baseline cognition output.",
+        ]
+    elif freshness_hours is not None and freshness_hours > 24:
+        data_status = "stale"
+        confidence = 0.62
+        reason = "Cognition contract signals are older than 24 hours."
+        actions = ["Refresh ingestion and recompute cognition contract."]
+
+    enriched.update(
+        _semantic_contract(
+            data_status=data_status,
+            confidence_score=confidence,
+            confidence_reason=reason,
+            coverage_start=coverage_start,
+            coverage_end=coverage_end,
+            freshness_hours=freshness_hours,
+            source_lineage=[{"connector": "cognition_sql", "endpoint": f"/cognition/{tab}"}],
+            next_best_actions=actions,
+        )
+    )
     return enriched
 
 

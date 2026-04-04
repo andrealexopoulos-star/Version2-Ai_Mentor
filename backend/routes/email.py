@@ -112,6 +112,31 @@ def _launch_integration_limit(current_user: dict):
     return 5
 
 
+def _semantic_contract(
+    *,
+    data_status: str,
+    confidence_score: float,
+    confidence_reason: str,
+    coverage_start: Optional[str] = None,
+    coverage_end: Optional[str] = None,
+    freshness_hours: Optional[int] = None,
+    source_lineage: Optional[List[Dict[str, Any]]] = None,
+    next_best_actions: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    return {
+        "data_status": data_status,
+        "confidence_score": round(max(0.0, min(1.0, float(confidence_score))), 3),
+        "confidence_reason": confidence_reason,
+        "coverage_window": {
+            "start": coverage_start,
+            "end": coverage_end,
+            "freshness_hours": freshness_hours,
+        },
+        "source_lineage": source_lineage or [],
+        "next_best_actions": next_best_actions or [],
+    }
+
+
 def _ensure_launch_email_slot(current_user: dict, provider: str) -> None:
     tier = resolve_tier(current_user)
     if tier == 'super_admin':
@@ -1493,10 +1518,42 @@ async def get_email_intelligence(current_user: dict = Depends(get_current_user))
     
     if not intelligence:
         return {
-            "message": "No email intelligence available. Run comprehensive sync first."
+            "message": "No email intelligence available. Run comprehensive sync first.",
+            **_semantic_contract(
+                data_status="empty",
+                confidence_score=0.0,
+                confidence_reason="No analyzed email intelligence exists yet for this account.",
+                source_lineage=[{"connector": "outlook", "endpoint": "/outlook/intelligence"}],
+                next_best_actions=[
+                    "Run Outlook email sync.",
+                    "Run priority inbox analysis.",
+                ],
+            ),
         }
-    
-    return intelligence
+
+    analyzed_at = _safe_parse_dt(intelligence.get("analyzed_at"))
+    freshness_hours: Optional[int] = None
+    if analyzed_at:
+        freshness_hours = int(max(0, (datetime.now(timezone.utc) - analyzed_at).total_seconds() // 3600))
+    data_status = "ready"
+    confidence = 0.82
+    reason = "Email intelligence is computed from synced mailbox data."
+    if freshness_hours is not None and freshness_hours > 72:
+        data_status = "stale"
+        confidence = 0.55
+        reason = "Email intelligence is older than 72 hours and may miss recent signals."
+    return {
+        **intelligence,
+        **_semantic_contract(
+            data_status=data_status,
+            confidence_score=confidence,
+            confidence_reason=reason,
+            coverage_end=analyzed_at.isoformat() if analyzed_at else None,
+            freshness_hours=freshness_hours,
+            source_lineage=[{"connector": "outlook", "endpoint": "/outlook/intelligence"}],
+            next_best_actions=(["Run Outlook email sync now."] if data_status == "stale" else []),
+        ),
+    }
 
 
 async def refresh_outlook_token_supabase(user_id: str, refresh_token: str) -> Dict[str, str]:
@@ -2694,6 +2751,46 @@ async def get_priority_inbox(current_user: dict = Depends(get_current_user)):
     analyzed_at = _safe_parse_dt((analysis or {}).get("analyzed_at"))
 
     if not analysis or (latest_source_dt and (not analyzed_at or latest_source_dt > analyzed_at)):
-        return await analyze_email_priority(current_user)
-    
-    return analysis
+        analysis = await analyze_email_priority(current_user)
+
+    if not isinstance(analysis, dict):
+        analysis = {"message": "Priority analysis returned an unexpected shape.", "raw": analysis}
+
+    has_priorities = bool(
+        analysis.get("prioritized_emails")
+        or analysis.get("critical")
+        or analysis.get("high_priority")
+        or analysis.get("priority_breakdown")
+    )
+    freshness_hours: Optional[int] = None
+    analyzed_dt = _safe_parse_dt(analysis.get("analyzed_at")) if isinstance(analysis, dict) else None
+    if analyzed_dt:
+        freshness_hours = int(max(0, (datetime.now(timezone.utc) - analyzed_dt).total_seconds() // 3600))
+
+    data_status = "ready" if has_priorities else "empty"
+    confidence = 0.78 if has_priorities else 0.35
+    reason = "Priority inbox contains analyzed, ranked messages." if has_priorities else "No prioritized messages were produced from current inbox signals."
+    actions: List[str] = []
+    if data_status != "ready":
+        actions = [
+            "Sync mailbox and rerun priority analysis.",
+            "Confirm inbox folder has recent actionable emails.",
+        ]
+    elif freshness_hours is not None and freshness_hours > 24:
+        data_status = "stale"
+        confidence = 0.6
+        reason = "Priority analysis is older than 24 hours."
+        actions = ["Refresh now to recompute priorities."]
+
+    return {
+        **analysis,
+        **_semantic_contract(
+            data_status=data_status,
+            confidence_score=confidence,
+            confidence_reason=reason,
+            coverage_end=(latest_source_dt.isoformat() if latest_source_dt else None),
+            freshness_hours=freshness_hours,
+            source_lineage=[{"connector": "outlook", "endpoint": "/email/priority-inbox"}],
+            next_best_actions=actions,
+        ),
+    }
