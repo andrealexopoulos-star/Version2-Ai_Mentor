@@ -309,6 +309,8 @@ const MySoundBoard = () => {
       const mapped = (response.data.messages || []).map((m) => ({
         ...m,
         coverage_window: m.coverage_window || m?.metadata?.coverage_window,
+        retrieval_contract: m.retrieval_contract || m?.metadata?.retrieval_contract,
+        forensic_report: m.forensic_report || m?.metadata?.forensic_report,
       }));
       setMessages(mapped);
     } catch (error) {

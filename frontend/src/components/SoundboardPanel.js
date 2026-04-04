@@ -356,6 +356,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         boardroom_trace: m.boardroom_trace,
         boardroom_status: m.boardroom_status || m?.metadata?.boardroom_status,
         soundboard_contract: m.soundboard_contract,
+        retrieval_contract: m.retrieval_contract || m?.metadata?.retrieval_contract,
+        forensic_report: m.forensic_report || m?.metadata?.forensic_report,
         model_used: m.model_used,
         confidence_score: m.confidence_score,
         data_freshness: m.data_freshness,

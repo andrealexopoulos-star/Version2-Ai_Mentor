@@ -363,6 +363,25 @@ class MergeClient:
             json={"model": model},
         )
 
+    async def get_tickets(
+        self,
+        account_token: str,
+        cursor: Optional[str] = None,
+        page_size: int = 100,
+    ) -> Dict[str, Any]:
+        """
+        List tickets/issues from Merge Ticketing Unified API (Jira, Asana, etc.).
+        """
+        params: Dict[str, Any] = {"page_size": page_size}
+        if cursor:
+            params["cursor"] = cursor
+
+        return await self._make_request(
+            "GET",
+            "/ticketing/v1/tickets",
+            account_token,
+            params=params,
+        )
 
     # ==================== ACCOUNTING ENDPOINTS ====================
     

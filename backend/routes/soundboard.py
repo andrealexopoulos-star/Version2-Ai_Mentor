@@ -315,6 +315,130 @@ def _report_window_meets_target(coverage_window: Dict[str, Any], *, min_days: in
     return (end_dt - start_dt).days >= min_days
 
 
+def _build_retrieval_contract(
+    *,
+    report_grade_request: bool,
+    grounded_report_ready: bool,
+    guardrail_status: str,
+    has_connected_sources: bool,
+    live_signal_count: int,
+    coverage_window: Dict[str, Any],
+    retrieval_depth: Dict[str, Any],
+    materialization_state: Dict[str, Any],
+) -> Dict[str, Any]:
+    missing_periods = list((coverage_window or {}).get("missing_periods") or [])
+    if report_grade_request and grounded_report_ready:
+        retrieval_mode = "report_grounded_materialized"
+    elif report_grade_request:
+        retrieval_mode = "report_grounding_blocked"
+    elif live_signal_count > 0:
+        retrieval_mode = "materialized_signals"
+    elif has_connected_sources:
+        retrieval_mode = "connector_connected_signal_thin"
+    else:
+        retrieval_mode = "profile_only"
+
+    if guardrail_status == "BLOCKED":
+        answer_grade = "BLOCKED"
+    elif guardrail_status == "DEGRADED":
+        answer_grade = "DEGRADED"
+    elif missing_periods:
+        answer_grade = "PARTIAL"
+    else:
+        answer_grade = "FULL"
+
+    rd = retrieval_depth or {}
+    email_r = dict(rd.get("email") or {})
+    calendar_r = dict(rd.get("calendar") or {})
+    custom_r = dict(rd.get("custom") or {})
+
+    return {
+        "retrieval_mode": retrieval_mode,
+        "answer_grade": answer_grade,
+        "report_grade_request": bool(report_grade_request),
+        "grounded_report_ready": bool(grounded_report_ready),
+        "has_connected_sources": bool(has_connected_sources),
+        "live_signal_count": int(live_signal_count or 0),
+        "coverage_start": (coverage_window or {}).get("coverage_start"),
+        "coverage_end": (coverage_window or {}).get("coverage_end"),
+        "missing_periods_count": len(missing_periods),
+        "history_truncated": bool(rd.get("history_truncated")),
+        "crm_pages_fetched": int(rd.get("crm_pages_fetched") or 0),
+        "accounting_pages_fetched": int(rd.get("accounting_pages_fetched") or 0),
+        "email_retrieval": email_r,
+        "calendar_retrieval": calendar_r,
+        "custom_retrieval": custom_r,
+        "materialization_attempted": bool((materialization_state or {}).get("attempted")),
+        "signals_emitted_on_demand": int((materialization_state or {}).get("signals_emitted") or 0),
+    }
+
+
+FORENSIC_REPORT_MODE_VERSION = "forensic_report_v1"
+FORENSIC_CONFIDENCE_CEILING_BY_GRADE = {
+    "FULL": 0.98,
+    "PARTIAL": 0.72,
+    "DEGRADED": 0.55,
+    "BLOCKED": 0.35,
+}
+
+
+def _apply_forensic_confidence_cap(
+    *,
+    raw_confidence: float,
+    answer_grade: str,
+    report_grade_request: bool,
+    grounded_report_ready: bool,
+) -> float:
+    grade = str(answer_grade or "DEGRADED").upper()
+    cap = FORENSIC_CONFIDENCE_CEILING_BY_GRADE.get(grade, 0.55)
+    if report_grade_request and not grounded_report_ready:
+        cap = min(cap, FORENSIC_CONFIDENCE_CEILING_BY_GRADE["DEGRADED"])
+    value = float(raw_confidence or 0.0)
+    return round(max(0.0, min(value, cap)), 4)
+
+
+def _build_forensic_report_payload(
+    *,
+    evidence_pack: Dict[str, Any],
+    boardroom_trace: Optional[Dict[str, Any]],
+    retrieval_contract: Dict[str, Any],
+    report_grade_request: bool,
+    grounded_report_ready: bool,
+) -> Dict[str, Any]:
+    refs = []
+    for idx, source in enumerate((evidence_pack or {}).get("sources") or []):
+        refs.append(
+            {
+                "ref": f"S{idx + 1}",
+                "source": source.get("source"),
+                "freshness": source.get("freshness"),
+                "summary": source.get("summary"),
+            }
+        )
+    contradictions = []
+    challenge = ((boardroom_trace or {}).get("challenge") or {}).get("summary")
+    if challenge:
+        contradictions.append(
+            {
+                "from": "boardroom_challenge",
+                "detail": str(challenge)[:700],
+            }
+        )
+    degraded_reason = None
+    if report_grade_request and not grounded_report_ready:
+        degraded_reason = "report_grounding_blocked"
+    elif str(retrieval_contract.get("answer_grade") or "").upper() in {"DEGRADED", "BLOCKED"}:
+        degraded_reason = "degraded_answer_grade"
+    return {
+        "mode_active": bool(report_grade_request),
+        "version": FORENSIC_REPORT_MODE_VERSION,
+        "citations_enforced": bool(report_grade_request and grounded_report_ready),
+        "citations": refs[:8],
+        "contradictions": contradictions,
+        "degraded_reason": degraded_reason,
+    }
+
+
 def _build_report_grounding_block(*, connected_sources: List[str], coverage_pct: float, coverage_window: Dict[str, Any], live_signal_count: int) -> str:
     connected_label = ", ".join(connected_sources) if connected_sources else "no connected systems"
     window_start = coverage_window.get("coverage_start") or "unknown"
@@ -784,6 +908,7 @@ class SoundboardChatRequest(BaseModel):
     intelligence_context: Optional[Dict[str, Any]] = None
     mode: Optional[str] = "auto"
     agent_id: Optional[str] = "auto"
+    forensic_report_mode: Optional[bool] = None
 
 
 def _has_configured_key(value: Optional[str]) -> bool:
@@ -1532,9 +1657,10 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     # Live signal freshness check
     live_signal_count, live_signal_age_hours = _fetch_observation_signal_state(sb, user_id)
+    materialization_state: Dict[str, Any] = {"attempted": False, "signals_emitted": 0}
     if live_signal_count == 0 and (request_looks_report_grade or has_crm or has_accounting or has_email):
-        materialization = await _attempt_soundboard_signal_materialization(sb, user_id)
-        if materialization.get("signals_emitted", 0) > 0:
+        materialization_state = await _attempt_soundboard_signal_materialization(sb, user_id)
+        if materialization_state.get("signals_emitted", 0) > 0:
             live_signal_count, live_signal_age_hours = _fetch_observation_signal_state(sb, user_id)
 
     logger.info(f"[GUARDRAIL] user={user_id[:8]} coverage={coverage_pct}% status={guardrail_status} critical_missing={len(missing_critical)}")
@@ -1673,6 +1799,14 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         "missing_periods": [],
         "confidence_impact": "unknown",
     }
+    retrieval_depth = {
+        "crm_pages_fetched": 0,
+        "accounting_pages_fetched": 0,
+        "history_truncated": False,
+        "email": {},
+        "calendar": {},
+        "custom": {},
+    }
 
     # FIRST: Inject observation_events (cached signals from emission layer)
     try:
@@ -1744,15 +1878,33 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         cw = (all_data or {}).get("coverage_window") or {}
         crm_cov = cw.get("crm") or {}
         acc_cov = cw.get("accounting") or {}
-        starts = [x for x in [crm_cov.get("start"), acc_cov.get("start"), coverage_window.get("coverage_start")] if x]
-        ends = [x for x in [crm_cov.get("end"), acc_cov.get("end"), coverage_window.get("coverage_end")] if x]
+        email_cov = cw.get("email") or {}
+        cal_cov = cw.get("calendar") or {}
+        custom_cov = cw.get("custom") or {}
+        starts = [x for x in [
+            crm_cov.get("start"), acc_cov.get("start"), coverage_window.get("coverage_start"),
+            email_cov.get("start"), cal_cov.get("start"), custom_cov.get("start"),
+        ] if x]
+        ends = [x for x in [
+            crm_cov.get("end"), acc_cov.get("end"), coverage_window.get("coverage_end"),
+            email_cov.get("end"), cal_cov.get("end"), custom_cov.get("end"),
+        ] if x]
         if starts:
             coverage_window["coverage_start"] = min(starts)
         if ends:
             coverage_window["coverage_end"] = max(ends)
             coverage_window["last_sync_at"] = max(ends)
-        if (all_data.get("crm", {}).get("history_meta", {}).get("truncated")
-                or all_data.get("accounting", {}).get("history_meta", {}).get("truncated")):
+        email_hist = ((all_data.get("email") or {}).get("history_meta") or {})
+        cal_hist = ((all_data.get("calendar") or {}).get("history_meta") or {})
+        custom_hist = ((all_data.get("custom") or {}).get("history_meta") or {})
+        truncated_any = bool(
+            (all_data.get("crm", {}).get("history_meta", {}) or {}).get("truncated")
+            or (all_data.get("accounting", {}).get("history_meta", {}) or {}).get("truncated")
+            or email_hist.get("truncated")
+            or cal_hist.get("truncated")
+            or custom_hist.get("truncated")
+        )
+        if truncated_any:
             coverage_window["missing_periods"] = ["Historical pages exceed current retrieval window; additional backfill required."]
         if coverage_pct >= 80:
             coverage_window["confidence_impact"] = "low"
@@ -1764,6 +1916,32 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         # Integration status
         connected_list = [k for k, v in {'CRM': all_data['crm']['connected'], 'Accounting': all_data['accounting']['connected'], 'Email': all_data['email']['connected'], 'Marketing': all_data['marketing']['connected']}.items() if v]
         disconnected_list = [k for k, v in {'CRM': all_data['crm']['connected'], 'Accounting': all_data['accounting']['connected'], 'Email': all_data['email']['connected']}.items() if not v]
+        retrieval_depth["crm_pages_fetched"] = int((all_data.get("crm", {}).get("history_meta", {}) or {}).get("deals_pages_fetched") or 0)
+        retrieval_depth["accounting_pages_fetched"] = int((all_data.get("accounting", {}).get("history_meta", {}) or {}).get("invoices_pages_fetched") or 0)
+        retrieval_depth["history_truncated"] = truncated_any
+        retrieval_depth["email"] = {
+            "pages_fetched": int(email_hist.get("pages_fetched") or 0),
+            "rows_loaded": int(email_hist.get("rows_loaded") or 0),
+            "truncated": bool(email_hist.get("truncated")),
+            "total_rows": email_hist.get("total_rows"),
+            "window_start": email_cov.get("start"),
+            "window_end": email_cov.get("end"),
+        }
+        retrieval_depth["calendar"] = {
+            "pages_fetched": int(cal_hist.get("pages_fetched") or 0),
+            "rows_loaded": int(cal_hist.get("rows_loaded") or 0),
+            "truncated": bool(cal_hist.get("truncated")),
+            "total_rows": cal_hist.get("total_rows"),
+            "window_start": cal_cov.get("start"),
+            "window_end": cal_cov.get("end"),
+        }
+        retrieval_depth["custom"] = {
+            "pages_fetched": int(custom_hist.get("tickets_pages_fetched") or custom_hist.get("pages_fetched") or 0),
+            "rows_loaded": int(custom_hist.get("rows_loaded") or 0),
+            "truncated": bool(custom_hist.get("truncated")),
+            "window_start": custom_cov.get("start"),
+            "window_end": custom_cov.get("end"),
+        }
         
         if connected_list:
             integration_context += "\n═══ LIVE INTEGRATION DATA (USE THESE NUMBERS) ═══\n"
@@ -2486,6 +2664,31 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             )
             response = sanitise_output(response)
 
+        retrieval_contract = _build_retrieval_contract(
+            report_grade_request=report_grade_request,
+            grounded_report_ready=grounded_report_ready,
+            guardrail_status=guardrail_status,
+            has_connected_sources=bool(has_crm or has_accounting or has_email),
+            live_signal_count=live_signal_count,
+            coverage_window=coverage_window,
+            retrieval_depth=retrieval_depth,
+            materialization_state=materialization_state,
+        )
+        forensic_report = _build_forensic_report_payload(
+            evidence_pack=evidence_pack,
+            boardroom_trace=boardroom_trace,
+            retrieval_contract=retrieval_contract,
+            report_grade_request=report_grade_request or bool(req.forensic_report_mode),
+            grounded_report_ready=grounded_report_ready,
+        )
+        capped_confidence = _apply_forensic_confidence_cap(
+            raw_confidence=contract_meta.get("confidence_score", 0.2),
+            answer_grade=retrieval_contract.get("answer_grade", "DEGRADED"),
+            report_grade_request=bool(report_grade_request or req.forensic_report_mode),
+            grounded_report_ready=grounded_report_ready,
+        )
+        contract_meta["confidence_score"] = capped_confidence
+
         _actual_tokens = len(system_message.split()) + len(clean_message.split()) + len(response.split())
         log_llm_call_to_db(
             tenant_id=user_id, model_name=response_model, endpoint='soundboard/chat',
@@ -2511,7 +2714,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         now = now_dt.isoformat()
         new_messages = [
             {"role": "user", "content": req.message, "timestamp": now},
-            {"role": "assistant", "content": response, "timestamp": now}
+            {"role": "assistant", "content": response, "timestamp": now, "retrieval_contract": retrieval_contract}
         ]
 
         # Save to Supabase (conversation header + message rows)
@@ -2555,6 +2758,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                     "contract_version": CONTRACT_VERSION,
                     "advisory_slots": advisory_slots if item["role"] == "assistant" else {},
                     "boardroom_status": ("orchestrated" if effective_agent_id == "boardroom" and boardroom_trace else ("requested_no_trace" if effective_agent_id == "boardroom" else "not_requested")) if item["role"] == "assistant" else None,
+                    "retrieval_contract": retrieval_contract if item["role"] == "assistant" else {},
+                    "forensic_report": forensic_report if item["role"] == "assistant" else {},
                 },
             }
             for item in new_messages
@@ -2642,7 +2847,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             mode_effective=mode,
             guardrail=guardrail_status,
             coverage_pct=coverage_pct,
-            confidence_score=contract_meta.get("confidence_score", 0.2),
+            confidence_score=capped_confidence,
             data_sources_count=contract_meta.get("data_sources_count", 1),
             data_freshness=contract_meta.get("data_freshness", "unknown"),
             connected_sources=(contract_meta.get("lineage") or {}).get("connected_sources", {}),
@@ -2674,6 +2879,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:6]] if guardrail_status == "DEGRADED" else [],
             "evidence_pack": evidence_pack,
             "soundboard_contract": soundboard_contract,
+            "retrieval_contract": retrieval_contract,
+            "forensic_report": forensic_report,
             "advisory_slots": advisory_slots,
             **contract_meta,
         }
@@ -2700,13 +2907,37 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         } if effective_agent_id == "boardroom" else None
         fallback_slots = parse_flagship_response_slots(fallback)
         fallback_human = _humanize_contract_response(fallback, fallback_slots)
+        retrieval_contract = _build_retrieval_contract(
+            report_grade_request=report_grade_request,
+            grounded_report_ready=False,
+            guardrail_status=guardrail_status,
+            has_connected_sources=bool(has_crm or has_accounting or has_email),
+            live_signal_count=live_signal_count,
+            coverage_window=coverage_window,
+            retrieval_depth=retrieval_depth,
+            materialization_state=materialization_state,
+        )
+        forensic_report = _build_forensic_report_payload(
+            evidence_pack=evidence_pack,
+            boardroom_trace=fallback_trace,
+            retrieval_contract=retrieval_contract,
+            report_grade_request=bool(report_grade_request or req.forensic_report_mode),
+            grounded_report_ready=False,
+        )
+        capped_confidence = _apply_forensic_confidence_cap(
+            raw_confidence=contract_meta.get("confidence_score", 0.2),
+            answer_grade=retrieval_contract.get("answer_grade", "DEGRADED"),
+            report_grade_request=bool(report_grade_request or req.forensic_report_mode),
+            grounded_report_ready=False,
+        )
+        contract_meta["confidence_score"] = capped_confidence
         error_contract = build_contract_payload(
             tier=tier_for_contract,
             mode_requested=requested_mode,
             mode_effective=mode,
             guardrail=guardrail_status,
             coverage_pct=coverage_pct,
-            confidence_score=contract_meta.get("confidence_score", 0.2),
+            confidence_score=capped_confidence,
             data_sources_count=contract_meta.get("data_sources_count", 1),
             data_freshness=contract_meta.get("data_freshness", "unknown"),
             connected_sources=(contract_meta.get("lineage") or {}).get("connected_sources", {}),
@@ -2726,6 +2957,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "boardroom_trace": fallback_trace,
             "boardroom_status": "fallback_error" if effective_agent_id == "boardroom" else "not_requested",
             "soundboard_contract": error_contract,
+            "retrieval_contract": retrieval_contract,
+            "forensic_report": forensic_report,
             "advisory_slots": fallback_slots,
             **contract_meta,
         }
@@ -2751,13 +2984,37 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         } if effective_agent_id == "boardroom" else None
         fallback_slots = parse_flagship_response_slots(fallback)
         fallback_human = _humanize_contract_response(fallback, fallback_slots)
+        retrieval_contract = _build_retrieval_contract(
+            report_grade_request=report_grade_request,
+            grounded_report_ready=False,
+            guardrail_status=guardrail_status,
+            has_connected_sources=bool(has_crm or has_accounting or has_email),
+            live_signal_count=live_signal_count,
+            coverage_window=coverage_window,
+            retrieval_depth=retrieval_depth,
+            materialization_state=materialization_state,
+        )
+        forensic_report = _build_forensic_report_payload(
+            evidence_pack=evidence_pack,
+            boardroom_trace=fallback_trace,
+            retrieval_contract=retrieval_contract,
+            report_grade_request=bool(report_grade_request or req.forensic_report_mode),
+            grounded_report_ready=False,
+        )
+        capped_confidence = _apply_forensic_confidence_cap(
+            raw_confidence=contract_meta.get("confidence_score", 0.2),
+            answer_grade=retrieval_contract.get("answer_grade", "DEGRADED"),
+            report_grade_request=bool(report_grade_request or req.forensic_report_mode),
+            grounded_report_ready=False,
+        )
+        contract_meta["confidence_score"] = capped_confidence
         error_contract = build_contract_payload(
             tier=tier_for_contract,
             mode_requested=requested_mode,
             mode_effective=mode,
             guardrail=guardrail_status,
             coverage_pct=coverage_pct,
-            confidence_score=contract_meta.get("confidence_score", 0.2),
+            confidence_score=capped_confidence,
             data_sources_count=contract_meta.get("data_sources_count", 1),
             data_freshness=contract_meta.get("data_freshness", "unknown"),
             connected_sources=(contract_meta.get("lineage") or {}).get("connected_sources", {}),
@@ -2777,6 +3034,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "boardroom_trace": fallback_trace,
             "boardroom_status": "fallback_error" if effective_agent_id == "boardroom" else "not_requested",
             "soundboard_contract": error_contract,
+            "retrieval_contract": retrieval_contract,
+            "forensic_report": forensic_report,
             "advisory_slots": fallback_slots,
             **contract_meta,
         }
@@ -2788,20 +3047,34 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
     SSE stream wrapper for Soundboard replies.
     Produces delta events for progressive UI rendering, then a final event with metadata.
     """
-    result = await soundboard_chat(req, current_user)
-    reply = str(result.get("reply") or "")
+    trace_id = str(uuid.uuid4())
 
     async def event_stream() -> AsyncGenerator[str, None]:
-        yield _sse_event("start", {"conversation_id": result.get("conversation_id")})
-        if not reply:
+        yield _sse_event("start", {"conversation_id": req.conversation_id, "trace_id": trace_id, "stream_mode": "synthetic"})
+        try:
+            result = await soundboard_chat(req, current_user)
+            for idx, phase in enumerate(((result.get("boardroom_trace") or {}).get("phases") or [])[:6]):
+                call_id = f"phase-{idx}"
+                yield _sse_event("tool_start", {"call_id": call_id, "name": phase.get("phase") or "boardroom_phase"})
+                yield _sse_event(
+                    "tool_result",
+                    {
+                        "call_id": call_id,
+                        "name": phase.get("phase") or "boardroom_phase",
+                        "ok": str(phase.get("status") or "ok").lower() != "error",
+                        "result_preview": f"{phase.get('role') or 'agent'}:{phase.get('status') or 'ok'}",
+                    },
+                )
+            reply = str(result.get("reply") or "")
+            if reply:
+                chunk_size = 20
+                for i in range(0, len(reply), chunk_size):
+                    chunk = reply[i : i + chunk_size]
+                    yield _sse_event("delta", {"text": chunk})
+                    await asyncio.sleep(0.01)
             yield _sse_event("final", {"payload": result})
-            return
-        chunk_size = 20
-        for i in range(0, len(reply), chunk_size):
-            chunk = reply[i : i + chunk_size]
-            yield _sse_event("delta", {"text": chunk})
-            await asyncio.sleep(0.01)
-        yield _sse_event("final", {"payload": result})
+        except Exception as exc:
+            yield _sse_event("error", {"message": str(exc)[:240], "code": "STREAM_RUNTIME_ERROR", "trace_id": trace_id})
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

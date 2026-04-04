@@ -79,6 +79,68 @@ def _collection_date_window(rows: List[Dict[str, Any]], keys: List[str]) -> Dict
     }
 
 
+def _supabase_row_count(sb, table: str, user_id: str) -> Optional[int]:
+    try:
+        res = sb.table(table).select("id", count="exact").eq("user_id", user_id).limit(1).execute()
+        val = getattr(res, "count", None)
+        return int(val) if val is not None else 0
+    except Exception as e:
+        logger.debug(f"supabase count {table}: {e}")
+        return None
+
+
+def _fetch_supabase_paged(
+    sb,
+    user_id: str,
+    *,
+    table: str,
+    order_column: str,
+    select_columns: str,
+    page_size: int,
+    max_pages: int,
+) -> Dict[str, Any]:
+    """Paginate a user-scoped Supabase table; mirrors Merge page depth semantics."""
+    total_count = _supabase_row_count(sb, table, user_id)
+    rows: List[Dict[str, Any]] = []
+    pages_fetched = 0
+    offset = 0
+    last_batch_len = 0
+    try:
+        for _ in range(max_pages):
+            batch_res = (
+                sb.table(table)
+                .select(select_columns)
+                .eq("user_id", user_id)
+                .order(order_column, desc=True)
+                .range(offset, offset + page_size - 1)
+                .execute()
+            )
+            batch = batch_res.data or []
+            if not batch:
+                break
+            pages_fetched += 1
+            rows.extend(batch)
+            last_batch_len = len(batch)
+            if last_batch_len < page_size:
+                break
+            offset += page_size
+    except Exception as e:
+        logger.debug(f"supabase paged fetch {table}: {e}")
+
+    truncated = False
+    if total_count is not None and len(rows) < total_count:
+        truncated = True
+    elif pages_fetched >= max_pages and last_batch_len >= page_size:
+        truncated = True
+
+    return {
+        "rows": rows,
+        "pages_fetched": pages_fetched,
+        "truncated": truncated,
+        "total_count": total_count,
+    }
+
+
 async def _brain_page_summary(sb, current_user: dict, page_name: str) -> List[Dict[str, Any]]:
     try:
         from business_brain_engine import BusinessBrainEngine
@@ -175,7 +237,7 @@ def _build_data_contract(data: Dict[str, Any], page_name: str, *, lineage_extra:
 
 async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
     """Fetch ALL data from ALL connected integrations in parallel."""
-    cache_key = 'unified_integration_bundle_v1'
+    cache_key = 'unified_integration_bundle_v2'
     cached = get_snapshot(sb, user_id, cache_key, max_age_minutes=10)
     if cached and isinstance(cached.get('payload'), dict):
         payload = cached.get('payload') or {}
@@ -189,7 +251,9 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
     data = {
         'crm': {'connected': False, 'deals': [], 'contacts': [], 'companies': []},
         'accounting': {'connected': False, 'invoices': [], 'payments': [], 'balances': []},
-        'email': {'connected': False, 'recent': [], 'response_times': []},
+        'email': {'connected': False, 'recent': [], 'response_times': [], 'history_meta': {}},
+        'calendar': {'connected': False, 'events': [], 'history_meta': {}},
+        'custom': {'connected': False, 'tickets': [], 'history_meta': {}},
         'marketing': {'connected': False, 'benchmarks': None},
         'profile': None,
         'snapshot': None,
@@ -197,6 +261,9 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
         'coverage_window': {
             'crm': {"start": None, "end": None},
             'accounting': {"start": None, "end": None},
+            'email': {"start": None, "end": None},
+            'calendar': {"start": None, "end": None},
+            'custom': {"start": None, "end": None},
         },
         '_cache': {'cache_hit': False, 'source_key': cache_key},
     }
@@ -204,12 +271,69 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
     live_truth = get_live_integration_truth(sb, user_id)
     accounts = {
         row['category']: row for row in (live_truth.get('integrations') or [])
-        if row.get('category') in {'crm', 'accounting', 'hris', 'ats'} and (row.get('account_token') or row.get('merge_account_id'))
+        if row.get('category') in {'crm', 'accounting', 'hris', 'ats', 'ticketing'}
+        and (row.get('account_token') or row.get('merge_account_id'))
     }
 
     data['crm']['connected'] = live_truth.get('canonical_truth', {}).get('crm_connected', False)
     data['accounting']['connected'] = live_truth.get('canonical_truth', {}).get('accounting_connected', False)
     data['email']['connected'] = live_truth.get('canonical_truth', {}).get('email_connected', False)
+
+    email_cache_count = _supabase_row_count(sb, "outlook_emails", user_id)
+    if data['email']['connected'] or (email_cache_count or 0) > 0:
+        email_pack = _fetch_supabase_paged(
+            sb,
+            user_id,
+            table="outlook_emails",
+            order_column="received_date",
+            select_columns="received_date,sent_date,created_at,subject,provider,folder",
+            page_size=MERGE_HISTORY_PAGE_SIZE,
+            max_pages=MERGE_HISTORY_MAX_PAGES,
+        )
+        data['email']['history_meta'] = {
+            "pages_fetched": email_pack.get("pages_fetched", 0),
+            "rows_loaded": len(email_pack.get("rows") or []),
+            "truncated": bool(email_pack.get("truncated")),
+            "total_rows": email_pack.get("total_count"),
+        }
+        data['email']['recent'] = [
+            {
+                "subject": row.get("subject"),
+                "received_date": row.get("received_date"),
+                "folder": row.get("folder"),
+            }
+            for row in (email_pack.get("rows") or [])[:50]
+        ]
+        if email_pack.get("rows"):
+            data['coverage_window']['email'] = _collection_date_window(
+                email_pack["rows"],
+                ["received_date", "sent_date", "created_at"],
+            )
+
+    cal_count = _supabase_row_count(sb, "outlook_calendar_events", user_id)
+    data['calendar']['connected'] = bool(cal_count and cal_count > 0)
+    if data['calendar']['connected']:
+        cal_pack = _fetch_supabase_paged(
+            sb,
+            user_id,
+            table="outlook_calendar_events",
+            order_column="start_time",
+            select_columns="start_time,end_time,created_at,subject,location",
+            page_size=MERGE_HISTORY_PAGE_SIZE,
+            max_pages=MERGE_HISTORY_MAX_PAGES,
+        )
+        data['calendar']['events'] = cal_pack.get("rows") or []
+        data['calendar']['history_meta'] = {
+            "pages_fetched": cal_pack.get("pages_fetched", 0),
+            "rows_loaded": len(cal_pack.get("rows") or []),
+            "truncated": bool(cal_pack.get("truncated")),
+            "total_rows": cal_pack.get("total_count"),
+        }
+        if cal_pack.get("rows"):
+            data['coverage_window']['calendar'] = _collection_date_window(
+                cal_pack["rows"],
+                ["start_time", "end_time", "created_at"],
+            )
 
     # Get business profile
     try:
@@ -271,6 +395,34 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
             )
         except Exception as e:
             logger.debug(f"Accounting fetch: {e}")
+
+    if 'ticketing' in accounts:
+        try:
+            from merge_client import MergeClient
+            mc = MergeClient(merge_api_key=os.environ.get('MERGE_API_KEY', ''))
+            token = accounts['ticketing']['account_token']
+            tickets = await _fetch_merge_collection(mc, "get_tickets", token)
+            data['custom']['connected'] = True
+            data['custom']['tickets'] = tickets.get('rows', [])
+            data['custom']['history_meta'] = {
+                "tickets_pages_fetched": tickets.get("pages_fetched", 0),
+                "rows_loaded": len(tickets.get("rows") or []),
+                "truncated": bool(tickets.get("truncated")),
+            }
+            if data['custom']['tickets']:
+                data['coverage_window']['custom'] = _collection_date_window(
+                    data['custom']['tickets'],
+                    [
+                        "due_date",
+                        "remote_updated_at",
+                        "updated_at",
+                        "created_at",
+                        "remote_created_at",
+                        "completed_at",
+                    ],
+                )
+        except Exception as e:
+            logger.debug(f"Ticketing fetch: {e}")
 
     # Fetch marketing benchmarks
     try:

@@ -1,0 +1,68 @@
+{
+  "spec_version": 1,
+  "description": "Ask BIQc retrieval_contract + depth + freshness SLO — static anchors for Block 4 gate and pytest",
+  "retrieval_contract_keys": [
+    "retrieval_mode",
+    "answer_grade",
+    "report_grade_request",
+    "grounded_report_ready",
+    "has_connected_sources",
+    "live_signal_count",
+    "coverage_start",
+    "coverage_end",
+    "missing_periods_count",
+    "history_truncated",
+    "crm_pages_fetched",
+    "accounting_pages_fetched",
+    "materialization_attempted",
+    "signals_emitted_on_demand"
+  ],
+  "answer_grade_guardrail_substrings": [
+    "if guardrail_status == \"BLOCKED\":",
+    "answer_grade = \"BLOCKED\"",
+    "elif guardrail_status == \"DEGRADED\":",
+    "answer_grade = \"DEGRADED\"",
+    "elif missing_periods:",
+    "answer_grade = \"PARTIAL\"",
+    "answer_grade = \"FULL\""
+  ],
+  "retrieval_depth_init_substrings": [
+    "\"crm_pages_fetched\": 0",
+    "\"accounting_pages_fetched\": 0",
+    "\"history_truncated\": False"
+  ],
+  "per_domain_depth_hydration_substrings": [
+    "deals_pages_fetched",
+    "invoices_pages_fetched",
+    "retrieval_depth[\"crm_pages_fetched\"]",
+    "retrieval_depth[\"accounting_pages_fetched\"]",
+    "retrieval_depth[\"history_truncated\"]"
+  ],
+  "freshness_contract_substrings": [
+    "def _soundboard_contract_meta",
+    "\"data_freshness\": freshness",
+    "data_freshness=contract_meta.get(\"data_freshness\""
+  ],
+  "response_wire_substrings": [
+    "\"retrieval_contract\": retrieval_contract"
+  ],
+  "regression_guard_substrings": [
+    "_enforce_conversion_guardrails"
+  ],
+  "frontend_surface_checks": [
+    {
+      "path": "frontend/src/components/soundboard/AskBiqcAssistantResponse.js",
+      "must_contain": [
+        "retrievalContract.answer_grade",
+        "message.data_freshness",
+        "retrievalContract.retrieval_mode"
+      ]
+    },
+    {
+      "path": "frontend/src/lib/soundboardRuntime.js",
+      "must_contain": [
+        "retrieval_contract: responseData.retrieval_contract"
+      ]
+    }
+  ]
+}

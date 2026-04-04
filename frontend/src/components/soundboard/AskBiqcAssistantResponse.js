@@ -37,6 +37,8 @@ export default function AskBiqcAssistantResponse({
   const directSources = (message.sources || []).filter(
     (source) => String(source || '').trim().toLowerCase() !== 'unknown'
   );
+  const retrievalContract = message.retrieval_contract || {};
+  const forensicReport = message.forensic_report || {};
 
   return (
     <>
@@ -156,6 +158,29 @@ export default function AskBiqcAssistantResponse({
           </Chip>
         </div>
       )}
+      {forensicReport.mode_active && retrievalContract.answer_grade && retrievalContract.answer_grade !== 'FULL' && (
+        <div className="mt-2" data-testid="ask-biqc-forensic-banner">
+          <Chip style={{ background: 'rgba(245,158,11,0.18)', color: '#FCD34D' }}>
+            Forensic report limited: {retrievalContract.answer_grade}
+          </Chip>
+        </div>
+      )}
+      {Array.isArray(forensicReport.contradictions) && forensicReport.contradictions.length > 0 && (
+        <div
+          className={`${compact ? 'mt-2 rounded-lg px-2 py-1.5' : 'mt-2 rounded-lg p-2'}`}
+          style={{ background: 'rgba(2,6,23,0.42)', border: '1px solid rgba(148,163,184,0.2)' }}
+          data-testid="ask-biqc-forensic-contradictions"
+        >
+          <p className={`${compact ? 'text-[9px]' : 'text-[10px]'} mb-1`} style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
+            Contradictions
+          </p>
+          {forensicReport.contradictions.slice(0, 3).map((item, index) => (
+            <p key={`forensic-contradiction-${index}`} className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }}>
+              - {item.from || 'source'}: {item.detail || 'n/a'}
+            </p>
+          ))}
+        </div>
+      )}
 
       {directSources.length > 0 && compact && (
         <div className="flex gap-1 mt-2 flex-wrap">
@@ -192,6 +217,79 @@ export default function AskBiqcAssistantResponse({
             freshness {message.data_freshness}
           </Chip>
         )}
+        {retrievalContract.retrieval_mode && (
+          <Chip
+            style={{ background: 'rgba(99,102,241,0.16)', color: '#A5B4FC' }}
+            testId={`${metadataTestId}-retrieval-mode`}
+          >
+            retrieval {retrievalContract.retrieval_mode}
+          </Chip>
+        )}
+        {retrievalContract.answer_grade && (
+          <Chip
+            style={{ background: 'rgba(236,72,153,0.14)', color: '#F9A8D4' }}
+            testId={`${metadataTestId}-answer-grade`}
+          >
+            grade {retrievalContract.answer_grade}
+          </Chip>
+        )}
+        {retrievalContract.history_truncated && (
+          <Chip
+            style={{ background: 'rgba(245,158,11,0.16)', color: '#FCD34D' }}
+            testId={`${metadataTestId}-history-truncated`}
+          >
+            history truncated
+          </Chip>
+        )}
+        {(Number(retrievalContract.crm_pages_fetched || 0) > 0 || Number(retrievalContract.accounting_pages_fetched || 0) > 0) && (
+          <Chip
+            style={{ background: 'rgba(56,189,248,0.14)', color: '#7DD3FC' }}
+            testId={`${metadataTestId}-pages-fetched`}
+          >
+            pages crm:{Number(retrievalContract.crm_pages_fetched || 0)} acc:{Number(retrievalContract.accounting_pages_fetched || 0)}
+          </Chip>
+        )}
+        {(() => {
+          const blocks = [
+            { key: 'email', label: 'email', block: retrievalContract.email_retrieval, testSuffix: 'email-depth' },
+            { key: 'cal', label: 'calendar', block: retrievalContract.calendar_retrieval, testSuffix: 'calendar-depth' },
+            { key: 'custom', label: 'custom', block: retrievalContract.custom_retrieval, testSuffix: 'custom-depth' },
+          ];
+          return blocks.map(({ key, label, block, testSuffix }) => {
+            if (!block || typeof block !== 'object') return null;
+            const pages = Number(block.pages_fetched || 0);
+            const rows = Number(block.rows_loaded || 0);
+            const hasWindow = Boolean(block.window_start && block.window_end);
+            if (pages <= 0 && rows <= 0 && !block.truncated && !hasWindow) return null;
+            const tail = [
+              pages > 0 ? `p${pages}` : null,
+              rows > 0 ? `r${rows}` : null,
+              block.total_rows != null && Number(block.total_rows) > rows ? `tot${Number(block.total_rows)}` : null,
+              block.truncated ? 'trunc' : null,
+            ].filter(Boolean).join(' ');
+            const win = hasWindow
+              ? `${String(block.window_start).slice(0, 10)}->${String(block.window_end).slice(0, 10)}`
+              : '';
+            const text = [label, tail, win].filter(Boolean).join(' ');
+            return (
+              <Chip
+                key={`depth-${key}`}
+                style={{ background: 'rgba(45,212,191,0.12)', color: '#5EEAD4' }}
+                testId={`${metadataTestId}-${testSuffix}`}
+              >
+                {text}
+              </Chip>
+            );
+          });
+        })()}
+        {retrievalContract.materialization_attempted && (
+          <Chip
+            style={{ background: 'rgba(34,197,94,0.14)', color: '#86EFAC' }}
+            testId={`${metadataTestId}-materialization`}
+          >
+            signal heal +{Number(retrievalContract.signals_emitted_on_demand || 0)}
+          </Chip>
+        )}
         {message.advisory_slots?.kpi_note && (
           <Chip
             style={{ background: compact ? '#8B5CF615' : 'rgba(139,92,246,0.12)', color: '#C4B5FD' }}
@@ -209,6 +307,15 @@ export default function AskBiqcAssistantResponse({
           </Chip>
         )}
       </div>
+      {Array.isArray(forensicReport.citations) && forensicReport.citations.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5" data-testid="ask-biqc-forensic-citations">
+          {forensicReport.citations.slice(0, compact ? 3 : 5).map((citation, index) => (
+            <Chip key={`forensic-citation-${index}`} style={{ background: 'rgba(99,102,241,0.14)', color: '#C7D2FE' }}>
+              {citation.ref || `S${index + 1}`} {citation.source || 'source'}
+            </Chip>
+          ))}
+        </div>
+      )}
 
       {message.file && (
         <a

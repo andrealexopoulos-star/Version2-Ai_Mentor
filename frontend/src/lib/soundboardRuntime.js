@@ -236,6 +236,13 @@ function buildGroundedAssistantMessage(grounded, { traceRootId, responseVersion,
           connected_sources: grounded?.data_sources || [],
         }
       : undefined,
+    retrieval_contract: grounded?.status === 'answered'
+      ? {
+          retrieval_mode: 'grounded_query',
+          answer_grade: 'FULL',
+          has_connected_sources: (grounded?.data_sources || []).length > 0,
+        }
+      : undefined,
     boardroom_status: grounded?.status === 'answered' ? 'grounded_query' : 'grounding_blocked',
     trace_root_id: traceRootId,
     response_version: responseVersion,
@@ -266,6 +273,8 @@ function buildAssistantMessageFromResponse(responseData, { traceRootId, response
     boardroom_status: responseData.boardroom_status,
     evidence_pack: responseData.evidence_pack,
     soundboard_contract: responseData.soundboard_contract,
+    retrieval_contract: responseData.retrieval_contract,
+    forensic_report: responseData.forensic_report,
     advisory_slots: responseData.advisory_slots,
     coverage_window: responseData.coverage_window,
     trace_root_id: traceRootId,
@@ -281,7 +290,16 @@ function buildAssistantMessageFromResponse(responseData, { traceRootId, response
   return assistantMessage;
 }
 
-async function streamSoundboardChat({ sessionToken, payload, signal, onDelta } = {}) {
+async function streamSoundboardChat({
+  sessionToken,
+  payload,
+  signal,
+  onDelta,
+  onStart,
+  onToolStart,
+  onToolResult,
+  onError,
+} = {}) {
   if (!sessionToken) {
     throw new Error('Missing session token for streaming chat');
   }
@@ -319,12 +337,26 @@ async function streamSoundboardChat({ sessionToken, payload, signal, onDelta } =
 
       try {
         const event = JSON.parse(line.slice(6));
-        if (event.type === 'delta' && typeof event.text === 'string') {
+        if (event.type === 'start') {
+          onStart?.(event);
+        } else if (event.type === 'delta' && typeof event.text === 'string') {
           onDelta?.(event.text);
+        } else if (event.type === 'tool_start') {
+          onToolStart?.(event);
+        } else if (event.type === 'tool_result') {
+          onToolResult?.(event);
         } else if (event.type === 'final' && event.payload) {
           finalPayload = event.payload;
+        } else if (event.type === 'error') {
+          onError?.(event);
+          const streamErr = new Error(event?.message || 'Streaming error');
+          streamErr.__streamFatal = true;
+          throw streamErr;
         }
-      } catch {
+      } catch (err) {
+        if (err?.__streamFatal) {
+          throw err;
+        }
         // Ignore malformed event chunks and continue streaming.
       }
     }
@@ -353,6 +385,10 @@ export async function runAskBiqcTurn({
   includeText = false,
   requestTimeoutMs = SOUNDBOARD_CHAT_TIMEOUT_MS,
   onDelta,
+  onStart,
+  onToolStart,
+  onToolResult,
+  onError,
   logPrefix = 'soundboard',
 }) {
   if (shouldUseGroundedDataQuery(message)) {
@@ -378,6 +414,10 @@ export async function runAskBiqcTurn({
       payload: requestPayload,
       signal: abortController.signal,
       onDelta,
+      onStart,
+      onToolStart,
+      onToolResult,
+      onError,
     });
     if (streamAbortRef) {
       streamAbortRef.current = null;

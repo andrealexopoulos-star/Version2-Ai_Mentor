@@ -21,17 +21,14 @@ def test_shared_routing_helper_exports_grounded_query_contract():
 
 def test_mysoundboard_uses_shared_grounded_query_helper():
     content = _read(MY_SOUNDBOARD_PATH)
-    assert "shouldUseGroundedDataQuery" in content
     assert "deriveSoundboardRequestScope" in content
-    assert "if (shouldUseGroundedDataQuery(fullMessage))" in content
+    assert "runAskBiqcTurn" in content
 
 
 def test_soundboard_panel_uses_shared_grounded_query_helper_and_streaming():
     content = _read(PANEL_PATH)
-    assert "shouldUseGroundedDataQuery" in content
     assert "deriveSoundboardRequestScope" in content
-    assert "const streamSoundboardChat = async" in content
-    assert "/api/soundboard/chat/stream" in content
+    assert "runAskBiqcTurn" in content
     assert "SOUND_BOARD_MODES" in content
 
 
@@ -42,8 +39,28 @@ def test_floating_soundboard_uses_shared_grounded_query_helper():
 
 
 def test_panel_has_regenerate_and_edit_controls():
-    content = _read(PANEL_PATH)
-    assert "Edit & resend" in content
-    assert "Regenerate" in content
-    assert "response_version" in content
-    assert "trace_root_id" in content
+    panel = _read(PANEL_PATH)
+    actions = _read(REPO_ROOT / "frontend" / "src" / "components" / "soundboard" / "AskBiqcMessageActions.js")
+    assert "response_version" in panel
+    assert "trace_root_id" in panel
+    assert "Edit & resend" in actions
+    assert "Regenerate" in actions
+
+
+def test_soundboard_surfaces_render_retrieval_contract():
+    panel = _read(PANEL_PATH)
+    my_soundboard = _read(MY_SOUNDBOARD_PATH)
+    runtime = _read(REPO_ROOT / "frontend" / "src" / "lib" / "soundboardRuntime.js")
+    response_component = _read(REPO_ROOT / "frontend" / "src" / "components" / "soundboard" / "AskBiqcAssistantResponse.js")
+
+    assert "retrieval_contract: m.retrieval_contract || m?.metadata?.retrieval_contract" in panel
+    assert "retrieval_contract: m.retrieval_contract || m?.metadata?.retrieval_contract" in my_soundboard
+    assert "retrieval_contract: responseData.retrieval_contract" in runtime
+    assert "retrievalContract.retrieval_mode" in response_component
+    assert "retrievalContract.answer_grade" in response_component
+    assert "retrievalContract.email_retrieval" in response_component
+    assert "retrievalContract.calendar_retrieval" in response_component
+    assert "retrievalContract.custom_retrieval" in response_component
+    assert "forensic_report: responseData.forensic_report" in runtime
+    assert "forensicReport.citations" in response_component
+    assert "ask-biqc-forensic-contradictions" in response_component

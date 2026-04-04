@@ -13,9 +13,8 @@ def _read(path: Path) -> str:
 def test_soundboard_has_report_grade_request_detector():
     content = _read(SOUNDBOARD_PATH)
     assert "def _is_report_grade_request" in content
-    assert '"board report"' in content
-    assert '"board pack"' in content
-    assert '"last 12 months"' in content
+    assert "board report|board pack" in content
+    assert "(last|past)\\s+(12|twelve)" in content
 
 
 def test_soundboard_requires_window_depth_for_report_readiness():
@@ -36,6 +35,27 @@ def test_soundboard_returns_report_grounding_flags():
     content = _read(SOUNDBOARD_PATH)
     assert '"grounded_report_ready": grounded_report_ready' in content
     assert '"report_grade_request": report_grade_request' in content
+    assert 'def _build_retrieval_contract(' in content
+    assert '"retrieval_contract": retrieval_contract' in content
+    assert '"retrieval_mode"' in content
+    assert '"answer_grade"' in content
+    assert '"email_retrieval"' in content
+    assert '"calendar_retrieval"' in content
+    assert '"custom_retrieval"' in content
+    assert 'FORENSIC_REPORT_MODE_VERSION' in content
+    assert 'def _build_forensic_report_payload(' in content
+    assert '"forensic_report": forensic_report' in content
+
+
+def test_unified_intelligence_exposes_domain_retrieval_depth():
+    ui_path = REPO_ROOT / "backend" / "routes" / "unified_intelligence.py"
+    content = _read(ui_path)
+    assert "def _fetch_supabase_paged(" in content
+    assert "'email': {\"start\": None, \"end\": None}," in content
+    assert "'calendar': {\"start\": None, \"end\": None}," in content
+    assert "'custom': {\"start\": None, \"end\": None}," in content
+    assert "outlook_calendar_events" in content
+    assert "get_tickets" in content
 
 
 def test_edge_query_defers_executive_report_requests():
@@ -50,3 +70,11 @@ def test_edge_query_uses_openai_compatible_model():
     content = _read(EDGE_QUERY_PATH)
     assert 'https://api.openai.com/v1/chat/completions' in content
     assert 'model: "gpt-4o-mini"' in content
+
+
+def test_soundboard_stream_contract_emits_extended_events():
+    content = _read(SOUNDBOARD_PATH)
+    assert 'stream_mode": "synthetic"' in content
+    assert '_sse_event("tool_start"' in content
+    assert '"tool_result"' in content
+    assert '_sse_event("error"' in content
