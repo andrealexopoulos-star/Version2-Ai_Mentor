@@ -11,6 +11,7 @@ const BoardroomCouncilCard = ({
   sourceLabels = [],
   activeIndex = 0,
   activeCheck = null,
+  boardroomStatus = 'live',
   compact = false,
   testId = 'soundboard-boardroom-visualizer',
 }) => {
@@ -32,7 +33,7 @@ const BoardroomCouncilCard = ({
     >
       <div className={`flex items-center justify-between gap-2 ${compact ? 'mb-2' : 'mb-3'}`}>
         <p className={`${compact ? 'text-[9px]' : 'text-[10px]'} uppercase tracking-wider`} style={{ color: '#93C5FD', fontFamily: fontFamily.mono }}>
-          Boardroom Council Live
+          {boardroomStatus === 'fallback_error' ? 'Boardroom Council Degraded' : 'Boardroom Council Live'}
         </p>
         <p className={`${compact ? 'text-[9px]' : 'text-[10px]'}`} style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
           Data-aware role checks

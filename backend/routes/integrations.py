@@ -79,7 +79,22 @@ def _semantic_contract(
     freshness_hours: Optional[int] = None,
     source_lineage: Optional[List[Dict[str, Any]]] = None,
     next_best_actions: Optional[List[str]] = None,
+    lookback_days_target: int = 365,
+    lookback_days_effective: Optional[int] = None,
+    backfill_state: str = "none",
+    missing_periods: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
+    if lookback_days_effective is None:
+        lookback_days_effective = 0
+        start_dt = _safe_parse_dt(coverage_start)
+        end_dt = _safe_parse_dt(coverage_end)
+        if start_dt and end_dt:
+            lookback_days_effective = max(0, min(lookback_days_target, (end_dt - start_dt).days))
+
+    gaps = list(missing_periods or [])
+    if lookback_days_effective < lookback_days_target:
+        gaps.append(f"Lookback depth below target ({lookback_days_effective}/{lookback_days_target} days).")
+
     return {
         "data_status": data_status,
         "confidence_score": round(max(0.0, min(1.0, float(confidence_score))), 3),
@@ -89,6 +104,10 @@ def _semantic_contract(
             "end": coverage_end,
             "freshness_hours": freshness_hours,
         },
+        "lookback_days_target": int(lookback_days_target),
+        "lookback_days_effective": int(max(0, lookback_days_effective)),
+        "backfill_state": backfill_state,
+        "missing_periods": gaps,
         "source_lineage": source_lineage or [],
         "next_best_actions": next_best_actions or [],
     }

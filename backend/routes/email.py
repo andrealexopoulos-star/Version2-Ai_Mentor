@@ -122,7 +122,22 @@ def _semantic_contract(
     freshness_hours: Optional[int] = None,
     source_lineage: Optional[List[Dict[str, Any]]] = None,
     next_best_actions: Optional[List[str]] = None,
+    lookback_days_target: int = 365,
+    lookback_days_effective: Optional[int] = None,
+    backfill_state: str = "none",
+    missing_periods: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
+    if lookback_days_effective is None:
+        lookback_days_effective = 0
+        start_dt = _safe_parse_dt(coverage_start)
+        end_dt = _safe_parse_dt(coverage_end)
+        if start_dt and end_dt:
+            lookback_days_effective = max(0, min(lookback_days_target, (end_dt - start_dt).days))
+
+    gaps = list(missing_periods or [])
+    if lookback_days_effective < lookback_days_target:
+        gaps.append(f"Lookback depth below target ({lookback_days_effective}/{lookback_days_target} days).")
+
     return {
         "data_status": data_status,
         "confidence_score": round(max(0.0, min(1.0, float(confidence_score))), 3),
@@ -132,6 +147,10 @@ def _semantic_contract(
             "end": coverage_end,
             "freshness_hours": freshness_hours,
         },
+        "lookback_days_target": int(lookback_days_target),
+        "lookback_days_effective": int(max(0, lookback_days_effective)),
+        "backfill_state": backfill_state,
+        "missing_periods": gaps,
         "source_lineage": source_lineage or [],
         "next_best_actions": next_best_actions or [],
     }
@@ -1979,11 +1998,26 @@ async def get_cached_calendar_events(
             "importance": "normal",
         })
     events.sort(key=lambda event: str(event.get("start") or ""))
+    effective_days = max(0, min(365, int((horizon - now).days)))
     return {
         "events": events,
         "total": len(events),
         "date_range": {"start": now.isoformat(), "end": horizon.isoformat()},
         "source": "cache",
+        "data_status": ("ready" if events else "empty"),
+        "confidence_score": (0.75 if events else 0.35),
+        "confidence_reason": ("Cached calendar events available for advisory context." if events else "No cached events in selected horizon."),
+        "coverage_window": {
+            "start": now.isoformat(),
+            "end": horizon.isoformat(),
+            "freshness_hours": None,
+        },
+        "lookback_days_target": 365,
+        "lookback_days_effective": effective_days,
+        "backfill_state": "none",
+        "missing_periods": ([] if effective_days >= 365 else [f"Lookback depth below target ({effective_days}/365 days)."]),
+        "source_lineage": [{"connector": "outlook_cache", "endpoint": "/email/calendar/events"}],
+        "next_best_actions": ([] if events else ["Sync Outlook calendar to populate events."]),
     }
 
 
@@ -2115,10 +2149,25 @@ async def get_calendar_events(
             "importance": event.get("importance", "normal")
         })
     
+    effective_days = max(0, min(365, int((datetime.fromisoformat(end_date) - datetime.fromisoformat(start_date)).days)))
     return {
         "events": events,
         "total": len(events),
-        "date_range": {"start": start_date, "end": end_date}
+        "date_range": {"start": start_date, "end": end_date},
+        "data_status": ("ready" if events else "empty"),
+        "confidence_score": (0.8 if events else 0.35),
+        "confidence_reason": ("Outlook calendar events fetched successfully." if events else "No events returned from Outlook in selected horizon."),
+        "coverage_window": {
+            "start": start_date,
+            "end": end_date,
+            "freshness_hours": 0,
+        },
+        "lookback_days_target": 365,
+        "lookback_days_effective": effective_days,
+        "backfill_state": "none",
+        "missing_periods": ([] if effective_days >= 365 else [f"Lookback depth below target ({effective_days}/365 days)."]),
+        "source_lineage": [{"connector": "outlook", "endpoint": "/outlook/calendar/events"}],
+        "next_best_actions": ([] if events else ["Extend lookback window or verify calendar sync."]),
     }
 
 

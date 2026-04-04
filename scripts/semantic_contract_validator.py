@@ -19,6 +19,10 @@ REQUIRED_KEYS = [
     "confidence_score",
     "confidence_reason",
     "coverage_window",
+    "lookback_days_target",
+    "lookback_days_effective",
+    "backfill_state",
+    "missing_periods",
     "source_lineage",
     "next_best_actions",
 ]
@@ -32,6 +36,7 @@ TARGET_ENDPOINTS = [
     "/api/cognition/operations",
     "/api/cognition/risk",
     "/api/cognition/market",
+    "/api/outlook/calendar/events",
 ]
 
 
@@ -62,6 +67,14 @@ def validate_payload(endpoint: str, payload: Dict) -> List[str]:
         missing.append("source_lineage(list)")
     if "next_best_actions" in payload and not isinstance(payload.get("next_best_actions"), list):
         missing.append("next_best_actions(list)")
+    if "missing_periods" in payload and not isinstance(payload.get("missing_periods"), list):
+        missing.append("missing_periods(list)")
+    if "lookback_days_target" in payload:
+        target = payload.get("lookback_days_target")
+        if not isinstance(target, int):
+            missing.append("lookback_days_target(int)")
+        elif target < 365:
+            missing.append("lookback_days_target(<365)")
     return missing
 
 

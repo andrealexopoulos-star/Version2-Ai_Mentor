@@ -10,6 +10,10 @@ REQUIRED_KEYS = [
     "confidence_score",
     "confidence_reason",
     "coverage_window",
+    "lookback_days_target",
+    "lookback_days_effective",
+    "backfill_state",
+    "missing_periods",
     "source_lineage",
     "next_best_actions",
 ]
@@ -56,3 +60,10 @@ def test_cognition_tabs_semantic_contract():
         assert resp.status_code in [200, 401, 403, 500, 503], f"{tab}: unexpected status {resp.status_code}"
         if resp.status_code == 200:
             _assert_semantic_contract(resp.json())
+
+
+def test_calendar_events_semantic_contract():
+    resp = requests.get(f"{BASE_URL}/api/outlook/calendar/events", headers=_headers(), timeout=20)
+    assert resp.status_code in [200, 400, 401, 403, 500, 503], f"Unexpected status: {resp.status_code}"
+    if resp.status_code == 200:
+        _assert_semantic_contract(resp.json())

@@ -834,6 +834,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             sourceLabels={boardroomSourceLabels}
             activeIndex={boardroomNarrationIndex}
             activeCheck={activeBoardroomCheck}
+            boardroomStatus={latestAssistantMessage?.boardroom_status}
             compact
             testId="soundboard-panel-boardroom-visualizer"
           />

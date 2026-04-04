@@ -8,6 +8,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import VoiceChat from '../components/VoiceChat';
 import BoardroomCouncilCard from '../components/soundboard/BoardroomCouncilCard';
+import DataCoverageGate from '../components/DataCoverageGate';
 import { fontFamily } from "../design-system/tokens";
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { getSoundboardPolicy, normalizeMessageContent, SOUND_BOARD_MODES } from '../lib/soundboardPolicy';
@@ -139,6 +140,7 @@ const MySoundBoard = () => {
   const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [scanUsage, setScanUsage] = useState(null);
   const [recordingScans, setRecordingScans] = useState({});
+  const [coverageGate, setCoverageGate] = useState(null);
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [showAgentMenu, setShowAgentMenu] = useState(false);
   const [showAdvancedControls, setShowAdvancedControls] = useState(false);
@@ -457,7 +459,7 @@ const MySoundBoard = () => {
       } : {};
       if (!advisorContext) intelligenceContext.request_scope = requestScope;
 
-      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage, agent_name, boardroom_trace, boardroom_status, evidence_pack, soundboard_contract, advisory_slots, coverage_window;
+      let reply, conversation_id, conversation_title, generatedFile, suggested_actions, intent, model_used, confidence_score, data_sources_count, data_freshness, lineage, agent_name, boardroom_trace, boardroom_status, evidence_pack, soundboard_contract, advisory_slots, coverage_window, guardrail, coverage_pct, missing_fields;
       const traceRootId = traceOptions?.trace_root_id || `trace-${Date.now()}`;
       const responseVersion = Number(traceOptions?.response_version || 1);
       const placeholderId = `stream-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -499,7 +501,20 @@ const MySoundBoard = () => {
         soundboard_contract,
         advisory_slots,
         coverage_window,
+        guardrail,
+        coverage_pct,
+        missing_fields,
       } = responseData);
+
+      if (guardrail === 'BLOCKED' || guardrail === 'DEGRADED') {
+        setCoverageGate({
+          guardrail,
+          coveragePct: coverage_pct ?? null,
+          missingFields: Array.isArray(missing_fields) ? missing_fields : [],
+        });
+      } else {
+        setCoverageGate(null);
+      }
 
       const replyTrimmed = typeof reply === 'string' ? reply.trim() : '';
       if (!replyTrimmed) {
@@ -1352,8 +1367,17 @@ const MySoundBoard = () => {
                   sourceLabels={boardroomSourceLabels}
                   activeIndex={boardroomNarrationIndex}
                   activeCheck={activeBoardroomCheck}
+                  boardroomStatus={latestAssistantMessage?.boardroom_status}
                   compact={false}
                   testId="soundboard-boardroom-visualizer"
+                />
+              )}
+              {coverageGate && (
+                <DataCoverageGate
+                  guardrail={coverageGate.guardrail}
+                  coveragePct={coverageGate.coveragePct}
+                  missingFields={coverageGate.missingFields}
+                  compact={coverageGate.guardrail === 'DEGRADED'}
                 />
               )}
 
