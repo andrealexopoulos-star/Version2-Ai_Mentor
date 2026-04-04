@@ -88,7 +88,9 @@ class EntitlementsUpsert(BaseModel):
 
 class PricingPublishRequest(BaseModel):
     plan_key: str
-    approver_user_id: str = Field(min_length=8)
+    product_approver_user_id: str = Field(min_length=8)
+    finance_approver_user_id: str = Field(min_length=8)
+    legal_approver_user_id: str = Field(min_length=8)
     effective_from: Optional[str] = None
 
     @field_validator("plan_key")
@@ -100,7 +102,9 @@ class PricingPublishRequest(BaseModel):
 class PricingRollbackRequest(BaseModel):
     plan_key: str
     target_version: int = Field(ge=1)
-    approver_user_id: str = Field(min_length=8)
+    product_approver_user_id: str = Field(min_length=8)
+    finance_approver_user_id: str = Field(min_length=8)
+    legal_approver_user_id: str = Field(min_length=8)
     reason: str = Field(min_length=4, max_length=512)
 
     @field_validator("plan_key")
@@ -292,14 +296,33 @@ def _is_super_admin_user(sb, user_id: str) -> bool:
     return role in {"super_admin", "superadmin"} or is_master
 
 
+def _validate_release_approvers(sb, actor_id: str, *, product_id: str, finance_id: str, legal_id: str) -> None:
+    approvers = [str(product_id or "").strip(), str(finance_id or "").strip(), str(legal_id or "").strip()]
+    if any(not item for item in approvers):
+        raise HTTPException(status_code=400, detail="Product, finance, and legal approvers are required")
+    if actor_id in approvers:
+        raise HTTPException(
+            status_code=400,
+            detail="Separation of duties violation: actor cannot self-approve product/finance/legal controls",
+        )
+    if len(set(approvers)) != 3:
+        raise HTTPException(status_code=400, detail="Product, finance, and legal approvers must be distinct users")
+    missing = [uid for uid in approvers if not _is_super_admin_user(sb, uid)]
+    if missing:
+        raise HTTPException(status_code=403, detail=f"All approvers must be super admin users: {missing}")
+
+
 @router.post("/admin/pricing/publish")
 async def admin_publish_pricing(payload: PricingPublishRequest, admin: dict = Depends(get_super_admin)):
     sb = get_sb()
     actor_id = str(admin.get("id") or "")
-    if actor_id == payload.approver_user_id:
-        raise HTTPException(status_code=400, detail="Dual approval required: approver must differ from actor")
-    if not _is_super_admin_user(sb, payload.approver_user_id):
-        raise HTTPException(status_code=403, detail="Approver must be super admin")
+    _validate_release_approvers(
+        sb,
+        actor_id,
+        product_id=payload.product_approver_user_id,
+        finance_id=payload.finance_approver_user_id,
+        legal_id=payload.legal_approver_user_id,
+    )
 
     latest_draft = (
         sb.table("pricing_plans")
@@ -349,7 +372,8 @@ async def admin_publish_pricing(payload: PricingPublishRequest, admin: dict = De
                 "from_version": from_version,
                 "to_version": int(draft["version"]),
                 "published_by": actor_id,
-                "approved_by": payload.approver_user_id,
+                # Keep compatibility with existing schema where approved_by is a single UUID.
+                "approved_by": payload.finance_approver_user_id,
                 "published_at": _now_iso(),
                 "status": "published",
             }
@@ -364,13 +388,30 @@ async def admin_publish_pricing(payload: PricingPublishRequest, admin: dict = De
         entity_id=str((release.data or [{}])[0].get("id") or ""),
         before_state={"active_version": from_version},
         after_state={"active_version": int(draft["version"])},
-        context={"plan_key": payload.plan_key, "approver_user_id": payload.approver_user_id},
+        context={
+            "plan_key": payload.plan_key,
+            "approval_contract": {
+                "version": "v1_triple_signoff",
+                "to_version": int(draft["version"]),
+                "actor_user_id": actor_id,
+                "product_approver_user_id": payload.product_approver_user_id,
+                "finance_approver_user_id": payload.finance_approver_user_id,
+                "legal_approver_user_id": payload.legal_approver_user_id,
+                "separation_of_duties_validated": True,
+            },
+        },
     )
     return {
         "ok": True,
         "plan_key": payload.plan_key,
         "from_version": from_version,
         "to_version": int(draft["version"]),
+        "approval_summary": {
+            "actor_user_id": actor_id,
+            "product_approver_user_id": payload.product_approver_user_id,
+            "finance_approver_user_id": payload.finance_approver_user_id,
+            "legal_approver_user_id": payload.legal_approver_user_id,
+        },
         "release": (release.data or [None])[0],
     }
 
@@ -379,10 +420,13 @@ async def admin_publish_pricing(payload: PricingPublishRequest, admin: dict = De
 async def admin_rollback_pricing(payload: PricingRollbackRequest, admin: dict = Depends(get_super_admin)):
     sb = get_sb()
     actor_id = str(admin.get("id") or "")
-    if actor_id == payload.approver_user_id:
-        raise HTTPException(status_code=400, detail="Dual approval required: approver must differ from actor")
-    if not _is_super_admin_user(sb, payload.approver_user_id):
-        raise HTTPException(status_code=403, detail="Approver must be super admin")
+    _validate_release_approvers(
+        sb,
+        actor_id,
+        product_id=payload.product_approver_user_id,
+        finance_id=payload.finance_approver_user_id,
+        legal_id=payload.legal_approver_user_id,
+    )
 
     target = (
         sb.table("pricing_plans")
@@ -423,7 +467,7 @@ async def admin_rollback_pricing(payload: PricingRollbackRequest, admin: dict = 
                 "from_version": current_version,
                 "to_version": payload.target_version,
                 "published_by": actor_id,
-                "approved_by": payload.approver_user_id,
+                "approved_by": payload.finance_approver_user_id,
                 "published_at": _now_iso(),
                 "rollback_reason": payload.reason,
                 "status": "rolled_back",
@@ -439,13 +483,31 @@ async def admin_rollback_pricing(payload: PricingRollbackRequest, admin: dict = 
         entity_id=str((release.data or [{}])[0].get("id") or ""),
         before_state={"active_version": current_version},
         after_state={"active_version": payload.target_version},
-        context={"plan_key": payload.plan_key, "reason": payload.reason},
+        context={
+            "plan_key": payload.plan_key,
+            "reason": payload.reason,
+            "approval_contract": {
+                "version": "v1_triple_signoff",
+                "to_version": int(payload.target_version),
+                "actor_user_id": actor_id,
+                "product_approver_user_id": payload.product_approver_user_id,
+                "finance_approver_user_id": payload.finance_approver_user_id,
+                "legal_approver_user_id": payload.legal_approver_user_id,
+                "separation_of_duties_validated": True,
+            },
+        },
     )
     return {
         "ok": True,
         "plan_key": payload.plan_key,
         "from_version": current_version,
         "to_version": payload.target_version,
+        "approval_summary": {
+            "actor_user_id": actor_id,
+            "product_approver_user_id": payload.product_approver_user_id,
+            "finance_approver_user_id": payload.finance_approver_user_id,
+            "legal_approver_user_id": payload.legal_approver_user_id,
+        },
         "release": (release.data or [None])[0],
     }
 

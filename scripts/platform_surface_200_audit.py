@@ -83,7 +83,7 @@ def default_value(field_name: str) -> Any:
         return TEST_EMAIL
     if key in {"user_id", "target_user_id", "owner_user_id"}:
         return TEST_USER_ID
-    if key in {"approver_user_id"}:
+    if key in {"approver_user_id", "product_approver_user_id", "finance_approver_user_id", "legal_approver_user_id"}:
         return "11111111-1111-4111-8111-111111111111"
     if key in {"disable"}:
         return False
@@ -220,13 +220,17 @@ def endpoint_payload(method: str, endpoint: str) -> Dict[str, Any]:
         return {
             "plan_key": "starter",
             "effective_from": datetime.now(timezone.utc).isoformat(),
-            "approver_user_id": "11111111-1111-4111-8111-111111111111",
+            "product_approver_user_id": "11111111-1111-4111-8111-111111111111",
+            "finance_approver_user_id": "11111111-1111-4111-8111-111111111112",
+            "legal_approver_user_id": "11111111-1111-4111-8111-111111111113",
         }
     if e == "/admin/pricing/rollback":
         return {
             "plan_key": "starter",
             "target_version": 1,
-            "approver_user_id": "11111111-1111-4111-8111-111111111111",
+            "product_approver_user_id": "11111111-1111-4111-8111-111111111111",
+            "finance_approver_user_id": "11111111-1111-4111-8111-111111111112",
+            "legal_approver_user_id": "11111111-1111-4111-8111-111111111113",
             "reason": "audit rollback",
         }
     if e == "/admin/pricing/overrides":

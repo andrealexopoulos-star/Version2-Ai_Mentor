@@ -42,14 +42,18 @@ const AdminPricingPage = () => {
 
   const [publishForm, setPublishForm] = useState({
     plan_key: 'starter',
-    approver_user_id: '',
+    product_approver_user_id: '',
+    finance_approver_user_id: '',
+    legal_approver_user_id: '',
     effective_from: '',
   });
 
   const [rollbackForm, setRollbackForm] = useState({
     plan_key: 'starter',
     target_version: 1,
-    approver_user_id: '',
+    product_approver_user_id: '',
+    finance_approver_user_id: '',
+    legal_approver_user_id: '',
     reason: 'Rollback requested by admin',
   });
 
@@ -180,7 +184,9 @@ const AdminPricingPage = () => {
     try {
       await apiClient.post('/admin/pricing/publish', {
         plan_key: publishForm.plan_key,
-        approver_user_id: publishForm.approver_user_id,
+        product_approver_user_id: publishForm.product_approver_user_id,
+        finance_approver_user_id: publishForm.finance_approver_user_id,
+        legal_approver_user_id: publishForm.legal_approver_user_id,
         effective_from: publishForm.effective_from || null,
       });
       toast.success('Plan published');
@@ -195,7 +201,9 @@ const AdminPricingPage = () => {
       await apiClient.post('/admin/pricing/rollback', {
         plan_key: rollbackForm.plan_key,
         target_version: Number(rollbackForm.target_version || 1),
-        approver_user_id: rollbackForm.approver_user_id,
+        product_approver_user_id: rollbackForm.product_approver_user_id,
+        finance_approver_user_id: rollbackForm.finance_approver_user_id,
+        legal_approver_user_id: rollbackForm.legal_approver_user_id,
         reason: rollbackForm.reason,
       });
       toast.success('Rollback completed');
@@ -313,9 +321,11 @@ const AdminPricingPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="p-4 space-y-3" style={CARD}>
-            <h2 style={{ fontFamily: fontFamily.display }} className="text-lg">Publish Plan (Dual Approval)</h2>
+            <h2 style={{ fontFamily: fontFamily.display }} className="text-lg">Publish Plan (Product + Finance + Legal)</h2>
             <input style={inputStyle} value={publishForm.plan_key} onChange={(e) => setPublishForm((p) => ({ ...p, plan_key: e.target.value }))} placeholder="plan_key" />
-            <input style={inputStyle} value={publishForm.approver_user_id} onChange={(e) => setPublishForm((p) => ({ ...p, approver_user_id: e.target.value }))} placeholder="approver_user_id (must differ from actor)" />
+            <input style={inputStyle} value={publishForm.product_approver_user_id} onChange={(e) => setPublishForm((p) => ({ ...p, product_approver_user_id: e.target.value }))} placeholder="product_approver_user_id" />
+            <input style={inputStyle} value={publishForm.finance_approver_user_id} onChange={(e) => setPublishForm((p) => ({ ...p, finance_approver_user_id: e.target.value }))} placeholder="finance_approver_user_id" />
+            <input style={inputStyle} value={publishForm.legal_approver_user_id} onChange={(e) => setPublishForm((p) => ({ ...p, legal_approver_user_id: e.target.value }))} placeholder="legal_approver_user_id" />
             <input style={inputStyle} value={publishForm.effective_from} onChange={(e) => setPublishForm((p) => ({ ...p, effective_from: e.target.value }))} placeholder="effective_from (optional ISO datetime)" />
             <button onClick={publishPlan} className="px-3 py-2 rounded-lg text-xs" style={{ ...CARD, borderColor: '#10B98135', color: '#10B981', fontFamily: fontFamily.mono }}>
               Publish
@@ -326,7 +336,9 @@ const AdminPricingPage = () => {
             <h2 style={{ fontFamily: fontFamily.display }} className="text-lg">Rollback Plan Version</h2>
             <input style={inputStyle} value={rollbackForm.plan_key} onChange={(e) => setRollbackForm((p) => ({ ...p, plan_key: e.target.value }))} placeholder="plan_key" />
             <input style={inputStyle} value={rollbackForm.target_version} onChange={(e) => setRollbackForm((p) => ({ ...p, target_version: e.target.value }))} placeholder="target version" />
-            <input style={inputStyle} value={rollbackForm.approver_user_id} onChange={(e) => setRollbackForm((p) => ({ ...p, approver_user_id: e.target.value }))} placeholder="approver_user_id (must differ from actor)" />
+            <input style={inputStyle} value={rollbackForm.product_approver_user_id} onChange={(e) => setRollbackForm((p) => ({ ...p, product_approver_user_id: e.target.value }))} placeholder="product_approver_user_id" />
+            <input style={inputStyle} value={rollbackForm.finance_approver_user_id} onChange={(e) => setRollbackForm((p) => ({ ...p, finance_approver_user_id: e.target.value }))} placeholder="finance_approver_user_id" />
+            <input style={inputStyle} value={rollbackForm.legal_approver_user_id} onChange={(e) => setRollbackForm((p) => ({ ...p, legal_approver_user_id: e.target.value }))} placeholder="legal_approver_user_id" />
             <input style={inputStyle} value={rollbackForm.reason} onChange={(e) => setRollbackForm((p) => ({ ...p, reason: e.target.value }))} placeholder="rollback reason" />
             <button onClick={rollbackPlan} className="px-3 py-2 rounded-lg text-xs" style={{ ...CARD, borderColor: '#F59E0B40', color: '#F59E0B', fontFamily: fontFamily.mono }}>
               Rollback

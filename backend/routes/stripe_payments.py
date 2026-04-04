@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, Request, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any, Dict
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -161,6 +161,77 @@ def _get_service_supabase():
         return sb
 
 
+def _get_latest_release_approval_context(sb, plan_key: str, version: int) -> Dict[str, Any]:
+    logs = (
+        sb.table("pricing_audit_log")
+        .select("context,created_at")
+        .eq("action", "publish_pricing")
+        .order("created_at", desc=True)
+        .limit(50)
+        .execute()
+    )
+    for row in (logs.data or []):
+        ctx = row.get("context") or {}
+        if str(ctx.get("plan_key") or "").strip().lower() != plan_key:
+            continue
+        approval = ctx.get("approval_contract") or {}
+        if str(approval.get("version") or "").strip() != "v1_triple_signoff":
+            continue
+        # Bind by explicit release version if available.
+        to_version = approval.get("to_version")
+        if to_version is not None and int(to_version) != int(version):
+            continue
+        return approval
+    return {}
+
+
+def _resolve_governed_plan(sb, requested_plan_id: str) -> Dict[str, Any]:
+    plan_key = str(requested_plan_id or "").strip().lower()
+    if plan_key in {"foundation", "growth"}:
+        plan_key = "starter"
+    elif plan_key == "professional":
+        plan_key = "pro"
+
+    active = (
+        sb.table("pricing_plans")
+        .select("*")
+        .eq("plan_key", plan_key)
+        .eq("is_active", True)
+        .order("version", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not active.data:
+        return {}
+
+    row = active.data[0]
+    approval = _get_latest_release_approval_context(sb, plan_key, int(row.get("version") or 0))
+    all_approvers_present = all(
+        str(approval.get(key) or "").strip()
+        for key in ("product_approver_user_id", "finance_approver_user_id", "legal_approver_user_id")
+    )
+    if not all_approvers_present:
+        raise HTTPException(
+            status_code=503,
+            detail="Pricing governance gate: active plan is missing required product/finance/legal approvals",
+        )
+
+    currency = str(row.get("currency") or "AUD").strip().lower()
+    return {
+        "amount": int(row.get("monthly_price_cents") or 0),
+        "currency": currency,
+        "name": str(row.get("name") or f"BIQc {plan_key.title()}"),
+        "tier": plan_key,
+        "interval": "month",
+        "governance": {
+            "plan_key": plan_key,
+            "plan_version": int(row.get("version") or 0),
+            "approval_contract": approval,
+            "source": "pricing_control_plane",
+        },
+    }
+
+
 class CheckoutRequest(BaseModel):
     tier: Optional[str] = None
     package_id: Optional[str] = None   # legacy support
@@ -177,7 +248,8 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
     if plan_id not in PLANS:
         raise HTTPException(status_code=400, detail=f"Invalid plan. Choose from: {list(PLANS.keys())}")
 
-    plan = PLANS[plan_id]
+    sb = _get_service_supabase()
+    plan = _resolve_governed_plan(sb, plan_id) or PLANS[plan_id]
     user_id = current_user["id"]
     user_email = current_user.get("email", "")
 
@@ -222,11 +294,13 @@ async def create_checkout(req: CheckoutRequest, request: Request, current_user: 
                 "user_email": user_email,
                 "tier": plan["tier"],
                 "source": "biqc_upgrade",
+                "pricing_source": (plan.get("governance", {}) or {}).get("source", "legacy_static"),
+                "pricing_plan_key": (plan.get("governance", {}) or {}).get("plan_key", plan_id),
+                "pricing_plan_version": str((plan.get("governance", {}) or {}).get("plan_version", "")),
             },
         )
         logger.info(f"✅ Stripe checkout created for {user_email} → {plan['name']}")
         try:
-            sb = _get_service_supabase()
             sb.table("payment_transactions").insert({
                 "user_id": user_id,
                 "session_id": session.id,
