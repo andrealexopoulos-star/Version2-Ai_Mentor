@@ -31,6 +31,12 @@ export default function AskBiqcAssistantResponse({
   if (!message || message.role !== 'assistant') return null;
 
   const confidencePercent = normalizeAskBiqcConfidencePercent(message.confidence_score);
+  const evidenceSources = (message.evidence_pack?.sources || []).filter(
+    (source) => String(source?.source || '').trim().toLowerCase() !== 'unknown'
+  );
+  const directSources = (message.sources || []).filter(
+    (source) => String(source || '').trim().toLowerCase() !== 'unknown'
+  );
 
   return (
     <>
@@ -79,9 +85,9 @@ export default function AskBiqcAssistantResponse({
         </div>
       )}
 
-      {message.evidence_pack?.sources?.length > 0 && (
+      {evidenceSources.length > 0 && (
         <div className={`mt-2 flex flex-wrap ${compact ? 'gap-1' : 'gap-1.5'}`} data-testid={evidenceTestId}>
-          {message.evidence_pack.sources.slice(0, 5).map((source) => (
+          {evidenceSources.slice(0, 5).map((source) => (
             <Chip
               key={source.id || source.source}
               style={{ background: compact ? '#8B5CF610' : 'rgba(139,92,246,0.12)', color: '#A78BFA' }}
@@ -151,9 +157,9 @@ export default function AskBiqcAssistantResponse({
         </div>
       )}
 
-      {message.sources?.length > 0 && compact && (
+      {directSources.length > 0 && compact && (
         <div className="flex gap-1 mt-2 flex-wrap">
-          {message.sources.map((source, index) => (
+          {directSources.map((source, index) => (
             <Chip key={`${source}-${index}`} style={{ background: '#10B98110', color: '#10B981' }}>
               {source}
             </Chip>

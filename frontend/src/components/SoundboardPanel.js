@@ -535,12 +535,13 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[92%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm`}
               style={{
-                background: msg.role === 'user' ? '#FF6A00' : '#0F1720',
-                color: msg.role === 'user' ? 'white' : '#E2E8F0',
-                border: msg.role === 'user' ? 'none' : '1px solid #223246',
+                background: msg.role === 'user' ? 'linear-gradient(135deg, rgba(255,106,0,0.20), rgba(255,106,0,0.10))' : '#0F1720',
+                color: msg.role === 'user' ? '#F8FAFC' : '#E2E8F0',
+                border: msg.role === 'user' ? '1px solid rgba(255,106,0,0.28)' : '1px solid #223246',
                 fontFamily: fontFamily.body,
                 whiteSpace: 'pre-line',
                 borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+                boxShadow: msg.role === 'user' ? 'inset 0 1px 0 rgba(255,255,255,0.05)' : 'none',
               }}>
               {msg.role === 'assistant' ? (
                 <AskBiqcAssistantResponse

@@ -12,9 +12,9 @@ import { fontFamily } from '../design-system/tokens';
 export function LineageBadge({ lineage, data_freshness, confidence_score, className = '', compact = false }) {
   const rawSources = lineage?.connected_sources_list || lineage?.connected_sources;
   const sources = Array.isArray(rawSources)
-    ? rawSources
+    ? rawSources.filter((source) => String(source || '').trim().toLowerCase() !== 'unknown')
     : (rawSources && typeof rawSources === 'object'
-      ? Object.keys(rawSources).filter((key) => Boolean(rawSources[key]))
+      ? Object.keys(rawSources).filter((key) => Boolean(rawSources[key]) && String(key || '').trim().toLowerCase() !== 'unknown')
       : []);
   const hasSources = sources.length > 0;
   const freshness = data_freshness || lineage?.last_updated;

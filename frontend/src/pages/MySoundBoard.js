@@ -845,14 +845,17 @@ const MySoundBoard = () => {
                         }`}
                         style={{
                           background: message.role === 'user' 
-                            ? 'var(--accent-primary)' 
+                            ? 'linear-gradient(135deg, rgba(255,106,0,0.20), rgba(255,106,0,0.10))'
                             : 'var(--bg-card)',
                           color: message.role === 'user' 
-                            ? 'white' 
+                            ? '#F8FAFC'
                             : 'var(--text-primary)',
                           border: message.role === 'user' 
-                            ? 'none' 
-                            : '1px solid var(--border-light)'
+                            ? '1px solid rgba(255,106,0,0.28)'
+                            : '1px solid var(--border-light)',
+                          boxShadow: message.role === 'user'
+                            ? 'inset 0 1px 0 rgba(255,255,255,0.05)'
+                            : 'none',
                         }}
                       >
                         {message.role === 'assistant' ? (

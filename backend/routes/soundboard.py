@@ -147,10 +147,18 @@ def _build_grounded_exec_fallback(*, has_crm: bool, has_accounting: bool, has_em
 
     lines = [
         "Priority now: contain the most material cross-functional risk cluster this week.",
-        "Situation: I am using your connected BIQc telemetry to provide this summary.",
         f"Connected systems: {', '.join(connected) if connected else 'integration visibility limited in this turn'}.",
-        f"Live signals observed: {len(obs_events or [])}.",
     ]
+    if obs_events:
+        lines.extend([
+            "Situation: I am using materialized BIQc signal events from your connected systems to provide this summary.",
+            f"Live signal events materialized: {len(obs_events or [])}.",
+        ])
+    else:
+        lines.extend([
+            "Situation: I can see your connected systems, but the materialized BIQc signal layer for this turn is still thin.",
+            "Live signal events materialized: 0 in this cycle.",
+        ])
     if top_signals:
         lines.append("Top signals:\n" + "\n".join(top_signals))
 
@@ -227,18 +235,55 @@ def _format_history_for_prompt(messages_history: List[Dict[str, Any]], *, limit:
 
 def _is_report_grade_request(message: str) -> bool:
     text = str(message or "").lower()
-    report_terms = [
-        "board report",
-        "board pack",
-        "board summary",
-        "performance report",
-        "monthly report",
-        "quarterly report",
-        "last 12 months",
-        "past 12 months",
-        "12 month",
+    report_patterns = [
+        r"\b(board report|board pack|board summary|performance report|monthly report|quarterly report|executive report)\b",
+        r"\b(last|past)\s+(12|twelve)\s+months?\b",
+        r"\b12[- ]month\b",
+        r"\b(review|analyse|analyze|summari[sz]e)\b.*\b(last|past)\s+(12|twelve)\s+months?\b",
+        r"\b12[- ]month\s+(review|performance|narrative|summary)\b",
+        r"\bhow the business performed\b",
     ]
-    return any(term in text for term in report_terms)
+    return any(re.search(pattern, text, re.IGNORECASE) for pattern in report_patterns)
+
+
+def _fetch_observation_signal_state(sb, user_id: str) -> tuple[int, Optional[float]]:
+    live_signal_count = 0
+    live_signal_age_hours = None
+    try:
+        obs_result = (
+            sb.table("observation_events")
+            .select("observed_at", count="exact")
+            .eq("user_id", user_id)
+            .order("observed_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        live_signal_count = obs_result.count or 0
+        if obs_result.data:
+            last_obs = datetime.fromisoformat(obs_result.data[0]["observed_at"].replace("Z", "+00:00"))
+            live_signal_age_hours = round((datetime.now(timezone.utc) - last_obs).total_seconds() / 3600, 1)
+    except Exception:
+        pass
+    return live_signal_count, live_signal_age_hours
+
+
+async def _attempt_soundboard_signal_materialization(sb, user_id: str) -> Dict[str, Any]:
+    try:
+        from workspace_helpers import get_user_account
+        from merge_emission_layer import get_emission_layer
+
+        account = await get_user_account(sb, user_id)
+        if not account or not account.get("id"):
+            return {"attempted": False, "signals_emitted": 0, "reason": "workspace_missing"}
+
+        emission_layer = get_emission_layer()
+        result = await emission_layer.run_emission(user_id, account["id"])
+        emitted = int((result or {}).get("signals_emitted") or 0)
+        logger.info(f"[soundboard] signal materialization user={user_id[:8]} emitted={emitted}")
+        return {"attempted": True, "signals_emitted": emitted}
+    except Exception as exc:
+        logger.warning(f"[soundboard] signal materialization failed for user {user_id[:8]}: {exc}")
+        return {"attempted": False, "signals_emitted": 0, "reason": str(exc)[:160]}
 
 
 def _has_grounded_report_facts(*, rev: Dict[str, Any], risk: Dict[str, Any], obs_events: List[Dict[str, Any]]) -> bool:
@@ -1480,21 +1525,17 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     guardrail_status = coverage["guardrail_status"]
     missing_fields = coverage["missing_fields"]
     missing_critical = coverage["missing_critical"]
+    request_looks_report_grade = _is_report_grade_request(str(req.message or ""))
 
     # Keep legacy context_fields for logging compatibility
     context_fields = sum(1 for f in ['business_name', 'industry', 'revenue_range', 'team_size', 'main_challenges', 'short_term_goals'] if profile and profile.get(f) and str(profile.get(f)) not in ('None', ''))
 
     # Live signal freshness check
-    live_signal_count = 0
-    live_signal_age_hours = None
-    try:
-        obs_result = sb.table('observation_events').select('observed_at', count='exact').eq('user_id', user_id).order('observed_at', desc=True).limit(1).execute()
-        live_signal_count = obs_result.count or 0
-        if obs_result.data:
-            last_obs = datetime.fromisoformat(obs_result.data[0]['observed_at'].replace('Z', '+00:00'))
-            live_signal_age_hours = round((datetime.now(timezone.utc) - last_obs).total_seconds() / 3600, 1)
-    except Exception:
-        pass
+    live_signal_count, live_signal_age_hours = _fetch_observation_signal_state(sb, user_id)
+    if live_signal_count == 0 and (request_looks_report_grade or has_crm or has_accounting or has_email):
+        materialization = await _attempt_soundboard_signal_materialization(sb, user_id)
+        if materialization.get("signals_emitted", 0) > 0:
+            live_signal_count, live_signal_age_hours = _fetch_observation_signal_state(sb, user_id)
 
     logger.info(f"[GUARDRAIL] user={user_id[:8]} coverage={coverage_pct}% status={guardrail_status} critical_missing={len(missing_critical)}")
 
@@ -2167,7 +2208,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     # ═══ RATE LIMITING per subscription tier ═══
     from routes.deps import check_rate_limit, AI_MODELS
     requested_mode = getattr(req, 'mode', 'auto')
-    report_grade_request = _is_report_grade_request(clean_message)
+    report_grade_request = request_looks_report_grade or _is_report_grade_request(clean_message)
     tier_for_contract = (current_user.get("subscription_tier") or profile.get("subscription_tier") or "free")
     is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin", "admin"}
     mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
