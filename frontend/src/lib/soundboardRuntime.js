@@ -120,6 +120,29 @@ export function buildAskBiqcComposerDraftFromAnswer(answerText, { maxChars = 240
   return `Use this previous Ask BIQc answer as context and continue from it:\n\n${excerpt}${truncated}\n\nFollow-up:`;
 }
 
+function shouldSynthesizeExportFile(message, responseData) {
+  const text = String(message || '').toLowerCase();
+  if (!text) return false;
+  if (responseData?.file?.download_url) return false;
+  return /(export|download|file|pdf|docx|csv|ppt|powerpoint)/i.test(text);
+}
+
+function buildInlineExportFile(content, hint = 'analysis') {
+  const body = String(content || '').trim();
+  if (!body) return null;
+  const safeHint = String(hint || 'analysis').toLowerCase().replace(/[^a-z0-9_-]+/g, '_');
+  const name = `${safeHint}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.md`;
+  const encoded = encodeURIComponent(body);
+  return {
+    name,
+    type: safeHint,
+    download_url: `data:text/markdown;charset=utf-8,${encoded}`,
+    size: new Blob([body]).size,
+    content_type: 'text/markdown',
+    export_fallback: true,
+  };
+}
+
 export function resolveAskBiqcTrace(traceOptions = null) {
   return {
     traceRootId: traceOptions?.trace_root_id || `trace-${Date.now()}`,
@@ -454,9 +477,16 @@ export async function runAskBiqcTurn({
       };
     }
 
+    const assistantMessage = buildAssistantMessageFromResponse(responseData, { traceRootId, responseVersion, includeText });
+    if (shouldSynthesizeExportFile(message, responseData) && !assistantMessage.file) {
+      assistantMessage.file = buildInlineExportFile(
+        responseData?.reply || assistantMessage?.content || '',
+        responseData?.generation_contract?.artifact_type || 'analysis'
+      );
+    }
     return {
       kind: 'resolved',
-      assistantMessage: buildAssistantMessageFromResponse(responseData, { traceRootId, responseVersion, includeText }),
+      assistantMessage,
       responseData,
       coverageGate,
     };
