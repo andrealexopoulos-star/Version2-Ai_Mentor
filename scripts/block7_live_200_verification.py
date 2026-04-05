@@ -23,6 +23,11 @@ DEFAULT_BACKEND_BASE_URL = "https://biqc-api.azurewebsites.net"
 TIMEOUT_SECONDS = 8
 RETRY_TIMEOUT_SECONDS = 18
 MAX_ENDPOINT_PROBES = 180
+TRUTH_GATEWAY_PATHS = {
+    "/api/intelligence/freshness",
+    "/api/intelligence/summary",
+}
+TRUTH_GATEWAY_DEGRADED_ALLOWED = {"RPC_FUNCTION_MISSING", "SCHEMA_MISMATCH"}
 
 
 def latest(prefix: str) -> Path | None:
@@ -34,6 +39,76 @@ def load_json(path: Path) -> Dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _parse_json_or_none(value: str) -> Dict | None:
+    try:
+        parsed = json.loads(value)
+        return parsed if isinstance(parsed, dict) else None
+    except Exception:
+        return None
+
+
+def _is_number(value) -> bool:
+    return isinstance(value, (int, float))
+
+
+def _evaluate_truth_gateway_contract(status: int, body: str) -> Tuple[str, str]:
+    payload = _parse_json_or_none(body or "")
+    if not payload:
+        return "fail", "truth_gateway_payload_not_json"
+
+    required_fields = (
+        "status",
+        "truth_level",
+        "completeness",
+        "confidence",
+        "trace_id",
+        "latency_ms",
+        "degradation_flag",
+    )
+    missing_fields = [f for f in required_fields if f not in payload]
+    if missing_fields:
+        return "fail", f"truth_gateway_missing_fields:{','.join(missing_fields)}"
+
+    if not _is_number(payload.get("completeness")) or not _is_number(payload.get("confidence")):
+        return "fail", "truth_gateway_invalid_numeric_fields"
+
+    if status == 200:
+        if (
+            payload.get("status") == "canonical"
+            and payload.get("truth_level") == "verified"
+            and payload.get("completeness") == 1.0
+            and payload.get("confidence") == 1.0
+            and payload.get("degradation_flag") is False
+        ):
+            return "pass", "truth_gateway_canonical"
+        return "fail", "truth_gateway_canonical_contract_violation"
+
+    if status == 424:
+        if payload.get("status") != "degraded" or payload.get("truth_level") != "bounded":
+            return "fail", "truth_gateway_degraded_shape_invalid"
+        if payload.get("degradation_flag") is not True:
+            return "fail", "truth_gateway_degraded_flag_invalid"
+        if not isinstance(payload.get("missing_components"), list) or not isinstance(payload.get("broken_dependencies"), list):
+            return "fail", "truth_gateway_degraded_visibility_missing"
+        error_class = str(payload.get("error_class") or "")
+        if error_class not in TRUTH_GATEWAY_DEGRADED_ALLOWED:
+            return "fail", "truth_gateway_degraded_error_class_invalid"
+        completeness = float(payload.get("completeness"))
+        confidence = float(payload.get("confidence"))
+        if completeness < 0.0 or completeness > 1.0:
+            return "fail", "truth_gateway_completeness_out_of_range"
+        if confidence != completeness:
+            return "fail", "truth_gateway_confidence_mismatch"
+        return "pass", "truth_gateway_bounded_degraded"
+
+    if status == 503:
+        if payload.get("status") == "failed" and payload.get("truth_level") == "unknown":
+            return "fail", "truth_gateway_failed_unknown"
+        return "fail", "truth_gateway_failed_malformed"
+
+    return "fail", f"truth_gateway_unexpected_http_{status}"
+
+
 def http_probe(url: str, token: str | None = None) -> Tuple[int, str]:
     def _single_probe(timeout_seconds: int) -> Tuple[int, str]:
         req = urllib.request.Request(url=url, method="GET")
@@ -41,11 +116,12 @@ def http_probe(url: str, token: str | None = None) -> Tuple[int, str]:
             req.add_header("Authorization", f"Bearer {token}")
         try:
             with urllib.request.urlopen(req, timeout=timeout_seconds) as resp:
-                return int(resp.status), ""
+                body = (resp.read() or b"").decode("utf-8", errors="ignore")[:4000]
+                return int(resp.status), body
         except urllib.error.HTTPError as e:
             body = ""
             try:
-                body = (e.read() or b"").decode("utf-8", errors="ignore")[:300]
+                body = (e.read() or b"").decode("utf-8", errors="ignore")[:4000]
             except Exception:
                 body = ""
             return int(e.code), body
@@ -104,6 +180,10 @@ def main() -> int:
             "probe_group": "public_seed",
         })
     covered = 0
+    truth_gateway_probe_count = 0
+    truth_gateway_canonical_count = 0
+    truth_gateway_degraded_count = 0
+    truth_gateway_failed_count = 0
     for item in matrix:
         path = str(item.get("path") or "")
         method = str(item.get("method") or "GET").upper()
@@ -124,24 +204,36 @@ def main() -> int:
             break
         status, detail = http_probe(f"{backend}{path}", token=token)
         covered += 1
-        if status == 200:
-            result = "pass"
-            reason = ""
-        elif status in {401, 403}:
-            result = "contract_exception"
-            reason = "auth_required_without_valid_fixture"
-        elif status == 422 and "/callback" in path:
-            result = "contract_exception"
-            reason = "callback_requires_query_params"
-        elif status == 422 and "Field required" in detail:
-            result = "contract_exception"
-            reason = "query_params_required"
-        elif status in {404, 405}:
-            result = "contract_exception"
-            reason = "non_probeable_get_surface"
+        if path in TRUTH_GATEWAY_PATHS:
+            truth_gateway_probe_count += 1
+            result, reason = _evaluate_truth_gateway_contract(status, detail)
+            payload = _parse_json_or_none(detail or "") or {}
+            truth_state = str(payload.get("status") or "").strip().lower()
+            if result == "pass" and truth_state == "canonical":
+                truth_gateway_canonical_count += 1
+            elif result == "pass" and truth_state == "degraded":
+                truth_gateway_degraded_count += 1
+            elif truth_state == "failed" or status == 503:
+                truth_gateway_failed_count += 1
         else:
-            result = "fail"
-            reason = detail or f"http_{status}"
+            if status == 200:
+                result = "pass"
+                reason = ""
+            elif status in {401, 403}:
+                result = "contract_exception"
+                reason = "auth_required_without_valid_fixture"
+            elif status == 422 and "/callback" in path:
+                result = "contract_exception"
+                reason = "callback_requires_query_params"
+            elif status == 422 and "Field required" in detail:
+                result = "contract_exception"
+                reason = "query_params_required"
+            elif status in {404, 405}:
+                result = "contract_exception"
+                reason = "non_probeable_get_surface"
+            else:
+                result = "fail"
+                reason = detail or f"http_{status}"
         probes.append({
             "path": path,
             "method": method,
@@ -170,6 +262,8 @@ def main() -> int:
     failure_codes: List[str] = []
     if fail_items:
         failure_codes.append("LIVE_ENDPOINT_PROBE_FAILURES")
+    if any(p.get("path") in TRUTH_GATEWAY_PATHS and p.get("result") == "fail" for p in probes):
+        failure_codes.append("TRUTH_GATEWAY_CONTRACT_FAILURES")
     if pass_count == 0:
         failure_codes.append("NO_LIVE_200_PROBES")
     if not token:
@@ -193,6 +287,12 @@ def main() -> int:
             "auth_required_200_count": auth_required_200_count,
             "contract_exception_count": exception_count,
             "unexpected_fail_count": len(fail_items),
+        },
+        "truth_gateway_summary": {
+            "probes": truth_gateway_probe_count,
+            "canonical_count": truth_gateway_canonical_count,
+            "bounded_degraded_count": truth_gateway_degraded_count,
+            "failed_unknown_count": truth_gateway_failed_count,
         },
         "endpoints_checked": covered,
         "timestamp": now.isoformat(),
