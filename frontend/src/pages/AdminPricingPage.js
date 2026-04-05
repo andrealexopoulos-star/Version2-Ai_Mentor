@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
-import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { toast } from 'sonner';
 import { fontFamily } from '../design-system/tokens';
 
@@ -23,13 +22,14 @@ const inputStyle = {
 };
 
 const AdminPricingPage = () => {
-  const { user } = useSupabaseAuth();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedPlanKey, setSelectedPlanKey] = useState('starter');
   const [selectedVersion, setSelectedVersion] = useState('');
   const [features, setFeatures] = useState([]);
   const [overrides, setOverrides] = useState([]);
+  const [releases, setReleases] = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
 
   const [planForm, setPlanForm] = useState({
     plan_key: 'starter',
@@ -101,12 +101,24 @@ const AdminPricingPage = () => {
     setOverrides(res?.data?.overrides || []);
   };
 
+  const refreshReleases = async () => {
+    const res = await apiClient.get('/admin/pricing/releases');
+    setReleases(res?.data?.releases || []);
+  };
+
+  const refreshAuditLog = async () => {
+    const res = await apiClient.get('/admin/pricing/audit-log', { params: { limit: 150 } });
+    setAuditLog(res?.data?.audit_log || []);
+  };
+
   const refreshAll = async () => {
     setLoading(true);
     try {
       await refreshPlans();
       await refreshEntitlements();
       await refreshOverrides();
+      await refreshReleases();
+      await refreshAuditLog();
     } catch (err) {
       toast.error('Failed to refresh pricing control data');
     } finally {
@@ -137,6 +149,7 @@ const AdminPricingPage = () => {
       });
       toast.success('Draft plan version created');
       await refreshPlans();
+      await refreshAuditLog();
     } catch (err) {
       toast.error('Failed to create plan draft');
     }
@@ -175,6 +188,7 @@ const AdminPricingPage = () => {
       await apiClient.put('/admin/pricing/entitlements', payload);
       toast.success('Entitlements saved');
       await refreshEntitlements();
+      await refreshAuditLog();
     } catch (err) {
       toast.error('Failed to save entitlements');
     }
@@ -191,6 +205,8 @@ const AdminPricingPage = () => {
       });
       toast.success('Plan published');
       await refreshPlans();
+      await refreshReleases();
+      await refreshAuditLog();
     } catch (err) {
       toast.error('Publish failed (check approver and draft availability)');
     }
@@ -208,6 +224,8 @@ const AdminPricingPage = () => {
       });
       toast.success('Rollback completed');
       await refreshPlans();
+      await refreshReleases();
+      await refreshAuditLog();
     } catch (err) {
       toast.error('Rollback failed');
     }
@@ -226,8 +244,30 @@ const AdminPricingPage = () => {
       });
       toast.success('Custom pricing override saved');
       await refreshOverrides();
+      await refreshAuditLog();
     } catch (err) {
       toast.error('Failed to save override');
+    }
+  };
+
+  const setOverrideStatus = async (override, status) => {
+    try {
+      await apiClient.put('/admin/pricing/overrides', {
+        id: override.id,
+        account_id: override.account_id || null,
+        user_id: override.user_id || null,
+        feature_key: override.feature_key || null,
+        status,
+        reason: override.reason || null,
+        override_payload: override.override_payload || {},
+        starts_at: override.starts_at || null,
+        ends_at: override.ends_at || null,
+      });
+      toast.success(`Override marked ${status}`);
+      await refreshOverrides();
+      await refreshAuditLog();
+    } catch {
+      toast.error(`Failed to mark override ${status}`);
     }
   };
 
@@ -330,6 +370,9 @@ const AdminPricingPage = () => {
             <button onClick={publishPlan} className="px-3 py-2 rounded-lg text-xs" style={{ ...CARD, borderColor: '#10B98135', color: '#10B981', fontFamily: fontFamily.mono }}>
               Publish
             </button>
+            <p className="text-[10px] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>
+              Governance: actor must be distinct from product, finance, and legal approvers.
+            </p>
           </div>
 
           <div className="p-4 space-y-3" style={CARD}>
@@ -362,13 +405,84 @@ const AdminPricingPage = () => {
 
           <div className="max-h-[220px] overflow-auto text-xs" style={{ border: '1px solid var(--biqc-border)', borderRadius: 8 }}>
             {overrides.map((o) => (
-              <div key={o.id} className="px-3 py-2 flex items-center justify-between" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-                <span style={{ fontFamily: fontFamily.mono }}>
-                  {o.feature_key || 'global'} | user:{o.user_id ? String(o.user_id).slice(0, 8) : '-'} | account:{o.account_id ? String(o.account_id).slice(0, 8) : '-'}
-                </span>
-                <span style={{ fontFamily: fontFamily.mono, color: o.status === 'active' ? '#10B981' : '#64748B' }}>{o.status}</span>
+              <div key={o.id} className="px-3 py-2 flex items-center justify-between gap-2" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
+                <div className="min-w-0">
+                  <span style={{ fontFamily: fontFamily.mono }}>
+                    {o.feature_key || 'global'} | user:{o.user_id ? String(o.user_id).slice(0, 8) : '-'} | account:{o.account_id ? String(o.account_id).slice(0, 8) : '-'}
+                  </span>
+                  <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                    {o.id}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span style={{ fontFamily: fontFamily.mono, color: o.status === 'active' ? '#10B981' : '#64748B' }}>{o.status}</span>
+                  {o.status === 'active' ? (
+                    <button
+                      onClick={() => setOverrideStatus(o, 'inactive')}
+                      className="px-2 py-1 rounded text-[10px]"
+                      style={{ ...CARD, borderColor: '#F59E0B40', color: '#F59E0B', fontFamily: fontFamily.mono }}
+                    >
+                      Disable
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setOverrideStatus(o, 'active')}
+                      className="px-2 py-1 rounded text-[10px]"
+                      style={{ ...CARD, borderColor: '#10B98140', color: '#10B981', fontFamily: fontFamily.mono }}
+                    >
+                      Activate
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="p-4 space-y-3" style={CARD}>
+            <h2 style={{ fontFamily: fontFamily.display }} className="text-lg">Release History</h2>
+            <div className="max-h-[260px] overflow-auto text-xs" style={{ border: '1px solid var(--biqc-border)', borderRadius: 8 }}>
+              {releases.length === 0 && (
+                <div className="px-3 py-3 text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No releases yet</div>
+              )}
+              {releases.map((r) => (
+                <div key={r.id || `${r.plan_key}-${r.to_version}-${r.published_at}`} className="px-3 py-2" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
+                  <div className="flex items-center justify-between">
+                    <span style={{ fontFamily: fontFamily.mono }}>
+                      {r.plan_key} {r.from_version ? `v${r.from_version}` : 'n/a'} -> v{r.to_version}
+                    </span>
+                    <span style={{ fontFamily: fontFamily.mono, color: r.status === 'published' ? '#10B981' : '#F59E0B' }}>
+                      {r.status}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                    {r.published_at ? new Date(r.published_at).toLocaleString('en-AU') : 'unknown time'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="p-4 space-y-3" style={CARD}>
+            <h2 style={{ fontFamily: fontFamily.display }} className="text-lg">Audit Log</h2>
+            <div className="max-h-[260px] overflow-auto text-xs" style={{ border: '1px solid var(--biqc-border)', borderRadius: 8 }}>
+              {auditLog.length === 0 && (
+                <div className="px-3 py-3 text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No audit records</div>
+              )}
+              {auditLog.map((row) => (
+                <div key={row.id || `${row.action}-${row.created_at}`} className="px-3 py-2" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
+                  <div className="flex items-center justify-between">
+                    <span style={{ fontFamily: fontFamily.mono }}>{row.action}</span>
+                    <span className="text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                      {row.entity_type}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>
+                    {row.entity_id || '-'} · {row.created_at ? new Date(row.created_at).toLocaleString('en-AU') : 'unknown'}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

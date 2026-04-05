@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
-import { User, Building, Settings as SettingsIcon, Zap, Brain, Loader2, Save, CreditCard, RefreshCw, BookOpen, AlertTriangle, Info, Lock, ArrowRight } from 'lucide-react';
+import { User, Settings as SettingsIcon, Zap, Bell, Activity, BarChart3, Brain, Loader2, Save, CreditCard, RefreshCw, BookOpen, AlertTriangle, Lock, ArrowRight } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
@@ -34,6 +34,16 @@ const Settings = () => {
   const [accountData, setAccountData] = useState({
     name: user?.name || '',
     email: user?.email || ''
+  });
+  const [opsLoading, setOpsLoading] = useState(true);
+  const [opsSummary, setOpsSummary] = useState({
+    actions_count: 0,
+    alerts_total: 0,
+    alerts_high: 0,
+    business_dna_completeness: 0,
+    business_dna_strength: 0,
+    data_health_score: 0,
+    connected_sources: 0,
   });
 
   const syncFromCalibration = async () => {
@@ -77,6 +87,7 @@ const Settings = () => {
   useEffect(() => {
     fetchProfile();
     fetchCalibrationStatus();
+    fetchOpsSummary();
     // Safety timeout: don't show loading forever
     const timeout = setTimeout(() => setLoading(false), 5000);
     return () => clearTimeout(timeout);
@@ -93,9 +104,51 @@ const Settings = () => {
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  const fetchOpsSummary = async () => {
+    setOpsLoading(true);
+    try {
+      const [snapshotRes, alertsRes, scoresRes, readinessRes, integrationRes] = await Promise.allSettled([
+        apiClient.get('/snapshot/latest'),
+        apiClient.get('/notifications/alerts'),
+        apiClient.get('/business-profile/scores'),
+        apiClient.get('/intelligence/data-readiness'),
+        apiClient.get('/user/integration-status'),
+      ]);
+
+      const actionsCount = snapshotRes.status === 'fulfilled'
+        ? Number((snapshotRes.value?.data?.cognitive?.resolution_queue || []).length || 0)
+        : 0;
+      const alertsSummary = alertsRes.status === 'fulfilled'
+        ? (alertsRes.value?.data?.summary || {})
+        : {};
+      const scores = scoresRes.status === 'fulfilled'
+        ? (scoresRes.value?.data || {})
+        : {};
+      const readiness = readinessRes.status === 'fulfilled'
+        ? (readinessRes.value?.data || {})
+        : {};
+      const integrationStatus = integrationRes.status === 'fulfilled'
+        ? (integrationRes.value?.data || {})
+        : {};
+      const connectedSources = Array.isArray(integrationStatus?.integrations)
+        ? integrationStatus.integrations.filter((row) => Boolean(row?.connected)).length
+        : Number(integrationStatus?.total_connected || 0);
+
+      setOpsSummary({
+        actions_count: actionsCount,
+        alerts_total: Number(alertsSummary.total || 0),
+        alerts_high: Number(alertsSummary.high || 0),
+        business_dna_completeness: Number(scores.completeness || 0),
+        business_dna_strength: Number(scores.strength || 0),
+        data_health_score: Number(readiness.score || 0),
+        connected_sources: connectedSources,
+      });
+    } catch {
+      // non-blocking, settings core still loads
+    } finally {
+      setOpsLoading(false);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -248,7 +301,7 @@ const Settings = () => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full mb-8">
+            <TabsList className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 w-full mb-8 gap-1">
               <TabsTrigger value="account" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">Account</span>
@@ -260,6 +313,26 @@ const Settings = () => {
               <TabsTrigger value="tools" className="flex items-center gap-2">
                 <Zap className="w-4 h-4" />
                 <span className="hidden sm:inline">Tools</span>
+              </TabsTrigger>
+              <TabsTrigger value="actions" className="flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                <span className="hidden sm:inline">Actions</span>
+              </TabsTrigger>
+              <TabsTrigger value="alerts" className="flex items-center gap-2">
+                <Bell className="w-4 h-4" />
+                <span className="hidden sm:inline">Alerts</span>
+              </TabsTrigger>
+              <TabsTrigger value="business-dna" className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                <span className="hidden sm:inline">Business DNA</span>
+              </TabsTrigger>
+              <TabsTrigger value="data-health" className="flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                <span className="hidden sm:inline">Data Health</span>
+              </TabsTrigger>
+              <TabsTrigger value="connectors" className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4" />
+                <span className="hidden sm:inline">Connectors</span>
               </TabsTrigger>
               <TabsTrigger value="billing" className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4" />
@@ -761,6 +834,189 @@ const Settings = () => {
               </Card>
             </TabsContent>
 
+            {/* ACTIONS TAB */}
+            <TabsContent value="actions">
+              <Card style={sectionResizeStyle}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="w-5 h-5" style={{ color: '#FF6A00' }} />
+                    Actions Workspace
+                  </CardTitle>
+                  <CardDescription>
+                    Keep execution work visible and move directly into your full Actions page.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Open actions</p>
+                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
+                        {opsLoading ? '--' : opsSummary.actions_count}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Connected sources</p>
+                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
+                        {opsLoading ? '--' : opsSummary.connected_sources}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Operational posture</p>
+                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
+                        {opsLoading ? '--' : `${Math.max(0, Math.min(100, Math.round((opsSummary.data_health_score + opsSummary.business_dna_strength) / 2)))}%`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'rgba(255,106,0,0.05)' }}>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Actions in Settings are a quick control surface. Use the full Actions workspace for prioritization, assignment, and completion tracking.
+                    </p>
+                    <Button className="mt-3 btn-primary" onClick={() => navigate('/actions')} data-testid="settings-open-actions">
+                      Open Actions Page
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ALERTS TAB */}
+            <TabsContent value="alerts">
+              <Card style={sectionResizeStyle}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="w-5 h-5" style={{ color: '#F59E0B' }} />
+                    Alerts Center
+                  </CardTitle>
+                  <CardDescription>
+                    View critical alert pressure before jumping to the full triage console.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-xl border p-4" style={{ borderColor: 'rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.06)' }}>
+                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#F59E0B' }}>Total alerts</p>
+                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
+                        {opsLoading ? '--' : opsSummary.alerts_total}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border p-4" style={{ borderColor: 'rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)' }}>
+                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#EF4444' }}>High urgency</p>
+                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
+                        {opsLoading ? '--' : opsSummary.alerts_high}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Alerts are grounded in connected systems and BIQc policies. Resolve urgent cards first to stabilize forecasting and execution confidence.
+                    </p>
+                    <Button className="mt-3 btn-primary" onClick={() => navigate('/alerts')} data-testid="settings-open-alerts">
+                      Open Alerts Page
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* BUSINESS DNA TAB */}
+            <TabsContent value="business-dna">
+              <Card style={sectionResizeStyle}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" style={{ color: '#06B6D4' }} />
+                    Business DNA
+                  </CardTitle>
+                  <CardDescription>
+                    Monitor profile completeness and strategic signal strength used by Ask BIQc.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Profile completeness</p>
+                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
+                        {opsLoading ? '--' : `${Math.round(opsSummary.business_dna_completeness)}%`}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Signal strength</p>
+                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
+                        {opsLoading ? '--' : `${Math.round(opsSummary.business_dna_strength)}%`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'rgba(6,182,212,0.05)' }}>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Business DNA drives personalization, priority scoring, and recommendation style across Ask BIQc and operating modules.
+                    </p>
+                    <Button className="mt-3 btn-primary" onClick={() => navigate('/business-profile')} data-testid="settings-open-business-dna">
+                      Open Business DNA Page
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* DATA HEALTH TAB */}
+            <TabsContent value="data-health">
+              <Card style={sectionResizeStyle}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="w-5 h-5" style={{ color: '#10B981' }} />
+                    Data Health
+                  </CardTitle>
+                  <CardDescription>
+                    Check ingestion readiness and connector-backed data confidence.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="rounded-xl border p-4" style={{ borderColor: 'rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.06)' }}>
+                    <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#10B981' }}>Readiness score</p>
+                    <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
+                      {opsLoading ? '--' : `${Math.round(opsSummary.data_health_score)}%`}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Data Health reflects coverage, freshness, and integration validity. Keep this score high to improve Ask BIQc answer depth and reliability.
+                    </p>
+                    <Button className="mt-3 btn-primary" onClick={() => navigate('/data-health')} data-testid="settings-open-data-health">
+                      Open Data Health Page
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* CONNECTORS TAB */}
+            <TabsContent value="connectors">
+              <Card style={sectionResizeStyle}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5" style={{ color: '#8B5CF6' }} />
+                    Connectors
+                  </CardTitle>
+                  <CardDescription>
+                    Manage integrations and validate post-connect sync health.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+                    <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Connected systems</p>
+                    <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
+                      {opsLoading ? '--' : opsSummary.connected_sources}
+                    </p>
+                    <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                      Connected sources directly influence retrieval depth across Ask BIQc and platform modules.
+                    </p>
+                  </div>
+                  <Button className="btn-primary" onClick={() => navigate('/integrations')} data-testid="settings-open-connectors">
+                    Open Connectors Page
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {/* BILLING TAB */}
             <TabsContent value="billing">
               <Card style={sectionResizeStyle}>
@@ -791,6 +1047,14 @@ const Settings = () => {
                       <span className="w-2 h-2 rounded-full" style={{ background: '#10B981' }} />
                       Beta Plan — All features active
                     </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/subscribe')}
+                      className="mx-auto"
+                      data-testid="settings-open-subscription"
+                    >
+                      Open Subscription Center
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

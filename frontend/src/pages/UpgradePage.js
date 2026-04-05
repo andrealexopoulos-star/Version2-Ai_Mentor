@@ -81,12 +81,12 @@ export default function UpgradePage({ success = false }) {
               Go to Advisor <ArrowRight className="h-4 w-4" />
             </button>
             <button
-              onClick={() => navigate('/biqc-foundation')}
+              onClick={() => navigate('/subscribe?section=foundation')}
               className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl border text-sm font-semibold"
               style={{ borderColor: '#243140', color: '#C9D5E2', fontFamily: fontFamily.body }}
               data-testid="upgrade-success-open-foundation"
             >
-              View Foundation
+              View Subscription
             </button>
           </div>
         </div>

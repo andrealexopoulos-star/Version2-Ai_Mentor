@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from routes.deps import get_super_admin, get_sb
 
@@ -14,8 +15,48 @@ from routes.deps import get_super_admin, get_sb
 router = APIRouter()
 
 
+PLAN_KEY_ALIASES = {
+    "foundation": "starter",
+    "growth": "starter",
+    "professional": "pro",
+    "custom": "custom_build",
+}
+ALLOWED_PLAN_KEYS = {"free", "starter", "pro", "enterprise", "custom_build"}
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _normalize_plan_key(value: str) -> str:
+    normalized = str(value or "").strip().lower()
+    normalized = PLAN_KEY_ALIASES.get(normalized, normalized)
+    if normalized not in ALLOWED_PLAN_KEYS:
+        raise ValueError(f"plan_key must be one of {sorted(ALLOWED_PLAN_KEYS)}")
+    return normalized
+
+
+def _validate_override_window(starts_at: Optional[str], ends_at: Optional[str]) -> None:
+    if not starts_at or not ends_at:
+        return
+    try:
+        start_dt = datetime.fromisoformat(str(starts_at).replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(str(ends_at).replace("Z", "+00:00"))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="starts_at and ends_at must be valid ISO datetime values") from exc
+    if end_dt < start_dt:
+        raise HTTPException(status_code=400, detail="ends_at must be greater than or equal to starts_at")
+
+
+def _validate_override_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    data = payload or {}
+    try:
+        encoded = json.dumps(data, separators=(",", ":"), default=str)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="override_payload must be JSON-serializable") from exc
+    if len(encoded.encode("utf-8")) > 32768:
+        raise HTTPException(status_code=400, detail="override_payload exceeds 32KB limit")
+    return data
 
 
 def _audit_log(actor_user_id: str, action: str, entity_type: str, entity_id: str, before_state: Any, after_state: Any, context: Optional[Dict[str, Any]] = None) -> None:
@@ -49,7 +90,7 @@ class PricingPlanUpsert(BaseModel):
     @field_validator("plan_key")
     @classmethod
     def validate_plan_key(cls, value: str) -> str:
-        v = value.strip().lower()
+        v = _normalize_plan_key(value)
         if not all(ch.isalnum() or ch in {"-", "_"} for ch in v):
             raise ValueError("plan_key must be alphanumeric with - or _")
         return v
@@ -83,7 +124,7 @@ class EntitlementsUpsert(BaseModel):
     @field_validator("plan_key")
     @classmethod
     def normalize_plan_key(cls, value: str) -> str:
-        return value.strip().lower()
+        return _normalize_plan_key(value)
 
 
 class PricingPublishRequest(BaseModel):
@@ -96,7 +137,7 @@ class PricingPublishRequest(BaseModel):
     @field_validator("plan_key")
     @classmethod
     def normalize_plan_key(cls, value: str) -> str:
-        return value.strip().lower()
+        return _normalize_plan_key(value)
 
 
 class PricingRollbackRequest(BaseModel):
@@ -110,7 +151,7 @@ class PricingRollbackRequest(BaseModel):
     @field_validator("plan_key")
     @classmethod
     def normalize_plan_key(cls, value: str) -> str:
-        return value.strip().lower()
+        return _normalize_plan_key(value)
 
 
 class PricingOverrideUpsert(BaseModel):
@@ -129,7 +170,42 @@ class PricingOverrideUpsert(BaseModel):
     def normalize_feature_key(cls, value: Optional[str]) -> Optional[str]:
         if value is None:
             return value
-        return value.strip().lower()
+        normalized = value.strip().lower()
+        if normalized and not all(ch.isalnum() or ch in {"-", "_", "."} for ch in normalized):
+            raise ValueError("feature_key must be alphanumeric with -, _, or .")
+        return normalized
+
+    @field_validator("status")
+    @classmethod
+    def normalize_status(cls, value: str) -> str:
+        normalized = str(value or "").strip().lower()
+        allowed = {"active", "inactive", "expired", "scheduled"}
+        if normalized not in allowed:
+            raise ValueError(f"status must be one of {sorted(allowed)}")
+        return normalized
+
+    @field_validator("override_payload")
+    @classmethod
+    def validate_override_payload_size(cls, value: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            encoded = json.dumps(value or {}, separators=(",", ":"), default=str)
+        except Exception as exc:
+            raise ValueError("override_payload must be JSON-serializable") from exc
+        if len(encoded.encode("utf-8")) > 32768:
+            raise ValueError("override_payload exceeds 32KB limit")
+        return value or {}
+
+    @model_validator(mode="after")
+    def validate_window(self):
+        if self.starts_at and self.ends_at:
+            try:
+                start_dt = datetime.fromisoformat(str(self.starts_at).replace("Z", "+00:00"))
+                end_dt = datetime.fromisoformat(str(self.ends_at).replace("Z", "+00:00"))
+            except Exception as exc:
+                raise ValueError("starts_at and ends_at must be valid ISO datetime values") from exc
+            if end_dt < start_dt:
+                raise ValueError("ends_at must be greater than or equal to starts_at")
+        return self
 
 
 @router.get("/admin/pricing/plans")
@@ -143,6 +219,40 @@ async def admin_pricing_plans(admin: dict = Depends(get_super_admin)):
         .execute()
     )
     return {"plans": plans.data or []}
+
+
+@router.get("/admin/pricing/releases")
+async def admin_pricing_releases(
+    plan_key: Optional[str] = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    admin: dict = Depends(get_super_admin),
+):
+    sb = get_sb()
+    q = sb.table("pricing_releases").select("*").order("published_at", desc=True).limit(limit)
+    if plan_key:
+        q = q.eq("plan_key", plan_key.strip().lower())
+    rows = q.execute()
+    return {"releases": rows.data or []}
+
+
+@router.get("/admin/pricing/audit-log")
+async def admin_pricing_audit_log(
+    plan_key: Optional[str] = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    admin: dict = Depends(get_super_admin),
+):
+    sb = get_sb()
+    q = sb.table("pricing_audit_log").select("*").order("created_at", desc=True).limit(limit)
+    rows = q.execute()
+    data = rows.data or []
+    if plan_key:
+        pk = plan_key.strip().lower()
+        data = [
+            row for row in data
+            if str(((row.get("context") or {}).get("plan_key") or "")).strip().lower() == pk
+            or str(row.get("entity_id") or "").strip().lower().startswith(f"{pk}:")
+        ]
+    return {"audit_log": data}
 
 
 @router.put("/admin/pricing/plans")
@@ -539,12 +649,13 @@ async def admin_upsert_pricing_override(payload: PricingOverrideUpsert, admin: d
 
     if not payload.account_id and not payload.user_id:
         raise HTTPException(status_code=400, detail="account_id or user_id is required")
+    _validate_override_window(payload.starts_at, payload.ends_at)
 
     row = {
         "account_id": payload.account_id,
         "user_id": payload.user_id,
         "feature_key": payload.feature_key,
-        "override_payload": payload.override_payload or {},
+        "override_payload": _validate_override_payload(payload.override_payload),
         "starts_at": payload.starts_at,
         "ends_at": payload.ends_at,
         "status": payload.status,

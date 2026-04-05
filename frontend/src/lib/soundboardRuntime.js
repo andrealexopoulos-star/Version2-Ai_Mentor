@@ -93,6 +93,40 @@ export function buildAskBiqcRequestPayload({
   };
 }
 
+const ARTIFACT_TYPE_HINTS = [
+  { type: 'video_brief', rx: /\b(video|storyboard|script)\b/i },
+  { type: 'image', rx: /\b(image|graphic|logo|banner|visual|thumbnail)\b/i },
+  { type: 'job_description', rx: /\b(job description|jd|position description|role spec)\b/i },
+  { type: 'sop', rx: /\b(sop|standard operating procedure|process guide)\b/i },
+  { type: 'playbook', rx: /\b(playbook|runbook|battlecard)\b/i },
+  { type: 'dashboard_spec', rx: /\b(dashboard|scorecard|kpi board|kpi dashboard)\b/i },
+  { type: 'plan', rx: /\b(plan|roadmap|execution plan|rollout)\b/i },
+  { type: 'memo', rx: /\b(memo|briefing note|brief)\b/i },
+  { type: 'report', rx: /\b(report|board report|board pack|exec report)\b/i },
+  { type: 'analysis', rx: /\b(analysis|analyse|deep dive|forensic)\b/i },
+];
+
+export function inferAskBiqcGenerationIntent(message = '') {
+  const text = String(message || '').trim();
+  if (!text) return { deliverableType: null, exportRequested: false };
+  const lower = text.toLowerCase();
+  const exportRequested = /\b(export|download|file|pdf|docx|csv|ppt|powerpoint)\b/i.test(text);
+  const creationRequested = /\b(create|generate|write|produce|build|draft|make|prepare)\b/i.test(text);
+  const matched = ARTIFACT_TYPE_HINTS.find((item) => item.rx.test(text));
+  let deliverableType = matched?.type || null;
+  if (!deliverableType && creationRequested) {
+    deliverableType = 'analysis';
+  }
+  if (!deliverableType && /\b(report|analysis)\b/i.test(text)) {
+    deliverableType = 'report';
+  }
+  // Strong forensic prompts should route as report artifacts for strict structure.
+  if (!deliverableType && /\b(board|forensic|executive summary|monthly review|quarterly review)\b/i.test(lower)) {
+    deliverableType = 'report';
+  }
+  return { deliverableType, exportRequested };
+}
+
 export function normalizeAskBiqcConfidencePercent(value) {
   if (typeof value !== 'number' || Number.isNaN(value)) {
     return null;

@@ -20,6 +20,7 @@ import {
   findPreviousAskBiqcUserPrompt,
   getAskBiqcCoverageGate,
   getAskBiqcMessageText,
+  inferAskBiqcGenerationIntent,
   getSoundboardErrorMessage,
   markAskBiqcStreamingStopped,
   removeAskBiqcPlaceholder,
@@ -249,6 +250,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         mode: activeMode?.backend_mode || 'auto',
         agentId: selectedAgent || 'auto',
         forensicReportMode: deepForensicRun,
+        ...inferAskBiqcGenerationIntent(msgToSend),
       });
 
       const turnResult = await runAskBiqcTurn({
@@ -360,6 +362,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         soundboard_contract: m.soundboard_contract,
         retrieval_contract: m.retrieval_contract || m?.metadata?.retrieval_contract,
         forensic_report: m.forensic_report || m?.metadata?.forensic_report,
+        generation_contract: m.generation_contract || m?.metadata?.generation_contract,
         model_used: m.model_used,
         confidence_score: m.confidence_score,
         data_freshness: m.data_freshness,
@@ -733,7 +736,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                     ))}
 
                     {!canUseTrinity && (
-                      <a href="/biqc-foundation" className="block px-3 py-2 text-[10px] no-underline"
+                      <a href="/subscribe?section=foundation" className="block px-3 py-2 text-[10px] no-underline"
                         style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="soundboard-panel-trinity-upgrade-link">
                         Unlock BIQc Trinity: get consensus intelligence across BIQc pathways.
                       </a>

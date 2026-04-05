@@ -1,114 +1,90 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Bell, MoreHorizontal, X, Link2, Activity,
-  FileText, Settings, Radar, Target, Workflow, Inbox, MessageSquare, Calendar, Eye, Megaphone, ClipboardList, Shield, TrendingUp, BarChart3 } from 'lucide-react';
+  FileText, Settings, Radar, Target, Inbox, MessageSquare, Calendar, Eye, Megaphone, ClipboardList, Shield, TrendingUp, BarChart3, CreditCard } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
 import { isPrivilegedUser } from '../lib/privilegedUser';
 
 
-// ── Primary 5-tab bar ─────────────────────────────────────────────────────────
-const NAV_ITEMS = [
-  { id: 'pulse',   label: 'Overview', icon: LayoutDashboard, path: '/advisor' },
-  { id: 'soundboard', label: 'Ask BIQc', icon: MessageSquare, path: '/soundboard' },
-  { id: 'inbox',   label: 'Inbox',    icon: Inbox,      path: '/email-inbox' },
-  { id: 'alerts',  label: 'Alerts',   icon: Bell,            path: '/alerts' },
-  { id: 'more',    label: 'More',     icon: MoreHorizontal,  path: null },
-];
-
-// ── More sheet — grouped for scannability ─────────────────────────────────────
-const MORE_SECTIONS = [
-  {
-    label: 'Free',
-    items: [
-      { label: 'Market & Positioning', icon: Radar,       path: '/market' },
-      { label: 'Calendar',             icon: Calendar,    path: '/calendar' },
-      { label: 'Competitive Benchmark',icon: Target,      path: '/competitive-benchmark' },
-    ],
-  },
-  {
-    label: 'Operate',
-    items: [
-      { label: 'Actions',       icon: Bell,     path: '/actions' },
-      { label: 'Data Health',   icon: Activity, path: '/data-health' },
-      { label: 'Business DNA',  icon: FileText, path: '/business-profile' },
-    ],
-  },
-  {
-    label: 'Foundation',
-    items: [
-      { label: 'BIQc Foundation', icon: Shield,        path: '/biqc-foundation' },
-      { label: 'Exposure Scan', icon: Eye,           path: '/exposure-scan' },
-      { label: 'Marketing Auto',icon: Megaphone,    path: '/marketing-automation' },
-      { label: 'Reports',       icon: FileText,     path: '/reports' },
-      { label: 'Revenue',       icon: TrendingUp,   path: '/revenue' },
-      { label: 'Operations',    icon: Activity,     path: '/operations' },
-      { label: 'Marketing Intel', icon: BarChart3,  path: '/marketing-intelligence' },
-      { label: 'Boardroom',     icon: MessageSquare, path: '/board-room' },
-    ],
-  },
-  {
-    label: 'More',
-    items: [
-      { label: 'Decision Tracker', icon: ClipboardList, path: '/decisions' },
-      { label: 'Ingestion Audit',  icon: Shield,        path: '/forensic-audit' },
-      { label: 'Connectors',       icon: Link2,         path: '/integrations' },
-      { label: 'Settings',         icon: Settings,      path: '/settings' },
-      { label: 'More Features',    icon: Workflow,      path: '/more-features' },
-    ],
-  },
-];
-
 const MobileNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useSupabaseAuth();
   const [moreOpen, setMoreOpen] = useState(false);
-  const hasFoundationAccess = isPrivilegedUser(user) || resolveTier(user) !== 'free';
+  const tier = resolveTier(user);
+  const isSA = isPrivilegedUser(user);
+  const hasFoundationAccess = isSA || tier !== 'free';
+  const isFreeTier = !isSA && tier === 'free';
+
+  const navItems = isFreeTier
+    ? [
+        { id: 'soundboard', label: 'Ask BIQc', icon: MessageSquare, path: '/soundboard' },
+        { id: 'inbox', label: 'Inbox', icon: Inbox, path: '/email-inbox' },
+        { id: 'calendar', label: 'Calendar', icon: Calendar, path: '/calendar' },
+        { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
+        { id: 'more', label: 'More', icon: MoreHorizontal, path: null },
+      ]
+    : [
+        { id: 'pulse', label: 'Overview', icon: LayoutDashboard, path: '/advisor' },
+        { id: 'soundboard', label: 'Ask BIQc', icon: MessageSquare, path: '/soundboard' },
+        { id: 'inbox', label: 'Inbox', icon: Inbox, path: '/email-inbox' },
+        { id: 'alerts', label: 'Alerts', icon: Bell, path: '/alerts' },
+        { id: 'more', label: 'More', icon: MoreHorizontal, path: null },
+      ];
 
   const moreSections = [
-    {
-      label: 'Free',
-      items: [
-        { label: 'Market & Position', icon: Radar, path: '/market' },
-        { label: 'Calendar', icon: Calendar, path: '/calendar' },
-        { label: 'Competitive Benchmark', icon: Target, path: '/competitive-benchmark' },
-      ],
-    },
-    {
-      label: 'Operate',
-      items: [
-        { label: 'Actions', icon: Bell, path: '/actions' },
-        { label: 'Data Health', icon: Activity, path: '/data-health' },
-        { label: 'Business DNA', icon: FileText, path: '/business-profile' },
-      ],
-    },
-    {
-      label: 'Foundation',
-      items: hasFoundationAccess
-        ? [
-            { label: 'BIQc Foundation', icon: Shield, path: '/biqc-foundation' },
-            { label: 'Exposure Scan', icon: Eye, path: '/exposure-scan' },
-            { label: 'Marketing Auto', icon: Megaphone, path: '/marketing-automation' },
-            { label: 'Reports', icon: FileText, path: '/reports' },
-            { label: 'Revenue', icon: TrendingUp, path: '/revenue' },
-            { label: 'Operations', icon: Activity, path: '/operations' },
-            { label: 'Marketing Intelligence', icon: BarChart3, path: '/marketing-intelligence' },
-            { label: 'Boardroom', icon: MessageSquare, path: '/board-room' },
-          ]
-        : [
-            { label: 'BIQc Foundation', icon: Shield, path: '/biqc-foundation' },
+    ...(isFreeTier
+      ? [{
+          label: 'Free Tier',
+          items: [
+            { label: 'Competitive Benchmark', icon: Target, path: '/competitive-benchmark' },
+            { label: 'Connectors', icon: Link2, path: '/integrations' },
           ],
-    },
-    {
-      label: 'More',
-      items: [
-        { label: 'Connectors', icon: Link2, path: '/integrations' },
-        { label: 'Settings', icon: Settings, path: '/settings' },
-        { label: 'More Features', icon: Workflow, path: '/more-features' },
-      ],
-    },
+        }]
+      : [
+          {
+            label: 'Free',
+            items: [
+              { label: 'Market & Position', icon: Radar, path: '/market' },
+              { label: 'Calendar', icon: Calendar, path: '/calendar' },
+              { label: 'Competitive Benchmark', icon: Target, path: '/competitive-benchmark' },
+            ],
+          },
+          {
+            label: 'Operate',
+            items: [
+              { label: 'Actions', icon: Bell, path: '/actions' },
+              { label: 'Data Health', icon: Activity, path: '/data-health' },
+              { label: 'Business DNA', icon: FileText, path: '/business-profile' },
+            ],
+          },
+          {
+            label: 'Foundation',
+            items: hasFoundationAccess
+              ? [
+                  { label: 'Exposure Scan', icon: Eye, path: '/exposure-scan' },
+                  { label: 'Marketing Auto', icon: Megaphone, path: '/marketing-automation' },
+                  { label: 'Reports', icon: FileText, path: '/reports' },
+                  { label: 'Revenue', icon: TrendingUp, path: '/revenue' },
+                  { label: 'Operations', icon: Activity, path: '/operations' },
+                  { label: 'Marketing Intelligence', icon: BarChart3, path: '/marketing-intelligence' },
+                  { label: 'Boardroom', icon: MessageSquare, path: '/board-room' },
+                ]
+              : [],
+          },
+          {
+            label: 'More',
+            items: [
+              { label: 'Connectors', icon: Link2, path: '/integrations' },
+              { label: 'Settings', icon: Settings, path: '/settings' },
+              { label: 'Subscription', icon: CreditCard, path: '/subscribe' },
+              { label: 'Decision Tracker', icon: ClipboardList, path: '/decisions' },
+              { label: 'Ingestion Audit', icon: Shield, path: '/forensic-audit' },
+            ],
+          },
+        ]),
   ];
 
   const handleNav = (item) => {
@@ -205,7 +181,7 @@ const MobileNav = () => {
         data-testid="mobile-bottom-nav"
       >
         <div className="flex items-center justify-around h-[68px]">
-          {NAV_ITEMS.map(item => {
+          {navItems.map(item => {
             const active = item.path && location.pathname === item.path;
             const isMore = item.id === 'more';
             return (

@@ -22,6 +22,8 @@ const ROUTE_ACCESS_MAP = {
   '/onboarding-decision': { minTier: 'free', launchType: 'free' },
   '/profile-import': { minTier: 'free', launchType: 'free' },
   '/biqc-legal': { minTier: 'free', launchType: 'free' },
+  '/subscribe': { minTier: 'free', launchType: 'free' },
+  '/upgrade': { minTier: 'free', launchType: 'free' },
   '/more-features': { minTier: 'free', launchType: 'free' },
   // Foundation (paid / starter)
   '/exposure-scan': { minTier: 'starter', featureKey: 'exposure-scan', launchType: 'foundation' },

@@ -27,6 +27,7 @@ import {
   findPreviousAskBiqcUserPrompt,
   getAskBiqcCoverageGate,
   getAskBiqcMessageText,
+  inferAskBiqcGenerationIntent,
   getSoundboardErrorMessage,
   markAskBiqcStreamingStopped,
   removeAskBiqcPlaceholder,
@@ -312,6 +313,7 @@ const MySoundBoard = () => {
         coverage_window: m.coverage_window || m?.metadata?.coverage_window,
         retrieval_contract: m.retrieval_contract || m?.metadata?.retrieval_contract,
         forensic_report: m.forensic_report || m?.metadata?.forensic_report,
+        generation_contract: m.generation_contract || m?.metadata?.generation_contract,
       }));
       setMessages(mapped);
     } catch (error) {
@@ -406,6 +408,7 @@ const MySoundBoard = () => {
         mode: currentMode.backend_mode,
         agentId: selectedAgent || 'auto',
         forensicReportMode: deepForensicRun,
+        ...inferAskBiqcGenerationIntent(fullMessage),
       });
 
       const turnResult = await runAskBiqcTurn({

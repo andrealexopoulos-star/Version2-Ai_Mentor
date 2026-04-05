@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
 import { apiClient } from '../lib/api';
-import { Lock, ArrowRight, Check, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Lock, ArrowRight, Check, Loader2, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
 import { PRICING_TIERS } from '../config/pricingTiers';
+import { FOUNDATION_FEATURES, WAITLIST_FEATURES } from '../config/launchConfig';
 import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 
@@ -22,17 +23,33 @@ const FEATURE_LABELS = {
 const PLANS = PRICING_TIERS.filter((t) => ['starter', 'pro', 'enterprise'].includes(t.id));
 
 const SubscribePage = () => {
-  const { user } = useSupabaseAuth();
+  const { user, refreshSession } = useSupabaseAuth();
+  const navigate = useNavigate();
+  const refreshSessionRef = useRef(refreshSession);
   const [searchParams] = useSearchParams();
   const from = searchParams.get('from') || '';
   const sessionId = searchParams.get('session_id');
   const status = searchParams.get('status');
+  const section = searchParams.get('section') || '';
   const featureLabel = FEATURE_LABELS[from] || (from ? from.replace(/\//g, '').replace(/-/g, ' ') : '');
   const currentTier = resolveTier(user);
+  const foundationUnlocked = ['starter', 'pro', 'enterprise', 'custom_build', 'super_admin'].includes(currentTier);
+  const groupedWaitlist = useMemo(() => {
+    const map = new Map();
+    WAITLIST_FEATURES.forEach((feature) => {
+      if (!map.has(feature.category)) map.set(feature.category, []);
+      map.get(feature.category).push(feature);
+    });
+    return [...map.entries()];
+  }, []);
 
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
   const [loading, setLoading] = useState(null);
+
+  useEffect(() => {
+    refreshSessionRef.current = refreshSession;
+  }, [refreshSession]);
 
   // Poll payment status if returning from Stripe
   const pollPaymentStatus = useCallback(async (sid, attempt) => {
@@ -46,6 +63,21 @@ const SubscribePage = () => {
       if (res.data?.payment_status === 'paid') {
         setPaymentResult({ status: 'success', message: 'Payment successful! Your account has been upgraded.', tier: res.data.metadata?.tier });
         setCheckingPayment(false);
+        try {
+          await refreshSessionRef.current?.();
+        } catch {
+          // non-blocking; success is already persisted server-side
+        }
+        try {
+          window.dispatchEvent(new CustomEvent('biqc:subscription-updated', {
+            detail: { tier: res.data.metadata?.tier || 'starter' },
+          }));
+        } catch {
+          // ignore browser event failures
+        }
+        if (from && from.startsWith('/')) {
+          setTimeout(() => navigate(from), 800);
+        }
         return;
       }
       if (res.data?.status === 'expired') {
@@ -58,7 +90,7 @@ const SubscribePage = () => {
       setPaymentResult({ status: 'error', message: 'Error checking payment. Please refresh.' });
       setCheckingPayment(false);
     }
-  }, []);
+  }, [from, navigate]);
 
   useEffect(() => {
     if (sessionId && status === 'success') {
@@ -182,6 +214,85 @@ const SubscribePage = () => {
           </button>
         </div>
       </div>
+
+      <div
+        id="foundation"
+        className="w-full max-w-4xl mb-8 rounded-xl border p-5"
+        style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}
+        data-testid="subscribe-foundation-modules"
+      >
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
+          Foundation Modules
+        </p>
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+          {FOUNDATION_FEATURES.map((feature) => (
+            <div key={feature.key} className="rounded-lg border p-3" style={{ borderColor: '#243140' }}>
+              <p className="text-sm font-semibold text-[#F4F7FA]">{feature.title}</p>
+              <p className="text-xs mt-1 text-[#9FB0C3]">{feature.summary}</p>
+              <div className="mt-2 flex items-center justify-between">
+                <span
+                  className="text-[10px] px-2 py-1 rounded-full"
+                  style={{
+                    background: foundationUnlocked ? '#10B98120' : '#FF6A0018',
+                    color: foundationUnlocked ? '#10B981' : '#FF6A00',
+                    fontFamily: fontFamily.mono,
+                  }}
+                >
+                  {foundationUnlocked ? 'Unlocked in your tier' : 'Unlock with paid tier'}
+                </span>
+                <button
+                  type="button"
+                  className="text-xs text-[#FF6A00] hover:text-[#FDBA74]"
+                  onClick={() => window.location.assign(feature.route)}
+                  data-testid={`subscribe-open-foundation-${feature.key}`}
+                >
+                  Open
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div
+        id="advanced"
+        className="w-full max-w-4xl mb-8 rounded-xl border p-5"
+        style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}
+        data-testid="subscribe-advanced-roadmap"
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-[#FF6A00]" />
+          <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
+            More Features Roadmap
+          </p>
+        </div>
+        <p className="text-xs mt-2 text-[#9FB0C3]">
+          These are staged modules. Join waitlist for priority rollout and packaging feedback.
+        </p>
+        <div className="mt-3 space-y-3">
+          {groupedWaitlist.map(([category, features]) => (
+            <div key={category} className="rounded-lg border p-3" style={{ borderColor: '#243140' }}>
+              <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]">{category}</p>
+              <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+                {features.map((feature) => (
+                  <div key={feature.key} className="rounded-md border px-3 py-2" style={{ borderColor: '#1F2937' }}>
+                    <p className="text-sm text-[#F4F7FA]">{feature.title}</p>
+                    <p className="text-[11px] mt-1 text-[#9FB0C3] line-clamp-2">{feature.about}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {(section === 'foundation' || section === 'advanced') && (
+        <div className="w-full max-w-4xl mb-6 p-3 rounded-xl" style={{ background: '#FF6A0010', border: '1px solid #FF6A0030' }}>
+          <p className="text-xs text-[#FDBA74]">
+            You were redirected from a legacy subscription path. This page is now the single source of truth for Foundation and More Features.
+          </p>
+        </div>
+      )}
 
       <Link to="/advisor" className="text-xs text-[#64748B] hover:text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Back to Intelligence Platform</Link>
     </div>

@@ -64,6 +64,8 @@ ROUTE_ACCESS = {
     '/onboarding-decision': 'free',
     '/profile-import': 'free',
     '/biqc-legal': 'free',
+    '/subscribe': 'free',
+    '/upgrade': 'free',
     '/more-features': 'free',
 
     # PAID TIER — requires starter or above

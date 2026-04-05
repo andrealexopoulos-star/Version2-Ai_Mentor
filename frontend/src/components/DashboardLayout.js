@@ -13,9 +13,9 @@ import {
 } from './ui/dropdown-menu';
 import {
   Settings, LogOut, Menu, X, ChevronDown, Shield, User,
-  Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity, FileText,
-  TrendingUp, Radar, HelpCircle, LayoutDashboard, AlertTriangle, Workflow, Link2,
-  ClipboardList, MessageSquare, Lock, Eye, Megaphone, FlaskConical,
+  Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity,
+  Radar, HelpCircle, LayoutDashboard, AlertTriangle, Link2,
+  ClipboardList, MessageSquare, Lock, Eye, FlaskConical,
   BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox, CreditCard
 } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
@@ -247,64 +247,58 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   };
 
   const isSA = isPrivilegedUser(user);
-  const hasFoundationMenuAccess = resolveTier(user) !== 'free' || isSA;
+  const resolvedTier = resolveTier(user);
+  const isFreeTier = !isSA && resolvedTier === 'free';
 
-  const foundationItems = [
-    { icon: Eye, label: 'Exposure Scan', path: '/exposure-scan' },
-    { icon: Megaphone, label: 'Marketing Auto', path: '/marketing-automation' },
-    { icon: FileText, label: 'Reports', path: '/reports' },
-    { icon: ClipboardList, label: 'Decision Tracker', path: '/decisions' },
-    { icon: BookOpen, label: 'SOP Generator', path: '/sop-generator' },
-    { icon: Shield, label: 'Ingestion Audit', path: '/forensic-audit' },
-    { icon: TrendingUp, label: 'Revenue', path: '/revenue' },
-    { icon: CreditCard, label: 'Billing', path: '/billing' },
-    { icon: Activity, label: 'Operations', path: '/operations' },
-    { icon: BarChart3, label: 'Marketing Intelligence', path: '/marketing-intelligence' },
-    { icon: MessageSquare, label: 'Boardroom', path: '/board-room' },
-  ];
+  const navSections = useMemo(() => {
+    const navSectionsBase = [
+      { id: 'overview', label: 'BIQc Overview', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [] },
+      { id: 'soundboard', label: 'Ask BIQc', path: '/soundboard', icon: MessageSquare, items: [] },
+      { id: 'priority-inbox', label: 'Inbox', path: '/email-inbox', icon: Inbox, items: [] },
+      { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [] },
+      { id: 'market', label: 'Market & Position', path: '/market', icon: Radar, items: [] },
+      { id: 'benchmark', label: 'Competitive Benchmark', path: '/competitive-benchmark', icon: Target, items: [] },
+      { id: 'business-dna', label: 'Business DNA', path: '/business-profile', icon: BarChart3, items: [] },
+      { id: 'actions', label: 'Actions', path: '/actions', icon: Zap, items: [] },
+      { id: 'alerts', label: 'Alerts', path: '/alerts', icon: Bell, showBadge: true, items: [] },
+      { id: 'data-health', label: 'Data Health', path: '/data-health', icon: Activity, items: [] },
+      { id: 'integrations', label: 'Connectors', path: '/integrations', icon: Link2, items: [] },
+      { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, items: [] },
+      { id: 'subscription', label: 'Subscription', path: '/subscribe', icon: CreditCard, items: [] },
+    ];
+    const scopedSections = isFreeTier
+      ? navSectionsBase.filter((section) => (
+        ['soundboard', 'priority-inbox', 'calendar', 'benchmark', 'integrations', 'settings'].includes(section.id)
+      ))
+      : navSectionsBase;
 
-  const navSections = [
-    { id: 'overview', label: 'BIQc Overview', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [] },
-    { id: 'soundboard', label: 'Ask BIQc', path: '/soundboard', icon: MessageSquare, items: [] },
-    { id: 'priority-inbox', label: 'Inbox', path: '/email-inbox', icon: Inbox, items: [] },
-    { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [] },
-    { id: 'market', label: 'Market & Position', path: '/market', icon: Radar, items: [] },
-    { id: 'benchmark', label: 'Competitive Benchmark', path: '/competitive-benchmark', icon: Target, items: [] },
-    { id: 'business-dna', label: 'Business DNA', path: '/business-profile', icon: BarChart3, items: [] },
-    { id: 'actions', label: 'Actions', path: '/actions', icon: Zap, items: [] },
-    { id: 'alerts', label: 'Alerts', path: '/alerts', icon: Bell, showBadge: true, items: [] },
-    { id: 'data-health', label: 'Data Health', path: '/data-health', icon: Activity, items: [] },
-    { id: 'integrations', label: 'Connectors', path: '/integrations', icon: Link2, items: [] },
-    { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, items: [] },
-    { id: 'foundation', label: 'BIQc Foundation', path: '/biqc-foundation', icon: Shield, items: hasFoundationMenuAccess ? foundationItems : [] },
-    { id: 'more-features', label: 'More Features', path: '/more-features', icon: Workflow, items: [] },
-  ];
-
-  // Admin section — visible to privileged user (REACT_APP_BIQC_MASTER_ADMIN_EMAIL)
-  if (isSA) {
-    navSections.push({
-      id: 'admin', label: 'Admin', items: [
-        { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
-        { icon: Settings, label: 'Admin Dashboard', path: '/admin' },
-        { icon: CreditCard, label: 'Pricing Control', path: '/admin/pricing' },
-        { icon: Bell, label: 'UX Feedback', path: '/admin/ux-feedback' },
-        { icon: ClipboardList, label: 'Scope Checkpoints', path: '/admin/scope-checkpoints' },
-        { icon: Activity, label: 'Data Center', path: '/data-center' },
-        { icon: BookOpen, label: 'Knowledge Base', path: '/knowledge-base' },
-        { icon: Activity, label: 'Observability', path: '/observability' },
-        { icon: Zap, label: 'Prompt Lab', path: '/admin/prompt-lab' },
-        { icon: Shield, label: 'Support Console', path: '/support-admin' },
-        { icon: Eye, label: 'Watchtower', path: '/watchtower' },
-      ],
-    });
-  }
+    if (!isSA) return scopedSections;
+    return [
+      ...scopedSections,
+      {
+        id: 'admin', label: 'Admin', items: [
+          { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
+          { icon: Settings, label: 'Admin Dashboard', path: '/admin' },
+          { icon: CreditCard, label: 'Pricing Control', path: '/admin/pricing' },
+          { icon: Bell, label: 'UX Feedback', path: '/admin/ux-feedback' },
+          { icon: ClipboardList, label: 'Scope Checkpoints', path: '/admin/scope-checkpoints' },
+          { icon: Activity, label: 'Data Center', path: '/data-center' },
+          { icon: BookOpen, label: 'Knowledge Base', path: '/knowledge-base' },
+          { icon: Activity, label: 'Observability', path: '/observability' },
+          { icon: Zap, label: 'Prompt Lab', path: '/admin/prompt-lab' },
+          { icon: Shield, label: 'Support Console', path: '/support-admin' },
+          { icon: Eye, label: 'Watchtower', path: '/watchtower' },
+        ],
+      },
+    ];
+  }, [isFreeTier, isSA]);
 
   const visibleSections = useMemo(() => {
     return navSections.map(section => ({
       ...section,
       items: section.items.filter(item => !item.requiresCalibration || isCalibrated),
     }));
-  }, [isCalibrated]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [navSections, isCalibrated]);
 
   const isActive = useCallback((path) => location.pathname === path || location.pathname.startsWith(`${path}/`), [location.pathname]);
   const getLockedRedirect = useCallback((path) => {
@@ -318,11 +312,8 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     if (config?.featureKey) {
       baseParams.set('feature', config.featureKey);
     }
-    if (config?.launchType === 'waitlist') {
-      return `/more-features?${baseParams.toString()}`;
-    }
-    if (config?.launchType === 'foundation' || config?.launchType === 'paid') {
-      return `/biqc-foundation?${baseParams.toString()}`;
+    if (config?.launchType === 'waitlist' || config?.launchType === 'foundation' || config?.launchType === 'paid') {
+      return `/subscribe?${baseParams.toString()}`;
     }
     return `/upgrade?${baseParams.toString()}`;
   }, []);
@@ -505,7 +496,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
               </div>
               <DropdownMenuSeparator style={{ background: '#243140' }} />
               <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/biqc-foundation')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Zap className="w-4 h-4 mr-2" /> Unlock Foundation: deeper operating intelligence</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/subscribe')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Zap className="w-4 h-4 mr-2" /> Subscription: plans and feature unlocks</DropdownMenuItem>
               {(user?.role === 'admin' || user?.role === 'superadmin' || isPrivilegedUser(user)) && (
                 <>
                   <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Shield className="w-4 h-4 mr-2" /> Super Admin</DropdownMenuItem>

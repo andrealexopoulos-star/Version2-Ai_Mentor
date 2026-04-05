@@ -31,9 +31,7 @@ import Pricing from './pages/Pricing';
 import SubscribePage from './pages/SubscribePage';
 import EnterpriseTerms from './pages/EnterpriseTerms';
 import LandingIntelligent from './pages/LandingIntelligent';
-import MoreFeaturesPage from './pages/MoreFeaturesPage';
 import BIQcLegalPage from './pages/BIQcLegalPage';
-import BIQcFoundationPage from './pages/BIQcFoundationPage';
 import { TermsPage as SiteTermsPage, PrivacyPage as SitePrivacyPage, DPAPage as SiteDPAPage, SecurityPage as SiteSecurityPage, TrustCentrePage as SiteTrustCentrePage } from './pages/website/TrustSubPages';
 import { resolveTier, getRouteAccess } from './lib/tierResolver';
 import { isPrivilegedUser } from './lib/privilegedUser';
@@ -203,10 +201,10 @@ const LaunchRoute = ({ children, access, featureKey = null }) => {
   if (authState === AUTH_STATE.LOADING || loading) return <LoadingScreen />;
   if (!user && !session) return <Navigate to="/login-supabase" replace />;
   if ((effectiveAccess === 'paid' || effectiveAccess === 'foundation') && !hasPaidAccess) {
-    return <Navigate to={`/biqc-foundation?${gateParams.toString()}`} replace />;
+    return <Navigate to={`/subscribe?${gateParams.toString()}`} replace />;
   }
   if (effectiveAccess === 'waitlist' && !privileged) {
-    return <Navigate to={`/more-features?${gateParams.toString()}`} replace />;
+    return <Navigate to={`/subscribe?${gateParams.toString()}`} replace />;
   }
   return children;
 };
@@ -302,8 +300,8 @@ function AppRoutes() {
         <Route path="/subscribe" element={<ProtectedRoute><SubscribePage /></ProtectedRoute>} />
         <Route path="/upgrade" element={<ProtectedRoute><UpgradePage /></ProtectedRoute>} />
         <Route path="/upgrade/success" element={<ProtectedRoute><UpgradePage success /></ProtectedRoute>} />
-        <Route path="/biqc-foundation" element={<ProtectedRoute><BIQcFoundationPage /></ProtectedRoute>} />
-        <Route path="/more-features" element={<ProtectedRoute><MoreFeaturesPage /></ProtectedRoute>} />
+        <Route path="/biqc-foundation" element={<ProtectedRoute><Navigate to="/subscribe?section=foundation" replace /></ProtectedRoute>} />
+        <Route path="/more-features" element={<ProtectedRoute><Navigate to="/subscribe?section=advanced" replace /></ProtectedRoute>} />
         <Route path="/biqc-legal" element={<ProtectedRoute><BIQcLegalPage /></ProtectedRoute>} />
 
         {/* Core app — free */}

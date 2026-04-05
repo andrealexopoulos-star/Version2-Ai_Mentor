@@ -50,6 +50,61 @@ const BENCHMARK_KEY_MAP = {
   seo: 'ai_citation_share',
 };
 
+const asNumber = (value) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+};
+
+const normalizePossiblyPercent = (value) => {
+  const num = asNumber(value);
+  if (num == null) return null;
+  if (num <= 0) return null;
+  if (num <= 1) return Math.round(num * 100);
+  return Math.round(Math.min(100, num));
+};
+
+const coerceScore = (container, keys = []) => {
+  if (!container || typeof container !== 'object') return null;
+  for (const key of keys) {
+    if (container[key] != null) {
+      const normalized = normalizePossiblyPercent(container[key]);
+      if (normalized != null) return normalized;
+    }
+  }
+  return null;
+};
+
+const parseJsonSafe = (value) => {
+  if (!value) return null;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
+const normalizeCmoBundleScores = (bundle) => {
+  if (!bundle || typeof bundle !== 'object') return null;
+  const website = coerceScore(bundle.website_health, ['score', 'overall_score', 'health_score', 'visibility_score']);
+  const social = coerceScore(bundle.social_media_analysis, ['score', 'overall_score', 'engagement_score']);
+  const reviews = coerceScore(bundle.website_health, ['review_score', 'reputation_score', 'trust_score']);
+  const content = coerceScore(bundle.paid_media_analysis, ['content_score', 'quality_score', 'score']);
+  const seo = coerceScore(bundle.seo_analysis, ['score', 'visibility_score', 'ranking_score']);
+  const derivedAverage = [website, social, reviews, content, seo]
+    .filter((v) => typeof v === 'number');
+  const overall = coerceScore(bundle, ['overall_score', 'score']) ?? (
+    derivedAverage.length
+      ? derivedAverage.reduce((sum, v) => sum + v, 0) / derivedAverage.length
+      : null
+  );
+  return {
+    overall: typeof overall === 'number' ? Math.round(overall) : null,
+    pillars: { website, social, reviews, content, seo },
+    competitors: Array.isArray(bundle.competitors) ? bundle.competitors : [],
+  };
+};
+
 const normalizeBenchmarkScores = (scores = {}) => ({
   website: scores.digital_presence != null ? Math.round(Number(scores.digital_presence) * 100) : null,
   social: scores.social_engagement != null ? Math.round(Number(scores.social_engagement) * 100) : null,
@@ -177,20 +232,23 @@ export default function CompetitiveBenchmarkPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [snapRes, cogRes, benchRes] = await Promise.allSettled([
+      const [snapRes, cogRes, benchRes, profileRes] = await Promise.allSettled([
         apiClient.get('/snapshot/latest'),
         apiClient.get('/cognition/overview'),
         apiClient.get('/marketing/benchmark/latest'),
+        apiClient.get('/business-profile'),
       ]);
       const cognitive = snapRes.status === 'fulfilled' ? snapRes.value.data?.cognitive : null;
       const cogData = cogRes.status === 'fulfilled' && cogRes.value.data?.status !== 'MIGRATION_REQUIRED' ? cogRes.value.data : null;
       const benchmark = benchRes.status === 'fulfilled' ? benchRes.value.data : null;
+      const profile = profileRes.status === 'fulfilled' ? (profileRes.value?.data || {}) : {};
+      const cmoBundle = normalizeCmoBundleScores(parseJsonSafe(profile?.competitor_scan_result));
       const footprint = cognitive?.digital_footprint || {};
       const competitive = cognitive?.competitive_landscape || {};
 
       // Only use REAL scores — never random fallbacks
       const benchmarkOverall = benchmark?.scores?.overall != null ? Math.round(Number(benchmark.scores.overall) * 100) : null;
-      const realScore = footprint.score || benchmarkOverall || null;
+      const realScore = footprint.score || benchmarkOverall || cmoBundle?.overall || null;
       const isReal = realScore != null;
 
       const normalizedBenchmarkPillars = benchmark?.scores ? normalizeBenchmarkScores(benchmark.scores) : {};
@@ -199,18 +257,18 @@ export default function CompetitiveBenchmarkPage() {
       setData({
         overallScore: realScore,
         pillars: {
-          website: footprint.website_score || normalizedBenchmarkPillars.website || null,
-          social: footprint.social_score || normalizedBenchmarkPillars.social || null,
-          reviews: footprint.review_score || normalizedBenchmarkPillars.reviews || null,
-          content: footprint.content_score || normalizedBenchmarkPillars.content || null,
-          seo: footprint.seo_score || normalizedBenchmarkPillars.seo || null,
+          website: footprint.website_score || normalizedBenchmarkPillars.website || cmoBundle?.pillars?.website || null,
+          social: footprint.social_score || normalizedBenchmarkPillars.social || cmoBundle?.pillars?.social || null,
+          reviews: footprint.review_score || normalizedBenchmarkPillars.reviews || cmoBundle?.pillars?.reviews || null,
+          content: footprint.content_score || normalizedBenchmarkPillars.content || cmoBundle?.pillars?.content || null,
+          seo: footprint.seo_score || normalizedBenchmarkPillars.seo || cmoBundle?.pillars?.seo || null,
         },
         percentile: footprint.percentile || null,
         industryAvg: footprint.industry_average || null,
-        competitors: competitive.competitors || benchmark?.competitors || [],
+        competitors: competitive.competitors || benchmark?.competitors || cmoBundle?.competitors || [],
         trend: footprint.trend || null,
-        lastUpdated: footprint.last_scan || benchmark?.updated_at || cogData?.computed_at || null,
-        scanSource: footprint.source || benchmark?.status || 'Web scraping',
+        lastUpdated: footprint.last_scan || benchmark?.updated_at || profile?.updated_at || cogData?.computed_at || null,
+        scanSource: footprint.source || benchmark?.status || (cmoBundle ? 'persisted_cmo_bundle' : 'Web scraping'),
         scanDomain: cognitive?.business_profile?.website || null,
       });
 
@@ -220,7 +278,7 @@ export default function CompetitiveBenchmarkPage() {
         .filter(Boolean)
         .slice(0, 3);
 
-      if (!benchmark?.scores && scanDomain && !autoBenchmarkTriggeredRef.current) {
+      if (!benchmark?.scores && !cmoBundle?.overall && scanDomain && !autoBenchmarkTriggeredRef.current) {
         autoBenchmarkTriggeredRef.current = true;
         try {
           const queueRes = await apiClient.post('/marketing/benchmark', { competitors: knownCompetitors }, { timeout: 30000 });
