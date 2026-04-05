@@ -398,6 +398,49 @@ def _apply_forensic_confidence_cap(
     return round(max(0.0, min(value, cap)), 4)
 
 
+def _extract_forensic_contradiction_row(role: str, analysis_text: str) -> Optional[Dict[str, Any]]:
+    """Extract deterministic contradiction rows from boardroom analyst text."""
+    lines = [line.strip(" -:\t") for line in str(analysis_text or "").splitlines() if line.strip()]
+    if not lines:
+        return None
+
+    contradiction = None
+    evidence_a = None
+    evidence_b = None
+    resolution_hint = None
+
+    for line in lines:
+        lower_line = line.lower()
+        match_primary = re.match(r"^(?:2[\)\.\-]\s*|contradictions?\s*[:\-]\s*)(.+)$", line, flags=re.IGNORECASE)
+        if match_primary and not contradiction:
+            contradiction = match_primary.group(1).strip()
+            continue
+        if not contradiction and any(token in lower_line for token in (" contradiction ", "conflict", "mismatch", "inconsisten")):
+            contradiction = line
+        if not evidence_a:
+            match_a = re.match(r"^(?:source|evidence|signal)\s*a\s*[:\-]\s*(.+)$", line, flags=re.IGNORECASE)
+            if match_a:
+                evidence_a = match_a.group(1).strip()
+        if not evidence_b:
+            match_b = re.match(r"^(?:source|evidence|signal)\s*b\s*[:\-]\s*(.+)$", line, flags=re.IGNORECASE)
+            if match_b:
+                evidence_b = match_b.group(1).strip()
+        if not resolution_hint:
+            match_resolution = re.match(r"^(?:resolution|decision|next step)\s*[:\-]\s*(.+)$", line, flags=re.IGNORECASE)
+            if match_resolution:
+                resolution_hint = match_resolution.group(1).strip()
+
+    if not contradiction:
+        return None
+    return {
+        "role": str(role or "unknown"),
+        "contradiction": contradiction[:380],
+        "evidence_a": (evidence_a or "")[:280] or None,
+        "evidence_b": (evidence_b or "")[:280] or None,
+        "resolution_hint": (resolution_hint or "")[:280] or None,
+    }
+
+
 def _build_forensic_report_payload(
     *,
     evidence_pack: Dict[str, Any],
@@ -420,19 +463,12 @@ def _build_forensic_report_payload(
         )
     contradictions = []
     for item in sorted(((boardroom_trace or {}).get("deliberations") or []), key=lambda entry: str(entry.get("role") or "")):
-        analysis_text = str(item.get("analysis") or "")
-        contradiction_line = None
-        for line in analysis_text.splitlines():
-            if "contradiction" in line.lower():
-                contradiction_line = line.strip(" -:\t")
-                break
-        if contradiction_line:
-            contradictions.append(
-                {
-                    "role": str(item.get("role") or "unknown"),
-                    "contradiction": contradiction_line[:380],
-                }
-            )
+        contradiction_row = _extract_forensic_contradiction_row(
+            role=str(item.get("role") or "unknown"),
+            analysis_text=str(item.get("analysis") or ""),
+        )
+        if contradiction_row:
+            contradictions.append(contradiction_row)
     challenge = ((boardroom_trace or {}).get("challenge") or {}).get("summary")
     if challenge and not contradictions:
         contradictions.append(
@@ -1855,7 +1891,31 @@ async def get_soundboard_conversation_detail(conversation_id: str, current_user:
         messages_result = sb.table("soundboard_messages").select(
             "role, content, timestamp, evidence_pack, boardroom_trace, metadata"
         ).eq("conversation_id", conversation_id).eq("user_id", current_user["id"]).order("timestamp", desc=False).execute()
-        messages = messages_result.data or []
+        messages = []
+        for row in (messages_result.data or []):
+            item = dict(row or {})
+            metadata = item.get("metadata") if isinstance(item.get("metadata"), dict) else {}
+            if isinstance(metadata, dict):
+                for key in (
+                    "file",
+                    "coverage_window",
+                    "intent",
+                    "model_used",
+                    "agent_name",
+                    "lineage",
+                    "suggested_actions",
+                    "confidence_score",
+                    "data_freshness",
+                    "data_sources_count",
+                    "advisory_slots",
+                    "boardroom_status",
+                    "retrieval_contract",
+                    "forensic_report",
+                    "generation_contract",
+                ):
+                    if key not in item and key in metadata:
+                        item[key] = metadata.get(key)
+            messages.append(item)
     except Exception:
         # Backward compatibility for deployments storing messages in conversation JSON column.
         messages = conversation.get("messages", [])
@@ -3018,6 +3078,48 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             ),
         )
 
+        # ═══ ACTION DELEGATION + SUGGESTED NEXT ACTIONS ═══
+        clean_message_lower = str(clean_message or "").lower()
+        action_keywords = {
+            "run_benchmark": ["benchmark my", "compare me to", "how do i compare", "competitor analysis"],
+            "generate_ad": ["create an ad", "write an ad", "google ad"],
+            "generate_blog": ["write a blog", "create a blog", "blog post about"],
+            "generate_social": ["create a social post", "write a social", "post on linkedin"],
+        }
+        delegated_action = None
+        for action, keywords in action_keywords.items():
+            if any(keyword in clean_message_lower for keyword in keywords):
+                delegated_action = action
+                break
+
+        suggested_actions = []
+        if intent_domain == "finance" and has_accounting:
+            suggested_actions.append({"label": "Draft overdue invoice reminders", "action": "draft_invoice_reminders", "prompt": "Draft overdue invoice reminders with priority order, tone guidance, and next-send schedule."})
+            suggested_actions.append({"label": "Generate cash flow forecast", "action": "generate_cashflow_forecast", "prompt": "Generate a 13-week cash flow forecast with best/base/worst scenarios and top risk levers."})
+        elif intent_domain == "sales" and has_crm:
+            suggested_actions.append({"label": "Flag stalled deals in HubSpot", "action": "flag_stalled_deals", "prompt": "Flag stalled deals and create an owner-by-owner rescue plan for the next 7 days."})
+            suggested_actions.append({"label": "Draft follow-up email for top deal", "action": "draft_deal_followup", "prompt": "Draft a decisive follow-up email for the highest-value stalled deal including decision-close language."})
+        elif intent_domain == "marketing":
+            suggested_actions.append({"label": "Run competitive benchmark", "action": "run_benchmark", "prompt": "Run a competitor benchmark and identify one offensive move and one defensive move for this month."})
+            suggested_actions.append({"label": "Generate campaign performance summary", "action": "generate_campaign_summary", "prompt": "Generate a campaign performance summary with spend efficiency and channel reallocation actions."})
+        elif intent_domain == "risk":
+            suggested_actions.append({"label": "Generate risk report PDF", "action": "generate_risk_report", "prompt": "Generate a risk report with risk score changes, triggers, and mitigation owners."})
+        elif intent_domain == "hr":
+            suggested_actions.append({"label": "Generate SOP for this process", "action": "generate_sop", "prompt": "Generate an SOP with step owners, controls, and execution checkpoints."})
+        if mailbox_requested:
+            suggested_actions.append({"label": "Summarise Inbox/Sent/Deleted deltas", "action": "summarise_mailbox_deltas", "prompt": "Summarise Inbox, Sent, and Deleted deltas with escalation and response lag signals."})
+            suggested_actions.append({"label": "Create owner response triage list", "action": "generate_response_triage", "prompt": "Create an owner triage list with urgency tiers and response SLAs."})
+        if wants_integration_analytics:
+            suggested_actions.append({"label": "Run cross-integration variance check", "action": "cross_integration_variance", "prompt": "Run a cross-integration variance check and surface top contradictions with root-cause hypotheses."})
+            suggested_actions.append({"label": "Generate Merge analytics memo", "action": "merge_analytics_memo", "prompt": "Generate a merge analytics memo with trend narrative and next-week executive actions."})
+
+        execution_id = str(uuid.uuid4())[:8] if suggested_actions else None
+        assistant_boardroom_status = (
+            "orchestrated"
+            if effective_agent_id == "boardroom" and boardroom_trace
+            else ("requested_no_trace" if effective_agent_id == "boardroom" else "not_requested")
+        )
+
         # Generate title for new conversations
         conversation_title = None
         if not conversation:
@@ -3037,7 +3139,23 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         now = now_dt.isoformat()
         new_messages = [
             {"role": "user", "content": req.message, "timestamp": now},
-            {"role": "assistant", "content": response, "timestamp": now, "retrieval_contract": retrieval_contract}
+            {
+                "role": "assistant",
+                "content": response,
+                "timestamp": now,
+                "suggested_actions": suggested_actions,
+                "file": generated_file,
+                "coverage_window": coverage_window,
+                "intent": {"domain": intent_domain, "action": intent_action},
+                "model_used": response_model,
+                "agent_name": effective_agent_name,
+                "lineage": contract_meta.get("lineage") or {},
+                "retrieval_contract": retrieval_contract,
+                "forensic_report": forensic_report,
+                "generation_contract": generation_contract,
+                "advisory_slots": advisory_slots,
+                "boardroom_status": assistant_boardroom_status,
+            },
         ]
 
         # Save to Supabase (conversation header + message rows)
@@ -3067,27 +3185,45 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             if not conv_insert.data:
                 raise HTTPException(status_code=500, detail="Failed to create SoundBoard conversation")
 
-        message_rows = [
-            {
-                "conversation_id": conversation_id,
-                "user_id": user_id,
-                "role": item["role"],
-                "content": item["content"],
-                "timestamp": item["timestamp"],
-                "evidence_pack": evidence_pack if item["role"] == "assistant" else {},
-                "boardroom_trace": boardroom_trace if item["role"] == "assistant" and boardroom_trace else {},
-                "metadata": {
-                    "mode_effective": mode,
-                    "contract_version": CONTRACT_VERSION,
-                    "advisory_slots": advisory_slots if item["role"] == "assistant" else {},
-                    "boardroom_status": ("orchestrated" if effective_agent_id == "boardroom" and boardroom_trace else ("requested_no_trace" if effective_agent_id == "boardroom" else "not_requested")) if item["role"] == "assistant" else None,
-                    "retrieval_contract": retrieval_contract if item["role"] == "assistant" else {},
-                    "forensic_report": forensic_report if item["role"] == "assistant" else {},
-                    "generation_contract": generation_contract if item["role"] == "assistant" else {},
-                },
+        message_rows = []
+        for item in new_messages:
+            is_assistant = item["role"] == "assistant"
+            metadata = {
+                "mode_effective": mode,
+                "contract_version": CONTRACT_VERSION,
             }
-            for item in new_messages
-        ]
+            if is_assistant:
+                metadata.update(
+                    {
+                        "advisory_slots": item.get("advisory_slots") or {},
+                        "boardroom_status": item.get("boardroom_status"),
+                        "retrieval_contract": item.get("retrieval_contract") or {},
+                        "forensic_report": item.get("forensic_report") or {},
+                        "generation_contract": item.get("generation_contract") or {},
+                        "suggested_actions": item.get("suggested_actions") or [],
+                        "file": item.get("file"),
+                        "coverage_window": item.get("coverage_window") or {},
+                        "intent": item.get("intent") or {},
+                        "model_used": item.get("model_used"),
+                        "agent_name": item.get("agent_name"),
+                        "lineage": item.get("lineage") or {},
+                        "data_freshness": contract_meta.get("data_freshness"),
+                        "data_sources_count": contract_meta.get("data_sources_count"),
+                        "confidence_score": contract_meta.get("confidence_score"),
+                    }
+                )
+            message_rows.append(
+                {
+                    "conversation_id": conversation_id,
+                    "user_id": user_id,
+                    "role": item["role"],
+                    "content": item["content"],
+                    "timestamp": item["timestamp"],
+                    "evidence_pack": evidence_pack if is_assistant else {},
+                    "boardroom_trace": boardroom_trace if is_assistant and boardroom_trace else {},
+                    "metadata": metadata,
+                }
+            )
         messages_persisted = False
         try:
             msg_insert = sb.table("soundboard_messages").insert(message_rows).execute()
@@ -3129,42 +3265,6 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         except Exception:
             pass
 
-        # ═══ MARKETING ACTION DELEGATION ═══
-        action_keywords = {
-            'run_benchmark': ['benchmark my', 'compare me to', 'how do i compare', 'competitor analysis'],
-            'generate_ad': ['create an ad', 'write an ad', 'google ad'],
-            'generate_blog': ['write a blog', 'create a blog', 'blog post about'],
-            'generate_social': ['create a social post', 'write a social', 'post on linkedin'],
-        }
-        delegated_action = None
-        for action, keywords in action_keywords.items():
-            if any(kw in msg_lower for kw in keywords):
-                delegated_action = action
-                break
-
-        # ═══ PROACTIVE NEXT ACTIONS (based on intent and data) ═══
-        suggested_actions = []
-        if intent_domain == "finance" and has_accounting:
-            suggested_actions.append({"label": "Draft overdue invoice reminders", "action": "draft_invoice_reminders", "prompt": "Draft overdue invoice reminders with priority order, tone guidance, and next-send schedule."})
-            suggested_actions.append({"label": "Generate cash flow forecast", "action": "generate_cashflow_forecast", "prompt": "Generate a 13-week cash flow forecast with best/base/worst scenarios and top risk levers."})
-        elif intent_domain == "sales" and has_crm:
-            suggested_actions.append({"label": "Flag stalled deals in HubSpot", "action": "flag_stalled_deals", "prompt": "Flag stalled deals and create an owner-by-owner rescue plan for the next 7 days."})
-            suggested_actions.append({"label": "Draft follow-up email for top deal", "action": "draft_deal_followup", "prompt": "Draft a decisive follow-up email for the highest-value stalled deal including decision-close language."})
-        elif intent_domain == "marketing":
-            suggested_actions.append({"label": "Run competitive benchmark", "action": "run_benchmark", "prompt": "Run a competitor benchmark and identify one offensive move and one defensive move for this month."})
-            suggested_actions.append({"label": "Generate campaign performance summary", "action": "generate_campaign_summary", "prompt": "Generate a campaign performance summary with spend efficiency and channel reallocation actions."})
-        elif intent_domain == "risk":
-            suggested_actions.append({"label": "Generate risk report PDF", "action": "generate_risk_report", "prompt": "Generate a risk report with risk score changes, triggers, and mitigation owners."})
-        elif intent_domain == "hr":
-            suggested_actions.append({"label": "Generate SOP for this process", "action": "generate_sop", "prompt": "Generate an SOP with step owners, controls, and execution checkpoints."})
-        if mailbox_requested:
-            suggested_actions.append({"label": "Summarise Inbox/Sent/Deleted deltas", "action": "summarise_mailbox_deltas", "prompt": "Summarise Inbox, Sent, and Deleted deltas with escalation and response lag signals."})
-            suggested_actions.append({"label": "Create owner response triage list", "action": "generate_response_triage", "prompt": "Create an owner triage list with urgency tiers and response SLAs."})
-        if wants_integration_analytics:
-            suggested_actions.append({"label": "Run cross-integration variance check", "action": "cross_integration_variance", "prompt": "Run a cross-integration variance check and surface top contradictions with root-cause hypotheses."})
-            suggested_actions.append({"label": "Generate Merge analytics memo", "action": "merge_analytics_memo", "prompt": "Generate a merge analytics memo with trend narrative and next-week executive actions."})
-
-        execution_id = str(uuid.uuid4())[:8] if suggested_actions else None
         soundboard_contract = build_contract_payload(
             tier=tier_for_contract,
             mode_requested=requested_mode,
@@ -3229,7 +3329,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         fallback_trace = {
             "contract_version": CONTRACT_VERSION,
             "phases": [{"phase": "boardroom_orchestration", "status": "error"}],
-            "error": str(e)[:240],
+            "error_code": "BOARDROOM_PROVIDER_ERROR",
         } if effective_agent_id == "boardroom" else None
         fallback_slots = parse_flagship_response_slots(fallback)
         fallback_human = fallback
@@ -3279,7 +3379,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "incident_or_compliance": incident_or_compliance,
             "explicit_capability_gap": explicit_capability_gap,
             "upsell_allowed": allow_upsell,
-            "provider_error": str(e),
+            "provider_error_code": "SOUNDBOARD_PROVIDER_ERROR",
             "mode_effective": mode,
             "evidence_pack": evidence_pack,
             "boardroom_trace": fallback_trace,
@@ -3289,6 +3389,11 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "forensic_report": forensic_report,
             "generation_contract": generation_contract,
             "advisory_slots": fallback_slots,
+            "agent_name": effective_agent_name,
+            "model_used": "fallback/error",
+            "lineage": contract_meta.get("lineage") or {},
+            "suggested_actions": [],
+            "file": None,
             **contract_meta,
         }
     except Exception as e:
@@ -3309,7 +3414,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         fallback_trace = {
             "contract_version": CONTRACT_VERSION,
             "phases": [{"phase": "boardroom_orchestration", "status": "error"}],
-            "error": str(e)[:240],
+            "error_code": "BOARDROOM_RUNTIME_ERROR",
         } if effective_agent_id == "boardroom" else None
         fallback_slots = parse_flagship_response_slots(fallback)
         fallback_human = fallback
@@ -3359,7 +3464,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "incident_or_compliance": incident_or_compliance,
             "explicit_capability_gap": explicit_capability_gap,
             "upsell_allowed": allow_upsell,
-            "runtime_error": str(e),
+            "runtime_error_code": "SOUNDBOARD_RUNTIME_ERROR",
             "mode_effective": mode,
             "evidence_pack": evidence_pack,
             "boardroom_trace": fallback_trace,
@@ -3369,6 +3474,11 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "forensic_report": forensic_report,
             "generation_contract": generation_contract,
             "advisory_slots": fallback_slots,
+            "agent_name": effective_agent_name,
+            "model_used": "fallback/error",
+            "lineage": contract_meta.get("lineage") or {},
+            "suggested_actions": [],
+            "file": None,
             **contract_meta,
         }
 
@@ -3408,10 +3518,10 @@ async def _execute_stream_tool_call(sb, user_id: str, tool_name: str, arguments:
                 .execute()
             )
             return {"signals": obs.data or [], "signals_count": len(obs.data or [])}
-        except Exception as exc:
-            return {"signals": [], "signals_count": 0, "error": str(exc)[:180]}
+        except Exception:
+            return {"signals": [], "signals_count": 0, "error_code": "RECENT_SIGNALS_UNAVAILABLE"}
 
-    return {"error": f"Unknown tool: {tool_name}"}
+    return {"error_code": "UNKNOWN_STREAM_TOOL"}
 
 
 async def _iterate_openai_stream_with_tools(
@@ -3462,20 +3572,26 @@ async def _iterate_openai_stream_with_tools(
         formatted_messages.append({"role": message.get("role", "user"), "content": message.get("content", "")})
     formatted_messages.append({"role": "user", "content": clean_message})
 
-    first_completion = await client.chat.completions.create(
-        model=model,
-        messages=formatted_messages,
-        tools=tool_definitions,
-        tool_choice="auto",
-        max_tokens=800,
-    )
-    first_message = first_completion.choices[0].message
-    tool_calls = list(first_message.tool_calls or [])
-    if tool_calls:
+    max_tool_rounds = 4
+    for _ in range(max_tool_rounds):
+        tool_planning = await client.chat.completions.create(
+            model=model,
+            messages=formatted_messages,
+            tools=tool_definitions,
+            tool_choice="auto",
+            max_tokens=800,
+        )
+        planning_message = tool_planning.choices[0].message
+        tool_calls = list(planning_message.tool_calls or [])
+        if not tool_calls:
+            if planning_message.content:
+                formatted_messages.append({"role": "assistant", "content": planning_message.content})
+            break
+
         formatted_messages.append(
             {
                 "role": "assistant",
-                "content": first_message.content or "",
+                "content": planning_message.content or "",
                 "tool_calls": [
                     {
                         "id": tc.id,
@@ -3502,7 +3618,7 @@ async def _iterate_openai_stream_with_tools(
                 "payload": {
                     "call_id": call.id,
                     "name": call.function.name,
-                    "ok": not bool(result.get("error")),
+                    "ok": not bool(result.get("error") or result.get("error_code")),
                     "result_preview": json.dumps(result)[:180],
                 },
             }
@@ -3583,9 +3699,6 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
                 ):
                     if event.get("type") == "done":
                         break
-                    if event.get("type") == "delta":
-                        # Keep parity with the authoritative persisted response from soundboard_chat.
-                        continue
                     yield _sse_event(event.get("type"), event.get("payload") or {})
 
             result = await soundboard_chat(req, current_user)
@@ -3599,7 +3712,8 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
                         await asyncio.sleep(0.01)
             yield _sse_event("final", {"payload": result})
         except Exception as exc:
-            yield _sse_event("error", {"message": str(exc)[:240], "code": "STREAM_RUNTIME_ERROR", "trace_id": trace_id})
+            logger.exception("Soundboard stream failed trace_id=%s", trace_id)
+            yield _sse_event("error", {"message": "Streaming interrupted. Please retry.", "code": "STREAM_RUNTIME_ERROR", "trace_id": trace_id})
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
@@ -3761,7 +3875,7 @@ async def proactive_signal_check(current_user: dict = Depends(get_current_user))
         
     except Exception as e:
         logger.error(f"[PROACTIVE_CHECK] Error: {e}")
-        return {"has_insight": False, "insights": [], "error": str(e)}
+        return {"has_insight": False, "insights": [], "error_code": "PROACTIVE_CHECK_FAILED"}
 
 
 def _build_cognitive_context(req: SoundboardChatRequest, core_context: dict) -> str:

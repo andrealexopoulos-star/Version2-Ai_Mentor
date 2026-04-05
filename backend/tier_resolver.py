@@ -91,6 +91,7 @@ ROUTE_ACCESS = {
     '/intelligence-baseline': 'starter',
     '/intel-centre': 'starter',
     '/watchtower': 'starter',
+    '/ab-testing': 'starter',
     '/operator': 'starter',
     '/marketing-intelligence': 'starter',
     '/market-analysis': 'starter',

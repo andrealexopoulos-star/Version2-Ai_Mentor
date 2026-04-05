@@ -69,6 +69,72 @@ EDGE_PROXY_ALLOWLIST = {
 }
 
 
+def _classify_rpc_failure(exc: Exception) -> str:
+    text = str(exc or "").lower()
+    if any(marker in text for marker in ("does not exist", "undefined function", "pgrst202", "not find the function")):
+        return "RPC_MISSING"
+    if any(marker in text for marker in ("permission denied", "not authorized", "forbidden", "42501")):
+        return "RPC_PERMISSION_DENIED"
+    if any(marker in text for marker in ("timeout", "timed out", "deadline exceeded")):
+        return "RPC_TIMEOUT"
+    if any(marker in text for marker in ("network", "connection", "dns", "socket")):
+        return "RPC_TRANSPORT_FAILURE"
+    return "RPC_RUNTIME_FAILURE"
+
+
+def _watchtower_degraded_payload(
+    user_id: str,
+    *,
+    rpc_reason_code: str,
+    rpc_error: Exception,
+    events: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    events = list(events or [])
+    now_iso = datetime.now(timezone.utc).isoformat()
+    return {
+        "status": "degraded",
+        "has_data": bool(events),
+        "positions": {},
+        "events": events,
+        "count": len(events),
+        "computed_at": now_iso,
+        "canonical_available": False,
+        "message": "Canonical watchtower SQL is temporarily unavailable. BIQc is serving resilient observation-event fallback.",
+        "degraded_reason_code": rpc_reason_code,
+        "degraded_contract_version": "watchtower-degraded-v2",
+        **_semantic_contract(
+            data_status="degraded" if events else "empty",
+            confidence_score=0.55 if events else 0.35,
+            confidence_reason=(
+                "Watchtower SQL unavailable; fallback events are available from observation stream."
+                if events
+                else "Watchtower SQL unavailable and no recent observation events are available."
+            ),
+            coverage_end=events[0].get("created_at") if events else None,
+            freshness_hours=None,
+            source_lineage=[{"connector": "watchtower_fallback", "endpoint": "/intelligence/watchtower"}],
+            next_best_actions=[
+                "Restore canonical watchtower SQL function permissions in production.",
+                "Run watchtower analysis refresh after SQL restoration.",
+            ],
+            backfill_state="degraded",
+            missing_periods=[
+                f"Canonical watchtower positions unavailable ({rpc_reason_code}).",
+            ],
+        ),
+        "lineage": {
+            "fallback_mode": "observation_events_only",
+            "sources": ["observation_events"],
+            "workspace_id": user_id,
+        },
+        "recovery_actions": [
+            "Restore `compute_watchtower_positions` in production schema.",
+            "Validate RPC grants and rerun live watchtower probes.",
+            "Confirm watchtower position computation resumes without degraded mode.",
+        ],
+    }
+
+
 def _semantic_contract(
     *,
     data_status: str,
@@ -214,7 +280,12 @@ async def proxy_edge_function(
     calibration_step = (request.headers.get("X-Calibration-Step") or "").strip()
     edge_payload = dict(body.payload or {})
     if current_user and current_user.get("id"):
-        edge_payload.setdefault("user_id", current_user["id"])
+        # Never trust caller-supplied tenant/user identifiers on proxied edge calls.
+        # The proxy enforces principal scope to the authenticated user.
+        user_scope_id = current_user["id"]
+        edge_payload["user_id"] = user_scope_id
+        if "tenant_id" in edge_payload:
+            edge_payload["tenant_id"] = user_scope_id
     try:
         async with httpx.AsyncClient(timeout=90) as client:
             edge_res = await client.post(
@@ -1803,7 +1874,16 @@ async def get_watchtower_events(
             rpc_result = sb.rpc('compute_watchtower_positions', {'p_workspace_id': user_id}).execute()
             positions = rpc_result.data if rpc_result and rpc_result.data else None
         except Exception as rpc_error:
-            raise HTTPException(status_code=503, detail=f"Canonical watchtower SQL unavailable: {rpc_error}")
+            rpc_reason = _classify_rpc_failure(rpc_error)
+            logger.warning("[watchtower] canonical RPC failed (%s): %s", rpc_reason, rpc_error)
+            observation_state = get_recent_observation_events(sb, user_id, limit=20)
+            events = build_watchtower_events(observation_state.get("events") or [], limit=10)
+            return _watchtower_degraded_payload(
+                user_id=user_id,
+                rpc_reason_code=rpc_reason,
+                rpc_error=rpc_error,
+                events=events,
+            )
 
         observation_state = get_recent_observation_events(sb, user_id, limit=20)
         events = build_watchtower_events(observation_state.get("events") or [], limit=10)

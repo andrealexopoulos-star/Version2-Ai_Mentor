@@ -9,10 +9,10 @@ Go to **Supabase Dashboard → Edge Functions → Secrets** and ensure these are
 
 ```
 OPENAI_API_KEY=<your OpenAI key>
-PERPLEXITY_API_KEY=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
-MERGE_API_KEY=vVXg9EXkp7_MhXeo4JYJNcpIVJcFaXXAQmXZW7WJMrrXC6H3clsnfQ
-SUPABASE_URL=<auto-set by Supabase>
-SUPABASE_SERVICE_ROLE_KEY=<auto-set by Supabase>
+PERPLEXITY_API_KEY=<your-perplexity-api-key>
+MERGE_API_KEY=<your-merge-api-key>
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service-role-jwt>
 ```
 
 If OPENAI_API_KEY is already set from previous functions, skip it.
@@ -56,7 +56,7 @@ Test each function with curl:
 
 ### Intelligence Bridge
 ```bash
-curl -X POST https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/intelligence-bridge \
+curl -X POST https://<project-ref>.supabase.co/functions/v1/intelligence-bridge \
   -H "Authorization: Bearer <SERVICE_ROLE_KEY>" \
   -H "Content-Type: application/json" \
   -d '{"user_id": "test", "snapshot": {"id": "test123", "open_risks": [], "contradictions": []}}'
@@ -65,7 +65,7 @@ Expected: `{"ok":true,"actions_created":0,"user_id":"test"}`
 
 ### SOP Generator
 ```bash
-curl -X POST https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/sop-generator \
+curl -X POST https://<project-ref>.supabase.co/functions/v1/sop-generator \
   -H "Authorization: Bearer <USER_JWT>" \
   -H "apikey: <ANON_KEY>" \
   -H "Content-Type: application/json" \
@@ -75,7 +75,7 @@ Expected: `{"ok":true,"type":"sop","content":"...","document_id":"..."}`
 
 ### Competitor Monitor
 ```bash
-curl -X POST https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/competitor-monitor \
+curl -X POST https://<project-ref>.supabase.co/functions/v1/competitor-monitor \
   -H "Authorization: Bearer <SERVICE_ROLE_KEY>" \
   -H "Content-Type: application/json" \
   -d '{"user_id": "<real_user_id>"}'
@@ -84,7 +84,7 @@ Expected: `{"ok":true,"mode":"single","signals":N,"actions":N}`
 
 ### CFO Cash Analysis
 ```bash
-curl -X POST https://uxyqpdfftxpkzeppqtvk.supabase.co/functions/v1/cfo-cash-analysis \
+curl -X POST https://<project-ref>.supabase.co/functions/v1/cfo-cash-analysis \
   -H "Authorization: Bearer <SERVICE_ROLE_KEY>" \
   -H "Content-Type: application/json" \
   -d '{"user_id": "<real_user_id>"}'
@@ -184,3 +184,5 @@ These are already deployed and working:
 | `sop-generator` | Generate SOPs/checklists | User (JWT) | OPENAI_API_KEY |
 | `competitor-monitor` | Weekly competitor scanning | pg_cron + manual | OPENAI_API_KEY, PERPLEXITY_API_KEY |
 | `cfo-cash-analysis` | Weekly financial analysis | pg_cron + manual | OPENAI_API_KEY, MERGE_API_KEY |
+
+For calibration-critical secret mapping, use the canonical matrix in `docs/CALIBRATION_SECRET_MATRIX.md`.

@@ -42,6 +42,7 @@ RATE_LIMIT_RULES = {
     "/api/auth/supabase/login": {"window": 300, "limit": 5, "detail": "Too many login attempts. Please wait a few minutes before trying again."},
     "/api/auth/login": {"window": 300, "limit": 5, "detail": "Too many login attempts. Please wait a few minutes before trying again."},
     "/api/soundboard/chat": {"window": 300, "limit": 120, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
+    "/api/soundboard/chat/stream": {"window": 300, "limit": 120, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
     "/api/boardroom/respond": {"window": 300, "limit": 20, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
     "/api/voice/war-room/start": {"window": 300, "limit": 10, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
     "/api/voice/war-room/respond": {"window": 300, "limit": 24, "detail": "Too many high-cost AI requests. Please wait a few minutes before trying again."},
@@ -140,8 +141,11 @@ def _allowed_origins():
 
 def configure_middleware(app):
     """Register all middleware on the FastAPI app instance."""
+    from middleware.tier_guard import TierGuardMiddleware
+
     app.add_middleware(NoCacheAPIMiddleware)
     app.add_middleware(RateLimitAPIMiddleware)
+    app.add_middleware(TierGuardMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_credentials=True,

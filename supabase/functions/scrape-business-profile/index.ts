@@ -165,13 +165,24 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "scrape-business-profile",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 
   try {
     const { url } = await req.json();
 
     if (!url || typeof url !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'URL parameter required', status: 'invalid_input' }),
+        JSON.stringify({ ok: false, error: 'URL parameter required', status: 'invalid_input' }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -182,6 +193,7 @@ serve(async (req) => {
     if (httpStatus === 0) {
       return new Response(
         JSON.stringify({
+          ok: false,
           url: normalizedUrl,
           status: 'unreachable',
           metadata: null,
@@ -195,6 +207,7 @@ serve(async (req) => {
     if (httpStatus >= 500) {
       return new Response(
         JSON.stringify({
+          ok: false,
           url: normalizedUrl,
           status: 'server_error',
           http_status: httpStatus,
@@ -209,6 +222,7 @@ serve(async (req) => {
     if (!html || html.length < 100) {
       return new Response(
         JSON.stringify({
+          ok: false,
           url: finalUrl,
           status: 'minimal_content',
           metadata: null,
@@ -228,6 +242,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        ok: true,
         url: finalUrl,
         status: metadata.status,
         metadata: {
@@ -250,7 +265,7 @@ serve(async (req) => {
     );
   } catch (e) {
     return new Response(
-      JSON.stringify({ error: 'Internal error', detail: String(e) }),
+      JSON.stringify({ ok: false, error: 'Internal error', detail: String(e) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

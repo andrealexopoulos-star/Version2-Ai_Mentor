@@ -188,11 +188,81 @@ def _get_edge_client() -> httpx.AsyncClient:
     return _edge_client
 
 
+def _edge_result_failed(result: Any) -> bool:
+    if not isinstance(result, dict):
+        return True
+    http_status = result.get("_http_status")
+    try:
+        status_code = int(http_status) if http_status is not None else 200
+    except Exception:
+        status_code = 200
+    if status_code >= 400:
+        return True
+    if result.get("ok") is False:
+        return True
+    status_value = str(result.get("status") or "").strip().lower()
+    if status_value == "error":
+        return True
+    if result.get("error"):
+        return True
+    if result.get("error_code"):
+        return True
+    # Guardrail: non-JSON edge responses are surfaced as {"raw": "..."}.
+    # Never treat those as successful/cachable outputs.
+    if "raw" in result and not result.get("status") and not result.get("data"):
+        return True
+    return False
+
+
+def _normalize_edge_result(function_name: str, http_status: int, data: Any) -> Dict[str, Any]:
+    payload = data if isinstance(data, dict) else {"data": data}
+    payload.setdefault("_http_status", http_status)
+
+    status_value = str(payload.get("status") or "").strip().lower()
+    detail_text = str(payload.get("detail") or "").strip()
+    error_text = str(payload.get("error") or "").strip()
+    has_error = bool(error_text or payload.get("error_code"))
+    raw_payload_only = ("raw" in payload) and not payload.get("status") and not payload.get("data")
+    failed_http = http_status >= 400
+    failed_flag = payload.get("ok") is False or status_value == "error"
+    meaningful_keys = [k for k in payload.keys() if k not in {"_http_status", "ok", "code", "status", "detail", "error", "error_code"}]
+    ambiguous_success = payload.get("ok") is None and not status_value and not payload.get("data") and not meaningful_keys
+
+    if failed_http or failed_flag or has_error or raw_payload_only or ambiguous_success:
+        payload["ok"] = False
+        if not payload.get("code"):
+            if raw_payload_only:
+                payload["code"] = "EDGE_INVALID_PAYLOAD"
+            else:
+                payload["code"] = "EDGE_FUNCTION_HTTP_ERROR" if failed_http else "EDGE_FUNCTION_FAILED"
+        if not error_text:
+            if raw_payload_only:
+                payload["error"] = f"{function_name} returned non-JSON payload"
+            elif detail_text:
+                payload["error"] = detail_text
+            elif failed_http:
+                payload["error"] = f"{function_name} returned HTTP {http_status}"
+            elif status_value == "error":
+                payload["error"] = f"{function_name} reported error status"
+            else:
+                payload["error"] = f"{function_name} reported failure"
+    else:
+        payload.setdefault("ok", True)
+        payload.setdefault("code", "OK")
+
+    return payload
+
+
 async def _call_edge_function(function_name: str, payload: Dict[str, Any], auth_header: str = "") -> Dict[str, Any]:
     supabase_url = (os.environ.get("SUPABASE_URL") or "").strip().rstrip("/")
     service_role = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY") or "").strip()
     if not supabase_url or not service_role:
-        return {"ok": False, "error": "supabase_not_configured"}
+        return {
+            "ok": False,
+            "error": "supabase_not_configured",
+            "code": "EDGE_PROXY_UNAVAILABLE",
+            "_http_status": 503,
+        }
     endpoint = f"{supabase_url}/functions/v1/{function_name}"
     outbound_auth = auth_header.strip() if auth_header else f"Bearer {service_role}"
     headers = {
@@ -211,17 +281,30 @@ async def _call_edge_function(function_name: str, payload: Dict[str, Any], auth_
                 data = res.json()
             except Exception:
                 data = {"raw": (res.text or "")[:1200]}
-            if isinstance(data, dict):
-                data.setdefault("_http_status", res.status_code)
-            return data if isinstance(data, dict) else {"data": data, "_http_status": res.status_code}
+            return _normalize_edge_result(function_name, res.status_code, data)
         except httpx.TimeoutException:
             if attempt == 0:
                 await asyncio.sleep(2)
                 continue
-            return {"ok": False, "error": f"timeout after retry calling {function_name}"}
+            return {
+                "ok": False,
+                "error": f"timeout after retry calling {function_name}",
+                "code": "EDGE_FUNCTION_TIMEOUT",
+                "_http_status": 504,
+            }
         except Exception as e:
-            return {"ok": False, "error": str(e)[:220]}
-    return {"ok": False, "error": f"exhausted retries for {function_name}"}
+            return {
+                "ok": False,
+                "error": str(e)[:220],
+                "code": "EDGE_FUNCTION_UNAVAILABLE",
+                "_http_status": 502,
+            }
+    return {
+        "ok": False,
+        "error": f"exhausted retries for {function_name}",
+        "code": "EDGE_FUNCTION_UNAVAILABLE",
+        "_http_status": 502,
+    }
 
 
 def _extract_meta_content(html: str, key: str) -> str:
@@ -607,7 +690,7 @@ def _parse_glassdoor_reviews(search_result: dict, business_name: str) -> dict:
     }
 
 
-def _aggregate_reviews(google: dict, glassdoor: dict, review_search_results: Optional[List[Dict[str, Any]]] = None) -> dict:
+def _aggregate_reviews(google: dict, glassdoor: dict) -> dict:
     """Combine Google and Glassdoor review signals into a single aggregation."""
     scores = []
     if google.get("star_rating"):
@@ -619,28 +702,12 @@ def _aggregate_reviews(google: dict, glassdoor: dict, review_search_results: Opt
     all_positive = (google.get("positive") or []) + (glassdoor.get("positive") or [])
     all_negative = (google.get("negative") or []) + (glassdoor.get("negative") or [])
     all_snippets = (google.get("snippets") or []) + (glassdoor.get("snippets") or [])
-    review_rows = review_search_results if isinstance(review_search_results, list) else []
-    forum_hints: List[str] = []
-    for row in review_rows[:12]:
-        if not isinstance(row, dict):
-            continue
-        title = str(row.get("title") or "").strip()
-        snippet = str(row.get("snippet") or "").strip()
-        link = str(row.get("link") or "").strip()
-        source_blob = " ".join([title, snippet, link]).lower()
-        if not source_blob:
-            continue
-        if any(token in source_blob for token in ("review", "forum", "reddit", "trustpilot", "productreview", "g2", "capterra")):
-            compact = (snippet or title or link)[:220]
-            if compact:
-                forum_hints.append(compact)
-    all_snippets.extend(forum_hints)
 
     return {
         "combined_score": combined_score,
         "positive_count": len(all_positive),
         "negative_count": len(all_negative),
-        "top_recent": all_snippets[:6],
+        "top_recent": all_snippets[:3],
         "has_data": bool(combined_score or all_snippets),
     }
 
@@ -836,17 +903,8 @@ def _build_customer_review_intelligence(
         or customer_score is not None
         or review_count_total_estimate > 0
     )
-    insufficiency_reason = ""
-    if not has_data:
-        if isinstance(browse_payload, dict) and browse_payload.get("error"):
-            insufficiency_reason = "Review-source connector returned an error in this scan window."
-        elif isinstance(browse_payload, dict) and browse_payload.get("ai_errors"):
-            insufficiency_reason = "Review-source retrieval was partially blocked during this scan window."
-        else:
-            insufficiency_reason = "No verifiable review/forum snippets were captured across trusted public sources."
     return {
         "has_data": has_data,
-        "insufficiency_reason": insufficiency_reason,
         "source_truth_only": True,
         "window_months": lookback_months,
         "window_label": f"last {lookback_months} months",
@@ -1794,11 +1852,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "results": (glassdoor_review_search.get("results") or []) + (indeed_review_search.get("results") or []),
             }
             glassdoor_reviews = _parse_glassdoor_reviews(merged_employer_results, business_name_hint)
-            review_aggregation = _aggregate_reviews(
-                google_reviews,
-                glassdoor_reviews,
-                review_search.get("results") or [],
-            )
+            review_aggregation = _aggregate_reviews(google_reviews, glassdoor_reviews)
 
             combined_text = "\n\n".join([
                 page_text[:12000],
@@ -1822,9 +1876,6 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 "unique_value_proposition, competitive_advantages, competitors, competitor_analysis, market_position, "
                 "abn, social_handles, trust_signals, executive_summary, confidence, "
                 "cmo_executive_brief, seo_analysis, paid_media_analysis, social_media_analysis, website_health, swot, competitor_swot, cmo_priority_actions, customer_review_intelligence, staff_review_intelligence, recommended_keywords, aeo_strategy.\n"
-                "Output must be operator-grade for SMB leaders: tie findings to day-to-day decisions across sales, marketing, finance, operations, HR, and IT where evidence supports it.\n"
-                "Every strategic claim must be source-attributed. If evidence is thin, explicitly state insufficiency rather than generic advice.\n"
-                "For technology providers (for example SMS gateway, communications API, SaaS platform), avoid generic agency language and anchor to product category, buyer type, and competitive position.\n"
                 "For customer_review_intelligence use source-verifiable customer reviews only (platform-attributed, date-bounded to last 12 months when dates are available), include positive and negative signals and operations action plan.\n"
                 "For staff_review_intelligence use source-verifiable evidence only (platform-attributed, date-bounded to last 12 months when dates are available). "
                 "Do not infer unpublished team dynamics.\n"
@@ -1937,7 +1988,7 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                         type(hit).__name__,
                     )
                 result = await _call_edge_function(fn_name, payload_dict, auth_header=auth)
-                if isinstance(result, dict) and not result.get("error"):
+                if isinstance(result, dict) and not _edge_result_failed(result):
                     asyncio.create_task(set_edge_result(fn_name, scan_domain, result))
                 return result
 
@@ -1975,24 +2026,26 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
             if not isinstance(semrush_intel, dict): semrush_intel = {"error": f"invalid_payload:{type(semrush_intel).__name__}"}
 
             ai_errors = []
-            if isinstance(deep_recon, dict) and deep_recon.get("error"):
-                ai_errors.append({"function": "deep-web-recon", "error": deep_recon["error"]})
-            if isinstance(social_enrichment, dict) and social_enrichment.get("error"):
-                ai_errors.append({"function": "social-enrichment", "error": social_enrichment["error"]})
-            if isinstance(competitor_monitor, dict) and competitor_monitor.get("error"):
-                ai_errors.append({"function": "competitor-monitor", "error": competitor_monitor["error"]})
-            if isinstance(market_analysis, dict) and market_analysis.get("error"):
-                ai_errors.append({"function": "market-analysis-ai", "error": market_analysis["error"]})
-            if isinstance(market_scorer, dict) and market_scorer.get("error"):
-                ai_errors.append({"function": "market-signal-scorer", "error": market_scorer["error"]})
-            if isinstance(browse_ai_reviews, dict) and browse_ai_reviews.get("error"):
-                ai_errors.append({"function": "browse-ai-reviews", "error": browse_ai_reviews["error"]})
-            if isinstance(semrush_intel, dict) and semrush_intel.get("error"):
-                ai_errors.append({"function": "semrush-domain-intel", "error": semrush_intel["error"]})
+            edge_failures = [
+                ("deep-web-recon", deep_recon),
+                ("social-enrichment", social_enrichment),
+                ("competitor-monitor", competitor_monitor),
+                ("market-analysis-ai", market_analysis),
+                ("market-signal-scorer", market_scorer),
+                ("browse-ai-reviews", browse_ai_reviews),
+                ("semrush-domain-intel", semrush_intel),
+            ]
+            for edge_fn_name, edge_result in edge_failures:
+                if _edge_result_failed(edge_result):
+                    ai_errors.append({
+                        "function": edge_fn_name,
+                        "error": str((edge_result or {}).get("error") or (edge_result or {}).get("detail") or "edge_function_failed"),
+                        "status": (edge_result or {}).get("_http_status"),
+                    })
 
             edge_meta = {
-                "market_analysis_failed": not isinstance(market_analysis, dict) or bool(market_analysis.get("error")),
-                "market_scorer_failed": not isinstance(market_scorer, dict) or bool(market_scorer.get("error")),
+                "market_analysis_failed": _edge_result_failed(market_analysis),
+                "market_scorer_failed": _edge_result_failed(market_scorer),
             }
 
             if isinstance(browse_ai_reviews, dict) and browse_ai_reviews.get("ok"):
@@ -2349,31 +2402,31 @@ async def website_enrichment(request: Request, payload: WebsiteEnrichRequest):
                 enrichment.setdefault("sources", {})
                 enrichment["sources"]["edge_tools"] = {
                     "deep_web_recon": {
-                        "ok": isinstance(deep_recon, dict) and not deep_recon.get("error"),
+                        "ok": not _edge_result_failed(deep_recon),
                         "status": (deep_recon or {}).get("_http_status"),
                     } if 'deep_recon' in locals() else {"ok": False},
                     "social_enrichment": {
-                        "ok": isinstance(social_enrichment, dict) and not social_enrichment.get("error"),
+                        "ok": not _edge_result_failed(social_enrichment),
                         "status": (social_enrichment or {}).get("_http_status"),
                     } if 'social_enrichment' in locals() else {"ok": False},
                     "competitor_monitor": {
-                        "ok": isinstance(competitor_monitor, dict) and not competitor_monitor.get("error"),
+                        "ok": not _edge_result_failed(competitor_monitor),
                         "status": (competitor_monitor or {}).get("_http_status"),
                     } if 'competitor_monitor' in locals() else {"ok": False},
                     "market_analysis_ai": {
-                        "ok": isinstance(market_analysis, dict) and not market_analysis.get("error"),
+                        "ok": not _edge_result_failed(market_analysis),
                         "status": (market_analysis or {}).get("_http_status"),
                     } if 'market_analysis' in locals() else {"ok": False},
                     "market_signal_scorer": {
-                        "ok": isinstance(market_scorer, dict) and not market_scorer.get("error"),
+                        "ok": not _edge_result_failed(market_scorer),
                         "status": (market_scorer or {}).get("_http_status"),
                     } if 'market_scorer' in locals() else {"ok": False},
                     "browse_ai_reviews": {
-                        "ok": isinstance(browse_ai_reviews, dict) and not browse_ai_reviews.get("error"),
+                        "ok": not _edge_result_failed(browse_ai_reviews),
                         "status": (browse_ai_reviews or {}).get("_http_status"),
                     } if 'browse_ai_reviews' in locals() else {"ok": False},
                     "semrush_domain_intel": {
-                        "ok": isinstance(semrush_intel, dict) and not semrush_intel.get("error"),
+                        "ok": not _edge_result_failed(semrush_intel),
                         "status": (semrush_intel or {}).get("_http_status"),
                     } if 'semrush_intel' in locals() else {"ok": False},
                 }

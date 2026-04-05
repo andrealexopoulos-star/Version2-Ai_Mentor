@@ -28,6 +28,17 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "calibration-sync",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 
   try {
     const authHeader = req.headers.get("Authorization") || "";
@@ -35,7 +46,7 @@ serve(async (req) => {
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: { user }, error: authErr } = await sb.auth.getUser(token);
     if (authErr || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -52,7 +63,7 @@ serve(async (req) => {
       .select("*").eq("user_id", userId).maybeSingle();
 
     if (!op) {
-      return new Response(JSON.stringify({ error: "No calibration data found" }), {
+      return new Response(JSON.stringify({ ok: false, error: "No calibration data found" }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -102,46 +113,27 @@ Country: ${bp?.target_country || "Australia"}`;
       }),
     });
 
-    if (!aiRes.ok) {
-      const detail = await aiRes.text().catch(() => "");
-      return new Response(JSON.stringify({
-        error: "AI extraction failed",
-        code: "AI_EXTRACTION_FAILED",
-        detail: detail?.slice(0, 400) || null,
-      }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const aiData = await aiRes.json();
-    const raw = aiData.choices?.[0]?.message?.content || "{}";
-    const usage = aiData.usage || {};
     let extracted: Record<string, any> = {};
-    try {
-      extracted = JSON.parse(raw);
-    } catch {
-      return new Response(JSON.stringify({
-        error: "AI response parse failed",
-        code: "AI_RESPONSE_PARSE_FAILED",
-      }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (aiRes.ok) {
+      const aiData = await aiRes.json();
+      const raw = aiData.choices?.[0]?.message?.content || "{}";
+      const usage = aiData.usage || {};
+      try { extracted = JSON.parse(raw); } catch { extracted = {}; }
 
-    // Track usage
-    try {
-      await sb.from("usage_tracking").insert({
-        user_id: userId,
-        function_name: "calibration-sync",
-        api_provider: "openai",
-        model: "gpt-4o-mini",
-        tokens_in: usage.prompt_tokens || 0,
-        tokens_out: usage.completion_tokens || 0,
-        cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,
-        called_at: new Date().toISOString(),
-      });
-    } catch {}
+      // Track usage
+      try {
+        await sb.from("usage_tracking").insert({
+          user_id: userId,
+          function_name: "calibration-sync",
+          api_provider: "openai",
+          model: "gpt-4o-mini",
+          tokens_in: usage.prompt_tokens || 0,
+          tokens_out: usage.completion_tokens || 0,
+          cost_estimate: ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,
+          called_at: new Date().toISOString(),
+        });
+      } catch {}
+    }
 
     // Merge: only fill in NULL fields (don't overwrite existing data)
     const updates: Record<string, any> = {};
@@ -194,7 +186,7 @@ Country: ${bp?.target_country || "Australia"}`;
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

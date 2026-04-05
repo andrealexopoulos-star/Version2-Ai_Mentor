@@ -35,12 +35,25 @@ class TierGuardMiddleware(BaseHTTPMiddleware):
         if api_path in ['/health', '/warmup', '/health/']:
             return await call_next(request)
 
-        # Extract user from request (set by auth dependency)
-        # The auth middleware runs first and sets request.state.user
+        # Extract user from request state when already provided.
         user = getattr(request.state, 'user', None)
+        if user is None:
+            # Middleware runs before route dependencies; resolve bearer token here.
+            auth_header = request.headers.get("authorization") or ""
+            token = ""
+            if auth_header.lower().startswith("bearer "):
+                token = auth_header.split(" ", 1)[1].strip()
+            if token:
+                try:
+                    from auth_supabase import verify_supabase_token
+                    user = await verify_supabase_token(token)
+                    request.state.user = user
+                except Exception:
+                    # Let route-level auth dependencies handle invalid tokens consistently.
+                    user = None
 
         if user is None:
-            # No user context yet — let the endpoint's auth dependency handle it
+            # No user context yet — let endpoint auth dependencies enforce authentication.
             return await call_next(request)
 
         # Check access

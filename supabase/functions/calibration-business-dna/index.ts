@@ -310,6 +310,17 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "calibration-business-dna",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 
   try {
     const authHeader = req.headers.get("Authorization") || "";
@@ -342,12 +353,12 @@ serve(async (req) => {
 
     if (!user) {
       const bodyUserId = body.user_id || body.tenant_id || "";
-      if (bodyUserId) {
+      if (bodyUserId && token === SUPABASE_SERVICE_ROLE_KEY) {
         user = { id: String(bodyUserId) };
       } else if (token === SUPABASE_SERVICE_ROLE_KEY) {
         user = { id: "service-role-scan" };
       } else {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });

@@ -274,6 +274,17 @@ function errorResp(msg: string, step: number): Response {
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "calibration-psych",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: CORS },
+    );
+  }
 
   let currentStep = 1;
   try {

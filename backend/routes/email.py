@@ -12,7 +12,6 @@ import json
 import asyncio
 import logging
 import re
-import jwt
 import uuid
 import urllib.parse
 from urllib.parse import quote
@@ -483,51 +482,41 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     import hmac
     # provider param is optional — endpoint URL already defines this as outlook
     
-    # Manual token validation (browser redirects can't send Authorization header)
+    # Browser redirects cannot send Authorization header; verify bearer token via Supabase Auth.
     current_user = None
-
     if token:
         try:
-            payload = jwt.decode(token, options={"verify_signature": False})
-            user_id = payload.get("sub")
-            if user_id:
-                # Fast path: look up in users table
+            from supabase_client import get_sb
+            auth_resp = get_sb().auth.get_user(token)
+            if auth_resp and auth_resp.user:
+                user_id = auth_resp.user.id
                 user_data = await get_user_by_id(user_id)
                 if user_data:
                     current_user = user_data
                 else:
-                    # Fallback: user exists in Supabase Auth but not yet in users table
-                    # (happens when the frontend signUp DB insert failed silently)
-                    # Verify the token cryptographically via Supabase Admin, then auto-provision
+                    now_iso = datetime.now(timezone.utc).isoformat()
+                    user_record = {
+                        "id": auth_resp.user.id,
+                        "email": auth_resp.user.email or "",
+                        "full_name": (
+                            (auth_resp.user.user_metadata or {}).get("full_name")
+                            or (auth_resp.user.user_metadata or {}).get("name")
+                            or ""
+                        ),
+                        "role": "user",
+                        "subscription_tier": "free",
+                        "is_master_account": _is_master_admin(auth_resp.user.email),
+                        "created_at": now_iso,
+                        "updated_at": now_iso,
+                    }
                     try:
-                        from supabase_client import get_sb
-                        auth_resp = get_sb().auth.get_user(token)
-                        if auth_resp and auth_resp.user:
-                            now_iso = datetime.now(timezone.utc).isoformat()
-                            user_record = {
-                                "id": auth_resp.user.id,
-                                "email": auth_resp.user.email or "",
-                                "full_name": (
-                                    (auth_resp.user.user_metadata or {}).get("full_name")
-                                    or (auth_resp.user.user_metadata or {}).get("name")
-                                    or ""
-                                ),
-                                "role": "user",
-                                "subscription_tier": "free",
-                                "is_master_account": _is_master_admin(auth_resp.user.email),
-                                "created_at": now_iso,
-                                "updated_at": now_iso,
-                            }
-                            try:
-                                get_sb().table("users").upsert(user_record, on_conflict="id").execute()
-                                logger.info(f"[outlook/login] Auto-provisioned missing users record for {auth_resp.user.id}")
-                            except Exception as upsert_err:
-                                logger.warning(f"[outlook/login] users upsert failed (non-fatal): {upsert_err}")
-                            current_user = user_record
-                    except Exception as auth_fb_err:
-                        logger.warning(f"[outlook/login] Supabase Auth fallback failed: {auth_fb_err}")
+                        get_sb().table("users").upsert(user_record, on_conflict="id").execute()
+                        logger.info(f"[outlook/login] Auto-provisioned missing users record for {auth_resp.user.id}")
+                    except Exception as upsert_err:
+                        logger.warning(f"[outlook/login] users upsert failed (non-fatal): {upsert_err}")
+                    current_user = user_record
         except Exception as token_err:
-            logger.warning(f"[outlook/login] Token parse error: {token_err}")
+            logger.warning(f"[outlook/login] Supabase token validation failed: {token_err}")
 
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
@@ -547,7 +536,9 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     encoded_scope = quote(scope, safe='')
     
     # Keep frontend base in state so callback redirects to the same user-facing host.
-    state_data = f"outlook_auth_{user_id}_return_{returnTo}_base_{frontend_base_url}"
+    safe_return_to = quote(returnTo or "/connect-email", safe='')
+    safe_frontend_base = quote(frontend_base_url, safe='')
+    state_data = f"outlook_auth_{user_id}_return_{safe_return_to}_base_{safe_frontend_base}"
     signature = hmac.new(
         JWT_SECRET.encode(),
         state_data.encode(),
@@ -555,6 +546,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     ).hexdigest()[:16]
     
     state = f"{state_data}_sig_{signature}"
+    encoded_state = quote(state, safe='')
     
     # Log the OAuth initiation for security audit
     logger.info(f"Outlook OAuth initiated for user: {current_user['email']} (ID: {user_id}), returnTo: {returnTo}")
@@ -568,7 +560,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
         f"redirect_uri={encoded_redirect}&"
         f"response_mode=query&"
         f"scope={encoded_scope}&"
-        f"state={state}&"
+        f"state={encoded_state}&"
         f"prompt=select_account"
     )
     
@@ -589,38 +581,33 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     current_user = None
     if token:
         try:
-            payload = jwt.decode(token, options={"verify_signature": False})
-            user_id = payload.get("sub")
-            if user_id:
+            from supabase_client import get_sb
+            auth_resp = get_sb().auth.get_user(token)
+            if auth_resp and auth_resp.user:
+                user_id = auth_resp.user.id
                 user_data = await get_user_by_id(user_id)
                 if user_data:
                     current_user = user_data
                 else:
+                    now_iso = datetime.now(timezone.utc).isoformat()
+                    user_record = {
+                        "id": auth_resp.user.id,
+                        "email": auth_resp.user.email or "",
+                        "full_name": (auth_resp.user.user_metadata or {}).get("full_name") or (auth_resp.user.user_metadata or {}).get("name") or "",
+                        "role": "user",
+                        "subscription_tier": "free",
+                        "is_master_account": _is_master_admin(auth_resp.user.email),
+                        "created_at": now_iso,
+                        "updated_at": now_iso,
+                    }
                     try:
-                        from supabase_client import get_sb
-                        auth_resp = get_sb().auth.get_user(token)
-                        if auth_resp and auth_resp.user:
-                            now_iso = datetime.now(timezone.utc).isoformat()
-                            user_record = {
-                                "id": auth_resp.user.id,
-                                "email": auth_resp.user.email or "",
-                                "full_name": (auth_resp.user.user_metadata or {}).get("full_name") or (auth_resp.user.user_metadata or {}).get("name") or "",
-                                "role": "user",
-                                "subscription_tier": "free",
-                                "is_master_account": _is_master_admin(auth_resp.user.email),
-                                "created_at": now_iso,
-                                "updated_at": now_iso,
-                            }
-                            try:
-                                get_sb().table("users").upsert(user_record, on_conflict="id").execute()
-                                logger.info(f"[gmail/login] Auto-provisioned missing users record for {auth_resp.user.id}")
-                            except Exception as upsert_err:
-                                logger.warning(f"[gmail/login] users upsert failed (non-fatal): {upsert_err}")
-                            current_user = user_record
-                    except Exception as auth_fb_err:
-                        logger.warning(f"[gmail/login] Supabase Auth fallback failed: {auth_fb_err}")
+                        get_sb().table("users").upsert(user_record, on_conflict="id").execute()
+                        logger.info(f"[gmail/login] Auto-provisioned missing users record for {auth_resp.user.id}")
+                    except Exception as upsert_err:
+                        logger.warning(f"[gmail/login] users upsert failed (non-fatal): {upsert_err}")
+                    current_user = user_record
         except Exception as token_err:
-            logger.warning(f"[gmail/login] Token parse error: {token_err}")
+            logger.warning(f"[gmail/login] Supabase token validation failed: {token_err}")
 
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
@@ -630,6 +617,7 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     user_id = current_user['id']
     
     callback_base_url = _get_oauth_callback_base_url()
+    frontend_base_url = _get_frontend_base_url()
     redirect_uri = f"{callback_base_url}/api/auth/gmail/callback"
     logger.info(f"📧 Gmail OAuth redirect_uri: {redirect_uri}")
     
@@ -646,9 +634,11 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     
     # Create a signed state parameter to prevent CSRF and tampering
     # Include returnTo path in state for post-auth redirect
-    # Format: gmail_auth_{user_id}_return_{returnTo}_sig_{hmac_signature}
+    # Format: gmail_auth_{user_id}_return_{encoded_returnTo}_base_{encoded_frontend_base}_sig_{hmac_signature}
     user_id = current_user['id']
-    state_data = f"gmail_auth_{user_id}_return_{returnTo}"
+    safe_return_to = quote(returnTo or "/connect-email", safe='')
+    safe_frontend_base = quote(frontend_base_url, safe='')
+    state_data = f"gmail_auth_{user_id}_return_{safe_return_to}_base_{safe_frontend_base}"
     signature = hmac.new(
         JWT_SECRET.encode(),
         state_data.encode(),
@@ -656,6 +646,7 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     ).hexdigest()[:16]
     
     state = f"{state_data}_sig_{signature}"
+    encoded_state = quote(state, safe='')
     
     logger.info(f"Gmail OAuth initiated for user: {current_user['email']} (ID: {user_id}), returnTo: {returnTo}")
     
@@ -666,7 +657,7 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
         f"response_type=code&"
         f"redirect_uri={encoded_redirect}&"
         f"scope={encoded_scope}&"
-        f"state={state}&"
+        f"state={encoded_state}&"
         f"access_type=offline&"
         f"prompt=select_account"
     )
@@ -689,7 +680,7 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         return RedirectResponse(url=f"{frontend_url}/connect-email?gmail_error={error}")
     
     # Extract and validate state parameter
-    # New format: gmail_auth_{user_id}_return_{returnTo}_sig_{signature}
+    # New format: gmail_auth_{user_id}_return_{encoded_returnTo}_base_{encoded_frontend_base}_sig_{signature}
     user_id = None
     return_to = "/connect-email"  # Default fallback
     
@@ -702,15 +693,21 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         state_data = state_parts[0]
         provided_signature = state_parts[1]
         
-        # Parse state_data to extract user_id and returnTo
-        # Format: {user_id}_return_{returnTo}
-        if "_return_" in state_data:
-            parts = state_data.split("_return_")
-            user_id = parts[0]
-            return_to = parts[1] if len(parts) > 1 else "/connect-email"
+        # Parse state_data to extract user_id, returnTo and optional callback base.
+        callback_base_url = None
+        pre_base = state_data
+        if "_base_" in state_data:
+            pre_base, callback_base_url = state_data.rsplit("_base_", 1)
+            callback_base_url = urllib.parse.unquote(callback_base_url or "")
+        if "_return_" in pre_base:
+            user_id, encoded_return_to = pre_base.split("_return_", 1)
+            return_to = urllib.parse.unquote(encoded_return_to or "/connect-email") or "/connect-email"
         else:
             # Legacy format support: just user_id
-            user_id = state_data
+            user_id = pre_base
+
+        if callback_base_url:
+            frontend_url = callback_base_url
         
         # Verify signature
         expected_signature = hmac.new(
@@ -782,12 +779,22 @@ async def gmail_callback(code: str, state: str = None, error: str = None, error_
         # DIRECT SUPABASE STORAGE — no edge function required
         logger.info("💾 Storing Gmail tokens directly in Supabase...")
         try:
+            # Google may omit refresh_token on reconnect flows; preserve existing token when omitted.
+            stored_refresh_token = refresh_token
+            if not stored_refresh_token:
+                try:
+                    existing = get_sb().table("gmail_connections").select("refresh_token").eq("user_id", user_id).limit(1).execute()
+                    if existing.data:
+                        stored_refresh_token = existing.data[0].get("refresh_token")
+                except Exception as refresh_lookup_error:
+                    logger.warning(f"Could not fetch existing Gmail refresh token: {refresh_lookup_error}")
+
             get_sb().table("gmail_connections").upsert(
                 {
                     "user_id": user_id,
                     "email": google_email,
                     "access_token": access_token,
-                    "refresh_token": refresh_token,
+                    "refresh_token": stored_refresh_token,
                     "token_expiry": expires_at,
                     "scopes": "https://www.googleapis.com/auth/gmail.readonly",
                     "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -845,17 +852,20 @@ async def gmail_status(current_user: dict = Depends(get_current_user)):
         if not access_token:
             return {"connected": False, "connected_email": None, "message": "No access token stored"}
 
-        # Check token expiry
+        # Check token expiry and refresh if needed (parity with get_gmail_tokens path)
         token_expiry = connection.get("token_expiry")
         needs_refresh = False
         if token_expiry:
             try:
-                from datetime import datetime, timezone
+                from datetime import datetime, timedelta, timezone
                 expiry_dt = datetime.fromisoformat(token_expiry.replace("Z", "+00:00"))
-                if expiry_dt <= datetime.now(timezone.utc):
-                    return {"connected": False, "connected_email": connection.get("email"), "needs_reconnect": True, "message": "Gmail token expired. Please reconnect."}
-                from datetime import timedelta
-                if expiry_dt <= datetime.now(timezone.utc) + timedelta(minutes=5):
+                now_utc = datetime.now(timezone.utc)
+                if expiry_dt <= now_utc:
+                    refreshed = await get_gmail_tokens(user_id)
+                    if not refreshed:
+                        return {"connected": False, "connected_email": connection.get("email"), "needs_reconnect": True, "message": "Gmail token expired. Please reconnect."}
+                    token_expiry = refreshed.get("expires_at")
+                elif expiry_dt <= now_utc + timedelta(minutes=5):
                     needs_refresh = True
             except Exception:
                 pass
@@ -868,7 +878,7 @@ async def gmail_status(current_user: dict = Depends(get_current_user)):
         }
     except Exception as e:
         logger.error(f"Error checking Gmail status: {e}")
-        return {"connected": False, "connected_email": None, "error": str(e)}
+        return {"connected": False, "connected_email": None, "error_code": "GMAIL_STATUS_CHECK_FAILED"}
 
 
 @router.post("/gmail/disconnect")
@@ -918,20 +928,19 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
         state_data = state_parts[0]
         provided_signature = state_parts[1]
         
-        # Parse: {user_id}_return_{returnTo}_base_{base_url}
+        # Parse: {user_id}_return_{encoded_returnTo}_base_{encoded_base_url}
         callback_base_url = None
         if "_base_" in state_data:
             pre_base, callback_base_url = state_data.rsplit("_base_", 1)
+            callback_base_url = urllib.parse.unquote(callback_base_url or "")
             if "_return_" in pre_base:
-                parts = pre_base.split("_return_")
-                user_id = parts[0]
-                return_to = parts[1] if len(parts) > 1 else "/connect-email"
+                user_id, encoded_return_to = pre_base.split("_return_", 1)
+                return_to = urllib.parse.unquote(encoded_return_to or "/connect-email") or "/connect-email"
             else:
                 user_id = pre_base
         elif "_return_" in state_data:
-            parts = state_data.split("_return_")
-            user_id = parts[0]
-            return_to = parts[1] if len(parts) > 1 else "/connect-email"
+            user_id, encoded_return_to = state_data.split("_return_", 1)
+            return_to = urllib.parse.unquote(encoded_return_to or "/connect-email") or "/connect-email"
         else:
             user_id = state_data
         
@@ -2031,10 +2040,13 @@ async def sync_calendar_provider_aware(
     if normalized_provider == "outlook":
         return await sync_calendar(current_user=current_user)
     if normalized_provider == "gmail":
-        raise HTTPException(
-            status_code=400,
-            detail="Gmail calendar sync is not configured yet. Connect Outlook or use cached calendar data.",
-        )
+        # Graceful contract: return a non-failing response until Gmail calendar ingestion is enabled.
+        return {
+            "status": "deferred",
+            "provider": "gmail",
+            "message": "Gmail calendar sync is not configured yet. Using cached calendar coverage where available.",
+            "next_best_action": "Connect Outlook calendar for live sync parity.",
+        }
     raise HTTPException(status_code=400, detail="Unsupported provider. Use outlook or gmail.")
 
 

@@ -493,11 +493,7 @@ export async function runAskBiqcTurn({
     const replyTrimmed = typeof responseData?.reply === 'string' ? responseData.reply.trim() : '';
 
     if (!replyTrimmed) {
-      const hint =
-        responseData?.runtime_error ||
-        responseData?.provider_error ||
-        responseData?.detail ||
-        'Empty reply from server. Try Normal mode or retry.';
+      const hint = 'I could not generate a complete answer for that request. Please retry.';
 
       return {
         kind: 'empty',

@@ -10,6 +10,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
+const TENANT_MISMATCH = "__TENANT_MISMATCH__";
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -52,14 +54,18 @@ function verdictToScore(verdict) {
 
 async function resolveTenantId(req, supabase, body) {
   const explicit = `${body.tenant_id || body.user_id || ""}`.trim();
-  if (explicit) return explicit;
 
   const authHeader = req.headers.get("Authorization") || "";
   const token = authHeader.replace("Bearer ", "").trim();
   if (!token) return null;
 
+  if (token === SUPABASE_SERVICE_ROLE_KEY) {
+    return explicit || null;
+  }
+
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) return null;
+  if (explicit && explicit !== data.user.id) return TENANT_MISMATCH;
   return data.user.id;
 }
 
@@ -72,6 +78,7 @@ serve(async (req) => {
 
   if (req.method === "GET") {
     return json({
+      ok: true,
       status: "ok",
       function: "market-signal-scorer",
       reachable: true,
@@ -82,6 +89,9 @@ serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const body = await req.json().catch(() => ({}));
   const tenantId = await resolveTenantId(req, supabase, body);
+  if (tenantId === TENANT_MISMATCH) {
+    return json({ error: "tenant_id/user_id must match authenticated user" }, 403);
+  }
   if (!tenantId) {
     return json({ error: "tenant_id or authenticated bearer token required" }, 400);
   }

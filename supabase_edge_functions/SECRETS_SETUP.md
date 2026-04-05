@@ -6,7 +6,7 @@ You MUST set these secrets in Supabase Dashboard → Edge Functions → Secrets.
 
 ### Core Secrets (ALL Edge Functions)
 ```bash
-SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co
+SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_ANON_KEY=<your-anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
 ```
@@ -31,9 +31,9 @@ GOOGLE_CLIENT_SECRET=<your-google-client-secret>
 
 ### Outlook OAuth (outlook-auth)
 ```bash
-AZURE_CLIENT_ID=data-harmony-fix
+AZURE_CLIENT_ID=<azure-app-client-id>
 AZURE_CLIENT_SECRET=<your-azure-secret>
-BACKEND_URL=https://beta.thestrategysquad.com
+BACKEND_URL=https://<backend-host>
 ```
 
 ## CLI Deployment
@@ -44,7 +44,7 @@ supabase functions deploy deep-web-recon --no-verify-jwt
 
 # Deploy all secrets at once
 supabase secrets set \
-  SUPABASE_URL=https://uxyqpdfftxpkzeppqtvk.supabase.co \
+  SUPABASE_URL=https://<project-ref>.supabase.co \
   SUPABASE_ANON_KEY=<key> \
   SUPABASE_SERVICE_ROLE_KEY=<key> \
   OPENAI_API_KEY=<key> \
@@ -63,3 +63,5 @@ supabase secrets set \
 | `calibration-psych` | 9-step persona profiling | `user_operator_profile` |
 
 **IMPORTANT:** Never commit secrets to git. They are managed separately by Supabase.
+
+For calibration-critical function-to-secret mapping, use `docs/CALIBRATION_SECRET_MATRIX.md`.

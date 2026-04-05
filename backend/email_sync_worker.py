@@ -30,15 +30,11 @@ LOOKBACK_DAYS = 7
 async def get_all_connected_accounts() -> List[Dict[str, Any]]:
     """Get ALL connected email accounts (Outlook, Gmail) for ALL users"""
     try:
-        # Query outlook_oauth_tokens table (contains both Outlook AND Gmail tokens)
+        # Query Outlook token table (primary source for Microsoft accounts).
         response = supabase_admin.table("outlook_oauth_tokens").select(
             "user_id, access_token, refresh_token, expires_at, provider, account_email"
         ).execute()
-        
-        if not response.data:
-            logger.info("No connected email accounts found")
-            return []
-        
+
         active_accounts = []
         for token_record in response.data:
             user_id = token_record.get("user_id")
@@ -60,7 +56,29 @@ async def get_all_connected_accounts() -> List[Dict[str, Any]]:
                     "provider": provider,
                     "account_email": token_record.get("account_email")
                 })
-        
+
+        # Query Gmail token table as authoritative source for Google accounts.
+        gmail_response = supabase_admin.table("gmail_connections").select(
+            "user_id, email, access_token, refresh_token, token_expiry"
+        ).execute()
+        for row in (gmail_response.data or []):
+            user_id = row.get("user_id")
+            access_token = row.get("access_token")
+            if not user_id or not access_token:
+                continue
+            active_accounts.append({
+                "user_id": user_id,
+                "access_token": access_token,
+                "refresh_token": row.get("refresh_token"),
+                "expires_at": row.get("token_expiry"),
+                "provider": "gmail",
+                "account_email": row.get("email"),
+            })
+
+        if not active_accounts:
+            logger.info("No connected email accounts found")
+            return []
+
         logger.info(f"✅ Found {len(active_accounts)} connected email accounts")
         return active_accounts
         

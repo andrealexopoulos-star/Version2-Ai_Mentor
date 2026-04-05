@@ -4,7 +4,7 @@ import { useSupabaseAuth, AUTH_STATE } from "../context/SupabaseAuthContext";
 import { apiClient } from "../lib/api";
 import { isPrivilegedUser } from "../lib/privilegedUser";
 
-const ADMIN_ROLES = ['admin', 'superadmin'];
+const SUPER_ADMIN_ROLES = ['superadmin', 'super_admin'];
 
 const getRecentLoginTimestamp = () => {
   try {
@@ -116,9 +116,14 @@ export default function ProtectedRoute({ children, adminOnly }) {
     const checkAdmin = async () => {
       try {
         const res = await apiClient.get('/auth/me');
-        const role = res.data?.user?.role;
+        const role = String(res.data?.user?.role || '').toLowerCase();
         const email = res.data?.user?.email;
-        if (!cancelled) setIsAdmin(ADMIN_ROLES.includes(role) || (user && isPrivilegedUser(user)));
+        if (!cancelled) {
+          setIsAdmin(
+            SUPER_ADMIN_ROLES.includes(role) ||
+            isPrivilegedUser({ email: email || user?.email || '' })
+          );
+        }
       } catch {
         if (!cancelled) setIsAdmin(false);
       } finally {

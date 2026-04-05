@@ -615,6 +615,99 @@ jobs:
             sleep 5
           done
 
+      - name: Calibration runtime edge smoke
+        env:
+          SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' && secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_ROLE }}
+        run: |
+          set -euo pipefail
+
+          # Backend calibration APIs must remain reachable and auth-gated.
+          CAL_INIT_CODE=$(curl --silent --output /tmp/calibration_init_probe.json --write-out "%{http_code}" \
+            -X POST ${{ env.BACKEND_BASE_URL }}/api/calibration/init)
+          echo "backend /api/calibration/init HTTP ${CAL_INIT_CODE}"
+          if [ "$CAL_INIT_CODE" -ne 401 ] && [ "$CAL_INIT_CODE" -ne 403 ] && [ "$CAL_INIT_CODE" -ne 422 ]; then
+            echo "Expected calibration init to be reachable and auth-gated (401/403/422)."
+            cat /tmp/calibration_init_probe.json
+            exit 1
+          fi
+
+          CAL_STATUS_CODE=$(curl --silent --output /tmp/calibration_status_probe.json --write-out "%{http_code}" \
+            ${{ env.BACKEND_BASE_URL }}/api/calibration/status)
+          echo "backend /api/calibration/status HTTP ${CAL_STATUS_CODE}"
+          if [ "$CAL_STATUS_CODE" -ne 401 ] && [ "$CAL_STATUS_CODE" -ne 403 ]; then
+            echo "Expected calibration status to be reachable and auth-gated (401/403)."
+            cat /tmp/calibration_status_probe.json
+            exit 1
+          fi
+
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY}" ]; then
+            echo "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for edge smoke tests."
+            exit 1
+          fi
+
+          EDGE_BASE="${SUPABASE_URL%/}/functions/v1"
+          EDGE_FUNCTIONS=(
+            calibration-business-dna
+            scrape-business-profile
+            deep-web-recon
+            social-enrichment
+            browse-ai-reviews
+            semrush-domain-intel
+            market-analysis-ai
+            market-signal-scorer
+            calibration-psych
+            calibration-sync
+            calibration-engine
+            competitor-monitor
+          )
+
+          for fn in "${EDGE_FUNCTIONS[@]}"; do
+            body_file="/tmp/${fn}-prod-health.json"
+            http_code=$(curl --silent --show-error --output "$body_file" --write-out "%{http_code}" \
+              -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+              -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+              "${EDGE_BASE}/${fn}")
+
+            echo "${fn} health HTTP ${http_code}"
+            if [ "$http_code" -ne 200 ]; then
+              echo "Expected ${fn} health endpoint to return HTTP 200."
+              cat "$body_file"
+              exit 1
+            fi
+
+            python3 - "$fn" "$body_file" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          fn = sys.argv[1]
+          raw = Path(sys.argv[2]).read_text(encoding="utf-8").strip()
+          try:
+              payload = json.loads(raw or "{}")
+          except Exception:
+              print(f"{fn}: health payload is not valid JSON")
+              print(raw[:500])
+              raise SystemExit(1)
+
+          required = ("ok", "function", "reachable", "generated_at")
+          missing = [key for key in required if key not in payload]
+          if missing:
+              print(f"{fn}: missing health payload keys: {missing}")
+              raise SystemExit(1)
+          if payload.get("ok") is not True:
+              print(f"{fn}: expected ok=true in health payload")
+              raise SystemExit(1)
+          if payload.get("reachable") is not True:
+              print(f"{fn}: expected reachable=true in health payload")
+              raise SystemExit(1)
+          reported_name = str(payload.get("function") or "")
+          if reported_name not in {fn, fn.replace("-", "_")}:
+              print(f"{fn}: function mismatch in health payload: {reported_name}")
+              raise SystemExit(1)
+          PY
+          done
+
       - name: Verify frontend custom-domain binding
         run: |
           for i in $(seq 1 12); do

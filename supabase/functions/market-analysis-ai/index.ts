@@ -107,11 +107,22 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "market-analysis-ai",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "No auth" }), {
+      return new Response(JSON.stringify({ ok: false, error: "No auth" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -120,7 +131,7 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -131,7 +142,7 @@ serve(async (req) => {
     const specific_question = body.specific_question || "";
 
     if (!product_or_service) {
-      return new Response(JSON.stringify({ error: "product_or_service is required" }), {
+      return new Response(JSON.stringify({ ok: false, error: "product_or_service is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -234,7 +245,8 @@ ${JSON.stringify(ctx, null, 2)}`;
     if (!aiRes.ok) {
       const err = await aiRes.text();
       console.error("[market-analysis] OpenAI error:", err);
-      return new Response(JSON.stringify({ error: "Analysis unavailable", data_sources: sources }), {
+      return new Response(JSON.stringify({ ok: false, error: "Analysis unavailable", data_sources: sources }), {
+        status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -251,12 +263,13 @@ ${JSON.stringify(ctx, null, 2)}`;
     }
 
     return new Response(JSON.stringify({
+      ok: true,
       analysis, data_sources: sources, generated_at: new Date().toISOString(),
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (err) {
     console.error("[market-analysis] Error:", err);
-    return new Response(JSON.stringify({ error: "Internal error", detail: String(err) }), {
+    return new Response(JSON.stringify({ ok: false, error: "Internal error", detail: String(err) }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

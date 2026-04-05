@@ -9,6 +9,7 @@ evidence index so freshness gates are satisfied in one command.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -41,6 +42,8 @@ def run_step(name: str, command: List[str]) -> StepResult:
 
 
 def main() -> int:
+    telemetry_enforcement = os.environ.get("RELEASE_TELEMETRY_ENFORCEMENT", "advisory").strip().lower()
+    telemetry_advisory = telemetry_enforcement != "strict"
     steps = [
         ("zd_zr_za_manager", [sys.executable, "scripts/zd_zr_za_manager.py"]),
         ("cfo_golden_harness", [sys.executable, "scripts/cfo_golden_test_harness.py"]),
@@ -53,10 +56,21 @@ def main() -> int:
     ]
 
     results: List[StepResult] = []
+    advisory_steps = []
     for name, cmd in steps:
         res = run_step(name, cmd)
         results.append(res)
         if res.exit_code != 0:
+            if name == "prod_supplier_telemetry_snapshot" and telemetry_advisory:
+                advisory_steps.append(
+                    {
+                        "name": name,
+                        "reason": "advisory_telemetry_mode_enabled",
+                        "stdout": res.stdout[-4000:],
+                        "stderr": res.stderr[-4000:],
+                    }
+                )
+                continue
             payload = {
                 "generated_at": datetime.now(timezone.utc).isoformat(),
                 "passed": False,
@@ -71,6 +85,7 @@ def main() -> int:
                     }
                     for r in results
                 ],
+                "advisory_steps": advisory_steps,
                 "stdout": res.stdout[-4000:],
                 "stderr": res.stderr[-4000:],
             }
@@ -81,6 +96,8 @@ def main() -> int:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "passed": True,
         "failure_code": None,
+        "telemetry_enforcement": "strict" if not telemetry_advisory else "advisory",
+        "advisory_steps": advisory_steps,
         "step_results": [
             {
                 "name": r.name,

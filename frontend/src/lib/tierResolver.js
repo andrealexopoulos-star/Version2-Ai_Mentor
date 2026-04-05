@@ -33,9 +33,9 @@ export function resolveTier(user) {
   if (!user) return 'free';
   const email = (user.email || '').toLowerCase().trim();
   if (email === SUPER_ADMIN_EMAIL.toLowerCase()) return 'super_admin';
-  // Respect role field — superadmin/admin role = super_admin tier
+  // Respect role field — only superadmin variants map to super_admin tier.
   const role = (user.role || '').toLowerCase();
-  if (role === 'superadmin' || role === 'super_admin' || role === 'admin') return 'super_admin';
+  if (role === 'superadmin' || role === 'super_admin') return 'super_admin';
   const dbTier = (user.subscription_tier || user.tier || 'free').toLowerCase();
   if (dbTier === 'starter' || dbTier === 'foundation' || dbTier === 'growth') return 'starter';
   if (dbTier === 'pro' || dbTier === 'professional') return 'pro';

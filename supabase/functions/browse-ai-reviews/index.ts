@@ -321,48 +321,20 @@ async function searchIndeedReviews(
   return result;
 }
 
-async function searchForumReviews(
-  businessName: string,
-  domain: string,
-  aiErrors: string[],
-): Promise<ReviewResult> {
-  const result: ReviewResult = {
-    source: "browse_ai",
-    platform: "forums",
-    rating: null,
-    review_count: null,
-    reviews: [],
-    url: "",
-  };
-
-  const q = `("${businessName}" OR "${domain}") (review OR complaints OR feedback OR discussion) (reddit OR forum OR whirlpool OR productreview OR g2 OR capterra)`;
-  const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(q)}&num=10`;
-  const html = await scrapeWithBrowseAI(searchUrl, aiErrors);
-  if (!html) return result;
-  result.url = searchUrl;
-
-  const snippets = html.match(
-    /<span[^>]*class="[^"]*(?:st|aCOpRe|hgKElc)[^"]*"[^>]*>([\s\S]*?)<\/span>/gi
-  );
-  if (snippets) {
-    for (const snip of snippets.slice(0, 12)) {
-      const text = snip.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-      if (text.length < 24) continue;
-      result.reviews.push({
-        text: text.slice(0, 300),
-        rating: extractRating(text),
-        author: "",
-        date: "",
-        sentiment: classifySentiment(text),
-      });
-    }
-  }
-  return result;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "browse-ai-reviews",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: corsHeaders },
+    );
   }
 
   const aiErrors: string[] = [];
@@ -392,12 +364,11 @@ serve(async (req) => {
 
     const searchName = businessName || domain;
 
-    const [google, glassdoor, trustpilot, indeed, forums] = await Promise.allSettled([
+    const [google, glassdoor, trustpilot, indeed] = await Promise.allSettled([
       searchGoogleReviews(searchName, location, aiErrors),
       searchGlassdoorReviews(searchName, aiErrors),
       searchTrustpilotReviews(searchName, domain, aiErrors),
       searchIndeedReviews(searchName, aiErrors),
-      searchForumReviews(searchName, domain, aiErrors),
     ]);
 
     const customerReviews: ReviewResult[] = [];
@@ -408,9 +379,6 @@ serve(async (req) => {
     }
     if (trustpilot.status === "fulfilled" && (trustpilot.value.rating || trustpilot.value.reviews.length > 0)) {
       customerReviews.push(trustpilot.value);
-    }
-    if (forums.status === "fulfilled" && forums.value.reviews.length > 0) {
-      customerReviews.push(forums.value);
     }
     if (glassdoor.status === "fulfilled" && (glassdoor.value.rating || glassdoor.value.reviews.length > 0)) {
       staffReviews.push(glassdoor.value);

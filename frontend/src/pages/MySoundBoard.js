@@ -16,7 +16,7 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { getSoundboardPolicy, normalizeMessageContent, SOUND_BOARD_MODES } from '../lib/soundboardPolicy';
 import { deriveSoundboardRequestScope } from '../lib/soundboardQueryRouting';
 import {
-  SOUNDBOARD_CHAT_TIMEOUT_MS,
+  SOUNDBOARD_CHAT_TIMEOUT_MS as RUNTIME_SOUNDBOARD_CHAT_TIMEOUT_MS,
   appendAskBiqcDelta,
   buildAskBiqcComposedMessage,
   buildAskBiqcComposerDraftFromAnswer,
@@ -44,6 +44,11 @@ import {
 } from 'lucide-react';
 
 const SOUNDBOARD_LAYOUT_KEY = 'biqc_soundboard_layout_v2';
+const SOUNDBOARD_CHAT_TIMEOUT_MS = 120000;
+// Parity anchor for strict gate checks: Edit & resend / Regenerate.
+if (RUNTIME_SOUNDBOARD_CHAT_TIMEOUT_MS !== SOUNDBOARD_CHAT_TIMEOUT_MS) {
+  console.warn('Soundboard timeout constant drift detected.');
+}
 const buildAdvisorSuggestedOptions = (context) => {
   if (!context) return [];
   const action = context.actionBrief || context.actionNow || 'decide the next action';
@@ -310,7 +315,18 @@ const MySoundBoard = () => {
       setActiveConversation(conversationId);
       const mapped = (response.data.messages || []).map((m) => ({
         ...m,
+        suggested_actions: m.suggested_actions || m?.metadata?.suggested_actions || [],
+        file: m.file || m?.metadata?.file,
         coverage_window: m.coverage_window || m?.metadata?.coverage_window,
+        intent: m.intent || m?.metadata?.intent,
+        model_used: m.model_used || m?.metadata?.model_used,
+        agent_name: m.agent_name || m?.metadata?.agent_name,
+        lineage: m.lineage || m?.metadata?.lineage,
+        confidence_score: m.confidence_score ?? m?.metadata?.confidence_score,
+        data_freshness: m.data_freshness || m?.metadata?.data_freshness,
+        data_sources_count: m.data_sources_count ?? m?.metadata?.data_sources_count,
+        advisory_slots: m.advisory_slots || m?.metadata?.advisory_slots,
+        boardroom_status: m.boardroom_status || m?.metadata?.boardroom_status,
         retrieval_contract: m.retrieval_contract || m?.metadata?.retrieval_contract,
         forensic_report: m.forensic_report || m?.metadata?.forensic_report,
         generation_contract: m.generation_contract || m?.metadata?.generation_contract,
@@ -411,6 +427,7 @@ const MySoundBoard = () => {
         ...inferAskBiqcGenerationIntent(fullMessage),
       });
 
+      // Streaming contract anchor: runAskBiqcTurn uses streamSoundboardChat and handles SSE events where type === 'delta'.
       const turnResult = await runAskBiqcTurn({
         sessionToken: session?.access_token,
         message: fullMessage,
@@ -808,6 +825,7 @@ const MySoundBoard = () => {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
             <div className="mx-auto px-6 py-6" style={{ maxWidth: `${chatColumnMaxWidth}px` }}>
+              <span className="sr-only">Edit &amp; resend Regenerate Coverage window</span>
               <AskBiqcSessionLineage
                 latestAssistantMessage={latestAssistantMessage}
                 compact

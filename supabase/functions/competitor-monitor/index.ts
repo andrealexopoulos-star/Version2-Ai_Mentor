@@ -30,6 +30,7 @@ const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const COMPETITOR_MONITOR_BATCH_SECRET = Deno.env.get("COMPETITOR_MONITOR_BATCH_SECRET") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -216,13 +217,39 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        function: "competitor-monitor",
+        reachable: true,
+        generated_at: new Date().toISOString(),
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 
   try {
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body = await req.json().catch(() => ({}));
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace("Bearer ", "").trim();
+    const isServiceRoleToken = Boolean(token) && token === SUPABASE_SERVICE_ROLE_KEY;
+    const batchSecret = (req.headers.get("X-Batch-Secret") || "").trim();
+
+    let authenticatedUserId: string | null = null;
+    if (token && !isServiceRoleToken) {
+        const { data: authData } = await sb.auth.getUser(token);
+        authenticatedUserId = authData?.user?.id || null;
+    }
 
     // Batch mode: scan all active users (for pg_cron)
     if (body.batch) {
+      if (!isServiceRoleToken || !COMPETITOR_MONITOR_BATCH_SECRET || batchSecret !== COMPETITOR_MONITOR_BATCH_SECRET) {
+        return new Response(JSON.stringify({ ok: false, error: "Unauthorized batch invocation" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const { data: users } = await sb
         .from("business_profiles")
         .select("user_id")
@@ -254,30 +281,39 @@ serve(async (req) => {
     }
 
     // Single user mode
-    const userId = body.user_id;
-    if (!userId) {
-      // Try to get from auth
-      const authHeader = req.headers.get("Authorization") || "";
-      const token = authHeader.replace("Bearer ", "");
-      const { data: { user } } = await sb.auth.getUser(token);
-      if (!user) {
-        return new Response(JSON.stringify({ error: "user_id required or authenticate via Bearer token" }), {
+    const requestedUserId = `${body.user_id || ""}`.trim();
+    if (!requestedUserId) {
+      if (!authenticatedUserId) {
+        return new Response(JSON.stringify({ ok: false, error: "user_id required or authenticate via Bearer token" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const result = await monitorUser(sb, user.id);
+      const result = await monitorUser(sb, authenticatedUserId);
       return new Response(JSON.stringify({ ok: true, mode: "single", ...result }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const result = await monitorUser(sb, userId);
+    if (isServiceRoleToken) {
+      const result = await monitorUser(sb, requestedUserId);
+      return new Response(JSON.stringify({ ok: true, mode: "single", ...result }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!authenticatedUserId || authenticatedUserId !== requestedUserId) {
+      return new Response(JSON.stringify({ ok: false, error: "user_id must match authenticated user" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const result = await monitorUser(sb, requestedUserId);
     return new Response(JSON.stringify({ ok: true, mode: "single", ...result }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

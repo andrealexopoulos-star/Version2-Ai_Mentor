@@ -363,12 +363,14 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         retrieval_contract: m.retrieval_contract || m?.metadata?.retrieval_contract,
         forensic_report: m.forensic_report || m?.metadata?.forensic_report,
         generation_contract: m.generation_contract || m?.metadata?.generation_contract,
-        model_used: m.model_used,
-        confidence_score: m.confidence_score,
-        data_freshness: m.data_freshness,
-        data_sources_count: m.data_sources_count,
-        lineage: m.lineage,
-        suggested_actions: m.suggested_actions,
+        model_used: m.model_used || m?.metadata?.model_used,
+        confidence_score: m.confidence_score ?? m?.metadata?.confidence_score,
+        data_freshness: m.data_freshness || m?.metadata?.data_freshness,
+        data_sources_count: m.data_sources_count ?? m?.metadata?.data_sources_count,
+        lineage: m.lineage || m?.metadata?.lineage,
+        suggested_actions: m.suggested_actions || m?.metadata?.suggested_actions || [],
+        file: m.file || m?.metadata?.file,
+        agent_name: m.agent_name || m?.metadata?.agent_name,
         advisory_slots: m.advisory_slots || m?.metadata?.advisory_slots,
         coverage_window: m.coverage_window || m?.metadata?.coverage_window,
       })));
@@ -504,6 +506,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-4" style={{ minHeight: 0 }}>
+        <span className="sr-only">Coverage window</span>
         <AskBiqcSessionLineage
           latestAssistantMessage={latestAssistantMessage}
           compact
