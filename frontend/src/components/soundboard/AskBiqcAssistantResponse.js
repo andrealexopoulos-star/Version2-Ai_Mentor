@@ -41,6 +41,7 @@ export default function AskBiqcAssistantResponse({
   );
   const retrievalContract = safeMessage.retrieval_contract || {};
   const forensicReport = safeMessage.forensic_report || {};
+  const generationContract = safeMessage.generation_contract || {};
   const hasAdvancedDetails = Boolean(
     evidenceSources.length > 0
     || safeMessage.coverage_window
@@ -58,6 +59,7 @@ export default function AskBiqcAssistantResponse({
     || Number(retrievalContract.crm_pages_fetched || 0) > 0
     || Number(retrievalContract.accounting_pages_fetched || 0) > 0
     || retrievalContract.materialization_attempted
+    || generationContract.requested
     || safeMessage.advisory_slots?.kpi_note
     || (typeof safeMessage.response_version === 'number' && safeMessage.response_version > 1)
     || (Array.isArray(forensicReport.citations) && forensicReport.citations.length > 0)
@@ -355,6 +357,22 @@ export default function AskBiqcAssistantResponse({
             testId={`${metadataTestId}-materialization`}
           >
             signal heal +{Number(retrievalContract.signals_emitted_on_demand || 0)}
+          </Chip>
+        )}
+        {generationContract.requested && (
+          <Chip
+            style={{ background: 'rgba(251,146,60,0.16)', color: '#FDBA74' }}
+            testId={`${metadataTestId}-generation-artifact`}
+          >
+            artifact {generationContract.artifact_type || 'analysis'}
+          </Chip>
+        )}
+        {generationContract.requested && generationContract.tier_allowed === false && (
+          <Chip
+            style={{ background: 'rgba(239,68,68,0.16)', color: '#FCA5A5' }}
+            testId={`${metadataTestId}-generation-tier-gated`}
+          >
+            export tier {generationContract.required_tier || 'starter'}+
           </Chip>
         )}
         {message.advisory_slots?.kpi_note && (

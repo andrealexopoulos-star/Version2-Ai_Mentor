@@ -78,6 +78,8 @@ export function buildAskBiqcRequestPayload({
   mode = 'auto',
   agentId = 'auto',
   forensicReportMode = false,
+  deliverableType = null,
+  exportRequested = false,
 }) {
   return {
     message,
@@ -86,6 +88,8 @@ export function buildAskBiqcRequestPayload({
     mode,
     agent_id: agentId || 'auto',
     forensic_report_mode: Boolean(forensicReportMode),
+    deliverable_type: deliverableType || null,
+    export_requested: Boolean(exportRequested),
   };
 }
 
@@ -277,6 +281,7 @@ function buildAssistantMessageFromResponse(responseData, { traceRootId, response
     soundboard_contract: responseData.soundboard_contract,
     retrieval_contract: responseData.retrieval_contract,
     forensic_report: responseData.forensic_report,
+    generation_contract: responseData.generation_contract,
     advisory_slots: responseData.advisory_slots,
     coverage_window: responseData.coverage_window,
     trace_root_id: traceRootId,

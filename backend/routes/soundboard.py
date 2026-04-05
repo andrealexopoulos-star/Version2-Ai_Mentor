@@ -925,6 +925,8 @@ class SoundboardChatRequest(BaseModel):
     mode: Optional[str] = "auto"
     agent_id: Optional[str] = "auto"
     forensic_report_mode: Optional[bool] = None
+    deliverable_type: Optional[str] = None
+    export_requested: Optional[bool] = None
 
 
 def _has_configured_key(value: Optional[str]) -> bool:
@@ -986,6 +988,158 @@ def _infer_intent_heuristic(message: str) -> tuple[str, str, str]:
         complexity = "high"
 
     return domain, action, complexity
+
+
+GENERATION_ARTIFACT_KEYWORDS: Dict[str, List[str]] = {
+    "report": ["report", "board report", "exec report", "board pack", "monthly report", "quarterly report"],
+    "analysis": ["analysis", "analyse", "deep dive", "root cause", "forensic"],
+    "dashboard_spec": ["dashboard", "scorecard", "kpi board", "metric board"],
+    "playbook": ["playbook", "runbook", "battlecard"],
+    "sop": ["sop", "standard operating procedure", "process guide"],
+    "job_description": ["job description", "jd", "role spec"],
+    "memo": ["memo", "briefing note"],
+    "plan": ["plan", "roadmap", "execution plan", "rollout plan"],
+    "image": ["image", "graphic", "social post", "logo", "banner"],
+    "video_brief": ["video", "ad video", "scripted video", "video storyboard"],
+}
+
+GENERATION_MIN_TIER: Dict[str, str] = {
+    "report": "free",
+    "analysis": "free",
+    "memo": "free",
+    "plan": "free",
+    "dashboard_spec": "starter",
+    "playbook": "starter",
+    "sop": "starter",
+    "job_description": "starter",
+    "image": "pro",
+    "video_brief": "enterprise",
+}
+
+COMMERCIAL_TIER_RANK = {
+    "free": 0,
+    "starter": 1,
+    "pro": 2,
+    "enterprise": 3,
+    "custom_build": 4,
+    "super_admin": 99,
+}
+
+
+def _normalize_commercial_tier(raw_tier: Optional[str]) -> str:
+    tier_value = (raw_tier or "free").strip().lower()
+    if tier_value in {"superadmin", "super_admin"}:
+        return "super_admin"
+    if tier_value in {"foundation", "growth", "starter"}:
+        return "starter"
+    if tier_value in {"professional", "pro"}:
+        return "pro"
+    if tier_value in {"enterprise"}:
+        return "enterprise"
+    if tier_value in {"custom", "custom_build"}:
+        return "custom_build"
+    return "free"
+
+
+def _infer_generation_request(message: str) -> Dict[str, Any]:
+    text = (message or "").lower()
+    if not text.strip():
+        return {"requested": False, "artifact_type": None, "wants_file_export": False}
+    create_markers = ("create", "generate", "write", "produce", "build", "draft", "make")
+    wants_generation = any(marker in text for marker in create_markers)
+    artifact_type = None
+    for candidate, keywords in GENERATION_ARTIFACT_KEYWORDS.items():
+        if any(keyword in text for keyword in keywords):
+            artifact_type = candidate
+            break
+    wants_file_export = any(
+        marker in text
+        for marker in ("download", "file", "pdf", "docx", "csv", "ppt", "powerpoint", "export")
+    )
+    if not wants_generation and artifact_type in {"analysis", "report"}:
+        wants_generation = True
+    return {
+        "requested": bool(wants_generation or artifact_type),
+        "artifact_type": artifact_type or ("analysis" if wants_generation else None),
+        "wants_file_export": wants_file_export,
+    }
+
+
+def _generation_allowed_for_tier(artifact_type: Optional[str], raw_tier: Optional[str], is_super_admin: bool) -> Dict[str, Any]:
+    normalized = _normalize_commercial_tier(raw_tier)
+    if is_super_admin:
+        return {"allowed": True, "required_tier": "free", "tier": normalized}
+    required_tier = GENERATION_MIN_TIER.get(artifact_type or "analysis", "free")
+    allowed = COMMERCIAL_TIER_RANK.get(normalized, 0) >= COMMERCIAL_TIER_RANK.get(required_tier, 0)
+    return {"allowed": bool(allowed), "required_tier": required_tier, "tier": normalized}
+
+
+async def _maybe_generate_export_file(
+    *,
+    user_id: str,
+    conversation_id: Optional[str],
+    clean_message: str,
+    response_text: str,
+    artifact_type: Optional[str],
+    should_export: bool,
+) -> Optional[Dict[str, Any]]:
+    if not should_export:
+        return None
+    selected = artifact_type or "analysis"
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    try:
+        from routes.file_service import _generate_image, _upload_to_storage, _get_storage
+        sb_files = _get_storage()
+        if selected == "image":
+            image_bytes = await _generate_image(clean_message)
+            fname = f"{selected}_{timestamp}.png"
+            path = _upload_to_storage(sb_files, user_id, "user-files", fname, image_bytes, "image/png")
+            signed = sb_files.storage.from_("user-files").create_signed_url(path, 3600)
+            download_url = signed.get("signedURL", signed.get("signedUrl", ""))
+            size_bytes = len(image_bytes)
+            content_type = "image/png"
+            bucket = "user-files"
+        else:
+            body = response_text or clean_message
+            if selected == "video_brief":
+                body = (
+                    "Video production brief (generated from Ask BIQc)\n\n"
+                    "This export provides script and storyboard guidance. Native rendered video export "
+                    "is roadmap-gated by provider runtime and cost tier.\n\n"
+                    f"{body}"
+                )
+            file_bytes = body.encode("utf-8")
+            fname = f"{selected}_{timestamp}.md"
+            bucket = "reports" if selected in {"report", "analysis", "dashboard_spec"} else "user-files"
+            path = _upload_to_storage(sb_files, user_id, bucket, fname, file_bytes, "text/markdown")
+            signed = sb_files.storage.from_(bucket).create_signed_url(path, 3600)
+            download_url = signed.get("signedURL", signed.get("signedUrl", ""))
+            size_bytes = len(file_bytes)
+            content_type = "text/markdown"
+        try:
+            sb_files.table("generated_files").insert({
+                "tenant_id": user_id,
+                "file_name": fname,
+                "file_type": selected,
+                "storage_path": path,
+                "bucket": bucket,
+                "size_bytes": size_bytes,
+                "generated_by": "ask_biqc",
+                "source_conversation_id": conversation_id or "",
+                "metadata": {"prompt": clean_message[:300], "artifact_type": selected},
+            }).execute()
+        except Exception:
+            pass
+        return {
+            "name": fname,
+            "type": selected,
+            "download_url": download_url,
+            "size": size_bytes,
+            "content_type": content_type,
+        }
+    except Exception as export_error:
+        logger.warning(f"[ASK_BIQC] Export generation failed: {export_error}")
+        return None
 
 
 def _coerce_request_scope(req: SoundboardChatRequest, message: str) -> Dict[str, Any]:
@@ -2088,6 +2242,25 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     tier_for_contract = (current_user.get("subscription_tier") or profile.get("subscription_tier") or "free")
     is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin"}
     mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
+    generation_request = _infer_generation_request(clean_message)
+    if req.deliverable_type and str(req.deliverable_type).strip():
+        generation_request["requested"] = True
+        generation_request["artifact_type"] = str(req.deliverable_type).strip().lower()
+    if req.export_requested is True:
+        generation_request["wants_file_export"] = True
+    generation_tier = _generation_allowed_for_tier(
+        generation_request.get("artifact_type"),
+        tier_for_contract,
+        is_super_admin,
+    )
+    generation_contract = {
+        "requested": bool(generation_request.get("requested")),
+        "artifact_type": generation_request.get("artifact_type"),
+        "file_export_requested": bool(generation_request.get("wants_file_export")),
+        "tier": generation_tier.get("tier"),
+        "tier_allowed": bool(generation_tier.get("allowed")),
+        "required_tier": generation_tier.get("required_tier"),
+    }
     feature = "trinity_daily" if mode == "trinity" else "soundboard_daily"
     preflight_checked = bool((req.intelligence_context or {}).get("_rate_limit_checked"))
     if not preflight_checked:
@@ -2234,6 +2407,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "suggested_actions": blocked_actions,
             "evidence_pack": evidence_pack,
             "soundboard_contract": blocked_contract,
+            "generation_contract": generation_contract,
             **contract_meta,
         }
 
@@ -2349,65 +2523,26 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + signal_injection + guardrail_injection + evidence_injection + contract_injection + f"\n\nCONTEXT:\n{user_context}"
 
-    # ═══ FILE GENERATION DETECTION ═══
-    file_keywords = {
-        'logo': ['create a logo', 'design a logo', 'make a logo', 'generate a logo', 'logo for'],
-        'document': ['create a document', 'write a document', 'draft a document', 'generate a document'],
-        'report': ['create a report', 'generate a report', 'write a report', 'produce a report'],
-        'social_image': ['create a social', 'design a post', 'social media image', 'create an image', 'generate an image'],
-    }
-    detected_file_type = None
-    msg_lower = clean_message.lower()
-    for ftype, keywords in file_keywords.items():
-        if any(kw in msg_lower for kw in keywords):
-            detected_file_type = ftype
-            break
-
-    if detected_file_type:
-        try:
-            from routes.file_service import _generate_image, _generate_document, _upload_to_storage, _get_storage
-            sb_files = _get_storage()
-            timestamp = __import__('datetime').datetime.now(__import__('datetime').timezone.utc).strftime('%Y%m%d_%H%M%S')
-
-            if detected_file_type in ('logo', 'social_image'):
-                image_bytes = await _generate_image(clean_message)
-                fname = f"{detected_file_type}_{timestamp}.png"
-                path = _upload_to_storage(sb_files, user_id, 'user-files', fname, image_bytes, 'image/png')
-                signed = sb_files.storage.from_('user-files').create_signed_url(path, 3600)
-                download_url = signed.get('signedURL', signed.get('signedUrl', ''))
-                sb_files.table('generated_files').insert({
-                    'tenant_id': user_id, 'file_name': fname, 'file_type': detected_file_type,
-                    'storage_path': path, 'bucket': 'user-files', 'size_bytes': len(image_bytes),
-                    'generated_by': 'soundboard', 'source_conversation_id': req.conversation_id or '',
-                    'metadata': {'prompt': clean_message[:200]},
-                }).execute()
-                return {
-                    "reply": f"I've created your {detected_file_type}. You can download it below or find it in your Reports tab.",
-                    "file": {"name": fname, "type": detected_file_type, "download_url": download_url, "size": len(image_bytes)},
-                    "conversation_id": req.conversation_id,
-                }
-            else:
-                content = await _generate_document(clean_message, detected_file_type)
-                fname = f"{detected_file_type}_{timestamp}.md"
-                bucket = 'reports' if detected_file_type == 'report' else 'user-files'
-                file_bytes = content.encode('utf-8')
-                path = _upload_to_storage(sb_files, user_id, bucket, fname, file_bytes, 'text/plain')
-                signed = sb_files.storage.from_(bucket).create_signed_url(path, 3600)
-                download_url = signed.get('signedURL', signed.get('signedUrl', ''))
-                sb_files.table('generated_files').insert({
-                    'tenant_id': user_id, 'file_name': fname, 'file_type': detected_file_type,
-                    'storage_path': path, 'bucket': bucket, 'size_bytes': len(file_bytes),
-                    'generated_by': 'soundboard', 'source_conversation_id': req.conversation_id or '',
-                    'metadata': {'prompt': clean_message[:200]},
-                }).execute()
-                return {
-                    "reply": f"I've generated your {detected_file_type}. You can download it below or find it in your Reports tab.\n\n{content[:500]}{'...' if len(content) > 500 else ''}",
-                    "file": {"name": fname, "type": detected_file_type, "download_url": download_url, "size": len(file_bytes)},
-                    "conversation_id": req.conversation_id,
-                }
-        except Exception as e:
-            logger.warning(f"File generation in SoundBoard failed: {e}")
-            # Fall through to normal chat response
+    # ═══ GENERATION CONTRACT INJECTION (universal ask + connector relevance) ═══
+    if generation_contract.get("requested"):
+        artifact_label = generation_contract.get("artifact_type") or "analysis"
+        system_message += (
+            "\n\n═══ DELIVERABLE CONTRACT (MANDATORY) ═══\n"
+            f"User requested artifact type: {artifact_label}.\n"
+            "Output must contain:\n"
+            "1) Direct deliverable first (no preamble).\n"
+            "2) Evidence used from connected systems.\n"
+            "3) Inferred reasoning from model knowledge (clearly labeled).\n"
+            "4) Gaps/assumptions and confidence note.\n"
+            "5) Next actions with owner + timing.\n"
+            "If connector data is partial, still produce the strongest usable deliverable now (do not refuse), "
+            "but explicitly label inferred vs proven parts.\n"
+        )
+        if not generation_contract.get("tier_allowed"):
+            system_message += (
+                f"\n[TIER NOTE]\nThe requested artifact export type is gated for tier '{generation_contract.get('required_tier')}'. "
+                "Still produce the full deliverable inline in chat; keep commercial notes to one concise line at most.\n"
+            )
 
     # ═══ HYBRID MODEL ROUTING — Direct provider keys only ═══
     # OpenAI: Uses your OPENAI_API_KEY directly (already in Azure/Supabase/GitHub)
@@ -2672,14 +2807,16 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             response = _ensure_flagship_contract_sections(response)
             response = sanitise_output(response)
             advisory_slots = parse_flagship_response_slots(response)
-            response = _humanize_contract_response(
-                response,
-                advisory_slots,
-                mode=mode,
-                agent_id=effective_agent_id,
-                last_assistant_message=_extract_last_assistant_message(messages_history),
-            )
-            response = sanitise_output(response)
+            should_keep_structured = bool(report_grade_request or generation_contract.get("requested"))
+            if not should_keep_structured:
+                response = _humanize_contract_response(
+                    response,
+                    advisory_slots,
+                    mode=mode,
+                    agent_id=effective_agent_id,
+                    last_assistant_message=_extract_last_assistant_message(messages_history),
+                )
+                response = sanitise_output(response)
 
         retrieval_contract = _build_retrieval_contract(
             report_grade_request=report_grade_request,
@@ -2710,6 +2847,21 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         log_llm_call_to_db(
             tenant_id=user_id, model_name=response_model, endpoint='soundboard/chat',
             total_tokens=_actual_tokens, latency_ms=_elapsed, feature_flag='soundboard',
+        )
+        generated_file = await _maybe_generate_export_file(
+            user_id=user_id,
+            conversation_id=req.conversation_id,
+            clean_message=clean_message,
+            response_text=response,
+            artifact_type=generation_contract.get("artifact_type"),
+            should_export=bool(
+                generation_contract.get("requested")
+                and generation_contract.get("tier_allowed")
+                and (
+                    generation_contract.get("file_export_requested")
+                    or generation_contract.get("artifact_type") in {"report", "analysis", "dashboard_spec", "playbook", "sop", "job_description", "plan", "memo"}
+                )
+            ),
         )
 
         # Generate title for new conversations
@@ -2777,6 +2929,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                     "boardroom_status": ("orchestrated" if effective_agent_id == "boardroom" and boardroom_trace else ("requested_no_trace" if effective_agent_id == "boardroom" else "not_requested")) if item["role"] == "assistant" else None,
                     "retrieval_contract": retrieval_contract if item["role"] == "assistant" else {},
                     "forensic_report": forensic_report if item["role"] == "assistant" else {},
+                    "generation_contract": generation_contract if item["role"] == "assistant" else {},
                 },
             }
             for item in new_messages
@@ -2898,7 +3051,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "soundboard_contract": soundboard_contract,
             "retrieval_contract": retrieval_contract,
             "forensic_report": forensic_report,
+            "generation_contract": generation_contract,
             "advisory_slots": advisory_slots,
+            "file": generated_file,
             **contract_meta,
         }
 
@@ -2923,7 +3078,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "error": str(e)[:240],
         } if effective_agent_id == "boardroom" else None
         fallback_slots = parse_flagship_response_slots(fallback)
-        fallback_human = _humanize_contract_response(fallback, fallback_slots)
+        fallback_human = fallback
+        if not (report_grade_request or generation_contract.get("requested")):
+            fallback_human = _humanize_contract_response(fallback, fallback_slots)
         retrieval_contract = _build_retrieval_contract(
             report_grade_request=report_grade_request,
             grounded_report_ready=False,
@@ -2976,6 +3133,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "soundboard_contract": error_contract,
             "retrieval_contract": retrieval_contract,
             "forensic_report": forensic_report,
+            "generation_contract": generation_contract,
             "advisory_slots": fallback_slots,
             **contract_meta,
         }
@@ -3000,7 +3158,9 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "error": str(e)[:240],
         } if effective_agent_id == "boardroom" else None
         fallback_slots = parse_flagship_response_slots(fallback)
-        fallback_human = _humanize_contract_response(fallback, fallback_slots)
+        fallback_human = fallback
+        if not (report_grade_request or generation_contract.get("requested")):
+            fallback_human = _humanize_contract_response(fallback, fallback_slots)
         retrieval_contract = _build_retrieval_contract(
             report_grade_request=report_grade_request,
             grounded_report_ready=False,
@@ -3053,6 +3213,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "soundboard_contract": error_contract,
             "retrieval_contract": retrieval_contract,
             "forensic_report": forensic_report,
+            "generation_contract": generation_contract,
             "advisory_slots": fallback_slots,
             **contract_meta,
         }
