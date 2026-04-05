@@ -113,8 +113,11 @@ export default function AskBiqcAssistantResponse({
         </div>
       )}
       {showDetails
-        && retrievalContract.answer_grade
-        && retrievalContract.answer_grade !== 'FULL'
+        && (
+          (retrievalContract.answer_grade && retrievalContract.answer_grade !== 'FULL')
+          || Boolean(forensicReport.degraded_reason)
+          || message.guardrail_status === 'DEGRADED'
+        )
         && onSuggestedAction && (
           <div className="mt-2">
             <button
@@ -215,7 +218,7 @@ export default function AskBiqcAssistantResponse({
           </Chip>
         </div>
       )}
-      {showDetails && forensicReport.mode_active && (
+      {showDetails && (forensicReport.mode_active || retrievalContract.report_grade_request || retrievalContract.answer_grade) && (
         <div
           className={`${compact ? 'mt-2 rounded-lg px-2 py-1.5' : 'mt-2 rounded-lg p-2'}`}
           style={{ background: 'rgba(2,6,23,0.42)', border: '1px solid rgba(148,163,184,0.2)' }}
