@@ -2259,6 +2259,11 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin"}
     mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
     generation_request = _infer_generation_request(clean_message)
+    if report_grade_request:
+        generation_request["requested"] = True
+        generation_request["artifact_type"] = generation_request.get("artifact_type") or "report"
+    if report_grade_request and any(marker in clean_message.lower() for marker in ("export", "file", "download", "pdf", "docx", "csv")):
+        generation_request["wants_file_export"] = True
     if req.deliverable_type and str(req.deliverable_type).strip():
         generation_request["requested"] = True
         generation_request["artifact_type"] = str(req.deliverable_type).strip().lower()
