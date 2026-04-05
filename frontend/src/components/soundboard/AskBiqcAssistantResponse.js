@@ -33,6 +33,7 @@ export default function AskBiqcAssistantResponse({
   const role = safeMessage.role;
 
   const confidencePercent = normalizeAskBiqcConfidencePercent(safeMessage.confidence_score);
+  const contentText = normalizeMessageContent(message.content ?? message.text);
   const evidenceSources = (safeMessage.evidence_pack?.sources || []).filter(
     (source) => String(source?.source || '').trim().toLowerCase() !== 'unknown'
   );
@@ -42,6 +43,15 @@ export default function AskBiqcAssistantResponse({
   const retrievalContract = safeMessage.retrieval_contract || {};
   const forensicReport = safeMessage.forensic_report || {};
   const generationContract = safeMessage.generation_contract || {};
+  const exportRequestedByPrompt = /\b(export|download|file|pdf|docx|csv|ppt|powerpoint)\b/i.test(contentText);
+  const canInlineExport = Boolean(
+    contentText.trim()
+    && (
+      generationContract.requested
+      || retrievalContract.report_grade_request
+      || exportRequestedByPrompt
+    )
+  );
   const hasAdvancedDetails = Boolean(
     evidenceSources.length > 0
     || safeMessage.coverage_window
@@ -75,7 +85,7 @@ export default function AskBiqcAssistantResponse({
       )}
       {message.type === 'integration_prompt' && <Database className="w-3.5 h-3.5 text-[#F59E0B] inline mr-1.5 -mt-0.5" />}
       <p className={`${compact ? 'text-sm' : 'text-sm'} whitespace-pre-wrap leading-relaxed`}>
-        {normalizeMessageContent(message.content ?? message.text)}
+        {contentText}
       </p>
 
       <AskBiqcMessageActions
@@ -86,6 +96,35 @@ export default function AskBiqcAssistantResponse({
         onRegenerate={onRegenerate}
         testIdPrefix={actionTestIdPrefix}
       />
+      {canInlineExport && (
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              const filenameHint = String(generationContract.artifact_type || 'ask_biqc_export')
+                .replace(/[^a-z0-9_-]+/gi, '_')
+                .toLowerCase();
+              const filename = `${filenameHint}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.md`;
+              const blob = new Blob([contentText], { type: 'text/markdown;charset=utf-8' });
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(blob);
+              link.download = filename;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(link.href);
+            } catch {
+              // no-op: preserve chat flow if browser blocks downloads
+            }
+          }}
+          className={`${compact ? 'mt-2 px-2.5 py-1 text-[10px]' : 'mt-2 px-3 py-1.5 text-xs'} rounded-lg font-medium transition-all hover:brightness-110 flex items-center gap-1.5`}
+          style={{ background: 'rgba(251,146,60,0.14)', border: '1px solid rgba(251,146,60,0.35)', color: '#FDBA74', fontFamily: fontFamily.mono }}
+          data-testid={`${actionTestIdPrefix}-export-inline`}
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>Export this response</span>
+        </button>
+      )}
       {hasAdvancedDetails && (
         <button
           type="button"

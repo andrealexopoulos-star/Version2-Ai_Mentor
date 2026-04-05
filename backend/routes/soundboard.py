@@ -523,6 +523,103 @@ def _humanize_contract_response(
     return _limit_to_executive_length(narrative, max_sentences=6)
 
 
+def _build_universal_deliverable_response(
+    *,
+    response_text: str,
+    slots: Dict[str, Any],
+    evidence_pack: Dict[str, Any],
+    forensic_report: Dict[str, Any],
+    retrieval_contract: Dict[str, Any],
+    generation_contract: Dict[str, Any],
+    coverage_window: Dict[str, Any],
+    guardrail_status: str,
+    report_grade_request: bool,
+) -> str:
+    generation_requested = bool((generation_contract or {}).get("requested"))
+    if not generation_requested and not report_grade_request:
+        return response_text
+
+    artifact_type = str((generation_contract or {}).get("artifact_type") or ("report" if report_grade_request else "analysis")).strip().lower()
+    artifact_title = artifact_type.replace("_", " ").title()
+
+    priority = str((slots or {}).get("priority_now") or "").strip()
+    decision = str((slots or {}).get("decision") or "").strip()
+    pathways = str((slots or {}).get("pathways") or "").strip()
+    kpi_note = str((slots or {}).get("kpi_note") or "").strip()
+    risk_if_delayed = str((slots or {}).get("risk_if_delayed") or "").strip()
+    if not priority and not decision:
+        first_line = re.split(r"\n+", str(response_text or "").strip())[0].strip()
+        priority = first_line or "Immediate focus is to stabilise the highest-impact business risk this week."
+
+    citations = list((forensic_report or {}).get("citations") or [])[:5]
+    evidence_sources = list((evidence_pack or {}).get("sources") or [])[:5]
+    evidence_lines: List[str] = []
+    if citations:
+        for item in citations:
+            label = str(item.get("ref") or item.get("source") or "source")
+            summary = str(item.get("summary") or "").strip()
+            freshness = str(item.get("freshness") or "unknown")
+            if summary:
+                evidence_lines.append(f"- {label}: {summary} (freshness: {freshness})")
+            else:
+                evidence_lines.append(f"- {label} (freshness: {freshness})")
+    elif evidence_sources:
+        for item in evidence_sources:
+            source = str(item.get("source") or "source")
+            summary = str(item.get("summary") or "").strip()
+            freshness = str(item.get("freshness") or "unknown")
+            evidence_lines.append(f"- {source}: {summary or 'Available for this turn'} (freshness: {freshness})")
+    else:
+        evidence_lines.append("- Connector evidence is limited in this turn; using calibration + model priors where needed.")
+
+    answer_grade = str((retrieval_contract or {}).get("answer_grade") or "DEGRADED").upper()
+    inference_line = (
+        "Inference relies on model priors where connector history is partial. "
+        "All inferred points are marked and should be validated after deeper retrieval."
+        if answer_grade in {"DEGRADED", "BLOCKED"} or str(guardrail_status).upper() != "FULL"
+        else "Inference is minimal; recommendations are primarily grounded in retrieved connector evidence."
+    )
+
+    missing_periods = list((coverage_window or {}).get("missing_periods") or [])
+    coverage_start = (coverage_window or {}).get("coverage_start") or "unknown"
+    coverage_end = (coverage_window or {}).get("coverage_end") or "unknown"
+    assumptions = [
+        f"- Retrieval window used: {coverage_start} -> {coverage_end}",
+        f"- Answer grade: {answer_grade}",
+    ]
+    if missing_periods:
+        assumptions.append(f"- Data gap detected: {missing_periods[0]}")
+    if bool((retrieval_contract or {}).get("history_truncated")):
+        assumptions.append("- Historical retrieval was truncated in at least one connector.")
+
+    next_actions: List[str] = []
+    if decision:
+        next_actions.append(f"- Decide now: {decision}")
+    if pathways:
+        next_actions.append(f"- Execute pathway: {pathways}")
+    if kpi_note:
+        next_actions.append(f"- KPI control: {kpi_note}")
+    if risk_if_delayed:
+        next_actions.append(f"- Risk if delayed: {risk_if_delayed}")
+    if not next_actions:
+        next_actions.append("- Assign one accountable owner and run a 48-hour execution checkpoint.")
+
+    sections = [
+        f"{artifact_title} Deliverable",
+        "Executive Answer",
+        priority or decision or "Strongest action is to stabilise priority risk with owner and deadline.",
+        "Evidence Used",
+        "\n".join(evidence_lines),
+        "Inferred Analysis",
+        inference_line,
+        "Assumptions / Gaps",
+        "\n".join(assumptions),
+        "Next Actions",
+        "\n".join(next_actions),
+    ]
+    return "\n\n".join([part for part in sections if str(part or "").strip()])
+
+
 def _build_specificity_fallback(*, profile: Dict[str, Any], top_concerns: List[Dict[str, Any]], coverage_pct: float, live_signal_count: int) -> str:
     business_name = (profile or {}).get("business_name") or "your business"
     industry = (profile or {}).get("industry") or "your industry"
@@ -2823,6 +2920,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         clean_lower = clean_message.strip().lower()
         greeting_only = clean_lower in {"hi", "hey", "hello", "yo", "good morning", "good afternoon", "good evening"}
         should_enforce_contract = not greeting_only and len(clean_message.split()) >= 4
+        should_keep_structured = False
         advisory_slots = {}
         if should_enforce_contract:
             response = _ensure_flagship_contract_sections(response)
@@ -2863,6 +2961,19 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             grounded_report_ready=grounded_report_ready,
         )
         contract_meta["confidence_score"] = capped_confidence
+        if should_enforce_contract and should_keep_structured:
+            response = _build_universal_deliverable_response(
+                response_text=response,
+                slots=advisory_slots,
+                evidence_pack=evidence_pack,
+                forensic_report=forensic_report,
+                retrieval_contract=retrieval_contract,
+                generation_contract=generation_contract,
+                coverage_window=coverage_window,
+                guardrail_status=guardrail_status,
+                report_grade_request=report_grade_request,
+            )
+            response = sanitise_output(response)
 
         _actual_tokens = len(system_message.split()) + len(clean_message.split()) + len(response.split())
         log_llm_call_to_db(
