@@ -206,15 +206,21 @@ def main() -> int:
         covered += 1
         if path in TRUTH_GATEWAY_PATHS:
             truth_gateway_probe_count += 1
-            result, reason = _evaluate_truth_gateway_contract(status, detail)
-            payload = _parse_json_or_none(detail or "") or {}
-            truth_state = str(payload.get("status") or "").strip().lower()
-            if result == "pass" and truth_state == "canonical":
-                truth_gateway_canonical_count += 1
-            elif result == "pass" and truth_state == "degraded":
-                truth_gateway_degraded_count += 1
-            elif truth_state == "failed" or status == 503:
-                truth_gateway_failed_count += 1
+            if status in {401, 403}:
+                # Live truth-gateway endpoints are auth-protected. Without a valid
+                # user fixture token this is a contract exception, not a gateway failure.
+                result = "contract_exception"
+                reason = "auth_required_without_valid_fixture"
+            else:
+                result, reason = _evaluate_truth_gateway_contract(status, detail)
+                payload = _parse_json_or_none(detail or "") or {}
+                truth_state = str(payload.get("status") or "").strip().lower()
+                if result == "pass" and truth_state == "canonical":
+                    truth_gateway_canonical_count += 1
+                elif result == "pass" and truth_state == "degraded":
+                    truth_gateway_degraded_count += 1
+                elif truth_state == "failed" or status == 503:
+                    truth_gateway_failed_count += 1
         else:
             if status == 200:
                 result = "pass"
