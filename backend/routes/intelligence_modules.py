@@ -107,7 +107,17 @@ def _classify_rpc_failure(exc: Exception) -> str:
     text = str(exc or "").lower()
     if any(marker in text for marker in ("does not exist", "undefined function", "pgrst202", "not find the function")):
         return _FAILURE_RPC_FUNCTION_MISSING
-    if any(marker in text for marker in ("schema cache", "pgrst204", "could not find the", "column")):
+    if any(
+        marker in text
+        for marker in (
+            "schema cache",
+            "pgrst204",
+            "could not find the",
+            "column",
+            "violates check constraint",
+            "23514",
+        )
+    ):
         return _FAILURE_SCHEMA_MISMATCH
     if any(marker in text for marker in ("timeout", "timed out", "deadline exceeded")):
         return _FAILURE_TIMEOUT

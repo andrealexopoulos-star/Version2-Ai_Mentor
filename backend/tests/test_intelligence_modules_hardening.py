@@ -173,6 +173,40 @@ def test_rpc_missing_returns_degraded_with_exact_completeness(monkeypatch):
     assert "rpc_definition" in payload["broken_dependencies"]
 
 
+def test_check_constraint_violation_returns_degraded_schema_mismatch(monkeypatch):
+    intelligence_modules._cache_snapshot(
+        "compute_evidence_freshness",
+        "workspace-1",
+        {
+            "freshness": {
+                "crm": {"status": "fresh"},
+            }
+        },
+    )
+
+    async def _raise(*_args, **_kwargs):
+        raise Exception(
+            'new row for relation "evidence_freshness" violates check constraint '
+            '"evidence_freshness_state_check" (SQLSTATE 23514)'
+        )
+
+    monkeypatch.setattr(intelligence_modules, "_rpc_execute", _raise)
+    monkeypatch.setattr(intelligence_modules, "emit_spine_event", lambda **_kwargs: None)
+
+    resp = asyncio.run(
+        intelligence_modules._rpc_truth_gateway("compute_evidence_freshness", "workspace-1")
+    )
+    payload = _response_payload(resp)
+
+    assert _response_status(resp) == 424
+    assert payload["status"] == "degraded"
+    assert payload["truth_level"] == "bounded"
+    assert payload["error_class"] == "SCHEMA_MISMATCH"
+    assert payload["completeness"] == 1 / 5
+    assert payload["confidence"] == 1 / 5
+    assert "schema_cache" in payload["broken_dependencies"]
+
+
 def test_canonical_response_enforces_full_truth_contract(monkeypatch):
     async def _ok(*_args, **_kwargs):
         return {
