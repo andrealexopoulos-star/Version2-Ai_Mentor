@@ -115,8 +115,6 @@ export default function AskBiqcAssistantResponse({
       {showDetails
         && retrievalContract.answer_grade
         && retrievalContract.answer_grade !== 'FULL'
-        && Array.isArray(message.coverage_window?.missing_periods)
-        && message.coverage_window.missing_periods.length > 0
         && onSuggestedAction && (
           <div className="mt-2">
             <button
@@ -217,7 +215,7 @@ export default function AskBiqcAssistantResponse({
           </Chip>
         </div>
       )}
-      {showDetails && Array.isArray(forensicReport.contradictions) && forensicReport.contradictions.length > 0 && (
+      {showDetails && forensicReport.mode_active && (
         <div
           className={`${compact ? 'mt-2 rounded-lg px-2 py-1.5' : 'mt-2 rounded-lg p-2'}`}
           style={{ background: 'rgba(2,6,23,0.42)', border: '1px solid rgba(148,163,184,0.2)' }}
@@ -231,12 +229,18 @@ export default function AskBiqcAssistantResponse({
               <span>Role</span>
               <span>Conflict</span>
             </div>
-            {forensicReport.contradictions.slice(0, 4).map((item, index) => (
+            {(Array.isArray(forensicReport.contradictions) ? forensicReport.contradictions : []).slice(0, 4).map((item, index) => (
               <div key={`forensic-contradiction-${index}`} className="grid grid-cols-[110px_1fr] gap-2 text-[10px]" style={{ color: '#CBD5E1' }}>
                 <span style={{ fontFamily: fontFamily.mono }}>{item.role || 'source'}</span>
                 <span>{item.contradiction || 'n/a'}</span>
               </div>
             ))}
+            {(!Array.isArray(forensicReport.contradictions) || forensicReport.contradictions.length === 0) && (
+              <div className="grid grid-cols-[110px_1fr] gap-2 text-[10px]" style={{ color: '#CBD5E1' }}>
+                <span style={{ fontFamily: fontFamily.mono }}>system</span>
+                <span>No explicit contradictions detected in this turn.</span>
+              </div>
+            )}
           </div>
         </div>
       )}
