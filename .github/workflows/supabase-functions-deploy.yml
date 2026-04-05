@@ -25,19 +25,63 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Detect changed edge functions
+        id: detect_changes
+        env:
+          DEPLOY_ALL: ${{ github.event.inputs.deploy_all || 'false' }}
+        run: |
+          set -euo pipefail
+
+          if [ "${DEPLOY_ALL}" = "true" ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "changed_functions=ALL" >> "$GITHUB_OUTPUT"
+            echo "Deploy-all requested: all functions will be deployed."
+            exit 0
+          fi
+
+          BEFORE_SHA="${{ github.event.before }}"
+          AFTER_SHA="${{ github.sha }}"
+          if [ -z "$BEFORE_SHA" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE_SHA="$(git rev-list --max-parents=0 HEAD)"
+          fi
+
+          CHANGED_FUNCTIONS=$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" \
+            | sed -n 's#^supabase/functions/\([^/]*\)/.*#\1#p' \
+            | sort -u \
+            | tr '\n' ' ' \
+            | xargs || true)
+
+          if [ -z "$CHANGED_FUNCTIONS" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "changed_functions=" >> "$GITHUB_OUTPUT"
+            echo "No Supabase edge function changes detected for this push."
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "changed_functions=${CHANGED_FUNCTIONS}" >> "$GITHUB_OUTPUT"
+            echo "Changed edge functions: ${CHANGED_FUNCTIONS}"
+          fi
+
+      - name: Skip deploy (no edge function changes)
+        if: steps.detect_changes.outputs.has_changes != 'true'
+        run: |
+          echo "Supabase edge deploy skipped: no function changes and deploy_all not requested."
+          exit 0
+
       - name: Setup Supabase CLI
+        if: steps.detect_changes.outputs.has_changes == 'true'
         run: |
           set -euo pipefail
           VERSION="v2.84.2"
           ARCHIVE="supabase_linux_amd64.tar.gz"
-          curl -L "https://github.com/supabase/cli/releases/download/${VERSION}/${ARCHIVE}" -o /tmp/supabase.tar.gz
+          curl -fL "https://github.com/supabase/cli/releases/download/${VERSION}/${ARCHIVE}" -o /tmp/supabase.tar.gz
           tar -xzf /tmp/supabase.tar.gz -C /tmp
-          sudo mv /tmp/supabase /usr/local/bin/supabase
+          sudo mv /tmp/supabase /usr/local/bin/supabase || mv /tmp/supabase /usr/local/bin/supabase
           supabase --version
 
       - name: Validate required GitHub secrets
+        if: steps.detect_changes.outputs.has_changes == 'true'
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF != '' && secrets.SUPABASE_PROJECT_REF || 'vwwandhoydemcybltoxz' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
@@ -62,8 +106,9 @@ jobs:
           fi
 
       - name: Deploy changed edge functions
+        if: steps.detect_changes.outputs.has_changes == 'true'
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF != '' && secrets.SUPABASE_PROJECT_REF || 'vwwandhoydemcybltoxz' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DEPLOY_ALL: ${{ github.event.inputs.deploy_all || 'false' }}
@@ -91,14 +136,10 @@ jobs:
             BEFORE_SHA="$(git rev-list --max-parents=0 HEAD)"
           fi
 
-          CHANGED_FUNCTIONS=$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" \
-            | sed -n 's#^supabase/functions/\([^/]*\)/.*#\1#p' \
-            | sort -u)
-
+          CHANGED_FUNCTIONS="${{ steps.detect_changes.outputs.changed_functions }}"
           if [ -z "$CHANGED_FUNCTIONS" ]; then
-            echo "No direct edge function diffs detected."
-            echo "Forcing calibration-core redeploy to keep runtime aligned with latest branch state."
-            CHANGED_FUNCTIONS="calibration-business-dna calibration-psych calibration-sync calibration-engine"
+            echo "No changed functions to deploy."
+            exit 0
           fi
 
           echo "Changed functions:"
@@ -114,8 +155,9 @@ jobs:
           done
 
       - name: Verify calibration edge runtime secrets
+        if: steps.detect_changes.outputs.has_changes == 'true'
         env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF != '' && secrets.SUPABASE_PROJECT_REF || 'vwwandhoydemcybltoxz' }}
         run: |
           set -euo pipefail
@@ -161,6 +203,7 @@ jobs:
           PY
 
       - name: Calibration edge health smoke
+        if: steps.detect_changes.outputs.has_changes == 'true'
         env:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF != '' && secrets.SUPABASE_PROJECT_REF || 'vwwandhoydemcybltoxz' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
