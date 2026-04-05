@@ -51,6 +51,47 @@ def _is_number(value) -> bool:
     return isinstance(value, (int, float))
 
 
+def _parse_bearer_token_candidate(raw: str | None) -> str:
+    value = (raw or "").strip()
+    if not value:
+        return ""
+    # Already a JWT-like bearer token.
+    if value.count(".") == 2:
+        return value
+    # Accept JSON payloads copied directly from auth responses.
+    if value.startswith("{") and value.endswith("}"):
+        try:
+            parsed = json.loads(value)
+            token = str(parsed.get("access_token") or "").strip()
+            if token.count(".") == 2:
+                return token
+        except Exception:
+            return ""
+    return ""
+
+
+def _load_auth_bearer_token() -> Tuple[str | None, str]:
+    direct = _parse_bearer_token_candidate(os.environ.get("AUTH_BEARER_TOKEN"))
+    if direct:
+        return direct, "AUTH_BEARER_TOKEN"
+
+    inline_json = _parse_bearer_token_candidate(os.environ.get("AUTH_BEARER_TOKEN_JSON"))
+    if inline_json:
+        return inline_json, "AUTH_BEARER_TOKEN_JSON"
+
+    token_file = (os.environ.get("AUTH_BEARER_TOKEN_FILE") or "").strip()
+    if token_file:
+        try:
+            raw = Path(token_file).read_text(encoding="utf-8")
+            file_token = _parse_bearer_token_candidate(raw)
+            if file_token:
+                return file_token, "AUTH_BEARER_TOKEN_FILE"
+        except Exception:
+            pass
+
+    return None, "none"
+
+
 def _evaluate_truth_gateway_contract(status: int, body: str) -> Tuple[str, str]:
     payload = _parse_json_or_none(body or "")
     if not payload:
@@ -150,7 +191,7 @@ def main() -> int:
 
     zd = load_json(zd_path)
     backend = os.environ.get("BACKEND_BASE_URL", DEFAULT_BACKEND_BASE_URL).rstrip("/")
-    token = os.environ.get("AUTH_BEARER_TOKEN", "").strip() or None
+    token, token_source = _load_auth_bearer_token()
 
     matrix = (zd.get("contract_matrix") or {}).get("backend_endpoints", [])
     probes = []
@@ -283,6 +324,7 @@ def main() -> int:
         "failure_codes": failure_codes,
         "backend_base_url": backend,
         "token_supplied": bool(token),
+        "token_source": token_source,
         "auth_fixture_token_present": bool(token),
         "token_load_check_passed": bool(token),
         "live_200_verification_passed": passed,
