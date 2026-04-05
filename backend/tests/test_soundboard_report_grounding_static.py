@@ -84,3 +84,9 @@ def test_soundboard_stream_contract_emits_extended_events():
 def test_soundboard_conversation_detail_preserves_forensic_artifacts():
     content = _read(SOUNDBOARD_PATH)
     assert "role, content, timestamp, evidence_pack, boardroom_trace, metadata" in content
+
+
+def test_generation_requests_do_not_force_generic_coaching_fallback():
+    content = _read(SOUNDBOARD_PATH)
+    assert "if _generic_response_detected(response) and not (report_grade_request or generation_contract.get(\"requested\"))" in content
+    assert "Answer exactly what the user asked for in the requested format first." in content
