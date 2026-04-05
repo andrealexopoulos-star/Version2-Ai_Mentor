@@ -14,6 +14,7 @@ import logging
 import os
 import json
 import re
+from urllib.parse import quote
 
 from core.llm_router import llm_chat, llm_chat_with_usage
 from core.advisor_response_style import (
@@ -1139,7 +1140,22 @@ async def _maybe_generate_export_file(
         }
     except Exception as export_error:
         logger.warning(f"[ASK_BIQC] Export generation failed: {export_error}")
-        return None
+        fallback_type = selected if selected != "image" else "image_brief"
+        fallback_name = f"{fallback_type}_{timestamp}.md"
+        fallback_body = (
+            "Ask BIQc export fallback\n\n"
+            "Primary storage export was unavailable for this turn, so this inline markdown export is provided.\n\n"
+            f"{response_text or clean_message}"
+        )
+        encoded = quote(fallback_body)
+        return {
+            "name": fallback_name,
+            "type": fallback_type,
+            "download_url": f"data:text/markdown;charset=utf-8,{encoded}",
+            "size": len(fallback_body.encode('utf-8')),
+            "content_type": "text/markdown",
+            "export_fallback": True,
+        }
 
 
 def _coerce_request_scope(req: SoundboardChatRequest, message: str) -> Dict[str, Any]:
