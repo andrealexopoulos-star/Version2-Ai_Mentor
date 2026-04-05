@@ -541,6 +541,8 @@ def _build_universal_deliverable_response(
 
     artifact_type = str((generation_contract or {}).get("artifact_type") or ("report" if report_grade_request else "analysis")).strip().lower()
     artifact_title = artifact_type.replace("_", " ").title()
+    if artifact_type in {"job_description", "image", "video_brief"}:
+        return response_text
 
     priority = str((slots or {}).get("priority_now") or "").strip()
     decision = str((slots or {}).get("decision") or "").strip()
@@ -549,7 +551,7 @@ def _build_universal_deliverable_response(
     risk_if_delayed = str((slots or {}).get("risk_if_delayed") or "").strip()
     if not priority and not decision:
         first_line = re.split(r"\n+", str(response_text or "").strip())[0].strip()
-        priority = first_line or "Immediate focus is to stabilise the highest-impact business risk this week."
+        priority = first_line or "Deliver the highest-value response for this request using available evidence."
 
     citations = list((forensic_report or {}).get("citations") or [])[:5]
     evidence_sources = list((evidence_pack or {}).get("sources") or [])[:5]
@@ -604,10 +606,11 @@ def _build_universal_deliverable_response(
     if not next_actions:
         next_actions.append("- Assign one accountable owner and run a 48-hour execution checkpoint.")
 
+    response_snippet = str(response_text or "").strip()
     sections = [
         f"{artifact_title} Deliverable",
         "Executive Answer",
-        priority or decision or "Strongest action is to stabilise priority risk with owner and deadline.",
+        response_snippet or priority or decision or "Strongest action is to stabilise priority risk with owner and deadline.",
         "Evidence Used",
         "\n".join(evidence_lines),
         "Inferred Analysis",
@@ -2539,16 +2542,27 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         user_first_name=user_first_name,
         business_name=(profile or {}).get("business_name"),
     )
-    contract_injection = (
-        "\n\n═══ RESPONSE CONTRACT (MANDATORY) ═══\n"
-        f"{build_flagship_response_contract_text()}"
-        "Do NOT output generic strategy. Every sentence must reference THIS business.\n"
-        "DATA ATTRIBUTION: When referencing a fact, state its source inline — e.g. "
-        "'Based on your calibration data...' or 'Your HubSpot pipeline shows...' or "
-        "'From your Xero invoices...'. Never state a fact without its source.\n"
-        "TONE: Keep it warm, plain-English, and conversational. Avoid robotic headings unless the user asks for a formal memo.\n"
-        f"\n[STYLE GUIDANCE]\n{style_injection}\n"
-    )
+    if generation_contract.get("requested"):
+        contract_injection = (
+            "\n\n═══ RESPONSE CONTRACT (MANDATORY) ═══\n"
+            "Answer exactly what the user asked for in the requested format first.\n"
+            "Do NOT default to coaching boilerplate.\n"
+            "If user asks for report/analysis: include explicit sections for evidence, assumptions, confidence, and next actions.\n"
+            "If user asks for other artifact types (SOP/JD/playbook/code/etc): output that artifact directly with relevant structure.\n"
+            "DATA ATTRIBUTION: When referencing a fact, state source inline.\n"
+            f"\n[STYLE GUIDANCE]\n{style_injection}\n"
+        )
+    else:
+        contract_injection = (
+            "\n\n═══ RESPONSE CONTRACT (MANDATORY) ═══\n"
+            f"{build_flagship_response_contract_text()}"
+            "Do NOT output generic strategy. Every sentence must reference THIS business.\n"
+            "DATA ATTRIBUTION: When referencing a fact, state its source inline — e.g. "
+            "'Based on your calibration data...' or 'Your HubSpot pipeline shows...' or "
+            "'From your Xero invoices...'. Never state a fact without its source.\n"
+            "TONE: Keep it warm, plain-English, and conversational. Avoid robotic headings unless the user asks for a formal memo.\n"
+            f"\n[STYLE GUIDANCE]\n{style_injection}\n"
+        )
     if mailbox_requested or wants_integration_analytics:
         scope_notes = []
         if mailbox_requested:
@@ -2867,7 +2881,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             )
             response = sanitise_output(response)
 
-        if _generic_response_detected(response):
+        if _generic_response_detected(response) and not (report_grade_request or generation_contract.get("requested")):
             if effective_agent_id == "boardroom":
                 response = _build_boardroom_fallback(
                     profile=profile or {},
@@ -2923,10 +2937,18 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         should_keep_structured = False
         advisory_slots = {}
         if should_enforce_contract:
-            response = _ensure_flagship_contract_sections(response)
-            response = sanitise_output(response)
+            should_keep_structured = bool(
+                report_grade_request
+                or (
+                    generation_contract.get("requested")
+                    and str(generation_contract.get("artifact_type") or "").lower()
+                    in {"report", "analysis", "dashboard_spec", "memo", "plan", "playbook", "sop"}
+                )
+            )
+            if not generation_contract.get("requested"):
+                response = _ensure_flagship_contract_sections(response)
+                response = sanitise_output(response)
             advisory_slots = parse_flagship_response_slots(response)
-            should_keep_structured = bool(report_grade_request or generation_contract.get("requested"))
             if not should_keep_structured:
                 response = _humanize_contract_response(
                     response,
