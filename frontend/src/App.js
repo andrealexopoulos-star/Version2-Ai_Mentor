@@ -296,7 +296,7 @@ function AppRoutes() {
         {/* /calibration-qa removed — calibration is triggered after first signup only */}
         <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
 
-        {/* Subscription */}
+        {/* Subscription (canonical entrypoint for all paid/waitlist upsell routing) */}
         <Route path="/subscribe" element={<ProtectedRoute><SubscribePage /></ProtectedRoute>} />
         <Route path="/upgrade" element={<ProtectedRoute><UpgradePage /></ProtectedRoute>} />
         <Route path="/upgrade/success" element={<ProtectedRoute><UpgradePage success /></ProtectedRoute>} />
