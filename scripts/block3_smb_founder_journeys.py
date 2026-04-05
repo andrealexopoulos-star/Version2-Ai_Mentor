@@ -19,6 +19,7 @@ REPORTS_DIR = REPO_ROOT / "test_reports"
 SOUNDBOARD_BACKEND = REPO_ROOT / "backend" / "routes" / "soundboard.py"
 SOUNDBOARD_PANEL = REPO_ROOT / "frontend" / "src" / "components" / "SoundboardPanel.js"
 MYSOUNDBOARD_PAGE = REPO_ROOT / "frontend" / "src" / "pages" / "MySoundBoard.js"
+ASSISTANT_RESPONSE = REPO_ROOT / "frontend" / "src" / "components" / "soundboard" / "AskBiqcAssistantResponse.js"
 
 
 def read(path: Path) -> str:
@@ -68,6 +69,7 @@ def main() -> int:
     backend_src = read(SOUNDBOARD_BACKEND).lower()
     panel_src = read(SOUNDBOARD_PANEL)
     board_src = read(MYSOUNDBOARD_PAGE)
+    assistant_src = read(ASSISTANT_RESPONSE)
 
     domain_checks = []
     for p in personas:
@@ -83,11 +85,19 @@ def main() -> int:
             }
         )
 
-    coverage_window_visible = all(
-        needle in panel_src for needle in ("coverage_window", "Coverage window", "last sync")
-    ) and all(
-        needle in board_src for needle in ("coverage_window", "Coverage window", "last sync")
+    # Coverage window metadata is rendered by shared assistant response UI that both
+    # Soundboard surfaces use, so visibility check must include that component.
+    panel_has_coverage_anchor = all(
+        needle in panel_src for needle in ("coverage_window", "Coverage window")
     )
+    board_has_coverage_anchor = all(
+        needle in board_src for needle in ("coverage_window", "Coverage window")
+    )
+    assistant_has_visible_coverage_copy = (
+        "Coverage window" in assistant_src
+        and ("last sync" in assistant_src.lower() or "last update" in assistant_src.lower())
+    )
+    coverage_window_visible = panel_has_coverage_anchor and board_has_coverage_anchor and assistant_has_visible_coverage_copy
 
     decision_job_coverage = all(item["covered"] for item in domain_checks)
     suite_passed = decision_job_coverage and coverage_window_visible
@@ -102,6 +112,8 @@ def main() -> int:
         "ui_evidence": {
             "panel_has_coverage_window": bool(re.search(r"Coverage window", panel_src)),
             "board_has_coverage_window": bool(re.search(r"Coverage window", board_src)),
+            "assistant_has_coverage_window": bool(re.search(r"Coverage window", assistant_src)),
+            "assistant_has_last_sync_or_update": ("last sync" in assistant_src.lower()) or ("last update" in assistant_src.lower()),
         },
     }
     out = REPORTS_DIR / f"block3_smb_founder_journeys_{now.strftime('%Y%m%d_%H%M%S')}.json"

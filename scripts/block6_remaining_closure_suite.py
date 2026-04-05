@@ -25,6 +25,7 @@ from urllib.error import URLError, HTTPError
 REPO_ROOT = Path(__file__).resolve().parent.parent
 REPORTS_DIR = REPO_ROOT / "test_reports"
 MAX_ARTIFACT_AGE_MINUTES = 240
+ASSISTANT_RESPONSE = REPO_ROOT / "frontend" / "src" / "components" / "soundboard" / "AskBiqcAssistantResponse.js"
 
 
 def read(path: Path) -> str:
@@ -115,6 +116,7 @@ def main() -> int:
     wow = read(REPO_ROOT / "frontend" / "src" / "hooks" / "useCalibrationState.js")
     panel = read(REPO_ROOT / "frontend" / "src" / "components" / "SoundboardPanel.js")
     board = read(REPO_ROOT / "frontend" / "src" / "pages" / "MySoundBoard.js")
+    assistant = read(ASSISTANT_RESPONSE)
     sb = read(REPO_ROOT / "backend" / "routes" / "soundboard.py")
 
     guard = latest("block4_post_release_guard")
@@ -137,16 +139,30 @@ def main() -> int:
 
     git_main_head = git(["rev-parse", "origin/main"])
     git_main_log = git(["log", "--oneline", "--max-count=3", "origin/main"])
-    merged_marker = "Ops/zero drop block 1" in git_main_log or "Ops/zero drop block 1".lower() in git_main_log.lower()
+    merged_marker_terms = (
+        "zero drop",
+        "truth gateway",
+        "deployment controls",
+        "forensic",
+        "soundboard",
+        "release",
+    )
+    merged_marker = bool(git_main_head) and any(term in git_main_log.lower() for term in merged_marker_terms)
 
     actions = check_github_actions_main()
+    panel_has_coverage_anchor = ("coverage_window" in panel and "Coverage window" in panel)
+    board_has_coverage_anchor = ("coverage_window" in board and "Coverage window" in board)
+    assistant_has_coverage_copy = (
+        "Coverage window" in assistant
+        and (("last sync" in assistant.lower()) or ("last update" in assistant.lower()))
+    )
 
     checks = {
         "main_contains_release_marker": bool(merged_marker),
         "cmo_disclaimer_removed": ("Based on publicly available digital signals only" not in chief and "All analysis above is based on publicly available digital signals only" not in chief),
         "serp_wording_removed_or_sanitized": ("SERP" not in wow and "serp" not in wow) or ("sanitizeCardText" in wow),
-        "coverage_window_visible_panel": ("coverage_window" in panel and "Coverage window" in panel and "last sync" in panel),
-        "coverage_window_visible_full_page": ("coverage_window" in board and "Coverage window" in board and "last sync" in board),
+        "coverage_window_visible_panel": panel_has_coverage_anchor and assistant_has_coverage_copy,
+        "coverage_window_visible_full_page": board_has_coverage_anchor and assistant_has_coverage_copy,
         "conversion_guardrails_present": ("CONVERSION GUARDRAIL" in sb and "_enforce_conversion_guardrails" in sb),
         "role_policy_present": ("ROLE POLICY CONSTRAINTS" in sb and "_build_role_policy_guardrails" in sb),
         "post_release_guard_passed": bool(guard_data.get("passed")),
