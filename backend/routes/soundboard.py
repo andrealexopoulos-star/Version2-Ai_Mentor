@@ -3306,12 +3306,18 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 response = _ensure_flagship_contract_sections(response)
                 response = sanitise_output(response)
             advisory_slots = parse_flagship_response_slots(response)
-            if not should_keep_structured:
+            is_simple_conversational = (
+                complexity == "low"
+                and intent_action not in {"forecast", "diagnose", "compare", "analyse", "summarise"}
+                and not generation_contract.get("requested")
+                and not report_grade_request
+                and effective_agent_id != "boardroom"
+                and len(clean_message.split()) < 15
+            )
+            if not should_keep_structured and is_simple_conversational:
                 response = _humanize_contract_response(
-                    response,
-                    advisory_slots,
-                    mode=mode,
-                    agent_id=effective_agent_id,
+                    response, advisory_slots,
+                    mode=mode, agent_id=effective_agent_id,
                     last_assistant_message=_extract_last_assistant_message(messages_history),
                 )
                 response = sanitise_output(response)
@@ -3358,8 +3364,6 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 coverage_window=coverage_window,
                 guardrail_status=guardrail_status,
                 report_grade_request=report_grade_request,
-            )
-            response = sanitise_output(response)
 
         _actual_tokens = len(system_message.split()) + len(clean_message.split()) + len(response.split())
         log_llm_call_to_db(
