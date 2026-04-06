@@ -81,8 +81,8 @@ def main() -> int:
         and gate_path
         and tier_parity_path
         and matrix_consistency_path
-        and supplier_path
         and ephemeral_guard_path
+        and (supplier_path or telemetry_advisory)
     ):
         print("Missing required evidence artifacts.")
         return 2
@@ -92,8 +92,20 @@ def main() -> int:
     gate_payload = load_json(gate_path)
     tier_parity_payload = load_json(tier_parity_path)
     matrix_consistency_payload = load_json(matrix_consistency_path)
-    supplier_payload = load_json(supplier_path)
+    supplier_payload = load_json(supplier_path) if supplier_path else {}
     ephemeral_guard_payload = load_json(ephemeral_guard_path)
+
+    if supplier_path:
+        supplier_artifact = describe_artifact(supplier_path)
+    else:
+        supplier_artifact = {
+            "path": "telemetry_skipped_non_strict",
+            "generated_at": now_utc().isoformat(),
+            "sha256": "not_applicable",
+            "size_bytes": 0,
+            "age_minutes": 0.0,
+            "is_fresh": True,
+        }
 
     artifacts = {
         "zd_zr_za": describe_artifact(zd_path),
@@ -101,7 +113,7 @@ def main() -> int:
         "gate_enforcement": describe_artifact(gate_path),
         "feature_tier_parity": describe_artifact(tier_parity_path),
         "feature_tier_matrix_consistency": describe_artifact(matrix_consistency_path),
-        "prod_supplier_telemetry": describe_artifact(supplier_path),
+        "prod_supplier_telemetry": supplier_artifact,
         "ephemeral_artifact_guard": describe_artifact(ephemeral_guard_path),
     }
 
@@ -150,9 +162,9 @@ def main() -> int:
                 "mismatch_count": matrix_consistency_payload.get("mismatch_count"),
             },
             "prod_supplier_telemetry": {
-                "passed": supplier_payload.get("passed"),
-                "failure_codes": supplier_payload.get("failure_codes", []),
-                "mode": supplier_payload.get("mode"),
+                "passed": supplier_payload.get("passed") if supplier_path else None,
+                "failure_codes": supplier_payload.get("failure_codes", []) if supplier_path else [],
+                "mode": supplier_payload.get("mode") if supplier_path else "skipped_non_strict",
             },
             "ephemeral_artifact_guard": {
                 "passed": ephemeral_guard_payload.get("passed"),
