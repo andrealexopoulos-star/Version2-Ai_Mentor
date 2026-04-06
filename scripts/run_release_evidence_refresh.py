@@ -44,19 +44,33 @@ def run_step(name: str, command: List[str]) -> StepResult:
 def main() -> int:
     telemetry_enforcement = os.environ.get("RELEASE_TELEMETRY_ENFORCEMENT", "strict").strip().lower()
     telemetry_advisory = telemetry_enforcement != "strict"
+    advisory_steps = []
     steps = [
         ("zd_zr_za_manager", [sys.executable, "scripts/zd_zr_za_manager.py"]),
         ("cfo_golden_harness", [sys.executable, "scripts/cfo_golden_test_harness.py"]),
         ("gate_enforcement_proof", [sys.executable, "scripts/gate_enforcement_proof.py"]),
         ("feature_tier_parity_gate", [sys.executable, "scripts/feature_tier_parity_gate.py"]),
         ("feature_tier_matrix_consistency_gate", [sys.executable, "scripts/feature_tier_matrix_consistency_gate.py"]),
-        ("prod_supplier_telemetry_snapshot", [sys.executable, "scripts/prod_supplier_telemetry_snapshot.py"]),
-        ("ephemeral_artifact_guard", [sys.executable, "scripts/ephemeral_artifact_guard.py"]),
-        ("release_evidence_index_builder", [sys.executable, "scripts/release_evidence_index_builder.py"]),
     ]
+    if telemetry_advisory:
+        advisory_steps.append(
+            {
+                "name": "prod_supplier_telemetry_snapshot",
+                "reason": "telemetry_mode_non_strict_skip",
+                "stdout": "",
+                "stderr": "",
+            }
+        )
+    else:
+        steps.append(("prod_supplier_telemetry_snapshot", [sys.executable, "scripts/prod_supplier_telemetry_snapshot.py"]))
+    steps.extend(
+        [
+            ("ephemeral_artifact_guard", [sys.executable, "scripts/ephemeral_artifact_guard.py"]),
+            ("release_evidence_index_builder", [sys.executable, "scripts/release_evidence_index_builder.py"]),
+        ]
+    )
 
     results: List[StepResult] = []
-    advisory_steps = []
     for name, cmd in steps:
         res = run_step(name, cmd)
         results.append(res)
