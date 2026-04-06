@@ -16,7 +16,7 @@ import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -109,16 +109,16 @@ def supabase_query(sql: str) -> Dict[str, Any]:
     return rows[0]
 
 
-def resolve_supabase_management_token() -> tuple[str, str]:
+def resolve_supabase_management_tokens() -> List[Tuple[str, str]]:
+    candidates: List[Tuple[str, str]] = []
     telemetry_token = os.environ.get(SUPABASE_TELEMETRY_TOKEN_ENV, "").strip()
-    if telemetry_token:
-        return telemetry_token, SUPABASE_TELEMETRY_TOKEN_ENV
-
     fallback_token = os.environ.get(SUPABASE_FALLBACK_TOKEN_ENV, "").strip()
-    if fallback_token:
-        return fallback_token, SUPABASE_FALLBACK_TOKEN_ENV
-
-    return "", ""
+    if telemetry_token:
+        candidates.append((telemetry_token, SUPABASE_TELEMETRY_TOKEN_ENV))
+    # Avoid duplicate attempts when both env vars carry the same value.
+    if fallback_token and fallback_token != telemetry_token:
+        candidates.append((fallback_token, SUPABASE_FALLBACK_TOKEN_ENV))
+    return candidates
 
 
 def classify_management_token_shape(token: str) -> str:
@@ -241,10 +241,27 @@ def supabase_query_via_management_api(sql: str, access_token: str, token_source:
 
 
 def collect_supabase_prod() -> Dict[str, Any]:
-    access_token, token_source = resolve_supabase_management_token()
-    use_management_api = bool(access_token)
+    token_candidates = resolve_supabase_management_tokens()
+    use_management_api = bool(token_candidates)
     if use_management_api:
-        preflight_supabase_management_token(access_token, token_source)
+        access_token = ""
+        token_source = ""
+        preflight_failures: List[str] = []
+        for candidate_token, candidate_source in token_candidates:
+            try:
+                preflight_supabase_management_token(candidate_token, candidate_source)
+                access_token = candidate_token
+                token_source = candidate_source
+                break
+            except Exception as exc:
+                preflight_failures.append(f"{candidate_source}:{exc}")
+                continue
+
+        if not access_token:
+            raise RuntimeError(
+                "no configured supabase management token can access telemetry project. "
+                f"attempts={' | '.join(preflight_failures)}"
+            )
         query_fn = lambda sql: supabase_query_via_management_api(sql, access_token, token_source)
     else:
         version = run_cmd(["supabase", "--version"])
