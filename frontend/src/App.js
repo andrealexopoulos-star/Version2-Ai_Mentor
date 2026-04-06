@@ -184,23 +184,27 @@ const LaunchRoute = ({ children, access, featureKey = null }) => {
   const { user, session, authState, loading } = useSupabaseAuth();
   const tier = resolveTier(user);
   const privileged = isPrivilegedUser(user);
-  const hasPaidAccess = privileged || (user && tier !== 'free');
+  const hasPaidAccess = privileged || (user && !['free', 'trial'].includes(tier));
+  const hasProAccess = privileged || (user && ['pro', 'professional', 'enterprise', 'custom_build', 'super_admin'].includes(tier));
   const routeConfig = getRouteAccess(location.pathname);
   const effectiveAccess = access || routeConfig?.launchType || 'free';
   const key = featureKey || routeConfig?.featureKey || '';
   const gateParams = new URLSearchParams({
     from: location.pathname,
-    required: routeConfig?.minTier || (effectiveAccess === 'waitlist' ? 'starter' : 'starter'),
+    required: routeConfig?.minTier || 'starter',
     launch: effectiveAccess,
   });
   if (key) gateParams.set('feature', key);
 
   if (authState === AUTH_STATE.LOADING || loading) return <LoadingScreen />;
   if (!user && !session) return <Navigate to="/login-supabase" replace />;
-  if ((effectiveAccess === 'paid' || effectiveAccess === 'foundation') && !hasPaidAccess) {
+  if (effectiveAccess === 'foundation' && !hasPaidAccess) {
     return <Navigate to={`/subscribe?${gateParams.toString()}`} replace />;
   }
-  if (effectiveAccess === 'waitlist' && !privileged) {
+  if (effectiveAccess === 'paid' && !hasProAccess) {
+    return <Navigate to={`/subscribe?${gateParams.toString()}`} replace />;
+  }
+  if (effectiveAccess === 'waitlist' && !hasPaidAccess) {
     return <Navigate to={`/subscribe?${gateParams.toString()}`} replace />;
   }
   return children;
@@ -313,46 +317,46 @@ function AppRoutes() {
         />
         <Route path="/connect-email" element={<ProtectedRoute><ConnectEmail /></ProtectedRoute>} />
         <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
-        <Route path="/forensic-audit" element={<ProtectedRoute><LaunchRoute access="paid"><ForensicAuditPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/exposure-scan" element={<ProtectedRoute><LaunchRoute access="paid"><DSEEPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/marketing-intelligence" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="marketing-intelligence"><MarketingIntelPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/forensic-audit" element={<ProtectedRoute><LaunchRoute access="foundation"><ForensicAuditPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/exposure-scan" element={<ProtectedRoute><LaunchRoute access="foundation"><DSEEPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/marketing-intelligence" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="marketing-intelligence"><MarketingIntelPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
         <Route path="/competitive-benchmark" element={<ProtectedRoute><CompetitiveBenchmarkPage /></ProtectedRoute>} />
 
         {/* Paid routes */}
-        <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="revenue"><RevenuePage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/billing" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="billing"><BillingPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="operations"><OperationsPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/risk" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="risk-workforce"><RiskPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="compliance"><CompliancePage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><LaunchRoute access="paid"><ReportsPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/audit-log" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="risk-workforce"><AuditLogPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="revenue"><RevenuePage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/billing" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="billing"><BillingPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="operations"><OperationsPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/risk" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="risk-workforce"><RiskPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="compliance"><CompliancePage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><LaunchRoute access="foundation"><ReportsPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/audit-log" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="risk-workforce"><AuditLogPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/alerts" element={<ProtectedRoute><AlertsPageAuth /></ProtectedRoute>} />
         <Route path="/actions" element={<ProtectedRoute><ActionsPage /></ProtectedRoute>} />
-        <Route path="/automations" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="automations"><AutomationsPageAuth /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/automations" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="automations"><AutomationsPageAuth /></LaunchRoute></ProtectedRoute>} />
         <Route path="/soundboard" element={<ProtectedRoute><SoundboardPanel /></ProtectedRoute>} />
         <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
-        <Route path="/war-room" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="war-room"><WarRoomPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/board-room" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="boardroom"><BoardRoomPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/war-room" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="war-room"><WarRoomPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/board-room" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="boardroom"><BoardRoomPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/warroom" element={<Navigate to="/war-room" replace />} />
         <Route path="/boardroom" element={<Navigate to="/board-room" replace />} />
-        <Route path="/sop-generator" element={<ProtectedRoute><LaunchRoute access="paid"><SOPGenerator /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/decisions" element={<ProtectedRoute><LaunchRoute access="paid"><DecisionsPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/diagnosis" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="diagnosis"><Diagnosis /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/analysis" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="analysis"><Analysis /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/documents" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="documents-library"><Documents /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/documents/:id" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="documents-library"><DocumentView /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/data-center" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="watchtower"><DataCenter /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/intel-centre" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="intel-centre"><IntelCentre /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/watchtower" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="watchtower"><Watchtower /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/intelligence-baseline" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="watchtower"><IntelligenceBaseline /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/operator" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="operations-intelligence"><OperatorDashboard /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/market-analysis" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="market-analysis"><MarketAnalysis /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/ops-advisory" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="ops-advisory"><OpsAdvisoryCentre /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/sop-generator" element={<ProtectedRoute><LaunchRoute access="foundation"><SOPGenerator /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/decisions" element={<ProtectedRoute><LaunchRoute access="foundation"><DecisionsPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/diagnosis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="diagnosis"><Diagnosis /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/analysis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="analysis"><Analysis /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/documents" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="documents-library"><Documents /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/documents/:id" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="documents-library"><DocumentView /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/data-center" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="watchtower"><DataCenter /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/intel-centre" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="intel-centre"><IntelCentre /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/watchtower" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="watchtower"><Watchtower /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/intelligence-baseline" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="watchtower"><IntelligenceBaseline /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/operator" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="operations-intelligence"><OperatorDashboard /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/market-analysis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="market-analysis"><MarketAnalysis /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/ops-advisory" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="ops-advisory"><OpsAdvisoryCentre /></LaunchRoute></ProtectedRoute>} />
         <Route path="/oac" element={<Navigate to="/ops-advisory" replace />} />
-        <Route path="/marketing-automation" element={<ProtectedRoute><LaunchRoute access="paid"><MarketingAutomationPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/ab-testing" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="watchtower"><ABTestingPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/marketing-automation" element={<ProtectedRoute><LaunchRoute access="foundation"><MarketingAutomationPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/ab-testing" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="ab-testing"><ABTestingPage /></LaunchRoute></ProtectedRoute>} />
 
         {/* Admin */}
         <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />

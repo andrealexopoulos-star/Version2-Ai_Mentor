@@ -17,6 +17,19 @@ import { apiClient } from '../lib/api';
 import { supabase } from '../context/SupabaseAuthContext';
 import { invalidateTutorialCache } from '../components/TutorialOverlay';
 const sectionResizeStyle = { resize: 'horizontal', overflow: 'auto', minWidth: '320px', maxWidth: '100%' };
+const TIER_DISPLAY = {
+  free: 'Free',
+  trial: 'Free Trial',
+  starter: 'Growth',
+  foundation: 'Growth',
+  growth: 'Growth',
+  pro: 'Professional',
+  professional: 'Professional',
+  enterprise: 'Enterprise',
+  custom_build: 'Custom',
+  beta: 'Beta',
+  super_admin: 'Admin',
+};
 
 const Settings = () => {
   const { user } = useSupabaseAuth();

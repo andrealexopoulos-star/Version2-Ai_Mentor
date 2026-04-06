@@ -1517,10 +1517,14 @@ GENERATION_MIN_TIER: Dict[str, str] = {
 
 COMMERCIAL_TIER_RANK = {
     "free": 0,
+    "trial": 0,
     "starter": 1,
+    "foundation": 1,
+    "growth": 1,
     "pro": 2,
+    "professional": 2,
     "enterprise": 3,
-    "custom_build": 4,
+    "custom_build": 3,
     "super_admin": 99,
 }
 

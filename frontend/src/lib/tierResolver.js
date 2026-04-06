@@ -36,13 +36,13 @@ export function resolveTier(user) {
   // Respect role field — only superadmin variants map to super_admin tier.
   const role = (user.role || '').toLowerCase();
   if (role === 'superadmin' || role === 'super_admin') return 'super_admin';
-  const dbTier = (user.subscription_tier || user.tier || 'free').toLowerCase();
-  if (dbTier === 'starter' || dbTier === 'foundation' || dbTier === 'growth') return 'starter';
-  if (dbTier === 'pro' || dbTier === 'professional') return 'pro';
-  if (dbTier === 'enterprise') return 'enterprise';
-  if (dbTier === 'custom' || dbTier === 'custom_build') return 'custom_build';
-  if (dbTier === 'super_admin') return 'super_admin';
-  return dbTier === 'free' ? 'free' : 'free';
+  const raw = (user.subscription_tier || user.tier || 'free').toLowerCase().trim();
+  if (['super_admin', 'superadmin'].includes(raw)) return 'super_admin';
+  if (['enterprise', 'custom_build', 'custom'].includes(raw)) return 'enterprise';
+  if (['pro', 'professional'].includes(raw)) return 'pro';
+  if (['starter', 'foundation', 'growth'].includes(raw)) return 'starter';
+  if (['trial'].includes(raw)) return 'trial';
+  return 'free';
 }
 
 export function hasAccess(userTier, requiredTier) {

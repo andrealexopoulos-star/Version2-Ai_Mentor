@@ -4,6 +4,20 @@ import { apiClient } from '../lib/api';
 import { fontFamily } from '../design-system/tokens';
 import { CreditCard, Building2, RefreshCw, CircleCheck, CircleAlert } from 'lucide-react';
 
+const TIER_DISPLAY = {
+  free: 'Free',
+  trial: 'Free Trial',
+  starter: 'Growth',
+  foundation: 'Growth',
+  growth: 'Growth',
+  pro: 'Professional',
+  professional: 'Professional',
+  enterprise: 'Enterprise',
+  custom_build: 'Custom',
+  beta: 'Beta',
+  super_admin: 'Admin',
+};
+
 const Panel = ({ children, className = '' }) => (
   <div
     className={`rounded-lg p-5 ${className}`}
@@ -53,6 +67,8 @@ const BillingPage = () => {
   const connectors = overview?.billing_connectors || {};
   const chargesSummary = overview?.charges_summary || {};
   const supplierSummary = overview?.supplier_summary || {};
+  const rawTier = String(overview?.subscription?.tier || overview?.user?.subscription_tier || 'free').toLowerCase();
+  const planLabel = TIER_DISPLAY[rawTier] || 'Free';
 
   const connectorBadges = useMemo(
     () => [
@@ -78,6 +94,9 @@ const BillingPage = () => {
             </h1>
             <p className="text-sm text-[#9FB0C3]">
               Unified client billing for charges and supplier obligations across Stripe and Xero-compatible accounting feeds.
+            </p>
+            <p className="mt-1 text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>
+              Current plan: {planLabel}
             </p>
           </div>
           <button

@@ -3,17 +3,17 @@ import { checkRouteAccess } from '../lib/tierResolver';
 
 export const TIERS = {
   free: { id: 'free', label: 'Free', price: 0, color: '#64748B' },
-  starter: { id: 'starter', label: 'Starter', price: 349, color: '#FF6A00' },
-  pro: { id: 'pro', label: 'Pro', price: 699, color: '#3B82F6' },
-  enterprise: { id: 'enterprise', label: 'Enterprise', price: 1499, color: '#8B5CF6' },
+  starter: { id: 'starter', label: 'Growth', price: 69, color: '#FF6A00' },
+  pro: { id: 'pro', label: 'Professional', price: 199, color: '#3B82F6' },
+  enterprise: { id: 'enterprise', label: 'Enterprise', price: null, color: '#8B5CF6' },
   custom_build: { id: 'custom_build', label: 'Custom Build', price: null, color: '#10B981' },
   admin: { id: 'admin', label: 'Admin', price: null, color: '#7C3AED' },
 };
 
 export const STRIPE_PRICES = {
-  starter_monthly: process.env.REACT_APP_STRIPE_STARTER_PRICE_ID || 'price_biqc_foundation_349',
-  pro_monthly: process.env.REACT_APP_STRIPE_PRO_PRICE_ID || 'price_biqc_pro_699',
-  enterprise_monthly: process.env.REACT_APP_STRIPE_ENTERPRISE_PRICE_ID || 'price_biqc_enterprise_1499',
+  starter_monthly: process.env.REACT_APP_STRIPE_STARTER_PRICE_ID || 'price_biqc_growth_69',
+  pro_monthly: process.env.REACT_APP_STRIPE_PRO_PRICE_ID || 'price_biqc_professional_199',
+  enterprise_monthly: process.env.REACT_APP_STRIPE_ENTERPRISE_PRICE_ID || '',
 };
 
 /** Path → minTier; from routeAccessConfig. */
