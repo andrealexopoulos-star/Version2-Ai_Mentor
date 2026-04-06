@@ -15,6 +15,7 @@ Do not duplicate concrete values in other markdown files.
 
 | Secret | Where it must exist | Purpose |
 |---|---|---|
+| `SUPABASE_TELEMETRY_ACCESS_TOKEN` | GitHub Actions (`deploy` release-evidence-refresh job) | Supabase Management API token dedicated to production telemetry SQL probes (`database_read` minimum) |
 | `SUPABASE_ACCESS_TOKEN` | GitHub Actions (`supabase-functions-deploy`) | Auth for `supabase` CLI deploy and secret introspection |
 | `SUPABASE_PROJECT_REF` | GitHub Actions (`supabase-functions-deploy`) | Target project for edge deploy + health smoke |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Edge Secrets, backend env, GitHub Actions | Server-to-server auth for edge calls and health checks |

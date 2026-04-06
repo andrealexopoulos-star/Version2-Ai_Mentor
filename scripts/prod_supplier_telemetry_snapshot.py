@@ -23,6 +23,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 REPORTS_DIR = REPO_ROOT / "test_reports"
 
 SUPABASE_PROD_PROJECT_REF = os.environ.get("SUPABASE_PROD_PROJECT_REF", "vwwandhoydemcybltoxz").strip()
+SUPABASE_TELEMETRY_TOKEN_ENV = "SUPABASE_TELEMETRY_ACCESS_TOKEN"
+SUPABASE_FALLBACK_TOKEN_ENV = "SUPABASE_ACCESS_TOKEN"
 
 THRESHOLDS = {
     # Supabase MAU (free plan documented upper envelope around 50k).
@@ -107,7 +109,19 @@ def supabase_query(sql: str) -> Dict[str, Any]:
     return rows[0]
 
 
-def supabase_query_via_management_api(sql: str, access_token: str) -> Dict[str, Any]:
+def resolve_supabase_management_token() -> tuple[str, str]:
+    telemetry_token = os.environ.get(SUPABASE_TELEMETRY_TOKEN_ENV, "").strip()
+    if telemetry_token:
+        return telemetry_token, SUPABASE_TELEMETRY_TOKEN_ENV
+
+    fallback_token = os.environ.get(SUPABASE_FALLBACK_TOKEN_ENV, "").strip()
+    if fallback_token:
+        return fallback_token, SUPABASE_FALLBACK_TOKEN_ENV
+
+    return "", ""
+
+
+def supabase_query_via_management_api(sql: str, access_token: str, token_source: str) -> Dict[str, Any]:
     """
     Execute read-only SQL through Supabase Management API.
 
@@ -168,20 +182,25 @@ def supabase_query_via_management_api(sql: str, access_token: str) -> Dict[str, 
             "Token lacks project db query permission. "
             "Use a Supabase PAT/fine-grained token scoped to project "
             f"{SUPABASE_PROD_PROJECT_REF} with database_read (or database_write). "
+            f"token_source={token_source}. "
+            "In GitHub Actions, set secret SUPABASE_TELEMETRY_ACCESS_TOKEN. "
             f"attempts={combined}"
         )
     raise RuntimeError(f"supabase management query failed: attempts={combined}")
 
 
 def collect_supabase_prod() -> Dict[str, Any]:
-    access_token = os.environ.get("SUPABASE_ACCESS_TOKEN", "").strip()
+    access_token, token_source = resolve_supabase_management_token()
     use_management_api = bool(access_token)
     if use_management_api:
-        query_fn = lambda sql: supabase_query_via_management_api(sql, access_token)
+        query_fn = lambda sql: supabase_query_via_management_api(sql, access_token, token_source)
     else:
         version = run_cmd(["supabase", "--version"])
         if not version.ok:
-            raise RuntimeError("supabase CLI not available and SUPABASE_ACCESS_TOKEN is not set")
+            raise RuntimeError(
+                "supabase CLI not available and no management token is set. "
+                f"Set {SUPABASE_TELEMETRY_TOKEN_ENV} (preferred) or {SUPABASE_FALLBACK_TOKEN_ENV}."
+            )
         temp_dir = REPO_ROOT / "supabase" / ".temp"
         temp_dir.mkdir(parents=True, exist_ok=True)
         (temp_dir / "project-ref").write_text(f"{SUPABASE_PROD_PROJECT_REF}\n", encoding="utf-8")
@@ -242,6 +261,7 @@ def collect_supabase_prod() -> Dict[str, Any]:
             "Egress and billing overage line items require Supabase billing export/dashboard integration.",
         ],
         "query_mode": "management_api" if use_management_api else "cli_linked_query",
+        "token_source": token_source if use_management_api else "supabase_cli_linked",
     }
 
 
