@@ -16,15 +16,15 @@ Reports,/reports,paid,starter,foundation,n/a,Supabase storage and render compute
 Decision Tracker,/decisions,paid,starter,foundation,n/a,Supabase data growth,Supabase paid storage overage,Supabase,active,Starter-gated
 Forensic Audit,/forensic-audit,paid,starter,foundation,n/a,Edge function and API invocation budgets,Supabase compute/network overage,Supabase+edge functions,active,Critical governance surface
 Revenue,/revenue,paid,starter,foundation,n/a,Accounting API quotas + data sync lag,Merge tier overages by linked accounts,Merge+Accounting,active,Finance critical
-Billing,/billing,paid,starter,paid,n/a,Stripe billing events and accounting sync volume,Stripe transaction fees + connector overages,Stripe+Merge/Xero,active,Unified billing surface
+Billing,/billing,paid,starter,foundation,n/a,Stripe billing events and accounting sync volume,Stripe transaction fees + connector overages,Stripe+Merge/Xero,active,Unified billing surface
 Operations,/operations,paid,starter,foundation,n/a,Event ingestion and compute budgets,Supabase/Azure overage by plan,Supabase+Merge,active,Starter-gated
 Marketing Intelligence,/marketing-intelligence,paid,starter,foundation,n/a,LLM and search budget thresholds,Token/request overage by vendor plan,SEMrush+LLM,active,Starter-gated
 Boardroom,/board-room,paid,starter,foundation,n/a,LLM token and latency SLO thresholds,Model token overage per vendor pricing,OpenAI+watchtower,active,Executive synthesis
-Risk,/risk,waitlist,starter,waitlist,n/a,Compliance workflow throughput thresholds,n/a until GA,Supabase+LLM,partial,Waitlist placeholder retained
-Compliance,/compliance,waitlist,starter,waitlist,n/a,Compliance workflow throughput thresholds,n/a until GA,Supabase+LLM,partial,Waitlist placeholder retained
-War Room,/war-room,waitlist,starter,waitlist,n/a,LLM token + persistence thresholds,n/a until GA,OpenAI,partial,Waitlist placeholder retained
-Data Center,/data-center,waitlist,starter,waitlist,n/a,"Supabase storage warn 8GiB hard 10GiB (prod telemetry)",Supabase paid storage/egress overage,File integrations,partial,Waitlist placeholder retained
-Documents,/documents,waitlist,starter,waitlist,n/a,"Supabase storage warn 8GiB hard 10GiB (prod telemetry)",Supabase paid storage/egress overage,Storage providers,partial,Waitlist placeholder retained
+Risk,/risk,paid,pro,paid,n/a,Compliance workflow throughput thresholds,LLM/request overage by supplier pricing,Supabase+LLM,active,Professional-gated
+Compliance,/compliance,paid,pro,paid,n/a,Compliance workflow throughput thresholds,LLM/request overage by supplier pricing,Supabase+LLM,active,Professional-gated
+War Room,/war-room,paid,pro,paid,n/a,LLM token + persistence thresholds,Model token overage by supplier pricing,OpenAI,active,Professional-gated
+Data Center,/data-center,paid,pro,paid,n/a,"Supabase storage warn 8GiB hard 10GiB (prod telemetry)",Supabase paid storage/egress overage,File integrations,active,Professional-gated
+Documents,/documents,paid,pro,paid,n/a,"Supabase storage warn 8GiB hard 10GiB (prod telemetry)",Supabase paid storage/egress overage,Storage providers,active,Professional-gated
 Xero Direct Connector,placeholder-xero-direct,deferred,n/a,deferred,n/a,Accounting sync depth and API call volume,TBD after integration scoping,Xero,deferred,Deferred placeholder to prevent planning omission
 BrowseAI Deep Enrichment,placeholder-browseai-deep,deferred,n/a,deferred,n/a,Task-run volume and crawl credits,TBD after endpoint contract validation,BrowseAI,deferred,Deferred placeholder pending stable health probe
 Firecrawl Contracted Crawl,placeholder-firecrawl-contract,deferred,n/a,deferred,n/a,Crawl-credit and endpoint contract threshold,TBD after endpoint alignment,Firecrawl,deferred,Deferred placeholder pending endpoint normalization
