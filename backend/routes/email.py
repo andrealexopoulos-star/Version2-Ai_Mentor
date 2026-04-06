@@ -1869,6 +1869,11 @@ async def debug_outlook_tokens(current_user: dict = Depends(get_current_user)):
     DEBUG ONLY: Inspect Outlook token state
     Should be disabled in production
     """
+    # Guard: Only allow super admins in non-production
+    role = (current_user.get("role") or "").lower()
+    if role not in {"superadmin", "super_admin"}:
+        raise HTTPException(status_code=404, detail="Endpoint not available")
+
     # Guard: Only allow in development
     if _is_production():
         raise HTTPException(status_code=404, detail="Endpoint not available in production")

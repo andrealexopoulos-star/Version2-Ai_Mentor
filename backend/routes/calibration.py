@@ -26,7 +26,7 @@ from core.llm_router import llm_trinity_chat
 from core.helpers import serper_search, scrape_url_text
 from routes.deps import (
     get_current_user, get_current_user_from_request,
-    get_sb, logger, cognitive_core,
+    get_sb, logger, cognitive_core, check_rate_limit,
 )
 from supabase_client import safe_query_single
 from prompt_registry import get_prompt
@@ -3247,6 +3247,7 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
 
     if not message:
         raise HTTPException(status_code=400, detail="Message required")
+    await check_rate_limit(user_id, "soundboard_daily", get_sb())
 
     try:
         # Resolve known facts BEFORE AI call — Guard 1: no redundant questions
