@@ -85,7 +85,7 @@ import DataCenter from './pages/DataCenter';
 import OpsAdvisoryCentre from './pages/OpsAdvisoryCentre';
 import ConnectEmail from './pages/ConnectEmail';
 import IntelCentre from './pages/IntelCentre';
-import MySoundBoard from './pages/MySoundBoard';
+import SoundboardPanel from './components/SoundboardPanel';
 import BoardRoomPage from './pages/BoardRoomPage';
 import WarRoomPage from './pages/WarRoomPage';
 import IntelligenceBaseline from './pages/IntelligenceBaseline';
@@ -331,7 +331,7 @@ function AppRoutes() {
         <Route path="/alerts" element={<ProtectedRoute><AlertsPageAuth /></ProtectedRoute>} />
         <Route path="/actions" element={<ProtectedRoute><ActionsPage /></ProtectedRoute>} />
         <Route path="/automations" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="automations"><AutomationsPageAuth /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/soundboard" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
+        <Route path="/soundboard" element={<ProtectedRoute><SoundboardPanel /></ProtectedRoute>} />
         <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
         <Route path="/war-room" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="war-room"><WarRoomPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/board-room" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="boardroom"><BoardRoomPage /></LaunchRoute></ProtectedRoute>} />
