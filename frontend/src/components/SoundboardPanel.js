@@ -99,6 +99,10 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     [boardroomConnectedSources, boardroomEvidenceSources]
   );
   const activeBoardroomCheck = boardroomChecks[boardroomNarrationIndex % Math.max(1, boardroomChecks.length)] || { role: 'CEO', line: 'Checking strategic priorities...' };
+  const streamingBuffer = useMemo(() => {
+    const activeStreamingMessage = [...messages].reverse().find((message) => message.streaming);
+    return String(activeStreamingMessage?.content || '');
+  }, [messages]);
 
   const inputRef = useRef(null);
   const messageThreadRef = useRef(null);
@@ -149,7 +153,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     if (messageThreadRef.current) {
       messageThreadRef.current.scrollTop = messageThreadRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, streamingBuffer]);
 
   const stopStreaming = useCallback(() => {
     streamAbortRef.current?.abort();
