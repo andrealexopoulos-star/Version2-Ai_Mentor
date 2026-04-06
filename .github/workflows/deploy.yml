@@ -165,7 +165,8 @@ jobs:
             AZURE_CREDENTIALS \
             ACR_USERNAME \
             ACR_PASSWORD \
-            SUPABASE_ACCESS_TOKEN
+            SUPABASE_ACCESS_TOKEN \
+            SUPABASE_TELEMETRY_ACCESS_TOKEN
           do
             val="$(printenv "$name" || true)"
             if [ -z "$val" ]; then
@@ -190,6 +191,7 @@ jobs:
           ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_TELEMETRY_ACCESS_TOKEN: ${{ secrets.SUPABASE_TELEMETRY_ACCESS_TOKEN }}
 
       - name: Probe critical edge functions for non-5xx contracts
         run: |
@@ -278,6 +280,7 @@ jobs:
           export RELEASE_TELEMETRY_ENFORCEMENT=strict
           python3 scripts/run_release_evidence_refresh.py
         env:
+          SUPABASE_TELEMETRY_ACCESS_TOKEN: ${{ secrets.SUPABASE_TELEMETRY_ACCESS_TOKEN }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROD_PROJECT_REF: vwwandhoydemcybltoxz
 
