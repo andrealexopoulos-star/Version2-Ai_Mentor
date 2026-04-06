@@ -3,7 +3,7 @@ MySoundBoard Routes — Thinking Partner
 Extracted from server.py. Prompts loaded from Supabase system_prompts table.
 Instrumented with Intelligence Spine LLM logging.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile
 from fastapi.responses import StreamingResponse
 import asyncio
 from pydantic import BaseModel
@@ -91,6 +91,7 @@ def _budget_system_prompt(
     biz_context: str,
     cognition_context: str,
     rag_context: str,
+    upload_context: str,
     memory_context: str,
     integration_context: str,
     marketing_context: str,
@@ -133,6 +134,7 @@ def _budget_system_prompt(
         (signal_injection, 500),
         (cognition_context, 600),
         (rag_context, 1000),
+        (upload_context, 1200),
         (memory_context, 600),
         (evidence_injection, 400),
         (marketing_context, 400),
@@ -1420,6 +1422,7 @@ class SoundboardChatRequest(BaseModel):
     forensic_report_mode: Optional[bool] = None
     deliverable_type: Optional[str] = None
     export_requested: Optional[bool] = None
+    upload_ids: Optional[List[str]] = None
 
 
 def _has_configured_key(value: Optional[str]) -> bool:
@@ -2765,6 +2768,19 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     except Exception as e:
         logger.debug(f"RAG retrieval: {e}")
 
+    upload_context = ""
+    if req.upload_ids:
+        try:
+            up_res = sb.table("uploads").select("file_name,file_type,extracted_text,extracted_json").in_("id", req.upload_ids).eq("user_id", user_id).execute()
+            for u in (up_res.data or []):
+                upload_context += f"\n\n═══ UPLOADED FILE: {u.get('file_name')} ═══\n"
+                if u.get("extracted_json"):
+                    j = u["extracted_json"]
+                    upload_context += f"Columns: {', '.join(j.get('headers', []))}\nRows: {len(j.get('rows', []))}\n\n"
+                upload_context += (u.get("extracted_text") or "")[:8000]
+        except Exception as e:
+            logger.warning(f"Upload context injection failed: {e}")
+
     # ═══ MEMORY — always attempt (no flag dependency) ═══
     memory_context = ""
     try:
@@ -3097,6 +3113,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         biz_context=biz_context,
         cognition_context=cognition_context,
         rag_context=rag_context,
+        upload_context=upload_context,
         memory_context=memory_context,
         integration_context=integration_context,
         marketing_context=marketing_context,
@@ -3882,239 +3899,100 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         }
 
 
-async def _execute_stream_tool_call(sb, user_id: str, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-    if tool_name == "get_connector_snapshot":
-        domains = {"crm": False, "accounting": False, "email": False, "calendar": False, "custom": False}
+@router.post("/soundboard/upload")
+async def soundboard_upload(
+    file: UploadFile = FastAPIFile(...),
+    conversation_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user["id"]
+    sb = get_sb()
+
+    ALLOWED = {
+        "application/pdf": "pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+        "text/csv": "csv",
+        "image/png": "image",
+        "image/jpeg": "image",
+    }
+    file_type = ALLOWED.get(file.content_type or "")
+    if not file_type:
+        raise HTTPException(400, "Unsupported file type. Please upload PDF, Word, Excel, CSV, or image.")
+
+    contents = await file.read()
+    if len(contents) > 25 * 1024 * 1024:
+        raise HTTPException(400, "File too large. Maximum size is 25MB.")
+
+    extracted_text, extracted_json = None, None
+
+    if file_type == "pdf":
         try:
-            accounts = sb.table("integration_accounts").select("category, status, provider_name").eq("user_id", user_id).limit(120).execute()
-            for row in (accounts.data or []):
-                if str(row.get("status") or "").lower() not in {"connected", "active"}:
-                    continue
-                category = str(row.get("category") or "").lower()
-                if category in domains:
-                    domains[category] = True
-                elif category:
-                    domains["custom"] = True
-        except Exception:
-            pass
+            import io
+            from PyPDF2 import PdfReader
+            reader = PdfReader(io.BytesIO(contents))
+            pages = [f"[Page {i+1}]\n{p.extract_text()}" for i, p in enumerate(reader.pages[:20]) if p.extract_text()]
+            extracted_text = "\n\n".join(pages)[:50000]
+        except Exception as e:
+            logger.warning(f"PDF extract failed: {e}")
+            extracted_text = "[PDF could not be read]"
+
+    elif file_type == "docx":
         try:
-            email_rows = sb.table("email_connections").select("id").eq("user_id", user_id).limit(1).execute()
-            if email_rows.data:
-                domains["email"] = True
-        except Exception:
-            pass
-        return {"connected_domains": domains}
+            import io
+            from docx import Document
+            doc = Document(io.BytesIO(contents))
+            extracted_text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())[:50000]
+        except Exception as e:
+            logger.warning(f"DOCX extract failed: {e}")
+            extracted_text = "[Document could not be read]"
 
-    if tool_name == "get_recent_signals":
-        limit = max(1, min(int(arguments.get("limit", 8) or 8), 20))
+    elif file_type in ("xlsx", "csv"):
         try:
-            obs = (
-                sb.table("observation_events")
-                .select("signal_name,domain,severity,entity,metric,observed_at")
-                .eq("user_id", user_id)
-                .order("observed_at", desc=True)
-                .limit(limit)
-                .execute()
-            )
-            return {"signals": obs.data or [], "signals_count": len(obs.data or [])}
-        except Exception:
-            return {"signals": [], "signals_count": 0, "error_code": "RECENT_SIGNALS_UNAVAILABLE"}
+            import io
+            import csv as _csv
+            if file_type == "xlsx":
+                import openpyxl
+                wb = openpyxl.load_workbook(io.BytesIO(contents), read_only=True, data_only=True)
+                rows = [[str(c) if c is not None else "" for c in row] for i, row in enumerate(wb.active.iter_rows(values_only=True)) if i < 500]
+            else:
+                rows = list(_csv.reader(io.StringIO(contents.decode("utf-8", errors="replace"))))[:500]
+            if rows:
+                headers, data_rows = rows[0], rows[1:]
+                extracted_json = {"headers": headers, "rows": data_rows}
+                extracted_text = " | ".join(headers) + "\n" + "---|" * len(headers) + "\n"
+                extracted_text += "\n".join(" | ".join(r) for r in data_rows[:50])
+        except Exception as e:
+            logger.warning(f"Spreadsheet extract failed: {e}")
+            extracted_text = "[Spreadsheet could not be read]"
 
-    return {"error_code": "UNKNOWN_STREAM_TOOL"}
+    elif file_type == "image":
+        extracted_text = f"[Image: {file.filename}]"
 
+    storage_path = None
+    try:
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        storage_path = f"{user_id}/{ts}_{file.filename}"
+        sb.storage.from_("user-files").upload(storage_path, contents, {"content-type": file.content_type})
+    except Exception as e:
+        logger.warning(f"Storage upload failed (non-fatal): {e}")
 
-async def _iterate_openai_stream_with_tools(
-    *,
-    api_key: str,
-    clean_message: str,
-    messages_history: List[Dict[str, Any]],
-    sb,
-    user_id: str,
-) -> AsyncGenerator[Dict[str, Any], None]:
-    import openai as _openai
+    upload_id = str(uuid.uuid4())
+    sb.table("uploads").insert({
+        "id": upload_id, "user_id": user_id, "conversation_id": conversation_id,
+        "file_name": file.filename, "file_type": file_type,
+        "extracted_text": extracted_text, "extracted_json": extracted_json,
+        "storage_path": storage_path, "size_bytes": len(contents), "processing_status": "complete",
+    }).execute()
 
-    client = _openai.AsyncOpenAI(api_key=api_key)
-    model = "gpt-4o-mini"
-    tool_definitions = [
-        {
-            "type": "function",
-            "function": {
-                "name": "get_connector_snapshot",
-                "description": "Return currently connected business domains for this tenant.",
-                "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
-            },
-        },
-        {
-            "type": "function",
-            "function": {
-                "name": "get_recent_signals",
-                "description": "Return recent observation signals for this tenant.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {"limit": {"type": "integer", "minimum": 1, "maximum": 20}},
-                    "required": [],
-                    "additionalProperties": False,
-                },
-            },
-        },
-    ]
-    formatted_messages: List[Dict[str, Any]] = [
-        {
-            "role": "system",
-            "content": (
-                "You are Ask BIQc. Respond directly to the user request in plain language. "
-                "When needed, call tools first, then produce a concise answer."
-            ),
-        }
-    ]
-    for message in (messages_history or [])[-8:]:
-        formatted_messages.append({"role": message.get("role", "user"), "content": message.get("content", "")})
-    formatted_messages.append({"role": "user", "content": clean_message})
-
-    max_tool_rounds = 4
-    for _ in range(max_tool_rounds):
-        tool_planning = await client.chat.completions.create(
-            model=model,
-            messages=formatted_messages,
-            tools=tool_definitions,
-            tool_choice="auto",
-            max_tokens=800,
-        )
-        planning_message = tool_planning.choices[0].message
-        tool_calls = list(planning_message.tool_calls or [])
-        if not tool_calls:
-            if planning_message.content:
-                formatted_messages.append({"role": "assistant", "content": planning_message.content})
-            break
-
-        formatted_messages.append(
-            {
-                "role": "assistant",
-                "content": planning_message.content or "",
-                "tool_calls": [
-                    {
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments or "{}",
-                        },
-                    }
-                    for tc in tool_calls
-                ],
-            }
-        )
-        for call in tool_calls:
-            args = {}
-            try:
-                args = json.loads(call.function.arguments or "{}")
-            except Exception:
-                args = {}
-            yield {"type": "tool_start", "payload": {"call_id": call.id, "name": call.function.name, "arguments": args}}
-            result = await _execute_stream_tool_call(sb, user_id, call.function.name, args)
-            yield {
-                "type": "tool_result",
-                "payload": {
-                    "call_id": call.id,
-                    "name": call.function.name,
-                    "ok": not bool(result.get("error") or result.get("error_code")),
-                    "result_preview": json.dumps(result)[:180],
-                },
-            }
-            formatted_messages.append({"role": "tool", "tool_call_id": call.id, "content": json.dumps(result)})
-
-    stream = await client.chat.completions.create(
-        model=model,
-        messages=formatted_messages,
-        max_tokens=2000,
-        stream=True,
-    )
-    reply_parts: List[str] = []
-    async for chunk in stream:
-        delta = chunk.choices[0].delta
-        text = delta.content or ""
-        if text:
-            reply_parts.append(text)
-            yield {"type": "delta", "payload": {"text": text}}
-    yield {"type": "done", "payload": {"reply": "".join(reply_parts), "model": model}}
-
-
-@router.post("/soundboard/chat/stream")
-async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict = Depends(get_current_user)):
-    """
-    SSE stream wrapper for Soundboard replies.
-    Produces delta events for progressive UI rendering, then a final event with metadata.
-    """
-    trace_id = str(uuid.uuid4())
-    from guardrails import sanitise_input
-    from routes.deps import check_rate_limit
-    sanitised = sanitise_input(req.message)
-    requested_mode = getattr(req, "mode", "auto")
-    tier_for_contract = (current_user.get("subscription_tier") or "free")
-    is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin"}
-    mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
-    feature = "trinity_daily" if mode == "trinity" else "soundboard_daily"
-    if not sanitised.get("blocked"):
-        await check_rate_limit(current_user["id"], feature, get_sb())
-        req.intelligence_context = dict(req.intelligence_context or {})
-        req.intelligence_context["_rate_limit_checked"] = True
-
-    async def event_stream() -> AsyncGenerator[str, None]:
-        if sanitised.get("blocked"):
-            yield _sse_event("start", {"conversation_id": req.conversation_id, "trace_id": trace_id, "stream_mode": "synthetic"})
-            result = {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
-            yield _sse_event("final", {"payload": result})
-            return
-        clean_message = sanitised.get("text") or str(req.message or "")
-        can_live_stream = _has_configured_key(OPENAI_KEY)
-        yield _sse_event(
-            "start",
-            {
-                "conversation_id": req.conversation_id,
-                "trace_id": trace_id,
-                "stream_mode": "live_openai" if can_live_stream else "synthetic",
-            },
-        )
-        try:
-            if can_live_stream:
-                sb = get_sb()
-                conversation = None
-                messages_history: List[Dict[str, Any]] = []
-                if req.conversation_id:
-                    conv = sb.table("soundboard_conversations").select("*").eq("id", req.conversation_id).eq("user_id", current_user["id"]).limit(1).execute()
-                    conversation = (conv.data or [None])[0]
-                if conversation:
-                    try:
-                        history = sb.table("soundboard_messages").select("role,content,timestamp").eq("conversation_id", req.conversation_id).eq("user_id", current_user["id"]).order("timestamp", desc=False).limit(8).execute()
-                        messages_history = history.data or []
-                    except Exception:
-                        messages_history = []
-                async for event in _iterate_openai_stream_with_tools(
-                    api_key=OPENAI_KEY,
-                    clean_message=clean_message,
-                    messages_history=messages_history,
-                    sb=sb,
-                    user_id=current_user["id"],
-                ):
-                    if event.get("type") == "done":
-                        break
-                    yield _sse_event(event.get("type"), event.get("payload") or {})
-
-            result = await soundboard_chat(req, current_user)
-            if not can_live_stream:
-                reply = str(result.get("reply") or "")
-                if reply:
-                    chunk_size = 20
-                    for i in range(0, len(reply), chunk_size):
-                        chunk = reply[i : i + chunk_size]
-                        yield _sse_event("delta", {"text": chunk})
-                        await asyncio.sleep(0.01)
-            yield _sse_event("final", {"payload": result})
-        except Exception as exc:
-            logger.exception("Soundboard stream failed trace_id=%s", trace_id)
-            yield _sse_event("error", {"message": "Streaming interrupted. Please retry.", "code": "STREAM_RUNTIME_ERROR", "trace_id": trace_id})
-
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    return {
+        "upload_id": upload_id,
+        "file_name": file.filename,
+        "file_type": file_type,
+        "preview_text": (extracted_text or "")[:200],
+        "row_count": len((extracted_json or {}).get("rows", [])) if extracted_json else None,
+        "size_bytes": len(contents),
+    }
 
 
 @router.patch("/soundboard/conversations/{conversation_id}")
