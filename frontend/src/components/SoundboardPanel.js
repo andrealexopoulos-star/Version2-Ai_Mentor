@@ -6,7 +6,7 @@ import { trackEvent, EVENTS, trackActivationStep, trackOnceForUser } from '../li
 import DataCoverageGate from './DataCoverageGate';
 import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
-import { getSoundboardPolicy, normalizeMessageContent, SOUND_BOARD_MODES } from '../lib/soundboardPolicy';
+import { getSoundboardPolicy, SOUND_BOARD_MODES } from '../lib/soundboardPolicy';
 import { deriveSoundboardRequestScope } from '../lib/soundboardQueryRouting';
 import {
   appendAskBiqcDelta,
@@ -151,22 +151,35 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     }
   }, [messages]);
 
-  // Handle action messages from insight cards
-  useEffect(() => {
-    if (actionMessage && actionMessage.trim()) {
-      setInput('');
-      setMessages(prev => [...prev, { role: 'user', text: actionMessage, content: actionMessage }]);
-      executeMessage(actionMessage);
-      if (onActionConsumed) onActionConsumed();
-    }
-  }, [actionMessage]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const stopStreaming = useCallback(() => {
     streamAbortRef.current?.abort();
     streamAbortRef.current = null;
     setLoading(false);
     setMessages((prev) => markAskBiqcStreamingStopped(prev, { includeText: true }));
   }, []);
+
+  const appendUserMessage = useCallback((rawMessage) => {
+    const cleanMessage = String(rawMessage || '').trim();
+    if (!cleanMessage) return '';
+    // Ensure no in-flight assistant streaming buffer remains before user append.
+    setMessages((prev) => [
+      ...prev.filter((message) => !message.streaming),
+      { role: 'user', text: cleanMessage, content: cleanMessage },
+    ]);
+    return cleanMessage;
+  }, []);
+
+  // Handle action messages from insight cards
+  useEffect(() => {
+    if (actionMessage && actionMessage.trim()) {
+      setInput('');
+      const cleanActionMessage = appendUserMessage(actionMessage);
+      if (cleanActionMessage) {
+        executeMessage(cleanActionMessage);
+      }
+      if (onActionConsumed) onActionConsumed();
+    }
+  }, [actionMessage, appendUserMessage, onActionConsumed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCopyAssistantMessage = useCallback(async (message) => {
     const copied = await copyAskBiqcText(getAskBiqcMessageText(message));
@@ -277,21 +290,23 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     if (currentAttachment) setAttachedFile(null);
 
     if (!fullMessage.trim()) return;
-    setMessages(prev => [...prev, { role: 'user', text: displayText, content: displayText }]);
+    const cleanMessage = appendUserMessage(userMsg || displayText);
+    if (!cleanMessage) return;
     trackEvent(EVENTS.SOUNDBOARD_QUERY, { message_length: fullMessage.length, has_attachment: !!currentAttachment });
     trackOnceForUser(EVENTS.ACTIVATION_FIRST_SOUNDBOARD_USE, user?.id, { entrypoint: 'soundboard_panel' });
     trackActivationStep('first_soundboard_use', { entrypoint: 'soundboard_panel' });
-    await executeMessage(displayText, fullMessage);
+    await executeMessage(cleanMessage, fullMessage);
   };
 
   const submitSuggestedAction = async (prompt) => {
     const nextPrompt = String(prompt || '').trim();
     if (!nextPrompt || loading) return;
-    setMessages(prev => [...prev, { role: 'user', text: nextPrompt, content: nextPrompt }]);
+    const cleanMessage = appendUserMessage(nextPrompt);
+    if (!cleanMessage) return;
     trackEvent(EVENTS.SOUNDBOARD_QUERY, { message_length: nextPrompt.length, has_attachment: false, source: 'suggested_action' });
     trackOnceForUser(EVENTS.ACTIVATION_FIRST_SOUNDBOARD_USE, user?.id, { entrypoint: 'soundboard_panel' });
     trackActivationStep('first_soundboard_use', { entrypoint: 'soundboard_panel' });
-    await executeMessage(nextPrompt, nextPrompt, {
+    await executeMessage(cleanMessage, cleanMessage, {
       trace_root_id: `trace-${Date.now()}`,
       response_version: 1,
     });
@@ -390,10 +405,11 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           onRegenerate={() => {
             const previousUserPrompt = findPreviousAskBiqcUserPrompt(messages, idx);
             if (!previousUserPrompt) return;
-            setMessages((prev) => [...prev, { role: 'user', text: previousUserPrompt, content: previousUserPrompt }]);
+            const cleanMessage = appendUserMessage(previousUserPrompt);
+            if (!cleanMessage) return;
             executeMessage(
-              previousUserPrompt,
-              previousUserPrompt,
+              cleanMessage,
+              cleanMessage,
               {
                 trace_root_id: msg.trace_root_id || `trace-${Date.now()}`,
                 response_version: Number(msg.response_version || 1) + 1,
@@ -410,7 +426,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   };
 
   const userBody = (msg) => {
-    const content = normalizeMessageContent(msg.content ?? msg.text);
+    const content = String(msg.content ?? msg.text ?? '');
     return (
       <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 20px' }}>
         <div
@@ -423,6 +439,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             fontSize: 14,
             color: 'rgba(255,255,255,0.9)',
             lineHeight: 1.5,
+            wordBreak: 'break-word',
           }}
         >
           {content}

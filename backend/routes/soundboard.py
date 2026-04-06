@@ -2438,6 +2438,13 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     sb = get_sb()
     user_id = current_user["id"]
 
+    def _safe_reply_text(value: Any) -> str:
+        reply = str(value or "")
+        stripped = reply.strip()
+        if stripped.startswith('{"detail":') or stripped.startswith("{'detail':"):
+            return "I'm having trouble connecting right now. Please try again in a moment."
+        return reply
+
     # Resolve facts
     resolved_facts = await resolve_facts(sb, user_id)
     facts_prompt = build_known_facts_prompt(resolved_facts)
@@ -2972,7 +2979,14 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     feature = "trinity_daily" if mode == "trinity" else "soundboard_daily"
     preflight_checked = bool((req.intelligence_context or {}).get("_rate_limit_checked"))
     if not preflight_checked:
-        await check_rate_limit(user_id, feature, get_sb())
+        try:
+            await check_rate_limit(user_id, feature, get_sb())
+        except HTTPException as he:
+            if he.status_code == 429:
+                raise
+            logger.warning(f"[RATE_LIMIT] Non-429 HTTP error, allowing: {he.detail}")
+        except Exception as e:
+            logger.warning(f"[RATE_LIMIT] Service error, allowing: {e}")
 
     # Scope-aware intent override for inbox/sent/deleted and merge analytics prompts.
     if mailbox_requested:
@@ -3101,7 +3115,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             },
         ]
         return {
-            "reply": blocked_reply,
+            "reply": _safe_reply_text(blocked_reply),
             "guardrail": "BLOCKED",
             "coverage_pct": coverage_pct,
             "coverage_window": coverage_window,
@@ -3833,7 +3847,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         )
 
         return {
-            "reply": response,
+            "reply": _safe_reply_text(response),
             "conversation_id": conversation_id,
             "conversation_title": conversation_title,
             "agent_id": effective_agent_id,
@@ -3940,7 +3954,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             connected_sources=(contract_meta.get("lineage") or {}).get("connected_sources", {}),
         )
         return {
-            "reply": fallback_human,
+            "reply": _safe_reply_text(fallback_human),
             "conversation_id": req.conversation_id,
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
@@ -4039,7 +4053,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             connected_sources=(contract_meta.get("lineage") or {}).get("connected_sources", {}),
         )
         return {
-            "reply": fallback_human,
+            "reply": _safe_reply_text(fallback_human),
             "conversation_id": req.conversation_id,
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
@@ -4238,7 +4252,14 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
     feature = "trinity_daily" if mode == "trinity" else "soundboard_daily"
 
     if not sanitised.get("blocked"):
-        await check_rate_limit(current_user["id"], feature, get_sb())
+        try:
+            await check_rate_limit(current_user["id"], feature, get_sb())
+        except HTTPException as he:
+            if he.status_code == 429:
+                raise
+            logger.warning(f"[RATE_LIMIT] Non-429 HTTP error, allowing: {he.detail}")
+        except Exception as e:
+            logger.warning(f"[RATE_LIMIT] Service error, allowing: {e}")
         req.intelligence_context = dict(req.intelligence_context or {})
         req.intelligence_context["_rate_limit_checked"] = True
 

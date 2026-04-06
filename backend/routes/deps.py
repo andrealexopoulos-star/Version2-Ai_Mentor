@@ -214,10 +214,11 @@ def get_user_rate_limit_state(sb, user_id: str):
     }
 
 async def check_rate_limit(user_id: str, feature: str, sb=None) -> bool:
-    """Tier-aware monthly quota + burst protection. Raises HTTPException if blocked."""
-    if not sb:
-        raise HTTPException(status_code=503, detail="Rate limit service unavailable")
+    """Tier-aware monthly quota + burst protection. Service failures fail open."""
     try:
+        if not sb:
+            logger.warning("[RATE_LIMIT] Missing service for %s, allowing request", str(user_id)[:8])
+            return True
         state = get_user_rate_limit_state(sb, user_id)
         if state.get("admin_bypass"):
             return True
@@ -269,11 +270,14 @@ async def check_rate_limit(user_id: str, feature: str, sb=None) -> bool:
             on_conflict="key"
         ).execute()
         return True
-    except HTTPException:
-        raise
+    except HTTPException as exc:
+        if exc.status_code == 429:
+            raise
+        logger.warning("[RATE_LIMIT] Non-429 HTTP error for %s, allowing: %s", str(user_id)[:8], exc.detail)
+        return True
     except Exception as exc:
-        logger.error("Rate limit check failed for %s/%s: %s", user_id, feature, exc)
-        raise HTTPException(status_code=503, detail="Rate limit service unavailable")
+        logger.warning("[RATE_LIMIT] Service unavailable for %s, allowing: %s", str(user_id)[:8], exc)
+        return True
 
 
 supabase_admin = None
