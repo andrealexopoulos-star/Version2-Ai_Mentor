@@ -59,64 +59,29 @@ def _call_cognition_for_soundboard(sb, user_id):
         return None
 
 
-def _polish_response(text):
-    """Post-process AI response to enforce quality standards."""
+def _polish_response(text: str) -> str:
     import re
+    if not text:
+        return text
 
-    # Remove lines that start with numbered lists (1. 2. 3.)
-    lines = text.split('\n')
-    cleaned = []
-    for line in lines:
-        stripped = line.strip()
-        # Convert numbered list items to prose
-        match = re.match(r'^(\d+)\.\s+\*\*(.+?)\*\*:?\s*(.*)', stripped)
-        if match:
-            title = match.group(2)
-            rest = match.group(3)
-            cleaned.append(f"{title}: {rest}" if rest else f"{title}.")
-        elif re.match(r'^(\d+)\.\s+\*\*(.+?)\*\*', stripped):
-            # Bold-only list item
-            match2 = re.match(r'^(\d+)\.\s+\*\*(.+?)\*\*\s*(.*)', stripped)
-            if match2:
-                cleaned.append(f"{match2.group(2)} {match2.group(3)}".strip())
-            else:
-                cleaned.append(stripped)
-        elif re.match(r'^\d+\.\s', stripped):
-            # Plain numbered item
-            cleaned.append(re.sub(r'^\d+\.\s+', '', stripped))
-        elif re.match(r'^[-•]\s', stripped):
-            # Bullet point
-            cleaned.append(re.sub(r'^[-•]\s+', '', stripped))
-        else:
-            cleaned.append(line)
-
-    text = '\n'.join(cleaned)
-
-    # Remove **bold** markdown
-    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
-
-    # Remove weak/hedging phrases aggressively
     weak_phrases = [
         r'[Ww]ithout [^.]*(?:data|insight|integration|connection|access|metric|feed|source|detail|information|visibility)[^.]*\.',
         r'[Gg]iven the (?:absence|lack|limited)[^.]*\.',
         r'[Tt]o (?:give|provide|get|move|refine)[^.]*(?:precise|detailed|specific|comprehensive|actionable|deeper|better)[^.]*\.',
         r'[Ww]e\'d ideally[^.]*\.',
-        r'[Ii]t\'s difficult to[^.]*(?:precise|accurate|exact|detailed|specific)[^.]*\.',
         r'[Ll]et me know[^.]*\.',
         r'[Ww]ould you like[^?]*\?',
         r'[Nn]eed a deeper dive[^?]*\?',
         r'[Ii]f you[\'d]? like to (?:dive|explore|discuss|know)[^.]*\.',
-        r'[Cc]onnecting (?:\w+ )*(?:data|financial|CRM|systems)[^.]*\.',
-        r'[Yy]ou should consider connecting[^.]*\.',
-        r'[Ff]or (?:a )?more (?:precise|detailed|comprehensive|accurate)[^.]*\.',
         r'[Hh]ere\'s (?:a )?rough[^.]*\.',
+        r'[Aa]s an AI[^.]*\.',
+        r'[Aa]s your AI assistant[^.]*\.',
+        r'[Aa]s a language model[^.]*\.',
     ]
     for pattern in weak_phrases:
         text = re.sub(pattern, '', text)
 
-    # Clean up double newlines
     text = re.sub(r'\n{3,}', '\n\n', text).strip()
-
     return text
 
 
