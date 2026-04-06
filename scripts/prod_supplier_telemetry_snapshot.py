@@ -108,31 +108,69 @@ def supabase_query(sql: str) -> Dict[str, Any]:
 
 
 def supabase_query_via_management_api(sql: str, access_token: str) -> Dict[str, Any]:
-    url = f"https://api.supabase.com/v1/projects/{SUPABASE_PROD_PROJECT_REF}/database/query"
-    body = json.dumps({"query": sql}).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=body,
-        headers={
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            raw = resp.read().decode("utf-8")
-    except urllib.error.HTTPError as exc:
-        details = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"supabase management query failed ({exc.code}): {details}") from exc
-    except Exception as exc:
-        raise RuntimeError(f"supabase management query failed: {exc}") from exc
+    """
+    Execute read-only SQL through Supabase Management API.
 
-    payload = json.loads(raw)
-    rows = extract_rows(payload)
-    if not rows:
-        raise RuntimeError("supabase management query returned no rows")
-    return rows[0]
+    Prefer read-only endpoint first to align with fine-grained `database_read`
+    tokens; fall back to the generic query endpoint for compatibility.
+    """
+    endpoint_attempts = [
+        (
+            "query_read_only_endpoint",
+            f"https://api.supabase.com/v1/projects/{SUPABASE_PROD_PROJECT_REF}/database/query/read-only",
+            {"query": sql},
+        ),
+        (
+            "query_read_only_flag",
+            f"https://api.supabase.com/v1/projects/{SUPABASE_PROD_PROJECT_REF}/database/query",
+            {"query": sql, "read_only": True},
+        ),
+        (
+            "query_default_endpoint",
+            f"https://api.supabase.com/v1/projects/{SUPABASE_PROD_PROJECT_REF}/database/query",
+            {"query": sql},
+        ),
+    ]
+
+    failures: List[str] = []
+    for attempt_name, url, body_payload in endpoint_attempts:
+        body = json.dumps(body_payload).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=body,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                raw = resp.read().decode("utf-8")
+            payload = json.loads(raw)
+            rows = extract_rows(payload)
+            if not rows:
+                failures.append(f"{attempt_name}: empty_rows")
+                continue
+            return rows[0]
+        except urllib.error.HTTPError as exc:
+            details = exc.read().decode("utf-8", errors="replace")
+            failures.append(f"{attempt_name}:{exc.code}:{details[:400]}")
+            continue
+        except Exception as exc:
+            failures.append(f"{attempt_name}:exception:{exc}")
+            continue
+
+    combined = " | ".join(failures)
+    if "403" in combined and "1010" in combined:
+        raise RuntimeError(
+            "supabase management query forbidden (403/code 1010). "
+            "Token lacks project db query permission. "
+            "Use a Supabase PAT/fine-grained token scoped to project "
+            f"{SUPABASE_PROD_PROJECT_REF} with database_read (or database_write). "
+            f"attempts={combined}"
+        )
+    raise RuntimeError(f"supabase management query failed: attempts={combined}")
 
 
 def collect_supabase_prod() -> Dict[str, Any]:
@@ -149,7 +187,10 @@ def collect_supabase_prod() -> Dict[str, Any]:
         (temp_dir / "project-ref").write_text(f"{SUPABASE_PROD_PROJECT_REF}\n", encoding="utf-8")
         query_fn = supabase_query
 
-    db_row = query_fn("select pg_database_size(current_database()) as bytes;")
+    # Read-only management query endpoint requires schema-qualified references.
+    db_row = query_fn(
+        "select pg_catalog.pg_database_size(pg_catalog.current_database()) as bytes;"
+    )
     mau_row = query_fn(
         "select count(*)::int as total_users, "
         "count(*) filter (where last_sign_in_at >= date_trunc('month', now()))::int as mau_current_month "

@@ -242,7 +242,7 @@ jobs:
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
 
-  # ─── RELEASE EVIDENCE REFRESH (TEMPORARY ADVISORY) ───────────────────────
+  # ─── RELEASE EVIDENCE REFRESH (STRICT BLOCKING GATE) ─────────────────────
   release-evidence-refresh:
     name: Release Evidence Refresh
     runs-on: ubuntu-latest
