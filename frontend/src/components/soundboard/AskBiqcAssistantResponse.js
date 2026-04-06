@@ -218,6 +218,65 @@ export default function AskBiqcAssistantResponse({
           )}
         </div>
       )}
+      {showDetails && (retrievalContract.searched_windows || retrievalContract.coverage_gaps || retrievalContract.sources_used) && (
+        <div
+          className={`${compact ? 'mt-2 rounded-lg px-2 py-1.5' : 'mt-2 rounded-lg p-2'}`}
+          style={{ background: 'rgba(2,6,23,0.42)', border: '1px solid rgba(45,212,191,0.22)' }}
+          data-testid="ask-biqc-retrieval-windows"
+        >
+          <p className={`${compact ? 'text-[9px]' : 'text-[10px]'} mb-1`} style={{ color: '#5EEAD4', fontFamily: fontFamily.mono }}>
+            Retrieval windows
+          </p>
+          <div className="grid gap-1">
+            {(() => {
+              const windows = retrievalContract.searched_windows || {};
+              const blocks = [
+                ['overall', windows.overall],
+                ['crm', windows.crm],
+                ['accounting', windows.accounting],
+                ['email', windows.email],
+                ['calendar', windows.calendar],
+                ['custom', windows.custom],
+              ];
+              return blocks.map(([label, block]) => {
+                if (!block || (!block.start && !block.end)) return null;
+                return (
+                  <div key={`window-${label}`} className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }}>
+                    {label}: {(block.start || 'n/a')} {compact ? '→' : '->'} {(block.end || 'n/a')}
+                  </div>
+                );
+              });
+            })()}
+          </div>
+          {Array.isArray(retrievalContract.coverage_gaps) && retrievalContract.coverage_gaps.length > 0 && (
+            <p className="text-[10px] mt-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+              gaps: {retrievalContract.coverage_gaps[0]}
+            </p>
+          )}
+          {Array.isArray(retrievalContract.sources_used) && retrievalContract.sources_used.length > 0 && (
+            <p className="text-[10px] mt-1" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
+              sources used: {retrievalContract.sources_used.slice(0, 6).join(', ')}
+            </p>
+          )}
+        </div>
+      )}
+      {showDetails && retrievalContract.semantic_signal_layer && (
+        <div
+          className={`${compact ? 'mt-2 rounded-lg px-2 py-1.5' : 'mt-2 rounded-lg p-2'}`}
+          style={{ background: 'rgba(2,6,23,0.42)', border: '1px solid rgba(34,197,94,0.2)' }}
+          data-testid="ask-biqc-semantic-signal-layer"
+        >
+          <p className={`${compact ? 'text-[9px]' : 'text-[10px]'} mb-1`} style={{ color: '#86EFAC', fontFamily: fontFamily.mono }}>
+            Semantic signal layer
+          </p>
+          <p className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }}>
+            {retrievalContract.semantic_signal_layer.version || 'semantic_signal_layer'} · signals {Number(retrievalContract.semantic_signal_layer.signals_materialized || 0)} · {retrievalContract.semantic_signal_layer.freshness_state || 'unknown'}
+          </p>
+          <p className="text-[10px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
+            refresh {Number(retrievalContract.semantic_signal_layer?.background_refresh?.refresh_interval_minutes || 0)}m · escalation +{Number(retrievalContract.semantic_signal_layer?.on_demand_escalation?.signals_emitted || 0)}
+          </p>
+        </div>
+      )}
 
       {showDetails && message.boardroom_trace?.phases?.length > 0 && (
         <div
@@ -333,6 +392,14 @@ export default function AskBiqcAssistantResponse({
             retrieval {retrievalContract.retrieval_mode}
           </Chip>
         )}
+        {retrievalContract.canonical_retrieval_mode && (
+          <Chip
+            style={{ background: 'rgba(45,212,191,0.16)', color: '#5EEAD4' }}
+            testId={`${metadataTestId}-canonical-retrieval-mode`}
+          >
+            canonical {retrievalContract.canonical_retrieval_mode}
+          </Chip>
+        )}
         {retrievalContract.answer_grade && (
           <Chip
             style={{ background: 'rgba(236,72,153,0.14)', color: '#F9A8D4' }}
@@ -396,6 +463,30 @@ export default function AskBiqcAssistantResponse({
             testId={`${metadataTestId}-materialization`}
           >
             signal heal +{Number(retrievalContract.signals_emitted_on_demand || 0)}
+          </Chip>
+        )}
+        {retrievalContract.quality_eval?.latency_slo_ms_target && (
+          <Chip
+            style={{ background: 'rgba(59,130,246,0.14)', color: '#93C5FD' }}
+            testId={`${metadataTestId}-latency-slo`}
+          >
+            slo {Number(retrievalContract.quality_eval.latency_slo_ms_target)}ms
+          </Chip>
+        )}
+        {retrievalContract.quality_eval?.latency_slo_breached && (
+          <Chip
+            style={{ background: 'rgba(239,68,68,0.16)', color: '#FCA5A5' }}
+            testId={`${metadataTestId}-latency-slo-breached`}
+          >
+            slo breached
+          </Chip>
+        )}
+        {retrievalContract.pricing_packaging?.required_tier && (
+          <Chip
+            style={{ background: 'rgba(234,179,8,0.16)', color: '#FDE68A' }}
+            testId={`${metadataTestId}-pricing-required-tier`}
+          >
+            package {retrievalContract.pricing_packaging.required_tier}+
           </Chip>
         )}
         {generationContract.requested && (

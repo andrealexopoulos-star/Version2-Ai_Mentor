@@ -42,6 +42,12 @@ def test_soundboard_returns_report_grounding_flags():
     assert '"email_retrieval"' in content
     assert '"calendar_retrieval"' in content
     assert '"custom_retrieval"' in content
+    assert '"canonical_retrieval_mode"' in content
+    assert '"searched_windows"' in content
+    assert '"coverage_gaps"' in content
+    assert '"semantic_signal_layer"' in content
+    assert '"quality_eval"' in content
+    assert '"pricing_packaging"' in content
     assert 'FORENSIC_REPORT_MODE_VERSION' in content
     assert 'def _build_forensic_report_payload(' in content
     assert '"forensic_report": forensic_report' in content

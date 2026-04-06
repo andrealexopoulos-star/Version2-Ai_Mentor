@@ -4,6 +4,7 @@ import { apiClient, callEdgeFunction } from '../lib/api';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
 import { fontFamily } from '../design-system/tokens';
 import { shouldUseGroundedDataQuery } from '../lib/soundboardQueryRouting';
+import { normalizeAskBiqcConfidencePercent } from '../lib/soundboardRuntime';
 
 const getSoundboardErrorMessage = (error) => {
   const detail = error?.response?.data?.detail;
@@ -236,6 +237,12 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
               role: 'assistant',
               text: result.answer,
               sources: result.data_sources,
+              retrieval_contract: {
+                retrieval_mode: 'grounded_query',
+                canonical_retrieval_mode: (result.data_sources || []).length > 1 ? 'hybrid_compare' : 'materialized',
+                answer_grade: 'FULL',
+                sources_used: result.data_sources || [],
+              },
             }]);
           } else {
             // Fallback to regular chat
@@ -261,7 +268,13 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       intelligence_context: { context },
     });
     if (res.data?.reply) {
-      const msg = { role: 'assistant', text: res.data.reply };
+      const msg = {
+        role: 'assistant',
+        text: res.data.reply,
+        retrieval_contract: res.data.retrieval_contract,
+        confidence_score: res.data.confidence_score,
+        data_freshness: res.data.data_freshness,
+      };
       // If backend generated a file, attach download info
       if (res.data?.file) {
         msg.file = res.data.file;
@@ -339,6 +352,30 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
                   {msg.sources.map((s, j) => (
                     <span key={j} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#10B98110', color: '#10B981', fontFamily: fontFamily.mono }}>{s}</span>
                   ))}
+                </div>
+              )}
+              {msg.role === 'assistant' && (
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {msg?.retrieval_contract?.canonical_retrieval_mode && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(99,102,241,0.16)', color: '#A5B4FC', fontFamily: fontFamily.mono }}>
+                      mode {msg.retrieval_contract.canonical_retrieval_mode}
+                    </span>
+                  )}
+                  {msg?.retrieval_contract?.answer_grade && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(236,72,153,0.14)', color: '#F9A8D4', fontFamily: fontFamily.mono }}>
+                      grade {msg.retrieval_contract.answer_grade}
+                    </span>
+                  )}
+                  {msg?.data_freshness && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.14)', color: '#FCD34D', fontFamily: fontFamily.mono }}>
+                      freshness {msg.data_freshness}
+                    </span>
+                  )}
+                  {normalizeAskBiqcConfidencePercent(msg?.confidence_score) != null && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(16,185,129,0.14)', color: '#86EFAC', fontFamily: fontFamily.mono }}>
+                      confidence {normalizeAskBiqcConfidencePercent(msg.confidence_score).toFixed(0)}%
+                    </span>
+                  )}
                 </div>
               )}
               {/* File download card — when backend generates a file */}

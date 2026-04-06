@@ -157,6 +157,11 @@ def test_depth_fields_pass_through_contract():
         "crm_pages_fetched": 4,
         "accounting_pages_fetched": 7,
         "history_truncated": True,
+        "crm": {"pages_fetched": 4, "rows_loaded": 42, "window_start": "2025-01-01", "window_end": "2025-12-31"},
+        "accounting": {"pages_fetched": 7, "rows_loaded": 55, "window_start": "2025-01-01", "window_end": "2025-12-31"},
+        "email": {"pages_fetched": 1, "rows_loaded": 10, "window_start": "2025-08-01", "window_end": "2025-09-01"},
+        "calendar": {"pages_fetched": 1, "rows_loaded": 5, "window_start": "2025-08-01", "window_end": "2025-09-01"},
+        "custom": {"pages_fetched": 1, "rows_loaded": 3, "window_start": "2025-08-01", "window_end": "2025-09-01"},
     }
     c = _build_retrieval_contract(
         report_grade_request=False,
@@ -167,12 +172,27 @@ def test_depth_fields_pass_through_contract():
         coverage_window={"missing_periods": []},
         retrieval_depth=depth,
         materialization_state={"attempted": True, "signals_emitted": 5},
+        intent_action="compare",
+        wants_integration_analytics=True,
+        data_freshness="45m",
+        workspace_tier="starter",
+        coverage_pct=72,
+        live_signal_age_hours=0.4,
+        latency_ms_actual=2200,
     )
     assert c["crm_pages_fetched"] == 4
     assert c["accounting_pages_fetched"] == 7
     assert c["history_truncated"] is True
     assert c["materialization_attempted"] is True
     assert c["signals_emitted_on_demand"] == 5
+    assert c["canonical_retrieval_mode"] == "hybrid_compare"
+    assert c["retrieval_plane"]["execution_path"] == "hybrid_compare_cross_connector"
+    assert "crm" in c["sources_used"]
+    assert c["searched_windows"]["crm"]["start"] == "2025-01-01"
+    assert c["semantic_signal_layer"]["version"] == "semantic_signal_layer_v2"
+    assert c["quality_eval"]["latency_slo_ms_target"] > 0
+    assert c["quality_eval"]["latency_slo_breached"] is False
+    assert c["pricing_packaging"]["required_tier"] in {"starter", "pro", "enterprise", "free"}
 
 
 @pytest.mark.skipif(not GATE_SCRIPT.is_file(), reason="gate script missing")

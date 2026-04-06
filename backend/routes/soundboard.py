@@ -316,6 +316,278 @@ def _report_window_meets_target(coverage_window: Dict[str, Any], *, min_days: in
     return (end_dt - start_dt).days >= min_days
 
 
+CANONICAL_RETRIEVAL_MODES = {
+    "materialized": "materialized",
+    "forensic_live": "forensic_live",
+    "warehouse": "warehouse",
+    "hybrid_compare": "hybrid_compare",
+}
+
+SEMANTIC_SIGNAL_LAYER_VERSION = "semantic_signal_layer_v2"
+SOUNDBOARD_SIGNAL_REFRESH_INTERVAL_MINUTES = int(
+    os.environ.get("SOUNDBOARD_SIGNAL_REFRESH_INTERVAL_MINUTES", "15")
+)
+ASK_BIQC_LATENCY_SLO_MS_DEFAULT = int(os.environ.get("ASK_BIQC_LATENCY_SLO_MS_DEFAULT", "45000"))
+ASK_BIQC_LATENCY_SLO_MS_DEEP = int(os.environ.get("ASK_BIQC_LATENCY_SLO_MS_DEEP", "120000"))
+
+
+def _clip01(value: float) -> float:
+    return max(0.0, min(1.0, float(value)))
+
+
+def _freshness_score_from_contract(data_freshness: str) -> float:
+    text = str(data_freshness or "").strip().lower()
+    if not text:
+        return 0.35
+    if text.endswith("m"):
+        try:
+            minutes = max(0, int(text[:-1]))
+        except Exception:
+            minutes = 60
+        if minutes <= 30:
+            return 0.95
+        if minutes <= 120:
+            return 0.8
+        if minutes <= 360:
+            return 0.65
+        return 0.45
+    if text.endswith("h"):
+        try:
+            hours = max(0, int(text[:-1]))
+        except Exception:
+            hours = 24
+        if hours <= 2:
+            return 0.78
+        if hours <= 12:
+            return 0.62
+        if hours <= 24:
+            return 0.5
+        return 0.38
+    return 0.4
+
+
+def _safe_date_head(value: Any) -> Optional[str]:
+    if not value:
+        return None
+    text = str(value).strip()
+    return text[:10] if len(text) >= 10 else text
+
+
+def _canonical_retrieval_mode(
+    *,
+    legacy_retrieval_mode: str,
+    report_grade_request: bool,
+    intent_action: str,
+    wants_integration_analytics: bool,
+    has_connected_sources: bool,
+    live_signal_count: int,
+) -> str:
+    action = str(intent_action or "").strip().lower()
+    if wants_integration_analytics or action == "compare":
+        return CANONICAL_RETRIEVAL_MODES["hybrid_compare"]
+    if report_grade_request:
+        return CANONICAL_RETRIEVAL_MODES["forensic_live"]
+    if has_connected_sources and int(live_signal_count or 0) == 0:
+        return CANONICAL_RETRIEVAL_MODES["warehouse"]
+    if legacy_retrieval_mode == "profile_only" and not has_connected_sources:
+        return CANONICAL_RETRIEVAL_MODES["materialized"]
+    return CANONICAL_RETRIEVAL_MODES["materialized"]
+
+
+def _retrieval_execution_path(canonical_mode: str) -> str:
+    if canonical_mode == CANONICAL_RETRIEVAL_MODES["forensic_live"]:
+        return "forensic_live_escalation"
+    if canonical_mode == CANONICAL_RETRIEVAL_MODES["warehouse"]:
+        return "warehouse_history_backfill"
+    if canonical_mode == CANONICAL_RETRIEVAL_MODES["hybrid_compare"]:
+        return "hybrid_compare_cross_connector"
+    return "materialized_semantic_layer"
+
+
+def _build_connector_windows(coverage_window: Dict[str, Any], retrieval_depth: Dict[str, Any]) -> Dict[str, Any]:
+    rd = retrieval_depth or {}
+
+    def from_block(block: Dict[str, Any]) -> Dict[str, Optional[str]]:
+        return {
+            "start": _safe_date_head((block or {}).get("window_start")),
+            "end": _safe_date_head((block or {}).get("window_end")),
+        }
+
+    return {
+        "overall": {
+            "start": _safe_date_head((coverage_window or {}).get("coverage_start")),
+            "end": _safe_date_head((coverage_window or {}).get("coverage_end")),
+        },
+        "crm": from_block(dict(rd.get("crm") or {})),
+        "accounting": from_block(dict(rd.get("accounting") or {})),
+        "email": from_block(dict(rd.get("email") or {})),
+        "calendar": from_block(dict(rd.get("calendar") or {})),
+        "custom": from_block(dict(rd.get("custom") or {})),
+    }
+
+
+def _build_sources_used(
+    *,
+    has_connected_sources: bool,
+    retrieval_depth: Dict[str, Any],
+    canonical_mode: str,
+    live_signal_count: int,
+) -> List[str]:
+    rd = retrieval_depth or {}
+    sources: List[str] = []
+    if int(rd.get("crm_pages_fetched") or 0) > 0:
+        sources.append("crm")
+    if int(rd.get("accounting_pages_fetched") or 0) > 0:
+        sources.append("accounting")
+    if int((rd.get("email") or {}).get("rows_loaded") or 0) > 0:
+        sources.append("email")
+    if int((rd.get("calendar") or {}).get("rows_loaded") or 0) > 0:
+        sources.append("calendar")
+    if int((rd.get("custom") or {}).get("rows_loaded") or 0) > 0:
+        sources.append("custom")
+    if int(live_signal_count or 0) > 0:
+        sources.append("observation_events")
+    if has_connected_sources and not sources:
+        sources.append("connected_sources_declared")
+    if canonical_mode == CANONICAL_RETRIEVAL_MODES["hybrid_compare"] and "hybrid_compare" not in sources:
+        sources.append("hybrid_compare")
+    # Preserve deterministic order.
+    return list(dict.fromkeys(sources))
+
+
+def _build_semantic_signal_layer(
+    *,
+    live_signal_count: int,
+    live_signal_age_hours: Optional[float],
+    materialization_state: Dict[str, Any],
+    refresh_interval_minutes: int,
+) -> Dict[str, Any]:
+    age_hours = float(live_signal_age_hours) if live_signal_age_hours is not None else None
+    if age_hours is None:
+        freshness_state = "unknown"
+    elif age_hours <= 2:
+        freshness_state = "fresh"
+    elif age_hours <= 24:
+        freshness_state = "stale"
+    else:
+        freshness_state = "cold"
+    return {
+        "version": SEMANTIC_SIGNAL_LAYER_VERSION,
+        "signals_materialized": int(live_signal_count or 0),
+        "source_table": "observation_events",
+        "freshness_state": freshness_state,
+        "background_refresh": {
+            "enabled": True,
+            "refresh_interval_minutes": int(refresh_interval_minutes or 15),
+        },
+        "on_demand_escalation": {
+            "requested": bool((materialization_state or {}).get("attempted")),
+            "signals_emitted": int((materialization_state or {}).get("signals_emitted") or 0),
+            "reason": (materialization_state or {}).get("reason"),
+        },
+    }
+
+
+def _build_retrieval_quality_eval(
+    *,
+    answer_grade: str,
+    retrieval_depth: Dict[str, Any],
+    data_freshness: str,
+    coverage_pct: float,
+    canonical_mode: str,
+    workspace_tier: str,
+    latency_ms_actual: Optional[int] = None,
+) -> Dict[str, Any]:
+    rd = retrieval_depth or {}
+    depth_pages = (
+        int(rd.get("crm_pages_fetched") or 0)
+        + int(rd.get("accounting_pages_fetched") or 0)
+        + int((rd.get("email") or {}).get("pages_fetched") or 0)
+        + int((rd.get("calendar") or {}).get("pages_fetched") or 0)
+        + int((rd.get("custom") or {}).get("pages_fetched") or 0)
+    )
+    depth_score = _clip01(depth_pages / 12.0)
+    if bool(rd.get("history_truncated")):
+        depth_score = _clip01(depth_score - 0.15)
+
+    grade = str(answer_grade or "DEGRADED").upper()
+    grade_score = {
+        "FULL": 1.0,
+        "PARTIAL": 0.78,
+        "DEGRADED": 0.52,
+        "BLOCKED": 0.2,
+    }.get(grade, 0.5)
+    freshness_score = _freshness_score_from_contract(data_freshness)
+    coverage_score = _clip01(float(coverage_pct or 0.0) / 100.0)
+
+    tier_rank = COMMERCIAL_TIER_RANK.get(_normalize_commercial_tier(workspace_tier), 0)
+    workspace_power_score = _clip01(0.35 + (tier_rank * 0.16))
+    if canonical_mode == CANONICAL_RETRIEVAL_MODES["hybrid_compare"]:
+        workspace_power_score = _clip01(workspace_power_score + 0.08)
+    elif canonical_mode == CANONICAL_RETRIEVAL_MODES["forensic_live"]:
+        workspace_power_score = _clip01(workspace_power_score + 0.05)
+
+    composite = _clip01(
+        (depth_score * 0.3)
+        + (freshness_score * 0.25)
+        + (coverage_score * 0.2)
+        + (workspace_power_score * 0.1)
+        + (grade_score * 0.15)
+    )
+    latency_budget_ms = ASK_BIQC_LATENCY_SLO_MS_DEEP if canonical_mode in {
+        CANONICAL_RETRIEVAL_MODES["forensic_live"],
+        CANONICAL_RETRIEVAL_MODES["hybrid_compare"],
+    } else ASK_BIQC_LATENCY_SLO_MS_DEFAULT
+    latency_observed_ms = int(latency_ms_actual) if latency_ms_actual is not None else None
+
+    return {
+        "depth_score": round(depth_score, 4),
+        "freshness_score": round(freshness_score, 4),
+        "coverage_score": round(coverage_score, 4),
+        "workspace_power_score": round(workspace_power_score, 4),
+        "answer_grade_score": round(grade_score, 4),
+        "composite_score": round(composite, 4),
+        "latency_slo_ms_target": int(latency_budget_ms),
+        "latency_observed_ms": latency_observed_ms,
+        "latency_slo_breached": bool(latency_observed_ms is not None and latency_observed_ms > latency_budget_ms),
+    }
+
+
+def _build_pricing_packaging(
+    *,
+    canonical_mode: str,
+    quality_eval: Dict[str, Any],
+    workspace_tier: str,
+) -> Dict[str, Any]:
+    depth_score = float((quality_eval or {}).get("depth_score") or 0.0)
+    freshness_score = float((quality_eval or {}).get("freshness_score") or 0.0)
+    workspace_power = float((quality_eval or {}).get("workspace_power_score") or 0.0)
+
+    required_tier = "free"
+    if canonical_mode in {CANONICAL_RETRIEVAL_MODES["warehouse"], CANONICAL_RETRIEVAL_MODES["hybrid_compare"]}:
+        required_tier = "starter"
+    if canonical_mode == CANONICAL_RETRIEVAL_MODES["forensic_live"] and (depth_score >= 0.55 or freshness_score >= 0.6):
+        required_tier = "pro"
+    if canonical_mode == CANONICAL_RETRIEVAL_MODES["hybrid_compare"] and depth_score >= 0.75 and freshness_score >= 0.7:
+        required_tier = "enterprise"
+    if workspace_power >= 0.95 and required_tier != "enterprise":
+        required_tier = "pro"
+
+    workspace_normalized = _normalize_commercial_tier(workspace_tier)
+    workspace_rank = COMMERCIAL_TIER_RANK.get(workspace_normalized, 0)
+    required_rank = COMMERCIAL_TIER_RANK.get(required_tier, 0)
+    return {
+        "workspace_tier": workspace_normalized,
+        "required_tier": required_tier,
+        "tier_aligned": bool(workspace_rank >= required_rank),
+        "packaging_basis": {
+            "depth_score": round(depth_score, 4),
+            "freshness_score": round(freshness_score, 4),
+            "workspace_power_score": round(workspace_power, 4),
+        },
+    }
+
+
 def _build_retrieval_contract(
     *,
     report_grade_request: bool,
@@ -326,6 +598,13 @@ def _build_retrieval_contract(
     coverage_window: Dict[str, Any],
     retrieval_depth: Dict[str, Any],
     materialization_state: Dict[str, Any],
+    intent_action: str = "",
+    wants_integration_analytics: bool = False,
+    data_freshness: str = "unknown",
+    workspace_tier: str = "free",
+    coverage_pct: float = 0.0,
+    live_signal_age_hours: Optional[float] = None,
+    latency_ms_actual: Optional[int] = None,
 ) -> Dict[str, Any]:
     missing_periods = list((coverage_window or {}).get("missing_periods") or [])
     if report_grade_request and grounded_report_ready:
@@ -352,16 +631,61 @@ def _build_retrieval_contract(
     email_r = dict(rd.get("email") or {})
     calendar_r = dict(rd.get("calendar") or {})
     custom_r = dict(rd.get("custom") or {})
+    canonical_mode = _canonical_retrieval_mode(
+        legacy_retrieval_mode=retrieval_mode,
+        report_grade_request=report_grade_request,
+        intent_action=intent_action,
+        wants_integration_analytics=wants_integration_analytics,
+        has_connected_sources=has_connected_sources,
+        live_signal_count=live_signal_count,
+    )
+    connector_windows = _build_connector_windows(coverage_window, rd)
+    sources_used = _build_sources_used(
+        has_connected_sources=has_connected_sources,
+        retrieval_depth=rd,
+        canonical_mode=canonical_mode,
+        live_signal_count=live_signal_count,
+    )
+    semantic_signal_layer = _build_semantic_signal_layer(
+        live_signal_count=live_signal_count,
+        live_signal_age_hours=live_signal_age_hours,
+        materialization_state=materialization_state,
+        refresh_interval_minutes=SOUNDBOARD_SIGNAL_REFRESH_INTERVAL_MINUTES,
+    )
+    quality_eval = _build_retrieval_quality_eval(
+        answer_grade=answer_grade,
+        retrieval_depth=rd,
+        data_freshness=data_freshness,
+        coverage_pct=coverage_pct,
+        canonical_mode=canonical_mode,
+        workspace_tier=workspace_tier,
+        latency_ms_actual=latency_ms_actual,
+    )
+    pricing_packaging = _build_pricing_packaging(
+        canonical_mode=canonical_mode,
+        quality_eval=quality_eval,
+        workspace_tier=workspace_tier,
+    )
 
     return {
         "retrieval_mode": retrieval_mode,
+        "canonical_retrieval_mode": canonical_mode,
+        "retrieval_plane": {
+            "engine": "unified_intelligence_v2",
+            "legacy_mode": retrieval_mode,
+            "canonical_mode": canonical_mode,
+            "execution_path": _retrieval_execution_path(canonical_mode),
+        },
         "answer_grade": answer_grade,
         "report_grade_request": bool(report_grade_request),
         "grounded_report_ready": bool(grounded_report_ready),
         "has_connected_sources": bool(has_connected_sources),
         "live_signal_count": int(live_signal_count or 0),
+        "sources_used": sources_used,
         "coverage_start": (coverage_window or {}).get("coverage_start"),
         "coverage_end": (coverage_window or {}).get("coverage_end"),
+        "searched_windows": connector_windows,
+        "coverage_gaps": missing_periods,
         "missing_periods_count": len(missing_periods),
         "history_truncated": bool(rd.get("history_truncated")),
         "crm_pages_fetched": int(rd.get("crm_pages_fetched") or 0),
@@ -371,6 +695,9 @@ def _build_retrieval_contract(
         "custom_retrieval": custom_r,
         "materialization_attempted": bool((materialization_state or {}).get("attempted")),
         "signals_emitted_on_demand": int((materialization_state or {}).get("signals_emitted") or 0),
+        "semantic_signal_layer": semantic_signal_layer,
+        "quality_eval": quality_eval,
+        "pricing_packaging": pricing_packaging,
     }
 
 
@@ -2149,6 +2476,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         "crm_pages_fetched": 0,
         "accounting_pages_fetched": 0,
         "history_truncated": False,
+            "crm": {},
+            "accounting": {},
         "email": {},
         "calendar": {},
         "custom": {},
@@ -2265,6 +2594,22 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         retrieval_depth["crm_pages_fetched"] = int((all_data.get("crm", {}).get("history_meta", {}) or {}).get("deals_pages_fetched") or 0)
         retrieval_depth["accounting_pages_fetched"] = int((all_data.get("accounting", {}).get("history_meta", {}) or {}).get("invoices_pages_fetched") or 0)
         retrieval_depth["history_truncated"] = truncated_any
+        crm_hist = (all_data.get("crm", {}).get("history_meta", {}) or {})
+        acc_hist = (all_data.get("accounting", {}).get("history_meta", {}) or {})
+        retrieval_depth["crm"] = {
+            "pages_fetched": int(crm_hist.get("deals_pages_fetched") or 0),
+            "rows_loaded": int(crm_hist.get("deals_rows_loaded") or 0),
+            "truncated": bool(crm_hist.get("truncated")),
+            "window_start": crm_cov.get("start"),
+            "window_end": crm_cov.get("end"),
+        }
+        retrieval_depth["accounting"] = {
+            "pages_fetched": int(acc_hist.get("invoices_pages_fetched") or 0),
+            "rows_loaded": int(acc_hist.get("invoices_rows_loaded") or 0),
+            "truncated": bool(acc_hist.get("truncated")),
+            "window_start": acc_cov.get("start"),
+            "window_end": acc_cov.get("end"),
+        }
         retrieval_depth["email"] = {
             "pages_fetched": int(email_hist.get("pages_fetched") or 0),
             "rows_loaded": int(email_hist.get("rows_loaded") or 0),
@@ -3028,6 +3373,13 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             coverage_window=coverage_window,
             retrieval_depth=retrieval_depth,
             materialization_state=materialization_state,
+            intent_action=intent_action,
+            wants_integration_analytics=wants_integration_analytics,
+            data_freshness=contract_meta.get("data_freshness", "unknown"),
+            workspace_tier=tier_for_contract,
+            coverage_pct=coverage_pct,
+            live_signal_age_hours=live_signal_age_hours,
+            latency_ms_actual=_elapsed,
         )
         forensic_report = _build_forensic_report_payload(
             evidence_pack=evidence_pack,
@@ -3344,6 +3696,12 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             coverage_window=coverage_window,
             retrieval_depth=retrieval_depth,
             materialization_state=materialization_state,
+            intent_action=intent_action,
+            wants_integration_analytics=wants_integration_analytics,
+            data_freshness=contract_meta.get("data_freshness", "unknown"),
+            workspace_tier=tier_for_contract,
+            coverage_pct=coverage_pct,
+            live_signal_age_hours=live_signal_age_hours,
         )
         forensic_report = _build_forensic_report_payload(
             evidence_pack=evidence_pack,
@@ -3429,6 +3787,12 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             coverage_window=coverage_window,
             retrieval_depth=retrieval_depth,
             materialization_state=materialization_state,
+            intent_action=intent_action,
+            wants_integration_analytics=wants_integration_analytics,
+            data_freshness=contract_meta.get("data_freshness", "unknown"),
+            workspace_tier=tier_for_contract,
+            coverage_pct=coverage_pct,
+            live_signal_age_hours=live_signal_age_hours,
         )
         forensic_report = _build_forensic_report_payload(
             evidence_pack=evidence_pack,
