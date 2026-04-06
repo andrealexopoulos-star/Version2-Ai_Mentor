@@ -31,6 +31,88 @@ const TIER_DISPLAY = {
   super_admin: 'Admin',
 };
 
+const SettingsBillingContent = ({ navigate, user }) => {
+  const [overview, setOverview] = useState(null);
+  const [loading, setBillingLoading] = useState(true);
+
+  useEffect(() => {
+    apiClient.get('/billing/overview')
+      .then(res => setOverview(res.data))
+      .catch(() => setOverview(null))
+      .finally(() => setBillingLoading(false));
+  }, []);
+
+  const rawTier = String(user?.subscription_tier || 'free').toLowerCase();
+  const onTrial = (() => {
+    if (!user?.trial_expires_at) return false;
+    return new Date(user.trial_expires_at) > new Date();
+  })();
+  const displayName = onTrial ? 'Free Trial (Professional)' : (TIER_DISPLAY[rawTier] || 'Free');
+  const isPaid = !['free', 'trial', ''].includes(rawTier) && !onTrial;
+
+  const money = (v, cur = 'AUD') =>
+    new Intl.NumberFormat('en-AU', { style: 'currency', currency: cur.toUpperCase() }).format(Number(v || 0));
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border p-5" style={{ borderColor: 'rgba(255,106,0,0.3)', background: 'rgba(255,106,0,0.05)' }}>
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#FF6A00' }}>Current Plan</p>
+            <p className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>{displayName}</p>
+          </div>
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm"
+            style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)' }}
+          >
+            <span className="w-2 h-2 rounded-full" style={{ background: '#10B981' }} /> Active
+          </div>
+        </div>
+        {isPaid ? (
+          <Button onClick={() => navigate('/billing')} className="btn-primary" style={{ background: '#FF6A00', color: 'white' }}>
+            Open Billing Centre
+          </Button>
+        ) : (
+          <div className="space-y-3">
+            {onTrial && (
+              <p className="text-sm" style={{ color: '#F59E0B' }}>
+                Your trial expires {new Date(user.trial_expires_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}. Upgrade to keep access.
+              </p>
+            )}
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={() => navigate('/subscribe')} className="btn-primary" style={{ background: '#FF6A00', color: 'white' }}>
+                {onTrial ? 'Upgrade Before Trial Ends' : 'View Plans & Upgrade'}
+              </Button>
+              <Button variant="outline" onClick={() => { window.location.href = 'mailto:billing@biqc.com.au'; }}>Contact Billing</Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {isPaid && !loading && overview && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#94A3B8' }}>Charges paid</p>
+            <p className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {money(overview.charges_summary?.total_paid, overview.charges_summary?.currency)}
+            </p>
+          </div>
+          <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#94A3B8' }}>Supplier outstanding</p>
+            <p className="text-xl font-semibold" style={{ color: overview.supplier_summary?.total_overdue_supplier > 0 ? '#EF4444' : 'var(--text-primary)' }}>
+              {money(overview.supplier_summary?.total_outstanding_supplier, overview.charges_summary?.currency)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+        Billing questions? <a href="mailto:billing@biqc.com.au" style={{ color: '#FF6A00' }}>billing@biqc.com.au</a>
+      </p>
+    </div>
+  );
+};
+
 const Settings = () => {
   const { user } = useSupabaseAuth();
   const navigate = useNavigate();
@@ -49,6 +131,7 @@ const Settings = () => {
     email: user?.email || ''
   });
   const [opsLoading, setOpsLoading] = useState(true);
+  const [memberSince, setMemberSince] = useState(null);
   const [opsSummary, setOpsSummary] = useState({
     actions_count: 0,
     alerts_total: 0,
@@ -101,6 +184,11 @@ const Settings = () => {
     fetchProfile();
     fetchCalibrationStatus();
     fetchOpsSummary();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.created_at) {
+        setMemberSince(new Date(data.user.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }));
+      }
+    }).catch(() => {});
     // Safety timeout: don't show loading forever
     const timeout = setTimeout(() => setLoading(false), 5000);
     return () => clearTimeout(timeout);
@@ -513,10 +601,7 @@ const Settings = () => {
                           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Account creation date</p>
                         </div>
                         <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {user?.created_at
-                            ? new Date(user.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
-                            : <span style={{ color: '#64748B', fontStyle: 'italic' }}>Not available</span>
-                          }
+                          {memberSince || 'Loading...'}
                         </span>
                       </div>
 
@@ -874,7 +959,7 @@ const Settings = () => {
                       </p>
                     </div>
                     <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Operational posture</p>
+                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Business Health Score</p>
                       <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
                         {opsLoading ? '--' : `${Math.max(0, Math.min(100, Math.round((opsSummary.data_health_score + opsSummary.business_dna_strength) / 2)))}%`}
                       </p>
@@ -1038,37 +1123,10 @@ const Settings = () => {
                     <CreditCard className="w-5 h-5" style={{ color: '#FF6A00' }} />
                     Billing & Subscription
                   </CardTitle>
-                  <CardDescription>Your plan details and payment history</CardDescription>
+                  <CardDescription>Your plan and usage</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-10 space-y-4">
-                    <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center"
-                      style={{ background: 'rgba(255,106,0,0.1)' }}>
-                      <CreditCard className="w-8 h-8" style={{ color: '#FF6A00' }} />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                        Billing management coming soon
-                      </h3>
-                      <p className="text-sm max-w-sm mx-auto" style={{ color: 'var(--text-muted)' }}>
-                        Plan upgrades, invoice history and payment method management will be available here shortly.
-                        For billing enquiries, contact <span style={{ color: '#FF6A00' }}>billing@biqc.com.au</span>
-                      </p>
-                    </div>
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
-                      style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)' }}>
-                      <span className="w-2 h-2 rounded-full" style={{ background: '#10B981' }} />
-                      Beta Plan — All features active
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate('/subscribe')}
-                      className="mx-auto"
-                      data-testid="settings-open-subscription"
-                    >
-                      Open Subscription Center
-                    </Button>
-                  </div>
+                  <SettingsBillingContent navigate={navigate} user={user} />
                 </CardContent>
               </Card>
             </TabsContent>
