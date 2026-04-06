@@ -42,7 +42,7 @@ def run_step(name: str, command: List[str]) -> StepResult:
 
 
 def main() -> int:
-    telemetry_enforcement = os.environ.get("RELEASE_TELEMETRY_ENFORCEMENT", "advisory").strip().lower()
+    telemetry_enforcement = os.environ.get("RELEASE_TELEMETRY_ENFORCEMENT", "strict").strip().lower()
     telemetry_advisory = telemetry_enforcement != "strict"
     steps = [
         ("zd_zr_za_manager", [sys.executable, "scripts/zd_zr_za_manager.py"]),

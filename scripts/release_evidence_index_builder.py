@@ -65,7 +65,7 @@ def describe_artifact(path: Path) -> Dict:
 
 def main() -> int:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    telemetry_enforcement = os.environ.get("RELEASE_TELEMETRY_ENFORCEMENT", "advisory").strip().lower()
+    telemetry_enforcement = os.environ.get("RELEASE_TELEMETRY_ENFORCEMENT", "strict").strip().lower()
     telemetry_advisory = telemetry_enforcement != "strict"
 
     zd_path = latest_report("zd_zr_za_manager")
