@@ -419,6 +419,8 @@ function buildAssistantMessageFromResponse(responseData, { traceRootId, response
     generation_contract: responseData.generation_contract,
     advisory_slots: responseData.advisory_slots,
     coverage_window: responseData.coverage_window,
+    data_requirements: responseData.data_requirements || [],
+    data_coverage_pct: responseData.data_coverage_pct,
     trace_root_id: traceRootId,
     response_version: responseVersion,
   };

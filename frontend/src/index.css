@@ -347,6 +347,10 @@ p {
     50% { opacity: 0.6; }
 }
 
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 .animate-fade-in {
     animation: fadeIn 0.4s ease-out forwards;
 }

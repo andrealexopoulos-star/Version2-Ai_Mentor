@@ -2,22 +2,23 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Send, Paperclip, Video, X, ChevronDown, FileText } from 'lucide-react';
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
+import { supabase } from '../context/SupabaseAuthContext';
 import { trackEvent, EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
-import DataCoverageGate from './DataCoverageGate';
 import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 import { getSoundboardPolicy, SOUND_BOARD_MODES } from '../lib/soundboardPolicy';
 import { deriveSoundboardRequestScope } from '../lib/soundboardQueryRouting';
+import { getBackendUrl } from '../config/urls';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   appendAskBiqcDelta,
   buildAskBiqcComposedMessage,
-  buildAskBiqcComposerDraftFromAnswer,
   buildAskBiqcRequestPayload,
   buildBoardroomChecks,
   copyAskBiqcText,
   createAskBiqcPlaceholder,
   findPreviousAskBiqcUserPrompt,
-  getAskBiqcCoverageGate,
   getAskBiqcMessageText,
   inferAskBiqcGenerationIntent,
   getSoundboardErrorMessage,
@@ -29,11 +30,382 @@ import {
 } from '../lib/soundboardRuntime';
 import VoiceChat from './VoiceChat';
 import AskBiqcMessageActions from './soundboard/AskBiqcMessageActions';
-import AskBiqcAssistantResponse from './soundboard/AskBiqcAssistantResponse';
 
 
 // Data query detection — ONLY route to integration Edge Function for EXPLICIT data retrieval requests.
 // Must NOT intercept strategic advisory questions that happen to mention business terms.
+function ConversationResumeCard({ field, value, resuming }) {
+  const fieldLabel = String(field || '').replace(/_/g, ' ');
+  return (
+    <div
+      style={{
+        marginTop: 8,
+        marginLeft: 20,
+        marginRight: 20,
+        padding: '10px 14px',
+        background: 'rgba(16,185,129,0.06)',
+        border: '1px solid rgba(16,185,129,0.15)',
+        borderRadius: 10,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <span style={{ color: '#10B981', fontSize: 16 }}>✓</span>
+      <div>
+        <p style={{ fontSize: 13, color: '#10B981', margin: 0 }}>
+          Saved {fieldLabel ? `${fieldLabel}: ` : ''}{value}
+        </p>
+        {resuming && (
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '2px 0 0' }}>
+            Updating analysis with new context...
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InlineIntegrationConnect({ req, onDismiss }) {
+  const [connecting, setConnecting] = useState(false);
+  const [connected, setConnected] = useState(false);
+
+  const handleConnect = async () => {
+    setConnecting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Missing session');
+      const tokenRes = await fetch(`${getBackendUrl()}/api/integrations/merge/link-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ category: req.integration_category }),
+      });
+      const tokenData = await tokenRes.json();
+      const linkToken = tokenData?.link_token;
+      if (!linkToken) throw new Error('No link token returned');
+
+      if (window.MergeLink) {
+        window.MergeLink.initialize({
+          linkToken,
+          onSuccess: async (public_token) => {
+            await fetch(`${getBackendUrl()}/api/integrations/merge/exchange-account-token`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({ public_token }),
+            });
+            setConnected(true);
+            setConnecting(false);
+          },
+          onExit: () => {
+            setConnecting(false);
+          },
+        });
+        window.MergeLink.openLink();
+      } else {
+        window.open('/integrations', '_blank', 'noopener,noreferrer');
+        setConnecting(false);
+      }
+    } catch (error) {
+      console.error('Inline integration connect failed:', error);
+      setConnecting(false);
+    }
+  };
+
+  if (connected) {
+    return (
+      <div
+        style={{
+          padding: '10px 14px',
+          borderRadius: 10,
+          background: 'rgba(16,185,129,0.08)',
+          border: '1px solid rgba(16,185,129,0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <span style={{ color: '#10B981', fontSize: 16 }}>✓</span>
+        <span style={{ fontSize: 13, color: '#10B981' }}>
+          {req.label} connected — refreshing your analysis...
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 10,
+        padding: '10px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+      }}
+    >
+      <div>
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
+          {req.label}
+        </span>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: '2px 0 0' }}>
+          {req.why}
+        </p>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+        <button
+          onClick={handleConnect}
+          disabled={connecting}
+          style={{
+            padding: '6px 14px',
+            borderRadius: 8,
+            background: 'rgba(255,106,0,0.15)',
+            border: '1px solid rgba(255,106,0,0.3)',
+            color: '#FF6A00',
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: connecting ? 'default' : 'pointer',
+          }}
+        >
+          {connecting ? 'Opening...' : req.integration_label}
+        </button>
+        <button
+          onClick={onDismiss}
+          style={{
+            padding: '6px 10px',
+            borderRadius: 8,
+            background: 'none',
+            color: 'rgba(255,255,255,0.3)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+        >
+          Later
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (req.type === 'integration') {
+    return <InlineIntegrationConnect req={req} onDismiss={onDismiss} />;
+  }
+
+  return (
+    <div
+      style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 10,
+        overflow: 'hidden',
+      }}
+    >
+      <button
+        onClick={() => setExpanded((prev) => !prev)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '10px 14px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <div>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
+            {req.label}
+          </span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginLeft: 8 }}>
+            — {req.why}
+          </span>
+        </div>
+        <span
+          style={{
+            fontSize: 11,
+            color: '#FF6A00',
+            padding: '2px 10px',
+            background: 'rgba(255,106,0,0.1)',
+            borderRadius: 20,
+            border: '1px solid rgba(255,106,0,0.2)',
+            flexShrink: 0,
+            marginLeft: 8,
+          }}
+        >
+          {expanded ? 'Cancel' : 'Add'}
+        </span>
+      </button>
+
+      {expanded && (
+        <div style={{ padding: '0 14px 12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          {req.type === 'select' ? (
+            <select
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                marginTop: 8,
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8,
+                color: 'rgba(255,255,255,0.9)',
+                fontSize: 13,
+                cursor: 'pointer',
+              }}
+            >
+              <option value="">Select {String(req.label || '').toLowerCase()}...</option>
+              {(req.options || []).map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+              placeholder={req.placeholder || `Enter ${String(req.label || '').toLowerCase()}...`}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && value.trim()) onSave();
+              }}
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                marginTop: 8,
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8,
+                color: 'rgba(255,255,255,0.9)',
+                fontSize: 13,
+                boxSizing: 'border-box',
+              }}
+            />
+          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button
+              onClick={onSave}
+              disabled={!value || saving}
+              style={{
+                padding: '6px 16px',
+                borderRadius: 8,
+                background: value ? '#FF6A00' : 'rgba(255,255,255,0.1)',
+                color: value ? 'white' : 'rgba(255,255,255,0.3)',
+                border: 'none',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: value ? 'pointer' : 'default',
+              }}
+            >
+              {saving ? 'Saving...' : 'Save and update analysis'}
+            </button>
+            <button
+              onClick={onDismiss}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                background: 'none',
+                color: 'rgba(255,255,255,0.3)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              Later
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InlineDataRequirements({ requirements, originalMessage, conversationId, onResume }) {
+  const [saved, setSaved] = useState({});
+  const [values, setValues] = useState({});
+  const [saving, setSaving] = useState({});
+  const [dismissed, setDismissed] = useState([]);
+
+  if (!Array.isArray(requirements) || requirements.length === 0) return null;
+  const visible = requirements.filter((req) => !dismissed.includes(req.id) && !saved[req.id]);
+  if (!visible.length) return null;
+
+  const handleSave = async (req) => {
+    const value = String(values[req.id] || '').trim();
+    if (!value) return;
+    setSaving((prev) => ({ ...prev, [req.id]: true }));
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Missing session');
+      const response = await fetch(`${getBackendUrl()}/api/soundboard/resume-after-update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          original_message: originalMessage,
+          saved_field: req.id,
+          saved_value: value,
+        }),
+      });
+      const payload = await response.json();
+      if (payload.status === 'saved') {
+        setSaved((prev) => ({ ...prev, [req.id]: value }));
+        if (onResume && payload.resume_message) {
+          onResume(payload.resume_message, req, value);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save inline field:', error);
+    } finally {
+      setSaving((prev) => ({ ...prev, [req.id]: false }));
+    }
+  };
+
+  return (
+    <div
+      style={{
+        marginTop: 16,
+        padding: '14px 16px',
+        background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 12,
+      }}
+    >
+      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 12, fontWeight: 500, letterSpacing: '0.05em' }}>
+        SHARPEN THIS RESPONSE
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {visible.map((req) => (
+          <InlineFieldCapture
+            key={req.id}
+            req={req}
+            value={values[req.id] || ''}
+            onChange={(nextValue) => setValues((prev) => ({ ...prev, [req.id]: nextValue }))}
+            onSave={() => handleSave(req)}
+            onDismiss={() => setDismissed((prev) => [...prev, req.id])}
+            saving={Boolean(saving[req.id])}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -51,8 +423,6 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [attachedFile, setAttachedFile] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeConversationTitle, setActiveConversationTitle] = useState('');
-  // ── Coverage gate state ──
-  const [coverageGate, setCoverageGate] = useState(null); // {guardrail, coveragePct, missingFields}
 
   const { session, user } = useSupabaseAuth();
   const policy = getSoundboardPolicy(user);
@@ -194,15 +564,23 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     toast.error('Failed to copy Ask BIQc response.');
   }, []);
 
-  const handleUseAnswerInComposer = useCallback((message) => {
-    setInput(buildAskBiqcComposerDraftFromAnswer(getAskBiqcMessageText(message)));
-    inputRef.current?.focus();
-  }, []);
-
-  const executeMessage = async (userMsg, fullMessage, traceOptions = null) => {
+  const executeMessage = async (userMsg, fullMessage, traceOptions = null, options = {}) => {
+    const { isResume = false, resumeConfirmationId = null } = options;
     const msgToSend = fullMessage || userMsg;
+    const resumeStatusId = isResume ? `resume-status-${Date.now()}` : null;
     setLoading(true);
     try {
+      if (resumeStatusId) {
+        setMessages((prev) => ([
+          ...prev,
+          {
+            id: resumeStatusId,
+            role: 'assistant_status',
+            content: 'Updating analysis with your new context...',
+            isStatus: true,
+          },
+        ]));
+      }
       const { traceRootId, responseVersion } = resolveAskBiqcTrace(traceOptions);
       const placeholder = createAskBiqcPlaceholder({ traceRootId, responseVersion, includeText: true });
       const placeholderId = placeholder.id;
@@ -234,7 +612,6 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         },
       });
 
-      const coverageState = turnResult.coverageGate || getAskBiqcCoverageGate(turnResult.responseData);
       if (turnResult.responseData?.guardrail) {
         const eventName = turnResult.responseData.guardrail === 'BLOCKED'
           ? 'ai_response_blocked'
@@ -246,17 +623,37 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           missing_count: (turnResult.responseData?.missing_fields || []).length,
         });
       }
-      setCoverageGate(coverageState);
 
       if (turnResult.kind === 'empty') {
         setMessages((prev) => [
-          ...removeAskBiqcPlaceholder(prev, placeholderId),
+          ...removeAskBiqcPlaceholder(
+            prev.filter((message) => message.id !== resumeStatusId),
+            placeholderId
+          ),
           turnResult.assistantMessage,
         ]);
+        if (resumeConfirmationId) {
+          setMessages((prev) => prev.map((message) => (
+            message.id === resumeConfirmationId
+              ? { ...message, resuming: false }
+              : message
+          )));
+        }
         return;
       }
 
-      setMessages((prev) => replaceAskBiqcPlaceholder(prev, placeholderId, turnResult.assistantMessage));
+      setMessages((prev) => replaceAskBiqcPlaceholder(
+        prev.filter((message) => message.id !== resumeStatusId),
+        placeholderId,
+        turnResult.assistantMessage
+      ));
+      if (resumeConfirmationId) {
+        setMessages((prev) => prev.map((message) => (
+          message.id === resumeConfirmationId
+            ? { ...message, resuming: false }
+            : message
+        )));
+      }
       if (turnResult.responseData?.conversation_id && !activeConvId) {
         setActiveConvId(turnResult.responseData.conversation_id);
         setActiveConversationTitle(turnResult.responseData.conversation_title || 'Ask BIQc');
@@ -275,7 +672,17 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         return;
       }
       const errText = getSoundboardErrorMessage(error, 'Connection issue. Try again.');
-      setMessages(prev => [...prev.filter((m) => !m.streaming), { role: 'assistant', text: errText, content: errText }]);
+      setMessages((prev) => ([
+        ...prev.filter((message) => !message.streaming && message.id !== resumeStatusId),
+        { role: 'assistant', text: errText, content: errText },
+      ]));
+      if (resumeConfirmationId) {
+        setMessages((prev) => prev.map((message) => (
+          message.id === resumeConfirmationId
+            ? { ...message, resuming: false }
+            : message
+        )));
+      }
     } finally {
       setLoading(false);
     }
@@ -302,19 +709,31 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     await executeMessage(cleanMessage, fullMessage);
   };
 
-  const submitSuggestedAction = async (prompt) => {
-    const nextPrompt = String(prompt || '').trim();
-    if (!nextPrompt || loading) return;
-    const cleanMessage = appendUserMessage(nextPrompt);
-    if (!cleanMessage) return;
-    trackEvent(EVENTS.SOUNDBOARD_QUERY, { message_length: nextPrompt.length, has_attachment: false, source: 'suggested_action' });
-    trackOnceForUser(EVENTS.ACTIVATION_FIRST_SOUNDBOARD_USE, user?.id, { entrypoint: 'soundboard_panel' });
-    trackActivationStep('first_soundboard_use', { entrypoint: 'soundboard_panel' });
-    await executeMessage(cleanMessage, cleanMessage, {
-      trace_root_id: `trace-${Date.now()}`,
-      response_version: 1,
-    });
-  };
+  const handleInlineResume = useCallback(async (resumeMessage, savedReq, savedValue) => {
+    const confirmationId = `resume-confirm-${Date.now()}`;
+    setMessages((prev) => ([
+      ...prev,
+      {
+        id: confirmationId,
+        role: 'resume_confirmation',
+        field: savedReq?.id,
+        value: savedValue,
+        resuming: true,
+      },
+    ]));
+    await executeMessage(
+      resumeMessage,
+      resumeMessage,
+      {
+        trace_root_id: `trace-${Date.now()}`,
+        response_version: 1,
+      },
+      {
+        isResume: true,
+        resumeConfirmationId: confirmationId,
+      }
+    );
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadConversation = async (conv) => {
     setActiveConvId(conv.id);
@@ -343,6 +762,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         agent_name: m.agent_name || m?.metadata?.agent_name,
         advisory_slots: m.advisory_slots || m?.metadata?.advisory_slots,
         coverage_window: m.coverage_window || m?.metadata?.coverage_window,
+        data_requirements: m.data_requirements || m?.metadata?.data_requirements || [],
+        data_coverage_pct: m.data_coverage_pct ?? m?.metadata?.data_coverage_pct ?? m.coverage_pct ?? null,
       })));
     } catch {
       setMessages([]);
@@ -375,20 +796,29 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
   const assistantBody = (msg, idx) => {
     const isLatestAssistant = idx === messages.length - 1 && loading;
-    const responseMessage = { ...msg, agent_name: null };
+    const content = String(msg.content || msg.text || '');
+    const dataRequirements = Array.isArray(msg.data_requirements) ? msg.data_requirements : [];
+    const coveragePct = Number.isFinite(Number(msg.data_coverage_pct))
+      ? Number(msg.data_coverage_pct)
+      : (Number.isFinite(Number(msg.coverage_pct)) ? Number(msg.coverage_pct) : null);
+    const originalMessage = messages
+      .slice(0, idx)
+      .filter((message) => message.role === 'user')
+      .slice(-1)[0]?.content || '';
+
     return (
-      <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <div
             style={{
-              width: 24,
-              height: 24,
-              borderRadius: 6,
+              width: 26,
+              height: 26,
+              borderRadius: 8,
               background: 'linear-gradient(135deg, #FF7A18, #E56A08)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               color: '#fff',
               flexShrink: 0,
@@ -396,35 +826,70 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           >
             B
           </div>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
-            {msg.agent_name || 'BIQc'}
-            {isLatestAssistant && <span style={{ color: '#FF6A00', marginLeft: 8 }}>thinking...</span>}
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>
+            BIQc
+            {msg.agent_name && msg.agent_name !== 'BIQc' && (
+              <span style={{ color: 'rgba(255,255,255,0.2)' }}> · {msg.agent_name}</span>
+            )}
           </span>
+          {coveragePct !== null && coveragePct < 50 && (
+            <span
+              style={{
+                fontSize: 10,
+                color: 'rgba(255,255,255,0.25)',
+                padding: '1px 8px',
+                borderRadius: 20,
+                border: '1px solid rgba(255,255,255,0.1)',
+                marginLeft: 4,
+              }}
+            >
+              {coveragePct}% context — answers sharpen as you add more
+            </span>
+          )}
+          {isLatestAssistant && (
+            <span style={{ fontSize: 12, color: '#FF6A00', marginLeft: 4 }}>
+              <span style={{ animation: 'pulse 1s infinite' }}>●</span>
+            </span>
+          )}
         </div>
-        <AskBiqcAssistantResponse
-          message={responseMessage}
-          compact
-          onCopy={() => handleCopyAssistantMessage(msg)}
-          onUseInComposer={() => handleUseAnswerInComposer(msg)}
-          onRegenerate={() => {
-            const previousUserPrompt = findPreviousAskBiqcUserPrompt(messages, idx);
-            if (!previousUserPrompt) return;
-            const cleanMessage = appendUserMessage(previousUserPrompt);
-            if (!cleanMessage) return;
-            executeMessage(
-              cleanMessage,
-              cleanMessage,
-              {
-                trace_root_id: msg.trace_root_id || `trace-${Date.now()}`,
-                response_version: Number(msg.response_version || 1) + 1,
-              },
-            );
-          }}
-          onSuggestedAction={(prompt) => submitSuggestedAction(prompt)}
-          actionTestIdPrefix="ask-biqc-panel-message-action"
-          metadataTestId="soundboard-panel-response-metadata-row"
-          evidenceTestId="soundboard-panel-evidence-row"
-        />
+
+        <div className="markdown-body" style={{ lineHeight: 1.75, color: 'rgba(255,255,255,0.88)', fontSize: 14 }}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {content}
+          </ReactMarkdown>
+        </div>
+
+        {!isLatestAssistant && dataRequirements.length > 0 && (
+          <InlineDataRequirements
+            requirements={dataRequirements}
+            originalMessage={originalMessage}
+            conversationId={activeConvId}
+            onResume={handleInlineResume}
+          />
+        )}
+
+        {!isLatestAssistant && (
+          <AskBiqcMessageActions
+            role="assistant"
+            compact
+            onCopy={() => handleCopyAssistantMessage(msg)}
+            onRegenerate={() => {
+              const previousUserPrompt = findPreviousAskBiqcUserPrompt(messages, idx);
+              if (!previousUserPrompt) return;
+              const cleanMessage = appendUserMessage(previousUserPrompt);
+              if (!cleanMessage) return;
+              executeMessage(
+                cleanMessage,
+                cleanMessage,
+                {
+                  trace_root_id: msg.trace_root_id || `trace-${Date.now()}`,
+                  response_version: Number(msg.response_version || 1) + 1,
+                },
+              );
+            }}
+            testIdPrefix="ask-biqc-panel-message-action"
+          />
+        )}
       </div>
     );
   };
@@ -653,8 +1118,38 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
 
           {messages.map((msg, i) => (
             msg.role === 'user'
-              ? <div key={`u-${i}`}>{userBody(msg)}</div>
-              : <div key={`a-${i}`}>{assistantBody(msg, i)}</div>
+              ? <div key={msg.id || `u-${i}`}>{userBody(msg)}</div>
+              : msg.role === 'assistant_status'
+                ? (
+                  <div key={msg.id || `status-${i}`} style={{ padding: '8px 20px' }}>
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '8px 12px',
+                        borderRadius: 10,
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        color: 'rgba(255,255,255,0.45)',
+                        fontSize: 12,
+                      }}
+                    >
+                      <span style={{ animation: 'pulse 1s infinite' }}>●</span>
+                      <span>{msg.content || 'Updating analysis...'}</span>
+                    </div>
+                  </div>
+                )
+                : msg.role === 'resume_confirmation'
+                  ? (
+                    <ConversationResumeCard
+                      key={msg.id || `resume-${i}`}
+                      field={msg.field}
+                      value={msg.value}
+                      resuming={Boolean(msg.resuming)}
+                    />
+                  )
+                  : <div key={msg.id || `a-${i}`}>{assistantBody(msg, i)}</div>
           ))}
 
           {loading && showBoardroomViz && (
@@ -758,16 +1253,6 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         </div>
 
         <div className="px-3 pb-3 pt-2 shrink-0" style={{ borderTop: '1px solid var(--biqc-border)' }}>
-        {/* Coverage gate — shown above input when blocked or degraded */}
-        {coverageGate && (
-          <DataCoverageGate
-            guardrail={coverageGate.guardrail}
-            coveragePct={coverageGate.coveragePct}
-            missingFields={coverageGate.missingFields}
-            compact={coverageGate.guardrail === 'DEGRADED'}
-            data-testid="soundboard-coverage-gate"
-          />
-        )}
         {/* Attachment preview */}
         {attachedFile && (
           <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid rgba(255,106,0,0.3)' }}>
@@ -920,12 +1405,25 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           )}
         </div>
 
-        <div className="rounded-2xl flex items-end gap-1 p-1.5" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${attachedFile ? 'rgba(255,106,0,0.4)' : '#243140'}` }}>
+        <div
+          className="rounded-2xl flex items-end gap-1 p-2"
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            border: `1px solid ${attachedFile ? 'rgba(255,106,0,0.4)' : 'rgba(255,255,255,0.1)'}`,
+          }}
+        >
           <input type="file" ref={fileRef} className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.md,.json,.py,.js" />
-          <button onClick={() => fileRef.current?.click()} className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0" data-testid="sb-upload">
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0"
+            data-testid="sb-upload"
+            title="Attach file"
+          >
             <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#FF6A00' : '#64748B' }} />
           </button>
-          <button className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0" data-testid="sb-video"
+          <button
+            className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0"
+            data-testid="sb-video"
             onClick={() => setShowVoiceChat(true)}>
             <Video className="w-4 h-4 text-[#64748B]" />
           </button>
@@ -943,19 +1441,26 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           <textarea
             ref={inputRef}
             value={input}
-            onChange={e => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+            onChange={e => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`; }}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!loading) sendMessage(); } }}
             placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "Ask anything..."}
             rows={1}
             className="flex-1 px-2 py-2 text-sm outline-none resize-none bg-transparent"
-            style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body, maxHeight: '120px' }}
+            style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body, maxHeight: '160px', minHeight: '24px' }}
             data-testid="sb-input"
           />
-          <button onClick={sendMessage} disabled={(!input.trim() && !attachedFile) || loading}
+          <button
+            onClick={sendMessage}
+            disabled={(!input.trim() && !attachedFile) || loading}
             className="p-2 rounded-xl shrink-0 transition-all disabled:opacity-20"
-            style={{ background: (input.trim() || attachedFile) ? '#FF6A00' : 'transparent' }}
-            data-testid="sb-send">
-            <Send className="w-4 h-4 text-white" />
+            style={{ background: (input.trim() || attachedFile) ? '#FF6A00' : 'rgba(255,255,255,0.1)', width: 32, height: 32 }}
+            data-testid="sb-send"
+          >
+            {loading ? (
+              <div style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.5)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            ) : (
+              <Send className="w-4 h-4 text-white" />
+            )}
           </button>
         </div>
         <p className="text-[9px] text-[#64748B] text-center mt-1.5" style={{ fontFamily: fontFamily.mono }}>
