@@ -277,8 +277,92 @@ export function getAskBiqcCoverageGate(responseData) {
   };
 }
 
+function normalizeGroundedRetrievalContract(grounded = {}) {
+  const nowIso = new Date().toISOString();
+  const sources = (grounded?.data_sources || []).map((value) => String(value || '').toLowerCase().trim()).filter(Boolean);
+  const sourceSet = new Set(sources);
+  const searchedWindows = {
+    overall: { start: null, end: null },
+    crm: { start: null, end: null },
+    accounting: { start: null, end: null },
+    email: { start: null, end: null },
+    calendar: { start: null, end: null },
+    custom: { start: null, end: null },
+  };
+  const canonicalMode = sourceSet.size > 1 ? 'hybrid_compare' : 'materialized';
+  return {
+    retrieval_mode: 'grounded_query',
+    canonical_retrieval_mode: canonicalMode,
+    retrieval_plane: {
+      engine: 'query_integrations_data',
+      legacy_mode: 'grounded_query',
+      canonical_mode: canonicalMode,
+      execution_path: canonicalMode === 'hybrid_compare' ? 'hybrid_compare_cross_connector' : 'materialized_semantic_layer',
+    },
+    answer_grade: 'FULL',
+    report_grade_request: false,
+    grounded_report_ready: true,
+    has_connected_sources: sources.length > 0,
+    live_signal_count: 0,
+    sources_used: sources,
+    coverage_start: null,
+    coverage_end: null,
+    searched_windows: searchedWindows,
+    coverage_gaps: [],
+    missing_periods_count: 0,
+    history_truncated: false,
+    crm_pages_fetched: 0,
+    accounting_pages_fetched: 0,
+    email_retrieval: {},
+    calendar_retrieval: {},
+    custom_retrieval: {},
+    materialization_attempted: false,
+    signals_emitted_on_demand: 0,
+    semantic_signal_layer: {
+      version: 'semantic_signal_layer_v2',
+      signals_materialized: 0,
+      source_table: 'observation_events',
+      freshness_state: 'unknown',
+      background_refresh: {
+        enabled: true,
+        refresh_interval_minutes: 15,
+      },
+      on_demand_escalation: {
+        requested: false,
+        signals_emitted: 0,
+        reason: null,
+      },
+    },
+    quality_eval: {
+      depth_score: 0,
+      freshness_score: 0.4,
+      coverage_score: 0.6,
+      workspace_power_score: 0.35,
+      answer_grade_score: 1,
+      composite_score: 0.495,
+      latency_slo_ms_target: 45000,
+      latency_observed_ms: null,
+      latency_slo_breached: false,
+    },
+    pricing_packaging: {
+      workspace_tier: 'free',
+      required_tier: 'free',
+      tier_aligned: true,
+      packaging_basis: {
+        depth_score: 0,
+        freshness_score: 0.4,
+        workspace_power_score: 0.35,
+      },
+    },
+    surfaced_at: nowIso,
+  };
+}
+
 function buildGroundedAssistantMessage(grounded, { traceRootId, responseVersion, includeText = false } = {}) {
   const content = String(grounded?.answer || grounded?.message || '').trim();
+  const retrievalContract = grounded?.status === 'answered'
+    ? normalizeGroundedRetrievalContract(grounded)
+    : undefined;
   const assistantMessage = {
     role: 'assistant',
     content,
@@ -299,13 +383,7 @@ function buildGroundedAssistantMessage(grounded, { traceRootId, responseVersion,
           connected_sources: grounded?.data_sources || [],
         }
       : undefined,
-    retrieval_contract: grounded?.status === 'answered'
-      ? {
-          retrieval_mode: 'grounded_query',
-          answer_grade: 'FULL',
-          has_connected_sources: (grounded?.data_sources || []).length > 0,
-        }
-      : undefined,
+    retrieval_contract: retrievalContract,
     boardroom_status: grounded?.status === 'answered' ? 'grounded_query' : 'grounding_blocked',
     trace_root_id: traceRootId,
     response_version: responseVersion,

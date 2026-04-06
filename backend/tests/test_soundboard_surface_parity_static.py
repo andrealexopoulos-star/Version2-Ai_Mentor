@@ -36,6 +36,8 @@ def test_floating_soundboard_uses_shared_grounded_query_helper():
     content = _read(FLOATING_PATH)
     assert "shouldUseGroundedDataQuery" in content
     assert "if (shouldUseGroundedDataQuery(fullMessage))" in content
+    assert "normalizeAskBiqcConfidencePercent" in content
+    assert "retrieval_contract: res.data.retrieval_contract" in content
 
 
 def test_panel_has_regenerate_and_edit_controls():
@@ -57,10 +59,15 @@ def test_soundboard_surfaces_render_retrieval_contract():
     assert "retrieval_contract: m.retrieval_contract || m?.metadata?.retrieval_contract" in my_soundboard
     assert "retrieval_contract: responseData.retrieval_contract" in runtime
     assert "retrievalContract.retrieval_mode" in response_component
+    assert "retrievalContract.canonical_retrieval_mode" in response_component
     assert "retrievalContract.answer_grade" in response_component
     assert "retrievalContract.email_retrieval" in response_component
     assert "retrievalContract.calendar_retrieval" in response_component
     assert "retrievalContract.custom_retrieval" in response_component
+    assert "retrievalContract.searched_windows" in response_component
+    assert "retrievalContract.semantic_signal_layer" in response_component
+    assert "retrievalContract.quality_eval" in response_component
+    assert "retrievalContract.pricing_packaging" in response_component
     assert "forensic_report: responseData.forensic_report" in runtime
     assert "forensicReport.citations" in response_component
     assert "ask-biqc-forensic-contradictions" in response_component

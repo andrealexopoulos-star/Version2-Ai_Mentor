@@ -3,19 +3,27 @@
   "description": "Ask BIQc retrieval_contract + depth + freshness SLO — static anchors for Block 4 gate and pytest",
   "retrieval_contract_keys": [
     "retrieval_mode",
+    "canonical_retrieval_mode",
+    "retrieval_plane",
     "answer_grade",
     "report_grade_request",
     "grounded_report_ready",
     "has_connected_sources",
     "live_signal_count",
+    "sources_used",
     "coverage_start",
     "coverage_end",
+    "searched_windows",
+    "coverage_gaps",
     "missing_periods_count",
     "history_truncated",
     "crm_pages_fetched",
     "accounting_pages_fetched",
     "materialization_attempted",
-    "signals_emitted_on_demand"
+    "signals_emitted_on_demand",
+    "semantic_signal_layer",
+    "quality_eval",
+    "pricing_packaging"
   ],
   "answer_grade_guardrail_substrings": [
     "if guardrail_status == \"BLOCKED\":",
@@ -29,14 +37,20 @@
   "retrieval_depth_init_substrings": [
     "\"crm_pages_fetched\": 0",
     "\"accounting_pages_fetched\": 0",
-    "\"history_truncated\": False"
+    "\"history_truncated\": False",
+    "\"crm\": {}",
+    "\"accounting\": {}"
   ],
   "per_domain_depth_hydration_substrings": [
     "deals_pages_fetched",
     "invoices_pages_fetched",
     "retrieval_depth[\"crm_pages_fetched\"]",
     "retrieval_depth[\"accounting_pages_fetched\"]",
-    "retrieval_depth[\"history_truncated\"]"
+    "retrieval_depth[\"history_truncated\"]",
+    "retrieval_depth[\"crm\"]",
+    "retrieval_depth[\"accounting\"]",
+    "deals_rows_loaded",
+    "invoices_rows_loaded"
   ],
   "freshness_contract_substrings": [
     "def _soundboard_contract_meta",
@@ -55,13 +69,26 @@
       "must_contain": [
         "retrievalContract.answer_grade",
         "message.data_freshness",
-        "retrievalContract.retrieval_mode"
+        "retrievalContract.retrieval_mode",
+        "retrievalContract.canonical_retrieval_mode",
+        "retrievalContract.searched_windows",
+        "retrievalContract.semantic_signal_layer",
+        "retrievalContract.quality_eval",
+        "retrievalContract.pricing_packaging"
       ]
     },
     {
       "path": "frontend/src/lib/soundboardRuntime.js",
       "must_contain": [
-        "retrieval_contract: responseData.retrieval_contract"
+        "retrieval_contract: responseData.retrieval_contract",
+        "normalizeGroundedRetrievalContract"
+      ]
+    },
+    {
+      "path": "frontend/src/components/FloatingSoundboard.js",
+      "must_contain": [
+        "retrieval_contract: res.data.retrieval_contract",
+        "normalizeAskBiqcConfidencePercent"
       ]
     }
   ]

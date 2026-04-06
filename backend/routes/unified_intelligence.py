@@ -365,6 +365,8 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
             data['crm']['history_meta'] = {
                 "deals_pages_fetched": deals.get("pages_fetched", 0),
                 "contacts_pages_fetched": contacts.get("pages_fetched", 0),
+                "deals_rows_loaded": len(deals.get("rows") or []),
+                "contacts_rows_loaded": len(contacts.get("rows") or []),
                 "truncated": bool(deals.get("truncated") or contacts.get("truncated")),
             }
             data['coverage_window']['crm'] = _collection_date_window(
@@ -387,6 +389,8 @@ async def _fetch_all_integration_data(sb, user_id: str) -> Dict:
             data['accounting']['history_meta'] = {
                 "invoices_pages_fetched": invoices.get("pages_fetched", 0),
                 "payments_pages_fetched": payments.get("pages_fetched", 0),
+                "invoices_rows_loaded": len(invoices.get("rows") or []),
+                "payments_rows_loaded": len(payments.get("rows") or []),
                 "truncated": bool(invoices.get("truncated") or payments.get("truncated")),
             }
             data['coverage_window']['accounting'] = _collection_date_window(
