@@ -157,7 +157,7 @@ export default function AskBiqcAssistantResponse({
         && (
           (retrievalContract.answer_grade && retrievalContract.answer_grade !== 'FULL')
           || Boolean(forensicReport.degraded_reason)
-          || message.guardrail_status === 'DEGRADED'
+          || message.guardrail_status === 'LIMITED_DATA'
         )
         && onSuggestedAction && (
           <div className="mt-2">
@@ -267,10 +267,10 @@ export default function AskBiqcAssistantResponse({
           data-testid="ask-biqc-semantic-signal-layer"
         >
           <p className={`${compact ? 'text-[9px]' : 'text-[10px]'} mb-1`} style={{ color: '#86EFAC', fontFamily: fontFamily.mono }}>
-            Semantic signal layer
+            Live business signals
           </p>
           <p className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: fontFamily.mono }}>
-            {retrievalContract.semantic_signal_layer.version || 'semantic_signal_layer'} · signals {Number(retrievalContract.semantic_signal_layer.signals_materialized || 0)} · {retrievalContract.semantic_signal_layer.freshness_state || 'unknown'}
+            signals {Number(retrievalContract.semantic_signal_layer.signals_materialized || 0)} · {retrievalContract.semantic_signal_layer.freshness_state || 'unknown'}
           </p>
           <p className="text-[10px]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
             refresh {Number(retrievalContract.semantic_signal_layer?.background_refresh?.refresh_interval_minutes || 0)}m · escalation +{Number(retrievalContract.semantic_signal_layer?.on_demand_escalation?.signals_emitted || 0)}
@@ -365,7 +365,7 @@ export default function AskBiqcAssistantResponse({
             style={{ background: 'rgba(16,185,129,0.12)', color: '#10B981' }}
             testId={`${metadataTestId}-confidence`}
           >
-            confidence {confidencePercent.toFixed(0)}%
+            Confidence {confidencePercent.toFixed(0)}%
           </Chip>
         )}
         {typeof message.data_sources_count === 'number' && (
@@ -381,7 +381,7 @@ export default function AskBiqcAssistantResponse({
             style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}
             testId={`${metadataTestId}-freshness`}
           >
-            freshness {message.data_freshness}
+            Last updated {message.data_freshness}
           </Chip>
         )}
         {retrievalContract.retrieval_mode && (
@@ -389,7 +389,7 @@ export default function AskBiqcAssistantResponse({
             style={{ background: 'rgba(99,102,241,0.16)', color: '#A5B4FC' }}
             testId={`${metadataTestId}-retrieval-mode`}
           >
-            retrieval {retrievalContract.retrieval_mode}
+            analysis mode {retrievalContract.retrieval_mode}
           </Chip>
         )}
         {retrievalContract.canonical_retrieval_mode && (

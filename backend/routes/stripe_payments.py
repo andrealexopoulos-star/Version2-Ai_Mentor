@@ -211,6 +211,30 @@ def _resolve_governed_plan(sb, requested_plan_id: str) -> Dict[str, Any]:
         for key in ("product_approver_user_id", "finance_approver_user_id", "legal_approver_user_id")
     )
     if not all_approvers_present:
+        # Keep checkout available by falling back to static plan metadata when
+        # release approvals are incomplete. This avoids a full purchase-path outage.
+        fallback = PLANS.get(plan_key, {})
+        if fallback:
+            logger.error(
+                "Pricing governance approvals missing for plan=%s version=%s; "
+                "falling back to static plan pricing.",
+                plan_key,
+                int(row.get("version") or 0),
+            )
+            return {
+                "amount": int(fallback.get("amount") or 0),
+                "currency": str(fallback.get("currency") or "aud").strip().lower(),
+                "name": str(fallback.get("name") or f"BIQc {plan_key.title()}"),
+                "tier": str(fallback.get("tier") or plan_key),
+                "interval": str(fallback.get("interval") or "month"),
+                "governance": {
+                    "plan_key": plan_key,
+                    "plan_version": int(row.get("version") or 0),
+                    "approval_contract": approval,
+                    "source": "pricing_control_plane_fallback_static",
+                    "warning": "missing_required_approvals",
+                },
+            }
         raise HTTPException(
             status_code=503,
             detail="Pricing governance gate: active plan is missing required product/finance/legal approvals",

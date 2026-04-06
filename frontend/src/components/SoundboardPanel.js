@@ -605,7 +605,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
                 <span className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
-                  {showBoardroomViz ? `${activeBoardroomCheck.role}: ${activeBoardroomCheck.line}` : 'Thinking...'}
+                  {showBoardroomViz ? `${activeBoardroomCheck.role}: ${activeBoardroomCheck.line}` : 'BIQc is thinking...'}
                 </span>
               </div>
               {showBoardroomViz && (

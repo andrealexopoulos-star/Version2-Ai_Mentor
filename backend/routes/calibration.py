@@ -26,7 +26,7 @@ from core.llm_router import llm_trinity_chat
 from core.helpers import serper_search, scrape_url_text
 from routes.deps import (
     get_current_user, get_current_user_from_request,
-    get_sb, logger, cognitive_core,
+    get_sb, logger, cognitive_core, check_rate_limit,
 )
 from supabase_client import safe_query_single
 from prompt_registry import get_prompt
@@ -3241,6 +3241,7 @@ async def calibration_brain(payload: CalibrationBrainRequest, current_user: dict
     Replaces fixed question flow with intelligent interrogation.
     """
     user_id = current_user.get("id")
+    await check_rate_limit(user_id, "soundboard_daily", get_sb())
 
     message = payload.message.strip()
     history = payload.history or []

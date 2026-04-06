@@ -36,6 +36,8 @@ import {
   runAskBiqcTurn,
 } from '../lib/soundboardRuntime';
 import { useLocation } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
 import {
   MessageSquare, Send, Plus, Trash2, Edit2, Check, X,
@@ -158,6 +160,7 @@ const MySoundBoard = () => {
   const fileRef = useRef(null);
   const streamAbortRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   const layoutStorageKey = user?.id ? `${SOUNDBOARD_LAYOUT_KEY}_${user.id}` : SOUNDBOARD_LAYOUT_KEY;
 
@@ -308,6 +311,25 @@ const MySoundBoard = () => {
     }
   };
 
+  const uploadAttachmentToSoundboard = useCallback(async () => {
+    if (!attachedFile?.raw) return [];
+    const form = new FormData();
+    form.append('file', attachedFile.raw, attachedFile.name || 'upload.bin');
+    if (activeConversation) {
+      form.append('conversation_id', activeConversation);
+    }
+    const response = await apiClient.post('/soundboard/upload', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    });
+    const payload = response?.data || {};
+    if (payload?.upload_id) {
+      setUploadedFiles((prev) => [...prev, payload]);
+      return [payload.upload_id];
+    }
+    return [];
+  }, [attachedFile, activeConversation]);
+
   const loadConversation = async (conversationId) => {
     try {
       setLoading(true);
@@ -426,6 +448,13 @@ const MySoundBoard = () => {
         forensicReportMode: deepForensicRun,
         ...inferAskBiqcGenerationIntent(fullMessage),
       });
+      if (attachedFileForTurn?.raw) {
+        try {
+          requestPayload.upload_ids = await uploadAttachmentToSoundboard();
+        } catch {
+          toast.error("Couldn't attach your file to this request.");
+        }
+      }
 
       // Streaming contract anchor: runAskBiqcTurn uses streamSoundboardChat and handles SSE events where type === 'delta'.
       const turnResult = await runAskBiqcTurn({
@@ -496,16 +525,18 @@ const MySoundBoard = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
-    const MAX_SIZE = 500 * 1024;
-    const isText = /\.(txt|csv|md|json|log|xml|html|py|js|ts|sql)$/i.test(file.name) || file.type.startsWith('text/');
-    if (isText && file.size < MAX_SIZE) {
+    const MAX_SIZE = 25 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error('File too large. Maximum size is 25MB.');
+      return;
+    }
+    const isText = /\.(txt|csv|md|json|log|xml|html|py|js|ts|sql)$/i.test(file.name) || (file.type || '').startsWith('text/');
+    if (isText) {
       const reader = new FileReader();
-      reader.onload = ev => setAttachedFile({ name: file.name, content: ev.target.result, size: file.size, type: 'text' });
+      reader.onload = ev => setAttachedFile({ name: file.name, content: ev.target.result, size: file.size, type: 'text', raw: file });
       reader.readAsText(file);
-    } else if (file.size > MAX_SIZE) {
-      toast.error('File too large (max 500KB). Paste key sections instead.');
     } else {
-      setAttachedFile({ name: file.name, content: null, size: file.size, type: 'binary', hint: 'Describe what you need from this file' });
+      setAttachedFile({ name: file.name, content: null, size: file.size, type: 'binary', hint: 'Describe what you need from this file', raw: file });
     }
   };
 
@@ -907,9 +938,11 @@ const MySoundBoard = () => {
                           />
                         ) : (
                           <>
-                            <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                              {normalizeMessageContent(message.content)}
-                            </p>
+                            <div className="markdown-body text-sm leading-relaxed">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {normalizeMessageContent(message.content)}
+                              </ReactMarkdown>
+                            </div>
                             <AskBiqcMessageActions
                               role={message.role}
                               onEdit={() => {
@@ -937,7 +970,7 @@ const MySoundBoard = () => {
                             <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                           </div>
                           <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                            {showBoardroomViz ? `${activeBoardroomCheck.role}: ${activeBoardroomCheck.line}` : 'Thinking...'}
+                            {showBoardroomViz ? `${activeBoardroomCheck.role}: ${activeBoardroomCheck.line}` : 'BIQc is thinking...'}
                           </span>
                         </div>
                         {showBoardroomViz && (
@@ -996,6 +1029,11 @@ const MySoundBoard = () => {
                     <X className="w-3 h-3" />
                   </button>
                 </div>
+              )}
+              {uploadedFiles.length > 0 && (
+                <p className="mb-2 text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: fontFamily.mono }}>
+                  Uploaded files in this session: {uploadedFiles.length}
+                </p>
               )}
               <div className="px-1 mb-2 relative" data-testid="soundboard-mode-toggle-wrapper">
                 <div className="flex flex-wrap items-center gap-2">

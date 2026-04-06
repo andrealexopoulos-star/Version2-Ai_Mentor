@@ -85,7 +85,7 @@ import DataCenter from './pages/DataCenter';
 import OpsAdvisoryCentre from './pages/OpsAdvisoryCentre';
 import ConnectEmail from './pages/ConnectEmail';
 import IntelCentre from './pages/IntelCentre';
-import MySoundBoard from './pages/MySoundBoard';
+import SoundboardPanel from './components/SoundboardPanel';
 import BoardRoomPage from './pages/BoardRoomPage';
 import WarRoomPage from './pages/WarRoomPage';
 import IntelligenceBaseline from './pages/IntelligenceBaseline';
@@ -110,13 +110,10 @@ import AdminUxFeedbackPage from './pages/AdminUxFeedbackPage';
 import AdminScopeCheckpointsPage from './pages/AdminScopeCheckpointsPage';
 
 // ── Conditional imports (pages that may not exist) ────────────────────────────
-let CognitiveV2Mockup, LoadingPreview, CalibrationPreview, AuthDebug, GmailTest, OutlookTest, ProfileImport;
+let CognitiveV2Mockup, LoadingPreview, CalibrationPreview, ProfileImport;
 try { CognitiveV2Mockup   = require('./pages/CognitiveV2Mockup').default; } catch { CognitiveV2Mockup = () => null; }
 try { LoadingPreview      = require('./pages/LoadingPreview').default; } catch { LoadingPreview = () => null; }
 try { CalibrationPreview  = require('./pages/CalibrationPreview').default; } catch { CalibrationPreview = () => null; }
-try { AuthDebug           = require('./pages/AuthDebug').default; } catch { AuthDebug = () => null; }
-try { GmailTest           = require('./pages/GmailTest').default; } catch { GmailTest = () => null; }
-try { OutlookTest         = require('./pages/OutlookTest').default; } catch { OutlookTest = () => null; }
 try { ProfileImport       = require('./pages/ProfileImport').default; } catch { ProfileImport = () => null; }
 
 
@@ -285,7 +282,6 @@ function AppRoutes() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/auth/callback" element={<AuthCallbackSupabase />} />
-        <Route path="/auth-debug" element={<ProtectedRoute adminOnly><AuthDebug /></ProtectedRoute>} />
         <Route path="/login" element={<Navigate to="/login-supabase" replace />} />
         <Route path="/register" element={<Navigate to="/register-supabase" replace />} />
 
@@ -335,7 +331,7 @@ function AppRoutes() {
         <Route path="/alerts" element={<ProtectedRoute><AlertsPageAuth /></ProtectedRoute>} />
         <Route path="/actions" element={<ProtectedRoute><ActionsPage /></ProtectedRoute>} />
         <Route path="/automations" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="automations"><AutomationsPageAuth /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/soundboard" element={<ProtectedRoute><MySoundBoard /></ProtectedRoute>} />
+        <Route path="/soundboard" element={<ProtectedRoute><SoundboardPanel /></ProtectedRoute>} />
         <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
         <Route path="/war-room" element={<ProtectedRoute><LaunchRoute access="waitlist" featureKey="war-room"><WarRoomPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/board-room" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="boardroom"><BoardRoomPage /></LaunchRoute></ProtectedRoute>} />
@@ -366,9 +362,6 @@ function AppRoutes() {
         <Route path="/admin/prompt-lab" element={<ProtectedRoute adminOnly><PromptLab /></ProtectedRoute>} />
         <Route path="/support-admin" element={<ProtectedRoute adminOnly><SupportConsolePage /></ProtectedRoute>} />
         <Route path="/observability" element={<ProtectedRoute adminOnly><ObservabilityPage /></ProtectedRoute>} />
-        <Route path="/outlook-test" element={<ProtectedRoute adminOnly><OutlookTest /></ProtectedRoute>} />
-        <Route path="/gmail-test" element={<ProtectedRoute adminOnly><GmailTest /></ProtectedRoute>} />
-
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppErrorBoundary>

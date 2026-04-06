@@ -11,7 +11,7 @@ const getSoundboardErrorMessage = (error) => {
   if (typeof detail === 'string' && detail.trim()) return detail;
   const reply = error?.response?.data?.reply;
   if (typeof reply === 'string' && reply.trim()) return reply;
-  return "I'm having trouble connecting. Try again in a moment.";
+  return 'Something went wrong. Please try again.';
 };
 
 // Detect if a message is a BNA update request
@@ -65,7 +65,8 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
   const { session } = useSupabaseAuth();
 
   const fileRef = useRef(null);
-  const [attachedFile, setAttachedFile] = useState(null); // { name, content, size }
+  const [attachedFile, setAttachedFile] = useState(null); // { name, content, size, raw }
+  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   // Read file as text
   const handleFileSelect = (e) => {
@@ -73,24 +74,26 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
     if (!file) return;
     e.target.value = ''; // reset for re-select
 
-    const MAX_SIZE = 500 * 1024; // 500KB text limit
+    const MAX_SIZE = 25 * 1024 * 1024;
     const textTypes = ['text/plain', 'text/csv', 'text/markdown', 'application/json', 'text/html'];
     const isText = textTypes.includes(file.type) || file.name.match(/\.(txt|csv|md|json|log|xml|html|py|js|ts|sql)$/i);
 
-    if (isText && file.size < MAX_SIZE) {
+    if (file.size > MAX_SIZE) {
+      setMessages(prev => [...prev, { role: 'assistant', text: 'File too large. Maximum size is 25MB.' }]);
+      return;
+    }
+    if (isText) {
       const reader = new FileReader();
       reader.onload = (ev) => {
-        setAttachedFile({ name: file.name, content: ev.target.result, size: file.size, type: 'text' });
+        setAttachedFile({ name: file.name, content: ev.target.result, size: file.size, type: 'text', raw: file });
       };
       reader.readAsText(file);
-    } else if (file.type.startsWith('image/') && file.size < 5 * 1024 * 1024) {
+    } else if (file.type.startsWith('image/')) {
       // Image files — attach as a note for now (full vision support requires API)
-      setAttachedFile({ name: file.name, content: null, size: file.size, type: 'image', hint: 'Image attached — describe what you want analysed.' });
-    } else if (file.size > MAX_SIZE) {
-      setMessages(prev => [...prev, { role: 'assistant', text: `File too large (max 500KB for text). Try pasting the content directly instead.` }]);
+      setAttachedFile({ name: file.name, content: null, size: file.size, type: 'image', hint: 'Image attached — describe what you want analysed.', raw: file });
     } else {
       // PDF/docx etc — instruct user
-      setAttachedFile({ name: file.name, content: null, size: file.size, type: 'binary', hint: 'Binary file attached — paste key sections as text for best analysis.' });
+      setAttachedFile({ name: file.name, content: null, size: file.size, type: 'binary', hint: 'Binary file attached — paste key sections as text for best analysis.', raw: file });
     }
   };
 
@@ -184,6 +187,25 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
     setPendingBnaUpdate(null);
   };
 
+  const uploadAttachmentToSoundboard = async (conversationId = null) => {
+    if (!attachedFile?.raw) return [];
+    const form = new FormData();
+    form.append('file', attachedFile.raw, attachedFile.name || 'upload.bin');
+    if (conversationId) {
+      form.append('conversation_id', conversationId);
+    }
+    const response = await apiClient.post('/soundboard/upload', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    });
+    const payload = response?.data || {};
+    if (payload?.upload_id) {
+      setUploadedFiles((prev) => [...prev, payload]);
+      return [payload.upload_id];
+    }
+    return [];
+  };
+
   const sendMessage = async () => {
     if ((!input.trim() && !attachedFile) || loading) return;
     const userMsg = input.trim();
@@ -263,10 +285,18 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
   };
 
   const sendToChat = async (userMsg) => {
-    const res = await apiClient.post('/soundboard/chat', {
+    const payload = {
       message: userMsg,
       intelligence_context: { context },
-    });
+    };
+    if (attachedFile?.raw) {
+      try {
+        payload.upload_ids = await uploadAttachmentToSoundboard();
+      } catch {
+        setMessages(prev => [...prev, { role: 'assistant', text: "Couldn't attach your file to this request." }]);
+      }
+    }
+    const res = await apiClient.post('/soundboard/chat', payload);
     if (res.data?.reply) {
       const msg = {
         role: 'assistant',
@@ -368,12 +398,12 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
                   )}
                   {msg?.data_freshness && (
                     <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.14)', color: '#FCD34D', fontFamily: fontFamily.mono }}>
-                      freshness {msg.data_freshness}
+                      Last updated {msg.data_freshness}
                     </span>
                   )}
                   {normalizeAskBiqcConfidencePercent(msg?.confidence_score) != null && (
                     <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(16,185,129,0.14)', color: '#86EFAC', fontFamily: fontFamily.mono }}>
-                      confidence {normalizeAskBiqcConfidencePercent(msg.confidence_score).toFixed(0)}%
+                      Confidence {normalizeAskBiqcConfidencePercent(msg.confidence_score).toFixed(0)}%
                     </span>
                   )}
                 </div>
@@ -418,7 +448,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
         {loading && (
           <div className="flex justify-start">
             <div className="px-3.5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#FF6A00', fontFamily: fontFamily.mono }}>
-              thinking...
+              BIQc is thinking...
             </div>
           </div>
         )}
@@ -437,6 +467,11 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
               <X className="w-3 h-3" />
             </button>
           </div>
+        )}
+        {uploadedFiles.length > 0 && (
+          <p className="mb-2 text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
+            Uploaded files in this session: {uploadedFiles.length}
+          </p>
         )}
         <div className="flex gap-2">
           {/* Hidden file input */}

@@ -3,7 +3,7 @@ MySoundBoard Routes — Thinking Partner
 Extracted from server.py. Prompts loaded from Supabase system_prompts table.
 Instrumented with Intelligence Spine LLM logging.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile
 from fastapi.responses import StreamingResponse
 import asyncio
 from pydantic import BaseModel
@@ -59,65 +59,99 @@ def _call_cognition_for_soundboard(sb, user_id):
         return None
 
 
-def _polish_response(text):
-    """Post-process AI response to enforce quality standards."""
+def _polish_response(text: str) -> str:
     import re
+    if not text:
+        return text
 
-    # Remove lines that start with numbered lists (1. 2. 3.)
-    lines = text.split('\n')
-    cleaned = []
-    for line in lines:
-        stripped = line.strip()
-        # Convert numbered list items to prose
-        match = re.match(r'^(\d+)\.\s+\*\*(.+?)\*\*:?\s*(.*)', stripped)
-        if match:
-            title = match.group(2)
-            rest = match.group(3)
-            cleaned.append(f"{title}: {rest}" if rest else f"{title}.")
-        elif re.match(r'^(\d+)\.\s+\*\*(.+?)\*\*', stripped):
-            # Bold-only list item
-            match2 = re.match(r'^(\d+)\.\s+\*\*(.+?)\*\*\s*(.*)', stripped)
-            if match2:
-                cleaned.append(f"{match2.group(2)} {match2.group(3)}".strip())
-            else:
-                cleaned.append(stripped)
-        elif re.match(r'^\d+\.\s', stripped):
-            # Plain numbered item
-            cleaned.append(re.sub(r'^\d+\.\s+', '', stripped))
-        elif re.match(r'^[-•]\s', stripped):
-            # Bullet point
-            cleaned.append(re.sub(r'^[-•]\s+', '', stripped))
-        else:
-            cleaned.append(line)
-
-    text = '\n'.join(cleaned)
-
-    # Remove **bold** markdown
-    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
-
-    # Remove weak/hedging phrases aggressively
     weak_phrases = [
         r'[Ww]ithout [^.]*(?:data|insight|integration|connection|access|metric|feed|source|detail|information|visibility)[^.]*\.',
         r'[Gg]iven the (?:absence|lack|limited)[^.]*\.',
         r'[Tt]o (?:give|provide|get|move|refine)[^.]*(?:precise|detailed|specific|comprehensive|actionable|deeper|better)[^.]*\.',
         r'[Ww]e\'d ideally[^.]*\.',
-        r'[Ii]t\'s difficult to[^.]*(?:precise|accurate|exact|detailed|specific)[^.]*\.',
         r'[Ll]et me know[^.]*\.',
         r'[Ww]ould you like[^?]*\?',
         r'[Nn]eed a deeper dive[^?]*\?',
         r'[Ii]f you[\'d]? like to (?:dive|explore|discuss|know)[^.]*\.',
-        r'[Cc]onnecting (?:\w+ )*(?:data|financial|CRM|systems)[^.]*\.',
-        r'[Yy]ou should consider connecting[^.]*\.',
-        r'[Ff]or (?:a )?more (?:precise|detailed|comprehensive|accurate)[^.]*\.',
         r'[Hh]ere\'s (?:a )?rough[^.]*\.',
+        r'[Aa]s an AI[^.]*\.',
+        r'[Aa]s your AI assistant[^.]*\.',
+        r'[Aa]s a language model[^.]*\.',
     ]
     for pattern in weak_phrases:
         text = re.sub(pattern, '', text)
 
-    # Clean up double newlines
     text = re.sub(r'\n{3,}', '\n\n', text).strip()
-
     return text
+
+
+def _budget_system_prompt(
+    *,
+    base_prompt: str,
+    biz_context: str,
+    cognition_context: str,
+    rag_context: str,
+    memory_context: str,
+    integration_context: str,
+    marketing_context: str,
+    actions_context: str,
+    signal_injection: str,
+    guardrail_injection: str,
+    evidence_injection: str,
+    contract_injection: str,
+    upload_context: str,
+    user_context: str,
+    generation_requested: bool,
+    target_max_tokens: int = 8000,
+) -> str:
+    try:
+        import tiktoken
+
+        enc = tiktoken.encoding_for_model("gpt-4o")
+
+        def count(text: str) -> int:
+            return len(enc.encode(text or ""))
+    except Exception:
+        def count(text: str) -> int:
+            return int(len((text or "").split()) * 1.3)
+
+    def cap(text: str, max_tokens: int) -> str:
+        if count(text) <= max_tokens:
+            return text
+        lines = text.split("\n")
+        used = 0
+        kept: List[str] = []
+        for line in lines:
+            line_tokens = count(line)
+            if used + line_tokens > max_tokens:
+                break
+            kept.append(line)
+            used += line_tokens
+        return "\n".join(kept)
+
+    parts: List[str] = [base_prompt, guardrail_injection, contract_injection, cap(biz_context, 800)]
+    budget = sum(count(part) for part in parts)
+
+    for block, limit in [
+        (integration_context, 2000),
+        (signal_injection, 500),
+        (cognition_context, 600),
+        (rag_context, 1000),
+        (memory_context, 600),
+        (upload_context, 1000),
+        (evidence_injection, 400),
+        (marketing_context, 400),
+    ]:
+        clipped = cap(block, limit)
+        if budget + count(clipped) < target_max_tokens:
+            parts.append(clipped)
+            budget += count(clipped)
+
+    if generation_requested and budget + count(actions_context) < target_max_tokens:
+        parts.append(actions_context)
+
+    parts.append(user_context)
+    return "\n".join(part for part in parts if part and part.strip())
 
 
 def _build_grounded_exec_fallback(*, has_crm: bool, has_accounting: bool, has_email: bool, obs_events: List[Dict[str, Any]], rev: Dict[str, Any], risk: Dict[str, Any], people: Dict[str, Any]) -> str:
@@ -1391,6 +1425,7 @@ class SoundboardChatRequest(BaseModel):
     forensic_report_mode: Optional[bool] = None
     deliverable_type: Optional[str] = None
     export_requested: Optional[bool] = None
+    upload_ids: Optional[List[str]] = None
 
 
 def _has_configured_key(value: Optional[str]) -> bool:
@@ -1744,15 +1779,15 @@ def _resolve_model_route(mode: str, intent_domain: str, intent_action: str, comp
         raise RuntimeError("AI provider keys are not configured. Add a valid OPENAI_API_KEY and/or GOOGLE_API_KEY in the backend environment to restore Soundboard replies.")
 
     mode = (mode or "auto").lower()
-    openai_pro = ["gpt-5.4-pro", "gpt-5.2", "o3-pro", "gpt-4o"]
-    openai_thinking = ["gpt-5.4", "gpt-5.2", "o3", "gpt-4o"]
-    openai_fast = ["gpt-5.3", "gpt-5.2", "gpt-4o-mini", "gpt-4o"]
-    gemini_pro = ["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"]
-    gemini_fast = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.0-flash"]
+    openai_pro = ["gpt-4o", "gpt-4o-2024-11-20"]
+    openai_thinking = ["o1-preview", "gpt-4o"]
+    openai_fast = ["gpt-4o-mini", "gpt-4o"]
+    gemini_pro = ["gemini-2.5-pro", "gemini-2.0-flash"]
+    gemini_fast = ["gemini-2.0-flash", "gemini-1.5-flash"]
 
     if mode == "normal":
         if has_openai:
-            return "openai", openai_fast, "Normal", "User-selected normal mode (GPT-5.3 fast path)"
+            return "openai", openai_fast, "Normal", "User-selected normal mode (OpenAI fast path)"
         return "gemini", gemini_fast, "Normal", "User-selected normal mode routed to Gemini fallback"
 
     if mode == "thinking":
@@ -1822,9 +1857,9 @@ async def _call_openai_with_fallback(api_key: str, system_message: str, clean_me
                 "messages": formatted_messages,
                 "max_tokens": 2000,
             }
-            if not any(candidate.startswith(prefix) for prefix in ("gpt-5", "o3", "o4")):
+            if not any(candidate.startswith(prefix) for prefix in ("o1", "o3", "o4")):
                 request_kwargs["temperature"] = 0.7
-            if reasoning and any(candidate.startswith(prefix) for prefix in ("gpt-5", "o3", "o4")):
+            if reasoning and any(candidate.startswith(prefix) for prefix in ("o1", "o3", "o4")):
                 request_kwargs["reasoning_effort"] = "high"
 
             completion = await client.chat.completions.create(**request_kwargs)
@@ -1975,7 +2010,7 @@ async def _call_trinity_orchestration(
             system_message=system_message,
             clean_message=clean_message,
             messages_history=messages_history,
-            model_candidates=["gpt-5.4", "gpt-5.3", "gpt-5.2"],
+            model_candidates=["gpt-4o", "gpt-4o-mini"],
             reasoning=True,
         ))
         parallel_tasks.append(_call_openai_with_fallback(
@@ -1983,7 +2018,7 @@ async def _call_trinity_orchestration(
             system_message=system_message,
             clean_message=clean_message,
             messages_history=messages_history,
-            model_candidates=["codex-5.3", "gpt-5.3", "gpt-5.2"],
+            model_candidates=["gpt-4o-mini", "gpt-4o"],
             reasoning=False,
         ))
 
@@ -1993,7 +2028,7 @@ async def _call_trinity_orchestration(
             system_message=system_message,
             clean_message=clean_message,
             messages_history=messages_history,
-            model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+            model_candidates=["gemini-2.5-pro", "gemini-2.0-flash"],
         ))
 
     if has_anthropic:
@@ -2002,7 +2037,7 @@ async def _call_trinity_orchestration(
             system_message=system_message,
             clean_message=clean_message,
             messages_history=messages_history,
-            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6"],
         ))
 
     results = await asyncio.gather(*parallel_tasks, return_exceptions=True)
@@ -2016,7 +2051,7 @@ async def _call_trinity_orchestration(
             model_outputs.append({"model": model, "text": text})
 
     if not model_outputs:
-        raise RuntimeError("Trinity mode failed across GPT-5.4, Codex-5.3, and Gemini Pro candidates.")
+        raise RuntimeError("Trinity mode failed across configured provider candidates.")
 
     if len(model_outputs) == 1:
         only = model_outputs[0]
@@ -2039,7 +2074,7 @@ async def _call_trinity_orchestration(
             system_message=synthesis_system,
             clean_message=synthesis_user,
             messages_history=[],
-            model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+            model_candidates=["gpt-4o", "gpt-4o-mini"],
             reasoning=False,
         )
         return fused, f"trinity/{fused_model}"
@@ -2048,7 +2083,7 @@ async def _call_trinity_orchestration(
         api_key=google_key,
         system_message=synthesis_system,
         clean_message=synthesis_user,
-        model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+        model_candidates=["gemini-2.5-pro", "gemini-2.0-flash"],
     )
     return fused, f"trinity/{fused_model}"
 
@@ -2087,7 +2122,7 @@ async def _run_boardroom_orchestration(
                     system_message=role_system,
                     clean_message=clean_message,
                     messages_history=messages_history[-SOUNDBOARD_BOARDROOM_CONTEXT_LIMIT:],
-                    model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+                    model_candidates=["gpt-4o", "gpt-4o-mini"],
                     reasoning=True,
                 )
             elif _has_configured_key(anthropic_key):
@@ -2096,7 +2131,7 @@ async def _run_boardroom_orchestration(
                     system_message=role_system,
                     clean_message=clean_message,
                     messages_history=messages_history[-SOUNDBOARD_BOARDROOM_CONTEXT_LIMIT:],
-                    model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+                    model_candidates=["claude-opus-4-6", "claude-sonnet-4-6"],
                 )
             else:
                 role_text, role_model = await _call_gemini_with_fallback(
@@ -2104,7 +2139,7 @@ async def _run_boardroom_orchestration(
                     system_message=role_system,
                     clean_message=clean_message,
                     messages_history=messages_history[-SOUNDBOARD_BOARDROOM_CONTEXT_LIMIT:],
-                    model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+                    model_candidates=["gemini-2.5-pro", "gemini-2.0-flash"],
                 )
             deliberations.append({"role": role_key, "analysis": role_text, "model": role_model})
             phase_trace.append({"phase": "delegate", "role": role_key, "status": "ok"})
@@ -2127,7 +2162,7 @@ async def _run_boardroom_orchestration(
             system_message=challenge_system,
             clean_message=challenge_prompt,
             messages_history=[],
-            model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+            model_candidates=["gpt-4o", "gpt-4o-mini"],
             reasoning=True,
         )
     elif _has_configured_key(anthropic_key):
@@ -2136,7 +2171,7 @@ async def _run_boardroom_orchestration(
             system_message=challenge_system,
             clean_message=challenge_prompt,
             messages_history=[],
-            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6"],
         )
     else:
         challenge_text, challenge_model = await _call_gemini_with_fallback(
@@ -2144,7 +2179,7 @@ async def _run_boardroom_orchestration(
             system_message=challenge_system,
             clean_message=challenge_prompt,
             messages_history=[],
-            model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+            model_candidates=["gemini-2.5-pro", "gemini-2.0-flash"],
         )
     phase_trace.append({"phase": "challenge", "status": "ok", "model": challenge_model})
 
@@ -2164,7 +2199,7 @@ async def _run_boardroom_orchestration(
             system_message=consensus_system,
             clean_message=consensus_input,
             messages_history=[],
-            model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+            model_candidates=["gpt-4o", "gpt-4o-mini"],
             reasoning=True,
         )
     elif _has_configured_key(anthropic_key):
@@ -2172,14 +2207,14 @@ async def _run_boardroom_orchestration(
             api_key=anthropic_key,
             system_message=consensus_system,
             clean_message=consensus_input,
-            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6"],
         )
     else:
         final_text, final_model = await _call_gemini_with_fallback(
             api_key=google_key,
             system_message=consensus_system,
             clean_message=consensus_input,
-            model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+            model_candidates=["gemini-2.5-pro", "gemini-2.0-flash"],
         )
     phase_trace.append({"phase": "consensus", "status": "ok", "model": final_model})
     trace = {
@@ -2194,6 +2229,153 @@ async def _run_boardroom_orchestration(
 
 class ConversationRename(BaseModel):
     title: str
+
+
+class UserSettingsUpdate(BaseModel):
+    sidebar_width: Optional[int] = None
+    sidebar_collapsed: Optional[bool] = None
+    default_agent: Optional[str] = None
+    default_mode: Optional[str] = None
+    theme: Optional[str] = None
+
+
+@router.post("/soundboard/upload")
+async def soundboard_upload(
+    file: UploadFile = FastAPIFile(...),
+    conversation_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user["id"]
+    sb = get_sb()
+
+    allowed = {
+        "application/pdf": "pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+        "text/csv": "csv",
+        "image/png": "image",
+        "image/jpeg": "image",
+    }
+    file_type = allowed.get(file.content_type or "")
+    if not file_type:
+        raise HTTPException(400, "Unsupported file type. Please upload PDF, Word, Excel, CSV, or image.")
+
+    contents = await file.read()
+    if len(contents) > 25 * 1024 * 1024:
+        raise HTTPException(400, "File too large. Maximum size is 25MB.")
+
+    extracted_text = None
+    extracted_json = None
+
+    if file_type == "pdf":
+        try:
+            import io
+            from PyPDF2 import PdfReader
+
+            reader = PdfReader(io.BytesIO(contents))
+            pages = [
+                f"[Page {idx + 1}]\n{page.extract_text()}"
+                for idx, page in enumerate(reader.pages[:20])
+                if page.extract_text()
+            ]
+            extracted_text = "\n\n".join(pages)[:50000]
+        except Exception as exc:
+            logger.warning("PDF extract failed: %s", exc)
+            extracted_text = "[PDF could not be read]"
+    elif file_type == "docx":
+        try:
+            import io
+            from docx import Document
+
+            doc = Document(io.BytesIO(contents))
+            extracted_text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())[:50000]
+        except Exception as exc:
+            logger.warning("DOCX extract failed: %s", exc)
+            extracted_text = "[Document could not be read]"
+    elif file_type in ("xlsx", "csv"):
+        try:
+            import io
+            import csv as csv_module
+
+            if file_type == "xlsx":
+                import openpyxl
+
+                workbook = openpyxl.load_workbook(io.BytesIO(contents), read_only=True, data_only=True)
+                rows = [
+                    [str(cell) if cell is not None else "" for cell in row]
+                    for idx, row in enumerate(workbook.active.iter_rows(values_only=True))
+                    if idx < 500
+                ]
+            else:
+                rows = list(csv_module.reader(io.StringIO(contents.decode("utf-8", errors="replace"))))[:500]
+
+            if rows:
+                headers = rows[0]
+                data_rows = rows[1:]
+                extracted_json = {"headers": headers, "rows": data_rows}
+                extracted_text = " | ".join(headers) + "\n" + "---|" * len(headers) + "\n"
+                extracted_text += "\n".join(" | ".join(row) for row in data_rows[:50])
+        except Exception as exc:
+            logger.warning("Spreadsheet extract failed: %s", exc)
+            extracted_text = "[Spreadsheet could not be read]"
+    elif file_type == "image":
+        extracted_text = f"[Image: {file.filename}]"
+
+    storage_path = None
+    try:
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        storage_path = f"{user_id}/{ts}_{file.filename}"
+        sb.storage.from_("user-files").upload(storage_path, contents, {"content-type": file.content_type})
+    except Exception as exc:
+        logger.warning("Storage upload failed (non-fatal): %s", exc)
+
+    upload_id = str(uuid.uuid4())
+    sb.table("uploads").insert({
+        "id": upload_id,
+        "user_id": user_id,
+        "conversation_id": conversation_id,
+        "file_name": file.filename,
+        "file_type": file_type,
+        "extracted_text": extracted_text,
+        "extracted_json": extracted_json,
+        "storage_path": storage_path,
+        "size_bytes": len(contents),
+        "processing_status": "complete",
+    }).execute()
+
+    return {
+        "upload_id": upload_id,
+        "file_name": file.filename,
+        "file_type": file_type,
+        "preview_text": (extracted_text or "")[:200],
+        "row_count": len((extracted_json or {}).get("rows", [])) if extracted_json else None,
+        "size_bytes": len(contents),
+    }
+
+
+@router.get("/soundboard/settings")
+async def get_soundboard_settings(current_user: dict = Depends(get_current_user)):
+    sb = get_sb()
+    result = sb.table("user_settings").select("*").eq("user_id", current_user["id"]).limit(1).execute()
+    if result.data:
+        return result.data[0]
+    return {
+        "user_id": current_user["id"],
+        "sidebar_width": 260,
+        "sidebar_collapsed": False,
+        "default_agent": "auto",
+        "default_mode": "auto",
+        "theme": "dark",
+    }
+
+
+@router.patch("/soundboard/settings")
+async def update_soundboard_settings(req: UserSettingsUpdate, current_user: dict = Depends(get_current_user)):
+    sb = get_sb()
+    updates = {k: v for k, v in req.model_dump().items() if v is not None}
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    sb.table("user_settings").upsert({"user_id": current_user["id"], **updates}).execute()
+    return {"status": "updated"}
 
 
 @router.get("/soundboard/conversations")
@@ -3058,7 +3240,38 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     if evidence_lines:
         evidence_injection = "\n\n═══ EVIDENCE CONTRACT (MANDATORY SOURCE REFERENCES) ═══\n" + "\n".join(evidence_lines) + "\n"
 
-    system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + signal_injection + guardrail_injection + evidence_injection + contract_injection + f"\n\nCONTEXT:\n{user_context}"
+    upload_context = ""
+    if req.upload_ids:
+        try:
+            up_res = sb.table("uploads").select(
+                "file_name,file_type,extracted_text,extracted_json"
+            ).in_("id", req.upload_ids).eq("user_id", user_id).execute()
+            for uploaded in (up_res.data or []):
+                upload_context += f"\n\n═══ UPLOADED FILE: {uploaded.get('file_name')} ═══\n"
+                if uploaded.get("extracted_json"):
+                    parsed = uploaded["extracted_json"]
+                    upload_context += f"Columns: {', '.join(parsed.get('headers', []))}\nRows: {len(parsed.get('rows', []))}\n\n"
+                upload_context += (uploaded.get("extracted_text") or "")[:8000]
+        except Exception as exc:
+            logger.warning("Upload context injection failed: %s", exc)
+
+    system_message = _budget_system_prompt(
+        base_prompt=soundboard_prompt + fact_block,
+        biz_context=biz_context,
+        cognition_context=cognition_context,
+        rag_context=rag_context,
+        memory_context=memory_context,
+        integration_context=integration_context,
+        marketing_context=marketing_context,
+        actions_context=actions_context,
+        signal_injection=signal_injection,
+        guardrail_injection=guardrail_injection,
+        evidence_injection=evidence_injection,
+        contract_injection=contract_injection,
+        upload_context=upload_context,
+        user_context=f"\n\nCONTEXT:\n{user_context}",
+        generation_requested=bool(generation_contract.get("requested")),
+    )
 
     # ═══ GENERATION CONTRACT INJECTION (universal ask + connector relevance) ═══
     if generation_contract.get("requested"):
@@ -3092,24 +3305,6 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     has_google_key = _has_configured_key(GOOGLE_DIRECT_KEY)
     has_anthropic_key = _has_configured_key(ANTHROPIC_DIRECT_KEY)
 
-    # Step 1: Intent refinement with o4-mini (fast thinking, direct OpenAI key)
-    if has_openai_key:
-        try:
-            import json as _json
-            reply, _ = await _call_openai_with_fallback(
-                api_key=OPENAI_DIRECT_KEY,
-                system_message='Classify this business query. Respond with JSON only: {"domain":"finance|sales|marketing|operations|hr|risk|planning|general","action":"summarise|forecast|create|update|compare|explain|recommend|diagnose","complexity":"low|medium|high"}',
-                clean_message=req.message[:400],
-                messages_history=[],
-                model_candidates=["o4-mini", "gpt-4o-mini"],
-                reasoning=False,
-            )
-            clf = _json.loads(reply or "{}")
-            intent_domain = clf.get("domain", intent_domain)
-            intent_action = clf.get("action", intent_action)
-            complexity = clf.get("complexity", complexity)
-        except Exception as e:
-            logger.warning(f"Intent classification failed, using heuristic fallback: {e}")
     logger.info(f"[INTENT] domain={intent_domain} action={intent_action} complexity={complexity}")
 
     # Resolve active agent (multi-agent mode): explicit agent_id or infer from intent when "auto"
@@ -3217,7 +3412,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                             api_key=ANTHROPIC_DIRECT_KEY,
                             system_message=system_message,
                             clean_message=clean_message,
-                            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+                            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6"],
                         )
                         provider = "anthropic-fallback"
                     elif has_google_key:
@@ -3226,7 +3421,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                             api_key=GOOGLE_DIRECT_KEY,
                             system_message=system_message,
                             clean_message=clean_message,
-                            model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+                            model_candidates=["gemini-2.5-pro", "gemini-2.0-flash"],
                         )
                         provider = "gemini-fallback"
                     else:
@@ -3247,7 +3442,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                             system_message=system_message,
                             clean_message=clean_message,
                             messages_history=messages_history,
-                            model_candidates=["gpt-5.3", "gpt-5.2", "gpt-4o"],
+                            model_candidates=["gpt-4o-mini", "gpt-4o"],
                             reasoning=reasoning_mode,
                         )
                         provider = "openai-fallback"
@@ -3339,6 +3534,14 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         clean_lower = clean_message.strip().lower()
         greeting_only = clean_lower in {"hi", "hey", "hello", "yo", "good morning", "good afternoon", "good evening"}
         should_enforce_contract = not greeting_only and len(clean_message.split()) >= 4
+        is_simple_conversational = (
+            complexity == "low"
+            and intent_action not in {"forecast", "diagnose", "compare", "analyse", "summarise"}
+            and not generation_contract.get("requested")
+            and not report_grade_request
+            and effective_agent_id != "boardroom"
+            and len(clean_message.split()) < 15
+        )
         should_keep_structured = False
         advisory_slots = {}
         if should_enforce_contract:
@@ -3354,7 +3557,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 response = _ensure_flagship_contract_sections(response)
                 response = sanitise_output(response)
             advisory_slots = parse_flagship_response_slots(response)
-            if not should_keep_structured:
+            if is_simple_conversational:
                 response = _humanize_contract_response(
                     response,
                     advisory_slots,
@@ -3685,7 +3888,15 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         } if effective_agent_id == "boardroom" else None
         fallback_slots = parse_flagship_response_slots(fallback)
         fallback_human = fallback
-        if not (report_grade_request or generation_contract.get("requested")):
+        fallback_simple_conversational = (
+            complexity == "low"
+            and intent_action not in {"forecast", "diagnose", "compare", "analyse", "summarise"}
+            and not generation_contract.get("requested")
+            and not report_grade_request
+            and effective_agent_id != "boardroom"
+            and len(clean_message.split()) < 15
+        )
+        if fallback_simple_conversational:
             fallback_human = _humanize_contract_response(fallback, fallback_slots)
         retrieval_contract = _build_retrieval_contract(
             report_grade_request=report_grade_request,
@@ -3776,7 +3987,15 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         } if effective_agent_id == "boardroom" else None
         fallback_slots = parse_flagship_response_slots(fallback)
         fallback_human = fallback
-        if not (report_grade_request or generation_contract.get("requested")):
+        fallback_simple_conversational = (
+            complexity == "low"
+            and intent_action not in {"forecast", "diagnose", "compare", "analyse", "summarise"}
+            and not generation_contract.get("requested")
+            and not report_grade_request
+            and effective_agent_id != "boardroom"
+            and len(clean_message.split()) < 15
+        )
+        if fallback_simple_conversational:
             fallback_human = _humanize_contract_response(fallback, fallback_slots)
         retrieval_contract = _build_retrieval_contract(
             report_grade_request=report_grade_request,
@@ -4006,78 +4225,162 @@ async def _iterate_openai_stream_with_tools(
 
 @router.post("/soundboard/chat/stream")
 async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict = Depends(get_current_user)):
-    """
-    SSE stream wrapper for Soundboard replies.
-    Produces delta events for progressive UI rendering, then a final event with metadata.
-    """
     trace_id = str(uuid.uuid4())
     from guardrails import sanitise_input
     from routes.deps import check_rate_limit
+    from routes.soundboard_stream import stream_openai_tokens, stream_gemini_tokens, stream_anthropic_tokens
+
     sanitised = sanitise_input(req.message)
     requested_mode = getattr(req, "mode", "auto")
     tier_for_contract = (current_user.get("subscription_tier") or "free")
     is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin"}
     mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
     feature = "trinity_daily" if mode == "trinity" else "soundboard_daily"
+
     if not sanitised.get("blocked"):
         await check_rate_limit(current_user["id"], feature, get_sb())
         req.intelligence_context = dict(req.intelligence_context or {})
         req.intelligence_context["_rate_limit_checked"] = True
 
+    OPENAI_KEY_DIRECT = os.environ.get("OPENAI_API_KEY", "")
+    GOOGLE_KEY_DIRECT = os.environ.get("GOOGLE_API_KEY", "")
+    ANTHROPIC_KEY_DIRECT = os.environ.get("ANTHROPIC_API_KEY", "")
+    has_openai = _has_configured_key(OPENAI_KEY_DIRECT)
+    has_google = _has_configured_key(GOOGLE_KEY_DIRECT)
+    has_anthropic = _has_configured_key(ANTHROPIC_KEY_DIRECT)
+
     async def event_stream() -> AsyncGenerator[str, None]:
         if sanitised.get("blocked"):
-            yield _sse_event("start", {"conversation_id": req.conversation_id, "trace_id": trace_id, "stream_mode": "synthetic"})
-            result = {"reply": "I can't process that request. Could you rephrase?", "blocked": True}
-            yield _sse_event("final", {"payload": result})
+            yield _sse_event("start", {"conversation_id": req.conversation_id, "trace_id": trace_id})
+            yield _sse_event("final", {"payload": {"reply": "I can't process that request. Could you rephrase?", "blocked": True}})
             return
-        clean_message = sanitised.get("text") or str(req.message or "")
-        can_live_stream = _has_configured_key(OPENAI_KEY)
-        yield _sse_event(
-            "start",
-            {
-                "conversation_id": req.conversation_id,
-                "trace_id": trace_id,
-                "stream_mode": "live_openai" if can_live_stream else "synthetic",
-            },
-        )
-        try:
-            if can_live_stream:
-                sb = get_sb()
-                conversation = None
-                messages_history: List[Dict[str, Any]] = []
-                if req.conversation_id:
-                    conv = sb.table("soundboard_conversations").select("*").eq("id", req.conversation_id).eq("user_id", current_user["id"]).limit(1).execute()
-                    conversation = (conv.data or [None])[0]
-                if conversation:
-                    try:
-                        history = sb.table("soundboard_messages").select("role,content,timestamp").eq("conversation_id", req.conversation_id).eq("user_id", current_user["id"]).order("timestamp", desc=False).limit(8).execute()
-                        messages_history = history.data or []
-                    except Exception:
-                        messages_history = []
-                async for event in _iterate_openai_stream_with_tools(
-                    api_key=OPENAI_KEY,
-                    clean_message=clean_message,
-                    messages_history=messages_history,
-                    sb=sb,
-                    user_id=current_user["id"],
-                ):
-                    if event.get("type") == "done":
-                        break
-                    yield _sse_event(event.get("type"), event.get("payload") or {})
 
-            result = await soundboard_chat(req, current_user)
-            if not can_live_stream:
-                reply = str(result.get("reply") or "")
-                if reply:
-                    chunk_size = 20
-                    for i in range(0, len(reply), chunk_size):
-                        chunk = reply[i : i + chunk_size]
-                        yield _sse_event("delta", {"text": chunk})
-                        await asyncio.sleep(0.01)
+        clean_message = sanitised.get("text") or str(req.message or "")
+        intent_domain, intent_action, complexity = _infer_intent_heuristic(clean_message)
+        agent_id = getattr(req, "agent_id", None) or "auto"
+        effective_agent_id = agent_id if (agent_id and agent_id != "auto") else intent_domain
+        is_boardroom = effective_agent_id == "boardroom"
+        is_trinity = mode == "trinity"
+        stream_contract = {"stream_mode": "synthetic"}
+
+        yield _sse_event("start", {
+            "conversation_id": req.conversation_id,
+            "trace_id": trace_id,
+            "agent": effective_agent_id,
+            "mode": mode,
+            **stream_contract,
+        })
+
+        try:
+            if is_boardroom:
+                for phase, message in [
+                    ("convening", "Convening the boardroom..."),
+                    ("ceo", "CEO reviewing strategic direction..."),
+                    ("cfo", "CFO analysing financial position..."),
+                    ("coo", "COO reviewing execution capacity..."),
+                    ("cmo", "CMO assessing market signals..."),
+                    ("challenge", "Identifying cross-functional conflicts..."),
+                    ("consensus", "Synthesising boardroom consensus..."),
+                ]:
+                    yield _sse_event("boardroom_phase", {"phase": phase, "message": message})
+                result = await soundboard_chat(req, current_user)
+
+            elif is_trinity:
+                yield _sse_event("trinity_provider", {"provider": "openai", "message": "GPT-4o reasoning..."})
+                yield _sse_event("trinity_provider", {"provider": "gemini", "message": "Gemini analysing..."})
+                yield _sse_event("trinity_provider", {"provider": "anthropic", "message": "Claude reviewing..."})
+                yield _sse_event("trinity_provider", {"provider": "fusing", "message": "Fusing all perspectives..."})
+                result = await soundboard_chat(req, current_user)
+
+            else:
+                result_task = asyncio.create_task(soundboard_chat(req, current_user))
+
+                try:
+                    _, model_candidates, _, _ = _resolve_model_route(
+                        mode=mode,
+                        intent_domain=intent_domain,
+                        intent_action=intent_action,
+                        complexity=complexity,
+                        has_openai=has_openai,
+                        has_google=has_google,
+                    )
+                    primary_model = model_candidates[0]
+
+                    sb = get_sb()
+                    messages_history: List[Dict[str, Any]] = []
+                    if req.conversation_id:
+                        try:
+                            hist = sb.table("soundboard_messages").select("role,content").eq("conversation_id", req.conversation_id).eq("user_id", current_user["id"]).order("timestamp", desc=False).limit(8).execute()
+                            messages_history = hist.data or []
+                        except Exception:
+                            messages_history = []
+
+                    stream_system = (
+                        "You are Ask BIQc, a business intelligence advisor. "
+                        "Answer the user's question directly and concisely. "
+                        "Reference their business where possible. "
+                        "The full detailed response with all data will follow."
+                    )
+                    stream_mode = "live_openai" if has_openai and ("gpt" in primary_model or "o1" in primary_model) else "synthetic"
+                    provider_stream_mode = stream_mode
+                    stream_contract = {"stream_mode": provider_stream_mode}
+                    yield _sse_event("stream_contract", stream_contract)
+
+                    if provider_stream_mode == "live_openai":
+                        stream_contract = {"stream_mode": "live_openai"}
+                        yield _sse_event("stream_contract", stream_contract)
+                        async for token in stream_openai_tokens(
+                            api_key=OPENAI_KEY_DIRECT,
+                            system_message=stream_system,
+                            clean_message=clean_message,
+                            messages_history=messages_history,
+                            model=primary_model,
+                        ):
+                            yield _sse_event("delta", {"text": token, "preview": True})
+                    elif has_google:
+                        stream_contract = {"stream_mode": "live_gemini"}
+                        yield _sse_event("stream_contract", stream_contract)
+                        async for token in stream_gemini_tokens(
+                            api_key=GOOGLE_KEY_DIRECT,
+                            system_message=stream_system,
+                            clean_message=clean_message,
+                            messages_history=messages_history,
+                            model="gemini-2.0-flash",
+                        ):
+                            yield _sse_event("delta", {"text": token, "preview": True})
+                    elif has_anthropic:
+                        stream_contract = {"stream_mode": "live_anthropic"}
+                        yield _sse_event("stream_contract", stream_contract)
+                        async for token in stream_anthropic_tokens(
+                            api_key=ANTHROPIC_KEY_DIRECT,
+                            system_message=stream_system,
+                            clean_message=clean_message,
+                            messages_history=messages_history,
+                            model="claude-sonnet-4-6",
+                        ):
+                            yield _sse_event("delta", {"text": token, "preview": True})
+                except Exception as stream_err:
+                    logger.warning(f"[STREAM] Token preview failed (non-fatal): {stream_err}")
+
+                result = await result_task
+
+            reply = str(result.get("reply") or "")
+            if reply:
+                yield _sse_event("replacing", {"message": "Loading full analysis..."})
+                for i in range(0, len(reply), 8):
+                    yield _sse_event("delta", {"text": reply[i : i + 8], "preview": False})
+                    await asyncio.sleep(0.005)
+
             yield _sse_event("final", {"payload": result})
+        except asyncio.CancelledError:
+            logger.info(f"[STREAM] Cancelled by client. trace_id={trace_id}")
         except Exception as exc:
-            logger.exception("Soundboard stream failed trace_id=%s", trace_id)
-            yield _sse_event("error", {"message": "Streaming interrupted. Please retry.", "code": "STREAM_RUNTIME_ERROR", "trace_id": trace_id})
+            logger.exception(f"[STREAM] Failed. trace_id={trace_id}: {exc}")
+            yield _sse_event("error", {
+                "message": "Something went wrong. Please try again.",
+                "code": "STREAM_ERROR",
+                "trace_id": trace_id,
+            })
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

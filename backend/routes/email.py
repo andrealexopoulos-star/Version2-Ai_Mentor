@@ -1863,56 +1863,6 @@ async def outlook_connection_status(current_user: dict = Depends(get_current_use
         }
 
 
-@router.get("/outlook/debug-tokens")
-async def debug_outlook_tokens(current_user: dict = Depends(get_current_user)):
-    """
-    DEBUG ONLY: Inspect Outlook token state
-    Should be disabled in production
-    """
-    # Guard: Only allow in development
-    if _is_production():
-        raise HTTPException(status_code=404, detail="Endpoint not available in production")
-    
-    user_id = current_user["id"]
-    debug_info = {
-        "user_id": user_id,
-        "user_email": current_user.get("email"),
-        "outlook_oauth_tokens": None,
-        "m365_tokens": None,
-        "outlook_emails_count": 0
-    }
-    
-    try:
-        # Check outlook_oauth_tokens
-        response = get_sb().table("outlook_oauth_tokens").select("user_id, provider, account_email, expires_at, created_at").eq("user_id", user_id).execute()
-        if response.data:
-            debug_info["outlook_oauth_tokens"] = response.data
-        else:
-            # Check if table has ANY records (for debugging)
-            all_response = get_sb().table("outlook_oauth_tokens").select("user_id, account_email", count="exact").limit(5).execute()
-            debug_info["outlook_oauth_tokens_sample"] = all_response.data if all_response.data else "empty table"
-            debug_info["outlook_oauth_tokens_total"] = all_response.count if hasattr(all_response, 'count') else len(all_response.data) if all_response.data else 0
-    except Exception as e:
-        debug_info["outlook_oauth_tokens_error"] = str(e)
-    
-    try:
-        # Check m365_tokens
-        response = get_sb().table("m365_tokens").select("user_id, expires_at").eq("user_id", user_id).execute()
-        if response.data:
-            debug_info["m365_tokens"] = response.data
-    except Exception as e:
-        debug_info["m365_tokens_error"] = str(e)
-    
-    try:
-        # Check outlook_emails count
-        response = get_sb().table("outlook_emails").select("id", count="exact").eq("user_id", user_id).execute()
-        debug_info["outlook_emails_count"] = response.count if hasattr(response, 'count') else len(response.data) if response.data else 0
-    except Exception as e:
-        debug_info["outlook_emails_error"] = str(e)
-    
-    return debug_info
-
-
 @router.post("/outlook/disconnect")
 async def disconnect_outlook(current_user: dict = Depends(get_current_user)):
     """Disconnect Microsoft Outlook integration and remove all synced data - SUPABASE VERSION"""
