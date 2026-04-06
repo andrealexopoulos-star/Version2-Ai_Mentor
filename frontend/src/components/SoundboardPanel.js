@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Send, Paperclip, Video, X, MessageSquare, Clock, ChevronDown, CheckCircle2, XCircle, Plus, Trash2, FileText, Zap, Eye } from 'lucide-react';
+import { Send, Paperclip, Video, X, ChevronDown, FileText } from 'lucide-react';
 import { apiClient } from '../lib/api';
-import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
+import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { trackEvent, EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
 import DataCoverageGate from './DataCoverageGate';
-import { CheckInAlerts } from './CheckInAlerts';
 import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 import { getSoundboardPolicy, normalizeMessageContent, SOUND_BOARD_MODES } from '../lib/soundboardPolicy';
@@ -31,15 +30,10 @@ import {
 import VoiceChat from './VoiceChat';
 import AskBiqcMessageActions from './soundboard/AskBiqcMessageActions';
 import AskBiqcAssistantResponse from './soundboard/AskBiqcAssistantResponse';
-import AskBiqcSessionLineage from './soundboard/AskBiqcSessionLineage';
-import BoardroomCouncilCard from './soundboard/BoardroomCouncilCard';
 
 
 // Data query detection — ONLY route to integration Edge Function for EXPLICIT data retrieval requests.
 // Must NOT intercept strategic advisory questions that happen to mention business terms.
-const SCAN_USAGE_CACHE_KEY = 'biqc_scan_usage_cache';
-const SCAN_USAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -51,20 +45,16 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const [selectedAgent, setSelectedAgent] = useState('auto');
   const [deepForensicRun, setDeepForensicRun] = useState(false);
   const [boardroomNarrationIndex, setBoardroomNarrationIndex] = useState(0);
-  const [boardroomProgress, setBoardroomProgress] = useState(12);
-  const [showHistory, setShowHistory] = useState(false);
   const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
   const [attachedFile, setAttachedFile] = useState(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeConversationTitle, setActiveConversationTitle] = useState('');
   // ── Coverage gate state ──
   const [coverageGate, setCoverageGate] = useState(null); // {guardrail, coveragePct, missingFields}
 
-  // ── Server-side scan usage (Supabase) ──
-  const [scanUsage, setScanUsage] = useState(null); // null = loading
-  const [recordingScans, setRecordingScans] = useState({});
   const { session, user } = useSupabaseAuth();
-  const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || '';
   const policy = getSoundboardPolicy(user);
 
   const BIQC_AGENTS = [
@@ -104,20 +94,6 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     () => (latestAssistantMessage?.evidence_pack?.sources || []).map((item) => item?.source).filter(Boolean),
     [latestAssistantMessage]
   );
-  const boardroomSourceLabels = useMemo(() => {
-    const sourceLabelMap = {
-      crm: 'CRM',
-      accounting: 'Accounting',
-      email: 'Email',
-      market: 'Market',
-      google_ads: 'Google Ads',
-      ads: 'Ads',
-      web: 'Web',
-      competitor: 'Competitor',
-    };
-    const unique = [...new Set([...boardroomConnectedSources, ...boardroomEvidenceSources].map((v) => String(v || '').toLowerCase().trim()).filter(Boolean))];
-    return unique.map((key) => sourceLabelMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())).slice(0, 5);
-  }, [boardroomConnectedSources, boardroomEvidenceSources]);
   const boardroomChecks = useMemo(
     () => buildBoardroomChecks(boardroomConnectedSources, boardroomEvidenceSources),
     [boardroomConnectedSources, boardroomEvidenceSources]
@@ -125,49 +101,22 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const activeBoardroomCheck = boardroomChecks[boardroomNarrationIndex % Math.max(1, boardroomChecks.length)] || { role: 'CEO', line: 'Checking strategic priorities...' };
 
   const inputRef = useRef(null);
-  const scrollRef = useRef(null);
+  const messageThreadRef = useRef(null);
   const fileRef = useRef(null);
   const streamAbortRef = useRef(null);
 
   useEffect(() => {
     if (!loading || !showBoardroomViz) {
       setBoardroomNarrationIndex(0);
-      setBoardroomProgress(12);
       return undefined;
     }
     const narrationTimer = setInterval(() => {
       setBoardroomNarrationIndex((prev) => (prev + 1) % Math.max(1, boardroomChecks.length));
     }, 1400);
-    const progressTimer = setInterval(() => {
-      setBoardroomProgress((prev) => {
-        if (prev >= 92) return 26;
-        return Math.min(92, prev + 10);
-      });
-    }, 900);
     return () => {
       clearInterval(narrationTimer);
-      clearInterval(progressTimer);
     };
   }, [loading, showBoardroomViz, boardroomChecks.length]);
-
-  // Fetch scan usage from Supabase backend on mount — with 5-minute sessionStorage cache
-  const fetchScanUsage = useCallback(async (forceRefresh = false) => {
-    try {
-      // Try sessionStorage cache first
-      if (!forceRefresh) {
-        const cached = sessionStorage.getItem(SCAN_USAGE_CACHE_KEY);
-        if (cached) {
-          const { data, ts } = JSON.parse(cached);
-          if (Date.now() - ts < SCAN_USAGE_CACHE_TTL) { setScanUsage(data); return; }
-        }
-      }
-      const res = await apiClient.get('/soundboard/scan-usage');
-      setScanUsage(res.data);
-      sessionStorage.setItem(SCAN_USAGE_CACHE_KEY, JSON.stringify({ data: res.data, ts: Date.now() }));
-    } catch {
-      setScanUsage({ calibration_complete: false, is_paid: false, exposure_scan: { can_run: true, days_until_next: 0 }, forensic_calibration: { can_run: true, days_until_next: 0 } });
-    }
-  }, []);
 
   // Load conversations + welcome message based on server state
   useEffect(() => {
@@ -183,7 +132,6 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         }]);
       }
     }).catch(() => {});
-    fetchScanUsage();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -196,9 +144,11 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     }
   }, [isPaidUser, selectedMode, availableModes]);
 
-  // Auto-scroll on new messages
+  // Auto-scroll on new messages and stream deltas
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (messageThreadRef.current) {
+      messageThreadRef.current.scrollTop = messageThreadRef.current.scrollHeight;
+    }
   }, [messages]);
 
   // Handle action messages from insight cards
@@ -292,6 +242,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       setMessages((prev) => replaceAskBiqcPlaceholder(prev, placeholderId, turnResult.assistantMessage));
       if (turnResult.responseData?.conversation_id && !activeConvId) {
         setActiveConvId(turnResult.responseData.conversation_id);
+        setActiveConversationTitle(turnResult.responseData.conversation_title || 'Ask BIQc');
         setConversations((prev) => [
           {
             id: turnResult.responseData.conversation_id,
@@ -347,8 +298,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   };
 
   const loadConversation = async (conv) => {
-    setShowHistory(false);
     setActiveConvId(conv.id);
+    setActiveConversationTitle(conv.title || 'Ask BIQc');
     try {
       const res = await apiClient.get(`/soundboard/conversations/${conv.id}`);
       setMessages((res.data?.messages || []).map((m) => ({
@@ -382,7 +333,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
   const newChat = () => {
     setActiveConvId(null);
     setMessages([]);
-    setShowHistory(false);
+    setActiveConversationTitle('');
   };
 
   const handleFileSelect = (e) => {
@@ -403,243 +354,389 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
     }
   };
 
-  return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--biqc-bg-input)' }} data-testid="soundboard-panel">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#FF6A0020' }}>
-            <MessageSquare className="w-3.5 h-3.5 text-[#FF6A00]" />
+  const assistantBody = (msg, idx) => {
+    const isLatestAssistant = idx === messages.length - 1 && loading;
+    const responseMessage = { ...msg, agent_name: null };
+    return (
+      <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 6,
+              background: 'linear-gradient(135deg, #FF7A18, #E56A08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 10,
+              fontWeight: 700,
+              color: '#fff',
+              flexShrink: 0,
+            }}
+          >
+            B
           </div>
-          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Ask BIQc</span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
+            {msg.agent_name || 'BIQc'}
+            {isLatestAssistant && <span style={{ color: '#FF6A00', marginLeft: 8 }}>thinking...</span>}
+          </span>
         </div>
-        <div className="flex items-center gap-1">
-          <button onClick={() => setShowHistory(!showHistory)} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" data-testid="sb-history-btn">
-            <Clock className="w-4 h-4 text-[#64748B]" />
-          </button>
-          <button onClick={newChat} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors" data-testid="sb-new-chat">
-            <Plus className="w-4 h-4 text-[#64748B]" />
-          </button>
-        </div>
-      </div>
-
-      {/* Top Action Buttons — server-side enforced via Supabase */}
-      <div className="px-3 pt-2 pb-1.5 shrink-0 space-y-1.5" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-
-        {/* Complete Calibration — only shown if NOT yet complete */}
-        {scanUsage && !scanUsage.calibration_complete && (
-          <a href="/calibration"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all hover:brightness-110"
-            style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: fontFamily.mono }}
-            data-testid="sb-calibration-btn">
-            <Zap className="w-3.5 h-3.5 shrink-0" />
-            <span className="flex-1">Complete Calibration</span>
-            <ChevronDown className="w-3 h-3 -rotate-90" />
-          </a>
-        )}
-
-        {/* Forensic Market Exposure — free tier: 1/month, paid: unlimited */}
-        {(() => {
-          const scan = scanUsage?.exposure_scan;
-          const canRun = !scanUsage || scan?.can_run;
-          const daysLeft = scan?.days_until_next || 0;
-          const isPaid = scanUsage?.is_paid;
-
-          return (
-            <button
-              disabled={!canRun && !isPaid}
-              onClick={async () => {
-                if (!canRun && !isPaid) return;
-                // Record in Supabase first
-                if (!isPaid) {
-                  setRecordingScans(prev => ({ ...prev, exposure_scan: true }));
-                  try {
-                    await apiClient.post('/soundboard/record-scan', { feature_name: 'exposure_scan' });
-                    sessionStorage.removeItem(SCAN_USAGE_CACHE_KEY); // Invalidate cache
-                    await fetchScanUsage(true); // Force fresh fetch
-                  } catch {}
-                  setRecordingScans(prev => ({ ...prev, exposure_scan: false }));
-                }
-                window.location.href = '/exposure-scan';
-              }}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl w-full text-xs font-medium transition-all"
-              style={{
-                background: canRun || isPaid ? '#3B82F615' : '#243140',
-                border: `1px solid ${canRun || isPaid ? '#3B82F630' : '#243140'}`,
-                color: canRun || isPaid ? '#3B82F6' : '#64748B',
-                fontFamily: fontFamily.mono,
-                cursor: canRun || isPaid ? 'pointer' : 'not-allowed',
-              }}
-              data-testid="sb-exposure-scan-btn">
-              <Eye className="w-3.5 h-3.5 shrink-0" />
-              <span className="flex-1">
-                {recordingScans.exposure_scan ? 'Recording...' :
-                  !canRun && !isPaid ? `Forensic Market Exposure (available in ${daysLeft}d)` :
-                  'Forensic Market Exposure'}
-              </span>
-              {!canRun && !isPaid && <Clock className="w-3 h-3 opacity-50" />}
-            </button>
-          );
-        })()}
-      </div>
-
-      <div className="px-3 pt-2 shrink-0" data-testid="soundboard-checkin-alerts-slot">
-        <CheckInAlerts />
-      </div>
-
-      {/* History dropdown */}
-      {showHistory && (
-        <div className="border-b overflow-y-auto max-h-60 shrink-0" style={{ borderColor: 'var(--biqc-border)', background: '#0D1420' }}>
-          <div className="p-2">
-            <p className="text-[10px] uppercase tracking-wider px-2 py-1 mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Recent conversations</p>
-            {conversations.length === 0 && <p className="text-xs text-[#64748B] px-2 py-2">No conversations yet</p>}
-            {conversations.slice(0, 15).map(c => (
-              <button key={c.id} onClick={() => loadConversation(c)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors truncate ${activeConvId === c.id ? 'bg-white/10 text-[#F4F7FA]' : 'text-[#9FB0C3] hover:bg-white/5'}`}
-                style={{ fontFamily: fontFamily.body }}>
-                {c.title || 'Untitled'}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-4" style={{ minHeight: 0 }}>
-        <span className="sr-only">Coverage window</span>
-        <AskBiqcSessionLineage
-          latestAssistantMessage={latestAssistantMessage}
+        <AskBiqcAssistantResponse
+          message={responseMessage}
           compact
-          className="mb-1"
-          testId="soundboard-panel-session-lineage"
+          onCopy={() => handleCopyAssistantMessage(msg)}
+          onUseInComposer={() => handleUseAnswerInComposer(msg)}
+          onRegenerate={() => {
+            const previousUserPrompt = findPreviousAskBiqcUserPrompt(messages, idx);
+            if (!previousUserPrompt) return;
+            setMessages((prev) => [...prev, { role: 'user', text: previousUserPrompt, content: previousUserPrompt }]);
+            executeMessage(
+              previousUserPrompt,
+              previousUserPrompt,
+              {
+                trace_root_id: msg.trace_root_id || `trace-${Date.now()}`,
+                response_version: Number(msg.response_version || 1) + 1,
+              },
+            );
+          }}
+          onSuggestedAction={(prompt) => submitSuggestedAction(prompt)}
+          actionTestIdPrefix="ask-biqc-panel-message-action"
+          metadataTestId="soundboard-panel-response-metadata-row"
+          evidenceTestId="soundboard-panel-evidence-row"
         />
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: '#FF6A0015' }}>
-              <Zap className="w-6 h-6" style={{ color: '#FF6A00' }} />
-            </div>
-            <p className="text-base font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
-              {firstName ? `${firstName}, your advisor is ready.` : 'Your advisor is ready.'}
+      </div>
+    );
+  };
+
+  const userBody = (msg) => {
+    const content = normalizeMessageContent(msg.content ?? msg.text);
+    return (
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 20px' }}>
+        <div
+          style={{
+            maxWidth: '70%',
+            padding: '12px 16px',
+            background: 'rgba(255,106,0,0.15)',
+            border: '1px solid rgba(255,106,0,0.25)',
+            borderRadius: '18px 18px 4px 18px',
+            fontSize: 14,
+            color: 'rgba(255,255,255,0.9)',
+            lineHeight: 1.5,
+          }}
+        >
+          {content}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        height: '100vh',
+        background: '#0a0f1a',
+        color: '#fff',
+        overflow: 'hidden',
+        fontFamily: "'Inter', sans-serif",
+      }}
+      data-testid="soundboard-panel"
+    >
+      <div
+        style={{
+          width: sidebarCollapsed ? '0px' : '260px',
+          minWidth: sidebarCollapsed ? '0px' : '260px',
+          height: '100vh',
+          background: '#0d1421',
+          borderRight: '1px solid rgba(255,255,255,0.08)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          transition: 'width 0.2s ease, min-width 0.2s ease',
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
+            padding: '16px',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Ask BIQc</span>
+          <button
+            onClick={() => setSidebarCollapsed(true)}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', padding: 4 }}
+            title="Collapse sidebar"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style={{ padding: '12px 16px', flexShrink: 0 }}>
+          <button
+            onClick={newChat}
+            style={{
+              width: '100%',
+              padding: '10px 14px',
+              background: 'rgba(255,106,0,0.12)',
+              border: '1px solid rgba(255,106,0,0.3)',
+              borderRadius: 10,
+              color: '#FF6A00',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 18, lineHeight: 1 }}>+</span> New Conversation
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }}>
+          {conversations.length === 0 ? (
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '16px 8px', textAlign: 'center' }}>
+              No conversations yet
             </p>
-            <p className="text-xs mb-6 max-w-[240px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
-              I've read your business data. Ask me anything specific — deals, cash flow, risks, competitors.
-            </p>
-            <div className="flex flex-wrap gap-2 justify-center max-w-[300px]">
-              {[
-                'What needs my attention this week?',
-                'Show me stalled deals',
-                'How is my cash flow?',
-                'What are my biggest risks?',
-              ].map(q => (
-                <button key={q} onClick={() => submitSuggestedAction(q)}
-                  className="text-[11px] px-3 py-2 rounded-lg transition-all hover:bg-[#FF6A00]/10 hover:border-[#FF6A00]/30"
-                  style={{ background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}>
-                  {q}
+          ) : (
+            <>
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', padding: '8px 8px 4px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Recent
+              </p>
+              {conversations.map((conv) => (
+                <button
+                  key={conv.id}
+                  onClick={() => loadConversation(conv)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 10px',
+                    marginBottom: 2,
+                    borderRadius: 8,
+                    background: activeConvId === conv.id ? 'rgba(255,255,255,0.08)' : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    display: 'block',
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: activeConvId === conv.id ? '#fff' : 'rgba(255,255,255,0.6)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      margin: 0,
+                    }}
+                  >
+                    {conv.title || 'New Conversation'}
+                  </p>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', margin: '2px 0 0' }}>
+                    {conv.updated_at ? new Date(conv.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : ''}
+                  </p>
                 </button>
               ))}
-            </div>
-          </div>
-        )}
-
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[92%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm`}
-              style={{
-                background: msg.role === 'user' ? 'linear-gradient(135deg, rgba(255,106,0,0.20), rgba(255,106,0,0.10))' : '#0F1720',
-                color: msg.role === 'user' ? '#F8FAFC' : '#E2E8F0',
-                border: msg.role === 'user' ? '1px solid rgba(255,106,0,0.28)' : '1px solid #223246',
-                fontFamily: fontFamily.body,
-                whiteSpace: 'pre-line',
-                borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                boxShadow: msg.role === 'user' ? 'inset 0 1px 0 rgba(255,255,255,0.05)' : 'none',
-              }}>
-              {msg.role === 'assistant' ? (
-                <AskBiqcAssistantResponse
-                  message={msg}
-                  compact
-                  onCopy={() => handleCopyAssistantMessage(msg)}
-                  onUseInComposer={() => handleUseAnswerInComposer(msg)}
-                  onRegenerate={() => {
-                    const previousUserPrompt = findPreviousAskBiqcUserPrompt(messages, i);
-                    if (!previousUserPrompt) return;
-                    setMessages((prev) => [...prev, { role: 'user', text: previousUserPrompt, content: previousUserPrompt }]);
-                    executeMessage(
-                      previousUserPrompt,
-                      previousUserPrompt,
-                      {
-                        trace_root_id: msg.trace_root_id || `trace-${Date.now()}`,
-                        response_version: Number(msg.response_version || 1) + 1,
-                      },
-                    );
-                  }}
-                  onSuggestedAction={(prompt) => submitSuggestedAction(prompt)}
-                  actionTestIdPrefix="ask-biqc-panel-message-action"
-                  metadataTestId="soundboard-panel-response-metadata-row"
-                  evidenceTestId="soundboard-panel-evidence-row"
-                />
-              ) : (
-                <>
-                  <p>{normalizeMessageContent(msg.content ?? msg.text)}</p>
-                  <AskBiqcMessageActions
-                    role={msg.role}
-                    compact
-                    onEdit={() => {
-                      setInput(getAskBiqcMessageText(msg));
-                      inputRef.current?.focus();
-                    }}
-                    testIdPrefix="ask-biqc-panel-message-action"
-                  />
-                </>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {loading && (
-          <div className="flex justify-start">
-            <div className="px-4 py-2.5 rounded-2xl text-sm" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', borderRadius: '20px 20px 20px 4px' }}>
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-                <span className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
-                  {showBoardroomViz ? `${activeBoardroomCheck.role}: ${activeBoardroomCheck.line}` : 'BIQc is thinking...'}
-                </span>
-              </div>
-              {showBoardroomViz && (
-                <div className="mt-2">
-                  <div className="w-full h-1 rounded-full overflow-hidden mb-1" style={{ background: 'rgba(30, 41, 59, 0.8)' }}>
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${boardroomProgress}%`, background: 'linear-gradient(90deg, #3B82F6 0%, #10B981 100%)' }}
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {boardroomChecks.map((step, i) => (
-                      <span
-                        key={`${step.role}-loading-${i}`}
-                        className="text-[9px] px-1.5 py-0.5 rounded"
-                        style={{
-                          background: i === boardroomNarrationIndex % Math.max(1, boardroomChecks.length) ? 'rgba(59,130,246,0.22)' : 'rgba(59,130,246,0.12)',
-                          color: i === boardroomNarrationIndex % Math.max(1, boardroomChecks.length) ? '#DBEAFE' : '#93C5FD',
-                          fontFamily: fontFamily.mono,
-                        }}
-                      >
-                        {step.role}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Input area */}
-      <div className="px-3 pb-3 pt-2 shrink-0" style={{ borderTop: '1px solid var(--biqc-border)' }}>
+      {sidebarCollapsed && (
+        <button
+          onClick={() => setSidebarCollapsed(false)}
+          style={{
+            position: 'fixed',
+            top: 12,
+            left: 12,
+            zIndex: 100,
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 8,
+            padding: '6px 10px',
+            color: 'rgba(255,255,255,0.6)',
+            cursor: 'pointer',
+            fontSize: 16,
+          }}
+          title="Show conversations"
+        >
+          ☰
+        </button>
+      )}
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh' }}>
+        <div
+          style={{
+            height: 52,
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 20px',
+            gap: 12,
+            flexShrink: 0,
+            background: '#0a0f1a',
+          }}
+        >
+          {sidebarCollapsed && (
+            <button
+              onClick={() => setSidebarCollapsed(false)}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 4, fontSize: 18 }}
+            >
+              ☰
+            </button>
+          )}
+          <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.7)' }}>
+            {activeConversationTitle || 'Ask BIQc'}
+          </span>
+        </div>
+
+        <div ref={messageThreadRef} style={{ flex: 1, overflowY: 'auto', padding: '20px 0', display: 'flex', flexDirection: 'column' }}>
+          {messages.length === 0 && (
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 40,
+                opacity: 0.4,
+              }}
+            >
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  background: 'linear-gradient(135deg, #FF7A18, #E56A08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 16,
+                  fontSize: 20,
+                }}
+              >
+                B
+              </div>
+              <p style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Ask BIQc anything</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', maxWidth: 300 }}>
+                Ask about your pipeline, cash flow, risks, or what needs attention this week.
+              </p>
+            </div>
+          )}
+
+          {messages.map((msg, i) => (
+            msg.role === 'user'
+              ? <div key={`u-${i}`}>{userBody(msg)}</div>
+              : <div key={`a-${i}`}>{assistantBody(msg, i)}</div>
+          ))}
+
+          {loading && showBoardroomViz && (
+            <div
+              style={{
+                padding: '10px 20px',
+                borderTop: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,106,0,0.04)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: '#FF6A00',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Boardroom Council Live
+                </span>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {['CRM', 'Accounting', 'Email', 'Signals'].map((source) => (
+                    <span
+                      key={source}
+                      style={{
+                        fontSize: 10,
+                        padding: '2px 8px',
+                        borderRadius: 20,
+                        background: 'rgba(255,255,255,0.08)',
+                        color: 'rgba(255,255,255,0.5)',
+                      }}
+                    >
+                      {source}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: '8px 12px',
+                  background: 'rgba(255,255,255,0.04)',
+                  borderRadius: 8,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}
+              >
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+                  {activeBoardroomCheck.line}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                {['CEO', 'CFO', 'COO', 'CMO'].map((role) => (
+                  <span
+                    key={role}
+                    style={{
+                      fontSize: 11,
+                      padding: '3px 10px',
+                      borderRadius: 20,
+                      background: 'rgba(255,106,0,0.1)',
+                      border: '1px solid rgba(255,106,0,0.2)',
+                      color: '#FF6A00',
+                    }}
+                  >
+                    {role}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {loading && !showBoardroomViz && (
+            <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <div
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 6,
+                    background: 'linear-gradient(135deg, #FF7A18, #E56A08)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: '#fff',
+                    flexShrink: 0,
+                  }}
+                >
+                  B
+                </div>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
+                  BIQc <span style={{ color: '#FF6A00', marginLeft: 8 }}>thinking...</span>
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>BIQc is thinking...</p>
+            </div>
+          )}
+        </div>
+
+        <div className="px-3 pb-3 pt-2 shrink-0" style={{ borderTop: '1px solid var(--biqc-border)' }}>
         {/* Coverage gate — shown above input when blocked or degraded */}
         {coverageGate && (
           <DataCoverageGate
@@ -802,18 +899,6 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           )}
         </div>
 
-        {showBoardroomViz && (
-          <BoardroomCouncilCard
-            checks={boardroomChecks}
-            sourceLabels={boardroomSourceLabels}
-            activeIndex={boardroomNarrationIndex}
-            activeCheck={activeBoardroomCheck}
-            boardroomStatus={latestAssistantMessage?.boardroom_status}
-            compact
-            testId="soundboard-panel-boardroom-visualizer"
-          />
-        )}
-
         <div className="rounded-2xl flex items-end gap-1 p-1.5" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${attachedFile ? 'rgba(255,106,0,0.4)' : '#243140'}` }}>
           <input type="file" ref={fileRef} className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.md,.json,.py,.js" />
           <button onClick={() => fileRef.current?.click()} className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0" data-testid="sb-upload">
@@ -855,6 +940,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         <p className="text-[9px] text-[#64748B] text-center mt-1.5" style={{ fontFamily: fontFamily.mono }}>
           BIQc uses connected data only. No fabrication.
         </p>
+      </div>
       </div>
       {showVoiceChat && (
         <VoiceChat

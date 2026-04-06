@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Database, Download } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { fontFamily } from '../../design-system/tokens';
 import { normalizeMessageContent } from '../../lib/soundboardPolicy';
 import { normalizeAskBiqcConfidencePercent } from '../../lib/soundboardRuntime';
@@ -84,9 +86,11 @@ export default function AskBiqcAssistantResponse({
         </p>
       )}
       {message.type === 'integration_prompt' && <Database className="w-3.5 h-3.5 text-[#F59E0B] inline mr-1.5 -mt-0.5" />}
-      <p className={`${compact ? 'text-sm' : 'text-sm'} whitespace-pre-wrap leading-relaxed`}>
-        {contentText}
-      </p>
+      <div className="markdown-body" style={{ lineHeight: 1.7, color: 'rgba(255,255,255,0.9)' }}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {contentText || ''}
+        </ReactMarkdown>
+      </div>
 
       <AskBiqcMessageActions
         role="assistant"
