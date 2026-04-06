@@ -3097,24 +3097,6 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     has_google_key = _has_configured_key(GOOGLE_DIRECT_KEY)
     has_anthropic_key = _has_configured_key(ANTHROPIC_DIRECT_KEY)
 
-    # Step 1: Intent refinement with o4-mini (fast thinking, direct OpenAI key)
-    if has_openai_key:
-        try:
-            import json as _json
-            reply, _ = await _call_openai_with_fallback(
-                api_key=OPENAI_DIRECT_KEY,
-                system_message='Classify this business query. Respond with JSON only: {"domain":"finance|sales|marketing|operations|hr|risk|planning|general","action":"summarise|forecast|create|update|compare|explain|recommend|diagnose","complexity":"low|medium|high"}',
-                clean_message=req.message[:400],
-                messages_history=[],
-                model_candidates=["o4-mini", "gpt-4o-mini"],
-                reasoning=False,
-            )
-            clf = _json.loads(reply or "{}")
-            intent_domain = clf.get("domain", intent_domain)
-            intent_action = clf.get("action", intent_action)
-            complexity = clf.get("complexity", complexity)
-        except Exception as e:
-            logger.warning(f"Intent classification failed, using heuristic fallback: {e}")
     logger.info(f"[INTENT] domain={intent_domain} action={intent_action} complexity={complexity}")
 
     # Resolve active agent (multi-agent mode): explicit agent_id or infer from intent when "auto"
