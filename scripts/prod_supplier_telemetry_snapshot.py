@@ -121,6 +121,57 @@ def resolve_supabase_management_token() -> tuple[str, str]:
     return "", ""
 
 
+def classify_management_token_shape(token: str) -> str:
+    raw = (token or "").strip()
+    if raw.startswith("sbp_"):
+        return "supabase_pat_like"
+    if raw.startswith("eyJ") and raw.count(".") == 2:
+        return "jwt_like"
+    return "unknown"
+
+
+def preflight_supabase_management_token(access_token: str, token_source: str) -> None:
+    token_shape = classify_management_token_shape(access_token)
+    if token_shape != "supabase_pat_like":
+        raise RuntimeError(
+            "supabase management token is not a Supabase PAT/fine-grained token. "
+            "Use Account > Access Tokens and provide a token that starts with sbp_. "
+            f"token_source={token_source}, token_shape={token_shape}"
+        )
+
+    # Validate project visibility before issuing database queries.
+    url = f"https://api.supabase.com/v1/projects/{SUPABASE_PROD_PROJECT_REF}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30):
+            return
+    except urllib.error.HTTPError as exc:
+        details = exc.read().decode("utf-8", errors="replace")
+        if exc.code in (401, 403, 404):
+            raise RuntimeError(
+                "supabase management token cannot access target project metadata. "
+                f"Ensure token owner has access to project {SUPABASE_PROD_PROJECT_REF} "
+                "and grant database_read (or database_write). "
+                f"token_source={token_source}, status={exc.code}, body={details[:400]}"
+            ) from exc
+        raise RuntimeError(
+            "supabase management token project preflight failed. "
+            f"token_source={token_source}, status={exc.code}, body={details[:400]}"
+        ) from exc
+    except Exception as exc:
+        raise RuntimeError(
+            "supabase management token project preflight failed with unexpected error. "
+            f"token_source={token_source}, error={exc}"
+        ) from exc
+
+
 def supabase_query_via_management_api(sql: str, access_token: str, token_source: str) -> Dict[str, Any]:
     """
     Execute read-only SQL through Supabase Management API.
@@ -193,6 +244,7 @@ def collect_supabase_prod() -> Dict[str, Any]:
     access_token, token_source = resolve_supabase_management_token()
     use_management_api = bool(access_token)
     if use_management_api:
+        preflight_supabase_management_token(access_token, token_source)
         query_fn = lambda sql: supabase_query_via_management_api(sql, access_token, token_source)
     else:
         version = run_cmd(["supabase", "--version"])
