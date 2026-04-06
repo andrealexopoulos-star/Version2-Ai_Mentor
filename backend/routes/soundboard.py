@@ -1744,11 +1744,11 @@ def _resolve_model_route(mode: str, intent_domain: str, intent_action: str, comp
         raise RuntimeError("AI provider keys are not configured. Add a valid OPENAI_API_KEY and/or GOOGLE_API_KEY in the backend environment to restore Soundboard replies.")
 
     mode = (mode or "auto").lower()
-    openai_pro = ["gpt-5.4-pro", "gpt-5.2", "o3-pro", "gpt-4o"]
-    openai_thinking = ["gpt-5.4", "gpt-5.2", "o3", "gpt-4o"]
-    openai_fast = ["gpt-5.3", "gpt-5.2", "gpt-4o-mini", "gpt-4o"]
-    gemini_pro = ["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"]
-    gemini_fast = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.0-flash"]
+    openai_pro = ["gpt-4o", "gpt-4o-2024-11-20"]
+    openai_thinking = ["o1-preview", "gpt-4o"]
+    openai_fast = ["gpt-4o-mini", "gpt-4o"]
+    gemini_pro = ["gemini-2.5-pro", "gemini-2.0-flash"]
+    gemini_fast = ["gemini-2.0-flash", "gemini-1.5-flash"]
 
     if mode == "normal":
         if has_openai:
@@ -1969,13 +1969,18 @@ async def _call_trinity_orchestration(
 
     parallel_tasks = []
 
+    openai_thinking_candidates = ["gpt-4o", "gpt-4o-mini"]
+    openai_fast_candidates = ["gpt-4o-mini", "gpt-4o"]
+    anthropic_candidates = ["claude-opus-4-6", "claude-sonnet-4-6"]
+    gemini_candidates = ["gemini-2.5-pro", "gemini-2.0-flash"]
+
     if has_openai:
         parallel_tasks.append(_call_openai_with_fallback(
             api_key=openai_key,
             system_message=system_message,
             clean_message=clean_message,
             messages_history=messages_history,
-            model_candidates=["gpt-5.4", "gpt-5.3", "gpt-5.2"],
+            model_candidates=openai_thinking_candidates,
             reasoning=True,
         ))
         parallel_tasks.append(_call_openai_with_fallback(
@@ -1983,7 +1988,7 @@ async def _call_trinity_orchestration(
             system_message=system_message,
             clean_message=clean_message,
             messages_history=messages_history,
-            model_candidates=["codex-5.3", "gpt-5.3", "gpt-5.2"],
+            model_candidates=openai_fast_candidates,
             reasoning=False,
         ))
 
@@ -1993,7 +1998,7 @@ async def _call_trinity_orchestration(
             system_message=system_message,
             clean_message=clean_message,
             messages_history=messages_history,
-            model_candidates=["gemini-3-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash"],
+            model_candidates=gemini_candidates,
         ))
 
     if has_anthropic:
@@ -2002,7 +2007,7 @@ async def _call_trinity_orchestration(
             system_message=system_message,
             clean_message=clean_message,
             messages_history=messages_history,
-            model_candidates=["claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5"],
+            model_candidates=anthropic_candidates,
         ))
 
     results = await asyncio.gather(*parallel_tasks, return_exceptions=True)
