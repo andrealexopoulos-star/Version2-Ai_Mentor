@@ -3995,6 +3995,32 @@ async def soundboard_upload(
     }
 
 
+@router.get("/soundboard/settings")
+async def get_soundboard_settings(current_user: dict = Depends(get_current_user)):
+    sb = get_sb()
+    res = sb.table("user_settings").select("*").eq("user_id", current_user["id"]).limit(1).execute()
+    if res.data:
+        return res.data[0]
+    return {"user_id": current_user["id"], "sidebar_width": 260, "sidebar_collapsed": False, "default_agent": "auto", "default_mode": "auto", "theme": "dark"}
+
+
+class UserSettingsUpdate(BaseModel):
+    sidebar_width: Optional[int] = None
+    sidebar_collapsed: Optional[bool] = None
+    default_agent: Optional[str] = None
+    default_mode: Optional[str] = None
+    theme: Optional[str] = None
+
+
+@router.patch("/soundboard/settings")
+async def update_soundboard_settings(req: UserSettingsUpdate, current_user: dict = Depends(get_current_user)):
+    sb = get_sb()
+    updates = {k: v for k, v in req.dict().items() if v is not None}
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    sb.table("user_settings").upsert({"user_id": current_user["id"], **updates}).execute()
+    return {"status": "updated"}
+
+
 @router.patch("/soundboard/conversations/{conversation_id}")
 async def rename_soundboard_conversation(
     conversation_id: str, req: ConversationRename,
