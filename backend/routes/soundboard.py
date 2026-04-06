@@ -4345,6 +4345,156 @@ def _build_cognitive_context(req: SoundboardChatRequest, core_context: dict) -> 
     return "\n".join(parts)
 
 
+def _sse_event(event_type: str, payload: Dict[str, Any]) -> str:
+    return f"data: {json.dumps({'type': event_type, **payload}, ensure_ascii=False)}\n\n"
+
+
+@router.post("/soundboard/chat/stream")
+async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict = Depends(get_current_user)):
+    trace_id = str(uuid.uuid4())
+    from guardrails import sanitise_input
+    from routes.deps import check_rate_limit
+    from routes.soundboard_stream import stream_openai_tokens, stream_gemini_tokens, stream_anthropic_tokens
+
+    sanitised = sanitise_input(req.message)
+    requested_mode = getattr(req, "mode", "auto")
+    tier = current_user.get("subscription_tier") or "free"
+    is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin"}
+    mode = enforce_mode_for_tier(requested_mode, tier, is_super_admin=is_super_admin)
+    feature = "trinity_daily" if mode == "trinity" else "soundboard_daily"
+
+    if not sanitised.get("blocked"):
+        await check_rate_limit(current_user["id"], feature, get_sb())
+        req.intelligence_context = dict(req.intelligence_context or {})
+        req.intelligence_context["_rate_limit_checked"] = True
+
+    OPENAI_KEY_DIRECT = os.environ.get("OPENAI_API_KEY", "")
+    GOOGLE_KEY_DIRECT = os.environ.get("GOOGLE_API_KEY", "")
+    ANTHROPIC_KEY_DIRECT = os.environ.get("ANTHROPIC_API_KEY", "")
+    has_openai = _has_configured_key(OPENAI_KEY_DIRECT)
+    has_google = _has_configured_key(GOOGLE_KEY_DIRECT)
+
+    async def event_stream() -> AsyncGenerator[str, None]:
+        if sanitised.get("blocked"):
+            yield _sse_event("start", {"conversation_id": req.conversation_id, "trace_id": trace_id})
+            yield _sse_event("final", {"payload": {"reply": "I can't process that request. Could you rephrase?", "blocked": True}})
+            return
+
+        clean_message = sanitised.get("text") or str(req.message or "")
+        intent_domain, intent_action, complexity = _infer_intent_heuristic(clean_message)
+        agent_id = getattr(req, "agent_id", None) or "auto"
+        effective_agent_id = agent_id if (agent_id and agent_id != "auto") else intent_domain
+        is_boardroom = effective_agent_id == "boardroom"
+        is_trinity = mode == "trinity"
+
+        yield _sse_event("start", {
+            "conversation_id": req.conversation_id,
+            "trace_id": trace_id,
+            "agent": effective_agent_id,
+            "mode": mode,
+        })
+
+        try:
+            if is_boardroom:
+                for phase_msg in [
+                    ("convening", "Convening the boardroom..."),
+                    ("ceo", "CEO reviewing strategic direction..."),
+                    ("cfo", "CFO analysing financial position..."),
+                    ("coo", "COO reviewing execution capacity..."),
+                    ("cmo", "CMO assessing market signals..."),
+                    ("challenge", "Identifying cross-functional conflicts..."),
+                    ("consensus", "Synthesising boardroom consensus..."),
+                ]:
+                    yield _sse_event("boardroom_phase", {"phase": phase_msg[0], "message": phase_msg[1]})
+                result = await soundboard_chat(req, current_user)
+
+            elif is_trinity:
+                yield _sse_event("trinity_provider", {"provider": "openai", "message": "GPT-4o reasoning..."})
+                yield _sse_event("trinity_provider", {"provider": "gemini", "message": "Gemini analysing..."})
+                yield _sse_event("trinity_provider", {"provider": "anthropic", "message": "Claude reviewing..."})
+                yield _sse_event("trinity_provider", {"provider": "fusing", "message": "Fusing all perspectives..."})
+                result = await soundboard_chat(req, current_user)
+
+            else:
+                result_task = asyncio.create_task(soundboard_chat(req, current_user))
+
+                try:
+                    _, model_candidates, _, _ = _resolve_model_route(
+                        mode=mode, intent_domain=intent_domain, intent_action=intent_action,
+                        complexity=complexity, has_openai=has_openai, has_google=has_google,
+                    )
+                    primary_model = model_candidates[0]
+
+                    sb = get_sb()
+                    messages_history = []
+                    if req.conversation_id:
+                        try:
+                            hist = sb.table("soundboard_messages").select("role,content").eq("conversation_id", req.conversation_id).eq("user_id", current_user["id"]).order("timestamp", desc=False).limit(8).execute()
+                            messages_history = hist.data or []
+                        except Exception:
+                            pass
+
+                    stream_system = (
+                        "You are Ask BIQc, a business intelligence advisor. "
+                        "Answer the user's question directly and concisely. "
+                        "Reference their business where possible. "
+                        "The full detailed response with all data will follow."
+                    )
+
+                    if has_openai and ("gpt" in primary_model or "o1" in primary_model):
+                        async for token in stream_openai_tokens(
+                            api_key=OPENAI_KEY_DIRECT,
+                            system_message=stream_system,
+                            clean_message=clean_message,
+                            messages_history=messages_history,
+                            model=primary_model,
+                        ):
+                            yield _sse_event("delta", {"text": token, "preview": True})
+                    elif has_google:
+                        async for token in stream_gemini_tokens(
+                            api_key=GOOGLE_KEY_DIRECT,
+                            system_message=stream_system,
+                            clean_message=clean_message,
+                            messages_history=messages_history,
+                            model="gemini-2.0-flash",
+                        ):
+                            yield _sse_event("delta", {"text": token, "preview": True})
+                    elif _has_configured_key(ANTHROPIC_KEY_DIRECT):
+                        async for token in stream_anthropic_tokens(
+                            api_key=ANTHROPIC_KEY_DIRECT,
+                            system_message=stream_system,
+                            clean_message=clean_message,
+                            messages_history=messages_history,
+                            model="claude-sonnet-4-6",
+                        ):
+                            yield _sse_event("delta", {"text": token, "preview": True})
+                except Exception as stream_err:
+                    logger.warning(f"[STREAM] Token preview failed (non-fatal): {stream_err}")
+
+                result = await result_task
+
+            reply = str(result.get("reply") or "")
+            if reply:
+                yield _sse_event("replacing", {"message": "Loading full analysis..."})
+                for i in range(0, len(reply), 8):
+                    yield _sse_event("delta", {"text": reply[i:i + 8], "preview": False})
+                    await asyncio.sleep(0.005)
+
+            yield _sse_event("final", {"payload": result})
+
+        except asyncio.CancelledError:
+            logger.info(f"[STREAM] Cancelled by client. trace_id={trace_id}")
+        except Exception as exc:
+            logger.exception(f"[STREAM] Failed. trace_id={trace_id}: {exc}")
+            yield _sse_event("error", {
+                "message": "Something went wrong. Please try again.",
+                "code": "STREAM_ERROR",
+                "trace_id": trace_id,
+            })
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
 
 # ═══════════════════════════════════════════════════════════════
 # SCAN USAGE — Supabase-backed server-side enforcement
