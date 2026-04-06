@@ -85,6 +85,130 @@ def _polish_response(text: str) -> str:
     return text
 
 
+def _assess_data_requirements(profile: Dict[str, Any], integrations: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Returns inline data capture requirements for the frontend chat thread.
+    This is additive metadata and must never block the assistant response.
+    """
+    requirements: List[Dict[str, Any]] = []
+    profile = profile or {}
+    integrations = integrations or {}
+
+    revenue_range = str(profile.get("revenue_range") or "").strip()
+    if revenue_range in {"", "None", "null"}:
+        requirements.append(
+            {
+                "id": "revenue_range",
+                "label": "Revenue range",
+                "why": "Calibrates financial benchmarks in my response",
+                "type": "select",
+                "options": [
+                    {"value": "Pre-revenue", "label": "Pre-revenue"},
+                    {"value": "Under $500K", "label": "Under $500K"},
+                    {"value": "$500K – $1M", "label": "$500K – $1M"},
+                    {"value": "$1M – $5M", "label": "$1M – $5M"},
+                    {"value": "$5M – $15M", "label": "$5M – $15M"},
+                    {"value": "$15M – $50M", "label": "$15M – $50M"},
+                    {"value": "$50M+", "label": "$50M+"},
+                ],
+            }
+        )
+
+    target_market = str(profile.get("target_market") or "").strip()
+    if len(target_market) < 10:
+        requirements.append(
+            {
+                "id": "target_market",
+                "label": "Target market",
+                "why": "Focuses advice on your actual customers",
+                "type": "text",
+                "placeholder": "e.g. Small accounting firms in Australia",
+            }
+        )
+
+    crm_connected = bool(integrations.get("hubspot") or integrations.get("salesforce"))
+    if not crm_connected:
+        requirements.append(
+            {
+                "id": "crm_connect",
+                "label": "CRM (pipeline data)",
+                "why": "Gives me visibility into your deals and revenue pipeline",
+                "type": "integration",
+                "integration_category": "crm",
+                "integration_label": "Connect HubSpot or Salesforce",
+            }
+        )
+
+    accounting_connected = bool(integrations.get("xero") or integrations.get("quickbooks"))
+    if not accounting_connected:
+        requirements.append(
+            {
+                "id": "accounting_connect",
+                "label": "Accounting (invoices, cash flow)",
+                "why": "Unlocks financial analysis and cash flow insights",
+                "type": "integration",
+                "integration_category": "accounting",
+                "integration_label": "Connect Xero or QuickBooks",
+            }
+        )
+
+    if not profile.get("business_stage"):
+        requirements.append(
+            {
+                "id": "business_stage",
+                "label": "Business stage",
+                "why": "Matches advice to your growth lifecycle",
+                "type": "select",
+                "options": [
+                    {"value": "Pre-revenue / Idea", "label": "Pre-revenue / Idea"},
+                    {"value": "Startup (0-2 years)", "label": "Startup (0-2 years)"},
+                    {"value": "Early Growth (2-5 years)", "label": "Early Growth (2-5 years)"},
+                    {"value": "Growth (5-10 years)", "label": "Growth (5-10 years)"},
+                    {"value": "Established (10+ years)", "label": "Established (10+ years)"},
+                    {"value": "Scaling / Expansion", "label": "Scaling / Expansion"},
+                ],
+            }
+        )
+
+    main_challenges = str(profile.get("main_challenges") or "").strip()
+    if len(main_challenges) < 15:
+        requirements.append(
+            {
+                "id": "main_challenges",
+                "label": "Current main challenge",
+                "why": "Directs my advice to your most urgent pressure",
+                "type": "text",
+                "placeholder": "e.g. Growing revenue while managing cash flow",
+            }
+        )
+
+    return requirements[:3]
+
+
+def _compute_data_coverage_pct(profile: Dict[str, Any], integrations: Dict[str, Any]) -> int:
+    """Returns 0-100 profile/integration coverage score for inline messaging."""
+    score = 0
+    profile = profile or {}
+    integrations = integrations or {}
+    fields = [
+        "revenue_range",
+        "target_market",
+        "business_stage",
+        "main_challenges",
+        "unique_value_proposition",
+        "short_term_goals",
+    ]
+    for field_name in fields:
+        value = str(profile.get(field_name) or "").strip()
+        if len(value) > 3 and value not in {"None", "null"}:
+            score += 10
+    if integrations.get("hubspot") or integrations.get("salesforce"):
+        score += 20
+    if integrations.get("xero") or integrations.get("quickbooks"):
+        score += 20
+    return min(score, 100)
+
+
 def _budget_system_prompt(
     *,
     base_prompt: str,
@@ -2243,6 +2367,13 @@ class UserSettingsUpdate(BaseModel):
     theme: Optional[str] = None
 
 
+class ResumeConversationRequest(BaseModel):
+    conversation_id: Optional[str] = None
+    original_message: str
+    saved_field: str
+    saved_value: str
+
+
 @router.post("/soundboard/upload")
 async def soundboard_upload(
     file: UploadFile = FastAPIFile(...),
@@ -2391,6 +2522,62 @@ async def get_soundboard_conversations(current_user: dict = Depends(get_current_
     return {"conversations": result.data or []}
 
 
+@router.post("/soundboard/resume-after-update")
+async def resume_after_update(req: ResumeConversationRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Saves a profile field and returns a resume message the frontend can pass into chat.
+    The assistant response remains inline inside the same conversation thread.
+    """
+    sb = get_sb()
+    user_id = current_user["id"]
+    allowed_fields = {
+        "revenue_range",
+        "target_market",
+        "business_stage",
+        "main_challenges",
+        "short_term_goals",
+        "unique_value_proposition",
+        "team_size",
+        "key_competitors",
+        "pricing_model",
+        "geographic_focus",
+    }
+    saved_field = str(req.saved_field or "").strip()
+    saved_value = str(req.saved_value or "").strip()
+    if not saved_field or not saved_value:
+        raise HTTPException(status_code=400, detail="saved_field and saved_value are required")
+
+    if saved_field in allowed_fields:
+        try:
+            existing = sb.table("business_profiles").select("id").eq("user_id", user_id).limit(1).execute()
+            if existing.data:
+                sb.table("business_profiles").update({saved_field: saved_value}).eq("user_id", user_id).execute()
+            else:
+                sb.table("business_profiles").insert({"user_id": user_id, saved_field: saved_value}).execute()
+        except Exception as exc:
+            logger.warning("Could not save inline field %s for user %s: %s", saved_field, user_id[:8], exc)
+
+    field_labels = {
+        "revenue_range": "revenue range",
+        "target_market": "target market",
+        "business_stage": "business stage",
+        "main_challenges": "current challenge",
+        "short_term_goals": "growth goals",
+    }
+    field_label = field_labels.get(saved_field, saved_field.replace("_", " "))
+    original_message = str(req.original_message or "").strip()
+    resume_message = (
+        f"[User just provided their {field_label}: {saved_value}] "
+        f"Now with this context, please give a complete answer to the original question: {original_message}"
+    )
+    return {
+        "status": "saved",
+        "field": saved_field,
+        "value": saved_value,
+        "resume_message": resume_message,
+    }
+
+
 @router.get("/soundboard/conversations/{conversation_id}")
 async def get_soundboard_conversation_detail(conversation_id: str, current_user: dict = Depends(get_current_user)):
     sb = get_sb()
@@ -2425,6 +2612,8 @@ async def get_soundboard_conversation_detail(conversation_id: str, current_user:
                     "retrieval_contract",
                     "forensic_report",
                     "generation_contract",
+                    "data_requirements",
+                    "data_coverage_pct",
                 ):
                     if key not in item and key in metadata:
                         item[key] = metadata.get(key)
@@ -2516,6 +2705,19 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     guardrail_status = coverage["guardrail_status"]
     missing_fields = coverage["missing_fields"]
     missing_critical = coverage["missing_critical"]
+    integrations_map = {
+        "hubspot": has_crm,
+        "salesforce": False,
+        "xero": has_accounting,
+        "quickbooks": False,
+    }
+    try:
+        data_requirements = _assess_data_requirements(profile or {}, integrations_map)
+        data_coverage_pct = _compute_data_coverage_pct(profile or {}, integrations_map)
+    except Exception as exc:
+        logger.debug(f"Data requirements assessment error: {exc}")
+        data_requirements = []
+        data_coverage_pct = int(coverage_pct or 0)
     request_looks_report_grade = _is_report_grade_request(str(req.message or ""))
 
     # Keep legacy context_fields for logging compatibility
@@ -3032,110 +3234,11 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
 
     # ═══ PERSONALIZATION GUARDRAIL: Block generic advice ═══
     if guardrail_status == "BLOCKED":
-        # Build actionable list of critical missing fields
-        critical_missing = [f for f in missing_fields if f["critical"]][:5]
-        missing_list = ", ".join(f["label"] for f in critical_missing) if critical_missing else "business profile fields"
-        logger.warning(f"[GUARDRAIL_BLOCKED] user={user_id[:8]} coverage={coverage_pct}% missing_critical={len(missing_critical)}")
-        blocked_contract = build_contract_payload(
-            tier=(current_user.get("effective_tier") or current_user.get("subscription_tier") or profile.get("subscription_tier") or "free"),
-            mode_requested=getattr(req, "mode", "auto"),
-            mode_effective="auto",
-            guardrail="BLOCKED",
-            coverage_pct=coverage_pct,
-            confidence_score=contract_meta.get("confidence_score", 0.2),
-            data_sources_count=contract_meta.get("data_sources_count", 1),
-            data_freshness=contract_meta.get("data_freshness", "unknown"),
-            connected_sources=(contract_meta.get("lineage") or {}).get("connected_sources", {}),
+        logger.info(
+            f"[GUARDRAIL_INLINE_CONTINUE] user={user_id[:8]} coverage={coverage_pct}% "
+            "forcing DEGRADED for answer-first + inline requirements flow"
         )
-        blocked_reply = (
-            f"I need a bit more context about your business before I can give you specific advice. "
-            f"I'm currently working with {coverage_pct}% data coverage — not enough to deliver accurate guidance.\n\n"
-            f"To unlock personalised intelligence, please complete: {missing_list}. "
-            "It takes about 3 minutes and makes every response significantly more useful."
-        )
-
-        # Persist blocked interactions so conversation retrieval remains consistent.
-        now_iso = now_dt.isoformat()
-        requested_mode = getattr(req, "mode", "auto")
-        if req.conversation_id and conversation:
-            blocked_conversation_id = req.conversation_id
-            sb.table("soundboard_conversations").update({
-                "updated_at": now_iso,
-                "mode_requested": requested_mode,
-                "mode_effective": "auto",
-                "last_model_used": "guardrail/blocked",
-                "contract_version": CONTRACT_VERSION,
-            }).eq("id", blocked_conversation_id).eq("user_id", user_id).execute()
-        else:
-            # Preserve client conversation ids so retrieval endpoints stay stable.
-            blocked_conversation_id = req.conversation_id or str(uuid.uuid4())
-            sb.table("soundboard_conversations").insert({
-                "id": blocked_conversation_id,
-                "user_id": user_id,
-                "title": (req.message[:40] if req.message else "New Conversation"),
-                "mode_requested": requested_mode,
-                "mode_effective": "auto",
-                "last_model_used": "guardrail/blocked",
-                "contract_version": CONTRACT_VERSION,
-                "created_at": now_iso,
-                "updated_at": now_iso,
-            }).execute()
-
-        try:
-            sb.table("soundboard_messages").insert([
-                {
-                    "conversation_id": blocked_conversation_id,
-                    "user_id": user_id,
-                    "role": "user",
-                    "content": req.message,
-                    "timestamp": now_iso,
-                },
-                {
-                    "conversation_id": blocked_conversation_id,
-                    "user_id": user_id,
-                    "role": "assistant",
-                    "content": blocked_reply,
-                    "timestamp": now_iso,
-                    "metadata": {
-                        "mode_effective": "auto",
-                        "contract_version": CONTRACT_VERSION,
-                        "guardrail": "BLOCKED",
-                    },
-                },
-            ]).execute()
-        except Exception:
-            pass
-
-        blocked_actions = [
-            {
-                "label": "Complete calibration now",
-                "action": "open_calibration",
-                "prompt": "Open calibration and complete the missing critical business profile fields.",
-            },
-            {
-                "label": "Show missing profile fields",
-                "action": "show_missing_fields",
-                "prompt": f"Show exactly which critical fields are missing and why each one improves advisor accuracy ({coverage_pct}% coverage now).",
-            },
-        ]
-        return {
-            "reply": _safe_reply_text(blocked_reply),
-            "guardrail": "BLOCKED",
-            "coverage_pct": coverage_pct,
-            "coverage_window": coverage_window,
-            "incident_or_compliance": incident_or_compliance,
-            "explicit_capability_gap": explicit_capability_gap,
-            "upsell_allowed": allow_upsell,
-            "missing_fields": [{"key": f["key"], "label": f["label"], "path": f["path"], "critical": f["critical"]} for f in missing_fields[:8]],
-            "context_fields": context_fields,
-            "live_signals": live_signal_count,
-            "conversation_id": blocked_conversation_id,
-            "suggested_actions": blocked_actions,
-            "evidence_pack": evidence_pack,
-            "soundboard_contract": blocked_contract,
-            "generation_contract": generation_contract,
-            **contract_meta,
-        }
+        guardrail_status = "DEGRADED"
 
     # P1: Signal freshness injection
     signal_injection = ""
@@ -3719,6 +3822,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                 "suggested_actions": suggested_actions,
                 "file": generated_file,
                 "coverage_window": coverage_window,
+                "data_requirements": data_requirements,
+                "data_coverage_pct": data_coverage_pct,
                 "intent": {"domain": intent_domain, "action": intent_action},
                 "model_used": response_model,
                 "agent_name": effective_agent_name,
@@ -3776,6 +3881,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
                         "suggested_actions": item.get("suggested_actions") or [],
                         "file": item.get("file"),
                         "coverage_window": item.get("coverage_window") or {},
+                        "data_requirements": item.get("data_requirements") or [],
+                        "data_coverage_pct": item.get("data_coverage_pct"),
                         "intent": item.get("intent") or {},
                         "model_used": item.get("model_used"),
                         "agent_name": item.get("agent_name"),
@@ -3868,6 +3975,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "coverage_window": coverage_window,
+            "data_requirements": data_requirements,
+            "data_coverage_pct": data_coverage_pct,
             "grounded_report_ready": grounded_report_ready,
             "report_grade_request": report_grade_request,
             "incident_or_compliance": incident_or_compliance,
@@ -3963,6 +4072,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "coverage_window": coverage_window,
+            "data_requirements": data_requirements,
+            "data_coverage_pct": data_coverage_pct,
             "incident_or_compliance": incident_or_compliance,
             "explicit_capability_gap": explicit_capability_gap,
             "upsell_allowed": allow_upsell,
@@ -4062,6 +4173,8 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
             "guardrail": guardrail_status,
             "coverage_pct": coverage_pct,
             "coverage_window": coverage_window,
+            "data_requirements": data_requirements,
+            "data_coverage_pct": data_coverage_pct,
             "incident_or_compliance": incident_or_compliance,
             "explicit_capability_gap": explicit_capability_gap,
             "upsell_allowed": allow_upsell,
