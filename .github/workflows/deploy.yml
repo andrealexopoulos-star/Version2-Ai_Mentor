@@ -18,7 +18,6 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   BACKEND_HEALTH_URL: https://biqc-api.azurewebsites.net/api/health
   BACKEND_AUTH_PROBE_URL: https://biqc-api.azurewebsites.net/api/user/integration-status
-  WEBSITE_GATE_BYPASS: true
 
 jobs:
   website-change-gate:
@@ -37,14 +36,6 @@ jobs:
       - name: Detect protected website changes
         id: scan
         run: |
-          if [ "${WEBSITE_GATE_BYPASS}" = "true" ]; then
-            echo "website_changed=true" >> "$GITHUB_OUTPUT"
-            echo "website_approved=true" >> "$GITHUB_OUTPUT"
-            echo "deploy_frontend=true" >> "$GITHUB_OUTPUT"
-            echo "Website gate bypass active — forcing frontend deploy."
-            exit 0
-          fi
-
           BEFORE_SHA="${{ github.event.before }}"
           if [ -z "$BEFORE_SHA" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
             BEFORE_SHA="$(git rev-list --max-count=1 HEAD^ || true)"
@@ -87,10 +78,6 @@ jobs:
 
       - name: Enforce approval for protected website changes (blocking)
         run: |
-          if [ "${WEBSITE_GATE_BYPASS}" = "true" ]; then
-            echo "Website gate bypass active — skipping approval enforcement."
-            exit 0
-          fi
           if [ "${{ steps.scan.outputs.website_changed }}" = "true" ] && [ "${{ steps.scan.outputs.website_approved }}" != "true" ]; then
             echo "Blocked: protected website files changed without [website-approved] in commit message."
             echo "Add [website-approved] after explicit website QA sign-off, then re-run deployment."
