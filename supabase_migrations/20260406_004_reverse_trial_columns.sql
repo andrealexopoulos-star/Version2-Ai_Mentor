@@ -1,0 +1,3 @@
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS trial_expires_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS trial_tier TEXT DEFAULT 'pro';

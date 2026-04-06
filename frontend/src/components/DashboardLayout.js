@@ -117,6 +117,13 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     const stored = Number(localStorage.getItem(SOUNDBOARD_WIDTH_STORAGE_KEY));
     return Number.isFinite(stored) ? clamp(stored, 320, 560) : 380;
   });
+  const trialDaysLeft = useMemo(() => {
+    if (!user?.trial_expires_at) return null;
+    const expiry = new Date(user.trial_expires_at);
+    const now = new Date();
+    if (expiry <= now) return null;
+    return Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+  }, [user]);
   const [isDesktopViewport, setIsDesktopViewport] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : false));
   const [activeResizeTarget, setActiveResizeTarget] = useState(null);
   const [notifications, setNotifications] = useState({ total: 0, high: 0 });
@@ -668,7 +675,42 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       {isNavOpen && <div className="fixed inset-0 bg-black/50 lg:hidden" onClick={closeAll} aria-hidden="true" style={{ zIndex: 998 }} />}
 
       {/* ═══ MAIN CONTENT + DESKTOP SOUNDBOARD PANEL ═══ */}
-      <div className="pt-14 pb-[76px] lg:pb-0 transition-all duration-300 flex" style={{ minHeight: '100dvh', marginLeft: isDesktopViewport ? `${activeSidebarWidth}px` : undefined }}>
+      {trialDaysLeft !== null && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 56,
+            left: 0,
+            right: 0,
+            zIndex: 998,
+            background: '#FF6A00',
+            padding: '6px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: 13,
+          }}
+        >
+          <span style={{ color: 'white', fontWeight: 500 }}>
+            You are on a free trial of Professional — {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining.
+          </span>
+          <button
+            onClick={() => navigate('/subscribe')}
+            style={{ background: 'white', color: '#FF6A00', border: 'none', borderRadius: 6, padding: '3px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+          >
+            Upgrade now
+          </button>
+        </div>
+      )}
+
+      <div
+        className="pt-14 pb-[76px] lg:pb-0 transition-all duration-300 flex"
+        style={{
+          minHeight: '100dvh',
+          marginLeft: isDesktopViewport ? `${activeSidebarWidth}px` : undefined,
+          paddingTop: trialDaysLeft !== null ? 32 : 0,
+        }}
+      >
         <main id="main-content" className="flex-1" style={{ background: 'var(--biqc-bg, #0F1720)', overflowY: 'visible' }}>
           <div className="px-4 py-4 md:px-6 md:py-6">
             <div className="mb-4 flex items-center justify-between gap-3" data-testid="page-navigation-row">

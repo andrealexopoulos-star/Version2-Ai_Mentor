@@ -300,6 +300,31 @@ def get_sb():
     return supabase_admin
 
 
+def _apply_trial_context(user_data: dict, sb) -> dict:
+    payload = dict(user_data or {})
+    user_id = payload.get("id")
+    if not user_id or sb is None:
+        payload["effective_tier"] = payload.get("subscription_tier", "free")
+        payload["on_trial"] = False
+        return payload
+
+    trial_expires_at = payload.get("trial_expires_at")
+    trial_tier = payload.get("trial_tier", "pro")
+    if trial_expires_at:
+        try:
+            expiry = datetime.fromisoformat(str(trial_expires_at).replace("Z", "+00:00"))
+            if expiry > datetime.now(timezone.utc):
+                payload["effective_tier"] = trial_tier
+                payload["on_trial"] = True
+                return payload
+        except Exception:
+            pass
+
+    payload["effective_tier"] = payload.get("subscription_tier", "free")
+    payload["on_trial"] = False
+    return payload
+
+
 # ─── Auth Dependencies ───
 
 async def get_current_user(
@@ -349,6 +374,13 @@ async def get_current_user(
             try:
                 sb = get_sb()
                 if sb:
+                    try:
+                        user_row = sb.table("users").select("trial_expires_at,trial_tier,subscription_tier").eq("id", user.get("id")).maybe_single().execute()
+                        if user_row.data:
+                            user = {**user, **user_row.data}
+                    except Exception as trial_ctx_err:
+                        logger.debug("Trial context fetch failed for %s: %s", user.get("id"), trial_ctx_err)
+                    user = _apply_trial_context(user, sb)
                     row = sb.table("users").select("role").eq("id", user.get("id")).maybe_single().execute()
                     if row.data and row.data.get("role") == "suspended":
                         raise HTTPException(status_code=403, detail="Account suspended. Contact support.")

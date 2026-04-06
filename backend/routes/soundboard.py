@@ -2953,7 +2953,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     from routes.deps import check_rate_limit
     requested_mode = getattr(req, "mode", "auto")
     report_grade_request = request_looks_report_grade or _is_report_grade_request(clean_message)
-    tier_for_contract = (current_user.get("subscription_tier") or profile.get("subscription_tier") or "free")
+    tier_for_contract = (current_user.get("effective_tier") or current_user.get("subscription_tier") or profile.get("subscription_tier") or "free")
     is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin"}
     mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
     generation_request = _infer_generation_request(clean_message)
@@ -3037,7 +3037,7 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
         missing_list = ", ".join(f["label"] for f in critical_missing) if critical_missing else "business profile fields"
         logger.warning(f"[GUARDRAIL_BLOCKED] user={user_id[:8]} coverage={coverage_pct}% missing_critical={len(missing_critical)}")
         blocked_contract = build_contract_payload(
-            tier=(current_user.get("subscription_tier") or profile.get("subscription_tier") or "free"),
+            tier=(current_user.get("effective_tier") or current_user.get("subscription_tier") or profile.get("subscription_tier") or "free"),
             mode_requested=getattr(req, "mode", "auto"),
             mode_effective="auto",
             guardrail="BLOCKED",
@@ -4250,7 +4250,7 @@ async def soundboard_chat_stream(req: SoundboardChatRequest, current_user: dict 
 
     sanitised = sanitise_input(req.message)
     requested_mode = getattr(req, "mode", "auto")
-    tier_for_contract = (current_user.get("subscription_tier") or "free")
+    tier_for_contract = (current_user.get("effective_tier") or current_user.get("subscription_tier") or "free")
     is_super_admin = (current_user.get("role") or "").lower() in {"superadmin", "super_admin"}
     mode = enforce_mode_for_tier(requested_mode, tier_for_contract, is_super_admin=is_super_admin)
     feature = "trinity_daily" if mode == "trinity" else "soundboard_daily"

@@ -36,12 +36,22 @@ export function resolveTier(user) {
   // Respect role field — only superadmin variants map to super_admin tier.
   const role = (user.role || '').toLowerCase();
   if (role === 'superadmin' || role === 'super_admin') return 'super_admin';
+
+  // Active reverse-trial grants elevated effective tier.
+  if (user.trial_expires_at) {
+    const trialExpiry = new Date(user.trial_expires_at);
+    if (trialExpiry > new Date()) {
+      const trialTier = (user.trial_tier || 'pro').toLowerCase();
+      return trialTier === 'pro' || trialTier === 'professional' ? 'pro' : 'starter';
+    }
+  }
+
   const raw = (user.subscription_tier || user.tier || 'free').toLowerCase().trim();
   if (['super_admin', 'superadmin'].includes(raw)) return 'super_admin';
   if (['enterprise', 'custom_build', 'custom'].includes(raw)) return 'enterprise';
   if (['pro', 'professional'].includes(raw)) return 'pro';
   if (['starter', 'foundation', 'growth'].includes(raw)) return 'starter';
-  if (['trial'].includes(raw)) return 'trial';
+  if (['trial'].includes(raw)) return 'free';
   return 'free';
 }
 

@@ -13,6 +13,7 @@ from supabase_client import get_supabase_client, init_supabase
 
 supabase_admin = init_supabase()
 from datetime import datetime
+from datetime import timezone, timedelta
 import re
 
 logger = logging.getLogger(__name__)
@@ -233,7 +234,17 @@ async def create_user_profile(user_id: str, email: str, metadata: Dict[str, Any]
             logger.warning(f"Could not create cognitive profile: {cog_error}")
         
         logger.info(f"✅ Created NEW user profile for {email} with ID {user_id}")
-        return _apply_master_admin_overrides(user_response.data[0], email)
+        created_user = _apply_master_admin_overrides(user_response.data[0], email)
+        try:
+            supabase_admin.table("users").update({
+                "trial_expires_at": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
+                "trial_tier": "pro",
+            }).eq("id", user_id).execute()
+            created_user["trial_expires_at"] = (datetime.now(timezone.utc) + timedelta(days=14)).isoformat()
+            created_user["trial_tier"] = "pro"
+        except Exception as trial_err:
+            logger.warning(f"Could not set trial for new user: {trial_err}")
+        return created_user
         
     except Exception as e:
         error_str = str(e)
