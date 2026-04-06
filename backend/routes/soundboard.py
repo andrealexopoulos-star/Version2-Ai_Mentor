@@ -85,6 +85,70 @@ def _polish_response(text: str) -> str:
     return text
 
 
+def _budget_system_prompt(
+    *,
+    base_prompt: str,
+    biz_context: str,
+    cognition_context: str,
+    rag_context: str,
+    memory_context: str,
+    integration_context: str,
+    marketing_context: str,
+    actions_context: str,
+    signal_injection: str,
+    guardrail_injection: str,
+    evidence_injection: str,
+    contract_injection: str,
+    user_context: str,
+    generation_requested: bool,
+    target_max_tokens: int = 8000,
+) -> str:
+    try:
+        import tiktoken
+        enc = tiktoken.encoding_for_model("gpt-4o")
+
+        def count(s):
+            return len(enc.encode(s or ""))
+    except Exception:
+        def count(s):
+            return int(len((s or "").split()) * 1.3)
+
+    def cap(text, max_tokens):
+        if count(text) <= max_tokens:
+            return text
+        lines, used, result = text.split('\n'), 0, []
+        for line in lines:
+            lt = count(line)
+            if used + lt > max_tokens:
+                break
+            result.append(line)
+            used += lt
+        return '\n'.join(result)
+
+    parts = [base_prompt, guardrail_injection, contract_injection, cap(biz_context, 800)]
+    budget = sum(count(p) for p in parts)
+
+    for block, limit in [
+        (integration_context, 2000),
+        (signal_injection, 500),
+        (cognition_context, 600),
+        (rag_context, 1000),
+        (memory_context, 600),
+        (evidence_injection, 400),
+        (marketing_context, 400),
+    ]:
+        capped = cap(block, limit)
+        if budget + count(capped) < target_max_tokens:
+            parts.append(capped)
+            budget += count(capped)
+
+    if generation_requested and budget + count(actions_context) < target_max_tokens:
+        parts.append(actions_context)
+
+    parts.append(user_context)
+    return "\n".join(p for p in parts if p and p.strip())
+
+
 def _build_grounded_exec_fallback(*, has_crm: bool, has_accounting: bool, has_email: bool, obs_events: List[Dict[str, Any]], rev: Dict[str, Any], risk: Dict[str, Any], people: Dict[str, Any]) -> str:
     connected = []
     if has_crm:
@@ -3028,7 +3092,22 @@ async def soundboard_chat(req: SoundboardChatRequest, current_user: dict = Depen
     if evidence_lines:
         evidence_injection = "\n\n═══ EVIDENCE CONTRACT (MANDATORY SOURCE REFERENCES) ═══\n" + "\n".join(evidence_lines) + "\n"
 
-    system_message = soundboard_prompt + fact_block + biz_context + cognition_context + rag_context + memory_context + integration_context + marketing_context + actions_context + signal_injection + guardrail_injection + evidence_injection + contract_injection + f"\n\nCONTEXT:\n{user_context}"
+    system_message = _budget_system_prompt(
+        base_prompt=soundboard_prompt + fact_block,
+        biz_context=biz_context,
+        cognition_context=cognition_context,
+        rag_context=rag_context,
+        memory_context=memory_context,
+        integration_context=integration_context,
+        marketing_context=marketing_context,
+        actions_context=actions_context,
+        signal_injection=signal_injection,
+        guardrail_injection=guardrail_injection,
+        evidence_injection=evidence_injection,
+        contract_injection=contract_injection,
+        user_context=f"\n\nCONTEXT:\n{user_context}",
+        generation_requested=False,
+    )
 
     # ═══ GENERATION CONTRACT INJECTION (universal ask + connector relevance) ═══
     if generation_contract.get("requested"):
