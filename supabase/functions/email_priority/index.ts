@@ -11,11 +11,8 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { verifyAuth } from "../_shared/auth.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -157,12 +154,13 @@ async function classifyWithAI(emails: any[]): Promise<any[]> {
   const systemPrompt = `You are an AI executive email triage assistant. Classify each email as high, medium, or low priority for a busy business leader.
 
 CLASSIFICATION RULES:
-HIGH: Client escalations, financial/legal urgency, board/CEO messages, overdue responses (>48h), contract/deal decisions, time-critical deadlines within 24h.
-MEDIUM: Project updates, colleague requests, client queries with 2-5 day window, vendor communications, meeting requests.
-LOW: Newsletters, marketing emails, FYI notifications, automated reports, social media digests.
+URGENT: Client escalations, legal/financial deadlines, direct exec escalations, same-day commitments.
+HIGH: Revenue-impacting threads, contracts, key customer issues, short-deadline items.
+MEDIUM: Normal project updates and coordination.
+LOW: Newsletters, FYI updates, automated notifications.
 
-For each email return EXACTLY this JSON structure:
-{"index": N, "priority": "high|medium|low", "reason": "one sentence", "suggested_action": "specific action", "action_item": "task text or null", "due_date": "YYYY-MM-DD or null"}`;
+Return JSON with "results" array and each row:
+{"index":N,"urgency":"urgent|high|medium|low","category":"sales|finance|operations|customer|team|marketing|admin|other","business_impact_score":0-100,"ai_summary":"short summary","action_required":true|false,"priority":"high|medium|low","reason":"one sentence","suggested_action":"specific action","action_item":"task text or null","due_date":"YYYY-MM-DD or null"}`;
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -205,6 +203,13 @@ For each email return EXACTLY this JSON structure:
     const aiResult = results.find((r: any) => r.index === i) || {};
     return {
       ...email,
+      urgency: ["urgent", "high", "medium", "low"].includes(aiResult.urgency) ? aiResult.urgency : "medium",
+      category: aiResult.category || "other",
+      business_impact_score: Number.isFinite(Number(aiResult.business_impact_score))
+        ? Number(aiResult.business_impact_score)
+        : 50,
+      ai_summary: aiResult.ai_summary || aiResult.reason || "Classified by AI",
+      action_required: Boolean(aiResult.action_required),
       priority_level: ["high", "medium", "low"].includes(aiResult.priority) ? aiResult.priority : "medium",
       reason: aiResult.reason || "Classified by AI",
       suggested_action: aiResult.suggested_action || "Review",
@@ -256,6 +261,22 @@ async function persistResults(sb: any, userId: string, provider: string, classif
   if (taskRows.length) {
     await sb.from("email_tasks").upsert(taskRows, { onConflict: "user_id,provider,email_id", ignoreDuplicates: true });
   }
+
+  const intelligenceRows = classifiedEmails.map((e) => ({
+    user_id: userId,
+    provider,
+    email_id: e.id,
+    urgency: e.urgency || "medium",
+    category: e.category || "other",
+    business_impact_score: Number(e.business_impact_score || 0),
+    ai_summary: e.ai_summary || e.reason || "",
+    action_required: Boolean(e.action_required),
+    analyzed_at: new Date().toISOString(),
+  }));
+  await sb.from("email_intelligence").upsert(intelligenceRows, {
+    onConflict: "user_id,provider,email_id",
+    ignoreDuplicates: false,
+  });
 }
 
 function buildStrategicInsights(emails: any[]): string {
@@ -276,30 +297,17 @@ function buildStrategicInsights(emails: any[]): string {
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return new Response(JSON.stringify({ ok: false, error: "Missing authorization header" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok || !auth.userId) {
+    return new Response(JSON.stringify({ ok: false, error: auth.error || "Missing authorization header" }), {
+      status: auth.status || 401, headers: corsHeaders(req),
     });
   }
 
   // Dual client: user client for auth, service client for DB writes
-  const userSb = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY") || SERVICE_ROLE, {
-    global: { headers: { Authorization: authHeader } },
-  });
   const adminSb = createClient(SUPABASE_URL, SERVICE_ROLE);
-
-  // Authenticate user
-  const { data: { user }, error: authError } = await userSb.auth.getUser();
-  if (authError || !user) {
-    return new Response(JSON.stringify({ ok: false, error: "Authentication failed" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const userId = user.id;
+  const userId = auth.userId;
   let provider = "gmail";
   try {
     const body = await req.json().catch(() => ({}));
@@ -332,7 +340,7 @@ Deno.serve(async (req) => {
       }
       default:
         return new Response(JSON.stringify({ ok: false, error: `Unknown provider: ${provider}. Supported: gmail, outlook, icloud, imap` }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: corsHeaders(req),
         });
     }
 
@@ -345,19 +353,50 @@ Deno.serve(async (req) => {
         low_priority: [],
         strategic_insights: "Your inbox is clear — no recent unread emails found.",
         total_analyzed: 0,
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: corsHeaders(req) });
     }
 
-    // 2. AI classification
-    const classified = await classifyWithAI(emails);
+    // 2. Cache lookup (last hour) and AI classification for misses
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: recentCache } = await adminSb
+      .from("email_intelligence")
+      .select("email_id, urgency, category, business_impact_score, ai_summary, action_required, analyzed_at")
+      .eq("user_id", userId)
+      .eq("provider", provider)
+      .gte("analyzed_at", hourAgo);
+    const cacheMap = new Map((recentCache || []).map((row: any) => [row.email_id, row]));
+    const cachedClassified = emails
+      .filter((e) => cacheMap.has(e.id))
+      .map((e) => ({
+        ...e,
+        urgency: cacheMap.get(e.id).urgency || "medium",
+        category: cacheMap.get(e.id).category || "other",
+        business_impact_score: Number(cacheMap.get(e.id).business_impact_score || 0),
+        ai_summary: cacheMap.get(e.id).ai_summary || "",
+        action_required: Boolean(cacheMap.get(e.id).action_required),
+        priority_level: "medium",
+        reason: cacheMap.get(e.id).ai_summary || "Cached intelligence",
+        suggested_action: "Review",
+        action_item: null,
+        due_date: null,
+      }));
+    const toClassify = emails.filter((e) => !cacheMap.has(e.id));
+    const newlyClassified = await classifyWithAI(toClassify);
+    const classified = [...cachedClassified, ...newlyClassified];
 
     // 3. Persist to Supabase
     await persistResults(adminSb, userId, provider, classified);
 
     // 4. Record run summary
-    const high = classified.filter(e => e.priority_level === "high");
-    const med  = classified.filter(e => e.priority_level === "medium");
-    const low  = classified.filter(e => e.priority_level === "low");
+    const urgencyRank: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+    const sorted = [...classified].sort((a, b) => {
+      const rankDiff = (urgencyRank[a.urgency || "medium"] ?? 2) - (urgencyRank[b.urgency || "medium"] ?? 2);
+      if (rankDiff !== 0) return rankDiff;
+      return Number(b.business_impact_score || 0) - Number(a.business_impact_score || 0);
+    });
+    const high = sorted.filter(e => e.priority_level === "high");
+    const med  = sorted.filter(e => e.priority_level === "medium");
+    const low  = sorted.filter(e => e.priority_level === "low");
     const insights = buildStrategicInsights(classified);
 
     await adminSb.from("email_intelligence_runs").insert({
@@ -376,21 +415,29 @@ Deno.serve(async (req) => {
       high_priority: high,
       medium_priority: med,
       low_priority: low,
+      classifications: sorted.map((e) => ({
+        email_id: e.id,
+        urgency: e.urgency,
+        category: e.category,
+        business_impact_score: e.business_impact_score,
+        ai_summary: e.ai_summary,
+        action_required: e.action_required,
+      })),
       strategic_insights: insights,
       total_analyzed: classified.length,
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }), { headers: corsHeaders(req) });
 
   } catch (err: any) {
     // Known provider errors (no token, expired, etc.)
     if (err.code) {
       return new Response(JSON.stringify({ ok: false, code: err.code, provider: err.provider, error: err.message }), {
         status: err.code === "TOKEN_EXPIRED" ? 401 : 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: corsHeaders(req),
       });
     }
     console.error("[email_priority] Unexpected error:", err);
     return new Response(JSON.stringify({ ok: false, error: err.message || "Internal error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: corsHeaders(req),
     });
   }
 });

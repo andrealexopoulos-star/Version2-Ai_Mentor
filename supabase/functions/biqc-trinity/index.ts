@@ -13,11 +13,8 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { verifyAuth } from "../_shared/auth.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -100,26 +97,23 @@ SYNTHESIS RULES:
 7. NEVER start with "I" — start with the most important insight`;
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error || "Unauthorized" }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
+  }
 
   const adminSb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-  // Auth
-  const authHeader = req.headers.get("Authorization") || "";
-  const userSb = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY") || SERVICE_ROLE, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: { user }, error: authError } = await userSb.auth.getUser();
-  if (authError || !user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  }
-
-  const userId = user.id;
+  const userId = auth.userId || "";
   let body: any;
-  try { body = await req.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
+  try { body = await req.json(); } catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: corsHeaders(req) }); }
 
   const { message, business_context = "", conversation_id = null, mode_requested = "trinity", agent_id = "boardroom" } = body;
-  if (!message) return new Response(JSON.stringify({ error: "message required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  if (!message) return new Response(JSON.stringify({ error: "message required" }), { status: 400, headers: corsHeaders(req) });
 
   const startTime = Date.now();
 
@@ -242,12 +236,12 @@ Now synthesize these three perspectives into one cohesive, authoritative executi
         gemini: { status: geminiResult.status, preview: geminiAnalysis.slice(0, 120) },
       },
       timing: { parallel_ms: parallelMs, total_ms: totalMs },
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }), { headers: corsHeaders(req) });
 
   } catch (err: any) {
     console.error("[TRINITY] Error:", err);
     return new Response(JSON.stringify({ error: err.message || "Trinity failed" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: corsHeaders(req),
     });
   }
 });

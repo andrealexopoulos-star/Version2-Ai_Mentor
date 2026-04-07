@@ -20,6 +20,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -28,11 +30,6 @@ const ABR_GUID =
   Deno.env.get("ABR_GUD") ||
   Deno.env.get("ABR_API_GUID") ||
   "";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 // Parse JSONP response from ABR into plain JSON
 function parseJsonp(jsonp: string): any {
@@ -113,8 +110,13 @@ function scoreMatch(result: any, hints: { name?: string; location?: string; doma
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
 
   try {
@@ -122,7 +124,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "No auth" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -131,7 +133,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -149,7 +151,7 @@ serve(async (req) => {
         address: null,
         match_confidence: 0,
         match_reason: "ABR API key not configured",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     }
 
     // Path 1: Direct ABN lookup
@@ -164,7 +166,7 @@ serve(async (req) => {
           address: null,
           match_confidence: 0,
           match_reason: result?.Message || "ABN not found in register",
-        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
       }
 
       const entityName = result.EntityName || '';
@@ -185,7 +187,7 @@ serve(async (req) => {
         address_postcode: postcode,
         match_confidence: 95,
         match_reason: "Direct ABN match from Australian Business Register",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     }
 
     // Path 2: Name search
@@ -201,7 +203,7 @@ serve(async (req) => {
           match_confidence: 0,
           match_reason: `No businesses found matching "${business_name_hint}"`,
           suggestions: [],
-        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
       }
 
       // Score and rank matches
@@ -246,7 +248,7 @@ serve(async (req) => {
           postcode: s.Postcode,
           score: s.match_score,
         })),
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     }
 
     // No search criteria provided
@@ -254,12 +256,12 @@ serve(async (req) => {
       status: "error",
       message: "Provide at least one of: abn, business_name_hint",
       match_confidence: 0,
-    }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }), { status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
 
   } catch (err) {
     console.error("[business-identity-lookup] Error:", err);
     return new Response(JSON.stringify({ error: "Internal error", detail: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

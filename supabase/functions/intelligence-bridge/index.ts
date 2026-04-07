@@ -22,14 +22,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifyAuth, enforceUserOwnership } from "../_shared/auth.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 const RISK_SUGGESTIONS: Record<string, Record<string, string>> = {
   finance: {
@@ -66,17 +63,31 @@ function suggestAction(domain: string, position: string): string {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleOptions(req);
+  }
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ ok: false, error: auth.error || "Unauthorized" }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
 
   try {
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body = await req.json();
-    const userId = body.user_id;
+    const userId = body.user_id || auth.userId;
+    const ownership = enforceUserOwnership(auth, userId);
+    if (!ownership.ok) {
+      return new Response(JSON.stringify({ ok: false, error: ownership.error }), {
+        status: ownership.status,
+        headers: corsHeaders(req),
+      });
+    }
 
     if (!userId) {
       return new Response(JSON.stringify({ error: "user_id required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: corsHeaders(req),
       });
     }
 
@@ -172,12 +183,12 @@ serve(async (req) => {
       actions_created: actionsCreated,
       user_id: userId,
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: corsHeaders(req),
     });
 
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: corsHeaders(req),
     });
   }
 });

@@ -10,12 +10,8 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-};
+import { verifyAuth, enforceUserOwnership } from "../_shared/auth.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL  = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -75,7 +71,14 @@ async function detectGmailInboxType(accessToken: string): Promise<string> {
 // ── main handler ──────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ ok: false, error: auth.error || "Unauthorized" }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
+  }
 
   const adminSb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
@@ -88,10 +91,17 @@ Deno.serve(async (req) => {
     // Called by backend Gmail OAuth callback after code exchange
     if (action === "store_tokens") {
       const { user_id, access_token, refresh_token, expires_at, account_email, account_name } = body;
+      const ownership = enforceUserOwnership(auth, user_id);
+      if (!ownership.ok) {
+        return new Response(JSON.stringify({ ok: false, error: ownership.error }), {
+          status: ownership.status,
+          headers: corsHeaders(req),
+        });
+      }
 
       if (!user_id || !access_token) {
         return new Response(JSON.stringify({ ok: false, error: "Missing user_id or access_token" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: corsHeaders(req),
         });
       }
 
@@ -112,7 +122,7 @@ Deno.serve(async (req) => {
       if (tokenErr) {
         console.error("[gmail_prod] token write failed:", tokenErr);
         return new Response(JSON.stringify({ ok: false, error: tokenErr.message }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500, headers: corsHeaders(req),
         });
       }
 
@@ -124,7 +134,7 @@ Deno.serve(async (req) => {
 
       console.log(`[gmail_prod] ✅ Tokens stored for ${account_email}, inbox: ${inboxType}`);
       return new Response(JSON.stringify({ ok: true, connected: true, inbox_type: inboxType }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: corsHeaders(req),
       });
     }
 
@@ -133,7 +143,7 @@ Deno.serve(async (req) => {
       const { code, user_id } = body;
       if (!code || !user_id) {
         return new Response(JSON.stringify({ ok: false, error: "Missing code or user_id" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: corsHeaders(req),
         });
       }
 
@@ -150,7 +160,7 @@ Deno.serve(async (req) => {
       });
       if (!tokenRes.ok) {
         return new Response(JSON.stringify({ ok: false, error: "Token exchange failed" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: corsHeaders(req),
         });
       }
 
@@ -168,7 +178,7 @@ Deno.serve(async (req) => {
       await upsertEmailConnection(adminSb, user_id, "gmail", userInfo.email);
 
       return new Response(JSON.stringify({ ok: true, provider: "gmail", connected: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: corsHeaders(req),
       });
     }
 
@@ -178,16 +188,11 @@ Deno.serve(async (req) => {
 
     // Multi-provider check
     if (providerParam === "all") {
-      let userId: string | null = null;
-      try {
-        const userSb = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
-        const { data: { user } } = await userSb.auth.getUser();
-        userId = user?.id || null;
-      } catch { /* anon check */ }
+      const userId = auth.isServiceRole ? String(body.user_id || "").trim() : auth.userId;
 
       if (!userId) {
         return new Response(JSON.stringify({ ok: false, error: "Authentication required" }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401, headers: corsHeaders(req),
         });
       }
 
@@ -208,26 +213,23 @@ Deno.serve(async (req) => {
           outlook: { connected: !!(outlookRow.data?.access_token) && !outlookExpired, email: outlookRow.data?.account_email, token_expired: outlookExpired },
           icloud:  { connected: !!(icloudRow.data?.connected), email: icloudRow.data?.apple_id_email },
         },
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: corsHeaders(req) });
     }
 
     // Single provider status (original response schema preserved)
     if (!authHeader) {
       return new Response(JSON.stringify({ ok: false, connected: false, error: "Missing authorization" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: corsHeaders(req),
       });
     }
 
-    let userId: string | null = null;
-    try {
-      const userSb = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
-      const { data: { user } } = await userSb.auth.getUser();
-      userId = user?.id || null;
-    } catch { /* ignore */ }
+    const userId: string | null = auth.isServiceRole
+      ? String(body.user_id || "").trim() || null
+      : auth.userId;
 
     if (!userId) {
       return new Response(JSON.stringify({ ok: false, connected: false, provider: "gmail", error: "Invalid session" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: corsHeaders(req),
       });
     }
 
@@ -239,7 +241,7 @@ Deno.serve(async (req) => {
 
     if (!conn?.access_token) {
       return new Response(JSON.stringify({ ok: true, connected: false, provider: "gmail" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: corsHeaders(req),
       });
     }
 
@@ -248,7 +250,7 @@ Deno.serve(async (req) => {
     const tokenExpired = conn.token_expiry ? new Date(conn.token_expiry) < now : false;
     if (tokenExpired) {
       return new Response(JSON.stringify({ ok: true, connected: false, provider: "gmail", needs_reconnect: true, error: "Token expired" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: corsHeaders(req),
       });
     }
 
@@ -262,7 +264,7 @@ Deno.serve(async (req) => {
         .update({ sync_status: "token_expired", updated_at: new Date().toISOString() })
         .eq("user_id", userId).eq("provider", "gmail");
       return new Response(JSON.stringify({ ok: true, connected: false, provider: "gmail", needs_reconnect: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: corsHeaders(req),
       });
     }
 
@@ -273,12 +275,12 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       ok: true, connected: true, provider: "gmail",
       email: conn.email, inbox_type: inboxType, labels_count: labels.length,
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }), { headers: corsHeaders(req) });
 
   } catch (err: any) {
     console.error("[gmail_prod] error:", err);
     return new Response(JSON.stringify({ ok: false, error: err.message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: corsHeaders(req),
     });
   }
 });

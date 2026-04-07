@@ -1,12 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 type JsonMap = Record<string, unknown>;
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-merge-signature, x-merge-webhook-signature",
-};
 
 function hexToBytes(hex: string): Uint8Array {
   const clean = hex.trim().toLowerCase().replace(/^0x/, "");
@@ -66,7 +62,7 @@ function buildDedupeKey(eventId: string, tenantId: string, category: string, ent
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: CORS });
+    return handleOptions(req);
   }
 
   const startedAt = Date.now();
@@ -78,7 +74,7 @@ serve(async (req: Request) => {
     if (!["1", "true", "yes"].includes(featureEnabled)) {
       return new Response(JSON.stringify({ ok: true, accepted: false, reason: "FEATURE_MERGE_WEBHOOK_ENABLED=false" }), {
         status: 202,
-        headers: { ...CORS, "Content-Type": "application/json" },
+        headers: corsHeaders(req),
       });
     }
     if (!supabaseUrl || !serviceRole || !webhookSecret) {
@@ -110,7 +106,7 @@ serve(async (req: Request) => {
     if (!safeEqualHex(providedSignature, expectedSignature) && expectedB64Url !== providedB64Url) {
       return new Response(JSON.stringify({ ok: false, error: "Invalid webhook signature" }), {
         status: 401,
-        headers: { ...CORS, "Content-Type": "application/json" },
+        headers: corsHeaders(req),
       });
     }
 
@@ -200,13 +196,13 @@ serve(async (req: Request) => {
       events: summaries,
     }), {
       status: 200,
-      headers: { ...CORS, "Content-Type": "application/json" },
+      headers: corsHeaders(req),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unhandled webhook ingest error";
     return new Response(JSON.stringify({ ok: false, error: message }), {
       status: 500,
-      headers: { ...CORS, "Content-Type": "application/json" },
+      headers: corsHeaders(req),
     });
   }
 });

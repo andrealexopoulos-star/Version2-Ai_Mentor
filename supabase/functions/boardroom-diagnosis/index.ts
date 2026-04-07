@@ -31,15 +31,12 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 // ─── Focus Area → Data Query + Prompt Mapping ───
 const FOCUS_CONFIGS: Record<string, {
@@ -104,9 +101,13 @@ const FOCUS_CONFIGS: Record<string, {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
 
   try {
@@ -114,7 +115,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "No auth" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -123,7 +124,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -132,7 +133,7 @@ serve(async (req) => {
     const config = FOCUS_CONFIGS[focus_area];
     if (!config) {
       return new Response(JSON.stringify({ error: `Unknown focus area: ${focus_area}` }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -288,7 +289,7 @@ Generate a diagnosis briefing. Return ONLY valid JSON with this exact structure:
         data_sources_used: dataSources,
         generated_at: new Date().toISOString(),
       }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -335,13 +336,13 @@ Generate a diagnosis briefing. Return ONLY valid JSON with this exact structure:
       data_sources_used: dataSources,
       generated_at: new Date().toISOString(),
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders(req), "Content-Type": "application/json" },
     });
 
   } catch (err) {
     console.error("boardroom-diagnosis error:", err);
     return new Response(JSON.stringify({ error: "Internal error", detail: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

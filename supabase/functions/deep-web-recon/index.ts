@@ -1,12 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { verifyAuth, enforceUserOwnership } from "../_shared/auth.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-calibration-run-id, x-calibration-step, x-proxy-request-id",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
-};
 
 interface SWOTResult {
   strengths: string[];
@@ -253,7 +249,14 @@ Return JSON ONLY (no markdown fences):
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleOptions(req);
+  }
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ ok: false, error: auth.error || "Unauthorized" }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
   if (req.method === "GET") {
     return new Response(
@@ -263,7 +266,7 @@ serve(async (req) => {
         reachable: true,
         generated_at: new Date().toISOString(),
       }),
-      { status: 200, headers: corsHeaders },
+      { status: 200, headers: corsHeaders(req) },
     );
   }
 
@@ -276,7 +279,19 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
+    const ownership = enforceUserOwnership(auth, body.user_id || null);
+    if (!ownership.ok) {
+      return new Response(JSON.stringify({ ok: false, error: ownership.error }), {
+        status: ownership.status,
+        headers: corsHeaders(req),
+      });
+    }
     const firecrawlKey = (Deno.env.get("FIRECRAWL_API_KEY") || "").trim();
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") || "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
+    );
+    const targetUserId = String(body.user_id || auth.userId || "").trim();
 
     const targets = [
       { source: "website", url: normalizeUrl(body.website || body.website_url || "") },
@@ -294,7 +309,7 @@ serve(async (req) => {
           ok: false,
           error: "At least one target URL is required (website, linkedin, twitter, etc.)",
         }),
-        { status: 400, headers: corsHeaders },
+        { status: 400, headers: corsHeaders(req) },
       );
     }
 
@@ -380,7 +395,47 @@ serve(async (req) => {
       correlation,
     };
 
-    return new Response(JSON.stringify(response), { headers: corsHeaders });
+    if (targetUserId) {
+      try {
+        await supabase.from("biqc_insights").upsert(
+          {
+            user_id: targetUserId,
+            status: "ready",
+            insight_payload: {
+              swot,
+              executive_summary: response.executive_summary,
+              signals: response.signals,
+            },
+            last_deep_crawl: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
+        if (response.signals.length > 0) {
+          await Promise.all(
+            response.signals.slice(0, 20).map((signal) =>
+              supabase.from("intelligence_actions").insert({
+                id: crypto.randomUUID(),
+                user_id: targetUserId,
+                source: "deep-web-recon",
+                source_id: `deep_recon_${Date.now()}_${signal.type}`,
+                domain: "market",
+                severity: signal.type === "competitor" ? "high" : "medium",
+                title: `Deep Recon: ${signal.type}`,
+                description: signal.text,
+                suggested_action: "Review this signal in context of current strategy.",
+                status: "read",
+                created_at: new Date().toISOString(),
+              })
+            ),
+          );
+        }
+      } catch (persistErr) {
+        aiErrors.push(`Persistence warning: ${String(persistErr).slice(0, 180)}`);
+      }
+    }
+
+    return new Response(JSON.stringify(response), { headers: corsHeaders(req) });
   } catch (err) {
     return new Response(
       JSON.stringify({
@@ -400,7 +455,7 @@ serve(async (req) => {
         ai_errors: [...aiErrors, String(err)],
         correlation,
       }),
-      { status: 500, headers: corsHeaders },
+      { status: 500, headers: corsHeaders(req) },
     );
   }
 });

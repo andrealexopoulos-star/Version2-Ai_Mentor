@@ -9,11 +9,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL     = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -67,7 +63,7 @@ async function refreshOutlookToken(refreshToken: string): Promise<{ access_token
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
 
   const adminSb = createClient(SUPABASE_URL, SERVICE_ROLE);
   const results: any = { gmail: [], outlook: [], errors: [] };
@@ -133,6 +129,6 @@ Deno.serve(async (req) => {
 
   console.log("[refresh_tokens] Complete:", JSON.stringify(results));
   return new Response(JSON.stringify({ ok: true, ...results }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders(req), "Content-Type": "application/json" },
   });
 });

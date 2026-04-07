@@ -16,16 +16,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 async function fetchMerge(token: string, endpoint: string, limit = 50) {
   if (!MERGE_API_KEY || !token || token === "connected") return [];
@@ -76,15 +73,20 @@ function classifyQuery(query: string): { type: string; sources: string[] } {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "No auth" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -93,7 +95,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -101,7 +103,7 @@ serve(async (req) => {
     const query = body.query || "";
     if (!query) {
       return new Response(JSON.stringify({ error: "No query provided" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -117,7 +119,7 @@ serve(async (req) => {
         message: 'Report-grade requests require the full BIQc Soundboard runtime so coverage, lineage, and missing periods can be checked before an answer is produced.',
         data_sources: [],
         raw_data: null,
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     }
 
     // Get user's integrations
@@ -150,7 +152,7 @@ serve(async (req) => {
         required_source: missingSource,
         message: `To answer "${query}", connect your ${sourceLabels[missingSource] || missingSource}. Go to Systems > Integrations to connect.`,
         data: null,
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     }
 
     // Gather data based on classification
@@ -267,12 +269,12 @@ Rules:
       answer,
       data_sources: dataSources,
       raw_data: queryData,
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
 
   } catch (err) {
     console.error("[query-integrations] Error:", err);
     return new Response(JSON.stringify({ error: "Internal error", detail: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

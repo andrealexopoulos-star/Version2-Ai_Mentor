@@ -13,17 +13,14 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 // ─── Fetch Merge.dev data ───
 async function fetchMerge(token: string, endpoint: string, limit = 20) {
@@ -197,15 +194,20 @@ RULES:
 Respond as plain text, not JSON.`;
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "No auth" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -214,7 +216,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -274,7 +276,7 @@ ${JSON.stringify(ctx, null, 2)}`;
       return new Response(JSON.stringify({
         mode, error: "AI temporarily unavailable",
         data_sources: sources,
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     }
 
     const aiData = await aiRes.json();
@@ -310,7 +312,7 @@ ${JSON.stringify(ctx, null, 2)}`;
         briefing,
         data_sources: sources,
         generated_at: new Date().toISOString(),
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     } else {
       // Plain text answer
       return new Response(JSON.stringify({
@@ -318,13 +320,13 @@ ${JSON.stringify(ctx, null, 2)}`;
         answer: raw,
         data_sources: sources,
         generated_at: new Date().toISOString(),
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     }
 
   } catch (err) {
     console.error("[strategic-console-ai] Error:", err);
     return new Response(JSON.stringify({ error: "Internal error", detail: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

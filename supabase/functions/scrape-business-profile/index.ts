@@ -8,11 +8,8 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { verifyAuth } from "../_shared/auth.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 function normalizeUrl(input: string): string {
   let url = input.trim();
@@ -163,7 +160,14 @@ function extractMetadata(html: string, url: string): StructuredMetadata {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleOptions(req);
+  }
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ ok: false, error: auth.error || "Unauthorized" }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
   if (req.method === "GET") {
     return new Response(
@@ -173,7 +177,7 @@ serve(async (req) => {
         reachable: true,
         generated_at: new Date().toISOString(),
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: corsHeaders(req) },
     );
   }
 
@@ -183,7 +187,7 @@ serve(async (req) => {
     if (!url || typeof url !== 'string') {
       return new Response(
         JSON.stringify({ ok: false, error: 'URL parameter required', status: 'invalid_input' }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: corsHeaders(req) }
       );
     }
 
@@ -200,7 +204,7 @@ serve(async (req) => {
           competitors: [],
           message: 'Domain is unreachable or does not resolve.',
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: corsHeaders(req) }
       );
     }
 
@@ -215,7 +219,7 @@ serve(async (req) => {
           competitors: [],
           message: 'Target server returned an error.',
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: corsHeaders(req) }
       );
     }
 
@@ -229,7 +233,7 @@ serve(async (req) => {
           competitors: [],
           message: 'Insufficient publicly available structured data for analysis.',
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: corsHeaders(req) }
       );
     }
 
@@ -261,12 +265,12 @@ serve(async (req) => {
           ? 'Insufficient publicly available structured data for competitor analysis.'
           : `Found ${metadata.competitors.length} competitor(s) in structured data.`,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: corsHeaders(req) }
     );
   } catch (e) {
     return new Response(
       JSON.stringify({ ok: false, error: 'Internal error', detail: String(e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: corsHeaders(req) }
     );
   }
 });

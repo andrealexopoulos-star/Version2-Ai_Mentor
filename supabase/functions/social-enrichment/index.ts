@@ -1,12 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-calibration-run-id, x-calibration-step, x-proxy-request-id",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
-};
+import { verifyAuth } from "../_shared/auth.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 type Platform =
   | "linkedin"
@@ -180,7 +174,14 @@ async function queryPerplexity(
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleOptions(req);
+  }
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ ok: false, error: auth.error || "Unauthorized" }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
   if (req.method === "GET") {
     return new Response(
@@ -190,7 +191,7 @@ serve(async (req) => {
         reachable: true,
         generated_at: new Date().toISOString(),
       }),
-      { status: 200, headers: corsHeaders },
+      { status: 200, headers: corsHeaders(req) },
     );
   }
 
@@ -212,7 +213,7 @@ serve(async (req) => {
     if (!websiteUrl) {
       return new Response(
         JSON.stringify({ ok: false, error: "website_url is required" }),
-        { status: 400, headers: corsHeaders },
+        { status: 400, headers: corsHeaders(req) },
       );
     }
 
@@ -315,7 +316,7 @@ serve(async (req) => {
       correlation,
     };
 
-    return new Response(JSON.stringify(result), { headers: corsHeaders });
+    return new Response(JSON.stringify(result), { headers: corsHeaders(req) });
   } catch (err) {
     return new Response(
       JSON.stringify({
@@ -324,7 +325,7 @@ serve(async (req) => {
         ai_errors: [...aiErrors, String(err)],
         correlation,
       }),
-      { status: 500, headers: corsHeaders },
+      { status: 500, headers: corsHeaders(req) },
     );
   }
 });

@@ -28,16 +28,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface FinancialAlert {
   type: string;
@@ -249,8 +246,13 @@ async function analyseUser(sb: any, userId: string): Promise<{ alerts: number; a
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
 
   try {
@@ -284,9 +286,7 @@ serve(async (req) => {
         users_analysed: uniqueUsers.length,
         total_alerts: totalAlerts,
         total_actions: totalActions,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     }
 
     // Single user mode
@@ -297,7 +297,7 @@ serve(async (req) => {
       const { data: { user } } = await sb.auth.getUser(token);
       if (!user) {
         return new Response(JSON.stringify({ error: "user_id required or authenticate" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
         });
       }
       userId = user.id;
@@ -305,12 +305,12 @@ serve(async (req) => {
 
     const result = await analyseUser(sb, userId);
     return new Response(JSON.stringify({ ok: true, mode: "single", ...result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders(req), "Content-Type": "application/json" },
     });
 
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

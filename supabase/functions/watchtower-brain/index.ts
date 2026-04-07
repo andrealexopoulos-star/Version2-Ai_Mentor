@@ -1,10 +1,7 @@
 // FILE: supabase/functions/watchtower-brain/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { verifyAuth } from "../_shared/auth.ts"
+import { corsHeaders, handleOptions } from "../_shared/cors.ts"
 
 // 🛡️ THE MASTER CONTROL PROMPT (HARDENED)
 // This prompt forces the AI to control the flow and refuse off-topic chat.
@@ -50,11 +47,18 @@ Extract the "17-Point Strategic Map" with absolute precision.
 
 serve(async (req) => {
   // Handle CORS preflight check
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  if (req.method === "OPTIONS") return handleOptions(req)
+  const auth = await verifyAuth(req)
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ ok: false, error: auth.error || "Unauthorized" }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    })
+  }
 
   if (req.method === 'GET') {
     return new Response(JSON.stringify({ ok: true, function: 'watchtower-brain', prompt_mode: 'inline', generated_at: new Date().toISOString() }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: corsHeaders(req),
     })
   }
 
@@ -64,7 +68,7 @@ serve(async (req) => {
     if (!apiKey) {
       return new Response(JSON.stringify({ error: 'OPENAI_API_KEY missing' }), {
         status: 503,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: corsHeaders(req),
       })
     }
 
@@ -91,17 +95,17 @@ serve(async (req) => {
     if (!openAiResponse.ok) {
       return new Response(JSON.stringify({ error: data?.error?.message || 'watchtower-brain upstream failure' }), {
         status: openAiResponse.status,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: corsHeaders(req),
       })
     }
     return new Response(data.choices[0].message.content, {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: corsHeaders(req),
     })
 
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: corsHeaders(req),
     })
   }
 })

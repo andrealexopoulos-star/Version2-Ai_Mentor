@@ -1,10 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+function detectAnomaly(current: number, history: number[]): { z: number; isAnomaly: boolean } {
+  if (!Number.isFinite(current) || history.length < 3) return { z: 0, isAnomaly: false };
+  const mean = history.reduce((a, b) => a + b, 0) / history.length;
+  const variance = history.reduce((sum, n) => sum + Math.pow(n - mean, 2), 0) / history.length;
+  const std = Math.sqrt(variance);
+  if (!Number.isFinite(std) || std === 0) return { z: 0, isAnomaly: false };
+  const z = (current - mean) / std;
+  return { z, isAnomaly: Math.abs(z) >= 2 };
+}
 
 function f(value: unknown, fallback = 0): number {
   const n = Number(value ?? fallback);
@@ -19,7 +25,7 @@ function parseDate(value: unknown): Date | null {
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: CORS });
+    return handleOptions(req);
   }
 
   try {
@@ -150,6 +156,36 @@ serve(async (req: Request) => {
         .from("business_metrics")
         .upsert(metrics, { onConflict: "tenant_id,metric_name,period,period_start,period_end" });
       if (metricWrite.error) throw new Error(metricWrite.error.message);
+      for (const metric of metrics) {
+        const histResp = await sb
+          .schema("business_core")
+          .from("business_metrics")
+          .select("value")
+          .eq("tenant_id", tenant)
+          .eq("metric_name", metric.metric_name)
+          .lt("period_end", periodEnd)
+          .order("period_end", { ascending: false })
+          .limit(14);
+        const history = (histResp.data || [])
+          .map((row: { value: unknown }) => Number(row.value))
+          .filter((n: number) => Number.isFinite(n));
+        const anomaly = detectAnomaly(Number(metric.value), history);
+        if (anomaly.isAnomaly) {
+          await sb.from("watchtower_events").insert({
+            tenant_id: tenant,
+            event_type: "metric_anomaly",
+            severity: Math.abs(anomaly.z) >= 3 ? "high" : "medium",
+            source: "business-brain-metrics-cron",
+            payload: {
+              metric_name: metric.metric_name,
+              value: metric.value,
+              z_score: anomaly.z,
+              period_end: periodEnd,
+            },
+            observed_at: new Date().toISOString(),
+          });
+        }
+      }
 
       await sb.from("ic_daily_metric_snapshots").upsert(
         {
@@ -187,13 +223,13 @@ serve(async (req: Request) => {
 
     return new Response(JSON.stringify({ ok: true, processed_tenants: tenants.length, summaries }), {
       status: 200,
-      headers: { ...CORS, "Content-Type": "application/json" },
+      headers: corsHeaders(req),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unhandled metrics cron error";
     return new Response(JSON.stringify({ ok: false, error: message }), {
       status: 500,
-      headers: { ...CORS, "Content-Type": "application/json" },
+      headers: corsHeaders(req),
     });
   }
 });

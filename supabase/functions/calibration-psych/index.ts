@@ -5,6 +5,8 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -151,13 +153,6 @@ ABSOLUTE RULES:
 6. agent_instructions must be actionable and specific to THIS operator.
 7. RESPOND WITH JSON ONLY — no markdown, no extra text outside the JSON structure.`;
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
-};
-
 function computeStep(op: Record<string, unknown>): number {
   const filled = Object.keys(STEPS)
     .filter((k) => op[STEPS[Number(k)].field] !== undefined)
@@ -257,7 +252,7 @@ async function askOpenAI(
   return { parsed: JSON.parse(txt), responseId: data.id };
 }
 
-function errorResp(msg: string, step: number): Response {
+function errorResp(req: Request, msg: string, step: number): Response {
   return new Response(
     JSON.stringify({
       message: msg,
@@ -268,12 +263,19 @@ function errorResp(msg: string, step: number): Response {
       agent_persona: null,
       agent_instructions: null,
     }),
-    { status: 200, headers: CORS },
+    { status: 200, headers: corsHeaders(req) },
   );
 }
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
+  }
   if (req.method === "GET") {
     return new Response(
       JSON.stringify({
@@ -282,7 +284,7 @@ serve(async (req: Request) => {
         reachable: true,
         generated_at: new Date().toISOString(),
       }),
-      { status: 200, headers: CORS },
+      { status: 200, headers: corsHeaders(req) },
     );
   }
 
@@ -296,7 +298,7 @@ serve(async (req: Request) => {
     if (!message) {
       return new Response(JSON.stringify({ error: "message required" }), {
         status: 400,
-        headers: CORS,
+        headers: corsHeaders(req),
       });
     }
 
@@ -348,7 +350,7 @@ serve(async (req: Request) => {
           agent_persona: null,
           agent_instructions: null,
         }),
-        { status: 200, headers: CORS },
+        { status: 200, headers: corsHeaders(req) },
       );
     }
 
@@ -363,7 +365,7 @@ serve(async (req: Request) => {
           agent_persona: profile.agent_persona,
           agent_instructions: profile.agent_instructions,
         }),
-        { status: 200, headers: CORS },
+        { status: 200, headers: corsHeaders(req) },
       );
     }
 
@@ -453,10 +455,10 @@ serve(async (req: Request) => {
         agent_persona: isComplete ? patch.agent_persona ?? null : null,
         agent_instructions: isComplete ? patch.agent_instructions ?? null : null,
       }),
-      { status: 200, headers: CORS },
+      { status: 200, headers: corsHeaders(req) },
     );
   } catch (err) {
     console.error("[calibration-psych]", err);
-    return errorResp("Calibration link disrupted. Please retry.", currentStep);
+    return errorResp(req, "Calibration link disrupted. Please retry.", currentStep);
   }
 });

@@ -10,17 +10,11 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { verifyAuth } from "../_shared/auth.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const BROWSE_AI_API_KEY = Deno.env.get("BROWSE_AI_API_KEY") || "";
 const BROWSE_AI_BASE = "https://api.browse.ai/v2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-calibration-run-id, x-calibration-step, x-proxy-request-id",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
-};
 
 interface ReviewResult {
   source: string;
@@ -323,7 +317,14 @@ async function searchIndeedReviews(
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleOptions(req);
+  }
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ ok: false, error: auth.error || "Unauthorized" }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
   if (req.method === "GET") {
     return new Response(
@@ -333,7 +334,7 @@ serve(async (req) => {
         reachable: true,
         generated_at: new Date().toISOString(),
       }),
-      { status: 200, headers: corsHeaders },
+      { status: 200, headers: corsHeaders(req) },
     );
   }
 
@@ -358,7 +359,7 @@ serve(async (req) => {
           ok: false,
           error: "business_name or domain is required",
         }),
-        { status: 400, headers: corsHeaders },
+        { status: 400, headers: corsHeaders(req) },
       );
     }
 
@@ -434,7 +435,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: corsHeaders,
+      headers: corsHeaders(req),
     });
   } catch (err) {
     return new Response(
@@ -454,7 +455,7 @@ serve(async (req) => {
         },
         correlation,
       }),
-      { status: 200, headers: corsHeaders },
+      { status: 200, headers: corsHeaders(req) },
     );
   }
 });

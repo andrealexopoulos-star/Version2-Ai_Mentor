@@ -15,6 +15,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -26,12 +28,8 @@ const QA_BYPASS_SECRET = Deno.env.get("QA_BYPASS_SECRET") || "";
 const QA_BYPASS_USER_ID = Deno.env.get("QA_BYPASS_USER_ID") || "";
 const QA_BYPASS_EMAIL = Deno.env.get("QA_BYPASS_EMAIL") || "qa@local";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, x-qa-bypass, content-type",
-};
-
 function failureResponse(
+  req: Request,
   code: string,
   error: string,
   status = 422,
@@ -48,7 +46,7 @@ function failureResponse(
       details,
       generated_at: new Date().toISOString(),
     }),
-    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    { status, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
   );
 }
 
@@ -307,8 +305,13 @@ RULES:
 - Australian English.`;
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
   if (req.method === "GET") {
     return new Response(
@@ -318,7 +321,7 @@ serve(async (req) => {
         reachable: true,
         generated_at: new Date().toISOString(),
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: { ...corsHeaders(req), "Content-Type": "application/json" } },
     );
   }
 
@@ -360,7 +363,7 @@ serve(async (req) => {
       } else {
         return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
           status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...corsHeaders(req), "Content-Type": "application/json" },
         });
       }
     }
@@ -372,6 +375,7 @@ serve(async (req) => {
 
     if (!websiteUrl && !businessDescription) {
       return failureResponse(
+        req,
         "MISSING_SCAN_INPUT",
         "Provide website_url or business_description",
         400,
@@ -386,7 +390,7 @@ serve(async (req) => {
     if (websiteUrl) {
       const url = normalizeWebsiteUrl(websiteUrl);
       if (!url) {
-        return failureResponse("INVALID_WEBSITE_URL", "Invalid website_url", 400, "validation");
+        return failureResponse(req, "INVALID_WEBSITE_URL", "Invalid website_url", 400, "validation");
       }
       const domain = url.replace(/https?:\/\//, "").replace(/\/.*/, "");
 
@@ -466,6 +470,7 @@ serve(async (req) => {
 
       if (!perplexityContent && !websiteContent) {
         return failureResponse(
+          req,
           "INSUFFICIENT_PUBLIC_CONTENT",
           "No usable public content found for this website",
           422,
@@ -508,7 +513,7 @@ serve(async (req) => {
       method: "POST",
       headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-5.3",
+        model: "gpt-4o",
         messages: [
           { role: "system", content: EXTRACTION_PROMPT },
           { role: "user", content: `Extract the complete Business DNA from this content:\n\n${contextBlock}` },
@@ -521,7 +526,7 @@ serve(async (req) => {
     if (!aiRes.ok) {
       const rawErr = await aiRes.text();
       console.error("[calibration-dna] OpenAI error:", rawErr);
-      return failureResponse("AI_EXTRACTION_FAILED", "AI extraction failed", 502, "extraction");
+      return failureResponse(req, "AI_EXTRACTION_FAILED", "AI extraction failed", 502, "extraction");
     }
 
     const aiData = await aiRes.json();
@@ -531,6 +536,7 @@ serve(async (req) => {
       extracted = JSON.parse(raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
     } catch {
       return failureResponse(
+        req,
         "AI_RESPONSE_PARSE_FAILED",
         "Failed to parse AI response",
         502,
@@ -616,10 +622,10 @@ serve(async (req) => {
       identity_signals: identitySignals,
       data_sources: sources,
       generated_at: new Date().toISOString(),
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
 
   } catch (err) {
     console.error("[calibration-dna] Error:", err);
-    return failureResponse("INTERNAL_SCAN_ERROR", "Internal scan error", 500, "scan");
+    return failureResponse(req, "INTERNAL_SCAN_ERROR", "Internal scan error", 500, "scan");
   }
 });

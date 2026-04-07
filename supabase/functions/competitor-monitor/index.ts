@@ -25,17 +25,14 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifyAuth, enforceUserOwnership } from "../_shared/auth.ts";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
 
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const COMPETITOR_MONITOR_BATCH_SECRET = Deno.env.get("COMPETITOR_MONITOR_BATCH_SECRET") || "";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface CompetitorSignal {
   name: string;
@@ -215,7 +212,14 @@ async function monitorUser(sb: any, userId: string): Promise<{ signals: number; 
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleOptions(req);
+  }
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ ok: false, error: auth.error || "Unauthorized" }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
   if (req.method === "GET") {
     return new Response(
@@ -225,29 +229,23 @@ serve(async (req) => {
         reachable: true,
         generated_at: new Date().toISOString(),
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: corsHeaders(req) },
     );
   }
 
   try {
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body = await req.json().catch(() => ({}));
-    const authHeader = req.headers.get("Authorization") || "";
-    const token = authHeader.replace("Bearer ", "").trim();
-    const isServiceRoleToken = Boolean(token) && token === SUPABASE_SERVICE_ROLE_KEY;
+    const isServiceRoleToken = auth.isServiceRole;
     const batchSecret = (req.headers.get("X-Batch-Secret") || "").trim();
 
-    let authenticatedUserId: string | null = null;
-    if (token && !isServiceRoleToken) {
-        const { data: authData } = await sb.auth.getUser(token);
-        authenticatedUserId = authData?.user?.id || null;
-    }
+    const authenticatedUserId = auth.userId;
 
     // Batch mode: scan all active users (for pg_cron)
     if (body.batch) {
       if (!isServiceRoleToken || !COMPETITOR_MONITOR_BATCH_SECRET || batchSecret !== COMPETITOR_MONITOR_BATCH_SECRET) {
         return new Response(JSON.stringify({ ok: false, error: "Unauthorized batch invocation" }), {
-          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403, headers: corsHeaders(req),
         });
       }
       const { data: users } = await sb
@@ -275,9 +273,7 @@ serve(async (req) => {
         users_scanned: userCount,
         total_signals: totalSignals,
         total_actions: totalActions,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      }), { headers: corsHeaders(req) });
     }
 
     // Single user mode
@@ -285,36 +281,37 @@ serve(async (req) => {
     if (!requestedUserId) {
       if (!authenticatedUserId) {
         return new Response(JSON.stringify({ ok: false, error: "user_id required or authenticate via Bearer token" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: corsHeaders(req),
         });
       }
       const result = await monitorUser(sb, authenticatedUserId);
       return new Response(JSON.stringify({ ok: true, mode: "single", ...result }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: corsHeaders(req),
       });
     }
 
     if (isServiceRoleToken) {
       const result = await monitorUser(sb, requestedUserId);
       return new Response(JSON.stringify({ ok: true, mode: "single", ...result }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: corsHeaders(req),
       });
     }
 
-    if (!authenticatedUserId || authenticatedUserId !== requestedUserId) {
+    const ownership = enforceUserOwnership(auth, requestedUserId);
+    if (!ownership.ok) {
       return new Response(JSON.stringify({ ok: false, error: "user_id must match authenticated user" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403, headers: corsHeaders(req),
       });
     }
 
     const result = await monitorUser(sb, requestedUserId);
     return new Response(JSON.stringify({ ok: true, mode: "single", ...result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: corsHeaders(req),
     });
 
   } catch (err) {
     return new Response(JSON.stringify({ ok: false, error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: corsHeaders(req),
     });
   }
 });

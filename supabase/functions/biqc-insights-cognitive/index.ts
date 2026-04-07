@@ -7,17 +7,14 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MERGE_API_KEY = Deno.env.get("MERGE_API_KEY") || "";
 const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY") || "";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 // ─── Merge.dev ───
 async function fetchMerge(token: string, endpoint: string, limit = 20) {
@@ -461,8 +458,13 @@ RULES:
 - ALWAYS generate the market_intelligence object with: positioning_verdict based on overall health, acquisition/retention/growth signal scores, drift_snapshot comparing current vs ideal benchmarks (0-100), market_kpis with estimated figures, competitor_signals (top 4), industry_trends (top 4 with confidence), misalignment_index (0=aligned, 100=contradictory), probability_of_goal_achievement (0-100 given current trajectory), gap_magnitude, strategic_risk_level.`;
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
   }
 
   try {
@@ -473,14 +475,14 @@ serve(async (req) => {
 
     if (body.warmup) {
       return new Response(JSON.stringify({ ok: true, warm: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "No auth" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -489,7 +491,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -535,7 +537,7 @@ serve(async (req) => {
         } catch (e) { console.error(`[precompute] Failed for ${u.user_id}:`, e); }
       }
       return new Response(JSON.stringify({ ok: true, mode: "precompute", users_computed: computed }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -570,7 +572,7 @@ serve(async (req) => {
               generated_at: cached.generated_at,
               cache_age_minutes: Math.round(ageMs / 60000),
               cached: true,
-            }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+            }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
           }
         }
       } catch {}
@@ -746,7 +748,7 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
       return new Response(JSON.stringify({
         error: "Cognitive system temporarily unavailable",
         data_sources: sources,
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
     }
 
     const aiData = await aiRes.json();
@@ -914,12 +916,12 @@ You MUST generate the action_plan object. Use the DETERMINISTIC RISK OVERLAY val
       time_of_day: timeOfDay,
       data_sources: sources,
       generated_at: new Date().toISOString(),
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }), { headers: { ...corsHeaders(req), "Content-Type": "application/json" } });
 
   } catch (err) {
     console.error("[biqc-insights] Error:", err);
     return new Response(JSON.stringify({ error: "Internal error", detail: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

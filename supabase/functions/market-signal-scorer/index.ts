@@ -1,21 +1,17 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-};
-
 const TENANT_MISMATCH = "__TENANT_MISMATCH__";
 
-function json(data, status = 200) {
+function json(req: Request, data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders(req), "Content-Type": "application/json" },
   });
 }
 
@@ -70,14 +66,21 @@ async function resolveTenantId(req, supabase, body) {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return handleOptions(req);
+  const auth = await verifyAuth(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status || 401,
+      headers: corsHeaders(req),
+    });
+  }
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return json({ error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing" }, 503);
+    return json(req, { error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing" }, 503);
   }
 
   if (req.method === "GET") {
-    return json({
+    return json(req, {
       ok: true,
       status: "ok",
       function: "market-signal-scorer",
@@ -90,10 +93,10 @@ serve(async (req) => {
   const body = await req.json().catch(() => ({}));
   const tenantId = await resolveTenantId(req, supabase, body);
   if (tenantId === TENANT_MISMATCH) {
-    return json({ error: "tenant_id/user_id must match authenticated user" }, 403);
+    return json(req, { error: "tenant_id/user_id must match authenticated user" }, 403);
   }
   if (!tenantId) {
-    return json({ error: "tenant_id or authenticated bearer token required" }, 400);
+    return json(req, { error: "tenant_id or authenticated bearer token required" }, 400);
   }
 
   const [profileRes, snapshotRes, benchmarkRes, eventRes, integrationRes, cacheRes] = await Promise.all([
@@ -178,7 +181,7 @@ serve(async (req) => {
         ? "stable"
         : "at_risk";
 
-  return json({
+  return json(req, {
     ok: true,
     function: "market-signal-scorer",
     tenant_id: tenantId,
