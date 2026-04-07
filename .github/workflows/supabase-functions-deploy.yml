@@ -101,12 +101,16 @@ jobs:
           ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
         run: |
           MISSING=()
-          for key in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF ALLOWED_ORIGINS; do
+          for key in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF; do
             val="${!key}"
             if [ -z "$val" ]; then
               MISSING+=("$key")
             fi
           done
+
+          if [ -z "${ALLOWED_ORIGINS:-}" ]; then
+            echo "WARNING: ALLOWED_ORIGINS missing; runtime will use in-function default allowlist."
+          fi
 
           EDGE_AUTH_KEY="${SUPABASE_SERVICE_ROLE_KEY:-${SUPABASE_SERVICE_ROLE:-${REACT_APP_SUPABASE_ANON_KEY:-}}}"
           if [ -z "$EDGE_AUTH_KEY" ]; then
