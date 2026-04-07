@@ -44,7 +44,8 @@ def test_route_has_required_request_models():
 
 def test_route_imports_dal_alias():
     source = _read(ROUTE_PATH)
-    assert "from backend import boardroom_conversations as brc" in source
+    assert "import boardroom_conversations as brc" in source
+    assert "from backend import boardroom_conversations" not in source
 
 
 @pytest.mark.skipif(brc is None, reason="DAL module import unavailable in sandbox")
