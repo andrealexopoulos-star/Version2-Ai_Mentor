@@ -776,7 +776,7 @@ async def boardroom_escalation_action(request: Request, payload: EscalationActio
         raise HTTPException(status_code=500, detail="Escalation memory not available")
 
 
-from backend import boardroom_conversations as brc
+import boardroom_conversations as brc
 from fastapi.responses import StreamingResponse
 from datetime import datetime
 import json
