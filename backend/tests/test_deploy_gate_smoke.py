@@ -1,15 +1,49 @@
 """
 Deploy gate smoke tests.
-TEMPORARILY BYPASSED during emergency rollback recovery.
-The original smoke tests check production /api/health and were failing
-because production is currently 503 (P3 backend regression).
-The bypass allows deploy.yml to proceed and deploy the rolled-back code.
-
-RESTORE this file from git history after production is recovered:
-  git show HEAD~1:backend/tests/test_deploy_gate_smoke.py > backend/tests/test_deploy_gate_smoke.py
+Keeps deployment gating focused on stable runtime behavior.
 """
 
+import os
+import requests
+import time
 
-def test_smoke_bypassed():
-    """Bypassed during emergency rollback. Always passes."""
-    assert True
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
+
+
+class TestDeployGateSmoke:
+    def test_backend_health(self):
+        # Retry quickly to absorb transient startup races, but fail hard on degraded health.
+        response = None
+        for attempt in range(3):
+            response = requests.get(f"{BASE_URL}/api/health", timeout=15)
+            if response.status_code == 200:
+                break
+            if attempt < 2:
+                time.sleep(2)
+
+        assert response is not None
+        assert response.status_code == 200
+        data = response.json()
+        assert data.get("status") == "healthy"
+
+    def test_api_root(self):
+        response = requests.get(f"{BASE_URL}/api/", timeout=15)
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+
+    def test_admin_prompts_auth_gate(self):
+        response = requests.get(f"{BASE_URL}/api/admin/prompts", timeout=15)
+        assert response.status_code in [401, 403]
+        assert "detail" in response.json()
+
+    def test_calibration_status_auth_gate(self):
+        response = requests.get(f"{BASE_URL}/api/calibration/status", timeout=15)
+        assert response.status_code in [401, 403]
+        assert "detail" in response.json()
+
+    def test_google_oauth_endpoint(self):
+        response = requests.get(f"{BASE_URL}/api/auth/supabase/oauth/google", timeout=15)
+        assert response.status_code == 200
+        data = response.json()
+        assert "url" in data
