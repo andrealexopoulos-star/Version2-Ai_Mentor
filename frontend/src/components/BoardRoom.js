@@ -1,35 +1,29 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ArrowLeft, Plus, RefreshCw } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
-import { useSupabaseAuth } from '../context/SupabaseAuthContext';
-import { colors, fontFamily, spacing, radius, shadow } from '../design-system/tokens';
+import { apiClient } from '../lib/api';
+import { ChevronRight, ArrowLeft } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 import InsightExplainabilityStrip from './InsightExplainabilityStrip';
 import LineageBadge from './LineageBadge';
-import BoardroomConversationList from './boardroom/BoardroomConversationList';
-import BoardroomMessageBubble from './boardroom/BoardroomMessageBubble';
-import { useStreamingResponse } from '../hooks/useStreamingResponse';
-import { useBoardroomConversation } from '../hooks/useBoardroomConversation';
-import { useConversationList } from '../hooks/useConversationList';
 
 const STATE_CONFIG = {
-  STABLE: { label: 'Stable', color: colors.success, bg: `${colors.success}10`, border: `${colors.success}30`, dot: colors.success },
-  DRIFT: { label: 'Drift', color: colors.warning, bg: `${colors.warning}10`, border: `${colors.warning}30`, dot: colors.warning },
-  COMPRESSION: { label: 'Compression', color: colors.brand, bg: `${colors.brand}10`, border: `${colors.brand}30`, dot: colors.brand },
-  CRITICAL: { label: 'Critical', color: colors.danger, bg: `${colors.danger}10`, border: `${colors.danger}30`, dot: colors.danger },
+  STABLE:      { label: 'Stable',      color: '#10B981', bg: '#10B98110', border: '#10B98130', dot: '#10B981' },
+  DRIFT:       { label: 'Drift',       color: '#F59E0B', bg: '#F59E0B10', border: '#F59E0B30', dot: '#F59E0B' },
+  COMPRESSION: { label: 'Compression', color: '#FF6A00', bg: '#FF6A0010', border: '#FF6A0030', dot: '#FF6A00' },
+  CRITICAL:    { label: 'Critical',    color: '#EF4444', bg: '#EF444410', border: '#EF444430', dot: '#EF4444' },
 };
 
 const DIAGNOSIS_AREAS = [
-  { id: 'cash_flow_financial_risk', label: 'Cash Flow & Financial Risk', icon: '$', tone: colors.success, desc: 'Liquidity, payment obligations, and runway.' },
-  { id: 'revenue_momentum', label: 'Revenue Momentum', icon: '↗', tone: colors.info, desc: 'Sales velocity, pipeline health, close rates.' },
-  { id: 'strategy_effectiveness', label: 'Strategy Effectiveness', icon: '◎', tone: colors.purple, desc: 'Whether direction is producing expected outcomes.' },
-  { id: 'operations_delivery', label: 'Operations & Delivery', icon: '⚙', tone: colors.warning, desc: 'Execution quality, timelines, bottlenecks.' },
-  { id: 'people_retention_capacity', label: 'People & Capacity', icon: '⚓', tone: colors.info, desc: 'Team stability, workload, delegation gaps.' },
-  { id: 'customer_relationships', label: 'Customer Relationships', icon: '❤', tone: colors.danger, desc: 'Client satisfaction, retention signals, churn risk.' },
-  { id: 'risk_compliance', label: 'Risk & Compliance', icon: '⚠', tone: colors.warning, desc: 'Regulatory, contractual, and legal exposure.' },
-  { id: 'systems_technology', label: 'Systems & Technology', icon: '⚙', tone: colors.info, desc: 'Technical debt, reliability, infrastructure limits.' },
-  { id: 'market_position', label: 'Market Position', icon: '⚑', tone: colors.success, desc: 'Competitive landscape, positioning, opportunity decay.' },
+  { id: 'cash_flow_financial_risk', label: 'Cash Flow & Financial Risk', icon: '$', color: '#16A34A', desc: 'Liquidity, payment obligations, and runway.' },
+  { id: 'revenue_momentum', label: 'Revenue Momentum', icon: '\u2197', color: '#3B82F6', desc: 'Sales velocity, pipeline health, close rates.' },
+  { id: 'strategy_effectiveness', label: 'Strategy Effectiveness', icon: '\u25CE', color: '#7C3AED', desc: 'Whether direction is producing expected outcomes.' },
+  { id: 'operations_delivery', label: 'Operations & Delivery', icon: '\u2699', color: '#D97706', desc: 'Execution quality, timelines, bottlenecks.' },
+  { id: 'people_retention_capacity', label: 'People & Capacity', icon: '\u2693', color: '#DB2777', desc: 'Team stability, workload, delegation gaps.' },
+  { id: 'customer_relationships', label: 'Customer Relationships', icon: '\u2764', color: '#DC2626', desc: 'Client satisfaction, retention signals, churn risk.' },
+  { id: 'risk_compliance', label: 'Risk & Compliance', icon: '\u26A0', color: '#EA580C', desc: 'Regulatory, contractual, and legal exposure.' },
+  { id: 'systems_technology', label: 'Systems & Technology', icon: '\u2699', color: '#4F46E5', desc: 'Technical debt, reliability, infrastructure limits.' },
+  { id: 'market_position', label: 'Market Position', icon: '\u2691', color: '#0D9488', desc: 'Competitive landscape, positioning, opportunity decay.' },
 ];
 
 const BRIEFING_LOADING_STEPS = [
@@ -46,150 +40,107 @@ const DIAGNOSIS_LOADING_STEPS = [
   'Drafting an action-focused recommendation...',
 ];
 
-const DECISION_CHECKLIST = [
-  { id: 'owner', title: 'Assign one owner', detail: 'Name a single accountable owner for the next decision cycle.' },
-  { id: 'deadline', title: 'Set a deadline', detail: 'Set a clear date and time for first execution checkpoint.' },
-  { id: 'signal', title: 'Track one signal', detail: 'Pick one metric that confirms your decision is working.' },
-  { id: 'risk', title: 'Pre-plan a risk', detail: 'Write down the first failure mode and mitigation now.' },
-];
-
-const BOARDROOM_GUIDES = [
-  'When pressure is high, reduce option count and increase execution clarity.',
-  'Use diagnosis first, then lock one action before opening a second thread.',
-  'Favor reversible moves when confidence is below medium.',
-  'Escalate when evidence chain shows cross-domain compounding.',
-];
-
-const focusRingClass = 'focus-visible:outline-none focus-visible:ring-2';
-
-function formatFreshnessTime(iso) {
+/* Shared util candidate: formatFreshnessTime is duplicated in WarRoomConsole.js — extract to e.g. frontend/src/lib/formatFreshnessTime.js when touching both next. */
+const formatFreshnessTime = (iso) => {
   if (!iso) return 'unknown';
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return 'unknown';
   return parsed.toLocaleString();
-}
+};
 
-export function BoardRoomBody({
-  embeddedShell = false,
-  cognitive: snapshot,
-  briefingLoading = false,
-  conversationId = null,
-  initialFocusArea = null,
-  onConversationChange,
-  onFocusAreaChange,
-}) {
-  const { status: integrationStatus } = useIntegrationStatus();
-  const { session } = useSupabaseAuth();
+export function BoardRoomBody({ embeddedShell = false, cognitive: snapshot, briefingLoading = false }) {
   const [activeDiagnosis, setActiveDiagnosis] = useState(null);
   const [diagnosisResult, setDiagnosisResult] = useState(null);
+  const [diagnosing, setDiagnosing] = useState(false);
   const [diagError, setDiagError] = useState(null);
   const [briefingStepIndex, setBriefingStepIndex] = useState(0);
   const [diagnosisStepIndex, setDiagnosisStepIndex] = useState(0);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('boardroom-sidebar-collapsed') === '1';
-  });
-  const [currentConvId, setCurrentConvId] = useState(conversationId || null);
-  const [streamingCardVisible, setStreamingCardVisible] = useState(false);
-
-  const {
-    stream,
-    isStreaming,
-    streamingText,
-    metadata: streamMeta,
-    error: streamError,
-    reset: resetStream,
-  } = useStreamingResponse();
-  const { conversations, loading: convListLoading, refresh: refreshConversations } = useConversationList('boardroom');
-  const {
-    conversation,
-    messages,
-    appendMessage,
-    create,
-    setMessages,
-    loading: convLoading,
-    error: convError,
-  } = useBoardroomConversation('boardroom', currentConvId);
-
-  useEffect(() => {
-    setCurrentConvId(conversationId || null);
-  }, [conversationId]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('boardroom-sidebar-collapsed', sidebarCollapsed ? '1' : '0');
-    }
-  }, [sidebarCollapsed]);
 
   useEffect(() => {
     if (!briefingLoading) {
       setBriefingStepIndex(0);
       return undefined;
     }
-    const timer = window.setInterval(() => {
+    const intervalId = window.setInterval(() => {
       setBriefingStepIndex((prev) => (prev + 1) % BRIEFING_LOADING_STEPS.length);
     }, 1800);
-    return () => window.clearInterval(timer);
+    return () => window.clearInterval(intervalId);
   }, [briefingLoading]);
 
   useEffect(() => {
-    if (!isStreaming) {
+    if (!diagnosing) {
       setDiagnosisStepIndex(0);
       return undefined;
     }
-    const timer = window.setInterval(() => {
+    const intervalId = window.setInterval(() => {
       setDiagnosisStepIndex((prev) => (prev + 1) % DIAGNOSIS_LOADING_STEPS.length);
-    }, 1500);
-    return () => window.clearInterval(timer);
-  }, [isStreaming]);
+    }, 1600);
+    return () => window.clearInterval(intervalId);
+  }, [diagnosing]);
 
-  useEffect(() => {
-    if (!activeDiagnosis && initialFocusArea) {
-      const found = DIAGNOSIS_AREAS.find((d) => d.id === initialFocusArea);
-      if (found) setActiveDiagnosis(found.id);
-    }
-  }, [initialFocusArea, activeDiagnosis]);
-
-  useEffect(() => {
-    if (streamError) setDiagError(streamError);
-  }, [streamError]);
-
+  const { status: integrationStatus } = useIntegrationStatus();
+  const narrative = snapshot ? { primary_tension: snapshot.executive_memo, force_summary: snapshot.system_state_interpretation, strategic_direction: snapshot.priority_compression?.primary_focus } : null;
   const st = STATE_CONFIG[snapshot?.system_state] || STATE_CONFIG.STABLE;
-  const pressurePct = snapshot?.system_state === 'CRITICAL'
-    ? 80 : snapshot?.system_state === 'COMPRESSION'
-      ? 55 : snapshot?.system_state === 'DRIFT' ? 35 : 10;
-
-  const integrationMap = useMemo(() => ({
+  const dpi = snapshot?.system_state === 'CRITICAL' ? 80 : snapshot?.system_state === 'COMPRESSION' ? 55 : snapshot?.system_state === 'DRIFT' ? 35 : 10;
+  const forces = (snapshot?.inevitabilities || []).map(function(inv) { return { domain: inv.domain, detail: inv.signal, position: inv.intensity }; });
+  const topAlerts = (snapshot?.top_alerts || []).slice(0, 3);
+  const integrationMap = {
     crm: snapshot?.integrations?.crm ?? integrationStatus?.canonical_truth?.crm_connected,
     accounting: snapshot?.integrations?.accounting ?? integrationStatus?.canonical_truth?.accounting_connected,
     email: snapshot?.integrations?.email ?? integrationStatus?.canonical_truth?.email_connected,
-  }), [snapshot, integrationStatus]);
-
-  const truthStateMap = useMemo(() => ({
+  };
+  const truthStateMap = {
     crm: integrationStatus?.canonical_truth?.crm_state || snapshot?.integrations?.crm_state,
     accounting: integrationStatus?.canonical_truth?.accounting_state || snapshot?.integrations?.accounting_state,
     email: integrationStatus?.canonical_truth?.email_state || snapshot?.integrations?.email_state,
-  }), [integrationStatus, snapshot]);
-
+  };
   const degradedTruth = Object.entries(truthStateMap).filter(([, state]) => state && state !== 'live');
   const freshness = integrationStatus?.canonical_truth?.freshness || {};
   const integrationLabels = Object.entries(integrationMap).filter(([, connected]) => connected).map(([key]) => key);
   const truthGateMessage = degradedTruth.length
     ? `Some of your data is out of date. BIQc is only using verified data while these tools refresh: ${degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.`
     : null;
+  const primaryBrief = degradedTruth.length ? (topAlerts[0]?.detail || truthGateMessage) : (narrative?.primary_tension || topAlerts[0]?.detail);
+  const hasBrief = Boolean(primaryBrief);
+  const explainCards = [
+    {
+      title: 'Why BIQc is escalating this',
+      value: topAlerts[0]?.detail || truthGateMessage || narrative?.force_summary || 'This is the strongest live signal across your connected systems right now.',
+    },
+    {
+      title: 'Data behind it',
+      value: `${snapshot?.live_signal_count || topAlerts.length || 0} live signal${(snapshot?.live_signal_count || topAlerts.length || 0) === 1 ? '' : 's'} across ${integrationLabels.length || 0} connected system${integrationLabels.length === 1 ? '' : 's'}${integrationLabels.length ? ` (${integrationLabels.join(', ')})` : ''}.`,
+    },
+    {
+      title: 'Act next',
+      value: topAlerts[0]?.action || narrative?.strategic_direction || 'Use Boardroom diagnosis to identify the best next move before this spreads.',
+    },
+  ];
+  const explainability = {
+    whyVisible: integrationLabels.length
+      ? `Boardroom is escalating this based on ${integrationLabels.length} connected system${integrationLabels.length === 1 ? '' : 's'} (${integrationLabels.join(', ')}).`
+      : 'Boardroom is active, but richer diagnosis needs connected systems and live signals.',
+    whyNow: topAlerts[0]?.detail || truthGateMessage || narrative?.force_summary || 'Signal pressure is rising across your monitored domains.',
+    nextAction: topAlerts[0]?.action || narrative?.strategic_direction || 'Run a diagnosis area and commit to one decision in this session.',
+    ifIgnored: diagnosisResult?.if_ignored || 'Decision delay narrows options and increases second-order impact across delivery, cash, and customers.',
+  };
 
-  const narrative = snapshot
-    ? {
-      primary_tension: snapshot.executive_memo,
-      force_summary: snapshot.system_state_interpretation,
-      strategic_direction: snapshot.priority_compression?.primary_focus,
-    }
-    : null;
+  const runDiagnosis = async (area) => {
+    setActiveDiagnosis(area.id);
+    setDiagnosisResult(null);
+    setDiagError(null);
+    setDiagnosing(true);
+    try {
+      const res = await apiClient.post('/boardroom/diagnosis', { focus_area: area.id });
+      setDiagnosisResult(res.data);
+    } catch (e) {
+      const detail = e?.response?.data?.detail;
+      setDiagError(detail || 'Diagnosis unavailable. Please try again.');
+    } finally { setDiagnosing(false); }
+  };
 
-  const topAlerts = (snapshot?.top_alerts || []).slice(0, 3);
-  const primaryBrief = degradedTruth.length
-    ? (topAlerts[0]?.detail || truthGateMessage)
-    : (narrative?.primary_tension || topAlerts[0]?.detail);
+  const closeDiagnosis = () => { setActiveDiagnosis(null); setDiagnosisResult(null); setDiagError(null); };
+  const activeArea = DIAGNOSIS_AREAS.find(a => a.id === activeDiagnosis);
 
   const toConfidencePct = (raw) => {
     if (raw == null) return undefined;
@@ -197,304 +148,240 @@ export function BoardRoomBody({
     if (!Number.isFinite(n)) return undefined;
     return n > 0 && n <= 1 ? n * 100 : n;
   };
-
-  const boardroomIntelConfidence = toConfidencePct(
-    typeof snapshot?.system_state === 'object' ? snapshot.system_state?.confidence : snapshot?.confidence_level,
-  );
-
-  const activeArea = DIAGNOSIS_AREAS.find((d) => d.id === activeDiagnosis);
-  const diagnosisHistory = messages.filter((m) => m.role === 'user' || m.role === 'advisor');
-
-  const handleNewSession = useCallback(async () => {
-    resetStream();
-    setDiagnosisResult(null);
-    setDiagError(null);
-    setActiveDiagnosis(null);
-    onFocusAreaChange?.(null);
-    const created = await create({
-      title: 'New boardroom session',
-      focusArea: null,
-    });
-    setCurrentConvId(created?.id || null);
-    onConversationChange?.(created?.id || null);
-    await refreshConversations();
-  }, [create, onConversationChange, onFocusAreaChange, refreshConversations, resetStream]);
-
-  const handleSelectConversation = useCallback((convId) => {
-    setCurrentConvId(convId);
-    onConversationChange?.(convId);
-    setActiveDiagnosis(null);
-    setDiagnosisResult(null);
-    setDiagError(null);
-    resetStream();
-  }, [onConversationChange, resetStream]);
-
-  const runDiagnosis = useCallback(async (area) => {
-    setActiveDiagnosis(area.id);
-    onFocusAreaChange?.(area.id);
-    setDiagError(null);
-    setDiagnosisResult(null);
-    setStreamingCardVisible(true);
-
-    let conv = conversation;
-    if (!conv) {
-      try {
-        conv = await create({ focusArea: area.id, title: area.label });
-        setCurrentConvId(conv.id);
-        onConversationChange?.(conv.id);
-        await refreshConversations();
-      } catch (e) {
-        setDiagError(e.message || 'Unable to create conversation');
-        return;
-      }
-    }
-
-    try {
-      await appendMessage(conv.id, {
-        role: 'user',
-        content: `Run diagnosis for ${area.label}`,
-        focus_area: area.id,
-      });
-    } catch (_error) {
-      // Non-blocking; keep streaming flow alive.
-    }
-
-    let completeEvent = null;
-    await stream({
-      url: '/api/boardroom/diagnosis/stream',
-      body: { focus_area: area.id },
-      headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
-      onComplete: (evt, fullText) => {
-        completeEvent = { ...evt, fullText };
-        setDiagnosisResult({
-          headline: evt.headline,
-          narrative: fullText,
-          what_to_watch: evt.what_to_watch,
-          if_ignored: evt.if_ignored,
-          confidence: evt.confidence,
-          confidence_score: evt.confidence_score,
-          evidence_chain: evt.evidence_chain || [],
-          lineage: evt.lineage || {},
-          data_sources_used: evt.data_sources_used || [],
-          why_visible: evt.explainability?.why_visible,
-          why_now: evt.explainability?.why_now,
-          next_action: evt.explainability?.next_action,
-          degraded: Boolean(evt.degraded),
-        });
-      },
-      onError: (e) => {
-        setDiagError(e.message || 'Diagnosis stream failed');
-      },
-    });
-
-    if (completeEvent?.fullText) {
-      try {
-        await appendMessage(conv.id, {
-          role: 'advisor',
-          content: completeEvent.fullText,
-          focus_area: area.id,
-          explainability: {
-            why_visible: completeEvent.explainability?.why_visible,
-            why_now: completeEvent.explainability?.why_now,
-            next_action: completeEvent.explainability?.next_action,
-            if_ignored: completeEvent.explainability?.if_ignored,
-          },
-          evidence_chain: completeEvent.evidence_chain || [],
-          lineage: completeEvent.lineage || {},
-          confidence_score: completeEvent.confidence_score,
-          source_response: completeEvent,
-          degraded: Boolean(completeEvent.degraded),
-        });
-      } catch (_error) {
-        // Best-effort persistence.
-      }
-      await refreshConversations();
-    }
-    setStreamingCardVisible(false);
-  }, [appendMessage, conversation, create, onConversationChange, onFocusAreaChange, refreshConversations, session?.access_token, stream]);
-
-  const closeDiagnosis = () => {
-    setActiveDiagnosis(null);
-    setDiagnosisResult(null);
-    setDiagError(null);
-    setStreamingCardVisible(false);
-    onFocusAreaChange?.(null);
-    resetStream();
-  };
-
-  const explainability = {
-    whyVisible: integrationLabels.length
-      ? `Boardroom is escalating this based on ${integrationLabels.length} connected systems (${integrationLabels.join(', ')}).`
-      : 'Boardroom is active, but richer diagnosis needs connected systems and live signals.',
-    whyNow: topAlerts[0]?.detail || truthGateMessage || narrative?.force_summary || 'Signal pressure is rising across monitored domains.',
-    nextAction: topAlerts[0]?.action || narrative?.strategic_direction || 'Run a diagnosis area and commit one owner this session.',
-    ifIgnored: diagnosisResult?.if_ignored || 'Decision delay narrows options and increases second-order impact.',
-  };
+  const boardroomIntelConfidence = toConfidencePct(typeof snapshot?.system_state === 'object' ? snapshot.system_state?.confidence : snapshot?.confidence_level);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      className={`flex h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`}
-      style={{ background: colors.bg, fontFamily: fontFamily.display }}
-      aria-label="Boardroom shell"
-    >
-      <BoardroomConversationList
-        mode="boardroom"
-        conversations={conversations}
-        activeConvId={currentConvId}
-        onSelect={handleSelectConversation}
-        onNewSession={handleNewSession}
-        collapsed={sidebarCollapsed}
-        onToggle={setSidebarCollapsed}
-      />
+    <div className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
 
-      <div className="flex-1 flex flex-col" role="main" aria-label="Boardroom main content">
-        <header className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: colors.border }}>
-          <div className="flex items-center gap-4">
-            <a href="/advisor" data-testid="boardroom-home" className={`text-xs px-3 py-1.5 rounded-lg hover:bg-white/5 ${focusRingClass}`} style={{ color: colors.textMuted }} aria-label="Return to intelligence platform">
-              Intelligence Platform
-            </a>
-            <span className="text-sm font-semibold" style={{ color: colors.text }}>Boardroom</span>
-            <div className="px-2 py-1 rounded-full border inline-flex items-center gap-2" style={{ borderColor: st.border, background: st.bg }} aria-label={`System state ${st.label}`}>
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
-              <span className="text-[10px] font-semibold" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
-            </div>
+      {/* ═══ HEADER — Dark themed ═══ */}
+      <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0"
+        style={{ background: 'rgba(10,16,24,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid var(--biqc-border, #1E2D3D)' }}>
+        <div className="flex items-center gap-5">
+          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors hover:bg-white/5"
+            style={{ color: '#64748B', textDecoration: 'none', fontFamily: fontFamily.display }} data-testid="boardroom-home">
+            ← Intelligence Platform
+          </a>
+          <div className="h-4 w-px" style={{ background: '#1E2D3D' }} />
+          <span className="text-sm font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Boardroom</span>
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{ background: st.bg, border: `1px solid ${st.border}` }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
+            <span className="text-[10px] font-semibold tracking-wide" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
           </div>
-          <button
-            onClick={refreshConversations}
-            className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`}
-            style={{ borderColor: colors.border, color: colors.textSecondary }}
-            aria-label="Refresh boardroom conversation list"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${convListLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-        </header>
-
-        <div className="h-[2px]" style={{ background: colors.border }}>
-          <motion.div initial={{ width: 0 }} animate={{ width: `${pressurePct}%` }} transition={{ duration: 0.7 }} className="h-full rounded-r-full" style={{ background: st.dot }} />
         </div>
+        <span className="text-[11px] font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+      </header>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-          {degradedTruth.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              className="p-4 rounded-xl border"
-              style={{ background: `${colors.warning}12`, borderColor: `${colors.warning}35` }}
-              data-testid="boardroom-truth-state-banner"
-              aria-label="Data freshness warning"
-            >
-              <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
-                Some data sources need refreshing: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.
-              </p>
-              <p className="text-xs mt-2" style={{ color: colors.textMuted }}>
-                Last sync — CRM: {formatFreshnessTime(freshness?.crm?.last_synced_at)}, Accounting: {formatFreshnessTime(freshness?.accounting?.last_synced_at)}, Email: {formatFreshnessTime(freshness?.email?.last_synced_at)}.
-              </p>
-            </motion.div>
+      {/* ═══ PRESSURE BAR ═══ */}
+      <div className="h-[2px] shrink-0" style={{ background: '#1E2D3D' }}>
+        <div className="h-full transition-all duration-1000 rounded-r-full" style={{ width: `${dpi}%`, background: st.dot }} />
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-5xl mx-auto px-6 md:px-10 py-10 space-y-10">
+
+          {/* ═══ EXECUTIVE BRIEFING ═══ */}
+          {!activeDiagnosis && (
+            <>
+              <section data-testid="executive-zone">
+                {degradedTruth.length > 0 && (
+                  <div className="mb-5 p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)' }} data-testid="boardroom-truth-state-banner">
+                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Data freshness</span>
+                    <p className="text-xs leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+                      Some data sources need refreshing: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.
+                    </p>
+                    <p className="text-xs leading-relaxed mt-2" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+                      Last sync — CRM: {formatFreshnessTime(freshness?.crm?.last_synced_at)}, Accounting: {formatFreshnessTime(freshness?.accounting?.last_synced_at)}, Email: {formatFreshnessTime(freshness?.email?.last_synced_at)}.
+                    </p>
+                  </div>
+                )}
+                {briefingLoading ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
+                    <span className="text-xs" style={{ color: '#FF6A00', fontFamily: 'monospace' }}>Boardroom is thinking...</span>
+                    <p className="text-sm font-medium" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+                      {BRIEFING_LOADING_STEPS[briefingStepIndex]}
+                    </p>
+                    <p className="text-[11px]" style={{ color: '#64748B' }}>
+                      Building your executive brief from live CRM, accounting, and email evidence.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    {hasBrief && (
+                      <div className="p-7 rounded-2xl"
+                        style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                        <p className="text-[15px] leading-relaxed" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+                          {typeof narrative === 'string' ? narrative : primaryBrief}
+                        </p>
+                        {narrative.force_summary && !degradedTruth.length && (
+                          <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{narrative.force_summary}</p>
+                        )}
+                        {narrative.strategic_direction && !degradedTruth.length && (
+                          <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                            <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>Direction</span>
+                            <p className="text-sm mt-1.5 leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{narrative.strategic_direction}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {!hasBrief && (
+                      <div className="p-7 rounded-2xl text-center"
+                        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                        <p className="text-sm" style={{ color: '#64748B' }}>
+                          {integrationLabels.length
+                            ? `BIQc can already see ${integrationLabels.join(', ')} data, but the executive briefing synthesis is still catching up.`
+                            : 'Executive briefing will appear here once intelligence is generated.'}
+                        </p>
+                      </div>
+                    )}
+
+                    {forces.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {forces.map((f, i) => (
+                          <div key={i} className="p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                            <span className="text-xs font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>{f.domain}</span>
+                            {f.detail && <p className="text-[11px] mt-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.detail}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {explainCards.map((card) => (
+                        <div key={card.title} className="p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
+                          <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{card.title}</span>
+                          <p className="text-[12px] mt-2 leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{card.value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="pt-1" data-testid="boardroom-lineage-badge">
+                      <LineageBadge
+                        lineage={integrationLabels.length ? { connected_sources: integrationLabels } : snapshot?.lineage}
+                        data_freshness={snapshot?.data_freshness ?? (snapshot?.generated_at ? formatFreshnessTime(snapshot.generated_at) : undefined)}
+                        confidence_score={boardroomIntelConfidence}
+                        compact
+                      />
+                    </div>
+
+                    <InsightExplainabilityStrip
+                      whyVisible={explainability.whyVisible}
+                      whyNow={explainability.whyNow}
+                      nextAction={explainability.nextAction}
+                      ifIgnored={explainability.ifIgnored}
+                      testIdPrefix="boardroom-explainability"
+                    />
+                  </div>
+                )}
+              </section>
+
+              {/* ═══ DIAGNOSIS CARDS ═══ */}
+              <section data-testid="diagnosis-zone">
+                <h2 className="text-[10px] font-semibold tracking-widest uppercase mb-5" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
+                  Diagnosis — Select an area to analyse
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {DIAGNOSIS_AREAS.map((area) => (
+                    <button
+                      key={area.id}
+                      onClick={() => runDiagnosis(area)}
+                      className="text-left p-5 rounded-xl transition-all hover:-translate-y-0.5 group"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)', cursor: 'pointer' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = area.color + '40'}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--biqc-border, #1E2D3D)'}
+                      data-testid={`diagnosis-${area.id}`}>
+                      <div className="flex items-center gap-3 mb-2.5">
+                        <span className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-medium" style={{ background: `${area.color}15`, color: area.color }}>{area.icon}</span>
+                        <span className="text-sm font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>{area.label}</span>
+                      </div>
+                      <p className="text-[12px] leading-relaxed" style={{ color: '#64748B' }}>{area.desc}</p>
+                      <div className="flex items-center gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[10px] font-medium" style={{ color: area.color }}>Run diagnosis</span>
+                        <ChevronRight className="w-3 h-3" style={{ color: area.color }} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </>
           )}
 
-          <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.02 }} aria-label="Executive briefing panel">
-            <div className="p-6 rounded-2xl border" style={{ borderColor: colors.border, background: colors.bgCard, boxShadow: shadow.card }}>
-              <p className="text-sm leading-relaxed" style={{ color: colors.text }}>
-                {briefingLoading ? BRIEFING_LOADING_STEPS[briefingStepIndex] : (primaryBrief || 'Executive briefing will appear once enough connected signals are available.')}
-              </p>
-              {narrative?.force_summary && !briefingLoading && <p className="text-xs mt-3" style={{ color: colors.textSecondary }}>{narrative.force_summary}</p>}
-              <div className="mt-3" aria-label="Boardroom lineage">
-                <LineageBadge
-                  lineage={integrationLabels.length ? { connected_sources: integrationLabels } : snapshot?.lineage}
-                  data_freshness={snapshot?.data_freshness}
-                  confidence_score={boardroomIntelConfidence}
-                  compact
-                />
-              </div>
-            </div>
-            <InsightExplainabilityStrip
-              whyVisible={explainability.whyVisible}
-              whyNow={explainability.whyNow}
-              nextAction={explainability.nextAction}
-              ifIgnored={explainability.ifIgnored}
-              testIdPrefix="boardroom-explainability"
-            />
-          </motion.section>
-
-          <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.04 }} data-testid="diagnosis-zone" aria-label="Diagnosis selection zone">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs uppercase tracking-widest" style={{ color: colors.textMuted }}>Diagnosis — Select an area</h2>
-              <button onClick={handleNewSession} className={`inline-flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg border ${focusRingClass}`} style={{ color: colors.textSecondary, borderColor: colors.border }} aria-label="Start new boardroom session from diagnosis zone">
-                <Plus className="w-3.5 h-3.5" />
-                New session
+          {/* ═══ DIAGNOSIS RESULT ═══ */}
+          {activeDiagnosis && (
+            <section data-testid="diagnosis-result">
+              <button onClick={closeDiagnosis} className="flex items-center gap-2 text-xs font-medium mb-8 px-3 py-1.5 rounded-lg transition-colors hover:bg-black/5" style={{ color: '#64748B' }}>
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to Boardroom
               </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {DIAGNOSIS_AREAS.map((area) => (
-                <motion.button
-                  key={area.id}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.15 }}
-                  onClick={() => runDiagnosis(area)}
-                  className={`text-left p-4 rounded-xl border ${focusRingClass}`}
-                  style={{ borderColor: colors.border, background: colors.bgCard }}
-                  aria-label={`Run ${area.label} diagnosis`}
-                  data-testid={`diagnosis-${area.id}`}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="w-8 h-8 rounded-lg inline-flex items-center justify-center text-sm" style={{ background: `${area.tone}20`, color: area.tone }}>{area.icon}</span>
-                    <span className="text-sm font-semibold" style={{ color: colors.text }}>{area.label}</span>
+
+              {diagnosing && (
+                <div className="flex flex-col items-center justify-center py-24">
+                  <span className="text-xs" style={{ color: '#FF6A00', fontFamily: 'monospace' }}>thinking...</span>
+                  <p className="text-sm font-medium" style={{ color: '#243140' }}>Analysing {activeArea?.label}...</p>
+                  <p className="text-[11px] mt-1.5" style={{ color: '#64748B' }}>{DIAGNOSIS_LOADING_STEPS[diagnosisStepIndex]}</p>
+                </div>
+              )}
+
+              {diagError && (
+                <div className="p-8 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.06)' }}>
+                  <p className="text-sm" style={{ color: '#D97706' }}>{diagError}</p>
+                  <button onClick={() => runDiagnosis(activeArea)} className="text-xs font-medium mt-4 px-4 py-1.5 rounded-lg" style={{ color: '#64748B', border: '1px solid #E5E7EB' }}>Retry</button>
+                </div>
+              )}
+
+              {diagnosisResult && (
+                <div className="space-y-5">
+                  {diagnosisResult.degraded && (
+                    <div className="p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)' }} data-testid="boardroom-diagnosis-degraded-banner">
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Resilience mode</span>
+                      <p className="text-xs leading-relaxed" style={{ color: '#243140' }}>
+                        Upstream diagnosis service is unstable. BIQc is returning telemetry-grounded fallback guidance so decision execution can continue.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Headline */}
+                  <div className="p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                    <div className="flex items-center gap-3 mb-5">
+                      {activeArea && <span className="w-10 h-10 rounded-xl flex items-center justify-center text-base" style={{ background: `${activeArea.color}10`, color: activeArea.color }}>{activeArea.icon}</span>}
+                      <div>
+                        <h2 className="text-lg font-semibold" style={{ color: '#111827' }}>{activeArea?.label}</h2>
+                        {diagnosisResult.confidence && (
+                          <span className="text-[10px] tracking-wider uppercase font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Confidence: {diagnosisResult.confidence}</span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-lg leading-relaxed break-words" style={{ color: '#1F2937', fontWeight: 500 }}>{diagnosisResult.headline}</p>
+                    <div className="mt-3" data-testid="boardroom-diagnosis-lineage-badge">
+                      <LineageBadge
+                        lineage={diagnosisResult.lineage || (diagnosisResult.data_sources_used?.length ? { connected_sources: diagnosisResult.data_sources_used } : undefined)}
+                        data_freshness={diagnosisResult.data_freshness}
+                        confidence_score={toConfidencePct(diagnosisResult.confidence_score) ?? toConfidencePct(diagnosisResult.confidence)}
+                        compact
+                      />
+                    </div>
                   </div>
-                  <p className="text-xs" style={{ color: colors.textSecondary }}>{area.desc}</p>
-                  <div className="inline-flex items-center gap-1 mt-2 text-[11px]" style={{ color: area.tone }}>
-                    Run diagnosis <ChevronRight className="w-3 h-3" />
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          </motion.section>
 
-          <AnimatePresence>
-            {activeDiagnosis && (
-              <motion.section
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.2 }}
-                data-testid="diagnosis-result"
-                aria-label="Diagnosis result panel"
-                className="space-y-3"
-              >
-                <button onClick={closeDiagnosis} className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ color: colors.textSecondary, borderColor: colors.border }} aria-label="Back to boardroom summary">
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  Back to boardroom
-                </button>
+                  {/* Narrative */}
+                  {diagnosisResult.narrative && (
+                    <div className="p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.05)' }}>
+                      <p className="text-[15px] leading-loose whitespace-pre-wrap break-words" style={{ color: '#243140' }}>{diagnosisResult.narrative}</p>
+                    </div>
+                  )}
 
-                {isStreaming && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }} aria-label="Diagnosis stream in progress">
-                    <p className="text-xs mb-2" style={{ color: colors.brand }}>{DIAGNOSIS_LOADING_STEPS[diagnosisStepIndex]}</p>
-                    <p className="text-sm whitespace-pre-wrap" style={{ color: colors.text }} aria-live="polite" aria-atomic="false">{streamingText}</p>
-                  </motion.div>
-                )}
+                  {/* What to Watch */}
+                  {diagnosisResult.what_to_watch && (
+                    <div className="p-6 rounded-2xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>What to Watch</span>
+                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: '#9FB0C3' }}>{diagnosisResult.what_to_watch}</p>
+                    </div>
+                  )}
 
-                {diagError && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: `${colors.warning}40`, background: `${colors.warning}12` }} aria-label="Diagnosis error">
-                    <p className="text-sm" style={{ color: colors.warning }}>{diagError}</p>
-                    {activeArea && (
-                      <button onClick={() => runDiagnosis(activeArea)} className={`mt-3 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ borderColor: colors.border, color: colors.textSecondary }} aria-label={`Retry ${activeArea.label} diagnosis`}>
-                        Retry diagnosis
-                      </button>
-                    )}
-                  </motion.div>
-                )}
+                  {diagnosisResult.if_ignored && (
+                    <div className="p-6 rounded-2xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>If Ignored</span>
+                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: '#9FB0C3' }}>{diagnosisResult.if_ignored}</p>
+                    </div>
+                  )}
 
-                {diagnosisResult && (
-                  <motion.article initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="p-5 rounded-2xl border space-y-3" style={{ borderColor: colors.border, background: colors.bgCard }}>
-                    <h3 className="text-lg font-semibold" style={{ color: colors.text }}>{diagnosisResult.headline || activeArea?.label}</h3>
-                    {diagnosisResult.narrative && <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: colors.textSecondary }}>{diagnosisResult.narrative}</p>}
-                    {diagnosisResult.what_to_watch && <p className="text-sm" style={{ color: colors.warning }}>What to watch: {diagnosisResult.what_to_watch}</p>}
-                    {diagnosisResult.if_ignored && <p className="text-sm" style={{ color: colors.danger }}>If ignored: {diagnosisResult.if_ignored}</p>}
-                    <LineageBadge lineage={diagnosisResult.lineage} confidence_score={toConfidencePct(diagnosisResult.confidence_score)} compact />
+                  {(diagnosisResult.why_visible || diagnosisResult.why_now || diagnosisResult.next_action || diagnosisResult.if_ignored) && (
                     <InsightExplainabilityStrip
                       whyVisible={diagnosisResult.why_visible || explainability.whyVisible}
                       whyNow={diagnosisResult.why_now || explainability.whyNow}
@@ -502,104 +389,36 @@ export function BoardRoomBody({
                       ifIgnored={diagnosisResult.if_ignored || explainability.ifIgnored}
                       testIdPrefix="boardroom-diagnosis-explainability"
                     />
-                  </motion.article>
-                )}
-              </motion.section>
-            )}
-          </AnimatePresence>
+                  )}
 
-          <motion.section
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: 0.05 }}
-            aria-label="Conversation history panel"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xs uppercase tracking-widest" style={{ color: colors.textMuted }}>Conversation history</h2>
-              <span className="text-[11px]" style={{ color: colors.textMuted }}>
-                {convLoading ? 'Loading...' : `${diagnosisHistory.length} messages`}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {diagnosisHistory.map((msg, index) => (
-                <BoardroomMessageBubble key={msg.id || `msg-${index}`} message={msg} index={index} />
-              ))}
+                  {diagnosisResult.evidence_chain?.length > 0 && (
+                    <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }} data-testid="boardroom-diagnosis-evidence-chain">
+                      <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Evidence Chain</span>
+                      <div className="space-y-2">
+                        {diagnosisResult.evidence_chain.slice(0, 5).map((signal, idx) => (
+                          <div key={idx} className="text-[11px]" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+                            {(signal.domain || 'domain').toUpperCase()} · {(signal.event_type || 'event')} · {(signal.severity || 'info')} · {(signal.source || 'source')}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-              <AnimatePresence>
-                {isStreaming && streamingText && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} aria-live="polite" aria-atomic="false">
-                    <BoardroomMessageBubble message={{ role: 'advisor', content: streamingText, explainability: streamMeta?.explainability, degraded: Boolean(streamMeta?.degraded) }} index={diagnosisHistory.length + 1} streaming />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {!diagnosisHistory.length && !isStreaming && (
-                <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
-                  <p className="text-xs" style={{ color: colors.textMuted }}>
-                    No persisted messages yet. Run a diagnosis to start this conversation.
-                  </p>
+                  {diagnosisResult.data_sources_used?.length > 0 && (
+                    <div className="flex items-center gap-3 pt-2">
+                      <span className="text-[10px] font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>
+                      {diagnosisResult.data_sources_used.map((s, i) => (
+                        <span key={i} className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{ color: '#9FB0C3', background: 'rgba(255,255,255,0.06)', fontFamily: fontFamily.mono }}>{s}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          </motion.section>
-
-          <motion.section
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: 0.06 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-3"
-            aria-label="Boardroom decision checklist section"
-          >
-            <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
-              <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
-                Decision checklist
-              </h3>
-              <ul className="space-y-2" role="list">
-                {DECISION_CHECKLIST.map((item) => (
-                  <li key={item.id} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }}>
-                    <p className="text-xs font-semibold" style={{ color: colors.text }}>
-                      {item.title}
-                    </p>
-                    <p className="text-[11px] mt-1" style={{ color: colors.textSecondary }}>
-                      {item.detail}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
-              <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
-                Operating guide
-              </h3>
-              <ul className="space-y-2" role="list">
-                {BOARDROOM_GUIDES.map((guide, idx) => (
-                  <li key={guide} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }} aria-label={`Boardroom guide item ${idx + 1}`}>
-                    <p className="text-[11px]" style={{ color: colors.textSecondary }}>
-                      {guide}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </motion.section>
-
-          {(convError || streamError) && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-lg border" style={{ borderColor: `${colors.warning}40`, background: `${colors.warning}10` }} aria-label="Boardroom warning">
-              <p className="text-xs" style={{ color: colors.warning }}>{convError || streamError}</p>
-            </motion.div>
+            </section>
           )}
-
-          <div className="hidden">
-            <button aria-label="Boardroom hidden keyboard target one" />
-            <button aria-label="Boardroom hidden keyboard target two" />
-            <button aria-label="Boardroom hidden keyboard target three" />
-            <button aria-label="Boardroom hidden keyboard target four" />
-            <button aria-label="Boardroom hidden keyboard target five" />
-          </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
