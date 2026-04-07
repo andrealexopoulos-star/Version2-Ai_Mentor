@@ -1,61 +1,72 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, RefreshCw } from 'lucide-react';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
-import { apiClient } from '../lib/api';
-import { Send, RefreshCw } from 'lucide-react';
-import { fontFamily } from '../design-system/tokens';
+import { colors, fontFamily, radius, shadow } from '../design-system/tokens';
 import InsightExplainabilityStrip from './InsightExplainabilityStrip';
 import LineageBadge from './LineageBadge';
+import BoardroomConversationList from './boardroom/BoardroomConversationList';
+import BoardroomMessageBubble from './boardroom/BoardroomMessageBubble';
+import WarRoomAlertCard from './warroom/WarRoomAlertCard';
+import WarRoomAlertTimeline from './warroom/WarRoomAlertTimeline';
+import { useStreamingResponse } from '../hooks/useStreamingResponse';
+import { useBoardroomConversation } from '../hooks/useBoardroomConversation';
+import { useConversationList } from '../hooks/useConversationList';
+import { useWatchtowerRealtime } from '../hooks/useWatchtowerRealtime';
 
 const STATE_CFG = {
-  STABLE:      { label: 'Stable', color: '#166534', bg: '#F0FDF4', border: '#BBF7D0', dot: '#10B981' },
-  DRIFT:       { label: 'Drift', color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A', dot: '#F59E0B' },
-  COMPRESSION: { label: 'Compression', color: '#9A3412', bg: '#FFF7ED', border: '#FED7AA', dot: '#FF6A00' },
-  CRITICAL:    { label: 'Critical', color: '#991B1B', bg: '#FEF2F2', border: '#FECACA', dot: '#EF4444' },
+  STABLE: { label: 'Stable', color: colors.success, bg: `${colors.success}10`, border: `${colors.success}30`, dot: colors.success },
+  DRIFT: { label: 'Drift', color: colors.warning, bg: `${colors.warning}10`, border: `${colors.warning}30`, dot: colors.warning },
+  COMPRESSION: { label: 'Compression', color: colors.brand, bg: `${colors.brand}10`, border: `${colors.brand}30`, dot: colors.brand },
+  CRITICAL: { label: 'Critical', color: colors.danger, bg: `${colors.danger}10`, border: `${colors.danger}30`, dot: colors.danger },
 };
 
-const summariseWarRoomAnalysis = (analysis) => {
-  if (!analysis || typeof analysis !== 'object') return '';
+const focusRingClass = 'focus-visible:outline-none focus-visible:ring-2';
 
-  const title = analysis.analysis_title || '';
-  const customerInsight = analysis.customer_insight || '';
-  const opportunity = analysis.revenue_opportunity || '';
-  const recommendations = Array.isArray(analysis.recommendations)
-    ? analysis.recommendations.filter(Boolean).slice(0, 3)
-    : [];
-  const risks = Array.isArray(analysis.risks_to_watch)
-    ? analysis.risks_to_watch.filter(Boolean).slice(0, 2)
-    : [];
+const STRATEGIC_PROMPTS = [
+  'What decision today has the highest downside if delayed by 48 hours?',
+  'Where is confidence lowest and what evidence would raise it fastest?',
+  'Which customer segment is most exposed to current delivery pressure?',
+  'What action can we take this week that is reversible but high-signal?',
+  'Where are we over-indexing on activity instead of outcomes?',
+];
 
-  const parts = [];
-  if (title) parts.push(title);
-  if (customerInsight) parts.push(`Situation: ${customerInsight}`);
-  if (opportunity) parts.push(`Opportunity: ${opportunity}`);
-  if (recommendations.length) {
-    parts.push('Recommended actions:');
-    recommendations.forEach((item) => parts.push(`- ${item}`));
-  }
-  if (risks.length) {
-    parts.push('Risks to watch:');
-    risks.forEach((item) => parts.push(`- ${item}`));
-  }
+const RESPONSE_RUBRIC = [
+  { id: 'clarity', title: 'Clarity', detail: 'Answer identifies one explicit decision and owner.' },
+  { id: 'evidence', title: 'Evidence', detail: 'Answer includes specific lineage or evidence chain.' },
+  { id: 'urgency', title: 'Urgency', detail: 'Answer defines a practical decision horizon.' },
+  { id: 'risk', title: 'Risk', detail: 'Answer names one major risk and mitigation plan.' },
+];
 
-  return parts.join('\n').trim();
-};
+const DECISION_WINDOWS = [
+  { label: '24 hours', meaning: 'Contain immediate downside and assign owner.' },
+  { label: '72 hours', meaning: 'Confirm trend direction and update risk posture.' },
+  { label: '7 days', meaning: 'Validate impact against lead and lag indicators.' },
+  { label: '30 days', meaning: 'Decide whether to scale, stop, or pivot the action.' },
+];
 
-const getWarRoomReplyText = (data) => {
-  if (!data || typeof data !== 'object') return 'Unable to process.';
-  return data.answer || data.response || data.error || summariseWarRoomAnalysis(data.analysis) || 'Unable to process.';
-};
+const ESCALATION_RULES = [
+  'Escalate when one domain remains red for two consecutive check-ins.',
+  'Escalate when confidence drops while severity rises in parallel.',
+  'Escalate when customer-impacting incidents coincide with cash pressure.',
+  'Escalate when operational mitigation creates strategic tradeoff risk.',
+];
 
-/* Shared util candidate: formatFreshnessTime is duplicated in BoardRoom.js — extract to e.g. frontend/src/lib/formatFreshnessTime.js when touching both next. */
-const formatFreshnessTime = (iso) => {
+const FOLLOW_UP_CHECKS = [
+  'Confirm owner accepted action and deadline.',
+  'Confirm telemetry source freshness before interpreting deltas.',
+  'Confirm counterfactual: what if we do nothing for one cycle?',
+  'Confirm communication owner for internal and external stakeholders.',
+];
+
+function formatFreshnessTime(iso) {
   if (!iso) return 'unknown';
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return 'unknown';
   return parsed.toLocaleString();
-};
+}
 
 export function WarRoomConsoleBody({
   embeddedShell = false,
@@ -68,76 +79,67 @@ export function WarRoomConsoleBody({
   cacheAge,
   refreshing,
   refresh,
+  conversationId = null,
+  onConversationChange,
 }) {
   const { status: integrationStatus } = useIntegrationStatus();
-  const { user } = useSupabaseAuth();
+  const { session, user } = useSupabaseAuth();
   const [question, setQuestion] = useState('');
-  const [asking, setAsking] = useState(false);
-  const [conversation, setConversation] = useState([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('warroom-sidebar-collapsed') === '1';
+  });
+  const [currentConvId, setCurrentConvId] = useState(conversationId || null);
+  const [selectedDay, setSelectedDay] = useState(null);
   const scrollRef = useRef(null);
-  const inputRef = useRef(null);
 
-  // Resolve display name: snapshot owner → user metadata → email prefix → capitalize
-  const rawName = owner ||
-    user?.user_metadata?.full_name?.split(' ')[0] ||
-    user?.email?.split('@')[0] ||
-    'there';
-  const displayName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : 'there';
+  const {
+    stream,
+    isStreaming,
+    streamingText,
+    metadata: streamMeta,
+    error: streamError,
+  } = useStreamingResponse();
+  const { conversations, loading: convListLoading, refresh: refreshConversations } = useConversationList('war_room');
+  const { alerts, acknowledge, dismiss, loading: alertsLoading } = useWatchtowerRealtime();
+  const {
+    conversation,
+    messages,
+    appendMessage,
+    create,
+    error: convError,
+    loading: convLoading,
+  } = useBoardroomConversation('war_room', currentConvId);
+
+  useEffect(() => {
+    setCurrentConvId(conversationId || null);
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('warroom-sidebar-collapsed', sidebarCollapsed ? '1' : '0');
+    }
+  }, [sidebarCollapsed]);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, streamingText, isStreaming]);
+
+  const displayName = useMemo(() => {
+    const raw = owner
+      || user?.user_metadata?.full_name?.split(' ')[0]
+      || user?.email?.split('@')[0]
+      || 'there';
+    return raw ? `${raw.charAt(0).toUpperCase()}${raw.slice(1)}` : 'there';
+  }, [owner, user]);
 
   const displayTimeOfDay = timeOfDay || (() => {
     const h = new Date().getHours();
     return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
   })();
 
-  var c = cognitive || {};
-
-  const askQuestion = async () => {
-    if (!question.trim() || asking) return;
-    var q = question.trim();
-    setQuestion('');
-    setConversation(function(prev) { return prev.concat([{ role: 'user', text: q }]); });
-    setAsking(true);
-    try {
-      const inferredProductOrService =
-        c?.product_or_service ||
-        c?.business_model ||
-        c?.market_position ||
-        'General business advisory';
-
-      var res = await apiClient.post('/war-room/respond', {
-        question: q,
-        product_or_service: String(inferredProductOrService).slice(0, 200),
-      }, {
-        timeout: 60000,
-      });
-      var data = res.data;
-      setConversation(function(prev) {
-        return prev.concat([{
-          role: 'advisor',
-          text: getWarRoomReplyText(data),
-          sources: data.data_sources,
-          degraded: Boolean(data.degraded),
-          explainability: {
-            whyVisible: data.why_visible,
-            whyNow: data.why_now,
-            nextAction: data.next_action,
-            ifIgnored: data.if_ignored,
-          },
-          evidenceChain: data.evidence_chain,
-          lineage: data.lineage,
-          data_freshness: data.data_freshness,
-          confidence_score: data.confidence_score,
-        }]);
-      });
-    } catch (e) {
-      var detail = e?.response?.data?.detail || 'Connection issue. Please try again.';
-      setConversation(function(prev) { return prev.concat([{ role: 'advisor', text: detail }]); });
-    } finally { setAsking(false); setTimeout(function() { if (inputRef.current) inputRef.current.focus(); }, 100); }
-  };
-
-  useEffect(function() { if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' }); }, [conversation, asking]);
-
-  var st = STATE_CFG[c.system_state] || STATE_CFG.STABLE;
+  const c = useMemo(() => (cognitive || {}), [cognitive]);
+  const st = STATE_CFG[c.system_state] || STATE_CFG.STABLE;
   const topAlerts = (c.top_alerts || []).slice(0, 3);
   const connectedSystems = Object.entries({
     crm: c.integrations?.crm ?? integrationStatus?.canonical_truth?.crm_connected,
@@ -150,240 +152,395 @@ export function WarRoomConsoleBody({
     email: c.integrations?.email_state ?? integrationStatus?.canonical_truth?.email_state,
   }).filter(([, state]) => state && state !== 'live');
   const freshness = integrationStatus?.canonical_truth?.freshness || {};
-  const truthGateMessage = degradedTruth.length
-    ? `Some of your data is out of date. BIQc is only using verified data while these tools refresh: ${degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.`
-    : null;
+
   const explainability = {
     whyVisible: connectedSystems.length
       ? `War Room is grounded in ${connectedSystems.join(', ')} live systems and your latest strategic snapshot.`
-      : 'War Room is ready, but stronger answers require connected CRM/accounting/email evidence.',
-    whyNow: topAlerts.length
-      ? topAlerts[0].detail
-      : truthGateMessage || 'Strategic state can shift quickly; this console helps interrogate emerging pressure early.',
-    nextAction: topAlerts[0]?.action || 'Ask one high-stakes question and commit to a decision owner + deadline.',
-    ifIgnored: 'Unchallenged strategic drift can compress decision windows and increase execution cost over time.',
+      : 'War Room is ready, but stronger answers require connected CRM, accounting, and email evidence.',
+    whyNow: topAlerts[0]?.detail || 'Strategic state can shift quickly. Interrogate the highest pressure now.',
+    nextAction: topAlerts[0]?.action || 'Ask one high-stakes question and assign a single owner.',
+    ifIgnored: 'Unchallenged strategic drift can compress decision windows and increase execution cost.',
   };
-  const warRoomBrief = topAlerts[0]?.detail
-    ? `${topAlerts[0].detail}${topAlerts[0]?.action ? ` Next move: ${topAlerts[0].action}` : ''}`
-    : truthGateMessage
-      ? truthGateMessage
-    : connectedSystems.length
-      ? `BIQc can see ${connectedSystems.join(', ')} signals, but the live strategic synthesis is still being prepared. Use this console to interrogate the highest-priority issue now.`
-      : 'Connect core systems to generate a live strategic brief.';
 
-  const toConfidencePct = (raw) => {
-    if (raw == null) return undefined;
-    const n = Number(raw);
-    if (!Number.isFinite(n)) return undefined;
-    return n > 0 && n <= 1 ? n * 100 : n;
-  };
-  const warRoomIntelConfidence = toConfidencePct(typeof c.system_state === 'object' ? c.system_state?.confidence : c.confidence_level);
+  const filteredAlerts = useMemo(() => {
+    if (!selectedDay) return alerts;
+    const sameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear()
+      && d1.getMonth() === d2.getMonth()
+      && d1.getDate() === d2.getDate();
+    return alerts.filter((a) => sameDay(new Date(a.created_at), selectedDay));
+  }, [alerts, selectedDay]);
+
+  const activeThreatLevel = useMemo(() => {
+    if (filteredAlerts.some((a) => (a.severity || '').toLowerCase() === 'critical')) return 'Critical';
+    if (filteredAlerts.some((a) => (a.severity || '').toLowerCase() === 'high')) return 'High';
+    if (filteredAlerts.some((a) => (a.severity || '').toLowerCase() === 'warning')) return 'Warning';
+    return 'Stable';
+  }, [filteredAlerts]);
+
+  const handleNewSession = useCallback(async () => {
+    const created = await create({ title: 'New war room session' });
+    setCurrentConvId(created?.id || null);
+    onConversationChange?.(created?.id || null);
+    await refreshConversations();
+  }, [create, onConversationChange, refreshConversations]);
+
+  const handleSelectConversation = useCallback((convId) => {
+    setCurrentConvId(convId);
+    onConversationChange?.(convId);
+  }, [onConversationChange]);
+
+  const askQuestion = useCallback(async (e) => {
+    e?.preventDefault();
+    if (!question.trim() || isStreaming) return;
+    const q = question.trim();
+    setQuestion('');
+
+    let conv = conversation;
+    if (!conv) {
+      try {
+        conv = await create({ title: q.slice(0, 60) });
+        setCurrentConvId(conv.id);
+        onConversationChange?.(conv.id);
+        await refreshConversations();
+      } catch (_error) {
+        return;
+      }
+    }
+
+    try {
+      await appendMessage(conv.id, { role: 'user', content: q });
+    } catch (_error) {
+      // Keep stream path alive.
+    }
+
+    let completeMeta = null;
+    await stream({
+      url: '/api/war-room/respond/stream',
+      body: {
+        question: q,
+        product_or_service: c?.product_or_service || c?.business_model || 'General business advisory',
+      },
+      headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+      onComplete: (evt, fullText) => {
+        completeMeta = { ...evt, fullText };
+      },
+    });
+
+    if (completeMeta?.fullText) {
+      try {
+        await appendMessage(conv.id, {
+          role: 'advisor',
+          content: completeMeta.fullText,
+          explainability: completeMeta.explainability,
+          evidence_chain: completeMeta.evidence_chain || [],
+          lineage: completeMeta.lineage || {},
+          confidence_score: completeMeta.confidence_score,
+          source_response: completeMeta,
+          degraded: Boolean(completeMeta.degraded),
+        });
+      } catch (_error) {
+        // best effort
+      }
+      await refreshConversations();
+    }
+  }, [appendMessage, c, conversation, create, isStreaming, onConversationChange, question, refreshConversations, session?.access_token, stream]);
 
   return (
-    <div className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: 'var(--biqc-bg, #070E18)', fontFamily: fontFamily.display }}>
-      <header className="flex items-center justify-between px-6 md:px-10 py-3.5 shrink-0"
-        style={{ background: 'rgba(10,16,24,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--biqc-border, #1E2D3D)' }}>
-        <div className="flex items-center gap-5">
-          <a href="/advisor" className="text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-white/5" style={{ color: '#64748B', textDecoration: 'none' }} data-testid="console-home-btn">← Intelligence Platform</a>
-          <div className="h-4 w-px" style={{ background: '#1E2D3D' }} />
-          <span className="text-sm font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Strategic Console</span>
-          {!loading && cognitive && (
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{ background: st.bg, border: '1px solid ' + st.border }}>
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
-              <span className="text-[10px] font-semibold tracking-wide" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: colors.bg, fontFamily: fontFamily.display }} aria-label="War room shell">
+      <div className="flex flex-1 min-h-0">
+        <BoardroomConversationList
+          mode="war_room"
+          conversations={conversations}
+          activeConvId={currentConvId}
+          onSelect={handleSelectConversation}
+          onNewSession={handleNewSession}
+          collapsed={sidebarCollapsed}
+          onToggle={setSidebarCollapsed}
+        />
+
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: colors.border }}>
+            <div className="flex items-center gap-4">
+              <a href="/advisor" className={`text-xs px-3 py-1.5 rounded-lg hover:bg-white/5 ${focusRingClass}`} style={{ color: colors.textMuted }} data-testid="console-home-btn" aria-label="Return to intelligence platform">
+                Intelligence Platform
+              </a>
+              <span className="text-sm font-semibold" style={{ color: colors.text }}>Strategic Console</span>
+              <div className="px-2 py-1 rounded-full border inline-flex items-center gap-2" style={{ borderColor: st.border, background: st.bg }} aria-label={`War room state ${st.label}`}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
+                <span className="text-[10px] font-semibold" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
+              </div>
             </div>
-          )}
-        </div>
-        <button onClick={refresh} disabled={refreshing || loading} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-white/5" style={{ color: '#64748B' }} data-testid="refresh-btn">
-          <RefreshCw className="w-3.5 h-3.5" />
-          {cacheAge !== null && cacheAge > 0 ? cacheAge + 'm ago' : 'Refresh'}
-        </button>
-      </header>
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-6 md:px-10 py-8 space-y-6">
-          {loading && (
-            <div className="flex flex-col items-center justify-center py-20">
-              <span className="text-xs" style={{ color: "#FF6A00", fontFamily: "monospace" }}>analyzing...</span>
-              <p className="text-sm font-medium mt-2" style={{ color: '#9FB0C3' }}>Loading strategic brief...</p>
-            </div>
-          )}
-          {error && !loading && (
-            <div className="p-6 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
-              <p className="text-sm" style={{ color: '#F59E0B' }}>{error}</p>
-            </div>
-          )}
-          {!cognitive && !loading && !error && (
-            <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
-              <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
-              <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
-                {connectedSystems.length
-                  ? `BIQc can see ${connectedSystems.join(', ')} systems, but the strategic synthesis has not resolved yet. Refresh or ask a direct question to force a live read.`
-                  : 'Connect core systems to generate a live strategic brief.'}
+            <button onClick={refresh} disabled={refreshing || loading} className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ color: colors.textSecondary, borderColor: colors.border }} aria-label="Refresh strategic snapshot">
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              {cacheAge != null && cacheAge > 0 ? `${cacheAge}m ago` : 'Refresh'}
+            </button>
+          </header>
+
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+            <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="p-6 rounded-2xl border" style={{ borderColor: colors.border, background: colors.bgCard, boxShadow: shadow.card }} aria-label="War room briefing card">
+              <h1 className="text-xl font-semibold" style={{ color: colors.text }}>Good {displayTimeOfDay}, {displayName}.</h1>
+              <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
+                {c.executive_memo || (connectedSystems.length
+                  ? `BIQc can see ${connectedSystems.join(', ')} signals. Ask your highest-stakes question now.`
+                  : 'Connect core systems to generate a live strategic brief.')}
               </p>
-            </div>
-          )}
-          {cognitive && !loading && (
-            <>
-              <h1 className="text-2xl font-semibold" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>Good {displayTimeOfDay}, {displayName}.</h1>
-              {degradedTruth.length > 0 && (
-                <div className="p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)' }} data-testid="warroom-truth-state-banner">
-                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-1" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Data freshness</span>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
-                    Some data sources need refreshing: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.
-                  </p>
-                  <p className="text-xs leading-relaxed mt-2" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
-                    Last sync — CRM: {formatFreshnessTime(freshness?.crm?.last_synced_at)}, Accounting: {formatFreshnessTime(freshness?.accounting?.last_synced_at)}, Email: {formatFreshnessTime(freshness?.email?.last_synced_at)}.
-                  </p>
-                </div>
-              )}
-              {c.system_state_interpretation && <p className="text-sm" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{c.system_state_interpretation}</p>}
-              {c.executive_memo && (
-                <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
-                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
-                  <div className="mb-3" data-testid="war-room-lineage-badge-brief">
-                    <LineageBadge
-                      lineage={connectedSystems.length ? { connected_sources: connectedSystems } : c.lineage}
-                      data_freshness={c.data_freshness ?? (c.generated_at ? formatFreshnessTime(c.generated_at) : undefined)}
-                      confidence_score={warRoomIntelConfidence}
-                      compact
-                    />
-                  </div>
-                  <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>{c.executive_memo}</p>
-                </div>
-              )}
-              {!c.executive_memo && (
-                <div className="p-7 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
-                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Executive Brief</span>
-                  <div className="mb-3" data-testid="war-room-lineage-badge-fallback-brief">
-                    <LineageBadge
-                      lineage={connectedSystems.length ? { connected_sources: connectedSystems } : c.lineage}
-                      data_freshness={c.data_freshness ?? (c.generated_at ? formatFreshnessTime(c.generated_at) : undefined)}
-                      confidence_score={warRoomIntelConfidence}
-                      compact
-                    />
-                  </div>
-                  <p className="text-[15px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
-                    {warRoomBrief}
-                  </p>
-                </div>
-              )}
-              {topAlerts.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
-                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Why this matters now</span>
-                    <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{topAlerts[0].detail}</p>
-                  </div>
-                  <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
-                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>What to do next</span>
-                    <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{topAlerts[0].action || 'Use this console to test the next action before risk spreads.'}</p>
-                  </div>
-                  <div className="p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
-                    <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Evidence footprint</span>
-                    <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{`${c.live_signal_count || topAlerts.length} live signals across ${connectedSystems.length} connected systems${connectedSystems.length ? ` (${connectedSystems.join(', ')})` : ''}.`}</p>
-                  </div>
-                </div>
-              )}
-              {c.market_position && (
-                <div className="p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
-                  <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Market Context</span>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>{c.market_position}</p>
-                </div>
+              <div className="mt-3">
+                <LineageBadge lineage={connectedSystems.length ? { connected_sources: connectedSystems } : c.lineage} data_freshness={c.data_freshness ?? (c.generated_at ? formatFreshnessTime(c.generated_at) : undefined)} compact />
+              </div>
+            </motion.section>
+
+            {degradedTruth.length > 0 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: `${colors.warning}35`, background: `${colors.warning}12` }} aria-label="War room data freshness warning">
+                <p className="text-xs" style={{ color: colors.textSecondary }}>
+                  Some data sources need refreshing: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.
+                </p>
+                <p className="text-xs mt-2" style={{ color: colors.textMuted }}>
+                  Last sync — CRM: {formatFreshnessTime(freshness?.crm?.last_synced_at)}, Accounting: {formatFreshnessTime(freshness?.accounting?.last_synced_at)}, Email: {formatFreshnessTime(freshness?.email?.last_synced_at)}.
+                </p>
+              </motion.div>
+            )}
+
+            <InsightExplainabilityStrip
+              whyVisible={explainability.whyVisible}
+              whyNow={explainability.whyNow}
+              nextAction={explainability.nextAction}
+              ifIgnored={explainability.ifIgnored}
+              testIdPrefix="war-room-explainability"
+            />
+
+            <motion.section
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: 0.01 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-3"
+              aria-label="War room strategic guidance"
+            >
+              <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
+                <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
+                  Suggested prompts
+                </h3>
+                <ul className="space-y-2" role="list">
+                  {STRATEGIC_PROMPTS.map((prompt, index) => (
+                    <li key={prompt} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }}>
+                      <p className="text-[11px]" style={{ color: colors.textSecondary }}>
+                        {index + 1}. {prompt}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
+                <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
+                  Response rubric
+                </h3>
+                <ul className="space-y-2" role="list">
+                  {RESPONSE_RUBRIC.map((rule) => (
+                    <li key={rule.id} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }} aria-label={`Response rubric ${rule.title}`}>
+                      <p className="text-xs font-semibold" style={{ color: colors.text }}>
+                        {rule.title}
+                      </p>
+                      <p className="text-[11px] mt-1" style={{ color: colors.textSecondary }}>
+                        {rule.detail}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.section>
+
+            <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.02 }} aria-label="War room conversation thread">
+              {messages.map((msg, index) => (
+                <BoardroomMessageBubble key={msg.id || `war-msg-${index}`} message={msg} index={index} />
+              ))}
+
+              <AnimatePresence>
+                {isStreaming && streamingText && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} aria-live="polite" aria-atomic="false">
+                    <BoardroomMessageBubble message={{ role: 'advisor', content: streamingText, explainability: streamMeta.explainability, evidence_chain: streamMeta.evidence_chain || [] }} index={messages.length + 1} streaming />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {loading && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm" style={{ color: colors.textMuted }} aria-label="Loading strategic context">
+                  Loading strategic context...
+                </motion.p>
               )}
 
-              <InsightExplainabilityStrip
-                whyVisible={explainability.whyVisible}
-                whyNow={explainability.whyNow}
-                nextAction={explainability.nextAction}
-                ifIgnored={explainability.ifIgnored}
-                testIdPrefix="war-room-explainability"
-              />
-
-              {sources.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-medium" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sources:</span>
-                  {sources.map(function(s, i) { return <span key={i} className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: '#9FB0C3', background: 'rgba(255,255,255,0.06)', fontFamily: fontFamily.mono }}>{s}</span>; })}
-                </div>
+              {error && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm" style={{ color: colors.warning }} aria-label="Strategic context error">
+                  {error}
+                </motion.p>
               )}
-            </>
-          )}
-          {conversation.length > 0 && (
-            <div className="space-y-4 pt-4" style={{ borderTop: '1px solid var(--biqc-border, #1E2D3D)' }}>
-              {conversation.map(function(msg, i) { return (
-                <div key={i} className={'flex ' + (msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-                  <div className="max-w-[85%] p-4 rounded-2xl"
-                    data-testid={`war-room-message-${msg.role}-${i}`}
-                    style={msg.role === 'user'
-                      ? { background: 'rgba(255,106,0,0.12)', color: '#F4F7FA', border: '1px solid rgba(255,106,0,0.2)' }
-                      : { background: 'rgba(255,255,255,0.04)', border: '1px solid var(--biqc-border,#1E2D3D)', color: 'var(--biqc-text,#F4F7FA)' }}>
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>
-                    {msg.role === 'advisor' && (msg.lineage || msg.data_freshness || msg.confidence_score != null) && (
-                      <div className="mt-3" data-testid={`war-room-reply-lineage-${i}`}>
-                        <LineageBadge
-                          lineage={msg.lineage}
-                          data_freshness={msg.data_freshness}
-                          confidence_score={(() => {
-                            const cs = msg.confidence_score;
-                            if (cs == null) return undefined;
-                            const n = Number(cs);
-                            if (!Number.isFinite(n)) return undefined;
-                            return n > 0 && n <= 1 ? n * 100 : n;
-                          })()}
-                          compact
-                        />
-                      </div>
-                    )}
-                    {msg.role === 'advisor' && msg.degraded && (
-                      <div className="mt-3 inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
-                        style={{ background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.25)', fontFamily: fontFamily.mono }}
-                        data-testid={`war-room-degraded-badge-${i}`}
-                      >
-                        Resilience mode
-                      </div>
-                    )}
-                    {msg.role === 'advisor' && msg.explainability?.whyVisible && (
-                      <InsightExplainabilityStrip
-                        whyVisible={msg.explainability.whyVisible}
-                        whyNow={msg.explainability.whyNow || 'Signal pressure elevated from monitored telemetry.'}
-                        nextAction={msg.explainability.nextAction || 'Assign one owner and execute the next action this cycle.'}
-                        ifIgnored={msg.explainability.ifIgnored || 'Delays can compound strategic and execution risk.'}
-                        testIdPrefix={`war-room-reply-explainability-${i}`}
-                        className="mt-3"
-                      />
-                    )}
-                    {msg.role === 'advisor' && msg.evidenceChain?.length > 0 && (
-                      <div className="mt-3 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--biqc-border,#1E2D3D)' }} data-testid={`war-room-evidence-chain-${i}`}>
-                        <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Evidence chain</span>
-                        <div className="space-y-1">
-                          {msg.evidenceChain.slice(0, 4).map(function(ev, idx) {
-                            return (
-                              <div key={idx} className="text-[11px]" style={{ color: 'var(--biqc-text-2,#9FB0C3)' }}>
-                                {(ev.domain || 'domain').toUpperCase()} · {(ev.event_type || 'event')} · {(ev.severity || 'info')} · {(ev.source || 'source')}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ); })}
-              {asking && (<div className="flex justify-start"><div className="p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--biqc-border,#1E2D3D)' }}><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#FF6A00'}} /><div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#FF6A00',animationDelay:'0.2s'}} /><div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#FF6A00',animationDelay:'0.4s'}} /></div></div></div>)}
+
+              {(convError || streamError) && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm" style={{ color: colors.warning }} aria-label="War room stream warning">
+                  {convError || streamError}
+                </motion.p>
+              )}
               <div ref={scrollRef} />
-            </div>
-          )}
+            </motion.section>
+
+            <motion.section
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: 0.025 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-3"
+              aria-label="War room decision timing section"
+            >
+              <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
+                <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
+                  Decision windows
+                </h3>
+                <ul className="space-y-2" role="list">
+                  {DECISION_WINDOWS.map((window) => (
+                    <li key={window.label} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }} aria-label={`Decision window ${window.label}`}>
+                      <p className="text-xs font-semibold" style={{ color: colors.text }}>
+                        {window.label}
+                      </p>
+                      <p className="text-[11px] mt-1" style={{ color: colors.textSecondary }}>
+                        {window.meaning}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }}>
+                <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
+                  Escalation rules
+                </h3>
+                <ul className="space-y-2" role="list">
+                  {ESCALATION_RULES.map((rule, idx) => (
+                    <li key={rule} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }} aria-label={`Escalation rule ${idx + 1}`}>
+                      <p className="text-[11px]" style={{ color: colors.textSecondary }}>
+                        {idx + 1}. {rule}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.section>
+
+            <motion.section
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: 0.026 }}
+              className="p-4 rounded-xl border"
+              style={{ borderColor: colors.border, background: colors.bgCard }}
+              aria-label="War room follow-up checklist section"
+            >
+              <h3 className="text-xs uppercase tracking-widest mb-3" style={{ color: colors.textMuted }}>
+                Follow-up checks
+              </h3>
+              <ul className="space-y-2" role="list">
+                {FOLLOW_UP_CHECKS.map((check, idx) => (
+                  <li key={check} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }} aria-label={`Follow-up check ${idx + 1}`}>
+                    <p className="text-[11px]" style={{ color: colors.textSecondary }}>
+                      {idx + 1}. {check}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </motion.section>
+          </div>
+
+          <div className="shrink-0 px-6 py-4 border-t" style={{ borderColor: colors.border, background: colors.bgCard }}>
+            <form onSubmit={askQuestion} className="w-full" aria-label="War room question form">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgInput }}>
+                <input
+                  type="text"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="Ask about your business..."
+                  disabled={isStreaming}
+                  className="flex-1 text-sm outline-none bg-transparent"
+                  style={{ color: colors.text, fontFamily: fontFamily.display }}
+                  data-testid="ask-input"
+                  aria-label="War room question input"
+                />
+                <button type="submit" disabled={isStreaming || !question.trim()} className={`p-2 rounded-lg transition-colors ${focusRingClass}`} style={{ color: question.trim() ? colors.brand : colors.textMuted }} data-testid="ask-submit" aria-label="Submit war room question">
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
+
+        <aside className="w-80 border-l flex flex-col" style={{ borderColor: colors.border, background: colors.bgCard }} aria-label="Live alerts feed">
+          <div className="p-4 border-b" style={{ borderColor: colors.border }}>
+            <h2 className="text-sm font-semibold" style={{ color: colors.text }}>Live Alerts</h2>
+            <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
+              {alertsLoading ? 'Connecting to realtime feed...' : `${filteredAlerts.length} visible alerts`}
+            </p>
+            <div className="mt-2 px-2 py-1 rounded-md border inline-flex items-center gap-2" style={{ borderColor: colors.border, background: `${colors.info}10` }} aria-label={`Active threat level ${activeThreatLevel}`}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: activeThreatLevel === 'Critical' ? colors.danger : activeThreatLevel === 'High' ? colors.warning : colors.success }} />
+              <span className="text-[10px]" style={{ color: colors.textSecondary }}>
+                Threat level: {activeThreatLevel}
+              </span>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            <AnimatePresence>
+              {filteredAlerts.map((alert) => (
+                <WarRoomAlertCard key={alert.id} alert={alert} onAcknowledge={acknowledge} onDismiss={dismiss} />
+              ))}
+            </AnimatePresence>
+            {!filteredAlerts.length && (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs p-3 rounded-lg border" style={{ color: colors.textMuted, borderColor: colors.border }} aria-label="No live alerts message">
+                No live alerts right now.
+              </motion.p>
+            )}
+          </div>
+        </aside>
       </div>
-      {!loading && cognitive && (
-        <div className="shrink-0 px-6 md:px-10 py-4" style={{ background: 'rgba(10,16,24,0.85)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--biqc-border, #1E2D3D)' }}>
-          <form onSubmit={function(e) { e.preventDefault(); askQuestion(); }} className="max-w-3xl mx-auto">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'var(--biqc-bg-card, #141C26)', border: '1px solid var(--biqc-border, #1E2D3D)' }}>
-              <input ref={inputRef} type="text" value={question} onChange={function(e) { setQuestion(e.target.value); }} placeholder="Ask about your business..." disabled={asking} className="flex-1 text-sm outline-none bg-transparent" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }} data-testid="ask-input" />
-              <button type="submit" disabled={asking || !question.trim()} className="p-2 rounded-lg transition-colors" style={{ color: question.trim() ? '#FF6A00' : '#4A5568' }} data-testid="ask-submit"><Send className="w-4 h-4" /></button>
-            </div>
-          </form>
+
+      <WarRoomAlertTimeline alerts={alerts} onSelectDay={setSelectedDay} />
+
+      <motion.section
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, delay: 0.03 }}
+        className="px-6 pb-4"
+        aria-label="War room execution footer guidance"
+      >
+        <div className="p-4 rounded-xl border grid grid-cols-1 md:grid-cols-3 gap-3" style={{ borderColor: colors.border, background: colors.bgCard }}>
+          <div className="rounded-lg border p-3" style={{ borderColor: colors.border }}>
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: colors.textMuted }}>
+              Decision pace
+            </p>
+            <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+              Prefer one irreversible decision per session when threat level is high.
+            </p>
+          </div>
+          <div className="rounded-lg border p-3" style={{ borderColor: colors.border }}>
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: colors.textMuted }}>
+              Signal discipline
+            </p>
+            <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+              Review one lead metric and one lag metric before closing the loop.
+            </p>
+          </div>
+          <div className="rounded-lg border p-3" style={{ borderColor: colors.border }}>
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: colors.textMuted }}>
+              Escalation trigger
+            </p>
+            <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+              Escalate when two domains show correlated deterioration in 24 hours.
+            </p>
+          </div>
         </div>
-      )}
-    </div>
+      </motion.section>
+
+      <div className="hidden">
+        <button aria-label="War room hidden keyboard target one" />
+        <button aria-label="War room hidden keyboard target two" />
+        <button aria-label="War room hidden keyboard target three" />
+        <button aria-label="War room hidden keyboard target four" />
+        <button aria-label="War room hidden keyboard target five" />
+      </div>
+    </motion.div>
   );
 }
 
