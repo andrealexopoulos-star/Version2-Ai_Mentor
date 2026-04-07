@@ -45,11 +45,23 @@ jobs:
             BEFORE_SHA="$(git rev-list --max-parents=0 HEAD)"
           fi
 
-          CHANGED_FUNCTIONS=$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" \
+          CHANGED_FILES=$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" || true)
+          CHANGED_FUNCTIONS=$(echo "$CHANGED_FILES" \
             | sed -n 's#^supabase/functions/\([^/]*\)/.*#\1#p' \
             | sort -u \
             | tr '\n' ' ' \
             | xargs || true)
+
+          # Safety fallback: if this workflow file changes, force redeploy of critical auth-sensitive functions.
+          if echo "$CHANGED_FILES" | grep -q "^.github/workflows/supabase-functions-deploy.yml$"; then
+            CHANGED_FUNCTIONS=$(printf "%s %s\n" "$CHANGED_FUNCTIONS" "rapid-task signal-evaluator outlook-auth merge-webhook-ingest" \
+              | tr ' ' '\n' \
+              | sed '/^$/d' \
+              | sort -u \
+              | tr '\n' ' ' \
+              | xargs)
+            echo "Workflow changed; forcing redeploy of critical auth-sensitive functions: ${CHANGED_FUNCTIONS}"
+          fi
 
           if [ -z "$CHANGED_FUNCTIONS" ]; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
