@@ -1,16 +1,49 @@
-"""TEMPORARY: Deploy gate smoke test bypassed for P0 hotfix recovery.
-
-This file is intentionally a no-op stub during the production recovery sprint.
-The original test checks production /api/health BEFORE the deploy runs, which
-creates a deadlock when production is already broken. The original will be
-restored in a separate follow-up PR after production is healthy.
-
-History: this same bypass was applied during the P3 recovery (commit 09d797d5)
-and restored by commit 621f9e90.
 """
+Deploy gate smoke tests.
+Keeps deployment gating focused on stable runtime behavior.
+"""
+
+import os
+import requests
+import time
+
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 
 
 class TestDeployGateSmoke:
-    def test_bypass_active(self):
-        """No-op stub. Real test restored in follow-up PR."""
-        assert True
+    def test_backend_health(self):
+        # Retry quickly to absorb transient startup races, but fail hard on degraded health.
+        response = None
+        for attempt in range(3):
+            response = requests.get(f"{BASE_URL}/api/health", timeout=15)
+            if response.status_code == 200:
+                break
+            if attempt < 2:
+                time.sleep(2)
+
+        assert response is not None
+        assert response.status_code == 200
+        data = response.json()
+        assert data.get("status") == "healthy"
+
+    def test_api_root(self):
+        response = requests.get(f"{BASE_URL}/api/", timeout=15)
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+
+    def test_admin_prompts_auth_gate(self):
+        response = requests.get(f"{BASE_URL}/api/admin/prompts", timeout=15)
+        assert response.status_code in [401, 403]
+        assert "detail" in response.json()
+
+    def test_calibration_status_auth_gate(self):
+        response = requests.get(f"{BASE_URL}/api/calibration/status", timeout=15)
+        assert response.status_code in [401, 403]
+        assert "detail" in response.json()
+
+    def test_google_oauth_endpoint(self):
+        response = requests.get(f"{BASE_URL}/api/auth/supabase/oauth/google", timeout=15)
+        assert response.status_code == 200
+        data = response.json()
+        assert "url" in data
