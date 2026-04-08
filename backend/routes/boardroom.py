@@ -1014,6 +1014,7 @@ async def stream_war_room_respond(
     sb = get_sb()
     question = sanitise_input(payload.question).get("text", payload.question)
     check_rate_limit(user_id, "war_room_ask", sb)
+    streaming_v2 = os.environ.get("WARROOM_STREAMING_V2_ENABLED", "true").lower() == "true"
 
     async def generate():
         yield await _sse_event("start", {
@@ -1054,11 +1055,18 @@ async def stream_war_room_respond(
             if not answer:
                 yield await _sse_event("error", {"message": "Empty war room response", "degraded": True})
                 return
-            chunk_size = 40
+            yield await _sse_event("thinking", {"message": "Synthesizing..."})
+            await asyncio.sleep(0.25)
+            if streaming_v2:
+                chunk_size = 8
+                chunk_delay = 0.012
+            else:
+                chunk_size = 40
+                chunk_delay = 0.025
             for i in range(0, len(answer), chunk_size):
                 chunk = answer[i:i + chunk_size]
                 yield await _sse_event("delta", {"text": chunk})
-                await asyncio.sleep(0.025)
+                await asyncio.sleep(chunk_delay)
             yield await _sse_event("complete", {
                 "explainability": {
                     "why_visible": data.get("why_visible"),

@@ -11,7 +11,6 @@ import BoardroomConversationList from './boardroom/BoardroomConversationList';
 import BoardroomMessageBubble from './boardroom/BoardroomMessageBubble';
 import WarRoomAlertCard from './warroom/WarRoomAlertCard';
 import WarRoomAlertTimeline from './warroom/WarRoomAlertTimeline';
-import { useStreamingResponse } from '../hooks/useStreamingResponse';
 import { useBoardroomConversation } from '../hooks/useBoardroomConversation';
 import { useConversationList } from '../hooks/useConversationList';
 import { useWatchtowerRealtime } from '../hooks/useWatchtowerRealtime';
@@ -96,13 +95,96 @@ export function WarRoomConsoleBody({
   const [selectedDay, setSelectedDay] = useState(null);
   const scrollRef = useRef(null);
 
-  const {
-    stream,
-    isStreaming,
-    streamingText,
-    metadata: streamMeta,
-    error: streamError,
-  } = useStreamingResponse();
+  const [warRoomStreaming, setWarRoomStreaming] = useState(false);
+  const [warRoomStreamingText, setWarRoomStreamingText] = useState('');
+  const [warRoomStreamMeta, setWarRoomStreamMeta] = useState({});
+  const [warRoomStreamError, setWarRoomStreamError] = useState(null);
+  const [warRoomThinking, setWarRoomThinking] = useState(false);
+  const [warRoomThinkingLabel, setWarRoomThinkingLabel] = useState('Synthesizing...');
+  const warRoomTextRef = useRef('');
+  const warRoomAbortRef = useRef(null);
+
+  const warRoomStream = useCallback(async ({ url, body, headers = {}, onComplete = null }) => {
+    warRoomTextRef.current = '';
+    setWarRoomStreamingText('');
+    setWarRoomStreamMeta({});
+    setWarRoomStreamError(null);
+    setWarRoomThinking(false);
+    setWarRoomThinkingLabel('Synthesizing...');
+    setWarRoomStreaming(true);
+    const controller = new AbortController();
+    warRoomAbortRef.current = controller;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+          ...headers,
+        },
+        body: JSON.stringify(body || {}),
+        signal: controller.signal,
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      if (!response.body) {
+        throw new Error('Response has no body');
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+        for (const raw of lines) {
+          const dataLine = raw.split('\n').find((l) => l.startsWith('data: '));
+          if (!dataLine) continue;
+          let evt;
+          try {
+            evt = JSON.parse(dataLine.slice(6));
+          } catch {
+            continue;
+          }
+          if (!evt || !evt.type) continue;
+          if (evt.type === 'start') {
+            setWarRoomStreamMeta((prev) => ({ ...prev, ...evt }));
+          } else if (evt.type === 'thinking') {
+            setWarRoomThinking(true);
+            if (evt.message) setWarRoomThinkingLabel(String(evt.message));
+          } else if (evt.type === 'delta') {
+            setWarRoomThinking(false);
+            const text = evt.text || '';
+            warRoomTextRef.current += text;
+            setWarRoomStreamingText(warRoomTextRef.current);
+          } else if (evt.type === 'truth_gate') {
+            setWarRoomThinking(false);
+            setWarRoomStreamMeta((prev) => ({ ...prev, truth_gate: evt }));
+          } else if (evt.type === 'complete') {
+            setWarRoomThinking(false);
+            setWarRoomStreamMeta((prev) => ({ ...prev, ...evt }));
+            if (onComplete) onComplete(evt, warRoomTextRef.current);
+          } else if (evt.type === 'error') {
+            setWarRoomThinking(false);
+            const msg = evt.message || 'Stream error';
+            setWarRoomStreamError(msg);
+          }
+        }
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        setWarRoomStreamError(e.message || 'Stream failed');
+      }
+    } finally {
+      setWarRoomStreaming(false);
+      warRoomAbortRef.current = null;
+    }
+  }, []);
+
   const { conversations, loading: convListLoading, refresh: refreshConversations } = useConversationList('war_room');
   const { alerts, acknowledge, dismiss, loading: alertsLoading } = useWatchtowerRealtime();
   const {
@@ -132,7 +214,7 @@ export function WarRoomConsoleBody({
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingText, isStreaming]);
+  }, [messages, warRoomStreamingText, warRoomStreaming, warRoomThinking]);
 
   const displayName = useMemo(() => {
     const raw = owner
@@ -200,7 +282,7 @@ export function WarRoomConsoleBody({
 
   const askQuestion = useCallback(async (e) => {
     e?.preventDefault();
-    if (!question.trim() || isStreaming) return;
+    if (!question.trim() || warRoomStreaming) return;
     const q = question.trim();
     setQuestion('');
 
@@ -223,7 +305,7 @@ export function WarRoomConsoleBody({
     }
 
     let completeMeta = null;
-    await stream({
+    await warRoomStream({
       url: '/api/war-room/respond/stream',
       body: {
         question: q,
@@ -252,7 +334,7 @@ export function WarRoomConsoleBody({
       }
       await refreshConversations();
     }
-  }, [appendMessage, c, conversation, create, isStreaming, onConversationChange, question, refreshConversations, session?.access_token, stream]);
+  }, [appendMessage, c, conversation, create, onConversationChange, question, refreshConversations, session?.access_token, warRoomStream, warRoomStreaming]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className={`flex flex-col h-full ${embeddedShell ? 'min-h-full' : 'min-h-screen'}`} style={{ background: colors.bg, fontFamily: fontFamily.display }} aria-label="War room shell">
@@ -366,9 +448,19 @@ export function WarRoomConsoleBody({
               ))}
 
               <AnimatePresence>
-                {isStreaming && streamingText && (
+                {warRoomStreaming && warRoomThinking && !warRoomStreamingText && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} aria-live="polite" className="warroom-chat-message">
+                    <p className="text-sm" style={{ color: colors.textMuted }} aria-label="War room synthesizing">
+                      {warRoomThinkingLabel}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {warRoomStreaming && warRoomStreamingText && (
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} aria-live="polite" aria-atomic="false" className="warroom-chat-message">
-                    <BoardroomMessageBubble message={{ role: 'advisor', content: streamingText, explainability: streamMeta.explainability, evidence_chain: streamMeta.evidence_chain || [] }} index={messages.length + 1} streaming />
+                    <BoardroomMessageBubble message={{ role: 'advisor', content: warRoomStreamingText, explainability: warRoomStreamMeta.explainability, evidence_chain: warRoomStreamMeta.evidence_chain || [] }} index={messages.length + 1} streaming />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -385,9 +477,9 @@ export function WarRoomConsoleBody({
                 </motion.p>
               )}
 
-              {(convError || streamError) && (
+              {(convError || warRoomStreamError) && (
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm" style={{ color: colors.warning }} aria-label="War room stream warning">
-                  {convError || streamError}
+                  {convError || warRoomStreamError}
                 </motion.p>
               )}
               <div ref={scrollRef} />
@@ -465,13 +557,13 @@ export function WarRoomConsoleBody({
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder="Ask about your business..."
-                  disabled={isStreaming}
+                  disabled={warRoomStreaming}
                   className="flex-1 text-sm outline-none bg-transparent"
                   style={{ color: colors.text, fontFamily: fontFamily.display, fontSize: '16px' }}
                   data-testid="ask-input"
                   aria-label="War room question input"
                 />
-                <button type="submit" disabled={isStreaming || !question.trim()} className={`p-2 rounded-lg transition-colors ${focusRingClass}`} style={{ color: question.trim() ? colors.brand : colors.textMuted }} data-testid="ask-submit" aria-label="Submit war room question">
+                <button type="submit" disabled={warRoomStreaming || !question.trim()} className={`p-2 rounded-lg transition-colors ${focusRingClass}`} style={{ color: question.trim() ? colors.brand : colors.textMuted }} data-testid="ask-submit" aria-label="Submit war room question">
                   <Send className="w-4 h-4" />
                 </button>
               </div>
