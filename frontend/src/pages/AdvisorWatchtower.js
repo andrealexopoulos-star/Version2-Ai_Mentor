@@ -2437,6 +2437,19 @@ export default function AdvisorWatchtower() {
                       <p className="mt-3 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid={`advisor-signal-detail-${signal.signalType}`}>
                         {signal.detail}
                       </p>
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const query = signal.finding || signal.signal_name || signal.event_type || signal.title || 'this signal';
+                            navigate(`/war-room?prefill=${encodeURIComponent(query)}`);
+                          }}
+                          className="text-xs px-2 py-1 rounded-md border border-white/10 hover:bg-white/5"
+                        >
+                          Ask WarRoom
+                        </button>
+                      </div>
                     </div>
                   ))}
 
