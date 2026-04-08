@@ -96,6 +96,7 @@ security = HTTPBearer()
 # ═══ AUTH HELPERS (kept on server for backward-compat lazy imports from routes) ═══
 from routes.deps import get_current_user
 from biqc_jobs import biqc_jobs
+from jobs.enrichment_worker import start_enrichment_worker, stop_enrichment_worker
 
 async def get_admin_user(current_user: dict = Depends(get_current_user)):
     from fastapi import HTTPException
@@ -167,6 +168,20 @@ async def startup_redis_runtime():
 async def shutdown_redis_runtime():
     with suppress(Exception):
         await biqc_jobs.shutdown()
+
+
+@app.on_event("startup")
+async def startup_enrichment_worker_runtime():
+    try:
+        start_enrichment_worker()
+    except Exception as exc:
+        logger.warning("Enrichment worker skipped during startup: %s", exc)
+
+
+@app.on_event("shutdown")
+async def shutdown_enrichment_worker_runtime():
+    with suppress(Exception):
+        await stop_enrichment_worker()
 
 
 # ═══ VOICE CHAT (REALTIME) — Direct OpenAI routing ═══

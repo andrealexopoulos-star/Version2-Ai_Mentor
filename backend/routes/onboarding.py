@@ -614,6 +614,14 @@ async def enrich_signals(current_user: dict = Depends(get_current_user)):
     )
 
 
+@router.post("/onboarding/enrich-all")
+async def enrich_all_endpoint(current_user: dict = Depends(require_owner_or_admin)):
+    from services.signal_enricher import backfill_unenriched, llm_caller
+
+    user_id = current_user.get("id")
+    return await backfill_unenriched(get_sb(), llm_caller, limit=500, user_id=user_id)
+
+
 @router.get("/business-profile/context")
 async def get_business_profile_context(current_user: dict = Depends(get_current_user)):
     """Get existing business profile + onboarding state + resolved facts.
