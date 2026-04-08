@@ -602,7 +602,7 @@ async def enrich_website(request: WebsiteEnrichRequest, current_user: dict = Dep
     return result
 
 
-@router.post("/enrich-signals")
+@router.post("/onboarding/enrich-signals")
 async def enrich_signals(current_user: dict = Depends(get_current_user)):
     """Backfill LLM enrichment for the current user's unenriched watchtower_insights rows."""
     user_id = current_user.get("id")
@@ -663,7 +663,7 @@ async def get_business_profile_context(current_user: dict = Depends(get_current_
     }
 
 
-@router.post("/seed-demo")
+@router.post("/onboarding/seed-demo")
 async def seed_demo_data(current_user: dict = Depends(get_current_user)):
     """Seed demo data for a user only when they have no existing events."""
     user_id = current_user["id"]
