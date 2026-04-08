@@ -12,6 +12,8 @@ from routes.deps import get_current_user, get_sb, logger, require_owner_or_admin
 from supabase_client import safe_query_single
 from auth_supabase import get_user_by_id
 from services.demo_seeder import seed_demo_account
+from services.signal_enricher import enrich_insight, backfill_unenriched
+import services.signal_enricher as signal_enricher
 from supabase_intelligence_helpers import (
     get_business_profile_supabase, update_business_profile_supabase,
 )
@@ -598,6 +600,18 @@ async def enrich_website(request: WebsiteEnrichRequest, current_user: dict = Dep
         result["error"] = str(e)
     
     return result
+
+
+@router.post("/enrich-signals")
+async def enrich_signals(current_user: dict = Depends(get_current_user)):
+    """Backfill LLM enrichment for the current user's unenriched watchtower_insights rows."""
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User id missing")
+    sb = get_sb()
+    return await backfill_unenriched(
+        sb, signal_enricher.llm_caller, 25, user_id=user_id
+    )
 
 
 @router.get("/business-profile/context")
