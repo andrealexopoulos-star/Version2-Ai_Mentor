@@ -381,7 +381,7 @@ export function WarRoomConsoleBody({
             </motion.section>
 
             {degradedTruth.length > 0 && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: `${colors.warning}35`, background: `${colors.warning}12` }} aria-label="War room data freshness warning">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: colors.warning, background: colors.warningDim }} aria-label="War room data freshness warning">
                 <p className="text-xs" style={{ color: colors.textSecondary }}>
                   Some data sources need refreshing: {degradedTruth.map(([domain, state]) => `${domain} (${state})`).join(', ')}.
                 </p>
@@ -577,7 +577,7 @@ export function WarRoomConsoleBody({
             <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
               {alertsLoading ? 'Connecting to realtime feed...' : `${filteredAlerts.length} visible alerts`}
             </p>
-            <div className="mt-2 px-2 py-1 rounded-md border inline-flex items-center gap-2" style={{ borderColor: colors.border, background: `${colors.info}10` }} aria-label={`Active threat level ${activeThreatLevel}`}>
+            <div className="mt-2 px-2 py-1 rounded-md border inline-flex items-center gap-2" style={{ borderColor: colors.border, background: colors.infoDim }} aria-label={`Active threat level ${activeThreatLevel}`}>
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: activeThreatLevel === 'Critical' ? colors.danger : activeThreatLevel === 'High' ? colors.warning : colors.success }} />
               <span className="text-[10px]" style={{ color: colors.textSecondary }}>
                 Threat level: {activeThreatLevel}
