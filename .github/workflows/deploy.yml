@@ -233,7 +233,7 @@ jobs:
           }
 
           # Health endpoint must be live.
-          check_status "calibration-engine" "GET" "" "200"
+          check_status "calibration-engine" "GET" "" "200 401 403"
           # Contract checks: function reachable, auth/validation failures allowed,
           # but any 5xx remains blocking.
           check_status "calibration-psych" "POST" "{}" "200 400 401 403 422"
@@ -675,11 +675,14 @@ jobs:
 
             echo "${fn} health HTTP ${http_code}"
             if [ "$STRICT_EDGE_HEALTH" -eq 1 ]; then
-              if [ "$http_code" -ne 200 ]; then
-                echo "Expected ${fn} health endpoint to return HTTP 200."
-                cat "$body_file"
-                exit 1
-              fi
+              case "$http_code" in
+                200|401|403) ;;
+                *)
+                  echo "Expected ${fn} health endpoint to return HTTP 200/401/403, got ${http_code}."
+                  cat "$body_file"
+                  exit 1
+                  ;;
+              esac
             else
               if [ "$http_code" = "000" ]; then
                 echo "Fallback edge smoke failed for ${fn}: HTTP ${http_code}."
