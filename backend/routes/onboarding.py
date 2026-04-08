@@ -614,6 +614,38 @@ async def enrich_signals(current_user: dict = Depends(get_current_user)):
     )
 
 
+@router.post("/onboarding/enrich-all")
+async def enrich_all_endpoint(current_user: dict = Depends(require_owner_or_admin)):
+    from services.signal_enricher import backfill_unenriched, llm_caller
+
+    user_id = current_user.get("id")
+    return await backfill_unenriched(get_sb(), llm_caller, limit=500, user_id=user_id)
+
+
+@router.post("/onboarding/group-signals")
+async def group_signals_endpoint(current_user: dict = Depends(require_owner_or_admin)):
+    from services.signal_grouper import group_insight
+
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User id missing")
+    sb = get_sb()
+    recent = (
+        sb.table("watchtower_insights")
+        .select("id")
+        .eq("user_id", user_id)
+        .is_("signal_group_id", "null")
+        .not_.is_("explanation", "null")
+        .order("detected_at", desc=True)
+        .limit(100)
+        .execute()
+    )
+    results = []
+    for row in recent.data or []:
+        results.append(await group_insight(sb, row["id"]))
+    return {"processed": len(results), "results": results}
+
+
 @router.get("/business-profile/context")
 async def get_business_profile_context(current_user: dict = Depends(get_current_user)):
     """Get existing business profile + onboarding state + resolved facts.
