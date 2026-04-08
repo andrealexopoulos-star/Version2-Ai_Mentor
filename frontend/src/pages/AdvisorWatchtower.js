@@ -679,6 +679,7 @@ export default function AdvisorWatchtower() {
   const [watchtowerEvents, setWatchtowerEvents] = useState([]);
   const [watchtowerLoading, setWatchtowerLoading] = useState(false);
   const [watchtowerError, setWatchtowerError] = useState('');
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [integrationContext, setIntegrationContext] = useState({
     mergeConnected: {},
     canonicalTruth: {},
@@ -1336,6 +1337,54 @@ export default function AdvisorWatchtower() {
     fetchDelegateProviders();
   }, [fetchDelegateProviders]);
 
+  useEffect(() => {
+    if (authState === AUTH_STATE.LOADING) return;
+    if (!initialDataLoadTriggeredRef.current) return;
+    if (overviewLoading || watchtowerLoading || integrationContextLoading || snapshotLoading) return;
+
+    let alreadyAttempted = false;
+    let dismissed = false;
+    try {
+      alreadyAttempted = Boolean(sessionStorage.getItem('omega_demo_seed_attempted'));
+      dismissed = sessionStorage.getItem('omega_demo_seed_dismissed') === '1';
+    } catch {
+      return;
+    }
+    if (alreadyAttempted || dismissed) return;
+
+    const cognitiveEmpty = (cognitive?.top_alerts || []).length === 0
+      && (cognitive?.resolution_queue || []).length === 0;
+    const watchtowerEmpty = (watchtowerEvents || []).length === 0;
+    if (!cognitiveEmpty || !watchtowerEmpty) return;
+
+    try {
+      sessionStorage.setItem('omega_demo_seed_attempted', '1');
+    } catch {
+      return;
+    }
+
+    void (async () => {
+      try {
+        const response = await apiClient.post('/onboarding/seed-demo', {}, { timeout: 20000 });
+        if (response?.data?.seeded === true) {
+          setIsDemoMode(true);
+          void handleRefresh();
+        }
+      } catch (err) {
+        console.warn('[AdvisorWatchtower] seed-demo failed', err);
+      }
+    })();
+  }, [
+    authState,
+    overviewLoading,
+    watchtowerLoading,
+    integrationContextLoading,
+    snapshotLoading,
+    cognitive,
+    watchtowerEvents,
+    handleRefresh,
+  ]);
+
   const handleDecisionAction = useCallback(async (decision, actionType) => {
     const actionConfig = DECISION_ACTIONS[actionType];
     if (!actionConfig) return;
@@ -1721,6 +1770,36 @@ export default function AdvisorWatchtower() {
         <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3" data-testid="advisor-page-header">
             <div className="space-y-1.5">
+              {isDemoMode && (
+                <div
+                  className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-medium uppercase tracking-wide"
+                  style={{
+                    fontFamily: fontFamily.mono,
+                    background: 'rgba(249,115,22,0.18)',
+                    borderColor: 'rgba(249,115,22,0.45)',
+                    color: '#FDBA74',
+                  }}
+                  data-testid="advisor-demo-data-badge"
+                >
+                  <span>Demo data</span>
+                  <button
+                    type="button"
+                    className="rounded-md px-2 py-0.5 text-[10px] normal-case tracking-normal underline-offset-2 hover:underline"
+                    style={{ color: '#FFEDD5' }}
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem('omega_demo_seed_dismissed', '1');
+                      } catch {
+                        /* ignore */
+                      }
+                      setIsDemoMode(false);
+                    }}
+                    data-testid="advisor-exit-demo-button"
+                  >
+                    Exit demo
+                  </button>
+                </div>
+              )}
               <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-header-kicker">
                 Today · Your Business Advisor
               </p>
