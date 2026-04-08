@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ArrowLeft, Plus, RefreshCw } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Plus, RefreshCw, Loader2 } from 'lucide-react';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
@@ -436,7 +436,7 @@ export function BoardRoomBody({
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.15 }}
                   onClick={() => runDiagnosis(area)}
-                  className={`text-left p-4 rounded-xl border ${focusRingClass}`}
+                  className={`text-left p-4 rounded-xl border ${focusRingClass} active:scale-95 transition-transform`}
                   style={{ borderColor: colors.border, background: colors.bgCard }}
                   aria-label={`Run ${area.label} diagnosis`}
                   data-testid={`diagnosis-${area.id}`}
@@ -470,40 +470,50 @@ export function BoardRoomBody({
                   Back to boardroom
                 </button>
 
-                {isStreaming && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }} aria-label="Diagnosis stream in progress">
-                    <p className="text-xs mb-2" style={{ color: colors.brand }}>{DIAGNOSIS_LOADING_STEPS[diagnosisStepIndex]}</p>
-                    <p className="text-sm whitespace-pre-wrap" style={{ color: colors.text }} aria-live="polite" aria-atomic="false">{streamingText}</p>
-                  </motion.div>
-                )}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  className="space-y-3"
+                >
+                  {isStreaming && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.bgCard }} aria-label="Diagnosis stream in progress">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" style={{ color: colors.brand }} aria-hidden />
+                        <p className="text-xs" style={{ color: colors.brand }}>{DIAGNOSIS_LOADING_STEPS[diagnosisStepIndex]}</p>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap" style={{ color: colors.text }} aria-live="polite" aria-atomic="false">{streamingText}</p>
+                    </motion.div>
+                  )}
 
-                {diagError && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: `${colors.warning}40`, background: `${colors.warning}12` }} aria-label="Diagnosis error">
-                    <p className="text-sm" style={{ color: colors.warning }}>{diagError}</p>
-                    {activeArea && (
-                      <button onClick={() => runDiagnosis(activeArea)} className={`mt-3 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ borderColor: colors.border, color: colors.textSecondary }} aria-label={`Retry ${activeArea.label} diagnosis`}>
-                        Retry diagnosis
-                      </button>
-                    )}
-                  </motion.div>
-                )}
+                  {diagError && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: `${colors.warning}40`, background: `${colors.warning}12` }} aria-label="Diagnosis error">
+                      <p className="text-sm" style={{ color: colors.warning }}>{diagError}</p>
+                      {activeArea && (
+                        <button onClick={() => runDiagnosis(activeArea)} className={`mt-3 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ borderColor: colors.border, color: colors.textSecondary }} aria-label={`Retry ${activeArea.label} diagnosis`}>
+                          Retry diagnosis
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
 
-                {diagnosisResult && (
-                  <motion.article initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="p-5 rounded-2xl border space-y-3" style={{ borderColor: colors.border, background: colors.bgCard }}>
-                    <h3 className="text-lg font-semibold" style={{ color: colors.text }}>{diagnosisResult.headline || activeArea?.label}</h3>
-                    {diagnosisResult.narrative && <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: colors.textSecondary }}>{diagnosisResult.narrative}</p>}
-                    {diagnosisResult.what_to_watch && <p className="text-sm" style={{ color: colors.warning }}>What to watch: {diagnosisResult.what_to_watch}</p>}
-                    {diagnosisResult.if_ignored && <p className="text-sm" style={{ color: colors.danger }}>If ignored: {diagnosisResult.if_ignored}</p>}
-                    <LineageBadge lineage={diagnosisResult.lineage} confidence_score={toConfidencePct(diagnosisResult.confidence_score)} compact />
-                    <InsightExplainabilityStrip
-                      whyVisible={diagnosisResult.why_visible || explainability.whyVisible}
-                      whyNow={diagnosisResult.why_now || explainability.whyNow}
-                      nextAction={diagnosisResult.next_action || explainability.nextAction}
-                      ifIgnored={diagnosisResult.if_ignored || explainability.ifIgnored}
-                      testIdPrefix="boardroom-diagnosis-explainability"
-                    />
-                  </motion.article>
-                )}
+                  {diagnosisResult && (
+                    <motion.article initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="p-5 rounded-2xl border space-y-3" style={{ borderColor: colors.border, background: colors.bgCard }}>
+                      <h3 className="text-lg font-semibold" style={{ color: colors.text }}>{diagnosisResult.headline || activeArea?.label}</h3>
+                      {diagnosisResult.narrative && <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: colors.textSecondary }}>{diagnosisResult.narrative}</p>}
+                      {diagnosisResult.what_to_watch && <p className="text-sm" style={{ color: colors.warning }}>What to watch: {diagnosisResult.what_to_watch}</p>}
+                      {diagnosisResult.if_ignored && <p className="text-sm" style={{ color: colors.danger }}>If ignored: {diagnosisResult.if_ignored}</p>}
+                      <LineageBadge lineage={diagnosisResult.lineage} confidence_score={toConfidencePct(diagnosisResult.confidence_score)} compact />
+                      <InsightExplainabilityStrip
+                        whyVisible={diagnosisResult.why_visible || explainability.whyVisible}
+                        whyNow={diagnosisResult.why_now || explainability.whyNow}
+                        nextAction={diagnosisResult.next_action || explainability.nextAction}
+                        ifIgnored={diagnosisResult.if_ignored || explainability.ifIgnored}
+                        testIdPrefix="boardroom-diagnosis-explainability"
+                      />
+                    </motion.article>
+                  )}
+                </motion.div>
               </motion.section>
             )}
           </AnimatePresence>
