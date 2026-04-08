@@ -7,7 +7,10 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from biqc_jobs import BIQcRedisJobs, QUEUE_NAMESPACE
+try:
+    from biqc_jobs import BIQcRedisJobs, QUEUE_NAMESPACE
+except ImportError:  # pragma: no cover
+    pytest.skip("redis/biqc_jobs dependencies not available", allow_module_level=True)
 
 
 class FakeRedis:
