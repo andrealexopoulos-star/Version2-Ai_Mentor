@@ -11,6 +11,7 @@ import logging
 from routes.deps import get_current_user, get_sb, logger, require_owner_or_admin, get_current_account
 from supabase_client import safe_query_single
 from auth_supabase import get_user_by_id
+from backend.services.demo_seeder import seed_demo_account
 from supabase_intelligence_helpers import (
     get_business_profile_supabase, update_business_profile_supabase,
 )
@@ -646,4 +647,12 @@ async def get_business_profile_context(current_user: dict = Depends(get_current_
         "intelligence_baseline": baseline,
         "calibration_status": calibration_status
     }
+
+
+@router.post("/seed-demo")
+async def seed_demo_data(current_user: dict = Depends(get_current_user)):
+    """Seed demo data for a user only when they have no existing events."""
+    user_id = current_user["id"]
+    result = seed_demo_account(get_sb(), user_id)
+    return result
 

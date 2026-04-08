@@ -145,6 +145,17 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarCollapsed(true);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Mobile scroll lock
   useEffect(() => {
     if (isNavOpen) {

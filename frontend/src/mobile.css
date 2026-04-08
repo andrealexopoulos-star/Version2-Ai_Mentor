@@ -11,6 +11,26 @@ html {
   overflow-y: scroll;
   -webkit-text-size-adjust: 100%;
 }
+
+/* Operation OMEGA Wave 1 — BoardRoom & WarRoom mobile */
+@media (max-width: 768px) {
+  .boardroom-diagnosis-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .warroom-chat-message {
+    font-size: 14px !important;
+    padding: 12px !important;
+    line-height: 1.5 !important;
+  }
+  /* iOS input zoom prevention */
+  input[type="text"],
+  input[type="email"],
+  input[type="search"],
+  textarea {
+    font-size: 16px !important;
+  }
+}
 body {
   overflow-x: hidden;
   overflow-y: visible;

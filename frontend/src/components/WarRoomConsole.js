@@ -15,6 +15,7 @@ import { useStreamingResponse } from '../hooks/useStreamingResponse';
 import { useBoardroomConversation } from '../hooks/useBoardroomConversation';
 import { useConversationList } from '../hooks/useConversationList';
 import { useWatchtowerRealtime } from '../hooks/useWatchtowerRealtime';
+import { useSearchParams } from 'react-router-dom';
 
 const STATE_CFG = {
   STABLE: { label: 'Stable', color: colors.success, bg: `${colors.success}10`, border: `${colors.success}30`, dot: colors.success },
@@ -89,6 +90,8 @@ export function WarRoomConsoleBody({
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem('warroom-sidebar-collapsed') === '1';
   });
+  const [searchParams] = useSearchParams();
+  const prefillQuery = searchParams.get('prefill');
   const [currentConvId, setCurrentConvId] = useState(conversationId || null);
   const [selectedDay, setSelectedDay] = useState(null);
   const scrollRef = useRef(null);
@@ -114,6 +117,12 @@ export function WarRoomConsoleBody({
   useEffect(() => {
     setCurrentConvId(conversationId || null);
   }, [conversationId]);
+
+  useEffect(() => {
+    if (prefillQuery && messages.length === 0) {
+      setQuestion(`Tell me more about: ${prefillQuery}`);
+    }
+  }, [prefillQuery, messages.length]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -351,12 +360,14 @@ export function WarRoomConsoleBody({
 
             <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.02 }} aria-label="War room conversation thread">
               {messages.map((msg, index) => (
-                <BoardroomMessageBubble key={msg.id || `war-msg-${index}`} message={msg} index={index} />
+                <div key={msg.id || `war-msg-${index}`} className="warroom-chat-message">
+                  <BoardroomMessageBubble message={msg} index={index} />
+                </div>
               ))}
 
               <AnimatePresence>
                 {isStreaming && streamingText && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} aria-live="polite" aria-atomic="false">
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} aria-live="polite" aria-atomic="false" className="warroom-chat-message">
                     <BoardroomMessageBubble message={{ role: 'advisor', content: streamingText, explainability: streamMeta.explainability, evidence_chain: streamMeta.evidence_chain || [] }} index={messages.length + 1} streaming />
                   </motion.div>
                 )}
@@ -456,7 +467,7 @@ export function WarRoomConsoleBody({
                   placeholder="Ask about your business..."
                   disabled={isStreaming}
                   className="flex-1 text-sm outline-none bg-transparent"
-                  style={{ color: colors.text, fontFamily: fontFamily.display }}
+                  style={{ color: colors.text, fontFamily: fontFamily.display, fontSize: '16px' }}
                   data-testid="ask-input"
                   aria-label="War room question input"
                 />
