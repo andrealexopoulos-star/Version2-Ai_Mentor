@@ -22,7 +22,7 @@ import { ArrowLeft } from 'lucide-react';
 import { resolveTier, getRouteAccess } from '../lib/tierResolver';
 import { canAccess, requiredTier, TIERS } from '../config/tiers';
 import { isPrivilegedUser } from '../lib/privilegedUser';
-import { fontFamily } from '../design-system/tokens';
+import { fontFamily, colors, shadow } from '../design-system/tokens';
 
 const DISPLAY = fontFamily.display;
 const SIDEBAR_WIDTH_STORAGE_KEY = 'biqc_sidebar_width';
@@ -44,7 +44,7 @@ const VerificationBadge = ({ navigate }) => {
 
   if (score === null) return null;
 
-  const color = score > 70 ? '#10B981' : score > 40 ? '#F59E0B' : '#EF4444';
+  const color = score > 70 ? colors.success : score > 40 ? colors.warning : colors.danger;
 
   return (
     <div className="relative hidden md:block">
@@ -59,10 +59,10 @@ const VerificationBadge = ({ navigate }) => {
       {showTooltip && (
         <div className="absolute right-0 top-10 w-64 rounded-xl p-4 shadow-xl z-50" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Snapshot Confidence</span>
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--biqc-text-muted)', fontFamily: fontFamily.mono }}>Snapshot Confidence</span>
             <span className="text-xs font-bold" style={{ color, fontFamily: fontFamily.mono }}>{score}%</span>
           </div>
-          <div className="h-1.5 rounded-full mb-3" style={{ background: '#243140' }}>
+          <div className="h-1.5 rounded-full mb-3" style={{ background: colors.border }}>
             <div className="h-1.5 rounded-full" style={{ width: `${score}%`, background: color }} />
           </div>
           <p className="text-[11px] text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
@@ -389,15 +389,15 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{ background: 'var(--biqc-bg, #0F1720)', color: 'var(--biqc-text, #F4F7FA)' }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: `var(--biqc-bg, ${colors.bg})`, color: `var(--biqc-text, ${colors.text})` }}>
       {/* ═══ TOP BAR ═══ */}
-      <header className="fixed top-0 left-0 right-0 h-14 px-4 lg:px-6 flex items-center justify-between" style={{ background: 'var(--biqc-bg-input, #0A1018)', borderBottom: '1px solid var(--biqc-border, #243140)', zIndex: 1000 }}>
+      <header className="fixed top-0 left-0 right-0 h-14 px-4 lg:px-6 flex items-center justify-between" style={{ background: `var(--biqc-bg-input, ${colors.bgInput})`, borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
         <div className="flex items-center gap-3">
           <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: 'var(--biqc-text-2)' }} aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'} data-testid="mobile-menu-toggle">
             {isNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
+            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: colors.brand }}>
               <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
             </div>
             <span className="font-semibold text-sm hidden sm:block" style={{ fontFamily: DISPLAY, color: 'var(--biqc-text)' }}>Strategy Squad</span>
@@ -427,7 +427,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 rounded-lg hover:bg-white/5 transition-colors relative" style={{ color: 'var(--biqc-text-2)' }} aria-label="Notifications">
               <Bell className="w-5 h-5" />
               {notifications.total > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full" style={{ background: notifications.high > 0 ? '#EF4444' : '#F59E0B' }}>
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full" style={{ background: notifications.high > 0 ? colors.danger : colors.warning }}>
                   {notifications.total > 9 ? '9+' : notifications.total}
                 </span>
               )}
@@ -437,8 +437,8 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                 <div className="p-3 flex items-center justify-between sticky top-0" style={{ borderBottom: '1px solid var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
                   <h3 className="font-semibold text-sm text-[#F4F7FA]" style={{ fontFamily: DISPLAY }}>Alerts</h3>
                   <div className="flex items-center gap-2">
-                    {notifications.high > 0 && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>{notifications.high} urgent</span>}
-                    <button onClick={() => { setShowNotifications(false); navigate('/alerts'); }} className="text-xs px-2 py-1 rounded-lg" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: fontFamily.mono }}>View all</button>
+                    {notifications.high > 0 && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: colors.dangerDim, color: colors.danger, fontFamily: fontFamily.mono }}>{notifications.high} urgent</span>}
+                    <button onClick={() => { setShowNotifications(false); navigate('/alerts'); }} className="text-xs px-2 py-1 rounded-lg" style={{ color: colors.brand, background: colors.brandDim, fontFamily: fontFamily.mono }}>View all</button>
                   </div>
                 </div>
                 {notificationsList.length === 0 ? (
@@ -450,10 +450,10 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                 ) : (
                   <div>
                     {notificationsList.map((notif, idx) => (
-                      <div key={notif.id || idx} className="p-3" style={{ borderBottom: '1px solid var(--biqc-border)', background: notif.severity === 'high' ? 'rgba(239,68,68,0.04)' : 'transparent' }}>
+                      <div key={notif.id || idx} className="p-3" style={{ borderBottom: '1px solid var(--biqc-border)', background: notif.severity === 'high' ? colors.dangerDim : 'transparent' }}>
                         <div className="flex items-start gap-3">
-                          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: notif.severity === 'high' ? '#EF444415' : '#F59E0B15' }}>
-                            <AlertCircle className="w-3.5 h-3.5" style={{ color: notif.severity === 'high' ? '#EF4444' : '#F59E0B' }} />
+                          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: notif.severity === 'high' ? colors.dangerDim : colors.warningDim }}>
+                            <AlertCircle className="w-3.5 h-3.5" style={{ color: notif.severity === 'high' ? colors.danger : colors.warning }} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.body }}>{notif.title}</p>
@@ -761,7 +761,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
         {!sbOpen ? (
           <button onClick={() => setSbOpen(true)}
             className="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
-            style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', boxShadow: '0 8px 32px rgba(255,106,0,0.4)' }}
+            style={{ background: `linear-gradient(135deg, ${colors.brand}, ${colors.brand})`, boxShadow: shadow.brandGlow }}
             data-testid="soundboard-fab">
             <MessageSquare className="w-5 h-5 text-white" />
           </button>
