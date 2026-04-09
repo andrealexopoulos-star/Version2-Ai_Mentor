@@ -1,14 +1,19 @@
 from pathlib import Path
+import sys
 from unittest.mock import MagicMock, patch
 import pytest
 
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
+
 try:
-    from backend import boardroom_conversations as brc
+    import boardroom_conversations as brc
 except Exception:  # pragma: no cover
     brc = None
 
 try:
-    from backend.routes import boardroom as boardroom_routes
+    from routes import boardroom as boardroom_routes
 except Exception:  # pragma: no cover
     boardroom_routes = None
 

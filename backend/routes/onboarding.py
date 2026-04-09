@@ -644,8 +644,6 @@ async def group_signals_endpoint(current_user: dict = Depends(require_owner_or_a
     for row in recent.data or []:
         results.append(await group_insight(sb, row["id"]))
     return {"processed": len(results), "results": results}
-
-
 @router.get("/business-profile/context")
 async def get_business_profile_context(current_user: dict = Depends(get_current_user)):
     """Get existing business profile + onboarding state + resolved facts.
