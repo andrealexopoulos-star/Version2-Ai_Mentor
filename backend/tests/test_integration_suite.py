@@ -1,7 +1,11 @@
 """BIQc Integration Test Suite — Covers all critical API endpoints."""
 import os
 import pytest
-import httpx
+
+try:
+    import httpx
+except ImportError:  # pragma: no cover
+    pytest.skip("httpx not installed", allow_module_level=True)
 
 BASE_URL = (
     os.environ.get("TEST_BASE_URL")

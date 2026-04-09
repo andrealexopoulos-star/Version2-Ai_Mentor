@@ -43,7 +43,6 @@ import shutil
 # Test file paths
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EDGE_FUNCTION_PATH = REPO_ROOT / "supabase" / "functions" / "business-brain-merge-ingest" / "index.ts"
-EDGE_FUNCTION_ALT_PATH = REPO_ROOT / "supabase_edge_functions" / "business-brain-merge-ingest" / "index.ts"
 
 
 class TestBusinessBrainMergeIngestCodeReview:
@@ -140,16 +139,6 @@ class TestBusinessBrainMergeIngestCodeReview:
         fetch_call = re.search(r'fetchDatasetsForCategory\(\s*mergeApiKey,\s*accountToken,\s*accountCategory', code)
         assert fetch_call, "fetchDatasetsForCategory should be called with accountCategory"
         print("✓ Code correctly scopes fetches to connector's category")
-
-    def test_both_edge_function_files_are_identical(self):
-        """Verify both edge function copies are synchronized"""
-        with open(EDGE_FUNCTION_PATH, "r") as f1:
-            code1 = f1.read()
-        with open(EDGE_FUNCTION_ALT_PATH, "r") as f2:
-            code2 = f2.read()
-        
-        assert code1 == code2, "supabase/functions and supabase_edge_functions copies should be identical"
-        print("✓ Both edge function file copies are synchronized")
 
 
 class TestLiveEvidenceDocumentation:

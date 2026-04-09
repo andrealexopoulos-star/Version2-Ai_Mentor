@@ -3,8 +3,12 @@ Sprint 2: Integration Status Endpoint Tests
 Tests for /api/user/integration-status and /api/user/integration-status/sync
 """
 import pytest
-import httpx
 import os
+
+try:
+    import httpx
+except ImportError:  # pragma: no cover
+    pytest.skip("httpx not installed", allow_module_level=True)
 
 BASE_URL = (
     os.environ.get("REACT_APP_BACKEND_URL")
