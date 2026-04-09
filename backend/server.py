@@ -6,6 +6,7 @@ from fastapi import FastAPI, APIRouter, Depends, Request
 from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
+import asyncio
 import os
 import logging
 from contextlib import suppress
@@ -182,6 +183,29 @@ async def startup_enrichment_worker_runtime():
 async def shutdown_enrichment_worker_runtime():
     with suppress(Exception):
         await stop_enrichment_worker()
+
+
+@app.on_event("startup")
+async def startup_email_sync_worker_runtime():
+    """Start the provider-agnostic email sync worker as a background task."""
+    try:
+        import asyncio as _asyncio
+        from email_sync_worker import sync_loop as _email_sync_loop
+        app.state.email_sync_task = _asyncio.create_task(_email_sync_loop())
+        logger.info("[EmailSync] Background sync worker started (60s interval)")
+    except Exception as exc:
+        logger.warning("[EmailSync] Worker skipped during startup: %s", exc)
+        app.state.email_sync_task = None
+
+
+@app.on_event("shutdown")
+async def shutdown_email_sync_worker_runtime():
+    """Cancel the email sync worker background task on shutdown."""
+    task = getattr(app.state, "email_sync_task", None)
+    if task and not task.done():
+        task.cancel()
+        with suppress(Exception):
+            await task
 
 
 # ═══ VOICE CHAT (REALTIME) — Direct OpenAI routing ═══
