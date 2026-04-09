@@ -54,7 +54,10 @@ jobs:
           fi
 
           WEBSITE_APPROVED=false
-          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          COMMIT_MESSAGE="$(cat <<'EOF'
+${{ github.event.head_commit.message }}
+EOF
+)"
           if echo "$COMMIT_MESSAGE" | grep -qi "\[website-approved\]"; then
             WEBSITE_APPROVED=true
           fi
