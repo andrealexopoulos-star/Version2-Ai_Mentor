@@ -384,7 +384,7 @@ export function BoardRoomBody({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
               className="p-4 rounded-xl border"
-              style={{ background: `${colors.warning}12`, borderColor: `${colors.warning}35` }}
+              style={{ background: colors.warningDim, borderColor: colors.warning }}
               data-testid="boardroom-truth-state-banner"
               aria-label="Data freshness warning"
             >
@@ -487,7 +487,7 @@ export function BoardRoomBody({
                   )}
 
                   {diagError && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: `${colors.warning}40`, background: `${colors.warning}12` }} aria-label="Diagnosis error">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl border" style={{ borderColor: colors.warning, background: colors.warningDim }} aria-label="Diagnosis error">
                       <p className="text-sm" style={{ color: colors.warning }}>{diagError}</p>
                       {activeArea && (
                         <button onClick={() => runDiagnosis(activeArea)} className={`mt-3 text-xs px-3 py-1.5 rounded-lg border ${focusRingClass}`} style={{ borderColor: colors.border, color: colors.textSecondary }} aria-label={`Retry ${activeArea.label} diagnosis`}>
@@ -595,7 +595,7 @@ export function BoardRoomBody({
           </motion.section>
 
           {(convError || streamError) && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-lg border" style={{ borderColor: `${colors.warning}40`, background: `${colors.warning}10` }} aria-label="Boardroom warning">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-lg border" style={{ borderColor: colors.warning, background: colors.warningDim }} aria-label="Boardroom warning">
               <p className="text-xs" style={{ color: colors.warning }}>{convError || streamError}</p>
             </motion.div>
           )}

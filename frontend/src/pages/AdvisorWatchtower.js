@@ -27,7 +27,7 @@ import { apiClient } from '../lib/api';
 import { SourceProvenanceBadge } from '../components/advisor/SourceProvenanceBadge';
 import { DelegateActionModal } from '../components/advisor/DelegateActionModal';
 import { EvidenceDrawer } from '../components/advisor/EvidenceDrawer';
-import { fontFamily } from '../design-system/tokens';
+import { fontFamily, colors } from '../design-system/tokens';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1762,7 +1762,7 @@ export default function AdvisorWatchtower() {
       <div
         className="min-h-[calc(100vh-56px)]"
         style={{
-          background: 'radial-gradient(circle at 15% -10%, rgba(249,115,22,0.15), transparent 35%), var(--biqc-bg)',
+          background: `radial-gradient(circle at 15% -10%, ${colors.brandDim}, transparent 35%), var(--biqc-bg)`,
           fontFamily: fontFamily.body,
         }}
         data-testid="advisor-screen"
@@ -1775,9 +1775,9 @@ export default function AdvisorWatchtower() {
                   className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-medium uppercase tracking-wide"
                   style={{
                     fontFamily: fontFamily.mono,
-                    background: 'rgba(249,115,22,0.18)',
-                    borderColor: 'rgba(249,115,22,0.45)',
-                    color: '#FDBA74',
+                    background: colors.brandDim,
+                    borderColor: colors.brandGlow,
+                    color: colors.warning,
                   }}
                   data-testid="advisor-demo-data-badge"
                 >
@@ -1785,7 +1785,7 @@ export default function AdvisorWatchtower() {
                   <button
                     type="button"
                     className="rounded-md px-2 py-0.5 text-[10px] normal-case tracking-normal underline-offset-2 hover:underline"
-                    style={{ color: '#FFEDD5' }}
+                    style={{ color: 'var(--biqc-text)' }}
                     onClick={() => {
                       try {
                         sessionStorage.setItem('omega_demo_seed_dismissed', '1');
@@ -1809,7 +1809,7 @@ export default function AdvisorWatchtower() {
                 </h1>
                 <p
                   className="pb-1 text-[10px]"
-                  style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}
+                  style={{ color: 'var(--biqc-text-muted)', fontFamily: fontFamily.mono }}
                   data-testid="advisor-header-datetime"
                 >
                   {greetingDateTime}
@@ -1841,7 +1841,7 @@ export default function AdvisorWatchtower() {
           </div>
 
           <div className="mb-8 space-y-3" data-testid="advisor-ia-consistency-strip">
-            <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-breadcrumbs">
+            <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--biqc-text-muted)', fontFamily: fontFamily.mono }} data-testid="advisor-breadcrumbs">
               <Link to="/advisor" className="hover:text-white" data-testid="advisor-breadcrumb-today">Today</Link>
               <span>›</span>
               <span data-testid="advisor-breadcrumb-current">Advisor</span>
@@ -1855,7 +1855,7 @@ export default function AdvisorWatchtower() {
                   value={rolePreference}
                   onChange={(event) => setRolePreference(event.target.value)}
                   className="rounded-xl border px-3 py-2 text-xs"
-                  style={{ background: '#0F172A', borderColor: '#334155', color: '#E2E8F0', fontFamily: fontFamily.mono }}
+                  style={{ background: 'var(--biqc-bg-input)', borderColor: 'var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}
                   data-testid="advisor-role-select"
                 >
                   {ROLE_OPTIONS.map((option) => (
@@ -1879,7 +1879,7 @@ export default function AdvisorWatchtower() {
           {!criticalError && integrationContextError && (
             <div
               className="mb-8 rounded-2xl border px-4 py-3 text-sm"
-              style={{ borderColor: '#334155', background: '#111827', color: '#CBD5E1' }}
+              style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)', color: 'var(--biqc-text-2)' }}
               data-testid="advisor-integration-context-warning"
             >
               Some of your connected tools are responding slowly, but your priorities are still showing based on the latest available data.
@@ -1889,7 +1889,7 @@ export default function AdvisorWatchtower() {
           {migrationRequired && (
             <div
               className="mb-8 rounded-2xl border px-4 py-3 text-sm"
-              style={{ borderColor: '#F59E0B60', background: '#F59E0B15', color: '#FDE68A' }}
+              style={{ borderColor: colors.warning, background: colors.warningDim, color: 'var(--biqc-text)' }}
               data-testid="advisor-migration-warning"
             >
               A system update is needed to unlock the full feature set. Your business priorities are still available.
@@ -1912,7 +1912,7 @@ export default function AdvisorWatchtower() {
                   <Link
                     to="/alerts"
                     className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
-                    style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                    style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}
                     data-testid="advisor-view-alerts-link"
                   >
                     View full signal inbox <ArrowRight className="h-3.5 w-3.5" />
