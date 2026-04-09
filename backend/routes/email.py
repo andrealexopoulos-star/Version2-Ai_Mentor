@@ -486,7 +486,7 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
     current_user = None
     if token:
         try:
-            from supabase_client import get_sb
+            from routes.deps import get_sb
             auth_resp = get_sb().auth.get_user(token)
             if auth_resp and auth_resp.user:
                 user_id = auth_resp.user.id
@@ -581,7 +581,7 @@ async def gmail_login(request: Request, returnTo: str = "/connect-email", token:
     current_user = None
     if token:
         try:
-            from supabase_client import get_sb
+            from routes.deps import get_sb
             auth_resp = get_sb().auth.get_user(token)
             if auth_resp and auth_resp.user:
                 user_id = auth_resp.user.id
