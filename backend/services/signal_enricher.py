@@ -150,6 +150,12 @@ async def enrich_insight(
             return {"ok": False, "insight_id": insight_id, "error": f"supabase_update:{exc}", "skipped": False}
 
         logger.info("[signal_enricher] enrich_insight success insight_id=%s urgency=%s", insight_id, urgency)
+        try:
+            from services.signal_grouper import group_insight as _group_fn
+
+            await _group_fn(supabase, insight_id)
+        except Exception:
+            logger.exception("[signal_enricher] grouping hook failed (non-blocking)")
         return {
             "ok": True,
             "insight_id": insight_id,
