@@ -19,7 +19,7 @@ import {
   BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox, CreditCard
 } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
-import { resolveTier, getRouteAccess } from '../lib/tierResolver';
+import { getRouteAccess } from '../lib/tierResolver';
 import { canAccess, requiredTier, TIERS } from '../config/tiers';
 import { isPrivilegedUser } from '../lib/privilegedUser';
 import { fontFamily, colors, shadow } from '../design-system/tokens';
@@ -265,36 +265,34 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   };
 
   const isSA = isPrivilegedUser(user);
-  const resolvedTier = resolveTier(user);
-  const isFreeTier = !isSA && resolvedTier === 'free';
 
+  // Navigation sections matching mockup groupings: Today, Inbox, Intelligence, System
   const navSections = useMemo(() => {
-    const navSectionsBase = [
-      { id: 'overview', label: 'BIQc Overview', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [] },
-      { id: 'soundboard', label: 'Ask BIQc', path: '/soundboard', icon: MessageSquare, items: [] },
-      { id: 'priority-inbox', label: 'Inbox', path: '/email-inbox', icon: Inbox, items: [] },
-      { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [] },
-      { id: 'market', label: 'Market & Position', path: '/market', icon: Radar, items: [] },
-      { id: 'benchmark', label: 'Competitive Benchmark', path: '/competitive-benchmark', icon: Target, items: [] },
-      { id: 'business-dna', label: 'Business DNA', path: '/business-profile', icon: BarChart3, items: [] },
-      { id: 'actions', label: 'Actions', path: '/actions', icon: Zap, items: [] },
-      { id: 'alerts', label: 'Alerts', path: '/alerts', icon: Bell, showBadge: true, items: [] },
-      { id: 'data-health', label: 'Data Health', path: '/data-health', icon: Activity, items: [] },
-      { id: 'integrations', label: 'Connectors', path: '/integrations', icon: Link2, items: [] },
-      { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, items: [] },
-      { id: 'subscription', label: 'Subscription', path: '/subscribe', icon: CreditCard, items: [] },
+    const sections = [
+      // — Today
+      { id: 'overview', label: 'Advisor', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [], group: 'today' },
+      { id: 'alerts', label: 'Alert Centre', path: '/alerts', icon: Bell, showBadge: true, items: [], group: 'today' },
+      { id: 'actions', label: 'Actions', path: '/actions', icon: Zap, items: [], group: 'today' },
+      // — Inbox
+      { id: 'priority-inbox', label: 'Email', path: '/email-inbox', icon: Inbox, items: [], group: 'inbox' },
+      { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [], group: 'inbox' },
+      // — Intelligence
+      { id: 'soundboard', label: 'Ask BIQc', path: '/soundboard', icon: MessageSquare, items: [], group: 'intelligence' },
+      { id: 'market', label: 'Market', path: '/market', icon: Radar, items: [], group: 'intelligence' },
+      { id: 'business-dna', label: 'Business DNA', path: '/business-profile', icon: BarChart3, items: [], group: 'intelligence' },
+      { id: 'benchmark', label: 'Competitive Benchmark', path: '/competitive-benchmark', icon: Target, items: [], group: 'intelligence' },
+      // — System
+      { id: 'data-health', label: 'Data health', path: '/data-health', icon: Activity, items: [], group: 'system' },
+      { id: 'integrations', label: 'Integrations', path: '/integrations', icon: Link2, items: [], group: 'system' },
+      { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, items: [], group: 'system' },
     ];
-    const scopedSections = isFreeTier
-      ? navSectionsBase.filter((section) => (
-        ['soundboard', 'priority-inbox', 'calendar', 'benchmark', 'integrations', 'settings'].includes(section.id)
-      ))
-      : navSectionsBase;
 
-    if (!isSA) return scopedSections;
-    return [
-      ...scopedSections,
-      {
-        id: 'admin', label: 'Admin', items: [
+    // Free tier: show all groups but lock paid items via canAccess
+    // No need to filter sections — tier gating handles visibility
+    if (isSA) {
+      sections.push(
+        // — Admin (only for super_admin / privileged)
+        { id: 'admin', label: 'Admin', group: 'admin', items: [
           { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
           { icon: Settings, label: 'Admin Dashboard', path: '/admin' },
           { icon: CreditCard, label: 'Pricing Control', path: '/admin/pricing' },
@@ -306,10 +304,11 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           { icon: Zap, label: 'Prompt Lab', path: '/admin/prompt-lab' },
           { icon: Shield, label: 'Support Console', path: '/support-admin' },
           { icon: Eye, label: 'Watchtower', path: '/watchtower' },
-        ],
-      },
-    ];
-  }, [isFreeTier, isSA]);
+        ]},
+      );
+    }
+    return sections;
+  }, [isSA]);
 
   const visibleSections = useMemo(() => {
     return navSections.map(section => ({
@@ -400,7 +399,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: colors.brand }}>
               <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
             </div>
-            <span className="font-semibold text-sm hidden sm:block" style={{ fontFamily: DISPLAY, color: 'var(--biqc-text)' }}>Strategy Squad</span>
+            <span className="font-semibold text-sm hidden sm:block" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)' }}>BIQc</span>
           </div>
         </div>
 
@@ -560,15 +559,25 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             el.addEventListener('scroll', handler, { passive: true });
             return () => el.removeEventListener('scroll', handler);
           }}
-          className="p-3 space-y-1 overflow-y-auto flex flex-col" style={{ height: '100%' }} aria-label="Platform navigation">
-          {visibleSections.map((section) => {
+          className="p-3 space-y-0.5 overflow-y-auto flex flex-col" style={{ height: '100%' }} aria-label="Platform navigation">
+          {visibleSections.map((section, idx) => {
             const isExpanded = expandedSections.has(section.id);
             const sectionActive = (section.path && isActive(section.path)) || section.items.some((item) => isActive(item.path));
             const sectionLocked = section.path ? !canAccess(user?.subscription_tier || 'free', section.path, user?.email || '') : false;
             const SectionIcon = section.icon;
+            // Render group header when group changes (mockup: "— Today", "— Inbox", etc.)
+            const prevGroup = idx > 0 ? visibleSections[idx - 1].group : null;
+            const showGroupHeader = section.group && section.group !== prevGroup && !sidebarCollapsed;
+            const groupLabels = { today: '— Today', inbox: '— Inbox', intelligence: '— Intelligence', system: '— System', admin: '— Admin' };
 
             return (
-              <div key={section.id} className="mb-1">
+              <div key={section.id}>
+                {showGroupHeader && (
+                  <div className="px-3 pt-4 pb-1 text-[10px] font-medium uppercase tracking-[0.12em]"
+                    style={{ color: 'var(--ink-muted, #708499)', fontFamily: 'var(--font-mono, monospace)' }}>
+                    {groupLabels[section.group] || section.group}
+                  </div>
+                )}
                 {section.path ? (
                   <div className="flex items-center gap-0.5">
                     <button
@@ -581,13 +590,13 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                       style={{
                         fontFamily: fontFamily.body,
                         color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
-                        background: sectionActive ? '#FF6A0015' : 'transparent',
-                        borderLeft: sectionActive ? '2px solid #FF6A00' : '2px solid transparent',
+                        background: sectionActive ? 'var(--lava-wash, rgba(232,93,0,0.12))' : 'transparent',
+                        borderLeft: sectionActive ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                       }}
                       data-testid={`nav-section-${section.id}`}
                       title={sectionLocked ? `Requires ${TIERS[requiredTier(section.path)]?.label} plan` : section.label}
                     >
-                      {SectionIcon ? <SectionIcon className="w-4 h-4 shrink-0" style={{ color: sectionLocked ? '#4A5568' : sectionActive ? '#FF6A00' : '#64748B' }} /> : null}
+                      {SectionIcon ? <SectionIcon className="w-4 h-4 shrink-0" style={{ color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--lava, #E85D00)' : 'var(--ink-muted, #708499)' }} /> : null}
                       <span className="flex-1 text-left">{section.label}</span>
                       {section.showBadge && notifications.total > 0 && !sectionLocked && <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-[#EF4444]">{notifications.total > 9 ? '9+' : notifications.total}</span>}
                       {sectionLocked && <Lock className="w-3 h-3 shrink-0" style={{ color: '#4A5568' }} />}
@@ -596,7 +605,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                       <button
                         onClick={() => toggleSection(section.id)}
                         className="p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0"
-                        style={{ color: sectionActive ? '#FF6A00' : '#64748B' }}
+                        style={{ color: sectionActive ? 'var(--lava, #E85D00)' : 'var(--ink-muted, #708499)' }}
                         aria-expanded={isExpanded}
                         aria-controls={`nav-section-items-${section.id}`}
                         data-testid={`nav-section-toggle-${section.id}`}
@@ -647,7 +656,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                           }}
                           data-testid={`nav-item-${item.path.replace('/', '')}`}
                           title={locked ? `Requires ${TIERS[requiredTier(item.path)]?.label} plan` : item.label}>
-                          <item.icon className="w-4 h-4 shrink-0" style={{ color: locked ? '#4A5568' : active ? '#FF6A00' : '#64748B' }} />
+                          <item.icon className="w-4 h-4 shrink-0" style={{ color: locked ? '#4A5568' : active ? 'var(--lava, #E85D00)' : 'var(--ink-muted, #708499)' }} />
                           <span className="flex-1 text-left">{item.label}</span>
                           {locked && <Lock className="w-3 h-3 shrink-0" style={{ color: '#4A5568' }} />}
                           {showBadge && !locked && <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-[#EF4444]">{notifications.total > 9 ? '9+' : notifications.total}</span>}
@@ -666,13 +675,13 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
               className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all hover:bg-white/5"
               style={{
                 color: isActive('/biqc-legal') ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
-                background: isActive('/biqc-legal') ? '#FF6A0015' : 'transparent',
-                borderLeft: isActive('/biqc-legal') ? '2px solid #FF6A00' : '2px solid transparent',
+                background: isActive('/biqc-legal') ? 'var(--lava-wash, rgba(232,93,0,0.12))' : 'transparent',
+                borderLeft: isActive('/biqc-legal') ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                 fontFamily: fontFamily.body,
               }}
               data-testid="nav-biqc-legal"
             >
-              <Scale className="w-4 h-4 shrink-0" style={{ color: isActive('/biqc-legal') ? '#FF6A00' : '#64748B' }} />
+              <Scale className="w-4 h-4 shrink-0" style={{ color: isActive('/biqc-legal') ? 'var(--lava, #E85D00)' : 'var(--ink-muted, #708499)' }} />
               {!sidebarCollapsed && <span className="flex-1 text-left">BIQc Legal</span>}
             </button>
           </div>
