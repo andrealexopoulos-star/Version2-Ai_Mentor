@@ -58,7 +58,7 @@ const SoundboardFlagshipStage = () => (
       >
         <Radio className="h-3.5 w-3.5" style={{ color: '#C65F2E' }} />
       </div>
-      <p className="text-sm sm:text-[15px] font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>
+      <p className="text-sm sm:text-[15px] font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
         Your Leadership Team is reviewing your request
       </p>
     </div>
@@ -98,7 +98,7 @@ const SoundboardFlagshipStage = () => (
           <div className="flex justify-center">
             <span
               className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px]"
-              style={{ color: '#F4F7FA', background: 'rgba(198,95,46,0.14)', border: '1px solid rgba(198,95,46,0.3)', fontFamily: fontFamily.mono }}
+              style={{ color: '#EDF1F7', background: 'rgba(198,95,46,0.14)', border: '1px solid rgba(198,95,46,0.3)', fontFamily: fontFamily.mono }}
             >
               Boardroom Mode
               <ArrowRight className="h-3 w-3" />
@@ -109,7 +109,7 @@ const SoundboardFlagshipStage = () => (
             <div className="flex items-start gap-2">
               <MessageSquare className="h-3.5 w-3.5 mt-0.5" style={{ color: '#C65F2E' }} />
               <div className="min-w-0">
-                <p className="text-[11px] sm:text-xs mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>
+                <p className="text-[11px] sm:text-xs mb-1" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
                   Hold headline price, launch a targeted retention offer, and defend margin while monitoring competitor churn.
                 </p>
                 <span className="inline-flex items-center gap-1 text-[10px]" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>

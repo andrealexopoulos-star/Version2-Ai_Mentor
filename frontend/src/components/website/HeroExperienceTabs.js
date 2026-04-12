@@ -222,7 +222,7 @@ const HeroExperienceTabs = () => {
             className="px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
             style={{
               fontFamily: fontFamily.body,
-              color: activeTab === 'meet' ? '#F4F7FA' : '#9FB0C3',
+              color: activeTab === 'meet' ? '#EDF1F7' : '#9FB0C3',
               background: activeTab === 'meet' ? 'rgba(198,95,46,0.18)' : 'transparent',
             }}
           >
@@ -234,7 +234,7 @@ const HeroExperienceTabs = () => {
             className="px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
             style={{
               fontFamily: fontFamily.body,
-              color: activeTab === 'soundboard' ? '#F4F7FA' : '#9FB0C3',
+              color: activeTab === 'soundboard' ? '#EDF1F7' : '#9FB0C3',
               background: activeTab === 'soundboard' ? 'rgba(198,95,46,0.18)' : 'transparent',
             }}
           >
@@ -246,7 +246,7 @@ const HeroExperienceTabs = () => {
       {activeTab === 'meet' ? (
         <div className="space-y-4">
           <div className="text-left rounded-xl border p-4" style={{ borderColor: 'rgba(91,143,168,0.24)', background: 'rgba(15,23,32,0.78)' }}>
-            <h3 className="text-xl sm:text-2xl font-semibold mb-3" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+            <h3 className="text-xl sm:text-2xl font-semibold mb-3" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
               How BIQc works
             </h3>
             <div className="space-y-2.5">
@@ -320,7 +320,7 @@ const HeroExperienceTabs = () => {
                 </p>
               </div>
               <div className="flex justify-center">
-                <span className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px]" style={{ color: '#F4F7FA', background: 'rgba(198,95,46,0.14)', border: '1px solid rgba(198,95,46,0.3)', fontFamily: fontFamily.mono }}>
+                <span className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px]" style={{ color: '#EDF1F7', background: 'rgba(198,95,46,0.14)', border: '1px solid rgba(198,95,46,0.3)', fontFamily: fontFamily.mono }}>
                   Boardroom Mode <ArrowRight className="h-3 w-3" /> <span className="opacity-80">live</span>
                 </span>
               </div>
@@ -328,7 +328,7 @@ const HeroExperienceTabs = () => {
                 <div className="flex items-start gap-2">
                   <MessageSquare className="h-3.5 w-3.5 mt-0.5" style={{ color: '#C65F2E' }} />
                   <div className="min-w-0">
-                    <p className="text-[11px] sm:text-xs mb-1 leading-relaxed whitespace-pre-line" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>
+                    <p className="text-[11px] sm:text-xs mb-1 leading-relaxed whitespace-pre-line" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
                       {responseText}
                       <span style={{ animation: 'liveCursor 1.3s ease-in-out infinite' }}>|</span>
                     </p>

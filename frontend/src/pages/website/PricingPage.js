@@ -26,7 +26,7 @@ const PricingPage = () => (
     {/* ═══ SECTION 1 — EXECUTIVE MARKET ASSESSMENT ═══ */}
     <section className="py-14 px-6" data-testid="pricing-assessment">
       <div className="max-w-3xl mx-auto">
-        <div className="rounded-2xl p-8 sm:p-10" style={{ background: 'rgba(255,106,0,0.02)', border: '1px solid rgba(255,106,0,0.12)' }}>
+        <div className="rounded-2xl p-8 sm:p-10" style={{ background: 'rgba(232,93,0,0.02)', border: '1px solid rgba(232,93,0,0.12)' }}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
               <h2 className="text-xl font-bold text-white" style={{ fontFamily: fontFamily.display }}>Executive Market Assessment</h2>
@@ -79,7 +79,7 @@ const PricingPage = () => (
         </div>
 
         {/* Free tier compact bar */}
-        <div className="rounded-xl p-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ background: 'rgba(255,106,0,0.03)', border: '1px solid rgba(255,106,0,0.12)' }} data-testid="free-tier-bar">
+        <div className="rounded-xl p-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ background: 'rgba(232,93,0,0.03)', border: '1px solid rgba(232,93,0,0.12)' }} data-testid="free-tier-bar">
           <div className="flex items-center gap-3">
             <div className="w-8 h-0.5 rounded-full" style={{ background: '#E85D00' }} />
             <div>
@@ -200,7 +200,7 @@ const PricingPage = () => (
             { name: 'Dedicated Data Sync', price: '$300\u2013$800/mo', desc: 'Real-time or hourly sync vs standard daily' },
           ].map(a => (
             <div key={a.name} className="rounded-xl p-5 flex items-start gap-4" style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(255,106,0,0.06)' }}>
+              <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(232,93,0,0.06)' }}>
                 <Plus className="w-3.5 h-3.5 text-[#E85D00]" />
               </div>
               <div>
@@ -226,7 +226,7 @@ const PricingPage = () => (
         <div className="mt-8">
           <Link to="/register-supabase"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #E85D00, #E85D00)', fontFamily: fontFamily.body, boxShadow: '0 8px 32px rgba(255,106,0,0.2)' }}
+            style={{ background: 'linear-gradient(135deg, #E85D00, #E85D00)', fontFamily: fontFamily.body, boxShadow: '0 8px 32px rgba(232,93,0,0.2)' }}
             data-testid="pricing-bottom-cta">
             Request Market Assessment <ArrowRight className="w-4 h-4" />
           </Link>
@@ -240,8 +240,8 @@ const PricingPage = () => (
 const PlanCard = ({ name, tagline, price, period, color, highlight, badge, description, includesFrom, features, cta, link }) => (
   <div className={`relative rounded-2xl p-6 flex flex-col transition-all ${highlight ? 'ring-2 ring-[#E85D00]' : ''}`}
     style={{
-      background: highlight ? 'rgba(255,106,0,0.025)' : 'rgba(255,255,255,0.015)',
-      border: `1px solid ${highlight ? 'rgba(255,106,0,0.2)' : 'rgba(255,255,255,0.05)'}`,
+      background: highlight ? 'rgba(232,93,0,0.025)' : 'rgba(255,255,255,0.015)',
+      border: `1px solid ${highlight ? 'rgba(232,93,0,0.2)' : 'rgba(255,255,255,0.05)'}`,
     }}
     data-testid={`plan-${name.toLowerCase()}`}>
 

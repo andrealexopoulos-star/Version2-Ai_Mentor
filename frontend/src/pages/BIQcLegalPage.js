@@ -37,14 +37,14 @@ export default function BIQcLegalPage() {
                   onClick={() => setSearchParams({ tab: tab.id })}
                   className="mb-2 flex w-full items-start rounded-2xl px-4 py-3 text-left transition-all"
                   style={{
-                    background: activeState ? 'rgba(255,106,0,0.08)' : 'transparent',
-                    border: `1px solid ${activeState ? 'rgba(255,106,0,0.28)' : 'transparent'}`,
+                    background: activeState ? 'rgba(232,93,0,0.08)' : 'transparent',
+                    border: `1px solid ${activeState ? 'rgba(232,93,0,0.28)' : 'transparent'}`,
                     color: activeState ? 'var(--biqc-text)' : 'var(--biqc-text-2)',
                   }}
                   data-testid={`biqc-legal-tab-${tab.id}`}
                 >
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: activeState ? '#FF6A00' : '#94A3B8', fontFamily: fontFamily.mono }}>{tab.label}</p>
+                    <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: activeState ? '#E85D00' : '#94A3B8', fontFamily: fontFamily.mono }}>{tab.label}</p>
                     <p className="mt-1 text-sm" style={{ fontFamily: fontFamily.body }}>{tab.title}</p>
                   </div>
                 </button>
@@ -53,7 +53,7 @@ export default function BIQcLegalPage() {
           </aside>
 
           <section className="rounded-[24px] border p-6 sm:p-8" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid={`biqc-legal-panel-${active.id}`}>
-            <p className="text-[10px] uppercase tracking-[0.16em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{active.label}</p>
+            <p className="text-[10px] uppercase tracking-[0.16em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>{active.label}</p>
             <h2 className="mt-3 text-3xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{active.title}</h2>
             <p className="mt-4 text-sm leading-7" style={{ color: 'var(--biqc-text-2)' }}>{active.summary}</p>
 
@@ -78,7 +78,7 @@ export default function BIQcLegalPage() {
                     style={{ borderColor: 'var(--biqc-border)', background: 'rgba(255,255,255,0.03)' }}
                     data-testid={`biqc-legal-overview-card-${tab.id}`}
                   >
-                    <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{tab.label}</p>
+                    <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>{tab.label}</p>
                     <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{tab.title}</p>
                     <p className="mt-2 text-xs leading-6" style={{ color: 'var(--biqc-text-2)' }}>{tab.summary}</p>
                   </button>
@@ -102,8 +102,8 @@ export default function BIQcLegalPage() {
               ))}
             </div>
 
-            <div className="mt-8 rounded-2xl border p-4" style={{ borderColor: 'rgba(255,106,0,0.24)', background: 'rgba(255,106,0,0.06)' }}>
-              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Contact</p>
+            <div className="mt-8 rounded-2xl border p-4" style={{ borderColor: 'rgba(232,93,0,0.24)', background: 'rgba(232,93,0,0.06)' }}>
+              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Contact</p>
               <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text)' }}>legal@biqc.ai</p>
               <p className="mt-1 text-xs" style={{ color: 'var(--biqc-text-2)' }}>For legal, privacy, or trust-centre questions.</p>
             </div>

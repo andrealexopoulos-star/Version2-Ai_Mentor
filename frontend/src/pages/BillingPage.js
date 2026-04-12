@@ -89,7 +89,7 @@ const BillingPage = () => {
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }}>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1.5" style={{ fontFamily: fontFamily.display }}>
+            <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1.5" style={{ fontFamily: fontFamily.display }}>
               Billing Command Center
             </h1>
             <p className="text-sm text-[#9FB0C3]">
@@ -133,7 +133,7 @@ const BillingPage = () => {
               <CreditCard className="w-4 h-4 text-[#3B82F6]" />
               <span className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Paid charges</span>
             </div>
-            <div className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>
+            <div className="text-2xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
               {money(chargesSummary.total_paid, chargesSummary.currency)}
             </div>
           </Panel>
@@ -143,17 +143,17 @@ const BillingPage = () => {
               <CreditCard className="w-4 h-4 text-[#F59E0B]" />
               <span className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Pending charges</span>
             </div>
-            <div className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>
+            <div className="text-2xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
               {money(chargesSummary.total_initiated, chargesSummary.currency)}
             </div>
           </Panel>
 
           <Panel>
             <div className="flex items-center gap-2 mb-2">
-              <Building2 className="w-4 h-4 text-[#FF6A00]" />
+              <Building2 className="w-4 h-4 text-[#E85D00]" />
               <span className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Supplier outstanding</span>
             </div>
-            <div className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>
+            <div className="text-2xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
               {money(supplierSummary.total_outstanding_supplier, chargesSummary.currency || 'AUD')}
             </div>
           </Panel>
@@ -163,7 +163,7 @@ const BillingPage = () => {
               <Building2 className="w-4 h-4 text-[#EF4444]" />
               <span className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Supplier overdue</span>
             </div>
-            <div className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>
+            <div className="text-2xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
               {money(supplierSummary.total_overdue_supplier, chargesSummary.currency || 'AUD')}
             </div>
           </Panel>
@@ -171,7 +171,7 @@ const BillingPage = () => {
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <Panel>
-            <h2 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>
+            <h2 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>
               Recent client charges (Stripe)
             </h2>
             <div className="space-y-2">
@@ -182,12 +182,12 @@ const BillingPage = () => {
                   style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
                 >
                   <div>
-                    <p className="text-xs text-[#F4F7FA]">{row.tier || 'subscription'}</p>
+                    <p className="text-xs text-[#EDF1F7]">{row.tier || 'subscription'}</p>
                     <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
                       {row.payment_status || 'unknown'} • {row.created_at || ''}
                     </p>
                   </div>
-                  <p className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>
+                  <p className="text-xs font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
                     {money(row.amount, row.currency || chargesSummary.currency || 'AUD')}
                   </p>
                 </div>
@@ -199,7 +199,7 @@ const BillingPage = () => {
           </Panel>
 
           <Panel>
-            <h2 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>
+            <h2 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>
               Supplier invoices (Xero/accounting)
             </h2>
             <div className="space-y-2">
@@ -210,14 +210,14 @@ const BillingPage = () => {
                   style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
                 >
                   <div>
-                    <p className="text-xs text-[#F4F7FA]">{row.supplier}</p>
+                    <p className="text-xs text-[#EDF1F7]">{row.supplier}</p>
                     <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
                       {row.status} • due {row.due_date || 'n/a'}
                     </p>
                   </div>
                   <p
                     className="text-xs font-semibold"
-                    style={{ fontFamily: fontFamily.mono, color: row.is_overdue ? '#EF4444' : '#F4F7FA' }}
+                    style={{ fontFamily: fontFamily.mono, color: row.is_overdue ? '#EF4444' : '#EDF1F7' }}
                   >
                     {money(row.amount, chargesSummary.currency || 'AUD')}
                   </p>

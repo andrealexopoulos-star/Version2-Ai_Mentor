@@ -14,7 +14,7 @@ const LoadingPreview = () => {
     <div>
       {/* Controls */}
       <div className="fixed top-4 right-4 z-50 flex gap-2">
-        <button onClick={() => reload('first')} className="px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: '#FF6A00' }}>First Visit</button>
+        <button onClick={() => reload('first')} className="px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: '#E85D00' }}>First Visit</button>
         <button onClick={() => reload('returning')} className="px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: '#7C3AED' }}>Returning</button>
         <button onClick={() => reload(mode)} className="px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: '#3B82F6' }}>Randomise</button>
       </div>

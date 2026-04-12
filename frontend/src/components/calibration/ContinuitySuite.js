@@ -1,9 +1,9 @@
 import React from 'react';
 
-const CHARCOAL = '#F4F7FA';
+const CHARCOAL = '#EDF1F7';
 const MUTED = '#9FB0C3';
-const GOLD = '#FF6A00';
-const CARD_BORDER = '#243140';
+const GOLD = '#E85D00';
+const CARD_BORDER = 'rgba(140,170,210,0.15)';
 const SERIF = "var(--font-heading)";
 
 const ContinuitySuite = ({ firstName, calStep, error, onResume }) => {
@@ -37,7 +37,7 @@ const ContinuitySuite = ({ firstName, calStep, error, onResume }) => {
         <p className="text-sm mb-10" style={{ color: '#94A3B8' }}>{calStep} of 9 stages completed.</p>
         {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
         <button onClick={onResume} className="px-8 py-3 rounded-xl text-sm font-semibold"
-          style={{ background: '#FF6A00', color: '#FFFFFF' }} data-testid="continue-calibration-btn">
+          style={{ background: '#E85D00', color: '#FFFFFF' }} data-testid="continue-calibration-btn">
           Resume My Session
         </button>
       </div>

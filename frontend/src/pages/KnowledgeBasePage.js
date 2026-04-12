@@ -15,7 +15,7 @@ const GUIDES = [
   {
     id: 'what-is-biqc',
     icon: BookOpen,
-    color: '#FF6A00',
+    color: '#E85D00',
     title: 'What is BIQc?',
     why: 'BIQc stands for Business Intelligence Quotient Centre — a sovereign intelligence platform purpose-built for SMBs who want to run their business with the same analytical precision as enterprise operators, without the enterprise cost.',
     steps: [
@@ -181,7 +181,7 @@ const FAQItem = ({ q, a }) => {
   return (
     <div className="rounded-lg overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.02] transition-colors" data-testid={`faq-${q.substring(0,20).replace(/\s/g,'-').toLowerCase()}`}>
-        <span className="text-sm font-medium text-[#F4F7FA] pr-4" style={{ fontFamily: fontFamily.body }}>{q}</span>
+        <span className="text-sm font-medium text-[#EDF1F7] pr-4" style={{ fontFamily: fontFamily.body }}>{q}</span>
         {open ? <ChevronUp className="w-4 h-4 text-[#64748B] shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#64748B] shrink-0" />}
       </button>
       {open && (
@@ -200,7 +200,7 @@ const KnowledgeBaseContent = () => {
   return (
     <div className="max-w-[900px] mx-auto space-y-8 px-6 py-8" style={{ fontFamily: fontFamily.body }} data-testid="knowledge-base-page">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display, textShadow: '0 1px 8px rgba(0,0,0,0.5)', WebkitTextStroke: '0.3px #F4F7FA' }}>Knowledge Base</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display, textShadow: '0 1px 8px rgba(0,0,0,0.5)', WebkitTextStroke: '0.3px #EDF1F7' }}>Knowledge Base</h1>
         <p className="text-sm text-[#9FB0C3]">Understanding BIQc — Business Intelligence Quotient Centre. Step-by-step guides to activate every intelligence layer, plus frequently asked questions.</p>
       </div>
 
@@ -208,7 +208,7 @@ const KnowledgeBaseContent = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
         {GUIDES.map(g => (
           <a key={g.id} href={`#${g.id}`} className="p-3 rounded-lg text-center transition-all hover:bg-white/[0.03]"
-            style={{ background: hash === g.id ? `${g.color}10` : '#141C26', border: `1px solid ${hash === g.id ? g.color + '40' : '#243140'}` }}>
+            style={{ background: hash === g.id ? `${g.color}10` : '#0E1628', border: `1px solid ${hash === g.id ? g.color + '40' : 'rgba(140,170,210,0.15)'}` }}>
             <g.icon className="w-5 h-5 mx-auto mb-1" style={{ color: g.color }} />
             <span className="text-[9px] text-[#9FB0C3] block" style={{ fontFamily: fontFamily.mono }}>{g.time}</span>
           </a>
@@ -224,7 +224,7 @@ const KnowledgeBaseContent = () => {
                 <guide.icon className="w-5 h-5" style={{ color: guide.color }} />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>{guide.title}</h2>
+                <h2 className="text-lg font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>{guide.title}</h2>
                 <p className="text-sm text-[#9FB0C3] leading-relaxed">{guide.why}</p>
               </div>
             </div>
@@ -247,7 +247,7 @@ const KnowledgeBaseContent = () => {
                     <span className="text-xs font-bold" style={{ color: guide.color, fontFamily: fontFamily.mono }}>{i + 1}</span>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p className="text-sm font-semibold text-[#F4F7FA]">{s.step}</p>
+                    <p className="text-sm font-semibold text-[#EDF1F7]">{s.step}</p>
                     <p className="text-xs text-[#64748B] mt-0.5 leading-relaxed">{s.detail}</p>
                   </div>
                 </div>
@@ -269,8 +269,8 @@ const KnowledgeBaseContent = () => {
       {/* FAQs */}
       <div id="faqs" className="scroll-mt-20">
         <div className="flex items-center gap-3 mb-4">
-          <HelpCircle className="w-5 h-5 text-[#FF6A00]" />
-          <h2 className="text-xl font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Frequently Asked Questions</h2>
+          <HelpCircle className="w-5 h-5 text-[#E85D00]" />
+          <h2 className="text-xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Frequently Asked Questions</h2>
         </div>
         <div className="space-y-2">
           {FAQS.map((faq, i) => <FAQItem key={i} {...faq} />)}
@@ -279,9 +279,9 @@ const KnowledgeBaseContent = () => {
 
       {/* CTA */}
       <Panel className="text-center py-8">
-        <h3 className="text-lg font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>Ready to get started?</h3>
+        <h3 className="text-lg font-semibold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>Ready to get started?</h3>
         <p className="text-sm text-[#9FB0C3] mb-4">Experience sovereign business intelligence in under 5 minutes.</p>
-        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="kb-cta">
+        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: '#E85D00' }} data-testid="kb-cta">
           Try It Free <ArrowRight className="w-4 h-4" />
         </Link>
       </Panel>

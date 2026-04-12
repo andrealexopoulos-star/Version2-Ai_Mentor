@@ -36,7 +36,7 @@ const Logo = ({ domain, name, size = 36 }) => {
         width: size,
         height: size,
         background: `linear-gradient(135deg, hsla(${hue}, 70%, 45%, 0.28), hsla(${(hue + 40) % 360}, 70%, 38%, 0.28))`,
-        border: '1px solid var(--biqc-border, #243140)',
+        border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))',
         color: '#E2E8F0',
         fontSize: size * 0.3,
         fontFamily: fontFamily.mono,
@@ -750,7 +750,7 @@ export default function Integrations() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search all connectors"
                   className="w-full rounded-lg py-2.5 pl-9 pr-9 text-[13px] outline-none"
-                  style={{ background: '#0B1220', border: '1px solid #1E293B', color: '#F4F7FA' }}
+                  style={{ background: '#0B1220', border: '1px solid #1E293B', color: '#EDF1F7' }}
                   data-testid="integrations-search"
                 />
                 {searchTerm && (
@@ -833,7 +833,7 @@ export default function Integrations() {
             </div>
           ) : (
             <div className="py-20 text-center">
-              <Search className="w-8 h-8 mx-auto mb-3" style={{ color: '#243140' }} />
+              <Search className="w-8 h-8 mx-auto mb-3" style={{ color: 'rgba(140,170,210,0.15)' }} />
               <p className="text-sm mb-1" style={{ color: '#64748B' }}>No connectors found for this filter.</p>
             </div>
           )}

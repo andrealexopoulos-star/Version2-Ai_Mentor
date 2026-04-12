@@ -42,16 +42,16 @@ const FirstLoginNotification = () => {
 
   return (
     <div className="fixed top-16 right-[400px] lg:right-[400px] z-50 w-[320px] max-w-[calc(100vw-32px)] rounded-xl overflow-hidden shadow-2xl"
-      style={{ background: 'var(--biqc-bg-card)', border: '1px solid #FF6A0030', animation: 'fadeIn 0.5s ease' }}
+      style={{ background: 'var(--biqc-bg-card)', border: '1px solid #E85D0030', animation: 'fadeIn 0.5s ease' }}
       data-testid="first-login-notification">
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#FF6A0020' }}>
-              <Plug className="w-4 h-4 text-[#FF6A00]" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#E85D0020' }}>
+              <Plug className="w-4 h-4 text-[#E85D00]" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Get Started</h3>
+              <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Get Started</h3>
               <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Connect your systems</p>
             </div>
           </div>
@@ -71,7 +71,7 @@ const FirstLoginNotification = () => {
             data-testid="connect-email-btn">
             <Mail className="w-4 h-4 text-[#3B82F6]" />
             <div className="flex-1">
-              <span className="text-sm text-[#F4F7FA] block">Connect Email</span>
+              <span className="text-sm text-[#EDF1F7] block">Connect Email</span>
               <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Outlook or Gmail</span>
             </div>
             <ArrowRight className="w-4 h-4 text-[#64748B]" />
@@ -81,9 +81,9 @@ const FirstLoginNotification = () => {
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all hover:bg-white/5"
             style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
             data-testid="connect-integrations-btn">
-            <Plug className="w-4 h-4 text-[#FF6A00]" />
+            <Plug className="w-4 h-4 text-[#E85D00]" />
             <div className="flex-1">
-              <span className="text-sm text-[#F4F7FA] block">Connect Integrations</span>
+              <span className="text-sm text-[#EDF1F7] block">Connect Integrations</span>
               <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Xero, HubSpot, CRM</span>
             </div>
             <ArrowRight className="w-4 h-4 text-[#64748B]" />

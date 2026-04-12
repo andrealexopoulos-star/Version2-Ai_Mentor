@@ -85,7 +85,7 @@ const AdminUxFeedbackPage = () => {
       <div className="space-y-4 max-w-[1280px]" style={{ fontFamily: fontFamily.body, color: 'var(--biqc-text)' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>UX Feedback Control</h1>
+            <h1 className="text-2xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>UX Feedback Control</h1>
             <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
               User feedback events, usability checkpoints, and milestone success tracking.
             </p>
@@ -98,19 +98,19 @@ const AdminUxFeedbackPage = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="p-3" style={cardStyle}>
             <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Total Feedback Events</div>
-            <div className="text-xl text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{summary?.total_events ?? 0}</div>
+            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{summary?.total_events ?? 0}</div>
           </div>
           <div className="p-3" style={cardStyle}>
             <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Average Rating</div>
-            <div className="text-xl text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{summary?.average_rating ?? '—'}</div>
+            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{summary?.average_rating ?? '—'}</div>
           </div>
           <div className="p-3" style={cardStyle}>
             <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Checkpoint Count</div>
-            <div className="text-xl text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{checkpoints.length}</div>
+            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{checkpoints.length}</div>
           </div>
           <div className="p-3" style={cardStyle}>
             <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Open Checkpoints</div>
-            <div className="text-xl text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>
+            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
               {checkpoints.filter((c) => !['completed', 'pass'].includes(String(c.status || '').toLowerCase())).length}
             </div>
           </div>
@@ -123,7 +123,7 @@ const AdminUxFeedbackPage = () => {
               {Object.entries(summary?.by_type || {}).map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between px-2 py-1 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-xs" style={{ fontFamily: fontFamily.mono }}>{k}</span>
-                  <span className="text-xs text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{v}</span>
+                  <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{v}</span>
                 </div>
               ))}
               {Object.keys(summary?.by_type || {}).length === 0 && (
@@ -177,7 +177,7 @@ const AdminUxFeedbackPage = () => {
                 onChange={(e) => setCheckpointForm((p) => ({ ...p, notes: e.target.value }))}
               />
             </div>
-            <button onClick={saveCheckpoint} className="px-3 py-2 rounded-lg text-xs" style={{ ...cardStyle, borderColor: '#FF6A0030', color: '#FF6A00', fontFamily: fontFamily.mono }}>
+            <button onClick={saveCheckpoint} className="px-3 py-2 rounded-lg text-xs" style={{ ...cardStyle, borderColor: '#E85D0030', color: '#E85D00', fontFamily: fontFamily.mono }}>
               Save Checkpoint
             </button>
           </div>
@@ -191,7 +191,7 @@ const AdminUxFeedbackPage = () => {
                 <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#3B82F615', color: '#3B82F6', fontFamily: fontFamily.mono }}>
                   {e.feedback_type || 'unknown'}
                 </span>
-                <span className="text-xs text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{e.message || '—'}</span>
+                <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>{e.message || '—'}</span>
                 <span className="ml-auto text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
                   {e.rating ? `rating ${e.rating}` : ''}
                 </span>
@@ -208,10 +208,10 @@ const AdminUxFeedbackPage = () => {
           <div className="max-h-[260px] overflow-auto">
             {deferredItems.map((item) => (
               <div key={item.id} className="px-3 py-2 flex items-center gap-3" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-                <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#E85D0015', color: '#E85D00', fontFamily: fontFamily.mono }}>
                   {item.integration_key}
                 </span>
-                <span className="text-xs text-[#F4F7FA] flex-1">{item.display_name}</span>
+                <span className="text-xs text-[#EDF1F7] flex-1">{item.display_name}</span>
                 <span className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>P{item.priority}</span>
                 <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{item.status}</span>
               </div>

@@ -107,7 +107,7 @@ const MobileNav = () => {
             className="fixed bottom-0 left-0 right-0 z-[1101] rounded-t-2xl"
             style={{
               background: 'var(--biqc-bg-input, #0A1018)',
-              borderTop: '1px solid var(--biqc-border, #243140)',
+              borderTop: '1px solid var(--biqc-border, rgba(140,170,210,0.15))',
               paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',
             }}
             role="dialog"
@@ -115,7 +115,7 @@ const MobileNav = () => {
             data-testid="mobile-more-sheet"
           >
             {/* Sheet header */}
-            <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid var(--biqc-border, #243140)' }}>
+            <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}>
               <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--biqc-text-muted)', fontFamily: fontFamily.mono }}>
                 More
               </span>
@@ -174,7 +174,7 @@ const MobileNav = () => {
         className="fixed bottom-0 left-0 right-0 z-[1099] lg:hidden"
         style={{
           background: 'var(--biqc-bg-input, #0A1018)',
-          borderTop: '1px solid var(--biqc-border, #243140)',
+          borderTop: '1px solid var(--biqc-border, rgba(140,170,210,0.15))',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
         aria-label="Mobile navigation"

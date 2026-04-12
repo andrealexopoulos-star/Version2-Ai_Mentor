@@ -33,7 +33,7 @@ export const SurfaceHeader = ({ eyebrow, title, question, summary, rightSlot, te
   </div>
 );
 
-export const MetricCard = ({ label, value, caption, tone = '#FF6A00', testId }) => (
+export const MetricCard = ({ label, value, caption, tone = '#E85D00', testId }) => (
   <SurfaceCard testId={testId}>
     <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>{label}</p>
     <div className="mt-3 flex items-end gap-2">

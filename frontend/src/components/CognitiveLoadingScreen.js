@@ -22,7 +22,7 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
     <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-6 relative overflow-hidden" style={{ background: 'var(--biqc-bg)' }} data-testid="cognitive-ignition">
       <style>{`
         @keyframes ignSmoke{0%{opacity:0;transform:scale(0.8) translateY(20px)}50%{opacity:0.06}100%{opacity:0;transform:scale(1.4) translateY(-40px)}}
-        @keyframes ignPulse{0%,100%{box-shadow:0 0 30px rgba(255,106,0,0.15)}50%{box-shadow:0 0 80px rgba(255,106,0,0.4)}}
+        @keyframes ignPulse{0%,100%{box-shadow:0 0 30px rgba(232,93,0,0.15)}50%{box-shadow:0 0 80px rgba(232,93,0,0.4)}}
         @keyframes ignLightning{0%,90%,100%{opacity:0}92%,98%{opacity:0.03}}
         @keyframes ignFadeUp{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
         @keyframes ignBar{0%{width:0}100%{width:100%}}
@@ -30,7 +30,7 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
 
       {/* Smoke layers */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)', animation: 'ignSmoke 4s ease-out infinite', opacity: 0 }} />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, #E85D00 0%, transparent 70%)', animation: 'ignSmoke 4s ease-out infinite', opacity: 0 }} />
         <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full" style={{ background: 'radial-gradient(circle, #3B82F6 0%, transparent 70%)', animation: 'ignSmoke 5s ease-out infinite 1s', opacity: 0 }} />
       </div>
 
@@ -40,14 +40,14 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
       <div className="max-w-xl w-full text-center relative z-10">
         {/* Logo */}
         <div className="mb-10" style={{ animation: 'ignFadeUp 1s ease-out' }}>
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto" style={{ background: '#FF6A00', animation: 'ignPulse 2s ease-in-out infinite' }}>
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto" style={{ background: '#E85D00', animation: 'ignPulse 2s ease-in-out infinite' }}>
             <span className="text-white font-bold text-3xl" style={{ fontFamily: fontFamily.mono }}>B</span>
           </div>
         </div>
 
         {/* Phase 0-1: Header */}
         <div style={{ animation: 'ignFadeUp 1.2s ease-out', opacity: phase >= 0 ? 1 : 0, transition: 'opacity 0.8s ease' }}>
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#F4F7FA] mb-4 tracking-tight" style={{ fontFamily: fontFamily.display }}>
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#EDF1F7] mb-4 tracking-tight" style={{ fontFamily: fontFamily.display }}>
             {ownerName ? `Welcome to BIQc, ${ownerName}.` : 'Welcome to BIQc.'}
           </h1>
         </div>
@@ -68,12 +68,12 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
               { title: 'Risk & Compliance', desc: 'Financial exposure, regulatory obligations, threat monitoring.' },
               { title: 'Autonomous Execution', desc: 'AI-driven alerts, actions, and automations across your business.' },
             ].map((item, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-lg text-left" style={{ background: '#141C2680', border: '1px solid #24314060' }}>
-                <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: '#FF6A0015' }}>
-                  <span className="text-xs font-bold" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{i + 1}</span>
+              <div key={i} className="flex items-start gap-3 p-3 rounded-lg text-left" style={{ background: '#0E162880', border: '1px solid rgba(140,170,210,0.15)60' }}>
+                <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: '#E85D0015' }}>
+                  <span className="text-xs font-bold" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>{i + 1}</span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
+                  <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
                   <p className="text-xs text-[#64748B] mt-0.5" style={{ fontFamily: fontFamily.body }}>{item.desc}</p>
                 </div>
               </div>
@@ -85,7 +85,7 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
         <div style={{ opacity: phase >= 3 ? 1 : 0, transform: phase >= 3 ? 'translateY(0)' : 'translateY(12px)', transition: 'all 0.8s ease' }}>
           <button onClick={onComplete}
             className="px-10 py-4 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110 active:scale-95"
-            style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', fontFamily: fontFamily.display, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}
+            style={{ background: 'linear-gradient(135deg, #E85D00, #E85D00)', fontFamily: fontFamily.display, boxShadow: '0 8px 32px rgba(232,93,0,0.3)' }}
             data-testid="ignition-cta">
             Meet BIQc
           </button>
@@ -93,8 +93,8 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
 
         {/* Progress */}
         <div className="max-w-xs mx-auto mt-8">
-          <div className="h-1 rounded-full overflow-hidden" style={{ background: '#243140' }}>
-            <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, #FF6A00, #3B82F6)', animation: 'ignBar 6s ease-in-out' }} />
+          <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
+            <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, #E85D00, #3B82F6)', animation: 'ignBar 6s ease-in-out' }} />
           </div>
         </div>
       </div>
@@ -129,7 +129,7 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
     <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-6" style={{ background: 'var(--biqc-bg)' }} data-testid="cognitive-loading">
       <style>{`
         @keyframes cogFadeUp{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}
-        @keyframes cogPulseGlow{0%,100%{box-shadow:0 0 20px rgba(255,106,0,0.2)}50%{box-shadow:0 0 40px rgba(255,106,0,0.5)}}
+        @keyframes cogPulseGlow{0%,100%{box-shadow:0 0 20px rgba(232,93,0,0.2)}50%{box-shadow:0 0 40px rgba(232,93,0,0.5)}}
         @keyframes cogOrbit{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
         @keyframes cogDotStep{0%,100%{opacity:0.3}50%{opacity:1}}
       `}</style>
@@ -137,19 +137,19 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
       <div className="max-w-lg w-full text-center">
         <div className="relative w-32 h-32 mx-auto mb-8">
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#FF6A00', animation: 'cogPulseGlow 2s ease-in-out infinite' }}>
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#E85D00', animation: 'cogPulseGlow 2s ease-in-out infinite' }}>
               <span className="text-white font-bold text-2xl" style={{ fontFamily: fontFamily.mono }}>B</span>
             </div>
           </div>
           {[0, 1, 2, 3, 4, 5].map(i => (
             <div key={i} className="absolute inset-0" style={{ animation: `cogOrbit ${3 + i * 0.5}s linear infinite`, animationDelay: `${i * 0.3}s` }}>
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full" style={{ background: ['#FF6A00', '#3B82F6', '#10B981', '#7C3AED', '#F59E0B', '#EF4444'][i], opacity: 0.7 }} />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full" style={{ background: ['#E85D00', '#3B82F6', '#10B981', '#7C3AED', '#F59E0B', '#EF4444'][i], opacity: 0.7 }} />
             </div>
           ))}
         </div>
 
         <div style={{ animation: 'cogFadeUp 0.6s ease-out' }}>
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#F4F7FA] mb-3 tracking-tight" style={{ fontFamily: fontFamily.display }}>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#EDF1F7] mb-3 tracking-tight" style={{ fontFamily: fontFamily.display }}>
             {ownerName ? `${ownerName}, ` : ''}{pack.headline}
           </h2>
           <p className="text-base text-[#9FB0C3] leading-relaxed mb-8" style={{ fontFamily: fontFamily.body }}>{pack.sub}</p>
@@ -158,8 +158,8 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
         <div className="space-y-3 text-left max-w-sm mx-auto mb-8">
           {visibleSteps.map((step, i) => (
             <div key={i} className="flex items-center gap-3" style={{ animation: 'cogFadeUp 0.5s ease-out both' }}>
-              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: ['#FF6A00', '#3B82F6', '#10B981', '#7C3AED'][i % 4] + '20' }}>
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: ['#FF6A00', '#3B82F6', '#10B981', '#7C3AED'][i % 4], animation: `cogDotStep 1.4s ease-in-out infinite ${i * 0.2}s` }} />
+              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: ['#E85D00', '#3B82F6', '#10B981', '#7C3AED'][i % 4] + '20' }}>
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: ['#E85D00', '#3B82F6', '#10B981', '#7C3AED'][i % 4], animation: `cogDotStep 1.4s ease-in-out infinite ${i * 0.2}s` }} />
               </div>
               <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>{step}</span>
             </div>
@@ -167,8 +167,8 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
         </div>
 
         <div className="max-w-xs mx-auto">
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#243140' }}>
-            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #FF6A00, #3B82F6, #10B981)' }} />
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #E85D00, #3B82F6, #10B981)' }} />
           </div>
           <p className="text-[10px] text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>Updating your intelligence...</p>
         </div>

@@ -133,13 +133,13 @@ class AppErrorBoundary extends React.Component {
     if (this.state.error) {
       return (
         <div style={{ minHeight: '100vh', background: '#070E18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 32 }}>
-          <div style={{ color: '#FF6A00', fontSize: 32, fontWeight: 'bold' }}>B</div>
-          <p style={{ color: '#F4F7FA', fontFamily: 'sans-serif', fontSize: 18, fontWeight: 600 }}>Something went wrong</p>
+          <div style={{ color: '#E85D00', fontSize: 32, fontWeight: 'bold' }}>B</div>
+          <p style={{ color: '#EDF1F7', fontFamily: 'sans-serif', fontSize: 18, fontWeight: 600 }}>Something went wrong</p>
           <p style={{ color: '#64748B', fontFamily: 'sans-serif', fontSize: 14, textAlign: 'center', maxWidth: 400 }}>
             BIQc encountered an error. Please refresh to continue.
           </p>
           <button onClick={() => window.location.reload()}
-            style={{ background: '#FF6A00', color: 'white', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontFamily: 'sans-serif', fontSize: 14 }}>
+            style={{ background: '#E85D00', color: 'white', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontFamily: 'sans-serif', fontSize: 14 }}>
             Refresh Page
           </button>
         </div>

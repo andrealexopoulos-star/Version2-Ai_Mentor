@@ -24,12 +24,12 @@ export default function BIQcFoundationPage() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-6xl space-y-8" data-testid="biqc-foundation-page">
-        <section className="rounded-[30px] border p-8 sm:p-10" style={{ borderColor: 'var(--biqc-border)', background: 'linear-gradient(180deg, rgba(255,106,0,0.08), rgba(20,28,38,0.96))' }}>
+        <section className="rounded-[30px] border p-8 sm:p-10" style={{ borderColor: 'var(--biqc-border)', background: 'linear-gradient(180deg, rgba(232,93,0,0.08), rgba(20,28,38,0.96))' }}>
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: 'rgba(255,106,0,0.12)', border: '1px solid rgba(255,106,0,0.24)' }}>
-                <Shield className="h-3.5 w-3.5" style={{ color: '#FF6A00' }} />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>BIQc Foundation</span>
+              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: 'rgba(232,93,0,0.12)', border: '1px solid rgba(232,93,0,0.24)' }}>
+                <Shield className="h-3.5 w-3.5" style={{ color: '#E85D00' }} />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>BIQc Foundation</span>
               </div>
               <h1 className="mt-4 text-4xl sm:text-5xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>The Intelligence layer for decicion confidence.</h1>
               <p className="mt-4 max-w-2xl text-sm sm:text-base" style={{ color: 'var(--biqc-text-2)' }}>
@@ -72,7 +72,7 @@ export default function BIQcFoundationPage() {
               <div className="mt-4 space-y-2">
                 {FOUNDATION_FEATURES.map((feature) => (
                   <div key={feature.key} className="flex items-start gap-2 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
-                    <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: '#FF6A00' }} />
+                    <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: '#E85D00' }} />
                     <span>{feature.title}</span>
                   </div>
                 ))}
@@ -80,7 +80,7 @@ export default function BIQcFoundationPage() {
               <button
                 onClick={() => navigate('/upgrade')}
                 className="mt-5 inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white"
-                style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
+                style={{ background: '#E85D00', fontFamily: fontFamily.body }}
                 data-testid="biqc-foundation-upgrade-button"
               >
                 {hasFoundationAccess ? 'Manage Foundation' : 'Upgrade to BIQc Foundation'}
@@ -106,7 +106,7 @@ export default function BIQcFoundationPage() {
         )}
 
         {selectedFeature && (
-          <section className="rounded-[26px] border p-6 sm:p-8" style={{ borderColor: 'rgba(255,106,0,0.24)', background: 'rgba(255,106,0,0.05)' }} data-testid={`biqc-foundation-feature-detail-${selectedFeature.key}`}>
+          <section className="rounded-[26px] border p-6 sm:p-8" style={{ borderColor: 'rgba(232,93,0,0.24)', background: 'rgba(232,93,0,0.05)' }} data-testid={`biqc-foundation-feature-detail-${selectedFeature.key}`}>
             <button
               onClick={() => setSearchParams({})}
               className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs hover:bg-white/5"
@@ -119,11 +119,11 @@ export default function BIQcFoundationPage() {
             <p className="mt-3 max-w-3xl text-sm leading-7" style={{ color: 'var(--biqc-text-2)' }}>{selectedFeature.summary}</p>
             <div className="mt-6 grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
               <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>What it does</p>
+                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>What it does</p>
                 <div className="mt-4 space-y-3">
                   {selectedFeature.whatItDoes.map((line) => (
                     <div key={line} className="flex items-start gap-2 text-sm" style={{ color: 'var(--biqc-text-2)' }}>
-                      <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: '#FF6A00' }} />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: '#E85D00' }} />
                       <span>{line}</span>
                     </div>
                   ))}
@@ -143,7 +143,7 @@ export default function BIQcFoundationPage() {
                     <button
                       onClick={() => navigate(selectedFeature.route)}
                       className="inline-flex min-h-[42px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-                      style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
+                      style={{ background: '#E85D00', fontFamily: fontFamily.body }}
                       data-testid={`biqc-foundation-open-${selectedFeature.key}`}
                     >
                       Open {selectedFeature.title} <ArrowRight className="h-4 w-4" />
@@ -152,7 +152,7 @@ export default function BIQcFoundationPage() {
                     <button
                       onClick={() => navigate('/upgrade')}
                       className="inline-flex min-h-[42px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-                      style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
+                      style={{ background: '#E85D00', fontFamily: fontFamily.body }}
                       data-testid={`biqc-foundation-upgrade-${selectedFeature.key}`}
                     >
                       Unlock in BIQc Foundation <Lock className="h-4 w-4" />

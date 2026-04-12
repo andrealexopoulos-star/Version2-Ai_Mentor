@@ -352,7 +352,7 @@ export default function SoundboardPage() {
         <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 15, marginBottom: 28, maxWidth: 480, margin: '0 auto 28px' }}>
           These examples use generic data. Your account uses live signals from Xero, HubSpot, Outlook, and every other connected tool.
         </p>
-        <Link to="/register-supabase" style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: '#fff', borderRadius: 12, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 8px 32px rgba(255,122,24,0.25)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <Link to="/register-supabase" style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: '#fff', borderRadius: 12, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 8px 32px rgba(232,93,0,0.25)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           Start Free Trial <ArrowRight size={16} />
         </Link>
         <p style={{ fontFamily: fontFamily.mono, color: '#4A5568', fontSize: 11, marginTop: 16 }}>

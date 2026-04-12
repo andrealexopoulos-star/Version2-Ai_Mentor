@@ -51,7 +51,7 @@ const ForensicCalibration = () => {
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center max-w-md">
             <Lock className="w-12 h-12 text-[#64748B] mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>Coming Soon</h1>
+            <h1 className="text-2xl font-bold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>Coming Soon</h1>
             <p className="text-sm text-[#9FB0C3] mb-6">Forensic Market Calibration will be available in the Pro plan.</p>
             <button onClick={() => navigate('/market')} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="forensic-back-btn">Back to Market</button>
           </div>
@@ -60,7 +60,7 @@ const ForensicCalibration = () => {
     );
   }
 
-  if (loadingExisting) return <DashboardLayout><div className="flex items-center justify-center min-h-[60vh]"><div className="w-6 h-6 border-2 border-[#FF6A00] border-t-transparent rounded-full animate-spin" /></div></DashboardLayout>;
+  if (loadingExisting) return <DashboardLayout><div className="flex items-center justify-center min-h-[60vh]"><div className="w-6 h-6 border-2 border-[#E85D00] border-t-transparent rounded-full animate-spin" /></div></DashboardLayout>;
 
   const handleSelect = (option) => setSelected(option);
 
@@ -92,7 +92,7 @@ const ForensicCalibration = () => {
         <div className="max-w-3xl mx-auto py-10 px-6" data-testid="forensic-results">
           <div className="text-center mb-8">
             <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>Forensic Calibration Complete</h1>
+            <h1 className="text-2xl font-bold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>Forensic Calibration Complete</h1>
             <p className="text-sm text-[#9FB0C3]">Your strategic profile has been scored and calibrated.</p>
           </div>
 
@@ -108,9 +108,9 @@ const ForensicCalibration = () => {
             {Object.entries(dims).map(([key, dim]) => (
               <div key={key} className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                 <span className="text-[10px] text-[#64748B] block mb-1 capitalize" style={{ fontFamily: fontFamily.mono }}>{key}</span>
-                <span className="text-lg font-bold text-[#F4F7FA] block" style={{ fontFamily: fontFamily.mono }}>{dim.label}</span>
-                <div className="h-1.5 rounded-full mt-2" style={{ background: '#243140' }}>
-                  <div className="h-1.5 rounded-full transition-all" style={{ background: '#FF6A00', width: `${dim.score}%` }} />
+                <span className="text-lg font-bold text-[#EDF1F7] block" style={{ fontFamily: fontFamily.mono }}>{dim.label}</span>
+                <div className="h-1.5 rounded-full mt-2" style={{ background: 'rgba(140,170,210,0.15)' }}>
+                  <div className="h-1.5 rounded-full transition-all" style={{ background: '#E85D00', width: `${dim.score}%` }} />
                 </div>
                 <span className="text-[10px] text-[#64748B] mt-1 block" style={{ fontFamily: fontFamily.mono }}>{dim.score}/100</span>
               </div>
@@ -138,7 +138,7 @@ const ForensicCalibration = () => {
             <button onClick={() => { setResult(null); setExistingResult(null); setStep(0); setAnswers({}); }} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="forensic-recalibrate-btn">
               Recalibrate
             </button>
-            <button onClick={() => navigate('/market')} className="px-8 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="forensic-return-btn">
+            <button onClick={() => navigate('/market')} className="px-8 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: '#E85D00' }} data-testid="forensic-return-btn">
               Return to Market Intelligence <ArrowRight className="w-4 h-4 inline ml-1" />
             </button>
           </div>
@@ -155,27 +155,27 @@ const ForensicCalibration = () => {
       <div className="max-w-2xl mx-auto py-10 px-6" data-testid="forensic-calibration">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Eye className="w-5 h-5 text-[#FF6A00]" />
+            <Eye className="w-5 h-5 text-[#E85D00]" />
             <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>Forensic Calibration</h1>
           </div>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: fontFamily.mono }}>{step + 1}/{QUESTIONS.length}</span>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ color: '#E85D00', background: '#E85D0015', fontFamily: fontFamily.mono }}>{step + 1}/{QUESTIONS.length}</span>
         </div>
-        <div className="h-1.5 rounded-full overflow-hidden mb-8" style={{ background: '#243140' }}>
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #FF6A00, #3B82F6)' }} />
+        <div className="h-1.5 rounded-full overflow-hidden mb-8" style={{ background: 'rgba(140,170,210,0.15)' }}>
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #E85D00, #3B82F6)' }} />
         </div>
 
         <div className="mb-8">
-          <p className="text-xl font-bold text-[#F4F7FA] mb-6" style={{ fontFamily: fontFamily.display }}>{q.question}</p>
+          <p className="text-xl font-bold text-[#EDF1F7] mb-6" style={{ fontFamily: fontFamily.display }}>{q.question}</p>
           <div className="space-y-3">
             {q.options.map((opt, i) => {
               const isSelected = selected === opt;
               return (
-                <button key={i} onClick={() => handleSelect(opt)} className="w-full text-left rounded-xl px-6 py-5 transition-all" style={{ background: isSelected ? '#FF6A0010' : '#141C26', border: `2px solid ${isSelected ? '#FF6A00' : '#243140'}` }} data-testid={`forensic-option-${i}`}>
+                <button key={i} onClick={() => handleSelect(opt)} className="w-full text-left rounded-xl px-6 py-5 transition-all" style={{ background: isSelected ? '#E85D0010' : '#0E1628', border: `2px solid ${isSelected ? '#E85D00' : 'rgba(140,170,210,0.15)'}` }} data-testid={`forensic-option-${i}`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ border: `2px solid ${isSelected ? '#FF6A00' : '#64748B'}`, background: isSelected ? '#FF6A00' : 'transparent' }}>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ border: `2px solid ${isSelected ? '#E85D00' : '#64748B'}`, background: isSelected ? '#E85D00' : 'transparent' }}>
                       {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
                     </div>
-                    <span className="text-sm text-[#F4F7FA]">{opt}</span>
+                    <span className="text-sm text-[#EDF1F7]">{opt}</span>
                   </div>
                 </button>
               );
@@ -189,7 +189,7 @@ const ForensicCalibration = () => {
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
           ) : <div />}
-          <button onClick={handleContinue} disabled={!selected || submitting} className="px-8 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-30 flex items-center gap-1" style={{ background: '#FF6A00' }} data-testid="forensic-continue">
+          <button onClick={handleContinue} disabled={!selected || submitting} className="px-8 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-30 flex items-center gap-1" style={{ background: '#E85D00' }} data-testid="forensic-continue">
             {submitting ? 'Scoring...' : step >= QUESTIONS.length - 1 ? 'Complete' : 'Continue'} <ArrowRight className="w-4 h-4" />
           </button>
         </div>

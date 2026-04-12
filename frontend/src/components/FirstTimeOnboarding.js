@@ -60,10 +60,10 @@ const WelcomeStep = ({ firstName, onConnect, onSkip }) => (
   <div className="space-y-6">
     <div className="text-center">
       <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
-        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', boxShadow: '0 0 40px rgba(255,106,0,0.3)' }}>
+        style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', boxShadow: '0 0 40px rgba(232,93,0,0.3)' }}>
         <Zap className="w-8 h-8 text-white" />
       </div>
-      <h2 className="text-2xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+      <h2 className="text-2xl font-semibold mb-2" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
         Welcome to BIQc{firstName ? `, ${firstName}` : ''}.
       </h2>
       <p className="text-sm leading-relaxed max-w-sm mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
@@ -72,8 +72,8 @@ const WelcomeStep = ({ firstName, onConnect, onSkip }) => (
     </div>
 
     {/* What BIQc does */}
-    <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
-      <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#FF7A18', fontFamily: fontFamily.mono }}>How BIQc Works</p>
+    <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.15)' }}>
+      <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>How BIQc Works</p>
       {[
         'Connects to your business systems (email, CRM, accounting, HR)',
         'Reads signals across financial, revenue, risk and market data',
@@ -81,7 +81,7 @@ const WelcomeStep = ({ firstName, onConnect, onSkip }) => (
         'Delivers daily executive briefs, alerts and recommended actions',
       ].map((item, i) => (
         <div key={i} className="flex items-start gap-2.5">
-          <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: '#FF7A18' }} />
+          <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: '#E85D00' }} />
           <p className="text-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item}</p>
         </div>
       ))}
@@ -108,7 +108,7 @@ const WelcomeStep = ({ firstName, onConnect, onSkip }) => (
     <div className="flex flex-col gap-3">
       <button onClick={onConnect}
         className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:brightness-110"
-        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(255,106,0,0.28)' }}
+        style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(232,93,0,0.28)' }}
         data-testid="onboarding-connect-email">
         Connect Email to Get Started <ArrowRight className="w-4 h-4" />
       </button>
@@ -150,7 +150,7 @@ const EmailStep = ({ onSkip }) => {
   return (
     <div className="space-y-5">
       <div className="text-center">
-        <h2 className="text-xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+        <h2 className="text-xl font-semibold mb-2" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
           Connect Your Email
         </h2>
         <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
@@ -162,9 +162,9 @@ const EmailStep = ({ onSkip }) => {
         {EMAIL_PROVIDERS.map(p => (
           <button key={p.id} onClick={() => connect(p)} disabled={!!connecting}
             className="w-full flex items-center gap-4 p-4 rounded-xl text-left transition-all"
-            style={{ background: '#141C26', border: '1px solid #243140' }}
+            style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = p.color + '60'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = '#243140'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(140,170,210,0.15)'}
             data-testid={`connect-email-${p.id}`}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: p.color + '15' }}>
@@ -174,7 +174,7 @@ const EmailStep = ({ onSkip }) => {
               }
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{p.name}</p>
+              <p className="text-sm font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>{p.name}</p>
               <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{p.desc}</p>
             </div>
             <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: '#64748B' }} />
@@ -199,7 +199,7 @@ const ConnectMoreStep = ({ emailProvider, onYes, onNo }) => (
         style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)' }}>
         <CheckCircle2 className="w-6 h-6" style={{ color: '#10B981' }} />
       </div>
-      <h2 className="text-xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+      <h2 className="text-xl font-semibold mb-2" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
         {emailProvider ? `${emailProvider} Connected` : 'Email Connected'}
       </h2>
       <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
@@ -207,8 +207,8 @@ const ConnectMoreStep = ({ emailProvider, onYes, onNo }) => (
       </p>
     </div>
 
-    <div className="rounded-xl p-4" style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
-      <p className="text-xs mb-2 font-semibold" style={{ color: '#FF7A18', fontFamily: fontFamily.mono }}>MORE CONNECTIONS = BETTER INTELLIGENCE</p>
+    <div className="rounded-xl p-4" style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.15)' }}>
+      <p className="text-xs mb-2 font-semibold" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>MORE CONNECTIONS = BETTER INTELLIGENCE</p>
       <p className="text-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
         Connect your CRM to see deal risks. Accounting for cash flow signals. HR for capacity and compliance. Each integration adds a new layer of intelligence BIQc can act on.
       </p>
@@ -217,15 +217,15 @@ const ConnectMoreStep = ({ emailProvider, onYes, onNo }) => (
     <div className="space-y-3">
       <button onClick={onYes}
         className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:brightness-110"
-        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(255,106,0,0.25)' }}
+        style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(232,93,0,0.25)' }}
         data-testid="connect-more-yes">
         Yes, Connect More Business Tools <ArrowRight className="w-4 h-4" />
       </button>
       <button onClick={onNo}
         className="w-full py-3 rounded-xl text-sm font-semibold transition-all"
-        style={{ background: 'transparent', border: '1px solid #243140', color: '#9FB0C3', fontFamily: fontFamily.body }}
+        style={{ background: 'transparent', border: '1px solid rgba(140,170,210,0.15)', color: '#9FB0C3', fontFamily: fontFamily.body }}
         onMouseEnter={e => e.currentTarget.style.borderColor = '#334155'}
-        onMouseLeave={e => e.currentTarget.style.borderColor = '#243140'}
+        onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(140,170,210,0.15)'}
         data-testid="connect-more-no">
         No, I'm Done for Now
       </button>
@@ -301,7 +301,7 @@ const IntegrationStep = ({ connectedList, onConnected, onDone, mergeLinkToken, s
   return (
     <div className="space-y-4">
       <div className="text-center">
-        <h2 className="text-xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+        <h2 className="text-xl font-semibold mb-2" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
           Connect Business Tools
         </h2>
         <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
@@ -325,9 +325,9 @@ const IntegrationStep = ({ connectedList, onConnected, onDone, mergeLinkToken, s
             onClick={() => connectCategory(cat)}
             disabled={openingMerge}
             className="flex flex-col gap-2 p-3.5 rounded-xl text-left transition-all"
-            style={{ background: '#141C26', border: '1px solid #243140' }}
+            style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = cat.color + '60'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = '#243140'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(140,170,210,0.15)'}
             data-testid={`integration-cat-${cat.id}`}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: cat.color + '15' }}>
@@ -337,7 +337,7 @@ const IntegrationStep = ({ connectedList, onConnected, onDone, mergeLinkToken, s
               }
             </div>
             <div>
-              <p className="text-xs font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{cat.label}</p>
+              <p className="text-xs font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>{cat.label}</p>
               <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{cat.desc}</p>
             </div>
           </button>
@@ -347,7 +347,7 @@ const IntegrationStep = ({ connectedList, onConnected, onDone, mergeLinkToken, s
       <div className="space-y-2 pt-1">
         <button onClick={onDone}
           className="w-full py-3 rounded-xl text-sm font-semibold transition-all"
-          style={{ background: 'transparent', border: '1px solid #243140', color: '#9FB0C3', fontFamily: fontFamily.body }}
+          style={{ background: 'transparent', border: '1px solid rgba(140,170,210,0.15)', color: '#9FB0C3', fontFamily: fontFamily.body }}
           data-testid="integration-done">
           No, I'm Done for Now
         </button>
@@ -362,10 +362,10 @@ const AllDoneStep = ({ connectedList, onFinish }) => (
   <div className="space-y-5 text-center">
     <div>
       <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
-        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', boxShadow: '0 0 40px rgba(255,106,0,0.3)' }}>
+        style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', boxShadow: '0 0 40px rgba(232,93,0,0.3)' }}>
         <Zap className="w-8 h-8 text-white" />
       </div>
-      <h2 className="text-2xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+      <h2 className="text-2xl font-semibold mb-2" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
         BIQc Is Active
       </h2>
       <p className="text-sm max-w-xs mx-auto leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
@@ -375,7 +375,7 @@ const AllDoneStep = ({ connectedList, onFinish }) => (
 
     {connectedList.length > 0 && (
       <div className="rounded-xl p-4" style={{ background: '#0A1018', border: '1px solid #1E2D3D' }}>
-        <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#FF7A18', fontFamily: fontFamily.mono }}>Connected Systems</p>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Connected Systems</p>
         <div className="flex flex-wrap gap-2 justify-center">
           {connectedList.map(c => (
             <span key={c} className="text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1"
@@ -388,12 +388,12 @@ const AllDoneStep = ({ connectedList, onFinish }) => (
     )}
 
     <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
-      You can connect more systems at any time from <span style={{ color: '#FF7A18' }}>Integrations</span> in the sidebar.
+      You can connect more systems at any time from <span style={{ color: '#E85D00' }}>Integrations</span> in the sidebar.
     </p>
 
     <button onClick={onFinish}
       className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:brightness-110"
-      style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(255,106,0,0.25)' }}
+      style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(232,93,0,0.25)' }}
       data-testid="onboarding-finish">
       Enter BIQc <ArrowRight className="w-4 h-4" />
     </button>
@@ -405,10 +405,10 @@ const WelcomeBackStep = ({ firstName, connectedCount, connectedNames, onConnectM
   <div className="space-y-5">
     <div className="text-center">
       <div className="w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center"
-        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', boxShadow: '0 0 32px rgba(255,106,0,0.25)' }}>
+        style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', boxShadow: '0 0 32px rgba(232,93,0,0.25)' }}>
         <Zap className="w-7 h-7 text-white" />
       </div>
-      <h2 className="text-2xl font-semibold mb-2" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+      <h2 className="text-2xl font-semibold mb-2" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
         Welcome back{firstName ? `, ${firstName}` : ''}.
       </h2>
       <p className="text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
@@ -418,15 +418,15 @@ const WelcomeBackStep = ({ firstName, connectedCount, connectedNames, onConnectM
       </p>
     </div>
 
-    <div className="rounded-xl p-4" style={{ background: 'rgba(255,122,24,0.06)', border: '1px solid rgba(255,122,24,0.15)' }}>
-      <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#FF7A18', fontFamily: fontFamily.mono }}>How BIQc works</p>
+    <div className="rounded-xl p-4" style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.15)' }}>
+      <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>How BIQc works</p>
       {[
         'Connects to your business systems and reads signals continuously',
         'Detects risks before they compound across your operations',
         'Delivers personalised executive briefings — without you having to ask',
       ].map((item, i) => (
         <div key={i} className="flex items-start gap-2.5 mb-1.5">
-          <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ background: '#FF7A18' }} />
+          <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ background: '#E85D00' }} />
           <p className="text-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item}</p>
         </div>
       ))}
@@ -452,13 +452,13 @@ const WelcomeBackStep = ({ firstName, connectedCount, connectedNames, onConnectM
     <div className="space-y-2.5">
       <button onClick={onContinue}
         className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:brightness-110"
-        style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 20px rgba(255,106,0,0.25)' }}
+        style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: 'white', fontFamily: fontFamily.body, boxShadow: '0 6px 20px rgba(232,93,0,0.25)' }}
         data-testid="welcome-back-continue">
         Continue to Intelligence Platform <ArrowRight className="w-4 h-4" />
       </button>
       <button onClick={onConnectMore}
         className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
-        style={{ background: 'transparent', border: '1px solid #243140', color: '#9FB0C3', fontFamily: fontFamily.body }}
+        style={{ background: 'transparent', border: '1px solid rgba(140,170,210,0.15)', color: '#9FB0C3', fontFamily: fontFamily.body }}
         data-testid="welcome-back-connect-more">
         <Plug className="w-3.5 h-3.5 inline mr-2" />Connect More Integrations
       </button>
@@ -561,7 +561,7 @@ const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null, hasConnecti
         <div className="flex items-center justify-between px-5 py-3.5"
           style={{ borderBottom: '1px solid #1E2D3D' }}>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#FF7A18' }}>
+            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#E85D00' }}>
               <span className="text-white font-bold text-[10px]">B</span>
             </div>
             <span className="text-xs font-semibold" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
@@ -628,7 +628,7 @@ const FirstTimeOnboarding = ({ onClose, initialEmailProvider = null, hasConnecti
           <div className="flex justify-center gap-1.5 pb-4">
             {[0, 1, 2, 3].map(i => (
               <div key={i} className="w-1.5 h-1.5 rounded-full transition-all"
-                style={{ background: i === step ? '#FF7A18' : '#243140', width: i === step ? 20 : 6 }} />
+                style={{ background: i === step ? '#E85D00' : 'rgba(140,170,210,0.15)', width: i === step ? 20 : 6 }} />
             ))}
           </div>
         )}

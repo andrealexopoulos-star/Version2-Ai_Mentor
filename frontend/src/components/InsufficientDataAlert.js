@@ -31,7 +31,7 @@ const InsufficientDataAlert = ({ missingItems = [] }) => {
       <div onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-white/[0.02] transition-colors cursor-pointer">
         <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0" />
         <div className="flex-1">
-          <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>
+          <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
             {alerts.length} data source{alerts.length > 1 ? 's' : ''} needed for full intelligence
           </span>
           <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>
@@ -57,7 +57,7 @@ const InsufficientDataAlert = ({ missingItems = [] }) => {
                 <BookOpen className="w-4 h-4 text-[#F59E0B]" />
               </div>
               <div className="flex-1">
-                <span className="text-sm text-[#F4F7FA] block">{a.label}</span>
+                <span className="text-sm text-[#EDF1F7] block">{a.label}</span>
                 <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{a.detail}</span>
               </div>
               <div className="flex items-center gap-1 shrink-0">

@@ -6,7 +6,7 @@ import { ArrowLeft, Clock, ArrowRight, Tag, ExternalLink } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 
 
-const CAT_COLORS = { Strategy: '#FF6A00', Healthcare: '#10B981', Finance: '#3B82F6', Manufacturing: '#F59E0B', Retail: '#7C3AED', Construction: '#10B981', Legal: '#EF4444', SMB: '#FF6A00', Technology: '#3B82F6', Operations: '#F59E0B', Marketing: '#7C3AED', 'Real Estate': '#10B981', Education: '#10B981', Future: '#FF6A00', Regional: '#3B82F6' };
+const CAT_COLORS = { Strategy: '#E85D00', Healthcare: '#10B981', Finance: '#3B82F6', Manufacturing: '#F59E0B', Retail: '#7C3AED', Construction: '#10B981', Legal: '#EF4444', SMB: '#E85D00', Technology: '#3B82F6', Operations: '#F59E0B', Marketing: '#7C3AED', 'Real Estate': '#10B981', Education: '#10B981', Future: '#E85D00', Regional: '#3B82F6' };
 
 // Simple markdown-like renderer for article content
 const RenderContent = ({ content }) => {
@@ -25,9 +25,9 @@ const RenderContent = ({ content }) => {
       const sourceText = line.replace('**Source:**', '').replace(urlMatch?.[0] || '', '').trim();
       elements.push(
         <div key={i} className="my-3 p-3 rounded-lg flex items-start gap-2" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-          <ExternalLink className="w-3.5 h-3.5 text-[#FF6A00] shrink-0 mt-0.5" />
+          <ExternalLink className="w-3.5 h-3.5 text-[#E85D00] shrink-0 mt-0.5" />
           <div>
-            <span className="text-[10px] font-semibold tracking-wider uppercase block mb-0.5" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Source</span>
+            <span className="text-[10px] font-semibold tracking-wider uppercase block mb-0.5" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Source</span>
             <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{sourceText}</span>
             {urlMatch && (
               <a href={urlMatch[0]} target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#3B82F6] hover:text-[#60A5FA] block mt-0.5 break-all" style={{ fontFamily: fontFamily.mono }}>
@@ -46,7 +46,7 @@ const RenderContent = ({ content }) => {
         <p key={i} className="text-sm leading-relaxed mb-4" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
           {parts.map((part, j) => {
             if (part.startsWith('**') && part.endsWith('**')) {
-              return <strong key={j} className="text-[#F4F7FA]">{part.replace(/\*\*/g, '')}</strong>;
+              return <strong key={j} className="text-[#EDF1F7]">{part.replace(/\*\*/g, '')}</strong>;
             }
             return part;
           })}
@@ -65,7 +65,7 @@ const BlogArticlePage = () => {
 
   if (!article) return <Navigate to="/blog" replace />;
 
-  const catColor = CAT_COLORS[article.category] || '#FF6A00';
+  const catColor = CAT_COLORS[article.category] || '#E85D00';
   const relatedArticles = BLOG_ARTICLES.filter(a => a.slug !== slug && (a.category === article.category || a.industry === article.industry)).slice(0, 3);
 
   return (
@@ -73,7 +73,7 @@ const BlogArticlePage = () => {
       <div style={{ background: 'var(--biqc-bg)', minHeight: '100vh', paddingTop: '64px' }} data-testid="blog-article-page">
         <article className="max-w-3xl mx-auto px-6 py-12">
           {/* Back */}
-          <Link to="/blog" className="inline-flex items-center gap-2 mb-8 text-sm text-[#64748B] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.body }} data-testid="blog-back">
+          <Link to="/blog" className="inline-flex items-center gap-2 mb-8 text-sm text-[#64748B] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.body }} data-testid="blog-back">
             <ArrowLeft className="w-4 h-4" /> Back to all articles
           </Link>
 
@@ -94,20 +94,20 @@ const BlogArticlePage = () => {
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 leading-tight" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{article.title}</h1>
           <p className="text-base text-[#9FB0C3] mb-8 leading-relaxed" style={{ fontFamily: fontFamily.body }}>{article.excerpt}</p>
 
-          <div className="h-px mb-8" style={{ background: '#243140' }} />
+          <div className="h-px mb-8" style={{ background: 'rgba(140,170,210,0.15)' }} />
 
           {/* Content */}
           <div className="prose-dark">
             <RenderContent content={article.content} />
           </div>
 
-          <div className="h-px my-8" style={{ background: '#243140' }} />
+          <div className="h-px my-8" style={{ background: 'rgba(140,170,210,0.15)' }} />
 
           {/* CTA */}
           <div className="rounded-xl p-6 text-center mb-8" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>See these insights in action for your business</h3>
             <p className="text-sm text-[#9FB0C3] mb-4" style={{ fontFamily: fontFamily.body }}>BIQc surfaces real intelligence from your connected business systems.</p>
-            <Link to="/register-supabase" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="article-cta">
+            <Link to="/register-supabase" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: '#E85D00' }} data-testid="article-cta">
               Try It Free <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -121,7 +121,7 @@ const BlogArticlePage = () => {
                   <Link key={ra.slug} to={`/blog/${ra.slug}`}
                     className="rounded-lg p-4 transition-all hover:bg-white/[0.02]"
                     style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-                    <span className="text-[10px] px-2 py-0.5 rounded mb-2 inline-block" style={{ color: CAT_COLORS[ra.category] || '#FF6A00', background: (CAT_COLORS[ra.category] || '#FF6A00') + '15', fontFamily: fontFamily.mono }}>{ra.category}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded mb-2 inline-block" style={{ color: CAT_COLORS[ra.category] || '#E85D00', background: (CAT_COLORS[ra.category] || '#E85D00') + '15', fontFamily: fontFamily.mono }}>{ra.category}</span>
                     <h4 className="text-sm font-semibold mb-1 line-clamp-2" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{ra.title}</h4>
                     <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{ra.readTime}</span>
                   </Link>

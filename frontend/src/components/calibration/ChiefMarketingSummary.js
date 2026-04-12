@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { ArrowRight, AlertTriangle, TrendingUp, Globe, Users, Star, Target, ChevronDown, ChevronUp, CheckCircle2, XCircle, Zap, BarChart3, Shield, Activity } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
-const LAVA = '#FF6A00';
+const LAVA = '#E85D00';
 const LAVA_SOFT = '#FF8C33';
 const STEEL_SURFACE = '#111A25';
-const STEEL_BORDER = '#243140';
+const STEEL_BORDER = 'rgba(140,170,210,0.15)';
 const STEEL_MUTED = '#64748B';
-const LAVA_BG = 'rgba(255,106,0,0.08)';
-const LAVA_BORDER = 'rgba(255,106,0,0.24)';
+const LAVA_BG = 'rgba(232,93,0,0.08)';
+const LAVA_BORDER = 'rgba(232,93,0,0.24)';
 
 // ── Footprint layers (kept for market presence score) ──
 const LAYERS = [
@@ -533,7 +533,7 @@ const ScoreBar = ({ score, max = 10, color }) => {
   const c = color || (score >= 7 ? '#10B981' : score >= 4 ? '#F59E0B' : '#EF4444');
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 rounded-full" style={{ background: '#243140' }}>
+      <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.15)' }}>
         <div className="h-1.5 rounded-full transition-all" style={{ background: c, width: `${pct}%` }} />
       </div>
       <span className="text-[11px] font-bold w-6 text-right" style={{ color: c, fontFamily: fontFamily.mono }}>{score}</span>
@@ -598,10 +598,10 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
 
         {/* ── HEADER ── */}
         <div className="text-center" style={{ animation: 'cmsFade 0.4s ease-out' }}>
-          <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+          <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
             Chief Marketing Officer Summary
           </span>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>
             {bizName}
           </h1>
         </div>
@@ -609,8 +609,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         {/* ── SECTION 1: FORENSIC MEMO ── */}
         <div className="rounded-xl p-6 space-y-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 0.6s ease-out' }} data-testid="business-summary">
           <div className="flex items-center gap-2 mb-1">
-            <Target className="w-4 h-4" style={{ color: '#FF6A00' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Forensic Marketing Memo</h2>
+            <Target className="w-4 h-4" style={{ color: '#E85D00' }} />
+            <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Forensic Marketing Memo</h2>
           </div>
 
           {forensicMemo ? (
@@ -650,7 +650,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           )}
 
           {websiteScanSummary && Object.keys(websiteScanSummary).length > 0 && (
-            <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+            <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
               <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Website Scan Coverage</p>
               <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
                 ABN: {websiteScanSummary.abn || 'Data not available on free tier'} · Full business name: {websiteScanSummary.full_business_name || bizName}
@@ -684,11 +684,11 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           <div className="mt-4 space-y-1.5 text-left">
             {LAYERS.map(l => {
               const { score, status } = scoreLayer(l, full);
-              const c = score === null ? '#243140' : score > 70 ? '#10B981' : score > 45 ? '#F59E0B' : '#EF4444';
+              const c = score === null ? 'rgba(140,170,210,0.15)' : score > 70 ? '#10B981' : score > 45 ? '#F59E0B' : '#EF4444';
               return (
                 <div key={l.key} className="flex items-center gap-3">
                   <span className="text-[11px] text-[#9FB0C3] w-36 shrink-0" style={{ fontFamily: fontFamily.body }}>{l.label}</span>
-                  <div className="flex-1 h-1.5 rounded-full" style={{ background: '#243140' }}>
+                  <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.15)' }}>
                     {score !== null && <div className="h-1.5 rounded-full" style={{ background: c, width: `${score}%` }} />}
                   </div>
                   <span className="text-[10px] w-20 text-right shrink-0" style={{ color: c, fontFamily: fontFamily.mono }}>{score !== null ? status : 'N/A'}</span>
@@ -703,7 +703,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #3B82F640', animation: 'cmsFade 0.9s ease-out' }} data-testid="executive-brief">
             <div className="flex items-center gap-2 mb-2">
               <Star className="w-4 h-4" style={{ color: '#3B82F6' }} />
-              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Executive Brief</h2>
+              <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Executive Brief</h2>
             </div>
             <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
               {cmoExecutiveBrief}
@@ -716,7 +716,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #8B5CF640', animation: 'cmsFade 0.92s ease-out' }} data-testid="deep-intelligence-signals">
             <div className="flex items-center gap-2 mb-3">
               <Shield className="w-4 h-4" style={{ color: '#8B5CF6' }} />
-              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Deep Intelligence Signals</h2>
+              <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Deep Intelligence Signals</h2>
             </div>
             {deepReconSummary && (
               <p className="text-sm text-[#9FB0C3] leading-relaxed mb-3" style={{ fontFamily: fontFamily.body }}>
@@ -740,7 +740,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 0.95s ease-out' }} data-testid="channel-diagnostics">
           <div className="flex items-center gap-2 mb-3">
             <Globe className="w-4 h-4" style={{ color: '#06B6D4' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Website, SEO, Paid & Social Diagnostics</h2>
+            <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Website, SEO, Paid & Social Diagnostics</h2>
           </div>
           <div className="space-y-4">
 
@@ -928,7 +928,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div style={{ animation: 'cmsFade 1.0s ease-out' }} data-testid="communication-audit">
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-4 h-4" style={{ color: '#3B82F6' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Products & Services Communication Audit</h2>
+            <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Products & Services Communication Audit</h2>
             <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: (audit.avg >= 7 ? '#10B981' : audit.avg >= 4 ? '#F59E0B' : '#EF4444') + '15', color: audit.avg >= 7 ? '#10B981' : audit.avg >= 4 ? '#F59E0B' : '#EF4444', fontFamily: fontFamily.mono }}>
               {audit.avg}/10 avg
             </span>
@@ -940,7 +940,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.02] transition-colors">
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{c.category}</span>
+                      <span className="text-xs font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>{c.category}</span>
                       {openAudit === i ? <ChevronUp className="w-3.5 h-3.5 text-[#64748B]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#64748B]" />}
                     </div>
                     <ScoreBar score={c.score} />
@@ -964,7 +964,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.4s ease-out' }} data-testid="competitor-intelligence">
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-4 h-4" style={{ color: LAVA }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Competitive Intelligence</h2>
+            <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Competitive Intelligence</h2>
           </div>
           {competitorLeaders.length > 0 && (
             <div className="space-y-2 mb-3">
@@ -1048,7 +1048,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                     <div className="space-y-2 mt-2">
                       {Array.isArray(competitorMonitorData.competitors) && competitorMonitorData.competitors.map((comp, idx) => (
                         <div key={idx} className="p-2 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
-                          <p className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>
+                          <p className="text-xs font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>
                             {comp.name || comp.domain || `Competitor ${idx + 1}`}
                           </p>
                           {comp.summary && <p className="text-[11px] text-[#9FB0C3] mt-1" style={{ fontFamily: fontFamily.body }}>{comp.summary}</p>}
@@ -1080,7 +1080,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.43s ease-out' }} data-testid="customer-review-intelligence">
           <div className="flex items-center gap-2 mb-3">
             <Star className="w-4 h-4" style={{ color: LAVA }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Customer Review Intelligence</h2>
+            <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Customer Review Intelligence</h2>
             <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ color: LAVA_SOFT, background: LAVA_BG, fontFamily: fontFamily.mono }}>
               confidence: {customerReviews.confidenceBand}
             </span>
@@ -1221,7 +1221,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             {customerReviews.impact.map((row, idx) => (
               <div key={idx} className="p-3 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
                 <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{row.fundamental}</p>
-                <p className="text-xs mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{row.impact}</p>
+                <p className="text-xs mb-1" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>{row.impact}</p>
                 <p className="text-[11px] leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{row.mechanism}</p>
               </div>
             ))}
@@ -1239,7 +1239,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.45s ease-out' }} data-testid="staff-intelligence">
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-4 h-4" style={{ color: '#3B82F6' }} />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Staff & Team Signals</h2>
+            <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Staff & Team Signals</h2>
           </div>
           {staff.hasStaffData ? (
             <div className="space-y-3">
@@ -1295,7 +1295,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 </div>
               )}
               {staff.founderBackground && (
-                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
                   <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Founder / Leadership Context</p>
                   <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
                     {staff.founderBackground.substring(0, 240)}{staff.founderBackground.length > 240 ? '...' : ''}
@@ -1371,9 +1371,9 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
               )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                 {staffImpact.impact.map((row, idx) => (
-                  <div key={idx} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                  <div key={idx} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{row.fundamental}</p>
-                    <p className="text-xs mb-1" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>{row.impact}</p>
+                    <p className="text-xs mb-1" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>{row.impact}</p>
                     <p className="text-[11px] leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{row.mechanism}</p>
                   </div>
                 ))}
@@ -1409,11 +1409,11 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'cmsFade 1.5s ease-out' }} data-testid="swot-analysis">
             <div className="flex items-center gap-2 mb-3">
               <Target className="w-4 h-4" style={{ color: '#8B5CF6' }} />
-              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>SWOT Analysis</h2>
+              <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>SWOT Analysis</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {['strengths', 'weaknesses', 'opportunities', 'threats'].map((key) => (
-                <div key={key} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                <div key={key} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
                   <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{key}</p>
                   {Array.isArray(swot[key]) && swot[key].length > 0 ? (
                     <ul className="space-y-1">
@@ -1437,7 +1437,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
           <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #06B6D440', animation: 'cmsFade 1.52s ease-out' }} data-testid="market-intelligence-analysis">
             <div className="flex items-center gap-2 mb-3">
               <Activity className="w-4 h-4" style={{ color: '#06B6D4' }} />
-              <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Market Intelligence Analysis</h2>
+              <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Market Intelligence Analysis</h2>
               {marketIntelScore !== null && (
                 <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{
                   color: marketIntelScore >= 70 ? '#10B981' : marketIntelScore >= 40 ? '#F59E0B' : '#EF4444',
@@ -1451,17 +1451,17 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
 
             {marketTrajectory && (
               <p className="text-xs text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
-                Market trajectory: <strong style={{ color: '#F4F7FA' }}>{marketTrajectory}</strong>
+                Market trajectory: <strong style={{ color: '#EDF1F7' }}>{marketTrajectory}</strong>
               </p>
             )}
 
             {marketAnalysis && (
               <div className="space-y-3">
                 {marketAnalysis.analysis_title && (
-                  <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{marketAnalysis.analysis_title}</p>
+                  <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>{marketAnalysis.analysis_title}</p>
                 )}
                 {marketAnalysis.market_size && (
-                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Market Size</p>
                     <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
                       {typeof marketAnalysis.market_size === 'string' ? marketAnalysis.market_size : JSON.stringify(marketAnalysis.market_size)}
@@ -1469,7 +1469,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   </div>
                 )}
                 {marketAnalysis.competitor_landscape && (
-                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Competitor Landscape</p>
                     <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
                       {typeof marketAnalysis.competitor_landscape === 'string' ? marketAnalysis.competitor_landscape : JSON.stringify(marketAnalysis.competitor_landscape)}
@@ -1477,7 +1477,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                   </div>
                 )}
                 {marketAnalysis.customer_insight && (
-                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                  <div className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Customer Insight</p>
                     <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
                       {typeof marketAnalysis.customer_insight === 'string' ? marketAnalysis.customer_insight : JSON.stringify(marketAnalysis.customer_insight)}
@@ -1518,7 +1518,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {['strengths', 'weaknesses', 'opportunities', 'threats'].map((k) => (
                         Array.isArray(marketAnalysis.swot[k]) && marketAnalysis.swot[k].length > 0 && (
-                          <div key={k} className="p-2 rounded-lg" style={{ background: '#111A25', border: '1px solid #243140' }}>
+                          <div key={k} className="p-2 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
                             <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{k}</p>
                             <ul className="space-y-0.5">
                               {marketAnalysis.swot[k].map((item, idx) => (
@@ -1568,7 +1568,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #10B98120', animation: 'cmsFade 1.6s ease-out' }} data-testid="recommendations">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-4 h-4 text-[#10B981]" />
-            <h2 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Immediate Strategic Recommendations</h2>
+            <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Immediate Strategic Recommendations</h2>
           </div>
           <div className="space-y-3">
             {[
@@ -1620,7 +1620,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
         <div className="text-center pt-4" style={{ animation: 'cmsFade 2s ease-out' }}>
           <button onClick={onConfirm} disabled={isSubmitting}
             className="px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-40 inline-flex items-center gap-2"
-            style={{ background: '#FF6A00', fontFamily: fontFamily.display }}
+            style={{ background: '#E85D00', fontFamily: fontFamily.display }}
             data-testid="cms-continue-btn">
             {isSubmitting ? 'Confirming...' : 'Continue to Calibrate'} <ArrowRight className="w-4 h-4" />
           </button>

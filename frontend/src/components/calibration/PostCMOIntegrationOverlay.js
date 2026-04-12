@@ -203,18 +203,18 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="relative w-16 h-16 mx-auto mb-6">
-            <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(135deg, #FF6A00, #7C3AED)', animation: 'pulseRing 2.5s ease-in-out infinite' }} />
+            <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(135deg, #E85D00, #7C3AED)', animation: 'pulseRing 2.5s ease-in-out infinite' }} />
             <div className="absolute inset-0.5 rounded-2xl flex items-center justify-center" style={{ background: 'var(--biqc-bg-input, #0A1018)' }}>
-              <Link2 className="w-7 h-7" style={{ color: '#FF6A00' }} />
+              <Link2 className="w-7 h-7" style={{ color: '#E85D00' }} />
             </div>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4" style={{ background: '#FF6A0015', border: '1px solid #FF6A0030' }}>
-            <Zap className="w-3 h-3" style={{ color: '#FF6A00' }} />
-            <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Unified Integrations Engine</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4" style={{ background: '#E85D0015', border: '1px solid #E85D0030' }}>
+            <Zap className="w-3 h-3" style={{ color: '#E85D00' }} />
+            <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Unified Integrations Engine</span>
           </div>
 
-          <h1 className="text-2xl font-semibold mb-3" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.display }}>
+          <h1 className="text-2xl font-semibold mb-3" style={{ color: 'var(--biqc-text, #EDF1F7)', fontFamily: fontFamily.display }}>
             Your intelligence foundation is ready.{firstName ? ` Hi ${firstName}!` : ''}
           </h1>
           <p className="text-sm max-w-sm mx-auto leading-relaxed mb-3" style={{ color: 'var(--biqc-text-2, #9FB0C3)', fontFamily: fontFamily.body }}>
@@ -249,8 +249,8 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
                 onMouseLeave={() => setHoveredId(null)}
                 className="relative flex items-start gap-3 p-4 rounded-xl text-left transition-all"
                 style={{
-                  background: isConnected ? `${intg.color}15` : hoveredId === intg.id ? '#243140' : '#141C26',
-                  border: `1px solid ${isConnected ? intg.color + '40' : hoveredId === intg.id ? '#334155' : '#243140'}`,
+                  background: isConnected ? `${intg.color}15` : hoveredId === intg.id ? 'rgba(140,170,210,0.15)' : '#0E1628',
+                  border: `1px solid ${isConnected ? intg.color + '40' : hoveredId === intg.id ? '#334155' : 'rgba(140,170,210,0.15)'}`,
                   animation: `gridFade ${0.3 + i * 0.08}s ease-out`,
                   transform: hoveredId === intg.id && !isConnecting ? 'translateY(-2px)' : 'none',
                   boxShadow: hoveredId === intg.id ? `0 8px 24px ${intg.color}15` : 'none',
@@ -272,7 +272,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
                   {intg.logo}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--biqc-text, #F4F7FA)', fontFamily: fontFamily.body }}>
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--biqc-text, #EDF1F7)', fontFamily: fontFamily.body }}>
                     {isConnecting ? 'Connecting...' : intg.name}
                   </p>
                   <p className="text-[10px] leading-relaxed" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{intg.description}</p>
@@ -286,7 +286,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
         <div className="space-y-3">
           <button onClick={handleContinue}
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: 'white', fontFamily: fontFamily.display, boxShadow: '0 6px 24px rgba(255,106,0,0.25)' }}>
+            style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: 'white', fontFamily: fontFamily.display, boxShadow: '0 6px 24px rgba(232,93,0,0.25)' }}>
             {connected.length > 0 ? 'Continue to Intelligence' : 'See What BIQc Found'} <ArrowRight className="w-4 h-4" />
           </button>
           <p className="text-center text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>

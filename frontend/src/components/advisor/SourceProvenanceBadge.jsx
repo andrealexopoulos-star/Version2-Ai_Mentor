@@ -4,7 +4,7 @@ import { fontFamily } from '../../design-system/tokens';
 
 const SOURCE_STYLE = {
   CRM: { bg: '#3B82F615', border: '#3B82F640', text: '#93C5FD' },
-  Accounting: { bg: '#FF6A0015', border: '#FF6A0040', text: '#FDBA74' },
+  Accounting: { bg: '#E85D0015', border: '#E85D0040', text: '#FDBA74' },
   'Email/Calendar': { bg: '#10B98115', border: '#10B98140', text: '#86EFAC' },
   'Observation Events': { bg: '#F59E0B15', border: '#F59E0B40', text: '#FCD34D' },
   'Market Feed': { bg: '#A855F715', border: '#A855F740', text: '#D8B4FE' },

@@ -65,11 +65,11 @@ const AuditLogPage = () => {
   const renderNullState = () => (
     <Panel className="text-center py-12">
       <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-      <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>No governance events recorded yet.</p>
+      <p className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>No governance events recorded yet.</p>
       <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: 'var(--biqc-text-2)' }}>
         The audit log records every verified intelligence event from your connected systems — deal changes, invoice movements, compliance flags. Connect CRM or accounting to start building your governance trail.
       </p>
-      <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="audit-connect-cta">
+      <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#E85D00' }} data-testid="audit-connect-cta">
         <Plug className="w-4 h-4" /> Connect Integrations
       </a>
     </Panel>
@@ -79,13 +79,13 @@ const AuditLogPage = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="audit-log-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Governance Audit Log</h1>
+          <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Governance Audit Log</h1>
           <p className="text-sm text-[#9FB0C3]">Verified events from connected integrations. No AI-generated entries.</p>
         </div>
 
         {loading && (
           <Panel className="text-center py-8">
-            <Loader2 className="w-6 h-6 text-[#FF6A00] mx-auto mb-3 animate-spin" />
+            <Loader2 className="w-6 h-6 text-[#E85D00] mx-auto mb-3 animate-spin" />
             <p className="text-sm text-[#9FB0C3]">Loading audit trail...</p>
           </Panel>
         )}
@@ -95,7 +95,7 @@ const AuditLogPage = () => {
         {!loading && integrations.length > 0 && events.length === 0 && (
           <Panel className="text-center py-8">
             <Shield className="w-8 h-8 text-[#10B981] mx-auto mb-3" />
-            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>No governance events recorded.</p>
+            <p className="text-sm text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>No governance events recorded.</p>
             <p className="text-xs text-[#64748B]">Events will appear as BIQc processes verified signals from your {integrations.length} connected integration{integrations.length > 1 ? 's' : ''}.</p>
           </Panel>
         )}
@@ -114,10 +114,10 @@ const AuditLogPage = () => {
                   <div key={ev.id} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }} data-testid={`audit-event-${ev.id}`}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm text-[#F4F7FA] block truncate" style={{ fontFamily: fontFamily.body }}>{ev.event_type}</span>
+                      <span className="text-sm text-[#EDF1F7] block truncate" style={{ fontFamily: fontFamily.body }}>{ev.event_type}</span>
                       {ev.signal_reference && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>ref: {ev.signal_reference}</span>}
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded shrink-0" style={{ color: 'var(--biqc-text-2)', background: '#24314050', fontFamily: fontFamily.mono }}>{ev.source_system}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded shrink-0" style={{ color: 'var(--biqc-text-2)', background: 'rgba(140,170,210,0.15)50', fontFamily: fontFamily.mono }}>{ev.source_system}</span>
                     {ev.confidence_score != null && (
                       <span className="text-[10px] shrink-0" style={{ color, fontFamily: fontFamily.mono }}>{Math.round(ev.confidence_score * 100)}%</span>
                     )}

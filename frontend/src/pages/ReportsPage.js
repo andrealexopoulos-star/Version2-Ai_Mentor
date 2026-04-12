@@ -45,9 +45,9 @@ const ForensicReportCard = () => {
   return (
     <Panel>
       <div className="flex items-center gap-2 mb-4">
-        <Shield className="w-4 h-4 text-[#FF6A00]" />
-        <h3 className="text-base font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Forensic Intelligence Reports</h3>
-        <span className="text-[9px] px-2 py-0.5 rounded-full ml-auto" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: fontFamily.mono }}>FREE TIER: 1/30 DAYS</span>
+        <Shield className="w-4 h-4 text-[#E85D00]" />
+        <h3 className="text-base font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Forensic Intelligence Reports</h3>
+        <span className="text-[9px] px-2 py-0.5 rounded-full ml-auto" style={{ background: '#E85D0015', color: '#E85D00', fontFamily: fontFamily.mono }}>FREE TIER: 1/30 DAYS</span>
       </div>
       <p className="text-xs text-[#64748B] mb-4" style={{ fontFamily: fontFamily.body }}>
         Downloadable Board-ready Executive Summary reports. Free tier: one scan per 30 days. Upgrade for unlimited.
@@ -59,7 +59,7 @@ const ForensicReportCard = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <FileText className="w-3.5 h-3.5 text-[#7C3AED]" />
-                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Forensic Calibration Report</span>
+                <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Forensic Calibration Report</span>
               </div>
               <p className="text-xs text-[#64748B]">Digital footprint analysis, identity verification, and strategic positioning assessment.</p>
               {calibDate > 0 && (
@@ -86,7 +86,7 @@ const ForensicReportCard = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <FileText className="w-3.5 h-3.5 text-[#3B82F6]" />
-                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Market Exposure Scan Report</span>
+                <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Market Exposure Scan Report</span>
               </div>
               <p className="text-xs text-[#64748B]">Structural competitive exposure analysis — gaps, vulnerabilities, and market positioning risks.</p>
               {scanDate > 0 && (
@@ -220,7 +220,7 @@ const ReportsPage = () => {
       <div className="flex items-start gap-3">
         <AlertTriangle className="w-5 h-5 text-[#64748B] shrink-0 mt-0.5" />
         <div>
-          <h3 className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Financial Snapshot Unavailable</h3>
+          <h3 className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Financial Snapshot Unavailable</h3>
           <p className="text-xs text-[#64748B] leading-relaxed">
             No accounting integration connected. Connect Xero, QuickBooks, or MYOB to generate verified financial reports.
             BIQc does not compute runway, margin, or budget metrics without verified accounting records.
@@ -235,7 +235,7 @@ const ReportsPage = () => {
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="reports-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Intelligence Reports</h1>
+            <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Intelligence Reports</h1>
             <p className="text-sm text-[#9FB0C3]">Verified intelligence from connected data sources only.</p>
           </div>
           {hasEvents && (
@@ -254,13 +254,13 @@ const ReportsPage = () => {
 
         {advisoryMemos.length > 0 && (
           <Panel>
-            <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Advisory Board Memos</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Advisory Board Memos</h3>
             <p className="text-xs text-[#64748B] mb-3">Recorded from video advisory sessions. Includes summary and owner action cues.</p>
             <div className="space-y-2">
               {advisoryMemos.slice(0, 5).map((memo) => (
                 <div key={memo.id} className="rounded-lg p-3" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <p className="text-xs font-semibold text-[#F4F7FA]">{memo.title || 'Advisory Memo'}</p>
+                    <p className="text-xs font-semibold text-[#EDF1F7]">{memo.title || 'Advisory Memo'}</p>
                     <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
                       {formatDuration(memo.duration_seconds || 0)}
                     </span>
@@ -269,7 +269,7 @@ const ReportsPage = () => {
                   {Array.isArray(memo.action_items) && memo.action_items.length > 0 && (
                     <div className="space-y-1">
                       {memo.action_items.slice(0, 3).map((item, idx) => (
-                        <p key={`${memo.id}-${idx}`} className="text-[11px] text-[#F4F7FA]">- {item}</p>
+                        <p key={`${memo.id}-${idx}`} className="text-[11px] text-[#EDF1F7]">- {item}</p>
                       ))}
                     </div>
                   )}
@@ -282,7 +282,7 @@ const ReportsPage = () => {
         <Panel data-testid="market-insights-report-panel">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="w-4 h-4 text-[#3B82F6]" />
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Market Insights Report</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Market Insights Report</h3>
           </div>
           {marketInsightsReport ? (
             <div className="space-y-3">
@@ -317,12 +317,12 @@ const ReportsPage = () => {
         {!loading && !loadError && !hasAnyIntegration && (
           <Panel className="text-center py-12">
             <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-            <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>No integrations connected.</p>
+            <p className="text-sm text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>No integrations connected.</p>
             <p className="text-xs text-[#64748B] mb-4 max-w-md mx-auto">
               Connect your CRM, accounting, and email integrations to generate verified intelligence reports.
               Reports contain only data from connected, verified sources.
             </p>
-            <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#FF6A00' }} data-testid="reports-connect-cta">
+            <a href="/integrations" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: '#E85D00' }} data-testid="reports-connect-cta">
               <Plug className="w-4 h-4" /> Connect Integrations
             </a>
           </Panel>
@@ -352,7 +352,7 @@ const ReportsPage = () => {
             {/* Financial Snapshot — only with accounting */}
             {hasAccounting ? (
               <Panel>
-                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Financial Snapshot</h3>
+                <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Financial Snapshot</h3>
                 <p className="text-xs text-[#9FB0C3]">Financial data from connected accounting integration. Metrics computed from verified transaction records.</p>
               </Panel>
             ) : renderFinancialNullState()}
@@ -360,11 +360,11 @@ const ReportsPage = () => {
             {/* Governance Events Summary */}
             {hasEvents ? (
               <Panel>
-                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Signal Summary</h3>
+                <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Signal Summary</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                   <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Total Events</span>
-                    <span className="text-xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{events.length}</span>
+                    <span className="text-xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{events.length}</span>
                   </div>
                   <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Avg Confidence</span>
@@ -372,7 +372,7 @@ const ReportsPage = () => {
                   </div>
                   <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Data Sources</span>
-                    <span className="text-xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{integrations.length}</span>
+                    <span className="text-xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{integrations.length}</span>
                   </div>
                 </div>
                 <div className="space-y-1">

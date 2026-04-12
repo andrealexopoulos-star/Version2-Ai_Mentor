@@ -34,7 +34,7 @@ const Tooltip = ({ text, children }) => {
       {children}
       {show && (
         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg text-[11px] leading-snug z-50 whitespace-pre-wrap max-w-[200px]"
-          style={{ background: '#1E2D3D', color: '#F4F7FA', border: '1px solid #334155', fontFamily: fontFamily.body, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+          style={{ background: '#1E2D3D', color: '#EDF1F7', border: '1px solid #334155', fontFamily: fontFamily.body, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
           {text}
         </span>
       )}
@@ -69,7 +69,7 @@ const RiskCategory = ({ icon: Icon, color, title, hasData, children, badgeLabel,
     <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-2">
         <Icon className="w-4 h-4" style={{ color }} />
-        <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{title}</h3>
+        <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{title}</h3>
       </div>
       <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold"
         style={{ background: hasData ? 'rgba(16,185,129,0.1)' : 'rgba(100,116,139,0.15)', color: hasData ? '#10B981' : '#64748B', fontFamily: fontFamily.mono }}>
@@ -88,7 +88,7 @@ const RiskCategory = ({ icon: Icon, color, title, hasData, children, badgeLabel,
 const ExampleMetric = ({ label, example, color }) => (
   <div className="p-3 rounded-lg opacity-60" style={{ background: 'var(--biqc-bg)', border: `1px dashed ${color}40` }}>
     <span className="text-[9px] uppercase tracking-widest" style={{ color, fontFamily: fontFamily.mono }}>sample</span>
-    <p className="text-xs font-semibold text-[#F4F7FA] mt-0.5" style={{ fontFamily: fontFamily.display }}>{label}</p>
+    <p className="text-xs font-semibold text-[#EDF1F7] mt-0.5" style={{ fontFamily: fontFamily.display }}>{label}</p>
     <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{example}</p>
   </div>
 );
@@ -136,7 +136,7 @@ const PropagationChain = ({ chain, cognitive }) => {
 
           {/* Show underlying data for each domain */}
           {srcData && (
-            <div className="p-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid #243140' }}>
+            <div className="p-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid rgba(140,170,210,0.15)' }}>
               <p className="text-[10px] font-semibold mb-1" style={{ color: ic, fontFamily: fontFamily.mono }}>{src.toUpperCase()} — Contributing factors</p>
               {srcData.pipeline != null && <p className="text-[11px]" style={{ color: '#9FB0C3' }}>Pipeline: ${srcData.pipeline?.toLocaleString()}</p>}
               {srcData.runway != null && <p className="text-[11px]" style={{ color: '#9FB0C3' }}>Cash runway: {srcData.runway} months</p>}
@@ -147,10 +147,10 @@ const PropagationChain = ({ chain, cognitive }) => {
 
           {/* Navigation link */}
           <div className="flex gap-2 pt-1">
-            {src === 'revenue' && <Link to="/revenue" className="text-[10px] flex items-center gap-1" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>View Revenue <ExternalLink className="w-3 h-3" /></Link>}
-            {(src === 'finance' || tgt === 'finance') && <Link to="/revenue" className="text-[10px] flex items-center gap-1" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>View Financials <ExternalLink className="w-3 h-3" /></Link>}
-            {(src === 'people' || tgt === 'people') && <Link to="/risk?tab=workforce" className="text-[10px] flex items-center gap-1" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>View Workforce <ExternalLink className="w-3 h-3" /></Link>}
-            {(src === 'operations' || tgt === 'operations') && <Link to="/operations" className="text-[10px] flex items-center gap-1" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>View Operations <ExternalLink className="w-3 h-3" /></Link>}
+            {src === 'revenue' && <Link to="/revenue" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>View Revenue <ExternalLink className="w-3 h-3" /></Link>}
+            {(src === 'finance' || tgt === 'finance') && <Link to="/revenue" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>View Financials <ExternalLink className="w-3 h-3" /></Link>}
+            {(src === 'people' || tgt === 'people') && <Link to="/risk?tab=workforce" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>View Workforce <ExternalLink className="w-3 h-3" /></Link>}
+            {(src === 'operations' || tgt === 'operations') && <Link to="/operations" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>View Operations <ExternalLink className="w-3 h-3" /></Link>}
           </div>
         </div>
       )}
@@ -247,7 +247,7 @@ const RiskPage = () => {
 
   // All risk categories (complete matrix)
   const RISK_CATEGORIES = [
-    { id: 'financial', icon: DollarSign, color: '#FF6A00', title: 'Financial Risk', has: runway != null || !!concentration || !!cap.margin },
+    { id: 'financial', icon: DollarSign, color: '#E85D00', title: 'Financial Risk', has: runway != null || !!concentration || !!cap.margin },
     { id: 'operational', icon: AlertTriangle, color: '#F59E0B', title: 'Operational Risk', has: slaBreaches != null || !!exec.bottleneck },
     { id: 'compliance', icon: Shield, color: '#8B5CF6', title: 'Compliance & Regulatory', has: regulatory.length > 0 },
     { id: 'market', icon: TrendingDown, color: '#3B82F6', title: 'Market Volatility', has: !!c.market_position?.volatility || !!c.market_position?.threats },
@@ -333,7 +333,7 @@ const RiskPage = () => {
         {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Risk & Workforce Intelligence</h1>
+            <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Risk & Workforce Intelligence</h1>
             <p className="text-sm text-[#9FB0C3]">
               {integrationLoading && !integrationResolved ? 'Verifying connected systems and live risk signals…' : hasAnyIntegration ? `Monitoring ${RISK_CATEGORIES.filter(c => c.has).length} of ${RISK_CATEGORIES.length} risk categories with live data.` : 'Connect integrations to activate risk monitoring.'}
             </p>
@@ -395,7 +395,7 @@ const RiskPage = () => {
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-colors"
-              style={{ background: activeTab === tab.id ? '#FF6A0015' : 'transparent', color: activeTab === tab.id ? '#F4F7FA' : '#64748B', fontFamily: fontFamily.mono }}
+              style={{ background: activeTab === tab.id ? '#E85D0015' : 'transparent', color: activeTab === tab.id ? '#EDF1F7' : '#64748B', fontFamily: fontFamily.mono }}
               data-testid={`risk-tab-${tab.id}`}>
               <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
@@ -416,7 +416,7 @@ const RiskPage = () => {
                   style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${cat.has ? cat.color + '30' : '#1E2D3D'}` }}>
                   <cat.icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: cat.has ? cat.color : '#4A5568' }} />
                   <div>
-                    <p className="text-[10px] font-semibold" style={{ color: cat.has ? '#F4F7FA' : '#64748B', fontFamily: fontFamily.mono }}>{cat.title}</p>
+                    <p className="text-[10px] font-semibold" style={{ color: cat.has ? '#EDF1F7' : '#64748B', fontFamily: fontFamily.mono }}>{cat.title}</p>
                     <p className="text-[9px]" style={{ color: cat.has ? cat.color : '#4A5568', fontFamily: fontFamily.mono }}>
                       {cat.has ? 'Monitoring' : 'Insufficient data'}
                     </p>
@@ -426,7 +426,7 @@ const RiskPage = () => {
             </div>
 
             {/* Financial Risk */}
-            <RiskCategory icon={DollarSign} color="#FF6A00" title="Financial Risk"
+            <RiskCategory icon={DollarSign} color="#E85D00" title="Financial Risk"
               hasData={runway != null || !!concentration || !!cap.margin}>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <RiskMeter value={runway != null ? (runway < 3 ? 90 : runway < 6 ? 60 : runway < 12 ? 30 : 10) : null}
@@ -444,7 +444,7 @@ const RiskPage = () => {
                         <p className="text-[11px] text-[#64748B] mt-0.5">
                           {topClientPct > 75 ? 'High concentration — losing one client would significantly impact revenue.' : topClientPct > 50 ? 'Moderate concentration — consider diversifying.' : 'Healthy spread across clients.'}
                         </p>
-                        <Link to="/revenue" className="text-[10px] flex items-center gap-1 mt-1.5" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                        <Link to="/revenue" className="text-[10px] flex items-center gap-1 mt-1.5" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                           View client breakdown <ArrowRight className="w-3 h-3" />
                         </Link>
                       </>
@@ -462,9 +462,9 @@ const RiskPage = () => {
               </div>
               {!hasAccounting && (
                 <div className="mt-3 flex items-center justify-between p-2.5 rounded-lg"
-                  style={{ background: 'rgba(255,106,0,0.06)', border: '1px solid rgba(255,106,0,0.15)' }}>
+                  style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.15)' }}>
                   <p className="text-[11px]" style={{ color: '#9FB0C3' }}>Connect Xero or MYOB for exact cash runway, margin % and cost structure.</p>
-                  <Link to="/integrations?category=financial" className="text-[10px] flex items-center gap-1 ml-3 whitespace-nowrap" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                  <Link to="/integrations?category=financial" className="text-[10px] flex items-center gap-1 ml-3 whitespace-nowrap" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                     Connect <Plug className="w-3 h-3" />
                   </Link>
                 </div>
@@ -476,7 +476,7 @@ const RiskPage = () => {
               hasData={slaBreaches != null || !!exec.bottleneck}>
               {slaBreaches != null && (
                 <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                  <p className="text-xs font-semibold text-[#F4F7FA]">SLA Breaches: <span style={{ color: slaBreaches > 0 ? '#EF4444' : '#10B981' }}>{slaBreaches}</span></p>
+                  <p className="text-xs font-semibold text-[#EDF1F7]">SLA Breaches: <span style={{ color: slaBreaches > 0 ? '#EF4444' : '#10B981' }}>{slaBreaches}</span></p>
                   <p className="text-[11px] text-[#64748B] mt-0.5">{slaBreaches === 0 ? 'No service commitment breaches this week.' : `${slaBreaches} commitment${slaBreaches > 1?'s':''} missed — review with your team.`}</p>
                 </div>
               )}
@@ -511,14 +511,14 @@ const RiskPage = () => {
                       { label: 'CRM (HubSpot)', icon: Shield, desc: 'Contract renewals, SLA obligations', cat: 'crm', connected: hasCRM },
                     ].map(item => (
                       <div key={item.label} className="p-2.5 rounded-lg"
-                        style={{ background: item.connected ? 'rgba(16,185,129,0.06)' : 'var(--biqc-bg)', border: `1px solid ${item.connected ? 'rgba(16,185,129,0.2)' : '#243140'}` }}>
+                        style={{ background: item.connected ? 'rgba(16,185,129,0.06)' : 'var(--biqc-bg)', border: `1px solid ${item.connected ? 'rgba(16,185,129,0.2)' : 'rgba(140,170,210,0.15)'}` }}>
                         <div className="flex items-center gap-1.5 mb-1">
                           {item.connected ? <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> : <XCircle className="w-3 h-3 text-[#64748B]" />}
                           <p className="text-[10px] font-semibold" style={{ color: item.connected ? '#10B981' : '#9FB0C3', fontFamily: fontFamily.mono }}>{item.label}</p>
                         </div>
                         <p className="text-[10px] text-[#64748B]">{item.desc}</p>
                         {!item.connected && (
-                          <Link to={`/integrations?category=${item.cat}`} className="text-[9px] flex items-center gap-1 mt-1" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                          <Link to={`/integrations?category=${item.cat}`} className="text-[9px] flex items-center gap-1 mt-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                             Connect <ArrowRight className="w-2.5 h-2.5" />
                           </Link>
                         )}
@@ -555,7 +555,7 @@ const RiskPage = () => {
               <Panel>
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingDown className="w-4 h-4 text-[#F59E0B]" />
-                  <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Alignment Issues</h3>
+                  <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Alignment Issues</h3>
                 </div>
                 <div className="space-y-2">
                   {contradictions.map((ct, i) => (
@@ -577,7 +577,7 @@ const RiskPage = () => {
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-[#3B82F6]" />
-                  <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Data Sources</h3>
+                  <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Data Sources</h3>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -586,7 +586,7 @@ const RiskPage = () => {
                   { label: 'Google / Outlook Calendar', desc: 'Meeting load, available capacity, overcommitment risk', icon: Calendar, connected: hasEmail, cat: 'email' },
                 ].map(src => (
                   <div key={src.label} className="flex items-start gap-3 p-3 rounded-lg"
-                    style={{ background: src.connected ? 'rgba(16,185,129,0.06)' : 'var(--biqc-bg)', border: `1px solid ${src.connected ? 'rgba(16,185,129,0.2)' : '#243140'}` }}>
+                    style={{ background: src.connected ? 'rgba(16,185,129,0.06)' : 'var(--biqc-bg)', border: `1px solid ${src.connected ? 'rgba(16,185,129,0.2)' : 'rgba(140,170,210,0.15)'}` }}>
                     <src.icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: src.connected ? '#10B981' : '#64748B' }} />
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
@@ -598,7 +598,7 @@ const RiskPage = () => {
                       </div>
                       <p className="text-[10px] text-[#64748B]">{src.desc}</p>
                       {!src.connected && (
-                        <Link to="/integrations?step=1" className="text-[9px] flex items-center gap-1 mt-1" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                        <Link to="/integrations?step=1" className="text-[9px] flex items-center gap-1 mt-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                           Connect <ArrowRight className="w-2.5 h-2.5" />
                         </Link>
                       )}
@@ -617,12 +617,12 @@ const RiskPage = () => {
                   <ExampleMetric label="Meeting Load This Week" example="e.g. 14 meetings — above your avg of 9" color="#8B5CF6" />
                   <ExampleMetric label="Founder Fatigue Index" example="e.g. High — 3 consecutive 50h+ weeks" color="#EF4444" />
                   <ExampleMetric label="Key-Person Dependency" example="e.g. 73% of client comms via 1 person" color="#F59E0B" />
-                  <ExampleMetric label="Unread Email Backlog" example="e.g. 47 unread — 8 from priority clients" color="#FF6A00" />
+                  <ExampleMetric label="Unread Email Backlog" example="e.g. 47 unread — 8 from priority clients" color="#E85D00" />
                   <ExampleMetric label="Calendar Availability" example="e.g. 6hrs free time next 5 business days" color="#10B981" />
                 </div>
                 <Link to="/integrations?step=1"
                   className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
-                  style={{ background: '#FF6A00', color: 'white', fontFamily: fontFamily.body }}>
+                  style={{ background: '#E85D00', color: 'white', fontFamily: fontFamily.body }}>
                   <Plug className="w-4 h-4" /> Connect Email & Calendar to Unlock These Insights
                 </Link>
               </Panel>
@@ -634,7 +634,7 @@ const RiskPage = () => {
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
                     <Activity className="w-4 h-4 text-[#3B82F6]" />
-                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Live Capacity & Communication Signals</h3>
+                    <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Live Capacity & Communication Signals</h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <RiskMeter value={fv.capacity_index} label="Capacity Utilisation" thresholds={[80, 100]} insufficientData={fv.capacity_index == null} />
@@ -662,9 +662,9 @@ const RiskPage = () => {
                 {fv.recommendation && (
                   <Panel>
                     <div className="flex items-start gap-3">
-                      <Heart className="w-4 h-4 text-[#FF6A00] shrink-0 mt-0.5" />
+                      <Heart className="w-4 h-4 text-[#E85D00] shrink-0 mt-0.5" />
                       <div>
-                        <h3 className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Workforce Advisory</h3>
+                        <h3 className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Workforce Advisory</h3>
                         <p className="text-xs text-[#9FB0C3] leading-relaxed">{fv.recommendation}</p>
                       </div>
                     </div>
@@ -676,7 +676,7 @@ const RiskPage = () => {
             {hasEmail && !hasPeopleData && (
               <Panel className="text-center py-6">
                 <Loader2 className="w-6 h-6 animate-spin text-[#10B981] mx-auto mb-2" />
-                <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Processing workforce signals.</p>
+                <p className="text-sm text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Processing workforce signals.</p>
                 <p className="text-xs text-[#64748B]">BIQc is analysing communication patterns and calendar density. Check back shortly.</p>
               </Panel>
             )}
@@ -690,18 +690,18 @@ const RiskPage = () => {
             <div className="flex justify-end">
               <button onClick={() => setShowAcronymLegend(v => !v)}
                 className="flex items-center gap-1.5 text-[10px] px-3 py-1.5 rounded-lg transition-colors hover:bg-white/5"
-                style={{ color: '#64748B', fontFamily: fontFamily.mono, border: '1px solid #243140' }}>
+                style={{ color: '#64748B', fontFamily: fontFamily.mono, border: '1px solid rgba(140,170,210,0.15)' }}>
                 <Info className="w-3 h-3" /> {showAcronymLegend ? 'Hide' : 'What do RVI, EDS, CDR, ADS mean?'}
               </button>
             </div>
 
             {showAcronymLegend && (
               <Panel>
-                <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Acronym Reference</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Acronym Reference</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {ACRONYMS.map(a => (
-                    <div key={a.label} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid #243140' }}>
-                      <p className="text-xs font-bold mb-0.5" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{a.label} — {a.title}</p>
+                    <div key={a.label} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid rgba(140,170,210,0.15)' }}>
+                      <p className="text-xs font-bold mb-0.5" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>{a.label} — {a.title}</p>
                       <p className="text-[11px] text-[#9FB0C3]">{a.desc}</p>
                     </div>
                   ))}
@@ -714,7 +714,7 @@ const RiskPage = () => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Activity className="w-4 h-4 text-[#EF4444]" />
-                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Instability Indices</h3>
+                    <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Instability Indices</h3>
                   </div>
                   <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: fontFamily.mono }}>COGNITION CORE</span>
                 </div>
@@ -734,7 +734,7 @@ const RiskPage = () => {
                         <div className="p-4 rounded-lg text-center cursor-help w-full" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                           <div className="relative w-12 h-12 mx-auto mb-2">
                             <svg className="w-12 h-12 -rotate-90" viewBox="0 0 40 40">
-                              <circle cx="20" cy="20" r="18" fill="none" stroke="#243140" strokeWidth="3.5" />
+                              <circle cx="20" cy="20" r="18" fill="none" stroke="rgba(140,170,210,0.15)" strokeWidth="3.5" />
                               {pct != null && <circle cx="20" cy="20" r="18" fill="none" stroke={ic} strokeWidth="3.5" strokeDasharray={c2} strokeDashoffset={off} strokeLinecap="round" />}
                             </svg>
                             <div className="absolute inset-0 flex items-center justify-center">
@@ -776,7 +776,7 @@ const RiskPage = () => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Risk Propagation Analysis</h3>
+                    <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Risk Propagation Analysis</h3>
                   </div>
                   <Tooltip text="Click any chain to see the underlying data driving that risk pathway and navigate to the relevant page.">
                     <span className="text-[10px] flex items-center gap-1 cursor-help" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
@@ -803,7 +803,7 @@ const RiskPage = () => {
                   Connect CRM, accounting and email to generate your cross-domain risk matrix. BIQc will then compute propagation chains and instability indices.
                 </p>
                 <Link to="/integrations" className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
-                  style={{ background: '#FF6A00', fontFamily: fontFamily.body }}>
+                  style={{ background: '#E85D00', fontFamily: fontFamily.body }}>
                   <Plug className="w-4 h-4" /> Connect Integrations
                 </Link>
               </Panel>

@@ -166,7 +166,7 @@ const ActionsPage = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="actions-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Resolution Centre</h1>
+          <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Resolution Centre</h1>
           <p className="text-sm text-[#9FB0C3]">AI-detected issues requiring action. Each item maps to a one-click resolution.</p>
         </div>
 
@@ -178,8 +178,8 @@ const ActionsPage = () => {
               <Panel className="mb-2" data-testid="actions-advisor-assignment-card">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="max-w-3xl">
-                    <p className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Advisor handoff</p>
-                    <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{advisorAssignment.title}</p>
+                    <p className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Advisor handoff</p>
+                    <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{advisorAssignment.title}</p>
                     <p className="mt-2 text-xs text-[#9FB0C3] leading-relaxed">{advisorAssignment.summary}</p>
                     <p className="mt-2 text-xs text-[#64748B]">Why now: {advisorAssignment.whyNow}</p>
                     <p className="mt-2 text-xs text-[#64748B]">If ignored: {advisorAssignment.ifIgnored}</p>
@@ -198,11 +198,11 @@ const ActionsPage = () => {
 
             {/* Priority Focus — filtered to remove stale integration prompts */}
             {(cleanPriority.primary || cleanPriority.secondary) && (
-              <div className="rounded-xl p-5" style={{ background: '#FF6A0008', border: '1px solid #FF6A0025' }}>
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Priority Focus</h3>
+              <div className="rounded-xl p-5" style={{ background: '#E85D0008', border: '1px solid #E85D0025' }}>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Priority Focus</h3>
                 {cleanPriority.primary && (
                   <div className="mb-3">
-                    <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{cleanPriority.primary}</span>
+                    <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{cleanPriority.primary}</span>
                     {cleanPriority.primary_hrs && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: fontFamily.mono }}>{cleanPriority.primary_hrs}</span>}
                   </div>
                 )}
@@ -228,12 +228,12 @@ const ActionsPage = () => {
                         <div className="flex items-start gap-3">
                           <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
+                            <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
                             {item.detail && <p className="text-xs mt-1 text-[#9FB0C3] leading-relaxed">{item.detail}</p>}
                             <div className="flex flex-wrap gap-2 mt-3">
                               {(item.actions || []).includes('auto-email') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630', fontFamily: fontFamily.mono }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
                               {(item.actions || []).includes('quick-sms') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: fontFamily.mono }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-                              {(item.actions || []).includes('hand-off') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030', fontFamily: fontFamily.mono }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+                              {(item.actions || []).includes('hand-off') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#E85D0015', color: '#E85D00', border: '1px solid #E85D0030', fontFamily: fontFamily.mono }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
                               <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: fontFamily.mono }}><CheckCircle2 className="w-3.5 h-3.5" />Complete</button>
                             </div>
                           </div>
@@ -260,7 +260,7 @@ const ActionsPage = () => {
                       <div className="flex items-start gap-3">
                         <ArrowRight className="w-4 h-4 text-[#3B82F6] shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{r.action}</p>
+                          <p className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{r.action}</p>
                           <p className="text-xs text-[#9FB0C3] mt-1">{r.impact}</p>
                         </div>
                       </div>

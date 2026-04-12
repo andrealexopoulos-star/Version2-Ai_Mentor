@@ -35,15 +35,15 @@ const ResetPassword = () => {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12" style={{ background: 'var(--biqc-bg)' }}>
       <div className="max-w-sm w-full">
-        <Link to="/login-supabase" className="inline-flex items-center gap-2 mb-8 text-sm transition-colors hover:text-[#FF6A00]" style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="reset-back-link">
+        <Link to="/login-supabase" className="inline-flex items-center gap-2 mb-8 text-sm transition-colors hover:text-[#E85D00]" style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="reset-back-link">
           <ArrowLeft className="w-4 h-4" /> Back to sign in
         </Link>
 
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#FF6A00' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#E85D00' }}>
             <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily.mono }}>B</span>
           </div>
-          <span className="text-xl font-semibold text-[#F4F7FA]" style={{ fontFamily: DISPLAY }}>BIQc</span>
+          <span className="text-xl font-semibold text-[#EDF1F7]" style={{ fontFamily: DISPLAY }}>BIQc</span>
         </div>
 
         {sent ? (
@@ -51,18 +51,18 @@ const ResetPassword = () => {
             <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: '#10B98115' }}>
               <CheckCircle2 className="w-8 h-8 text-[#10B981]" />
             </div>
-            <h1 className="text-2xl font-normal text-[#F4F7FA] mb-3" style={{ fontFamily: DISPLAY }}>Check your email</h1>
+            <h1 className="text-2xl font-normal text-[#EDF1F7] mb-3" style={{ fontFamily: DISPLAY }}>Check your email</h1>
             <p className="text-sm text-[#9FB0C3] mb-6 leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              We've sent a password reset link to <strong className="text-[#F4F7FA]">{email}</strong>. Click the link in the email to set a new password.
+              We've sent a password reset link to <strong className="text-[#EDF1F7]">{email}</strong>. Click the link in the email to set a new password.
             </p>
             <p className="text-xs text-[#64748B] mb-8" style={{ fontFamily: fontFamily.mono }}>Didn't receive it? Check spam or try again.</p>
-            <button onClick={() => setSent(false)} className="text-sm text-[#FF6A00] hover:text-[#FF8C33] transition-colors" style={{ fontFamily: fontFamily.body }} data-testid="reset-try-again">
+            <button onClick={() => setSent(false)} className="text-sm text-[#E85D00] hover:text-[#FF8C33] transition-colors" style={{ fontFamily: fontFamily.body }} data-testid="reset-try-again">
               Send again
             </button>
           </div>
         ) : (
           <>
-            <h1 className="text-2xl font-normal text-[#F4F7FA] mb-2" style={{ fontFamily: DISPLAY }}>Reset your password</h1>
+            <h1 className="text-2xl font-normal text-[#EDF1F7] mb-2" style={{ fontFamily: DISPLAY }}>Reset your password</h1>
             <p className="text-sm text-[#9FB0C3] mb-8" style={{ fontFamily: fontFamily.body }}>Enter your email and we'll send you a reset link.</p>
 
             <form onSubmit={handleReset} className="space-y-5" data-testid="reset-form">
@@ -76,7 +76,7 @@ const ResetPassword = () => {
               </div>
               <button type="submit" disabled={loading}
                 className="w-full h-12 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 disabled:opacity-50 flex items-center justify-center gap-2"
-                style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
+                style={{ background: '#E85D00', fontFamily: fontFamily.body }}
                 data-testid="reset-submit-btn">
                 {loading ? 'Sending...' : <><Mail className="w-4 h-4" /> Send reset link</>}
               </button>

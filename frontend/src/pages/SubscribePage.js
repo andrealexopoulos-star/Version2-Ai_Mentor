@@ -130,19 +130,19 @@ const SubscribePage = () => {
       )}
 
       {checkingPayment && (
-        <div className="w-full max-w-xl mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: '#FF6A0010', border: '1px solid #FF6A0030' }}>
-          <Loader2 className="w-5 h-5 text-[#FF6A00] animate-spin" />
-          <p className="text-sm text-[#FF6A00]">Verifying payment...</p>
+        <div className="w-full max-w-xl mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: '#E85D0010', border: '1px solid #E85D0030' }}>
+          <Loader2 className="w-5 h-5 text-[#E85D00] animate-spin" />
+          <p className="text-sm text-[#E85D00]">Verifying payment...</p>
         </div>
       )}
 
       <div className="text-center mb-10 max-w-xl">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: '#FF6A0015' }}>
-          <Lock className="w-6 h-6 text-[#FF6A00]" />
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: '#E85D0015' }}>
+          <Lock className="w-6 h-6 text-[#E85D00]" />
         </div>
-        {featureLabel && <p className="text-xs text-[#FF6A00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
-        <h1 className="text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Choose your paid BIQc tier</h1>
-        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#F4F7FA] capitalize">{currentTier}</strong></p>
+        {featureLabel && <p className="text-xs text-[#E85D00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
+        <h1 className="text-3xl font-bold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Choose your paid BIQc tier</h1>
+        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#EDF1F7] capitalize">{currentTier}</strong></p>
         <p className="mt-2 text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>
           Transparent billing: shown amount is charged exactly as displayed. No hidden onboarding or compliance fees.
         </p>
@@ -153,7 +153,7 @@ const SubscribePage = () => {
         <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
           {['Select plan', 'Review amount', 'Secure payment auth', 'Activation confirmation'].map((step, idx) => (
             <div key={step} className="rounded-lg border px-3 py-2 text-xs" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1' }}>
-              <span style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{idx + 1}.</span> {step}
+              <span style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>{idx + 1}.</span> {step}
             </div>
           ))}
         </div>
@@ -165,13 +165,13 @@ const SubscribePage = () => {
           return (
             <div key={plan.id} className="rounded-xl p-6 relative" style={{
               background: 'var(--biqc-bg-card)',
-              border: `2px solid ${plan.recommended ? plan.color : '#243140'}`,
+              border: `2px solid ${plan.recommended ? plan.color : 'rgba(140,170,210,0.15)'}`,
               boxShadow: plan.recommended ? `0 8px 32px ${plan.color}20` : 'none',
             }} data-testid={`plan-${plan.id}`}>
               {plan.recommended && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-3 py-1 rounded-full text-white" style={{ background: plan.color, fontFamily: fontFamily.mono }}>RECOMMENDED</span>
               )}
-              <h3 className="text-lg font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>{plan.name}</h3>
+              <h3 className="text-lg font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>{plan.name}</h3>
               <div className="flex items-baseline gap-1 mb-4">
                 <span className="text-3xl font-bold" style={{ color: plan.color, fontFamily: fontFamily.mono }}>{plan.price}</span>
                 <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{plan.period}</span>
@@ -226,15 +226,15 @@ const SubscribePage = () => {
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
           {FOUNDATION_FEATURES.map((feature) => (
-            <div key={feature.key} className="rounded-lg border p-3" style={{ borderColor: '#243140' }}>
-              <p className="text-sm font-semibold text-[#F4F7FA]">{feature.title}</p>
+            <div key={feature.key} className="rounded-lg border p-3" style={{ borderColor: 'rgba(140,170,210,0.15)' }}>
+              <p className="text-sm font-semibold text-[#EDF1F7]">{feature.title}</p>
               <p className="text-xs mt-1 text-[#9FB0C3]">{feature.summary}</p>
               <div className="mt-2 flex items-center justify-between">
                 <span
                   className="text-[10px] px-2 py-1 rounded-full"
                   style={{
-                    background: foundationUnlocked ? '#10B98120' : '#FF6A0018',
-                    color: foundationUnlocked ? '#10B981' : '#FF6A00',
+                    background: foundationUnlocked ? '#10B98120' : '#E85D0018',
+                    color: foundationUnlocked ? '#10B981' : '#E85D00',
                     fontFamily: fontFamily.mono,
                   }}
                 >
@@ -242,7 +242,7 @@ const SubscribePage = () => {
                 </span>
                 <button
                   type="button"
-                  className="text-xs text-[#FF6A00] hover:text-[#FDBA74]"
+                  className="text-xs text-[#E85D00] hover:text-[#FDBA74]"
                   onClick={() => window.location.assign(feature.route)}
                   data-testid={`subscribe-open-foundation-${feature.key}`}
                 >
@@ -261,7 +261,7 @@ const SubscribePage = () => {
         data-testid="subscribe-advanced-roadmap"
       >
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#FF6A00]" />
+          <Sparkles className="w-4 h-4 text-[#E85D00]" />
           <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
             More Features Roadmap
           </p>
@@ -271,12 +271,12 @@ const SubscribePage = () => {
         </p>
         <div className="mt-3 space-y-3">
           {groupedWaitlist.map(([category, features]) => (
-            <div key={category} className="rounded-lg border p-3" style={{ borderColor: '#243140' }}>
+            <div key={category} className="rounded-lg border p-3" style={{ borderColor: 'rgba(140,170,210,0.15)' }}>
               <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]">{category}</p>
               <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
                 {features.map((feature) => (
                   <div key={feature.key} className="rounded-md border px-3 py-2" style={{ borderColor: '#1F2937' }}>
-                    <p className="text-sm text-[#F4F7FA]">{feature.title}</p>
+                    <p className="text-sm text-[#EDF1F7]">{feature.title}</p>
                     <p className="text-[11px] mt-1 text-[#9FB0C3] line-clamp-2">{feature.about}</p>
                   </div>
                 ))}
@@ -287,7 +287,7 @@ const SubscribePage = () => {
       </div>
 
       {(section === 'foundation' || section === 'advanced') && (
-        <div className="w-full max-w-4xl mb-6 p-3 rounded-xl" style={{ background: '#FF6A0010', border: '1px solid #FF6A0030' }}>
+        <div className="w-full max-w-4xl mb-6 p-3 rounded-xl" style={{ background: '#E85D0010', border: '1px solid #E85D0030' }}>
           <p className="text-xs text-[#FDBA74]">
             You were redirected from a legacy subscription path. This page is now the single source of truth for Foundation and More Features.
           </p>

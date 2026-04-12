@@ -30,7 +30,7 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
 
   const hasDegradedTruth = cats.some((cat) => cat.state && cat.state !== 'live' && cat.connected);
 
-  const barColor = hasDegradedTruth ? '#F59E0B' : pct >= 80 ? '#10B981' : pct >= 40 ? '#FF6A00' : '#F59E0B';
+  const barColor = hasDegradedTruth ? '#F59E0B' : pct >= 80 ? '#10B981' : pct >= 40 ? '#E85D00' : '#F59E0B';
 
   return (
     <div className="relative">
@@ -39,7 +39,7 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all hover:bg-white/5"
-        style={{ border: '1px solid #243140' }}
+        style={{ border: '1px solid rgba(140,170,210,0.15)' }}
         data-testid="intelligence-coverage-bar"
         aria-label={`Intelligence coverage ${pct}% — click to inspect live vs stale systems`}
       >
@@ -49,7 +49,7 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
             style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
             {pct}%
           </span>
-          <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: '#243140' }}>
+          <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
             <div className="h-full rounded-full transition-all duration-500"
               style={{ width: `${pct}%`, background: barColor }} />
           </div>
@@ -59,8 +59,8 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
       {/* Tooltip */}
       {showTooltip && (
         <div className="absolute top-full right-0 mt-2 z-50 w-52 rounded-xl p-3"
-          style={{ background: '#141C26', border: '1px solid #243140', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', fontFamily: fontFamily.body }}>
-          <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+          style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', fontFamily: fontFamily.body }}>
+          <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
             Intelligence Coverage
           </p>
           <div className="space-y-1.5">
@@ -69,8 +69,8 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
                 <span className="text-xs" style={{ color: '#9FB0C3' }}>{cat.label}</span>
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
                   style={{
-                    background: cat.state === 'live' ? 'rgba(16,185,129,0.1)' : cat.connected ? 'rgba(245,158,11,0.12)' : 'rgba(255,106,0,0.08)',
-                    color: cat.state === 'live' ? '#10B981' : cat.connected ? '#F59E0B' : '#FF6A00',
+                    background: cat.state === 'live' ? 'rgba(16,185,129,0.1)' : cat.connected ? 'rgba(245,158,11,0.12)' : 'rgba(232,93,0,0.08)',
+                    color: cat.state === 'live' ? '#10B981' : cat.connected ? '#F59E0B' : '#E85D00',
                     fontFamily: fontFamily.mono,
                   }}>
                   {cat.connected ? cat.state : 'Connect'}
@@ -80,7 +80,7 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
           </div>
           <button onClick={() => navigate('/integrations')}
             className="w-full mt-3 py-1.5 rounded-lg text-[10px] font-semibold transition-all hover:brightness-110"
-            style={{ background: '#FF6A00', color: '#fff', fontFamily: fontFamily.mono }}>
+            style={{ background: '#E85D00', color: '#fff', fontFamily: fontFamily.mono }}>
             + Add Integrations
           </button>
         </div>

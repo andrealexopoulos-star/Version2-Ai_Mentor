@@ -113,12 +113,12 @@ export function parseIdentitySignals(extractedData, websiteUrl) {
 }
 
 const SignalBlock = ({ icon: Icon, label, value, sub, warning, hint }) => (
-  <div className="rounded-lg p-4" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${warning ? '#F59E0B20' : '#243140'}` }}>
+  <div className="rounded-lg p-4" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${warning ? '#F59E0B20' : 'rgba(140,170,210,0.15)'}` }}>
     <div className="flex items-center gap-2 mb-1.5">
       <Icon className="w-3.5 h-3.5 text-[#3B82F6]" />
       <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{label}</span>
     </div>
-    <span className={`text-sm block ${warning ? 'text-[#64748B]' : 'text-[#F4F7FA]'}`}>{value}</span>
+    <span className={`text-sm block ${warning ? 'text-[#64748B]' : 'text-[#EDF1F7]'}`}>{value}</span>
     {sub && <span className="text-xs text-[#64748B] block mt-0.5">{sub}</span>}
     {hint && <span className="text-[11px] text-[#F59E0B] block mt-1" style={{ fontFamily: fontFamily.mono }}>{hint}</span>}
   </div>
@@ -174,7 +174,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
       <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="identity-edit-mode">
         <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-6">
           <div className="text-center mb-4">
-            <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Edit Business Details</h1>
+            <h1 className="text-2xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Edit Business Details</h1>
             <p className="text-sm text-[#9FB0C3] mt-1">Correct any details below, then regenerate the scan.</p>
           </div>
           {[
@@ -185,14 +185,14 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             <div key={f.key}>
               <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.label}</label>
               <input type="text" value={f.val || ''} onChange={e => setEditFields(p => ({ ...p, [f.key]: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg text-sm text-[#F4F7FA] outline-none focus:ring-1 focus:ring-[#FF6A00]"
+                className="w-full px-3 py-2.5 rounded-lg text-sm text-[#EDF1F7] outline-none focus:ring-1 focus:ring-[#E85D00]"
                 style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid={`edit-${f.key}`} />
             </div>
           ))}
           <div className="flex gap-3 pt-4">
             <button onClick={handleRegenerate} disabled={isRegenerating}
               className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 flex items-center justify-center gap-2 disabled:opacity-40"
-              style={{ background: '#FF6A00' }} data-testid="edit-regenerate-btn">
+              style={{ background: '#E85D00' }} data-testid="edit-regenerate-btn">
               <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
               {isRegenerating ? 'Scanning...' : 'Regenerate Scan'}
             </button>
@@ -220,7 +220,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             <div key={f.key}>
               <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.label}</label>
               <input type="text" value={rejectFields[f.key]} onChange={e => setRejectFields(p => ({ ...p, [f.key]: e.target.value }))}
-                placeholder={f.ph} className="w-full px-3 py-2.5 rounded-lg text-sm text-[#F4F7FA] placeholder:text-[#64748B] outline-none focus:ring-1 focus:ring-[#FF6A00]"
+                placeholder={f.ph} className="w-full px-3 py-2.5 rounded-lg text-sm text-[#EDF1F7] placeholder:text-[#64748B] outline-none focus:ring-1 focus:ring-[#E85D00]"
                 style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid={`reject-${f.key}`} />
             </div>
           ))}
@@ -228,7 +228,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             <button onClick={handleRejectSubmit}
               disabled={(!rejectFields.legalName && !rejectFields.suburb && !rejectFields.abn) || isRegenerating}
               className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-40 flex items-center justify-center gap-2"
-              style={{ background: '#FF6A00' }} data-testid="reject-regenerate-btn">
+              style={{ background: '#E85D00' }} data-testid="reject-regenerate-btn">
               <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
               {isRegenerating ? 'Scanning...' : 'Search Again'}
             </button>
@@ -245,10 +245,10 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
       <style>{`@keyframes idFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
       <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-5">
         <div className="text-center" style={{ animation: 'idFade 0.5s ease-out' }}>
-          <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+          <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
             Identity Verification
           </span>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>
             Is this your business?
           </h1>
           <p className="text-sm text-[#9FB0C3]">
@@ -299,7 +299,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
               {confidence.reasons.map((r, i) => (
                 <span key={i} className="text-[11px] px-2 py-0.5 rounded-full" style={{
                   color: r.positive ? '#10B981' : '#64748B',
-                  background: r.positive ? '#10B98110' : '#24314050',
+                  background: r.positive ? '#10B98110' : 'rgba(140,170,210,0.15)50',
                   fontFamily: fontFamily.mono,
                 }}>
                   {r.positive ? '\u2713' : '\u2014'} {r.label}
@@ -334,11 +334,11 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
               </button>
             </div>
             {lookupResult && (
-              <div className="mt-3 pt-3" style={{ borderTop: '1px solid #24314050' }}>
+              <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(140,170,210,0.15)50' }}>
                 {lookupResult.status === 'found' && (
                   <div className="space-y-1">
                     <p className="text-xs text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>Match found in Australian Business Register</p>
-                    {lookupResult.legal_name && <p className="text-sm text-[#F4F7FA]">Legal name: {lookupResult.legal_name}</p>}
+                    {lookupResult.legal_name && <p className="text-sm text-[#EDF1F7]">Legal name: {lookupResult.legal_name}</p>}
                     {lookupResult.abn && <p className="text-sm text-[#9FB0C3]">ABN: {lookupResult.abn}</p>}
                     {lookupResult.address && <p className="text-sm text-[#9FB0C3]">Location: {lookupResult.address}</p>}
                   </div>
@@ -380,7 +380,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
           )}
           <button onClick={handleConfirm}
             className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 flex items-center justify-center gap-2"
-            style={{ background: '#FF6A00' }} data-testid="identity-confirm-btn">
+            style={{ background: '#E85D00' }} data-testid="identity-confirm-btn">
             <CheckCircle2 className="w-4 h-4" /> Yes — this is my business
           </button>
           <button onClick={() => setMode('edit')}

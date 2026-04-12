@@ -12,9 +12,9 @@ const Panel = ({ children, className = '' }) => (
 );
 
 const SYSTEM_COLORS = {
-  xero: '#13B5EA', hubspot: '#FF6A00', outlook: '#0078D4', gmail: '#EF4444',
+  xero: '#13B5EA', hubspot: '#E85D00', outlook: '#0078D4', gmail: '#EF4444',
   salesforce: '#00A1E0', 'google calendar': '#4285F4', slack: '#4A154B',
-  jira: '#0052CC', bamboohr: '#73C41D', quickbooks: '#2CA01C', default: '#FF6A00',
+  jira: '#0052CC', bamboohr: '#73C41D', quickbooks: '#2CA01C', default: '#E85D00',
 };
 
 const MISSING_SOURCES = [
@@ -173,12 +173,12 @@ const DataHealthPage = () => {
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Data Health</h1>
+          <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Data Health</h1>
           <p className="text-sm text-[#9FB0C3]">
             {hasAnyData
               ? `${connectedCount} integration${connectedCount !== 1 ? 's' : ''} active — monitoring data quality in real time.`
               : 'Connect integrations to start monitoring data quality and sync status.'}
-            {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>loading...</span>}
+            {loading && <span className="text-[10px] ml-2 text-[#E85D00]" style={{ fontFamily: fontFamily.mono }}>loading...</span>}
           </p>
         </div>
 
@@ -188,7 +188,7 @@ const DataHealthPage = () => {
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${connectedCount > 0 ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`} />
               <div>
-                <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>
+                <h2 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
                   {connectedCount > 0 ? `${connectedCount} System${connectedCount > 1 ? 's' : ''} Connected` : 'No Systems Connected'}
                 </h2>
                 <p className="text-sm text-[#9FB0C3]">{sourcesCount} active data source{sourcesCount !== 1 ? 's' : ''}</p>
@@ -198,14 +198,14 @@ const DataHealthPage = () => {
             {hasAnyData ? (
               <button onClick={handleForceSync} disabled={syncing}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all"
-                style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030' }}
+                style={{ background: '#E85D0015', color: '#E85D00', border: '1px solid #E85D0030' }}
                 data-testid="force-sync-btn">
                 {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                 {syncing ? 'Syncing…' : 'Force Sync'}
               </button>
             ) : (
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium cursor-not-allowed"
-                style={{ background: '#1E2D3D', color: '#4A5568', border: '1px solid #243140' }}
+                style={{ background: '#1E2D3D', color: '#4A5568', border: '1px solid rgba(140,170,210,0.15)' }}
                 title="Connect at least one integration to enable Force Sync"
                 data-testid="force-sync-disabled">
                 <RefreshCw className="w-3.5 h-3.5" />Force Sync
@@ -234,7 +234,7 @@ const DataHealthPage = () => {
         {/* Connected Systems with sync status */}
         {systems.length > 0 && (
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Connected Systems</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Connected Systems</h3>
             {systems.map((sys, i) => (
               <Panel key={i}>
                 <div className="flex items-center gap-4">
@@ -243,7 +243,7 @@ const DataHealthPage = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-semibold text-[#F4F7FA]">{sys.name}</h4>
+                      <h4 className="text-sm font-semibold text-[#EDF1F7]">{sys.name}</h4>
                       <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: '#64748B', background: '#1E2D3D', fontFamily: fontFamily.mono }}>{sys.type}</span>
                       <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', fontFamily: fontFamily.mono }}>
                         ✓ Connected
@@ -259,7 +259,7 @@ const DataHealthPage = () => {
                   <div className="flex items-center gap-3 shrink-0">
                     <Link to="/integrations"
                       className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110"
-                      style={{ background: '#1E2D3D', color: '#9FB0C3', border: '1px solid #243140' }}>
+                      style={{ background: '#1E2D3D', color: '#9FB0C3', border: '1px solid rgba(140,170,210,0.15)' }}>
                       Reconnect
                     </Link>
                     <CheckCircle2 className="w-5 h-5 text-[#10B981]" />
@@ -273,7 +273,7 @@ const DataHealthPage = () => {
         {/* Req 7: Data Quality — ONLY real metrics, never hardcoded */}
         <Panel>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Data Quality Score</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Data Quality Score</h3>
             {!hasAnyData && (
               <span className="text-[10px] px-2.5 py-1 rounded-full" style={{ background: '#1E2D3D', color: '#64748B', fontFamily: fontFamily.mono }}>
                 Connect integrations to generate scores
@@ -342,7 +342,7 @@ const DataHealthPage = () => {
           <Panel>
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>
+              <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
                 Improve Your Data Coverage
               </h3>
             </div>
@@ -359,7 +359,7 @@ const DataHealthPage = () => {
                   </div>
                   <Link to={`/integrations?category=${src.cat}`}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 whitespace-nowrap ml-3"
-                    style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030' }}>
+                    style={{ background: '#E85D0015', color: '#E85D00', border: '1px solid #E85D0030' }}>
                     <Plug className="w-3 h-3" /> Connect <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>

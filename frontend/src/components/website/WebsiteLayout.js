@@ -40,11 +40,11 @@ const TrustDropdown = ({ open, onClose }) => {
 
   if (!open) return null;
   return (
-    <div ref={ref} className="absolute top-full right-0 mt-2 w-72 rounded-xl overflow-hidden" style={{ background: 'rgba(20,28,38,0.95)', border: '1px solid rgba(255,106,0,0.15)', backdropFilter: 'blur(24px)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+    <div ref={ref} className="absolute top-full right-0 mt-2 w-72 rounded-xl overflow-hidden" style={{ background: 'rgba(20,28,38,0.95)', border: '1px solid rgba(232,93,0,0.15)', backdropFilter: 'blur(24px)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
       {TRUST_ITEMS.map((item) => (
         <Link key={item.path} to={item.path} onClick={onClose} className="flex items-center gap-3 px-5 py-3.5 transition-all hover:bg-white/5 group" data-testid={`trust-dropdown-${item.label.toLowerCase().replace(/\s+/g,'-')}`}>
-          <item.icon className="w-4 h-4 text-[#9FB0C3] group-hover:text-[#FF6A00] transition-colors" />
-          <span className="text-sm text-[#F4F7FA] group-hover:text-white" style={{ fontFamily: fontFamily.display, fontWeight: item.bold ? 600 : 400 }}>{item.label}</span>
+          <item.icon className="w-4 h-4 text-[#9FB0C3] group-hover:text-[#E85D00] transition-colors" />
+          <span className="text-sm text-[#EDF1F7] group-hover:text-white" style={{ fontFamily: fontFamily.display, fontWeight: item.bold ? 600 : 400 }}>{item.label}</span>
         </Link>
       ))}
     </div>
@@ -61,14 +61,14 @@ const MeetDropdown = ({ open, onClose }) => {
 
   if (!open) return null;
   return (
-    <div ref={ref} className="absolute top-full left-0 mt-2 w-[340px] rounded-xl overflow-hidden" style={{ background: 'rgba(20,28,38,0.95)', border: '1px solid rgba(255,106,0,0.15)', backdropFilter: 'blur(24px)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+    <div ref={ref} className="absolute top-full left-0 mt-2 w-[340px] rounded-xl overflow-hidden" style={{ background: 'rgba(20,28,38,0.95)', border: '1px solid rgba(232,93,0,0.15)', backdropFilter: 'blur(24px)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
       <div className="px-5 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        <p className="text-[11px] uppercase tracking-wider" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Meet BIQc</p>
+        <p className="text-[11px] uppercase tracking-wider" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Meet BIQc</p>
         <p className="text-xs mt-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>Explore each capability and the business outcomes it delivers.</p>
       </div>
       {MEET_BIQC_ITEMS.map((item) => (
         <Link key={item.path} to={item.path} onClick={onClose} className="block px-5 py-3.5 transition-all hover:bg-white/5 group" data-testid={`meet-dropdown-${item.label.toLowerCase().replace(/\s+/g,'-')}`}>
-          <p className="text-sm text-[#F4F7FA] group-hover:text-white" style={{ fontFamily: fontFamily.display }}>{item.label}</p>
+          <p className="text-sm text-[#EDF1F7] group-hover:text-white" style={{ fontFamily: fontFamily.display }}>{item.label}</p>
           <p className="text-xs mt-0.5 text-[#9FB0C3] group-hover:text-[#CBD5E1]" style={{ fontFamily: fontFamily.body }}>{item.blurb}</p>
         </Link>
       ))}
@@ -113,13 +113,13 @@ const WebsiteNav = () => {
                       }
                     }}
                     className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm transition-all"
-                    style={{ color: isActive ? '#FF6A00' : '#9FB0C3', fontFamily: fontFamily.display }}
+                    style={{ color: isActive ? '#E85D00' : '#9FB0C3', fontFamily: fontFamily.display }}
                     data-testid={link.dropdown === 'meet' ? 'nav-meet-biqc' : 'nav-trust'}
                   >
                     {link.label} <ChevronDown className="w-3.5 h-3.5" />
                   </button>
                 ) : (
-                  <Link to={link.path} className="px-4 py-2 rounded-lg text-sm transition-all hover:text-white" style={{ color: isActive ? '#FF6A00' : '#9FB0C3', fontFamily: fontFamily.display }} data-testid={`nav-${link.label.toLowerCase()}`}>
+                  <Link to={link.path} className="px-4 py-2 rounded-lg text-sm transition-all hover:text-white" style={{ color: isActive ? '#E85D00' : '#9FB0C3', fontFamily: fontFamily.display }} data-testid={`nav-${link.label.toLowerCase()}`}>
                     {link.label}
                   </Link>
                 )}
@@ -133,7 +133,7 @@ const WebsiteNav = () => {
         {/* CTA + Mobile Toggle */}
         <div className="flex items-center gap-3">
           <Link to="/login-supabase" className="hidden md:block px-4 py-2 rounded-lg text-sm text-[#9FB0C3] hover:text-white transition-colors" style={{ fontFamily: fontFamily.display }} data-testid="nav-login">Log in</Link>
-          <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', fontFamily: fontFamily.display, boxShadow: '0 4px 16px rgba(255,106,0,0.3)' }} data-testid="nav-get-started">
+          <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #E85D00, #E85D00)', fontFamily: fontFamily.display, boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }} data-testid="nav-get-started">
             Try It Free
           </Link>
           {/* Mobile: Log In text + hamburger */}
@@ -156,16 +156,16 @@ const WebsiteNav = () => {
             <div key={link.label}>
               <Link to={link.path} onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-[#9FB0C3] hover:text-white hover:bg-white/5 transition-all" style={{ fontFamily: fontFamily.display }}>{link.label}</Link>
               {link.dropdown === 'trust' && TRUST_ITEMS.map((item) => (
-                <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className="block px-8 py-2 text-xs text-[#9FB0C3]/70 hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
+                <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className="block px-8 py-2 text-xs text-[#9FB0C3]/70 hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
               ))}
               {link.dropdown === 'meet' && MEET_BIQC_ITEMS.map((item) => (
-                <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className="block px-8 py-2 text-xs text-[#9FB0C3]/70 hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
+                <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className="block px-8 py-2 text-xs text-[#9FB0C3]/70 hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
               ))}
             </div>
           ))}
           <div className="pt-4 space-y-2">
             <Link to="/login-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[#9FB0C3] border border-white/10">Log in</Link>
-            <Link to="/register-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-white font-semibold" style={{ background: '#FF6A00' }}>Get started</Link>
+            <Link to="/register-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-white font-semibold" style={{ background: '#E85D00' }}>Get started</Link>
           </div>
         </div>
       )}
@@ -190,7 +190,7 @@ const WebsiteFooter = () => (
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Product</h2>
           <div className="space-y-2.5">
             {[['Platform', '/platform'], ['Intelligence', '/intelligence'], ['Integrations', '/our-integrations'], ['Pricing', '/pricing']].map(([l, p]) => (
-              <Link key={p} to={p} className="block text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
+              <Link key={p} to={p} className="block text-sm text-[#9FB0C3] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
             ))}
           </div>
         </div>
@@ -198,7 +198,7 @@ const WebsiteFooter = () => (
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Legal</h2>
           <div className="space-y-2.5">
             {TRUST_ITEMS.map((item) => (
-              <Link key={item.path} to={item.path} className="block text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
+              <Link key={item.path} to={item.path} className="block text-sm text-[#9FB0C3] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
             ))}
           </div>
         </div>
@@ -206,7 +206,7 @@ const WebsiteFooter = () => (
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[#9FB0C3]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Company</h2>
           <div className="space-y-2.5">
             {[['Contact', '/contact'], ['Trust', '/trust'], ['Try It Free', '/register-supabase']].map(([l, p]) => (
-              <Link key={l} to={p} className="block text-sm text-[#9FB0C3] hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
+              <Link key={l} to={p} className="block text-sm text-[#9FB0C3] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
             ))}
           </div>
           <div className="mt-6 flex items-center gap-2">
@@ -224,7 +224,7 @@ const WebsiteFooter = () => (
 );
 
 const WebsiteLayout = ({ children }) => (
-  <div className="min-h-screen" style={{ background: '#0F1720', color: '#F4F7FA' }}>
+  <div className="min-h-screen" style={{ background: '#0F1720', color: '#EDF1F7' }}>
     <a href="#main-content" className="skip-link">Skip to main content</a>
     <WebsiteNav />
     <main id="main-content" className="pt-16">{children}</main>

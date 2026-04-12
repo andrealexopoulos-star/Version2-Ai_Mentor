@@ -33,34 +33,34 @@ const OnboardPreview = ({ step }) => {
     <div className="min-h-[calc(100vh-40px)] flex flex-col" style={{ background: 'var(--biqc-bg)' }}>
       <header className="px-6 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#FF6A00' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#E85D00' }}>
             <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
           </div>
           <div>
-            <h3 className="font-semibold text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>BIQc Setup</h3>
+            <h3 className="font-semibold text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>BIQc Setup</h3>
             <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{cfg.title}</p>
           </div>
         </div>
         {stepNum > 0 && <div className="flex items-center gap-3">
           <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{stepNum}/7</span>
-          <div className="w-24 h-1.5 rounded-full" style={{ background: '#243140' }}>
-            <div className="h-full rounded-full" style={{ background: '#FF6A00', width: `${Math.round((stepNum/7)*100)}%` }} />
+          <div className="w-24 h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.15)' }}>
+            <div className="h-full rounded-full" style={{ background: '#E85D00', width: `${Math.round((stepNum/7)*100)}%` }} />
           </div>
         </div>}
       </header>
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-2xl rounded-xl p-8" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
           <div className="text-center mb-6">
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: '#FF6A0020' }}>
-              <span className="text-2xl" style={{ color: '#FF6A00' }}>&#9889;</span>
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: '#E85D0020' }}>
+              <span className="text-2xl" style={{ color: '#E85D00' }}>&#9889;</span>
             </div>
-            <h1 className="text-2xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>{cfg.title}</h1>
+            <h1 className="text-2xl font-bold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>{cfg.title}</h1>
             <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{cfg.sub}</p>
           </div>
           {cfg.items && <div className="space-y-3 max-w-lg mx-auto">{cfg.items.map((item, i) => (
             <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FF6A0015' }}>
-                <span className="text-xs text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>{i+1}</span>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#E85D0015' }}>
+                <span className="text-xs text-[#E85D00]" style={{ fontFamily: fontFamily.mono }}>{i+1}</span>
               </div>
               <p className="text-sm text-[#9FB0C3]">{item}</p>
             </div>
@@ -73,7 +73,7 @@ const OnboardPreview = ({ step }) => {
           ))}</div>}
           <div className="flex justify-between mt-8">
             {stepNum > 0 && <button className="px-5 py-2.5 rounded-xl text-sm" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }}>Back</button>}
-            <button className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white ml-auto" style={{ background: '#FF6A00' }}>
+            <button className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white ml-auto" style={{ background: '#E85D00' }}>
               {stepNum === 0 ? 'Begin Setup' : 'Continue'}
             </button>
           </div>
@@ -86,16 +86,16 @@ const OnboardPreview = ({ step }) => {
 const AuthLoadingPreview = () => (
   <div className="min-h-[calc(100vh-40px)] flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }}>
     <div className="text-center space-y-6">
-      <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto" style={{ background: '#FF6A00' }}>
+      <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto" style={{ background: '#E85D00' }}>
         <span className="text-white font-bold text-xl" style={{ fontFamily: fontFamily.mono }}>B</span>
       </div>
       <div>
-        <p className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Good evening.</p>
+        <p className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Good evening.</p>
         <p className="text-sm text-[#64748B] mt-1" style={{ fontFamily: fontFamily.body }}>Establishing secure connection...</p>
       </div>
       <div className="w-48 mx-auto">
-        <div className="h-1 rounded-full overflow-hidden" style={{ background: '#243140' }}>
-          <div className="h-full rounded-full" style={{ background: '#FF6A00', width: '60%' }} />
+        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
+          <div className="h-full rounded-full" style={{ background: '#E85D00', width: '60%' }} />
         </div>
       </div>
     </div>
@@ -111,7 +111,7 @@ const CalibrationPreview = () => {
         <span className="text-[10px] text-[#64748B] mr-1 shrink-0" style={{ fontFamily: fontFamily.mono }}>Screen:</span>
         {SCREENS.map(s => (
           <button key={s} onClick={() => setScreen(s)} className="px-2 py-1 rounded text-[10px] font-medium shrink-0"
-            style={{ background: screen === s ? '#FF6A00' : '#141C26', color: screen === s ? 'white' : '#64748B', border: `1px solid ${screen === s ? '#FF6A00' : '#243140'}` }}>
+            style={{ background: screen === s ? '#E85D00' : '#0E1628', color: screen === s ? 'white' : '#64748B', border: `1px solid ${screen === s ? '#E85D00' : 'rgba(140,170,210,0.15)'}` }}>
             {s}
           </button>
         ))}
@@ -245,26 +245,26 @@ const CalibrationPreview = () => {
           <div className="min-h-[calc(100vh-40px)] flex items-center justify-center p-4" style={{ background: 'var(--biqc-bg)' }}>
             <div className="max-w-2xl w-full rounded-xl p-8 md:p-12" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
               <div className="text-center mb-8">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: '#FF6A0020' }}>
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: '#E85D0020' }}>
                   <span className="text-3xl">&#9889;</span>
                 </div>
-                <h1 className="text-2xl md:text-3xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Welcome to BIQc</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Welcome to BIQc</h1>
                 <p className="text-base text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Let's set up your intelligent advisor</p>
               </div>
               <div className="p-4 rounded-lg mb-8" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                 <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>BIQc learns about your business to provide personalized intelligence. This 5-minute setup helps us understand your context and deliver relevant insights.</p>
               </div>
               <div className="space-y-4">
-                <button className="w-full p-6 rounded-xl text-left transition-all" style={{ background: '#FF6A0008', border: '2px solid #FF6A0040' }}>
+                <button className="w-full p-6 rounded-xl text-left transition-all" style={{ background: '#E85D0008', border: '2px solid #E85D0040' }}>
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="text-[#FF6A00]">&#9889;</span>
-                        <h3 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Complete Setup Now</h3>
+                        <span className="text-[#E85D00]">&#9889;</span>
+                        <h3 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Complete Setup Now</h3>
                       </div>
                       <p className="text-sm text-[#9FB0C3]">5 minutes to unlock personalized intelligence and insights</p>
                     </div>
-                    <span className="text-[#FF6A00] text-xl">&#8594;</span>
+                    <span className="text-[#E85D00] text-xl">&#8594;</span>
                   </div>
                 </button>
                 <button className="w-full p-6 rounded-xl text-left" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
@@ -272,7 +272,7 @@ const CalibrationPreview = () => {
                     <div>
                       <div className="flex items-center gap-3 mb-2">
                         <span className="text-[#64748B]">&#128339;</span>
-                        <h3 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>I'll Do This Later</h3>
+                        <h3 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>I'll Do This Later</h3>
                       </div>
                       <p className="text-sm text-[#64748B]">You'll be asked again next time you sign in</p>
                     </div>
@@ -287,15 +287,15 @@ const CalibrationPreview = () => {
 
         {screen === 'first-login-notif' && (
           <div className="min-h-[calc(100vh-40px)] relative" style={{ background: 'var(--biqc-bg)' }}>
-            <div className="absolute top-4 right-4 w-[360px] rounded-xl overflow-hidden shadow-2xl" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #FF6A0030' }}>
+            <div className="absolute top-4 right-4 w-[360px] rounded-xl overflow-hidden shadow-2xl" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #E85D0030' }}>
               <div className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#FF6A0020' }}>
-                      <span className="text-sm text-[#FF6A00]">&#128268;</span>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#E85D0020' }}>
+                      <span className="text-sm text-[#E85D00]">&#128268;</span>
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Get Started</h3>
+                      <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Get Started</h3>
                       <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Connect your systems</p>
                     </div>
                   </div>
@@ -305,12 +305,12 @@ const CalibrationPreview = () => {
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                     <span className="text-[#3B82F6]">&#9993;</span>
-                    <div className="flex-1"><span className="text-sm text-[#F4F7FA] block">Connect Email</span><span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Outlook or Gmail</span></div>
+                    <div className="flex-1"><span className="text-sm text-[#EDF1F7] block">Connect Email</span><span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Outlook or Gmail</span></div>
                     <span className="text-[#64748B]">&#8594;</span>
                   </div>
                   <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                    <span className="text-[#FF6A00]">&#128268;</span>
-                    <div className="flex-1"><span className="text-sm text-[#F4F7FA] block">Connect Integrations</span><span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Xero, HubSpot, CRM</span></div>
+                    <span className="text-[#E85D00]">&#128268;</span>
+                    <div className="flex-1"><span className="text-sm text-[#EDF1F7] block">Connect Integrations</span><span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Xero, HubSpot, CRM</span></div>
                     <span className="text-[#64748B]">&#8594;</span>
                   </div>
                 </div>
@@ -324,14 +324,14 @@ const CalibrationPreview = () => {
 
         {screen === 'checkin-alert' && (
           <div className="min-h-[calc(100vh-40px)] p-8" style={{ background: 'var(--biqc-bg)' }}>
-            <h2 className="text-lg font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>Weekly Check-In Alert (appears on dashboard)</h2>
+            <h2 className="text-lg font-semibold text-[#EDF1F7] mb-4" style={{ fontFamily: fontFamily.display }}>Weekly Check-In Alert (appears on dashboard)</h2>
             <div className="max-w-3xl space-y-3">
               <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: '#7C3AED10', border: '1px solid #7C3AED25' }}>
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#7C3AED15' }}>
                   <span className="text-[#7C3AED]">&#127909;</span>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Weekly Check-In Available</p>
+                  <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Weekly Check-In Available</p>
                   <p className="text-xs mt-0.5 text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Schedule a video check-in with your BIQc advisor to review progress and priorities.</p>
                   <div className="flex gap-2 mt-3">
                     <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg text-white" style={{ background: '#7C3AED', fontFamily: fontFamily.mono }}>Schedule Check-In</button>
@@ -340,15 +340,15 @@ const CalibrationPreview = () => {
                   </div>
                 </div>
               </div>
-              <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: '#FF6A0010', border: '1px solid #FF6A0025' }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FF6A0015' }}>
-                  <span className="text-[#FF6A00]">&#8635;</span>
+              <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: '#E85D0010', border: '1px solid #E85D0025' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#E85D0015' }}>
+                  <span className="text-[#E85D00]">&#8635;</span>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Recalibration Recommended</p>
+                  <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Recalibration Recommended</p>
                   <p className="text-xs mt-0.5 text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Your business context may have changed. A quick recalibration keeps BIQc accurate.</p>
                   <div className="flex gap-2 mt-3">
-                    <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg text-white" style={{ background: '#FF6A00', fontFamily: fontFamily.mono }}>Recalibrate Now</button>
+                    <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg text-white" style={{ background: '#E85D00', fontFamily: fontFamily.mono }}>Recalibrate Now</button>
                     <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}>Pick a Date</button>
                     <button className="text-[11px] px-2 py-1.5 rounded-lg text-[#64748B]">&#10005;</button>
                   </div>

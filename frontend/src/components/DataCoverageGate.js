@@ -19,7 +19,7 @@ const CoverageBar = ({ pct }) => {
   const color = pct >= 40 ? '#10B981' : pct >= 20 ? '#F59E0B' : '#EF4444';
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 rounded-full" style={{ background: '#243140' }}>
+      <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.15)' }}>
         <div className="h-1.5 rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
       </div>
       <span className="text-[10px] font-semibold flex-shrink-0" style={{ color, fontFamily: fontFamily.mono }}>{pct}%</span>

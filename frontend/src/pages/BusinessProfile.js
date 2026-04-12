@@ -213,7 +213,7 @@ const BusinessProfile = () => {
               </p>
             </div>
             <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-              {autoSaveStatus === 'saving' && <><span className="text-xs" style={{ color: '#FF6A00' }}>saving...</span></>}
+              {autoSaveStatus === 'saving' && <><span className="text-xs" style={{ color: '#E85D00' }}>saving...</span></>}
               {autoSaveStatus === 'saved' && <><CheckCircle className="w-4 h-4 text-emerald-500" /> Saved</>}
               {autoSaveStatus === 'error' && <><AlertCircle className="w-4 h-4 text-red-500" /> Save failed</>}
               {!autoSaveStatus && <span className="text-xs">Auto-saves as you type</span>}

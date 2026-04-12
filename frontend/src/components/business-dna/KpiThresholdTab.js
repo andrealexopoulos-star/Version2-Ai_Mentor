@@ -164,7 +164,7 @@ export const KpiThresholdTab = () => {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle className="flex items-center gap-2" data-testid="business-dna-kpi-title">
-              <SlidersHorizontal className="h-4 w-4 text-[#FF6A00]" /> KPI Thresholds
+              <SlidersHorizontal className="h-4 w-4 text-[#E85D00]" /> KPI Thresholds
             </CardTitle>
             <CardDescription data-testid="business-dna-kpi-description">
               Choose the KPIs BIQc should track most closely for your business. Free tier includes {config.visible_metric_limit} active KPI slots.
@@ -182,7 +182,7 @@ export const KpiThresholdTab = () => {
             <p className="mt-2 text-xl" data-testid="business-dna-kpi-plan-label">{config.plan_label}</p>
             <p className="mt-1 text-sm text-[#94A3B8]" data-testid="business-dna-kpi-plan-limit">{config.visible_metric_limit} visible KPIs</p>
           </div>
-          <div className="rounded-2xl border p-4" style={{ borderColor: config.selection_limit_reached ? 'rgba(255,106,0,0.32)' : 'var(--biqc-border)', background: config.selection_limit_reached ? 'rgba(255,106,0,0.08)' : 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-selected-count-card">
+          <div className="rounded-2xl border p-4" style={{ borderColor: config.selection_limit_reached ? 'rgba(232,93,0,0.32)' : 'var(--biqc-border)', background: config.selection_limit_reached ? 'rgba(232,93,0,0.08)' : 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-selected-count-card">
             <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]">Selected Now</p>
             <p className="mt-2 flex items-center gap-2 text-xl" data-testid="business-dna-kpi-selected-count">
               {config.selected_count}
@@ -203,16 +203,16 @@ export const KpiThresholdTab = () => {
           </div>
         </div>
 
-        <div className="rounded-2xl border p-4" style={{ borderColor: config.selection_limit_reached ? 'rgba(255,106,0,0.32)' : 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-selection-guide">
+        <div className="rounded-2xl border p-4" style={{ borderColor: config.selection_limit_reached ? 'rgba(232,93,0,0.32)' : 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-selection-guide">
           <div className="flex flex-wrap items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[#FF6A00]" />
+            <Sparkles className="h-4 w-4 text-[#E85D00]" />
             <p className="text-sm text-[#E2E8F0]">
               Select the KPIs that matter most to your business right now. BIQc will use these as your active free-tier intelligence policy.
             </p>
           </div>
           {config.selection_limit_reached && config.selection_upgrade_prompt && (
-            <div className="mt-3 flex items-start gap-2 rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(255,106,0,0.28)', background: 'rgba(255,106,0,0.08)' }} data-testid="business-dna-kpi-upgrade-prompt">
-              <Lock className="mt-0.5 h-4 w-4 text-[#FF6A00]" />
+            <div className="mt-3 flex items-start gap-2 rounded-xl border px-3 py-3" style={{ borderColor: 'rgba(232,93,0,0.28)', background: 'rgba(232,93,0,0.08)' }} data-testid="business-dna-kpi-upgrade-prompt">
+              <Lock className="mt-0.5 h-4 w-4 text-[#E85D00]" />
               <p className="text-sm text-[#FDEAD7]">{config.selection_upgrade_prompt}</p>
             </div>
           )}
@@ -237,12 +237,12 @@ export const KpiThresholdTab = () => {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
             <div className="space-y-3" data-testid="business-dna-kpi-catalog-list">
               {filteredCatalog.map((metric) => (
-                <div key={metric.metric_key} className="rounded-2xl border p-4" style={{ borderColor: metric.selected ? 'rgba(255,106,0,0.32)' : 'var(--biqc-border)', background: metric.selected ? 'rgba(255,106,0,0.06)' : 'var(--biqc-bg-card)' }} data-testid={`business-dna-kpi-row-${metric.metric_key}`}>
+                <div key={metric.metric_key} className="rounded-2xl border p-4" style={{ borderColor: metric.selected ? 'rgba(232,93,0,0.32)' : 'var(--biqc-border)', background: metric.selected ? 'rgba(232,93,0,0.06)' : 'var(--biqc-bg-card)' }} data-testid={`business-dna-kpi-row-${metric.metric_key}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="max-w-2xl">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-medium" data-testid={`business-dna-kpi-name-${metric.metric_key}`}>{metric.metric_name}</p>
-                        {metric.selected && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]" style={{ color: '#FF6A00', background: 'rgba(255,106,0,0.12)', fontFamily: 'var(--font-mono)' }}><CheckCircle2 className="h-3 w-3" /> Active</span>}
+                        {metric.selected && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]" style={{ color: '#E85D00', background: 'rgba(232,93,0,0.12)', fontFamily: 'var(--font-mono)' }}><CheckCircle2 className="h-3 w-3" /> Active</span>}
                       </div>
                       <p className="mt-1 text-xs text-[#94A3B8]" data-testid={`business-dna-kpi-meta-${metric.metric_key}`}>{metric.category} · {metric.primary_source}</p>
                       <p className="mt-2 text-sm text-[#CBD5E1]" data-testid={`business-dna-kpi-description-${metric.metric_key}`}>{metric.description}</p>
@@ -273,7 +273,7 @@ export const KpiThresholdTab = () => {
               </div>
 
               {selectedMetrics.map((metric) => (
-                <div key={metric.metric_key} className="rounded-2xl border p-4" style={{ borderColor: 'rgba(255,106,0,0.24)', background: 'rgba(255,106,0,0.05)' }} data-testid={`business-dna-kpi-selected-row-${metric.metric_key}`}>
+                <div key={metric.metric_key} className="rounded-2xl border p-4" style={{ borderColor: 'rgba(232,93,0,0.24)', background: 'rgba(232,93,0,0.05)' }} data-testid={`business-dna-kpi-selected-row-${metric.metric_key}`}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="max-w-2xl">
                       <p className="text-sm font-medium text-[#F8FAFC]">{metric.metric_name}</p>

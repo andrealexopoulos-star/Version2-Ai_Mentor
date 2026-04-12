@@ -80,7 +80,7 @@ const MarketingAutomationPage = () => {
                 {value.map((item, i) => (
                   <div key={i} className="text-sm text-[#9FB0C3]">
                     {typeof item === 'object' ? (
-                      <div className="pl-3 border-l-2 border-[#243140]">
+                      <div className="pl-3 border-l-2 border-[rgba(140,170,210,0.15)]">
                         {Object.entries(item).map(([k, v]) => (
                           <p key={k}><span className="text-[#64748B]">{k}:</span> {String(v)}</p>
                         ))}
@@ -90,7 +90,7 @@ const MarketingAutomationPage = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-[#F4F7FA]">{String(value)}</p>
+              <p className="text-sm text-[#EDF1F7]">{String(value)}</p>
             )}
           </div>
         ))}
@@ -102,7 +102,7 @@ const MarketingAutomationPage = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="marketing-automation-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Marketing Automation</h1>
+          <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Marketing Automation</h1>
           <p className="text-sm text-[#9FB0C3]">Generate marketing content grounded in your business data and intelligence.</p>
         </div>
 
@@ -110,7 +110,7 @@ const MarketingAutomationPage = () => {
           {/* Left: Config */}
           <div className="space-y-5">
             <Panel>
-              <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>Content Type</h3>
+              <h3 className="text-sm font-semibold text-[#EDF1F7] mb-4" style={{ fontFamily: fontFamily.display }}>Content Type</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {CONTENT_TYPES.map(ct => (
                   <button
@@ -119,13 +119,13 @@ const MarketingAutomationPage = () => {
                     data-testid={`content-type-${ct.id}`}
                     className="p-3 rounded-lg text-left transition-all"
                     style={{
-                      background: selectedType === ct.id ? 'rgba(255, 106, 0, 0.1)' : '#0F1720',
-                      border: selectedType === ct.id ? '1px solid rgba(255, 106, 0, 0.3)' : '1px solid #243140',
+                      background: selectedType === ct.id ? 'rgba(232, 93, 0, 0.1)' : '#0F1720',
+                      border: selectedType === ct.id ? '1px solid rgba(232, 93, 0, 0.3)' : '1px solid rgba(140,170,210,0.15)',
                     }}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <ct.icon className="w-4 h-4" style={{ color: selectedType === ct.id ? '#FF6A00' : '#64748B' }} />
-                      <span className="text-sm font-medium" style={{ color: selectedType === ct.id ? '#FF6A00' : '#F4F7FA' }}>{ct.label}</span>
+                      <ct.icon className="w-4 h-4" style={{ color: selectedType === ct.id ? '#E85D00' : '#64748B' }} />
+                      <span className="text-sm font-medium" style={{ color: selectedType === ct.id ? '#E85D00' : '#EDF1F7' }}>{ct.label}</span>
                     </div>
                     <p className="text-[11px] text-[#64748B]">{ct.description}</p>
                   </button>
@@ -134,7 +134,7 @@ const MarketingAutomationPage = () => {
             </Panel>
 
             <Panel>
-              <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>Parameters</h3>
+              <h3 className="text-sm font-semibold text-[#EDF1F7] mb-4" style={{ fontFamily: fontFamily.display }}>Parameters</h3>
               <div className="space-y-4">
                 <div>
                   <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Topic *</label>
@@ -197,7 +197,7 @@ const MarketingAutomationPage = () => {
                 disabled={generating || !selectedType || !topic.trim()}
                 data-testid="marketing-generate-btn"
                 className="w-full mt-4"
-                style={{ background: '#FF6A00', color: 'white' }}
+                style={{ background: '#E85D00', color: 'white' }}
               >
                 {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</> : <><Sparkles className="w-4 h-4 mr-2" />Generate Content</>}
               </Button>
@@ -208,7 +208,7 @@ const MarketingAutomationPage = () => {
           <div>
             <Panel className="min-h-[400px]">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Generated Content</h3>
+                <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Generated Content</h3>
                 {result?.content && (
                   <button onClick={handleCopy} data-testid="marketing-copy-btn"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors"
@@ -231,7 +231,7 @@ const MarketingAutomationPage = () => {
               {generating && (
                 <div className="flex items-center justify-center h-[300px]">
                   <div className="text-center">
-                    <Loader2 className="w-8 h-8 text-[#FF6A00] mx-auto mb-3 animate-spin" />
+                    <Loader2 className="w-8 h-8 text-[#E85D00] mx-auto mb-3 animate-spin" />
                     <p className="text-sm text-[#9FB0C3]">Generating content from your business intelligence...</p>
                   </div>
                 </div>

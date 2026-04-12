@@ -426,10 +426,10 @@ const EmailInbox = () => {
         }}
         role="button"
         tabIndex={0}
-        className={`p-4 rounded-xl border transition-all ${isSelected ? 'ring-1 ring-[#FF6A00]' : ''}`}
+        className={`p-4 rounded-xl border transition-all ${isSelected ? 'ring-1 ring-[#E85D00]' : ''}`}
         style={{
-          background: 'var(--biqc-bg-card, #141C26)',
-          borderColor: isSelected ? '#FF6A00' : 'var(--biqc-border, #1E2D3D)',
+          background: 'var(--biqc-bg-card, #0E1628)',
+          borderColor: isSelected ? '#E85D00' : 'var(--biqc-border, #1E2D3D)',
         }}
         data-testid={`priority-email-card-${email.email_id}`}
       >
@@ -437,11 +437,11 @@ const EmailInbox = () => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                style={{ background: '#FF6A00' }}>
+                style={{ background: '#E85D00' }}>
                 {(email.from || 'U')[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+                <p className="font-medium text-sm truncate" style={{ color: 'var(--biqc-text, #EDF1F7)' }}>
                   {email.from || 'Unknown Sender'}
                 </p>
                 <p className="text-xs" style={{ color: '#64748B' }}>
@@ -449,7 +449,7 @@ const EmailInbox = () => {
                 </p>
               </div>
             </div>
-            <h4 className="text-sm font-semibold mb-1 line-clamp-1" style={{ color: 'var(--biqc-text, #F4F7FA)' }}>
+            <h4 className="text-sm font-semibold mb-1 line-clamp-1" style={{ color: 'var(--biqc-text, #EDF1F7)' }}>
               {email.subject || 'No Subject'}
             </h4>
             {email.snippet && (
@@ -461,7 +461,7 @@ const EmailInbox = () => {
               </p>
             )}
             {email.suggested_action && (
-              <p className="text-xs" style={{ color: '#FF6A00' }}>
+              <p className="text-xs" style={{ color: '#E85D00' }}>
                 <span className="font-medium">Action:</span> {email.suggested_action}
               </p>
             )}
@@ -532,7 +532,7 @@ const EmailInbox = () => {
               {dismissingEmail === email.email_id ? '…' : 'Dismiss'}
             </Button>
             <Button size="sm" type="button" className="text-xs"
-              style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', padding: '4px 10px' }}
+              style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)', padding: '4px 10px' }}
               onClick={(e) => { e.stopPropagation(); fetchReplySuggestions(email.email_id); }}>
               <Sparkles className="w-3 h-3 mr-1" />
               Reply
@@ -959,7 +959,7 @@ const EmailInbox = () => {
           >
             <p className="text-xs" style={{ color: '#94A3B8' }}>{freshnessText}</p>
             {priorityAnalysis?.from_cache && (
-              <button className="text-xs underline" style={{ color: '#FF6A00' }} onClick={runPriorityAnalysis}>
+              <button className="text-xs underline" style={{ color: '#E85D00' }} onClick={runPriorityAnalysis}>
                 Refresh now
               </button>
             )}
@@ -986,8 +986,8 @@ const EmailInbox = () => {
                       onClick={() => setSelectedFolder(folderName)}
                       className="w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-all"
                       style={{
-                        background: active ? 'rgba(255,106,0,0.12)' : 'transparent',
-                        border: `1px solid ${active ? 'rgba(255,106,0,0.35)' : 'rgba(148,163,184,0.15)'}`,
+                        background: active ? 'rgba(232,93,0,0.12)' : 'transparent',
+                        border: `1px solid ${active ? 'rgba(232,93,0,0.35)' : 'rgba(148,163,184,0.15)'}`,
                         color: active ? '#FFB17A' : '#CBD5E1',
                       }}
                     >
@@ -1010,7 +1010,7 @@ const EmailInbox = () => {
                   <p className="text-sm" style={{ color: '#64748B' }}>No messages loaded for this folder yet.</p>
                 ) : folderMessages.map((msg) => (
                   <div key={msg.id} className="rounded-lg border px-3 py-2" style={{ borderColor: 'rgba(148,163,184,0.18)' }}>
-                    <p className="text-xs truncate" style={{ color: '#F4F7FA' }}>{msg.subject}</p>
+                    <p className="text-xs truncate" style={{ color: '#EDF1F7' }}>{msg.subject}</p>
                     <p className="text-[11px] truncate mt-0.5" style={{ color: '#94A3B8' }}>{msg.from}</p>
                     <p className="text-[11px] mt-1 line-clamp-1" style={{ color: '#64748B' }}>{msg.snippet}</p>
                   </div>
@@ -1104,7 +1104,7 @@ const EmailInbox = () => {
                   <div className="mt-4 space-y-4">
                     <div className="rounded-lg border p-4" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)' }}>
                       <p className="text-xs text-[#94A3B8]">From</p>
-                      <p className="mt-1 text-sm text-[#F4F7FA]">{selectedEmailData.from}</p>
+                      <p className="mt-1 text-sm text-[#EDF1F7]">{selectedEmailData.from}</p>
                       <p className="mt-2 text-xs text-[#64748B]">{selectedEmailData.received ? new Date(selectedEmailData.received).toLocaleString() : 'No timestamp available'}</p>
                     </div>
                     <div>

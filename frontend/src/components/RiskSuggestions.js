@@ -19,7 +19,7 @@ import { AlertTriangle, TrendingDown, Clock, DollarSign, Users, CheckCircle2, X,
 
 // ── Domain → icon map ─────────────────────────────────────────────────────────
 const DOMAIN_CFG = {
-  revenue:    { icon: TrendingDown, color: '#FF6A00' },
+  revenue:    { icon: TrendingDown, color: '#E85D00' },
   finance:    { icon: DollarSign,   color: '#F59E0B' },
   people:     { icon: Users,        color: '#3B82F6' },
   operations: { icon: BarChart3,    color: '#8B5CF6' },
@@ -263,7 +263,7 @@ export const RiskSuggestions = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-sm font-semibold leading-snug" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+                <p className="text-sm font-semibold leading-snug" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
                   {risk.title}
                 </p>
               </div>
@@ -283,11 +283,11 @@ export const RiskSuggestions = () => {
 
             {/* Action */}
             {risk.action && (
-              <div className="ml-10 mb-3 p-2 rounded-lg" style={{ background: 'rgba(255,106,0,0.06)', border: '1px solid rgba(255,106,0,0.15)' }}>
-                <p className="text-[11px] font-semibold" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+              <div className="ml-10 mb-3 p-2 rounded-lg" style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.15)' }}>
+                <p className="text-[11px] font-semibold" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                   RECOMMENDED ACTION
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: '#F4F7FA', fontFamily: fontFamily.body }}>
+                <p className="text-xs mt-0.5" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
                   {risk.action}
                 </p>
               </div>
@@ -307,12 +307,12 @@ export const RiskSuggestions = () => {
               <button
                 onClick={() => handleDismiss(risk.id)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all"
-                style={{ background: 'transparent', border: '1px solid #243140', color: '#64748B', fontFamily: fontFamily.body }}>
+                style={{ background: 'transparent', border: '1px solid rgba(140,170,210,0.15)', color: '#64748B', fontFamily: fontFamily.body }}>
                 Acknowledged
               </button>
               <a href="/advisor"
                 className="flex items-center gap-1 text-xs ml-auto"
-                style={{ color: '#FF6A00', fontFamily: fontFamily.body }}>
+                style={{ color: '#E85D00', fontFamily: fontFamily.body }}>
                 Ask advisor <ArrowRight className="w-3 h-3" />
               </a>
             </div>

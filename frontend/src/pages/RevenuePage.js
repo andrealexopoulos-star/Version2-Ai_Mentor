@@ -131,7 +131,7 @@ const RevenuePage = () => {
   const avgDealSize = hasDeals && deals.length > 0 ? Math.round(totalPipeline / deals.length) : null;
 
   const healthScore = winRate != null ? (winRate > 50 ? 'good' : winRate > 30 ? 'moderate' : 'critical') : null;
-  const healthColor = healthScore === 'good' ? '#10B981' : healthScore === 'moderate' ? '#F59E0B' : '#FF6A00';
+  const healthColor = healthScore === 'good' ? '#10B981' : healthScore === 'moderate' ? '#F59E0B' : '#E85D00';
   const healthPct = winRate != null ? Math.min(Math.round(winRate * 2), 100) : 0;
 
   const explainability = {
@@ -248,7 +248,7 @@ const RevenuePage = () => {
         {/* Header with connection status badges */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1.5" style={{ fontFamily: fontFamily.display }}>Revenue Engine</h1>
+            <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1.5" style={{ fontFamily: fontFamily.display }}>Revenue Engine</h1>
             {(crmConnected || accountingConnected) && (
               <LineageBadge
                 lineage={{ connected_sources: [crmConnected && (crmIntegration?.provider || 'CRM'), accountingConnected && (accountingIntegration?.provider || 'Accounting')].filter(Boolean) }}
@@ -273,7 +273,7 @@ const RevenuePage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=crm')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)', fontFamily: fontFamily.mono }}
                   data-testid="revenue-connect-crm-button">
                   <Plug className="w-3 h-3" /> Connect CRM <ArrowRight className="w-3 h-3" />
                 </button>
@@ -293,7 +293,7 @@ const RevenuePage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=financial')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)', fontFamily: fontFamily.mono }}
                   data-testid="revenue-connect-accounting-button">
                   <Plug className="w-3 h-3" /> Connect Accounting <ArrowRight className="w-3 h-3" />
                 </button>
@@ -324,7 +324,7 @@ const RevenuePage = () => {
           <div className="space-y-4" data-testid="revenue-top-signals-column">
             <SectionLabel title="What needs intervention now" detail="Every top signal below shows its source clearly so revenue issues are never detached from the system creating them." testId="revenue-top-signals-label" />
             <div className="grid gap-4 md:grid-cols-2" data-testid="revenue-kpi-hero-grid">
-              <MetricCard label="Pipeline value" value={totalPipeline != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(totalPipeline) : '—'} caption="Open opportunities in the current revenue window" tone="#FF6A00" testId="revenue-pipeline-metric" />
+              <MetricCard label="Pipeline value" value={totalPipeline != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(totalPipeline) : '—'} caption="Open opportunities in the current revenue window" tone="#E85D00" testId="revenue-pipeline-metric" />
               <MetricCard label="Weighted pipeline" value={weightedPipeline != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(weightedPipeline) : '—'} caption="Probability-adjusted pipeline value" tone="#3B82F6" testId="revenue-weighted-metric" />
               <MetricCard label="Win rate" value={winRate != null ? `${winRate}%` : '—'} caption="Closed-won share across visible deals" tone={winRate != null && winRate >= 50 ? '#10B981' : '#F59E0B'} testId="revenue-win-rate-metric" />
               <MetricCard label="Client concentration" value={topClientPct ? `${topClientPct}%` : '—'} caption="Share of pipeline held by the top client" tone={topClientPct >= 40 ? '#EF4444' : '#10B981'} testId="revenue-concentration-metric" />
@@ -356,9 +356,9 @@ const RevenuePage = () => {
 
         {/* Sync progress bar */}
         {(loading || (hasAnyConnectedSystem && syncProgress < 100)) && (
-          <div className="rounded-xl p-4" style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.12)' }}>
+          <div className="rounded-xl p-4" style={{ background: 'rgba(232,93,0,0.04)', border: '1px solid rgba(232,93,0,0.12)' }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>
+              <span className="text-xs font-medium text-[#E85D00]" style={{ fontFamily: fontFamily.mono }}>
                 {integrationLoading && !integrationResolved
                   ? 'Verifying connected systems…'
                   : !hasAnyConnectedSystem
@@ -373,7 +373,7 @@ const RevenuePage = () => {
             </div>
             <div className="w-full h-1.5 rounded-full" style={{ background: '#1E2D3D' }}>
               <div className="h-1.5 rounded-full transition-all duration-500"
-                style={{ width: `${syncProgress}%`, background: 'linear-gradient(90deg, #FF7A18, #E56A08)' }} />
+                style={{ width: `${syncProgress}%`, background: 'linear-gradient(90deg, #E85D00, #E56A08)' }} />
             </div>
             {crmConnected && syncProgress < 100 && (
               <p className="text-[10px] text-[#64748B] mt-1.5" style={{ fontFamily: fontFamily.mono }}>
@@ -388,7 +388,7 @@ const RevenuePage = () => {
             <div className="flex items-start gap-3">
               <Loader2 className="w-5 h-5 text-[#3B82F6] animate-spin flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.display }}>Verifying your connected systems</p>
+                <p className="text-sm font-semibold text-[#EDF1F7] mb-0.5" style={{ fontFamily: fontFamily.display }}>Verifying your connected systems</p>
                 <p className="text-xs text-[#64748B]">BIQc is checking CRM, accounting, and live pipeline signals before rendering revenue analysis.</p>
               </div>
             </div>
@@ -399,10 +399,10 @@ const RevenuePage = () => {
           <Panel className="py-10">
             {crmConnected || accountingConnected ? (
               <div className="text-center py-4">
-                <div className="w-10 h-10 rounded-full bg-[#FF6A00]/10 flex items-center justify-center mx-auto mb-4">
-                  <Loader2 className="w-5 h-5 text-[#FF6A00] animate-spin" />
+                <div className="w-10 h-10 rounded-full bg-[#E85D00]/10 flex items-center justify-center mx-auto mb-4">
+                  <Loader2 className="w-5 h-5 text-[#E85D00] animate-spin" />
                 </div>
-                <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>
+                <p className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>
                   {crmConnected ? 'HubSpot Connected — Pulling Pipeline Data' : 'Accounting Connected — Loading Financial Data'}
                 </p>
                 <p className="text-xs text-[#64748B]">First sync in progress. This takes 1-2 minutes. Refresh to check.</p>
@@ -426,7 +426,7 @@ const RevenuePage = () => {
           <Panel>
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Revenue Health Score</h2>
+                <h2 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Revenue Health Score</h2>
                 <p className="text-sm text-[#9FB0C3]">Based on pipeline stability, concentration risk, and deal velocity.</p>
               </div>
               <div className="flex items-center gap-3">
@@ -445,8 +445,8 @@ const RevenuePage = () => {
           <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="revenue-tabs">
             {TABS.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id ? 'text-[#F4F7FA]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
-                style={{ background: activeTab === tab.id ? '#FF6A0015' : 'transparent', fontFamily: fontFamily.mono }}
+                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id ? 'text-[#EDF1F7]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
+                style={{ background: activeTab === tab.id ? '#E85D0015' : 'transparent', fontFamily: fontFamily.mono }}
                 data-testid={`revenue-tab-${tab.id}`}>
                 {tab.label}
               </button>
@@ -460,20 +460,20 @@ const RevenuePage = () => {
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
                     <BarChart3 className="w-4 h-4 text-[#3B82F6]" />
-                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Pipeline Overview</h3>
+                    <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Pipeline Overview</h3>
                   </div>
                   <div className="space-y-3 mb-4">
                     {[['Total Pipeline', '$' + (totalPipeline || 0).toLocaleString()], ['Active Deals', String(activeDeals || 0)], ['Win Rate', (winRate || 0) + '%'], ['Avg Deal Size', avgDealSize ? '$' + avgDealSize.toLocaleString() : '—']].map(([k, v]) => (
-                      <div key={k} className="flex justify-between"><span className="text-xs text-[#9FB0C3]">{k}</span><span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{v}</span></div>
+                      <div key={k} className="flex justify-between"><span className="text-xs text-[#9FB0C3]">{k}</span><span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{v}</span></div>
                     ))}
-                    <div className="flex justify-between"><span className="text-xs text-[#9FB0C3]">Stalled (&gt;7d)</span><span className="text-sm font-semibold" style={{ fontFamily: fontFamily.mono, color: stalledCount > 0 ? '#FF6A00' : '#10B981' }}>{stalledCount}</span></div>
+                    <div className="flex justify-between"><span className="text-xs text-[#9FB0C3]">Stalled (&gt;7d)</span><span className="text-sm font-semibold" style={{ fontFamily: fontFamily.mono, color: stalledCount > 0 ? '#E85D00' : '#10B981' }}>{stalledCount}</span></div>
                   </div>
                 </Panel>
 
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
-                    <Users className="w-4 h-4 text-[#FF6A00]" />
-                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Deal Breakdown</h3>
+                    <Users className="w-4 h-4 text-[#E85D00]" />
+                    <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Deal Breakdown</h3>
                   </div>
                   <div className="space-y-2">
                     {deals.slice(0, 6).map((d, i) => {
@@ -483,12 +483,12 @@ const RevenuePage = () => {
                       const isStalled = d.last_modified_at && (Date.now() - new Date(d.last_modified_at).getTime()) > 7 * 86400000;
                       return (
                         <div key={i} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: isStalled ? '#FF6A00' : '#10B981' }} />
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: isStalled ? '#E85D00' : '#10B981' }} />
                           <div className="flex-1 min-w-0">
-                            <span className="text-xs text-[#F4F7FA] block truncate">{name}</span>
+                            <span className="text-xs text-[#EDF1F7] block truncate">{name}</span>
                             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{stage}</span>
                           </div>
-                          <span className="text-xs font-semibold text-[#F4F7FA] shrink-0" style={{ fontFamily: fontFamily.mono }}>${amount.toLocaleString()}</span>
+                          <span className="text-xs font-semibold text-[#EDF1F7] shrink-0" style={{ fontFamily: fontFamily.mono }}>${amount.toLocaleString()}</span>
                         </div>
                       );
                     })}
@@ -498,7 +498,7 @@ const RevenuePage = () => {
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
                     <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Churn Signals</h3>
+                    <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Churn Signals</h3>
                   </div>
                   {c.revenue?.churn ? (
                     <p className="text-xs text-[#9FB0C3] leading-relaxed">{c.revenue.churn}</p>
@@ -518,7 +518,7 @@ const RevenuePage = () => {
                 ].map(m => (
                   <Panel key={m.label}>
                     <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
-                    <span className="text-xl font-bold text-[#F4F7FA] block" style={{ fontFamily: fontFamily.mono }}>{m.value}</span>
+                    <span className="text-xl font-bold text-[#EDF1F7] block" style={{ fontFamily: fontFamily.mono }}>{m.value}</span>
                   </Panel>
                 ))}
               </div>
@@ -530,8 +530,8 @@ const RevenuePage = () => {
             <>
               <Panel>
                 <div className="flex items-center gap-2 mb-4">
-                  <Target className="w-4 h-4 text-[#FF6A00]" />
-                  <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Growth Scenario Modeling</h3>
+                  <Target className="w-4 h-4 text-[#E85D00]" />
+                  <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Growth Scenario Modeling</h3>
                 </div>
                 <p className="text-xs text-[#64748B] mb-4">Projections computed from your actual CRM deal data. No assumptions.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -555,7 +555,7 @@ const RevenuePage = () => {
 
               {/* Deal Probability Distribution */}
               <Panel>
-                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: fontFamily.display }}>Pipeline by Probability</h3>
+                <h3 className="text-sm font-semibold text-[#EDF1F7] mb-4" style={{ fontFamily: fontFamily.display }}>Pipeline by Probability</h3>
                 <div className="space-y-3">
                   {[
                     { label: 'High Probability (70%+)', deals: highProbDeals, color: '#10B981' },
@@ -606,7 +606,7 @@ const RevenuePage = () => {
               <Panel>
                 <div className="flex items-center gap-2 mb-4">
                   <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-                  <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Revenue Concentration Risk</h3>
+                  <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Revenue Concentration Risk</h3>
                 </div>
                 <p className="text-xs text-[#64748B] mb-4">High concentration means revenue depends heavily on a small number of clients. Diversification reduces risk.</p>
                 
@@ -618,7 +618,7 @@ const RevenuePage = () => {
                       return (
                         <div key={name}>
                           <div className="flex justify-between mb-1">
-                            <span className="text-xs text-[#F4F7FA]">{name}</span>
+                            <span className="text-xs text-[#EDF1F7]">{name}</span>
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-semibold" style={{ fontFamily: fontFamily.mono, color }}>{pct}%</span>
                               <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>${Math.round(value / 1000)}K</span>
@@ -645,11 +645,11 @@ const RevenuePage = () => {
                 </Panel>
                 <Panel>
                   <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Unique Clients</span>
-                  <span className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{sortedCompanies.length}</span>
+                  <span className="text-2xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{sortedCompanies.length}</span>
                 </Panel>
                 <Panel>
                   <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Avg per Client</span>
-                  <span className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>
+                  <span className="text-2xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
                     {sortedCompanies.length > 0 ? '$' + Math.round((totalPipeline / sortedCompanies.length) / 1000) + 'K' : '—'}
                   </span>
                 </Panel>
@@ -664,8 +664,8 @@ const RevenuePage = () => {
                 <Panel>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-[#FF6A00]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Revenue Cognition Intelligence</h3>
+                      <Zap className="w-4 h-4 text-[#E85D00]" />
+                      <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Revenue Cognition Intelligence</h3>
                     </div>
                     <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: fontFamily.mono }}>LIVE</span>
                   </div>
@@ -704,7 +704,7 @@ const RevenuePage = () => {
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
                     <ArrowUpRight className="w-4 h-4 text-[#EF4444]" />
-                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Risk Propagation Chains</h3>
+                    <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Risk Propagation Chains</h3>
                   </div>
                   <div className="space-y-3">
                     {unified.propagation_map.slice(0, 4).map((chain, i) => (
@@ -730,7 +730,7 @@ const RevenuePage = () => {
               {!unified?.signals && !unified?.instability_indices ? (
                 <Panel className="text-center py-8">
                   <Zap className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-                  <p className="text-sm text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Cross-Domain Intelligence</p>
+                  <p className="text-sm text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Cross-Domain Intelligence</p>
                   <p className="text-xs text-[#64748B]">Connect multiple integrations (CRM + Accounting) to unlock cross-domain revenue insights.</p>
                 </Panel>
               ) : (
@@ -740,7 +740,7 @@ const RevenuePage = () => {
                     <Panel>
                       <div className="flex items-center gap-2 mb-4">
                         <Receipt className="w-4 h-4 text-[#EF4444]" />
-                        <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Overdue Invoices</h3>
+                        <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Overdue Invoices</h3>
                         <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>
                           ACCOUNTING
                         </span>
@@ -749,7 +749,7 @@ const RevenuePage = () => {
                         {unified.signals.overdue_invoices.map((inv, i) => (
                           <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                             <div>
-                              <span className="text-xs text-[#F4F7FA]">Invoice #{inv.number}</span>
+                              <span className="text-xs text-[#EDF1F7]">Invoice #{inv.number}</span>
                               <span className="text-[10px] text-[#EF4444] block" style={{ fontFamily: fontFamily.mono }}>{inv.days_overdue}d overdue</span>
                             </div>
                             <span className="text-sm font-bold text-[#EF4444]" style={{ fontFamily: fontFamily.mono }}>${(inv.amount || 0).toLocaleString()}</span>
@@ -764,7 +764,7 @@ const RevenuePage = () => {
                     <Panel>
                       <div className="flex items-center gap-2 mb-4">
                         <FileWarning className="w-4 h-4 text-[#F59E0B]" />
-                        <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>At-Risk Revenue</h3>
+                        <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>At-Risk Revenue</h3>
                         <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#F59E0B15', color: '#F59E0B', fontFamily: fontFamily.mono }}>
                           CRM
                         </span>
@@ -773,10 +773,10 @@ const RevenuePage = () => {
                         {unified.signals.at_risk.map((deal, i) => (
                           <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                             <div>
-                              <span className="text-xs text-[#F4F7FA]">{deal.name}</span>
+                              <span className="text-xs text-[#EDF1F7]">{deal.name}</span>
                               <span className="text-[10px] text-[#F59E0B] block" style={{ fontFamily: fontFamily.mono }}>{deal.risk}</span>
                             </div>
-                            <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>${(deal.amount || 0).toLocaleString()}</span>
+                            <span className="text-sm font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>${(deal.amount || 0).toLocaleString()}</span>
                           </div>
                         ))}
                       </div>
@@ -787,7 +787,7 @@ const RevenuePage = () => {
                   {unified?.signals && <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <Panel>
                       <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Pipeline Total</span>
-                      <span className="text-2xl font-bold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>
+                      <span className="text-2xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
                         ${unified.signals.pipeline_total ? Math.round(unified.signals.pipeline_total / 1000) + 'K' : '—'}
                       </span>
                     </Panel>
@@ -799,7 +799,7 @@ const RevenuePage = () => {
                     </Panel>
                     <Panel>
                       <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Stalled Deals</span>
-                      <span className="text-2xl font-bold" style={{ fontFamily: fontFamily.mono, color: unified.signals.stalled_deals > 0 ? '#FF6A00' : '#10B981' }}>
+                      <span className="text-2xl font-bold" style={{ fontFamily: fontFamily.mono, color: unified.signals.stalled_deals > 0 ? '#E85D00' : '#10B981' }}>
                         {unified.signals.stalled_deals ?? 0}
                       </span>
                     </Panel>

@@ -294,7 +294,7 @@ body {
   /* Auth page: hide right panel on mobile, full-width form */
   [data-testid="login-submit-btn"],
   [data-testid="register-submit-btn"] {
-    background: #FF6A00 !important;
+    background: #E85D00 !important;
     color: white !important;
   }
   /* Auth form inputs */

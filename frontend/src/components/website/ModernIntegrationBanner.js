@@ -61,7 +61,7 @@ const LogoChip = ({ name }) => (
 );
 
 export const ModernIntegrationBanner = () => (
-  <section className="py-14 sm:py-18 overflow-hidden" style={{ background: '#07121E' }} data-testid="modern-integration-banner">
+  <section className="py-14 sm:py-18 overflow-hidden" style={{ background: '#0B1120' }} data-testid="modern-integration-banner">
     <style>{`
       @keyframes modernTrackLeft {
         0% { transform: translateX(0); }
@@ -92,7 +92,7 @@ export const ModernIntegrationBanner = () => (
       <p className="text-[11px] uppercase tracking-[0.18em]" style={{ color: '#C65F2E', fontFamily: fontFamily.mono }}>
         Integrations
       </p>
-      <h3 className="mt-2 text-2xl sm:text-3xl font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+      <h3 className="mt-2 text-2xl sm:text-3xl font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
         One connection layer across your operating stack.
       </h3>
       <p className="mt-3 text-sm sm:text-base max-w-2xl mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>

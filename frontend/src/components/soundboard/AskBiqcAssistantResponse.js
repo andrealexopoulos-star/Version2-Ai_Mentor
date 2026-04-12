@@ -148,7 +148,7 @@ export default function AskBiqcAssistantResponse({
               type="button"
               onClick={() => onSuggestedAction?.(action.prompt || action.label)}
               className={`${compact ? 'px-2.5 py-1 text-[10px]' : 'px-3 py-1.5 text-xs'} rounded-lg font-medium transition-all hover:brightness-110 flex items-center gap-1.5`}
-              style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.25)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+              style={{ background: 'rgba(232,93,0,0.1)', border: '1px solid rgba(232,93,0,0.25)', color: '#E85D00', fontFamily: fontFamily.mono }}
               data-testid={`${actionTestIdPrefix}-suggested-${index}`}
             >
               <span>→</span>
@@ -554,11 +554,11 @@ export default function AskBiqcAssistantResponse({
           target="_blank"
           rel="noopener noreferrer"
           className={`flex items-center gap-2 mt-2 px-3 py-2 rounded-lg ${compact ? '' : 'hover:brightness-110 transition-all'}`}
-          style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', textDecoration: 'none' }}
+          style={{ background: '#E85D0015', border: '1px solid #E85D0030', textDecoration: 'none' }}
         >
-          <Download className="w-3.5 h-3.5 text-[#FF6A00] shrink-0" />
+          <Download className="w-3.5 h-3.5 text-[#E85D00] shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className={`${compact ? 'text-[11px]' : 'text-xs'} font-semibold truncate`} style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+            <p className={`${compact ? 'text-[11px]' : 'text-xs'} font-semibold truncate`} style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
               {message.file.name}
             </p>
             <p className="text-[9px]" style={{ color: compact ? '#64748B' : 'var(--text-muted)', fontFamily: fontFamily.mono }}>

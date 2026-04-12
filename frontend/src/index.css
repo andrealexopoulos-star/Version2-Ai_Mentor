@@ -98,7 +98,7 @@
 }
 
 /* Text overrides: dark-theme white/grey text → dark text in light mode */
-[data-theme="light"] .text-\[#F4F7FA\]  { color: #0F172A !important; }
+[data-theme="light"] .text-\[#EDF1F7\]  { color: #0F172A !important; }
 [data-theme="light"] .text-\[#E6EEF7\]  { color: #0F172A !important; }
 [data-theme="light"] .text-\[#9FB0C3\]  { color: #475569 !important; }
 [data-theme="light"] .text-\[#64748B\]  { color: #64748B !important; }  /* already good */
@@ -113,7 +113,7 @@
 
 /* Background overrides for Tailwind bg classes */
 [data-theme="light"] .bg-\[#0F1720\]  { background-color: #F0F4F8 !important; }
-[data-theme="light"] .bg-\[#141C26\]  { background-color: #FFFFFF !important; }
+[data-theme="light"] .bg-\[#0E1628\]  { background-color: #FFFFFF !important; }
 [data-theme="light"] .bg-\[#0A1018\]  { background-color: #F8FAFC !important; }
 [data-theme="light"] .bg-\[#1A2332\]  { background-color: #EDF2F7 !important; }
 [data-theme="light"] .bg-\[#243140\]  { background-color: #E2E8F0 !important; }
@@ -1131,7 +1131,7 @@ html, body {
         min-width: 100% !important;
         max-width: 100% !important;
         min-height: 48px !important;
-        background-color: #FF6A00 !important;
+        background-color: #E85D00 !important;
         color: white !important;
         border-radius: 12px !important;
         font-size: 15px !important;

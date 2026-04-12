@@ -194,7 +194,7 @@ const DataCenter = () => {
           {/* Header */}
           <div className="mb-8">
             <p className="overline text-[#9FB0C3] mb-2">Knowledge Base</p>
-            <h1 className="text-3xl md:text-4xl font-serif text-[#F4F7FA]">Data Center</h1>
+            <h1 className="text-3xl md:text-4xl font-serif text-[#EDF1F7]">Data Center</h1>
             <p className="text-[#9FB0C3] mt-2">
               Upload your business documents to make the AI your subject matter expert
             </p>
@@ -250,13 +250,13 @@ const DataCenter = () => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-[#0F1720] p-1 mb-6">
-              <TabsTrigger value="files" className="data-[state=active]:bg-[#141C26]" data-testid="tab-files">
+              <TabsTrigger value="files" className="data-[state=active]:bg-[#0E1628]" data-testid="tab-files">
                 <Database className="w-4 h-4 mr-2" /> Files & Documents
               </TabsTrigger>
-              <TabsTrigger value="profile" className="data-[state=active]:bg-[#141C26]" data-testid="tab-profile">
+              <TabsTrigger value="profile" className="data-[state=active]:bg-[#0E1628]" data-testid="tab-profile">
                 <Building2 className="w-4 h-4 mr-2" /> Business Profile
               </TabsTrigger>
-              <TabsTrigger value="upload" className="data-[state=active]:bg-[#141C26]" data-testid="tab-upload">
+              <TabsTrigger value="upload" className="data-[state=active]:bg-[#0E1628]" data-testid="tab-upload">
                 <Upload className="w-4 h-4 mr-2" /> Upload
               </TabsTrigger>
             </TabsList>
@@ -272,7 +272,7 @@ const DataCenter = () => {
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
                             <div className="w-10 h-10 bg-[#ccff00]/20 rounded-sm flex items-center justify-center">
-                              <Icon className="w-5 h-5 text-[#F4F7FA]" />
+                              <Icon className="w-5 h-5 text-[#EDF1F7]" />
                             </div>
                             <button
                               onClick={() => setDeleteFileId(file.id)}
@@ -282,7 +282,7 @@ const DataCenter = () => {
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </button>
                           </div>
-                          <h3 className="font-medium text-[#F4F7FA] truncate mb-1">{file.filename}</h3>
+                          <h3 className="font-medium text-[#EDF1F7] truncate mb-1">{file.filename}</h3>
                           <p className="text-xs text-[#9FB0C3] mb-2">
                             {fileCategories.find(c => c.value === file.category)?.label || file.category}
                           </p>
@@ -294,7 +294,7 @@ const DataCenter = () => {
                             <span>{new Date(file.created_at).toLocaleDateString()}</span>
                           </div>
                           {file.extracted_text && (
-                            <div className="mt-3 pt-3 border-t border-[#243140]">
+                            <div className="mt-3 pt-3 border-t border-[rgba(140,170,210,0.15)]">
                               <div className="flex items-center gap-1 text-xs text-green-600">
                                 <Check className="w-3 h-3" />
                                 Text extracted for AI
@@ -309,8 +309,8 @@ const DataCenter = () => {
               ) : (
                 <Card className="rounded-lg">
                   <CardContent className="p-12 text-center">
-                    <Database className="w-16 h-16 text-[#F4F7FA]/20 mx-auto mb-4" />
-                    <h3 className="text-xl font-serif text-[#F4F7FA] mb-2">No files yet</h3>
+                    <Database className="w-16 h-16 text-[#EDF1F7]/20 mx-auto mb-4" />
+                    <h3 className="text-xl font-serif text-[#EDF1F7] mb-2">No files yet</h3>
                     <p className="text-[#9FB0C3] mb-6">
                       Upload your business documents to help the AI understand your business better
                     </p>
@@ -360,7 +360,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-industry">
                           <SelectValue placeholder="Select industry" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#141C26]">
+                        <SelectContent className="bg-[#0E1628]">
                           {industries.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
                         </SelectContent>
                       </Select>
@@ -371,7 +371,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-business-type">
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#141C26]">
+                        <SelectContent className="bg-[#0E1628]">
                           <SelectItem value="Sole Proprietorship">Sole Proprietorship</SelectItem>
                           <SelectItem value="LLC">LLC</SelectItem>
                           <SelectItem value="Corporation">Corporation</SelectItem>
@@ -396,7 +396,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-employees">
                           <SelectValue placeholder="Select range" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#141C26]">
+                        <SelectContent className="bg-[#0E1628]">
                           {employeeCounts.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
                         </SelectContent>
                       </Select>
@@ -407,7 +407,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-revenue">
                           <SelectValue placeholder="Select range" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#141C26]">
+                        <SelectContent className="bg-[#0E1628]">
                           {revenueRanges.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                         </SelectContent>
                       </Select>
@@ -490,14 +490,14 @@ const DataCenter = () => {
                   {/* Drop Zone */}
                   <div
                     className={`border-2 border-dashed rounded-sm p-8 text-center transition-colors ${
-                      dragActive ? 'border-[#ccff00] bg-[#ccff00]/10' : 'border-[#243140] hover:border-[#243140]'
+                      dragActive ? 'border-[#ccff00] bg-[#ccff00]/10' : 'border-[rgba(140,170,210,0.15)] hover:border-[rgba(140,170,210,0.15)]'
                     }`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
                   >
-                    <Upload className="w-12 h-12 text-[#F4F7FA]/30 mx-auto mb-4" />
+                    <Upload className="w-12 h-12 text-[#EDF1F7]/30 mx-auto mb-4" />
                     {uploadForm.file ? (
                       <div className="flex items-center justify-center gap-2">
                         <Check className="w-5 h-5 text-green-600" />
@@ -533,7 +533,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="upload-category">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#141C26]">
+                        <SelectContent className="bg-[#0E1628]">
                           {fileCategories.map(cat => (
                             <SelectItem key={cat.value} value={cat.value}>
                               <div className="flex items-center gap-2">
@@ -586,7 +586,7 @@ const DataCenter = () => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteFileId} onOpenChange={() => setDeleteFileId(null)}>
-        <AlertDialogContent className="bg-[#141C26]">
+        <AlertDialogContent className="bg-[#0E1628]">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete File</AlertDialogTitle>
             <AlertDialogDescription>

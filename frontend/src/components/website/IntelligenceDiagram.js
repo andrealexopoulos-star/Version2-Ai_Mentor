@@ -32,7 +32,7 @@ const SIX_INPUT_CATEGORIES = [
     label: 'Market Intelligence',
     desc: 'Competitor moves, demand shifts, and industry signals.',
     tools: ['Competitor Recon', 'Industry Signals', 'Web Scanning'],
-    color: '#FF6A00',
+    color: '#E85D00',
   },
   {
     label: 'HR & Payments',
@@ -51,13 +51,13 @@ const AnimatedConnector = ({ height = 40 }) => (
     <div style={{
       position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 6,
       width: 2, height,
-      background: 'linear-gradient(to bottom, rgba(255,140,40,0.55), rgba(255,140,40,0.12))',
-      boxShadow: '0 0 8px rgba(255,140,40,0.3)',
+      background: 'linear-gradient(to bottom, rgba(232,93,0,0.55), rgba(232,93,0,0.12))',
+      boxShadow: '0 0 8px rgba(232,93,0,0.3)',
     }} />
     <div className="signal-pulse" style={{
       position: 'absolute', left: '50%', transform: 'translateX(-50%)',
       width: 7, height: 7, borderRadius: '50%', background: '#FF8C28', top: 6,
-      boxShadow: '0 0 12px rgba(255,140,40,0.8), 0 0 24px rgba(255,140,40,0.4)',
+      boxShadow: '0 0 12px rgba(232,93,0,0.8), 0 0 24px rgba(232,93,0,0.4)',
     }} />
     <style>{`
       .signal-pulse { animation: signalMove 2s ease-in-out infinite; }
@@ -90,8 +90,8 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
     >
       <style>{`
         @keyframes coreGlow {
-          0%,100% { box-shadow: 0 0 40px rgba(255,140,40,0.35), 0 0 80px rgba(255,140,40,0.15); }
-          50%      { box-shadow: 0 0 55px rgba(255,140,40,0.5),  0 0 110px rgba(255,140,40,0.22); }
+          0%,100% { box-shadow: 0 0 40px rgba(232,93,0,0.35), 0 0 80px rgba(232,93,0,0.15); }
+          50%      { box-shadow: 0 0 55px rgba(232,93,0,0.5),  0 0 110px rgba(232,93,0,0.22); }
         }
         @keyframes corePulse {
           0%,100% { opacity: 0.3; transform: scale(1); }
@@ -109,13 +109,13 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
 
       {/* Subtle grid */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: 'linear-gradient(rgba(255,140,40,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,140,40,0.018) 1px, transparent 1px)',
+        backgroundImage: 'linear-gradient(rgba(232,93,0,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(232,93,0,0.018) 1px, transparent 1px)',
         backgroundSize: '60px 60px',
       }} />
       {/* Central energy wave */}
       <div className="absolute left-1/2 -translate-x-1/2 hidden sm:block pointer-events-none" style={{
         top: '35%', width: 1000, height: 320,
-        background: 'radial-gradient(ellipse, rgba(255,140,40,0.06) 0%, transparent 70%)',
+        background: 'radial-gradient(ellipse, rgba(232,93,0,0.06) 0%, transparent 70%)',
         animation: 'waveFloat 10s ease-in-out infinite',
       }} />
 
@@ -125,7 +125,7 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
         <div className="text-center mb-8">
           <h2 style={{
             fontFamily: fontFamily.display,
-            color: '#F4F7FA',
+            color: '#EDF1F7',
             fontSize: 'clamp(26px, 3.8vw, 44px)',
             fontWeight: 700,
             lineHeight: 1.1,
@@ -225,12 +225,12 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
           <div style={{ position: 'relative' }} data-testid="biqc-core-node">
             <div style={{
               position: 'absolute', inset: -48, borderRadius: '50%', pointerEvents: 'none',
-              background: 'radial-gradient(circle, rgba(255,140,40,0.14) 0%, rgba(255,100,0,0.04) 50%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(232,93,0,0.14) 0%, rgba(255,100,0,0.04) 50%, transparent 70%)',
               animation: 'corePulse 6s ease-in-out infinite',
             }} />
             <div style={{
               position: 'absolute', inset: -28, borderRadius: '50%', pointerEvents: 'none',
-              border: '1px solid rgba(255,140,40,0.08)',
+              border: '1px solid rgba(232,93,0,0.08)',
               animation: 'corePulse 6s ease-in-out infinite 1.5s',
             }} />
             <div style={{
@@ -239,13 +239,13 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
               borderRadius: 20,
               textAlign: 'center',
               background: 'linear-gradient(135deg, rgba(38,50,65,0.97), rgba(12,20,30,0.97))',
-              border: '2px solid rgba(255,140,40,0.5)',
+              border: '2px solid rgba(232,93,0,0.5)',
               animation: 'coreGlow 6s ease-in-out infinite',
             }}>
               <span style={{
-                fontFamily: fontFamily.mono, color: '#FF7A18',
+                fontFamily: fontFamily.mono, color: '#E85D00',
                 fontSize: 30, fontWeight: 800, display: 'block',
-                textShadow: '0 0 28px rgba(255,122,24,0.6)',
+                textShadow: '0 0 28px rgba(232,93,0,0.6)',
               }}>
                 BIQc
               </span>
@@ -274,8 +274,8 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
             <div key={step} style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{
                 padding: '9px 22px', borderRadius: 8,
-                background: 'rgba(255,140,40,0.05)',
-                border: '1px solid rgba(255,140,40,0.18)',
+                background: 'rgba(232,93,0,0.05)',
+                border: '1px solid rgba(232,93,0,0.18)',
                 animation: `stepPulse 3s ease-in-out infinite ${i * 0.65}s`,
               }}>
                 <span style={{ fontFamily: fontFamily.mono, color: '#FF9C45', fontSize: 12, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
@@ -285,10 +285,10 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
               {i < PIPELINE_STEPS.length - 1 && (
                 <div style={{ padding: '0 5px' }}>
                   <svg width="24" height="10" viewBox="0 0 24 10" fill="none">
-                    <line x1="0" y1="5" x2="20" y2="5" stroke="rgba(255,140,40,0.35)" strokeWidth="1.2" strokeDasharray="3 2">
+                    <line x1="0" y1="5" x2="20" y2="5" stroke="rgba(232,93,0,0.35)" strokeWidth="1.2" strokeDasharray="3 2">
                       <animate attributeName="stroke-dashoffset" from="10" to="0" dur="1.5s" repeatCount="indefinite" />
                     </line>
-                    <polygon points="18,2 24,5 18,8" fill="rgba(255,140,40,0.5)" />
+                    <polygon points="18,2 24,5 18,8" fill="rgba(232,93,0,0.5)" />
                   </svg>
                 </div>
               )}

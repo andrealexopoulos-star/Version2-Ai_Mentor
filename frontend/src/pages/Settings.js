@@ -54,10 +54,10 @@ const SettingsBillingContent = ({ navigate, user }) => {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border p-5" style={{ borderColor: 'rgba(255,106,0,0.3)', background: 'rgba(255,106,0,0.05)' }}>
+      <div className="rounded-xl border p-5" style={{ borderColor: 'rgba(232,93,0,0.3)', background: 'rgba(232,93,0,0.05)' }}>
         <div className="flex items-start justify-between mb-3">
           <div>
-            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#FF6A00' }}>Current Plan</p>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#E85D00' }}>Current Plan</p>
             <p className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>{displayName}</p>
           </div>
           <div
@@ -68,7 +68,7 @@ const SettingsBillingContent = ({ navigate, user }) => {
           </div>
         </div>
         {isPaid ? (
-          <Button onClick={() => navigate('/billing')} className="btn-primary" style={{ background: '#FF6A00', color: 'white' }}>
+          <Button onClick={() => navigate('/billing')} className="btn-primary" style={{ background: '#E85D00', color: 'white' }}>
             Open Billing Centre
           </Button>
         ) : (
@@ -79,7 +79,7 @@ const SettingsBillingContent = ({ navigate, user }) => {
               </p>
             )}
             <div className="flex gap-2 flex-wrap">
-              <Button onClick={() => navigate('/subscribe')} className="btn-primary" style={{ background: '#FF6A00', color: 'white' }}>
+              <Button onClick={() => navigate('/subscribe')} className="btn-primary" style={{ background: '#E85D00', color: 'white' }}>
                 {onTrial ? 'Upgrade Before Trial Ends' : 'View Plans & Upgrade'}
               </Button>
               <Button variant="outline" onClick={() => { window.location.href = 'mailto:billing@biqc.com.au'; }}>Contact Billing</Button>
@@ -106,7 +106,7 @@ const SettingsBillingContent = ({ navigate, user }) => {
       )}
 
       <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-        Billing questions? <a href="mailto:billing@biqc.com.au" style={{ color: '#FF6A00' }}>billing@biqc.com.au</a>
+        Billing questions? <a href="mailto:billing@biqc.com.au" style={{ color: '#E85D00' }}>billing@biqc.com.au</a>
       </p>
     </div>
   );
@@ -590,7 +590,7 @@ const Settings = () => {
                           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Your current role and access level</p>
                         </div>
                         <span className="badge badge-primary text-xs px-3 py-1 rounded-full"
-                          style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)' }}>
+                          style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)' }}>
                           {user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'Business Owner'}
                         </span>
                       </div>
@@ -619,14 +619,14 @@ const Settings = () => {
 
                       {/* Calibration review link */}
                       <div className="p-4 rounded-lg flex items-center justify-between"
-                        style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.15)' }}>
+                        style={{ background: 'rgba(232,93,0,0.04)', border: '1px solid rgba(232,93,0,0.15)' }}>
                         <div>
                           <p className="font-medium" style={{ color: 'var(--text-primary)' }}>AI Calibration Answers</p>
                           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Review or update your calibration to refine your AI agent's behaviour</p>
                         </div>
                         <Button variant="outline" onClick={() => navigate('/calibration')}
                           className="flex items-center gap-2 text-sm"
-                          style={{ borderColor: '#FF6A00', color: '#FF6A00' }}
+                          style={{ borderColor: '#E85D00', color: '#E85D00' }}
                           data-testid="recalibrate-btn">
                           Review Calibration <ArrowRight className="w-4 h-4" />
                         </Button>
@@ -877,7 +877,7 @@ const Settings = () => {
               <Card style={sectionResizeStyle}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5" style={{ color: '#FF6A00' }} />
+                    <CreditCard className="w-5 h-5" style={{ color: '#E85D00' }} />
                     Billing & Subscription
                   </CardTitle>
                   <CardDescription>Your plan and usage</CardDescription>

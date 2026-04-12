@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { Shield, Lock, Database, RefreshCw, X, ChevronRight, DollarSign, Target, Eye, Zap, Clock, ChevronDown } from 'lucide-react';
 
 const CREAM = '#0F1720';
-const CHARCOAL = '#F4F7FA';
+const CHARCOAL = '#EDF1F7';
 const MUTED = '#9FB0C3';
-const GOLD = '#FF6A00';
-const CARD_BG = '#141C26';
-const CARD_BORDER = '#243140';
+const GOLD = '#E85D00';
+const CARD_BG = '#0E1628';
+const CARD_BORDER = 'rgba(140,170,210,0.15)';
 const SERIF = "var(--font-heading)";
-const AZ = '#FF6A00';
+const AZ = '#E85D00';
 
 const ANALYZE_PHASES = [
   'Scanning market presence...',
@@ -22,7 +22,7 @@ const ANALYZE_PHASES = [
 export const CalibrationLoading = () => (
   <div className="flex-1 flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }} data-testid="calibration-loading">
     <div className="text-center">
-      <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: '#FF6A00', animation: 'pulse 2s ease-in-out infinite' }}>
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: '#E85D00', animation: 'pulse 2s ease-in-out infinite' }}>
         <span className="text-white font-bold text-lg" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
       </div>
       <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }}>Loading calibration...</p>
@@ -77,7 +77,7 @@ const PrivacyModal = ({ onClose }) => (
           },
           {
             icon: RefreshCw,
-            color: '#FF7A18',
+            color: '#E85D00',
             title: 'How BIQc learns about your business.',
             body: 'BIQc uses your data only to generate intelligence for YOU — alerts, recommendations and briefings specific to your business. We do not sell your data, share it with other businesses, or use it to train general AI models. Your intelligence is yours alone.',
           },
@@ -100,14 +100,14 @@ const PrivacyModal = ({ onClose }) => (
           <p className="text-xs leading-relaxed" style={{ color: MUTED }}>
             BIQc operates under Australia's Privacy Act 1988 and the Australian Privacy Principles (APPs).
             You can request deletion of all your data at any time by contacting us at{' '}
-            <span style={{ color: '#FF7A18' }}>privacy@biqc.com.au</span>.
+            <span style={{ color: '#E85D00' }}>privacy@biqc.com.au</span>.
             We will action your request within 30 days.
           </p>
         </div>
 
         <button onClick={onClose}
           className="w-full py-3 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
-          style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: 'white', fontFamily: SERIF }}>
+          style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: 'white', fontFamily: SERIF }}>
           Got it — I'm happy to continue
         </button>
       </div>
@@ -152,7 +152,7 @@ export const WelcomeHandshake = ({
 
             {/* BIQc logo mark */}
             <div className="w-16 h-16 rounded-2xl mx-auto mb-7 flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', boxShadow: '0 0 40px rgba(255,106,0,0.25)' }}>
+              style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', boxShadow: '0 0 40px rgba(232,93,0,0.25)' }}>
               <span className="text-white font-bold text-2xl" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
             </div>
 
@@ -175,7 +175,7 @@ export const WelcomeHandshake = ({
               ].map(item => (
                 <div key={item.num} className="rounded-xl p-3 text-left" style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
                   <div className="w-5 h-5 rounded-md flex items-center justify-center mb-1.5"
-                    style={{ background: 'rgba(255,122,24,0.15)' }}>
+                    style={{ background: 'rgba(232,93,0,0.15)' }}>
                     <span className="text-[10px] font-bold" style={{ color: AZ }}>{item.num}</span>
                   </div>
                   <p className="text-xs font-semibold mb-0.5" style={{ color: CHARCOAL, fontFamily: SERIF }}>{item.label}</p>
@@ -196,7 +196,7 @@ export const WelcomeHandshake = ({
 
             <button onClick={() => setPhase('scan')}
               className="mx-auto px-12 py-4 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all hover:brightness-110"
-              style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: 'white', fontFamily: SERIF, boxShadow: '0 8px 28px rgba(255,106,0,0.28)' }}
+              style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: 'white', fontFamily: SERIF, boxShadow: '0 8px 28px rgba(232,93,0,0.28)' }}
               data-testid="welcome-continue-btn">
               Begin Business Intelligence Scan
               <ChevronRight className="w-4 h-4" />
@@ -248,7 +248,7 @@ export const WelcomeHandshake = ({
               type="submit"
               disabled={isSubmitting || !websiteUrl.trim()}
               className="w-full px-8 py-3.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
-              style={{ background: '#FF6A00', color: '#FFFFFF', fontFamily: SERIF }}
+              style={{ background: '#E85D00', color: '#FFFFFF', fontFamily: SERIF }}
               data-testid="begin-audit-btn">
               {isSubmitting ? 'Scanning...' : scanFailure ? 'Regenerate Scan' : 'Begin Strategic Audit'}
             </button>
@@ -257,7 +257,7 @@ export const WelcomeHandshake = ({
           <div className="max-w-sm mx-auto mt-8 grid grid-cols-2 gap-3">
             {['Market positioning', 'Competitive signals', 'Trust architecture', 'Growth pressure'].map(item => (
               <div key={item} className="flex items-center gap-2 text-left">
-                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#FF6A00' }} />
+                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#E85D00' }} />
                 <span className="text-xs" style={{ color: MUTED, fontFamily: "'JetBrains Mono', monospace" }}>{item}</span>
               </div>
             ))}
@@ -355,7 +355,7 @@ export const AuditProgress = ({ onManualFallback = null }) => {
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6" data-testid="analyzing-state">
       <style>{`
-        @keyframes panelGlow{0%,100%{box-shadow:0 0 0 rgba(255,106,0,0.0), inset 0 0 0 rgba(255,106,0,0.0)}50%{box-shadow:0 0 34px rgba(255,106,0,0.14), inset 0 0 24px rgba(255,106,0,0.09)}}
+        @keyframes panelGlow{0%,100%{box-shadow:0 0 0 rgba(232,93,0,0.0), inset 0 0 0 rgba(232,93,0,0.0)}50%{box-shadow:0 0 34px rgba(232,93,0,0.14), inset 0 0 24px rgba(232,93,0,0.09)}}
         @keyframes crtFlicker{0%,100%{opacity:0.18}50%{opacity:0.11}}
         @keyframes scanlineSweep{0%{transform:translateY(-110%)}100%{transform:translateY(310%)}}
         @keyframes dataPulse{0%,100%{opacity:0.45}50%{opacity:1}}
@@ -379,7 +379,7 @@ export const AuditProgress = ({ onManualFallback = null }) => {
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'linear-gradient(180deg, rgba(255,106,0,0) 0%, rgba(255,106,0,0.13) 45%, rgba(255,106,0,0) 100%)',
+            background: 'linear-gradient(180deg, rgba(232,93,0,0) 0%, rgba(232,93,0,0.13) 45%, rgba(232,93,0,0) 100%)',
             transform: 'translateY(-110%)',
             animation: 'scanlineSweep 2.9s linear infinite',
           }}
@@ -392,19 +392,19 @@ export const AuditProgress = ({ onManualFallback = null }) => {
               style={{
                 width: 170,
                 height: 170,
-                border: '1px solid rgba(255,106,0,0.5)',
-                background: 'radial-gradient(circle at center, rgba(255,106,0,0.18) 0%, rgba(255,106,0,0.06) 35%, rgba(255,106,0,0.02) 60%, rgba(0,0,0,0.0) 100%)',
+                border: '1px solid rgba(232,93,0,0.5)',
+                background: 'radial-gradient(circle at center, rgba(232,93,0,0.18) 0%, rgba(232,93,0,0.06) 35%, rgba(232,93,0,0.02) 60%, rgba(0,0,0,0.0) 100%)',
               }}
             >
-              <div className="absolute left-1/2 top-0 h-full w-px" style={{ background: 'rgba(255,106,0,0.16)' }} />
-              <div className="absolute top-1/2 left-0 w-full h-px" style={{ background: 'rgba(255,106,0,0.16)' }} />
+              <div className="absolute left-1/2 top-0 h-full w-px" style={{ background: 'rgba(232,93,0,0.16)' }} />
+              <div className="absolute top-1/2 left-0 w-full h-px" style={{ background: 'rgba(232,93,0,0.16)' }} />
               {[30, 55, 80].map((size) => (
                 <div
                   key={size}
                   className="absolute rounded-full"
                   style={{
                     inset: `${size / 2}px`,
-                    border: '1px solid rgba(255,106,0,0.18)',
+                    border: '1px solid rgba(232,93,0,0.18)',
                   }}
                 />
               ))}
@@ -415,12 +415,12 @@ export const AuditProgress = ({ onManualFallback = null }) => {
                   height: 82,
                   transformOrigin: 'bottom center',
                   transform: `translate(-50%, -100%) rotate(${sweepRotation}deg)`,
-                  background: 'linear-gradient(to top, rgba(255,106,0,0.9) 0%, rgba(255,106,0,0.1) 100%)',
+                  background: 'linear-gradient(to top, rgba(232,93,0,0.9) 0%, rgba(232,93,0,0.1) 100%)',
                 }}
               />
               <div
                 className="absolute top-1/2 left-1/2 w-2.5 h-2.5 rounded-full"
-                style={{ transform: 'translate(-50%, -50%)', background: '#FF6A00', boxShadow: '0 0 14px rgba(255,106,0,0.6)' }}
+                style={{ transform: 'translate(-50%, -50%)', background: '#E85D00', boxShadow: '0 0 14px rgba(232,93,0,0.6)' }}
               />
             </div>
           </div>
@@ -450,7 +450,7 @@ export const AuditProgress = ({ onManualFallback = null }) => {
                       className="h-full rounded-full"
                       style={{
                         width: `${active * 10}%`,
-                        background: 'linear-gradient(90deg, #FF6A00 0%, #FFC48B 100%)',
+                        background: 'linear-gradient(90deg, #E85D00 0%, #FFC48B 100%)',
                         animation: 'dataPulse 1.1s ease-in-out infinite',
                         animationDelay: `${i * 0.08}s`,
                       }}
@@ -504,15 +504,15 @@ export const IdentityBar = ({ email, onSignOut }) => (
 
 const CARD_TYPE_META = {
   revenue_leakage: { icon: DollarSign, color: '#E85D00', gradient: 'linear-gradient(135deg, #111A24 0%, #1A2633 100%)', borderColor: '#2D3B4A' },
-  competitor_delta: { icon: Target, color: '#FF6A00', gradient: 'linear-gradient(135deg, #121B25 0%, #1C2836 100%)', borderColor: '#324252' },
-  hidden_issue: { icon: Eye, color: '#FF7A18', gradient: 'linear-gradient(135deg, #111925 0%, #1A2432 100%)', borderColor: '#30404F' },
+  competitor_delta: { icon: Target, color: '#E85D00', gradient: 'linear-gradient(135deg, #121B25 0%, #1C2836 100%)', borderColor: '#324252' },
+  hidden_issue: { icon: Eye, color: '#E85D00', gradient: 'linear-gradient(135deg, #111925 0%, #1A2432 100%)', borderColor: '#30404F' },
   quick_win: { icon: Zap, color: '#FF8C33', gradient: 'linear-gradient(135deg, #13202C 0%, #1D2B39 100%)', borderColor: '#3A4A5B' },
 };
 
 const ConfidenceBadge = ({ level }) => {
   const colors = {
     high: { bg: '#213041', text: '#FF8C33', label: 'High Confidence' },
-    medium: { bg: '#273649', text: '#FF7A18', label: 'Medium Confidence' },
+    medium: { bg: '#273649', text: '#E85D00', label: 'Medium Confidence' },
     low: { bg: '#2B394D', text: '#E85D00', label: 'Low Confidence' },
   };
   const c = colors[level] || colors.medium;
@@ -579,7 +579,7 @@ export const WowCards = ({ cards, onConfirm }) => {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8" style={{ animation: 'fadeSlideIn 0.6s ease-out' }}>
             <div className="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', boxShadow: '0 0 30px rgba(255,106,0,0.2)' }}>
+              style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', boxShadow: '0 0 30px rgba(232,93,0,0.2)' }}>
               <Eye className="w-6 h-6 text-white" />
             </div>
             <h2 className="text-2xl sm:text-3xl mb-2" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
@@ -601,10 +601,10 @@ export const WowCards = ({ cards, onConfirm }) => {
               onClick={onConfirm}
               className="px-10 py-3.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
               style={{
-                background: 'linear-gradient(135deg, #FF7A18, #E56A08)',
+                background: 'linear-gradient(135deg, #E85D00, #E56A08)',
                 color: 'white',
                 fontFamily: SERIF,
-                boxShadow: '0 8px 28px rgba(255,106,0,0.25)',
+                boxShadow: '0 8px 28px rgba(232,93,0,0.25)',
               }}
               data-testid="wow-cards-continue-btn"
             >
@@ -733,10 +733,10 @@ export const StrategicRoadmap = ({ roadmap, onConfirm }) => {
               onClick={onConfirm}
               className="px-10 py-3.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
               style={{
-                background: 'linear-gradient(135deg, #FF7A18, #E56A08)',
+                background: 'linear-gradient(135deg, #E85D00, #E56A08)',
                 color: 'white',
                 fontFamily: SERIF,
-                boxShadow: '0 8px 28px rgba(255,106,0,0.25)',
+                boxShadow: '0 8px 28px rgba(232,93,0,0.25)',
               }}
               data-testid="roadmap-continue-btn"
             >

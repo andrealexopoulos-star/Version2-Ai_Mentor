@@ -91,7 +91,7 @@ const CompliancePage = () => {
         <div className="grid gap-4 md:grid-cols-3" data-testid="compliance-summary-grid">
           <MetricCard label="Live obligations" value={String(regulatory.length)} caption="Snapshot-backed regulatory items" tone={regulatory.length > 0 ? '#F59E0B' : '#10B981'} testId="compliance-obligations-count" />
           <MetricCard label="Single points of failure" value={String(spofs.length)} caption="Dependencies with real supporting evidence" tone={spofs.length > 0 ? '#EF4444' : '#10B981'} testId="compliance-spof-count" />
-          <MetricCard label="Alignment contradictions" value={String(contradictions.length)} caption="Strategic conflicts surfaced by cognition" tone={contradictions.length > 0 ? '#FF6A00' : '#10B981'} testId="compliance-contradictions-count" />
+          <MetricCard label="Alignment contradictions" value={String(contradictions.length)} caption="Strategic conflicts surfaced by cognition" tone={contradictions.length > 0 ? '#E85D00' : '#10B981'} testId="compliance-contradictions-count" />
         </div>
 
         <div className="flex flex-wrap items-center gap-2" data-testid="compliance-lineage-badge">

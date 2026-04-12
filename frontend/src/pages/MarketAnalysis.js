@@ -68,7 +68,7 @@ const MarketAnalysis = () => {
           {/* Header */}
           <div className="mb-8">
             <p className="overline text-[#9FB0C3] mb-2">Market Intelligence</p>
-            <h1 className="text-3xl md:text-4xl font-serif text-[#F4F7FA]">Market Analysis</h1>
+            <h1 className="text-3xl md:text-4xl font-serif text-[#EDF1F7]">Market Analysis</h1>
             <p className="text-[#9FB0C3] mt-2">
               Understand your market, competitors, and growth opportunities
             </p>
@@ -80,23 +80,23 @@ const MarketAnalysis = () => {
               <CardContent className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-[#F4F7FA]">Analysis Title</Label>
+                    <Label className="text-[#EDF1F7]">Analysis Title</Label>
                     <Input
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder="e.g., E-commerce Market Analysis 2024"
-                      className="bg-[#141C26]"
+                      className="bg-[#0E1628]"
                       data-testid="market-title-input"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[#F4F7FA]">Business & Market Context</Label>
+                    <Label className="text-[#EDF1F7]">Business & Market Context</Label>
                     <Textarea
                       value={formData.business_context}
                       onChange={(e) => setFormData({ ...formData, business_context: e.target.value })}
                       placeholder="Describe your business, industry, target market, main competitors, and what specific market insights you need..."
-                      className="min-h-[250px] bg-[#141C26]"
+                      className="min-h-[250px] bg-[#0E1628]"
                       data-testid="market-context-input"
                     />
                     <p className="text-xs text-[#9FB0C3]">
@@ -126,7 +126,7 @@ const MarketAnalysis = () => {
 
                 {/* Quick Tips */}
                 <div className="mt-6 p-4 bg-[#0F1720] rounded-sm">
-                  <h4 className="font-medium text-[#F4F7FA] mb-2 text-sm">Tips for Better Analysis</h4>
+                  <h4 className="font-medium text-[#EDF1F7] mb-2 text-sm">Tips for Better Analysis</h4>
                   <ul className="text-xs text-[#9FB0C3] space-y-1">
                     <li>• Be specific about your target market segment</li>
                     <li>• Name your main competitors if known</li>
@@ -143,7 +143,7 @@ const MarketAnalysis = () => {
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
                     <CognitiveMesh compact />
-                    <p className="text-[#F4F7FA] font-medium">Analyzing market data...</p>
+                    <p className="text-[#EDF1F7] font-medium">Analyzing market data...</p>
                     <p className="text-sm text-[#9FB0C3] mt-1">This may take a moment</p>
                   </CardContent>
                 </Card>
@@ -156,13 +156,13 @@ const MarketAnalysis = () => {
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <span className="badge badge-forest text-xs">Market Analysis</span>
-                          <h3 className="text-xl font-serif text-[#F4F7FA] mt-2">{result.title}</h3>
+                          <h3 className="text-xl font-serif text-[#EDF1F7] mt-2">{result.title}</h3>
                         </div>
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={saveAsDocument}
-                          className="border-[#243140] text-[#F4F7FA]"
+                          className="border-[rgba(140,170,210,0.15)] text-[#EDF1F7]"
                           data-testid="save-market-analysis-btn"
                         >
                           <Save className="w-4 h-4 mr-2" />
@@ -176,7 +176,7 @@ const MarketAnalysis = () => {
                   </Card>
 
                   {result.recommendations?.length > 0 && (
-                    <Card className="rounded-lg bg-[#141C26] text-white">
+                    <Card className="rounded-lg bg-[#0E1628] text-white">
                       <CardContent className="p-6">
                         <h4 className="text-lg font-serif text-[#ccff00] mb-4 flex items-center gap-2">
                           <TrendingUp className="w-5 h-5" />
@@ -185,7 +185,7 @@ const MarketAnalysis = () => {
                         <ul className="space-y-3">
                           {result.recommendations.slice(0, 5).map((rec, i) => (
                             <li key={i} className="flex items-start gap-3">
-                              <span className="w-6 h-6 bg-[#ccff00] text-[#F4F7FA] rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
+                              <span className="w-6 h-6 bg-[#ccff00] text-[#EDF1F7] rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
                                 {i + 1}
                               </span>
                               <span className="text-white/90">{rec}</span>
@@ -201,7 +201,7 @@ const MarketAnalysis = () => {
               {!loading && !result && (
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
-                    <Target className="w-12 h-12 text-[#F4F7FA]/20 mx-auto mb-4" />
+                    <Target className="w-12 h-12 text-[#EDF1F7]/20 mx-auto mb-4" />
                     <p className="text-[#9FB0C3]">
                       Describe your market and business to get comprehensive analysis
                     </p>

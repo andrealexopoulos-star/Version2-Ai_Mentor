@@ -777,7 +777,7 @@ const MySoundBoard = () => {
               {scanUsage && !scanUsage.calibration_complete && (
                 <a href="/calibration"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110"
-                  style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                  style={{ background: '#E85D0015', border: '1px solid #E85D0030', color: '#E85D00', fontFamily: fontFamily.mono }}
                   data-testid="mysb-calibration-btn">
                   <Zap className="w-3.5 h-3.5" /> Complete Calibration
                 </a>
@@ -805,8 +805,8 @@ const MySoundBoard = () => {
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                     style={{
-                      background: canRun || isPaid ? '#3B82F615' : '#243140',
-                      border: `1px solid ${canRun || isPaid ? '#3B82F630' : '#243140'}`,
+                      background: canRun || isPaid ? '#3B82F615' : 'rgba(140,170,210,0.15)',
+                      border: `1px solid ${canRun || isPaid ? '#3B82F630' : 'rgba(140,170,210,0.15)'}`,
                       color: canRun || isPaid ? '#3B82F6' : '#64748B',
                       fontFamily: fontFamily.mono,
                       cursor: canRun || isPaid ? 'pointer' : 'not-allowed',
@@ -901,13 +901,13 @@ const MySoundBoard = () => {
                         }`}
                         style={{
                           background: message.role === 'user' 
-                            ? 'linear-gradient(135deg, rgba(255,106,0,0.20), rgba(255,106,0,0.10))'
+                            ? 'linear-gradient(135deg, rgba(232,93,0,0.20), rgba(232,93,0,0.10))'
                             : 'var(--bg-card)',
                           color: message.role === 'user' 
                             ? '#F8FAFC'
                             : 'var(--text-primary)',
                           border: message.role === 'user' 
-                            ? '1px solid rgba(255,106,0,0.28)'
+                            ? '1px solid rgba(232,93,0,0.28)'
                             : '1px solid var(--border-light)',
                           boxShadow: message.role === 'user'
                             ? 'inset 0 1px 0 rgba(255,255,255,0.05)'
@@ -1020,8 +1020,8 @@ const MySoundBoard = () => {
             <div className="mx-auto" style={{ maxWidth: `${chatColumnMaxWidth}px` }}>
               {/* File attachment preview */}
               {attachedFile && (
-                <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(255,106,0,0.3)' }}>
-                  <FileText className="w-3.5 h-3.5 shrink-0" style={{ color: '#FF6A00' }} />
+                <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(232,93,0,0.3)' }}>
+                  <FileText className="w-3.5 h-3.5 shrink-0" style={{ color: '#E85D00' }} />
                   <span className="flex-1 text-xs truncate" style={{ color: 'var(--text-primary)', fontFamily: fontFamily.mono }}>{attachedFile.name}</span>
                   {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>ready</span>}
                   {attachedFile.hint && <span className="text-[9px] truncate max-w-[100px]" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{attachedFile.hint}</span>}
@@ -1084,7 +1084,7 @@ const MySoundBoard = () => {
                       <button
                         onClick={() => { setShowModeMenu((v) => !v); setShowAgentMenu(false); }}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110"
-                        style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                        style={{ background: 'rgba(232,93,0,0.1)', border: '1px solid rgba(232,93,0,0.2)', color: '#E85D00', fontFamily: fontFamily.mono }}
                         data-testid="soundboard-mode-selector"
                       >
                         <span>{activeMode?.icon}</span>
@@ -1105,10 +1105,10 @@ const MySoundBoard = () => {
                             >
                               <span className="text-lg shrink-0">{mode.icon}</span>
                               <div>
-                                <p className="text-sm font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>
+                                <p className="text-sm font-semibold" style={{ color: selectedMode === mode.id ? '#E85D00' : '#EDF1F7', fontFamily: fontFamily.body }}>
                                   {mode.label}
                                   {selectedMode === mode.id && (
-                                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.15)', color: '#FF6A00' }}>
+                                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(232,93,0,0.15)', color: '#E85D00' }}>
                                       Active
                                     </span>
                                   )}
@@ -1156,7 +1156,7 @@ const MySoundBoard = () => {
                             >
                               <span className="text-sm shrink-0">{agent.icon}</span>
                               <div className="min-w-0">
-                                <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#F4F7FA', fontFamily: fontFamily.body }}>{agent.label}</p>
+                                <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#EDF1F7', fontFamily: fontFamily.body }}>{agent.label}</p>
                                 <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{agent.shortDesc}</p>
                               </div>
                             </button>
@@ -1217,7 +1217,7 @@ const MySoundBoard = () => {
                   accept=".txt,.csv,.md,.json,.log,.xml,.html,.py,.js,.ts,.sql,.pdf,.doc,.docx,.png,.jpg" />
                 <button onClick={() => fileRef.current?.click()}
                   className="p-2 rounded-lg transition-all hover:bg-white/5 shrink-0"
-                  style={{ color: attachedFile ? '#FF6A00' : 'var(--text-muted)' }}
+                  style={{ color: attachedFile ? '#E85D00' : 'var(--text-muted)' }}
                   data-testid="soundboard-attach" title="Attach file">
                   <Paperclip className="w-4 h-4" />
                 </button>

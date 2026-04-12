@@ -45,8 +45,8 @@ h1, h2, h3 {
 
 /* ═══ PASSWORD VISIBILITY ═══ */
 input[type="password"] {
-  color: #F4F7FA !important;
-  -webkit-text-fill-color: #F4F7FA !important;
+  color: #EDF1F7 !important;
+  -webkit-text-fill-color: #EDF1F7 !important;
 }
 input[type="password"]::placeholder {
   -webkit-text-fill-color: #64748B !important;

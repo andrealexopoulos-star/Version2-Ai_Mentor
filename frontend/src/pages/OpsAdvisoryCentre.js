@@ -57,10 +57,10 @@ const OpsAdvisoryCentre = () => {
       <div className="space-y-6 max-w-[1200px] animate-fade-in" data-testid="ops-advisory-page" style={{ fontFamily: fontFamily.body }}>
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-5 h-5" style={{ color: '#FF6A00' }} />
-            <span className="text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: fontFamily.mono }} data-testid="ops-advisory-badge">Ops Advisory</span>
+            <Sparkles className="w-5 h-5" style={{ color: '#E85D00' }} />
+            <span className="text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest" style={{ background: '#E85D0015', color: '#E85D00', fontFamily: fontFamily.mono }} data-testid="ops-advisory-badge">Ops Advisory</span>
           </div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }} data-testid="ops-advisory-title">Strategic Intelligence</h1>
+          <h1 className="text-2xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }} data-testid="ops-advisory-title">Strategic Intelligence</h1>
           <p className="mt-2 text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }} data-testid="ops-advisory-subtitle">
             Evidence-backed strategic intelligence based on your profile and recent activity
           </p>
@@ -95,9 +95,9 @@ const OpsAdvisoryCentre = () => {
         ) : data?.locked ? (
           <Panel data-testid="ops-advisory-locked-panel">
             <div className="flex items-start gap-3 mb-3">
-              <Lock className="w-4 h-4 mt-0.5" style={{ color: '#FF6A00' }} />
+              <Lock className="w-4 h-4 mt-0.5" style={{ color: '#E85D00' }} />
               <div>
-                <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Upgrade to unlock more recommendations</h3>
+                <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Upgrade to unlock more recommendations</h3>
                 <p className="text-xs mt-1" style={{ color: '#9FB0C3' }}>You&apos;ve reached your monthly limit for your current plan.</p>
               </div>
             </div>
@@ -105,7 +105,7 @@ const OpsAdvisoryCentre = () => {
               <div className="text-sm" style={{ color: '#9FB0C3' }}>
                 Used {data?.usage?.used || 0} of {data?.usage?.limit || 0} this month.
               </div>
-              <Link to="/upgrade" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold" style={{ background: '#FF6A00', color: '#fff' }} data-testid="ops-advisory-view-plans-button">
+              <Link to="/upgrade" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold" style={{ background: '#E85D00', color: '#fff' }} data-testid="ops-advisory-view-plans-button">
                 View Plans
               </Link>
             </div>
@@ -114,7 +114,7 @@ const OpsAdvisoryCentre = () => {
           <>
             <Panel data-testid="ops-advisory-recommendations-panel">
               <div className="mb-4">
-                <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Recommendations</h2>
+                <h2 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Recommendations</h2>
                 <p className="text-xs mt-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
                   {data?.meta?.date ? `Generated for ${data.meta.date}` : 'Generated today'}
                 </p>
@@ -129,7 +129,7 @@ const OpsAdvisoryCentre = () => {
                       style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
                       data-testid={`ops-advisory-item-${idx}`}
                     >
-                      <div className="text-sm font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+                      <div className="text-sm font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
                         {item.title}
                       </div>
                       {item.reason && (
@@ -201,7 +201,7 @@ const OpsAdvisoryCentre = () => {
                 Used {data?.usage?.used || 0} of {data?.usage?.limit || 0} recommendations this month.
               </div>
               <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold"
-                style={{ background: '#243140', color: '#F4F7FA', border: '1px solid #334155' }}
+                style={{ background: 'rgba(140,170,210,0.15)', color: '#EDF1F7', border: '1px solid #334155' }}
                 onClick={fetchRecommendations}
                 data-testid="ops-advisory-refresh-button">
                 <RefreshCw className="w-3.5 h-3.5" /> Refresh

@@ -229,10 +229,10 @@ const CalendarView = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl animate-fade-in">
         {advisorDraft && (
-          <div className="p-5 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,106,0,0.25)' }} data-testid="calendar-advisor-draft-card">
+          <div className="p-5 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid rgba(232,93,0,0.25)' }} data-testid="calendar-advisor-draft-card">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="max-w-3xl">
-                <p className="text-xs uppercase tracking-[0.14em] mb-2" style={{ color: '#FF6A00' }}>Advisor follow-up draft</p>
+                <p className="text-xs uppercase tracking-[0.14em] mb-2" style={{ color: '#E85D00' }}>Advisor follow-up draft</p>
                 <input
                   value={advisorDraft.title}
                   onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, title: event.target.value }))}

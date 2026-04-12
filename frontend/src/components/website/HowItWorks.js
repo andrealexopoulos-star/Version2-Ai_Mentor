@@ -41,7 +41,7 @@ const SIX_LAYERS = [
 
 const SIX_CATEGORIES = [
   {
-    icon: DollarSign, color: '#FF6A00', title: 'Financial Data',         // [I]
+    icon: DollarSign, color: '#E85D00', title: 'Financial Data',         // [I]
     items: ['Cash flow monitoring', 'Invoice tracking & aged receivables', 'Expense anomaly detection', 'Margin variance analysis', 'Tax liability flags', 'Runway projections'],
   },
   {
@@ -85,13 +85,13 @@ const TABS = [
 // ─── Small reusable pieces ────────────────────────────────────────────────────
 const OrangeLine = () => (
   <div className="flex items-center gap-3 mb-4">
-    <div className="w-8 h-[2px] flex-shrink-0" style={{ background: '#FF6A00' }} />
+    <div className="w-8 h-[2px] flex-shrink-0" style={{ background: '#E85D00' }} />
   </div>
 );
 
 const SectionTag = ({ children }) => (
   <span className="text-[10px] font-semibold tracking-[0.18em] uppercase"
-    style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+    style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
     {children}
   </span>
 );
@@ -116,7 +116,7 @@ const CategoryCard = ({ cat }) => {
             style={{ background: `${cat.color}15` }}>
             <cat.icon className="w-4 h-4" style={{ color: cat.color }} />
           </div>
-          <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #F4F7FA)' }}>
+          <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
             {cat.title}
           </h3>
         </div>
@@ -163,9 +163,9 @@ export function HowItWorks() {
       <div className="max-w-5xl mx-auto px-6 pt-14 pb-2 text-center">
         <SectionTag>How It Works</SectionTag>
         <h2 className="text-2xl sm:text-3xl font-medium mt-2 mb-3"
-          style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #F4F7FA)' }}>
+          style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
           From disconnected data to&nbsp;
-          <span style={{ color: '#FF6A00' }}>autonomous intelligence.</span>
+          <span style={{ color: '#E85D00' }}>autonomous intelligence.</span>
         </h2>
         <p className="text-sm sm:text-base max-w-xl mx-auto"
           style={{ color: 'var(--biqc-text-2, #9FB0C3)', fontFamily: fontFamily.body }}>
@@ -188,8 +188,8 @@ export function HowItWorks() {
                 className="flex-shrink-0 px-4 sm:px-6 py-3.5 text-xs font-semibold whitespace-nowrap transition-all"
                 style={{
                   fontFamily: fontFamily.mono,
-                  color: activeTab === tab.id ? '#FF6A00' : 'var(--biqc-text-muted, #64748B)',
-                  borderBottom: activeTab === tab.id ? '2px solid #FF6A00' : '2px solid transparent',
+                  color: activeTab === tab.id ? '#E85D00' : 'var(--biqc-text-muted, #64748B)',
+                  borderBottom: activeTab === tab.id ? '2px solid #E85D00' : '2px solid transparent',
                   textDecoration: 'none',
                 }}
                 data-testid={`how-it-works-tab-${tab.id}`}>
@@ -208,7 +208,7 @@ export function HowItWorks() {
           <OrangeLine />
           <SectionTag>The Problem SMBs Face</SectionTag>
           <h3 className="text-xl sm:text-2xl font-medium mt-2 mb-8"
-            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #F4F7FA)' }}>
+            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
             You're running a business with enterprise-level complexity<br className="hidden sm:block" /> on startup-level infrastructure.
           </h3>
 
@@ -222,7 +222,7 @@ export function HowItWorks() {
                 }}>
                 <item.icon className="w-5 h-5 mb-3" style={{ color: '#EF4444' }} />
                 <h4 className="text-sm font-semibold mb-2"
-                  style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #F4F7FA)' }}>
+                  style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
                   {item.title}
                 </h4>
                 <p className="text-xs leading-relaxed"
@@ -244,29 +244,29 @@ export function HowItWorks() {
           <OrangeLine />
           <SectionTag>What BIQc Does</SectionTag>
           <h3 className="text-xl sm:text-2xl font-medium mt-2 mb-8"
-            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #F4F7FA)' }}>
+            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
             Six layers of autonomous intelligence.
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {SIX_LAYERS.map((item, i) => (
               <div key={i}
-                className="rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#FF6A00]/20 relative overflow-hidden"
+                className="rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#E85D00]/20 relative overflow-hidden"
                 style={{
                   background: 'var(--biqc-bg-card, rgba(255,255,255,0.03))',
                   border: '1px solid var(--biqc-border, rgba(255,255,255,0.08))',
                 }}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center"
-                    style={{ background: 'rgba(255,106,0,0.1)' }}>
-                    <item.icon className="w-4 h-4" style={{ color: '#FF6A00' }} />
+                    style={{ background: 'rgba(232,93,0,0.1)' }}>
+                    <item.icon className="w-4 h-4" style={{ color: '#E85D00' }} />
                   </div>
-                  <span className="text-3xl font-bold" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,106,0,0.08)' }}>
+                  <span className="text-3xl font-bold" style={{ fontFamily: fontFamily.mono, color: 'rgba(232,93,0,0.08)' }}>
                     {item.num}
                   </span>
                 </div>
                 <h4 className="text-sm font-semibold mb-2"
-                  style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #F4F7FA)' }}>
+                  style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
                   {item.title}
                 </h4>
                 <p className="text-xs leading-relaxed"
@@ -288,7 +288,7 @@ export function HowItWorks() {
           <OrangeLine />
           <SectionTag>What BIQc Analyses</SectionTag>
           <h3 className="text-xl sm:text-2xl font-medium mt-2 mb-2"
-            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #F4F7FA)' }}>
+            style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
             Six categories of business intelligence.
           </h3>
           <p className="text-sm mb-8"
@@ -313,7 +313,7 @@ export function HowItWorks() {
           <div className="text-center mb-10">
             <SectionTag>Intelligence Pipeline</SectionTag>
             <h3 className="text-xl sm:text-2xl font-medium mt-2"
-              style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #F4F7FA)' }}>
+              style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
               From Raw Data to Executive Briefing
             </h3>
           </div>
@@ -326,7 +326,7 @@ export function HowItWorks() {
                 {i < 3 && (
                   <div className="hidden lg:block absolute top-8 left-full w-full z-10"
                     style={{ width: 'calc(100% - 1rem)', marginLeft: '0.5rem' }}>
-                    <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, rgba(255,106,0,0.4), rgba(255,106,0,0.1))' }} />
+                    <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, rgba(232,93,0,0.4), rgba(232,93,0,0.1))' }} />
                   </div>
                 )}
                 <div className="rounded-2xl p-5 text-center h-full transition-all duration-200 hover:-translate-y-0.5"
@@ -335,11 +335,11 @@ export function HowItWorks() {
                     border: '1px solid var(--biqc-border, rgba(255,255,255,0.08))',
                   }}>
                   <div className="text-4xl font-bold mb-3"
-                    style={{ fontFamily: fontFamily.mono, color: 'rgba(255,106,0,0.15)' }}>
+                    style={{ fontFamily: fontFamily.mono, color: 'rgba(232,93,0,0.15)' }}>
                     {step.num}
                   </div>
                   <h4 className="text-base font-semibold mb-2"
-                    style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #F4F7FA)' }}>
+                    style={{ fontFamily: fontFamily.display, color: 'var(--biqc-text, #EDF1F7)' }}>
                     {step.title}
                   </h4>
                   <p className="text-xs leading-relaxed"
@@ -360,9 +360,9 @@ export function HowItWorks() {
               to="/register-supabase"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
               style={{
-                background: 'linear-gradient(135deg, #FF7A18, #E56A08)',
+                background: 'linear-gradient(135deg, #E85D00, #E56A08)',
                 fontFamily: fontFamily.body,
-                boxShadow: '0 8px 32px rgba(255,106,0,0.28)',
+                boxShadow: '0 8px 32px rgba(232,93,0,0.28)',
               }}
               data-testid="how-it-works-cta">
               Start free trial <ArrowRight className="w-4 h-4" />

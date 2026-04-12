@@ -14,7 +14,7 @@ const ActionBar = ({ actions }) => (
   <div className="flex flex-wrap gap-2 mt-3">
     {actions.includes("auto-email") && <ActionBtn icon={Mail} label="Auto-Email" color="#3B82F6" />}
     {actions.includes("quick-sms") && <ActionBtn icon={MessageSquare} label="Quick-SMS" color="#10B981" />}
-    {actions.includes("hand-off") && <ActionBtn icon={Users} label="Hand Off" color="#FF6A00" />}
+    {actions.includes("hand-off") && <ActionBtn icon={Users} label="Hand Off" color="#E85D00" />}
     {actions.includes("dismiss") && <ActionBtn icon={XCircle} label="Dismiss & Learn" color="#64748B" />}
   </div>
 );
@@ -22,7 +22,7 @@ const ActionBar = ({ actions }) => (
 /* ═══ 5 COGNITION GROUPS ═══ */
 const GROUPS = {
   money: {
-    id: 'money', label: 'Money', icon: DollarSign, color: '#FF6A00', 
+    id: 'money', label: 'Money', icon: DollarSign, color: '#E85D00', 
     description: 'Cash, invoices, margins, runway, spend',
   },
   revenue: {
@@ -107,7 +107,7 @@ const weeklyBrief = { cash: 4200, hours: 8.5, actions: 14, tasks: 22, sop: 97, f
 const alignment = { contradictions: ["Revenue target 20% vs 0 outbound in 14 days", "Improve ops vs no SOPs for top 3 processes"] };
 const memo = "Andre, your business is at an inflection point. Deal Alpha ($45K) is your Q2 anchor — if it closes, runway extends to 5 months. If not, 2.8 months and cut non-essential spend.\n\nThe deeper issue isn't revenue — it's capacity. You're at 112% with 14 pending decisions and 42 meetings. SLA breaches and proposal bottleneck are symptoms of a founder who's the single point of failure.\n\nMy recommendation: Deploy $500/mo in automation this week. This buys 8 hours immediately. Use them to close Deal Alpha personally. Revisit hiring in 60 days.";
 
-const ST = { STABLE: { c: '#166534', bg: '#F0FDF4', b: '#BBF7D0', d: '#10B981' }, DRIFT: { c: '#F59E0B', bg: '#FFFBEB', b: '#FDE68A', d: '#F59E0B' }, COMPRESSION: { c: '#9A3412', bg: '#FFF7ED', b: '#FED7AA', d: '#FF6A00' }, CRITICAL: { c: '#991B1B', bg: '#FEF2F2', b: '#FECACA', d: '#EF4444' } };
+const ST = { STABLE: { c: '#166534', bg: '#F0FDF4', b: '#BBF7D0', d: '#10B981' }, DRIFT: { c: '#F59E0B', bg: '#FFFBEB', b: '#FDE68A', d: '#F59E0B' }, COMPRESSION: { c: '#9A3412', bg: '#FFF7ED', b: '#FED7AA', d: '#E85D00' }, CRITICAL: { c: '#991B1B', bg: '#FEF2F2', b: '#FECACA', d: '#EF4444' } };
 const SEV = { high: { bg: '#FEF2F2', b: '#FECACA', d: '#EF4444' }, medium: { bg: '#FFFBEB', b: '#FDE68A', d: '#F59E0B' }, low: { bg: '#F0FDF4', b: '#BBF7D0', d: '#10B981' } };
 
 const Card = ({ children, className = '' }) => (<div className={`rounded-2xl ${className}`} style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(0,0,0,0.06)', backdropFilter: 'blur(12px)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>{children}</div>);
@@ -164,7 +164,7 @@ const CognitiveSnapshotV2Mockup = () => {
                   className="flex items-center gap-2.5 px-4 py-3 rounded-xl transition-all shrink-0"
                   style={{
                     background: isActive ? g.color : 'white',
-                    color: isActive ? 'white' : '#243140',
+                    color: isActive ? 'white' : 'rgba(140,170,210,0.15)',
                     border: `1.5px solid ${isActive ? g.color : 'rgba(0,0,0,0.08)'}`,
                     boxShadow: isActive ? `0 4px 16px ${g.color}30` : '0 1px 3px rgba(0,0,0,0.04)',
                     fontFamily: fontFamily.display,
@@ -201,7 +201,7 @@ const CognitiveSnapshotV2Mockup = () => {
 
             {/* AI Insight Summary */}
             <Card className="p-5">
-              <p className="text-sm leading-relaxed" style={{ color: '#243140', fontFamily: fontFamily.body }}>{gd.insight}</p>
+              <p className="text-sm leading-relaxed" style={{ color: 'rgba(140,170,210,0.15)', fontFamily: fontFamily.body }}>{gd.insight}</p>
             </Card>
 
             {/* Resolution Items */}
@@ -239,9 +239,9 @@ const CognitiveSnapshotV2Mockup = () => {
               <Card className="p-6">
                 <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Financial Position</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div><span className="text-2xl font-bold" style={{ color: '#FF6A00', fontFamily: fontFamily.display }}>{gd.metrics.runway}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Months Runway</p></div>
+                  <div><span className="text-2xl font-bold" style={{ color: '#E85D00', fontFamily: fontFamily.display }}>{gd.metrics.runway}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Months Runway</p></div>
                   <div><span className="text-sm font-semibold" style={{ color: '#F59E0B', fontFamily: fontFamily.display }}>{gd.metrics.margin}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Margins</p></div>
-                  <div><span className="text-sm font-semibold" style={{ color: '#243140', fontFamily: fontFamily.display }}>{gd.metrics.outstanding}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Outstanding</p></div>
+                  <div><span className="text-sm font-semibold" style={{ color: 'rgba(140,170,210,0.15)', fontFamily: fontFamily.display }}>{gd.metrics.outstanding}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Outstanding</p></div>
                   <div><span className="text-sm font-semibold" style={{ color: '#EF4444', fontFamily: fontFamily.display }}>{gd.metrics.overdue}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Overdue</p></div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
@@ -270,11 +270,11 @@ const CognitiveSnapshotV2Mockup = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div><span className="text-2xl font-bold" style={{ color: '#EF4444', fontFamily: fontFamily.display }}>{gd.metrics.sla_breaches}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>SLA Breaches</p></div>
                   <div><span className="text-2xl font-bold" style={{ color: '#F59E0B', fontFamily: fontFamily.display }}>{gd.metrics.task_aging}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Task Aging</p></div>
-                  <div><span className="text-sm font-semibold" style={{ color: '#243140', fontFamily: fontFamily.display }}>{gd.metrics.sop_compliance}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>SOP Compliance</p></div>
-                  <div><span className="text-sm font-semibold" style={{ color: '#243140', fontFamily: fontFamily.display }}>{gd.metrics.bottleneck}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Bottleneck</p></div>
+                  <div><span className="text-sm font-semibold" style={{ color: 'rgba(140,170,210,0.15)', fontFamily: fontFamily.display }}>{gd.metrics.sop_compliance}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>SOP Compliance</p></div>
+                  <div><span className="text-sm font-semibold" style={{ color: 'rgba(140,170,210,0.15)', fontFamily: fontFamily.display }}>{gd.metrics.bottleneck}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Bottleneck</p></div>
                 </div>
                 <div className="mb-4"><p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Resource Load</p><div className="flex gap-4">{Object.entries(gd.load).map(([k, v]) => (<div key={k} className="flex items-center gap-2"><span className="text-xs" style={{ fontFamily: fontFamily.body }}>{k}</span><div className="w-24 h-2 rounded-full" style={{ background: '#F3F4F6' }}><div className="h-full rounded-full" style={{ width: `${Math.min(v, 100)}%`, background: v > 100 ? '#EF4444' : v > 80 ? '#F59E0B' : '#10B981' }} /></div><span className="text-[10px] font-semibold" style={{ color: v > 100 ? '#EF4444' : '#64748B', fontFamily: fontFamily.mono }}>{v}%</span></div>))}</div></div>
-                {gd.recs.map((r, i) => (<p key={i} className="text-sm mt-1" style={{ color: '#FF6A00', fontFamily: fontFamily.display }}>→ {r}</p>))}
+                {gd.recs.map((r, i) => (<p key={i} className="text-sm mt-1" style={{ color: '#E85D00', fontFamily: fontFamily.display }}>→ {r}</p>))}
               </Card>
             )}
 
@@ -283,11 +283,11 @@ const CognitiveSnapshotV2Mockup = () => {
                 <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Capacity</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div><span className="text-2xl font-bold" style={{ color: '#EF4444', fontFamily: fontFamily.display }}>{gd.metrics.capacity}%</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Capacity</p></div>
-                  <div><span className="text-2xl font-bold" style={{ color: '#243140', fontFamily: fontFamily.display }}>{gd.metrics.meetings}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Meetings (avg {gd.metrics.avg_meetings})</p></div>
+                  <div><span className="text-2xl font-bold" style={{ color: 'rgba(140,170,210,0.15)', fontFamily: fontFamily.display }}>{gd.metrics.meetings}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Meetings (avg {gd.metrics.avg_meetings})</p></div>
                   <div><span className="text-2xl font-bold" style={{ color: '#F59E0B', fontFamily: fontFamily.display }}>{gd.metrics.decisions}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Decisions Pending</p></div>
                   <div><span className="text-sm font-bold" style={{ color: '#EF4444', fontFamily: fontFamily.display }}>{gd.metrics.fatigue}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Fatigue Risk</p></div>
                 </div>
-                <div className="mb-3"><p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Single Points of Failure</p>{gd.spof.map((s, i) => (<p key={i} className="text-sm mb-1" style={{ color: '#243140', fontFamily: fontFamily.body }}>• {s}</p>))}</div>
+                <div className="mb-3"><p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Single Points of Failure</p>{gd.spof.map((s, i) => (<p key={i} className="text-sm mb-1" style={{ color: 'rgba(140,170,210,0.15)', fontFamily: fontFamily.body }}>• {s}</p>))}</div>
               </Card>
             )}
 
@@ -296,7 +296,7 @@ const CognitiveSnapshotV2Mockup = () => {
                 <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Competitive Intelligence</h3>
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div><span className="text-2xl font-bold" style={{ color: '#7C3AED', fontFamily: fontFamily.display }}>{gd.metrics.competitors_tracked}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Tracked</p></div>
-                  <div><span className="text-sm font-semibold" style={{ color: '#FF6A00', fontFamily: fontFamily.display }}>{gd.metrics.pricing_vs_market}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>vs Market</p></div>
+                  <div><span className="text-sm font-semibold" style={{ color: '#E85D00', fontFamily: fontFamily.display }}>{gd.metrics.pricing_vs_market}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>vs Market</p></div>
                   <div><span className="text-sm font-semibold" style={{ fontFamily: fontFamily.display }}>{gd.metrics.sentiment}</span><p className="text-[10px] uppercase tracking-widest" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Sentiment</p></div>
                 </div>
                 <div className="space-y-2 mb-3">{gd.competitors.map((c, i) => (<div key={i} className="flex items-center gap-2"><span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: '#F3F4F6', fontFamily: fontFamily.mono }}>{c.name}</span><span className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{c.signal}</span></div>))}</div>
@@ -319,7 +319,7 @@ const CognitiveSnapshotV2Mockup = () => {
               <button onClick={() => setBriefOpen(!briefOpen)} className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-center gap-1 sm:gap-6 flex-wrap">
                   <span className="text-[10px] font-semibold tracking-widest uppercase mr-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>This Week</span>
-                  <div className="text-left"><span className="text-xl font-bold" style={{ color: '#FF6A00', fontFamily: fontFamily.display }}>${weeklyBrief.cash.toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>recovered</span></div>
+                  <div className="text-left"><span className="text-xl font-bold" style={{ color: '#E85D00', fontFamily: fontFamily.display }}>${weeklyBrief.cash.toLocaleString()}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>recovered</span></div>
                   <div className="text-left"><span className="text-xl font-bold" style={{ color: '#10B981', fontFamily: fontFamily.display }}>{weeklyBrief.hours}h</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>saved</span></div>
                   <div className="text-left"><span className="text-xl font-bold" style={{ color: '#3B82F6', fontFamily: fontFamily.display }}>{weeklyBrief.actions}</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>actions</span></div>
                   <div className="text-left"><span className="text-xl font-bold" style={{ color: '#7C3AED', fontFamily: fontFamily.display }}>{weeklyBrief.sop}%</span><span className="text-[9px] ml-1 uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>sop</span></div>
@@ -328,10 +328,10 @@ const CognitiveSnapshotV2Mockup = () => {
               </button>
               {briefOpen && (
                 <div className="px-6 pb-5 pt-2 space-y-2" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                  <p className="text-sm" style={{ color: '#243140', fontFamily: fontFamily.body }}><strong style={{ color: '#FF6A00' }}>Cash:</strong> Sent {weeklyBrief.actions} payment reminders, recovering ${weeklyBrief.cash.toLocaleString()}.</p>
-                  <p className="text-sm" style={{ color: '#243140', fontFamily: fontFamily.body }}><strong style={{ color: '#10B981' }}>Time:</strong> Handled {weeklyBrief.tasks} tasks, saving {weeklyBrief.hours} hours.</p>
-                  <p className="text-sm" style={{ color: '#243140', fontFamily: fontFamily.body }}><strong style={{ color: '#3B82F6' }}>Team:</strong> Assigned {weeklyBrief.leads} leads; {weeklyBrief.actioned} actioned in 2 hours.</p>
-                  <p className="text-sm" style={{ color: '#243140', fontFamily: fontFamily.body }}><strong style={{ color: '#7C3AED' }}>SOPs:</strong> {weeklyBrief.sop}% compliance, {weeklyBrief.fixes} auto-fixes.</p>
+                  <p className="text-sm" style={{ color: 'rgba(140,170,210,0.15)', fontFamily: fontFamily.body }}><strong style={{ color: '#E85D00' }}>Cash:</strong> Sent {weeklyBrief.actions} payment reminders, recovering ${weeklyBrief.cash.toLocaleString()}.</p>
+                  <p className="text-sm" style={{ color: 'rgba(140,170,210,0.15)', fontFamily: fontFamily.body }}><strong style={{ color: '#10B981' }}>Time:</strong> Handled {weeklyBrief.tasks} tasks, saving {weeklyBrief.hours} hours.</p>
+                  <p className="text-sm" style={{ color: 'rgba(140,170,210,0.15)', fontFamily: fontFamily.body }}><strong style={{ color: '#3B82F6' }}>Team:</strong> Assigned {weeklyBrief.leads} leads; {weeklyBrief.actioned} actioned in 2 hours.</p>
+                  <p className="text-sm" style={{ color: 'rgba(140,170,210,0.15)', fontFamily: fontFamily.body }}><strong style={{ color: '#7C3AED' }}>SOPs:</strong> {weeklyBrief.sop}% compliance, {weeklyBrief.fixes} auto-fixes.</p>
                 </div>
               )}
             </Card>

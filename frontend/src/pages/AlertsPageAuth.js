@@ -10,7 +10,7 @@ import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip
 import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 
-const sevMap = { critical: { color: '#FF6A00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, high: { color: '#FF6A00', label: 'Critical' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
+const sevMap = { critical: { color: '#E85D00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, high: { color: '#E85D00', label: 'Critical' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
 
 const AlertItem = ({ alert, onAction }) => {
   const [open, setOpen] = useState(false);
@@ -26,7 +26,7 @@ const AlertItem = ({ alert, onAction }) => {
 
   if (actioned === 'complete' || actioned === 'ignore') {
     return (
-      <div className="rounded-lg px-5 py-3 flex items-center gap-3" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #24314050', opacity: 0.5 }}>
+      <div className="rounded-lg px-5 py-3 flex items-center gap-3" style={{ background: 'var(--biqc-bg-card)', border: '1px solid rgba(140,170,210,0.15)50', opacity: 0.5 }}>
         {actioned === 'complete' ? <CheckCircle2 className="w-4 h-4 text-[#10B981]" /> : <XCircle className="w-4 h-4 text-[#64748B]" />}
         <span className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.body }}>{alert.title}</span>
         <span className="ml-auto text-[10px] px-2 py-0.5 rounded" style={{ color: actioned === 'complete' ? '#10B981' : '#64748B', background: actioned === 'complete' ? '#10B98115' : '#64748B15', fontFamily: fontFamily.mono }}>{actioned}</span>
@@ -39,7 +39,7 @@ const AlertItem = ({ alert, onAction }) => {
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors" data-testid={`alert-toggle-${alert.id}`}>
         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color, boxShadow: alert.severity === 'critical' || alert.severity === 'high' ? `0 0 10px ${s.color}40` : 'none' }} />
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-[#F4F7FA] block" style={{ fontFamily: fontFamily.display }}>{alert.title}</span>
+          <span className="text-sm font-medium text-[#EDF1F7] block" style={{ fontFamily: fontFamily.display }}>{alert.title}</span>
         </div>
         <span className="text-[10px] text-[#64748B] shrink-0" style={{ fontFamily: fontFamily.mono }}>{alert.time}</span>
         <span className="text-[10px] px-2 py-0.5 rounded uppercase tracking-wider shrink-0" style={{ fontFamily: fontFamily.mono, color: s.color, background: s.color + '15' }}>{s.label}</span>
@@ -58,7 +58,7 @@ const AlertItem = ({ alert, onAction }) => {
           <div className="flex flex-wrap gap-2 pt-1">
             {alert.actions?.includes('email') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630' }} data-testid={`alert-auto-email-${alert.id}`}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
             {alert.actions?.includes('sms') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130' }} data-testid={`alert-quick-sms-${alert.id}`}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-            {alert.actions?.includes('handoff') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030' }} data-testid={`alert-hand-off-${alert.id}`}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+            {alert.actions?.includes('handoff') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#E85D0015', color: '#E85D00', border: '1px solid #E85D0030' }} data-testid={`alert-hand-off-${alert.id}`}><Users className="w-3.5 h-3.5" />Hand Off</button>}
             <button onClick={() => handleAction('complete')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130' }} data-testid={`alert-complete-${alert.id}`}><CheckCircle2 className="w-3.5 h-3.5" />Complete</button>
             <button onClick={() => handleAction('ignore')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#64748B15', color: '#64748B', border: '1px solid #64748B30' }} data-testid={`alert-ignore-${alert.id}`}><XCircle className="w-3.5 h-3.5" />Ignore</button>
           </div>
@@ -189,7 +189,7 @@ const AlertsPageAuth = () => {
       <div className="space-y-6 max-w-[900px]" style={{ fontFamily: fontFamily.body }} data-testid="alerts-page">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Alert Centre</h1>
+            <h1 className="text-2xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Alert Centre</h1>
             <p className="text-sm text-[#9FB0C3]">
               {loading || integrationLoading
                 ? 'Scanning connected data sources...'
@@ -200,7 +200,7 @@ const AlertsPageAuth = () => {
                     : !integrationResolved
                       ? 'Verifying connected systems before checking for alerts.'
                     : 'No data sources connected — connect your tools to activate monitoring.'}
-              {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>syncing...</span>}
+              {loading && <span className="text-[10px] ml-2 text-[#E85D00]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>syncing...</span>}
             </p>
           </div>
         </div>
@@ -223,7 +223,7 @@ const AlertsPageAuth = () => {
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[['Critical', critCount, '#FF6A00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
+          {[['Critical', critCount, '#E85D00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
             <div key={l} className="rounded-lg p-4 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
               {loading
                 ? <Loader2 className="w-6 h-6 animate-spin mx-auto mb-1" style={{ color: c }} />
@@ -240,18 +240,18 @@ const AlertsPageAuth = () => {
             {[['all','All'],['critical','Critical'],['moderate','Moderate'],['info','Info']].map(([val,label]) => (
               <button key={val} onClick={() => setFilter(val)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{ background: filter === val ? '#FF6A00' : '#141C26', color: filter === val ? 'white' : '#9FB0C3', border: `1px solid ${filter === val ? '#FF6A00' : '#243140'}`, fontFamily: fontFamily.mono }}
+                style={{ background: filter === val ? '#E85D00' : '#0E1628', color: filter === val ? 'white' : '#9FB0C3', border: `1px solid ${filter === val ? '#E85D00' : 'rgba(140,170,210,0.15)'}`, fontFamily: fontFamily.mono }}
                 data-testid={`alerts-filter-${val}`}>
                 {label}
               </button>
             ))}
           </div>
-          <div className="h-4 w-px bg-[#243140] hidden sm:block" />
+          <div className="h-4 w-px bg-[rgba(140,170,210,0.15)] hidden sm:block" />
           <div className="flex gap-1.5 flex-wrap">
             {[['all','All time'],['today','Today'],['week','This week'],['month','This month']].map(([val,label]) => (
               <button key={val} onClick={() => setDateRange(val)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{ background: dateRange === val ? '#243140' : 'transparent', color: dateRange === val ? '#F4F7FA' : '#64748B', border: `1px solid ${dateRange === val ? '#334155' : 'transparent'}`, fontFamily: fontFamily.mono }}
+                style={{ background: dateRange === val ? 'rgba(140,170,210,0.15)' : 'transparent', color: dateRange === val ? '#EDF1F7' : '#64748B', border: `1px solid ${dateRange === val ? '#334155' : 'transparent'}`, fontFamily: fontFamily.mono }}
                 data-testid={`alerts-date-range-${val}`}>
                 {label}
               </button>
@@ -262,12 +262,12 @@ const AlertsPageAuth = () => {
             {[['severity','Severity'],['date','Date']].map(([val,label]) => (
               <button key={val} onClick={() => setSortBy(val)}
                 className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-all"
-                style={{ background: sortBy === val ? '#FF6A0015' : 'transparent', color: sortBy === val ? '#FF6A00' : '#64748B', border: `1px solid ${sortBy === val ? '#FF6A0030' : 'transparent'}`, fontFamily: fontFamily.mono }}
+                style={{ background: sortBy === val ? '#E85D0015' : 'transparent', color: sortBy === val ? '#E85D00' : '#64748B', border: `1px solid ${sortBy === val ? '#E85D0030' : 'transparent'}`, fontFamily: fontFamily.mono }}
                 data-testid={`alerts-sort-${val}`}>
                 {label}
               </button>
             ))}
-            <button onClick={fetchAlerts} className="ml-1 p-1.5 rounded-lg hover:bg-white/5" title="Refresh" style={{ color: loading ? '#FF6A00' : '#64748B' }} data-testid="alerts-refresh-button">
+            <button onClick={fetchAlerts} className="ml-1 p-1.5 rounded-lg hover:bg-white/5" title="Refresh" style={{ color: loading ? '#E85D00' : '#64748B' }} data-testid="alerts-refresh-button">
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
             </button>
           </div>
@@ -283,7 +283,7 @@ const AlertsPageAuth = () => {
                 <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.1)' }}>
                   <Shield className="w-7 h-7 text-[#10B981]" />
                 </div>
-                <p className="text-base font-semibold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>
+                <p className="text-base font-semibold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>
                   All clear — no issues detected.
                 </p>
                 <p className="text-sm text-[#9FB0C3] max-w-md mx-auto mb-1" style={{ fontFamily: fontFamily.body }}>
@@ -297,13 +297,13 @@ const AlertsPageAuth = () => {
               </div>
             ) : (
               /* No integrations connected — explain WHY there are no alerts */
-              <div className="rounded-xl p-8" style={{ background: 'var(--biqc-bg-card)', border: '1px solid rgba(255,106,0,0.2)' }}>
+              <div className="rounded-xl p-8" style={{ background: 'var(--biqc-bg-card)', border: '1px solid rgba(232,93,0,0.2)' }}>
                 <div className="flex items-start gap-4 mb-5">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,106,0,0.1)' }}>
-                    <Bell className="w-6 h-6 text-[#FF6A00]" />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(232,93,0,0.1)' }}>
+                    <Bell className="w-6 h-6 text-[#E85D00]" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>
+                    <p className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>
                       No alerts — because no data is being monitored yet.
                     </p>
                     <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
@@ -329,7 +329,7 @@ const AlertsPageAuth = () => {
 
                 <Link to="/integrations"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
-                  style={{ background: '#FF6A00', color: 'white', fontFamily: fontFamily.body }}
+                  style={{ background: '#E85D00', color: 'white', fontFamily: fontFamily.body }}
                   data-testid="alerts-connect-integrations">
                   <Plug className="w-4 h-4" /> Connect Integrations to Activate Alerts <ArrowRight className="w-4 h-4" />
                 </Link>

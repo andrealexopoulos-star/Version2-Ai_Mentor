@@ -69,7 +69,7 @@ const VerificationBadge = ({ navigate }) => {
             {score > 70 ? 'Strong data coverage. Intelligence is well-grounded.' : score > 40 ? 'Moderate coverage. Connect more systems to improve.' : 'Limited data. Most insights based on public signals.'}
           </p>
           <button onClick={() => { setShowTooltip(false); navigate('/integrations'); }}
-            className="text-[11px] text-[#FF6A00] hover:underline w-full text-left" style={{ fontFamily: fontFamily.mono }}>
+            className="text-[11px] text-[#E85D00] hover:underline w-full text-left" style={{ fontFamily: fontFamily.mono }}>
             Improve score — connect systems
           </button>
         </div>
@@ -434,7 +434,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             {showNotifications && (
               <div className="absolute right-0 top-12 w-96 max-h-[480px] overflow-y-auto rounded-xl shadow-xl" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', zIndex: 9999, position: 'fixed', right: 16, top: 64 }}>
                 <div className="p-3 flex items-center justify-between sticky top-0" style={{ borderBottom: '1px solid var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                  <h3 className="font-semibold text-sm text-[#F4F7FA]" style={{ fontFamily: DISPLAY }}>Alerts</h3>
+                  <h3 className="font-semibold text-sm text-[#EDF1F7]" style={{ fontFamily: DISPLAY }}>Alerts</h3>
                   <div className="flex items-center gap-2">
                     {notifications.high > 0 && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: colors.dangerDim, color: colors.danger, fontFamily: fontFamily.mono }}>{notifications.high} urgent</span>}
                     <button onClick={() => { setShowNotifications(false); navigate('/alerts'); }} className="text-xs px-2 py-1 rounded-lg" style={{ color: colors.brand, background: colors.brandDim, fontFamily: fontFamily.mono }}>View all</button>
@@ -455,9 +455,9 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                             <AlertCircle className="w-3.5 h-3.5" style={{ color: notif.severity === 'high' ? colors.danger : colors.warning }} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.body }}>{notif.title}</p>
+                            <p className="text-xs font-semibold text-[#EDF1F7] mb-0.5" style={{ fontFamily: fontFamily.body }}>{notif.title}</p>
                             <p className="text-[11px] text-[#64748B] line-clamp-2 mb-1" style={{ fontFamily: fontFamily.body }}>{notif.message}</p>
-                            {notif.action && <p className="text-[11px] text-[#FF6A00]">{notif.action}</p>}
+                            {notif.action && <p className="text-[11px] text-[#E85D00]">{notif.action}</p>}
                             {/* Action buttons inline in bell */}
                             <div className="flex gap-1.5 mt-2">
                               <button
@@ -493,34 +493,34 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
 
           <button className="p-2 rounded-lg hover:bg-white/5 hidden md:flex" style={{ color: 'var(--biqc-text-2)' }} aria-label="Help"><HelpCircle className="w-5 h-5" /></button>
 
-          <div className="w-px h-6 mx-1 hidden md:block" style={{ background: '#243140' }} />
+          <div className="w-px h-6 mx-1 hidden md:block" style={{ background: 'rgba(140,170,210,0.15)' }} />
 
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 p-1 pr-3 rounded-xl hover:bg-white/5 transition-colors" aria-label="User menu">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: '#FF6A00', fontFamily: fontFamily.body }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: '#E85D00', fontFamily: fontFamily.body }}>
                   {user?.full_name?.charAt(0).toUpperCase() || 'U'}
                 </div>
-                <span className="hidden sm:block text-sm font-medium text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{user?.full_name?.split(' ')[0] || 'User'}</span>
+                <span className="hidden sm:block text-sm font-medium text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>{user?.full_name?.split(' ')[0] || 'User'}</span>
                 <ChevronDown className="w-3.5 h-3.5 hidden sm:block text-[#64748B]" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', borderRadius: '12px' }}>
               <div className="px-3 py-2.5">
-                <p className="font-medium text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{user?.full_name}</p>
+                <p className="font-medium text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>{user?.full_name}</p>
                 <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{user?.email}</p>
               </div>
-              <DropdownMenuSeparator style={{ background: '#243140' }} />
-              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/subscribe')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Zap className="w-4 h-4 mr-2" /> Subscription: plans and feature unlocks</DropdownMenuItem>
+              <DropdownMenuSeparator style={{ background: 'rgba(140,170,210,0.15)' }} />
+              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/subscribe')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Zap className="w-4 h-4 mr-2" /> Subscription: plans and feature unlocks</DropdownMenuItem>
               {(user?.role === 'admin' || user?.role === 'superadmin' || isPrivilegedUser(user)) && (
                 <>
-                  <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Shield className="w-4 h-4 mr-2" /> Super Admin</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/calibration')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Settings className="w-4 h-4 mr-2" /> Recalibrate</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Shield className="w-4 h-4 mr-2" /> Super Admin</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/calibration')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Settings className="w-4 h-4 mr-2" /> Recalibrate</DropdownMenuItem>
                 </>
               )}
-              <DropdownMenuSeparator style={{ background: '#243140' }} />
+              <DropdownMenuSeparator style={{ background: 'rgba(140,170,210,0.15)' }} />
               <DropdownMenuItem onClick={() => { logout(); navigate('/'); }} className="cursor-pointer py-2.5 text-[#EF4444] focus:text-[#EF4444] focus:bg-red-500/5"><LogOut className="w-4 h-4 mr-2" /> Sign Out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -529,12 +529,12 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
 
       {/* ═══ SIDEBAR ═══ */}
       <aside className={`fixed left-0 transition-all duration-300 ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-14 h-[calc(100vh-3.5rem)]`}
-        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, #0A1018)', borderRight: '1px solid var(--biqc-border, #243140)', width: `${activeSidebarWidth}px` }}
+        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, #0A1018)', borderRight: '1px solid var(--biqc-border, rgba(140,170,210,0.15))', width: `${activeSidebarWidth}px` }}
         role="navigation" aria-label="Main navigation">
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="hidden lg:flex absolute -right-3 top-6 w-6 h-6 rounded-full items-center justify-center hover:bg-white/10 transition-colors"
-          style={{ background: 'var(--biqc-bg-card, #141C26)', border: '1px solid var(--biqc-border, #243140)' }}
+          style={{ background: 'var(--biqc-bg-card, #0E1628)', border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}
           aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           {sidebarCollapsed ? <ChevronRight className="w-4 h-4" style={{ color: 'var(--biqc-text-muted)' }} /> : <ChevronRight className="w-4 h-4 rotate-180" style={{ color: 'var(--biqc-text-muted)' }} />}
         </button>
@@ -589,7 +589,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                       aria-current={sectionActive ? 'page' : undefined}
                       style={{
                         fontFamily: fontFamily.body,
-                        color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
+                        color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #9FB0C3)',
                         background: sectionActive ? 'var(--lava-wash, rgba(232,93,0,0.12))' : 'transparent',
                         borderLeft: sectionActive ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                       }}
@@ -617,7 +617,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                 ) : (
                   <button onClick={() => toggleSection(section.id)}
                     className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3 justify-between'} w-full ${sidebarCollapsed ? 'px-2' : 'px-3'} py-2.5 rounded-lg text-xs font-semibold uppercase tracking-[0.1em] transition-all`}
-                    style={{ color: sectionActive ? '#FF6A00' : 'var(--biqc-text-muted, #8B9DB5)', fontFamily: fontFamily.mono, minHeight: '40px' }}
+                    style={{ color: sectionActive ? '#E85D00' : 'var(--biqc-text-muted, #8B9DB5)', fontFamily: fontFamily.mono, minHeight: '40px' }}
                     title={sidebarCollapsed ? section.label : undefined}
                     aria-expanded={isExpanded}
                     aria-controls={`nav-section-items-${section.id}`}
@@ -649,9 +649,9 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                           aria-current={active ? 'page' : undefined}
                           style={{
                             fontFamily: fontFamily.body,
-                            color: locked ? '#4A5568' : active ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
-                            background: active ? '#FF6A0015' : 'transparent',
-                            borderLeft: active ? '2px solid #FF6A00' : '2px solid transparent',
+                            color: locked ? '#4A5568' : active ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #9FB0C3)',
+                            background: active ? '#E85D0015' : 'transparent',
+                            borderLeft: active ? '2px solid #E85D00' : '2px solid transparent',
                             cursor: 'pointer',
                           }}
                           data-testid={`nav-item-${item.path.replace('/', '')}`}
@@ -669,12 +669,12 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             );
           })}
 
-          <div className="mt-auto pt-2 pb-2" style={{ borderTop: '1px solid var(--biqc-border, #243140)' }}>
+          <div className="mt-auto pt-2 pb-2" style={{ borderTop: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}>
             <button
               onClick={() => { navigate('/biqc-legal'); closeAll(); }}
               className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all hover:bg-white/5"
               style={{
-                color: isActive('/biqc-legal') ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
+                color: isActive('/biqc-legal') ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #9FB0C3)',
                 background: isActive('/biqc-legal') ? 'var(--lava-wash, rgba(232,93,0,0.12))' : 'transparent',
                 borderLeft: isActive('/biqc-legal') ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                 fontFamily: fontFamily.body,
@@ -703,7 +703,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             left: 0,
             right: 0,
             zIndex: 998,
-            background: '#FF6A00',
+            background: '#E85D00',
             padding: '6px 20px',
             display: 'flex',
             alignItems: 'center',
@@ -716,7 +716,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           </span>
           <button
             onClick={() => navigate('/subscribe')}
-            style={{ background: 'white', color: '#FF6A00', border: 'none', borderRadius: 6, padding: '3px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+            style={{ background: 'white', color: '#E85D00', border: 'none', borderRadius: 6, padding: '3px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
           >
             Upgrade now
           </button>
@@ -752,7 +752,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
 
         {/* Desktop Soundboard Panel — hidden on dedicated /soundboard route */}
         {!hideEmbeddedSoundboard && (
-          <aside className="hidden lg:flex shrink-0 flex-col relative" style={{ width: `${soundboardWidthPx}px`, background: 'var(--biqc-bg-input, #0A1018)', borderLeft: '1px solid var(--biqc-border, #243140)', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
+          <aside className="hidden lg:flex shrink-0 flex-col relative" style={{ width: `${soundboardWidthPx}px`, background: 'var(--biqc-bg-input, #0A1018)', borderLeft: '1px solid var(--biqc-border, rgba(140,170,210,0.15))', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
             <div
               className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-white/10"
               onMouseDown={startSoundboardResize}
@@ -779,7 +779,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             <div className="fixed inset-0 bg-black/60 z-[1200]" onClick={() => setSbOpen(false)} />
             <div className="fixed inset-0 z-[1201] flex flex-col" style={{ background: 'var(--biqc-bg-input, #0A1018)' }}>
               <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Ask BIQc</span>
+                <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Ask BIQc</span>
                 <button onClick={() => setSbOpen(false)} className="p-2 rounded-lg hover:bg-white/5"><X className="w-5 h-5 text-[#64748B]" /></button>
               </div>
               <div className="flex-1 overflow-hidden">
@@ -808,7 +808,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           <div className="fixed inset-0 z-[1200] bg-black/50" onClick={() => setFeedbackOpen(false)} />
           <div className="fixed z-[1201] w-[min(460px,92vw)] p-4 rounded-xl" style={{ ...cardStyleFromTheme(), right: 16, bottom: 84 }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Quick UX Feedback</span>
+              <span className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Quick UX Feedback</span>
               <button onClick={() => setFeedbackOpen(false)} className="text-[#64748B]">✕</button>
             </div>
             <div className="grid grid-cols-2 gap-2 mb-2">
@@ -850,7 +850,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                 onClick={submitFeedback}
                 disabled={feedbackSubmitting}
                 className="px-3 py-2 rounded-lg text-xs"
-                style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                style={{ background: '#E85D0015', border: '1px solid #E85D0030', color: '#E85D00', fontFamily: fontFamily.mono }}
               >
                 {feedbackSubmitting ? 'Sending...' : 'Send feedback'}
               </button>

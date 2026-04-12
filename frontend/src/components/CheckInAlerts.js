@@ -94,9 +94,9 @@ export const CheckInAlerts = () => {
           border: `1px solid ${alert.severity === 'high' ? '#EF444425' : alert.severity === 'medium' ? '#F59E0B25' : '#3B82F625'}`,
         }}>
           <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{
-            background: alert.type === 'recalibration' ? '#FF6A0015' : '#7C3AED15',
+            background: alert.type === 'recalibration' ? '#E85D0015' : '#7C3AED15',
           }}>
-            {alert.type === 'recalibration' ? <RefreshCw className="w-4 h-4" style={{ color: '#FF6A00' }} /> : <Video className="w-4 h-4" style={{ color: '#7C3AED' }} />}
+            {alert.type === 'recalibration' ? <RefreshCw className="w-4 h-4" style={{ color: '#E85D00' }} /> : <Video className="w-4 h-4" style={{ color: '#7C3AED' }} />}
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{alert.title}</p>
@@ -109,7 +109,7 @@ export const CheckInAlerts = () => {
                   setShowScheduler(alert.type);
                 }
               }} className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:-translate-y-0.5" style={{
-                background: alert.type === 'recalibration' ? '#FF6A00' : '#7C3AED',
+                background: alert.type === 'recalibration' ? '#E85D00' : '#7C3AED',
                 color: 'white',
                 fontFamily: fontFamily.mono,
               }} data-testid={`checkin-action-${alert.type}`}>
@@ -159,9 +159,9 @@ export const CheckInAlerts = () => {
                   <button key={d.value} onClick={() => setSelectedDate(d.value)}
                     className="px-3 py-2 rounded-lg text-xs font-medium transition-all"
                     style={{
-                      background: selectedDate === d.value ? '#FF6A00' : '#0F1720',
+                      background: selectedDate === d.value ? '#E85D00' : '#0F1720',
                       color: selectedDate === d.value ? 'white' : '#9FB0C3',
-                      border: `1px solid ${selectedDate === d.value ? '#FF6A00' : '#243140'}`,
+                      border: `1px solid ${selectedDate === d.value ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
                       fontFamily: fontFamily.mono,
                     }}>
                     {d.label}
@@ -178,9 +178,9 @@ export const CheckInAlerts = () => {
                   <button key={t} onClick={() => setSelectedTime(t)}
                     className="px-2 py-1.5 rounded-lg text-xs font-medium transition-all"
                     style={{
-                      background: selectedTime === t ? '#FF6A00' : '#0F1720',
+                      background: selectedTime === t ? '#E85D00' : '#0F1720',
                       color: selectedTime === t ? 'white' : '#9FB0C3',
-                      border: `1px solid ${selectedTime === t ? '#FF6A00' : '#243140'}`,
+                      border: `1px solid ${selectedTime === t ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
                       fontFamily: fontFamily.mono,
                     }}>
                     {t}
@@ -191,7 +191,7 @@ export const CheckInAlerts = () => {
 
             <button onClick={handleSchedule} disabled={!selectedDate || submitting}
               className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40"
-              style={{ background: '#FF6A00', fontFamily: fontFamily.display }}
+              style={{ background: '#E85D00', fontFamily: fontFamily.display }}
               data-testid="schedule-confirm">
               {submitting ? 'Scheduling...' : `Schedule for ${selectedDate ? new Date(selectedDate).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : '...'} at ${selectedTime}`}
             </button>

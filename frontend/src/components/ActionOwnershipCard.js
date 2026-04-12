@@ -15,7 +15,7 @@ const ActionOwnershipCard = ({
     { label: 'Owner', value: owner, icon: UserRound, color: '#3B82F6', key: 'owner' },
     { label: 'Deadline', value: deadline, icon: CalendarClock, color: '#F59E0B', key: 'deadline' },
     { label: 'Checkpoint', value: checkpoint, icon: Flag, color: '#10B981', key: 'checkpoint' },
-    { label: 'Success metric', value: successMetric, icon: Target, color: '#FF6A00', key: 'success' },
+    { label: 'Success metric', value: successMetric, icon: Target, color: '#E85D00', key: 'success' },
   ];
 
   return (
