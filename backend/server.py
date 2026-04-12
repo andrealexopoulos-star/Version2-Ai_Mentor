@@ -458,6 +458,9 @@ api_router.include_router(tutorials_router)
 from routes.business_brain import router as business_brain_router
 api_router.include_router(business_brain_router)
 
+from routes.user_settings import router as user_settings_router
+api_router.include_router(user_settings_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)

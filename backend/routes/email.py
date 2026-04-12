@@ -912,6 +912,46 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     # Handle OAuth errors
     if error:
         logger.error(f"Outlook OAuth error: {error} - {error_description}")
+
+        # Detect admin consent requirement
+        desc = (error_description or "").lower()
+        is_admin_consent = (
+            "aadsts65001" in desc
+            or "admin_consent_required" in desc
+            or "consent_required" in desc
+            or error in ("interaction_required", "consent_required")
+        )
+
+        if is_admin_consent:
+            # Track the failed attempt
+            try:
+                sb = get_sb()
+                sb.table("integration_attempts").insert({
+                    "user_id": None,  # user_id not parsed yet at this point
+                    "provider": "microsoft",
+                    "status": "admin_required",
+                    "error_code": error,
+                    "error_detail": error_description,
+                }).execute()
+            except Exception as track_err:
+                logger.warning(f"Failed to track integration attempt: {track_err}")
+
+            azure_client_id = os.environ.get("AZURE_CLIENT_ID", "")
+            redirect_uri = os.environ.get(
+                "AZURE_REDIRECT_URI",
+                f"{os.environ.get('PUBLIC_FRONTEND_URL', frontend_url)}/api/auth/outlook/callback"
+            )
+            admin_consent_url = (
+                f"https://login.microsoftonline.com/common/adminconsent"
+                f"?client_id={azure_client_id}"
+                f"&redirect_uri={urllib.parse.quote(redirect_uri, safe='')}"
+            )
+            params = urllib.parse.urlencode({
+                "outlook_error": "admin_consent_required",
+                "admin_consent_url": admin_consent_url,
+            })
+            return RedirectResponse(url=f"{frontend_url}/connect-email?{params}")
+
         return RedirectResponse(url=f"{frontend_url}/connect-email?outlook_error={error}")
     
     # Extract and validate state parameter (contains user_id, returnTo, and verification hash)

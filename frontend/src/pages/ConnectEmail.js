@@ -11,6 +11,7 @@ import {
   AlertCircle, Inbox, X
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import AdminConsentModal from '../components/AdminConsentModal';
 
 const ConnectEmail = () => {
   const navigate = useNavigate();
@@ -18,28 +19,36 @@ const ConnectEmail = () => {
   const [outlookStatus, setOutlookStatus] = useState({ connected: false });
   const [gmailStatus, setGmailStatus] = useState({ connected: false });
   const [loading, setLoading] = useState(true);
+  const [showAdminConsent, setShowAdminConsent] = useState(false);
+  const [adminConsentUrl, setAdminConsentUrl] = useState('');
 
   useEffect(() => {
     checkEmailConnections();
-    
+
     // Handle OAuth callback
     const urlParams = new URLSearchParams(window.location.search);
     const outlookConnected = urlParams.get('outlook_connected');
     const gmailConnected = urlParams.get('gmail_connected');
-    
-    if (outlookConnected === 'true') {
-      // console.log("Outlook OAuth completed - refreshing connection status");
-      // Clean URL
+    const outlookError = urlParams.get('outlook_error');
+    const consentUrl = urlParams.get('admin_consent_url');
+
+    // Admin consent required — show modal
+    if (outlookError === 'admin_consent_required' && consentUrl) {
+      setShowAdminConsent(true);
+      setAdminConsentUrl(decodeURIComponent(consentUrl));
       window.history.replaceState({}, '', '/connect-email');
-      // Refresh connection status after a brief delay
+    } else if (outlookError) {
+      toast.error(`Microsoft connection failed: ${outlookError.replace(/_/g, ' ')}`);
+      window.history.replaceState({}, '', '/connect-email');
+    }
+
+    if (outlookConnected === 'true') {
+      window.history.replaceState({}, '', '/connect-email');
       setTimeout(() => checkEmailConnections(), 1500);
     }
-    
+
     if (gmailConnected === 'true') {
-      // console.log("Gmail OAuth completed - refreshing connection status");
-      // Clean URL
       window.history.replaceState({}, '', '/connect-email');
-      // Refresh connection status after a brief delay
       setTimeout(() => checkEmailConnections(), 1500);
     }
   }, []);
@@ -237,6 +246,12 @@ const ConnectEmail = () => {
 
   return (
     <DashboardLayout>
+      {showAdminConsent && (
+        <AdminConsentModal
+          adminConsentUrl={adminConsentUrl}
+          onClose={() => setShowAdminConsent(false)}
+        />
+      )}
       <div className="px-3 sm:px-6 lg:px-8 py-6 sm:py-8 w-full lg:max-w-5xl lg:mx-auto">
         <div className="space-y-6">
           {/* Header */}
