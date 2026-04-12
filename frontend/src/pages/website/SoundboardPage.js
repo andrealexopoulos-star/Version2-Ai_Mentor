@@ -162,7 +162,7 @@ function ChatDisplay({ mode, example }) {
     <div ref={ref} style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', maxHeight: 480, paddingRight: 4 }}>
       {/* User bubble */}
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <div style={{ background: `${mode.color}22`, border: `1px solid ${mode.color}40`, borderRadius: '16px 16px 4px 16px', padding: '12px 16px', maxWidth: '78%', fontFamily: fontFamily.body, color: '#F4F7FA', fontSize: 14, lineHeight: 1.6 }}>
+        <div style={{ background: `${mode.color}22`, border: `1px solid ${mode.color}40`, borderRadius: '16px 16px 4px 16px', padding: '12px 16px', maxWidth: '78%', fontFamily: fontFamily.body, color: '#EDF1F7', fontSize: 14, lineHeight: 1.6 }}>
           {example.q}
         </div>
       </div>
@@ -212,12 +212,12 @@ export default function SoundboardPage() {
       `}</style>
 
       {/* â”€â”€ Hero â”€â”€ */}
-      <section style={{ background: 'linear-gradient(180deg, #070D1A 0%, #07121E 100%)', padding: '80px 24px 56px', textAlign: 'center' }}>
+      <section style={{ background: 'linear-gradient(180deg, #080C14 0%, #0B1120 100%)', padding: '80px 24px 56px', textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(198,95,46,0.08)', border: '1px solid rgba(198,95,46,0.25)', borderRadius: 20, padding: '6px 14px', marginBottom: 20 }}>
           <Mic size={12} style={{ color: '#C65F2E' }} />
           <span style={{ fontFamily: fontFamily.mono, color: '#C65F2E', fontSize: 11, fontWeight: 700, letterSpacing: '0.18em' }}>SOUNDBOARD â€” LIVE DEMO</span>
         </div>
-        <h1 style={{ fontFamily: fontFamily.display, color: '#F4F7FA', fontSize: 'clamp(30px, 5vw, 54px)', lineHeight: 1.08, fontWeight: 700, margin: '0 auto 16px', maxWidth: 700 }}>
+        <h1 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(30px, 5vw, 54px)', lineHeight: 1.08, fontWeight: 700, margin: '0 auto 16px', maxWidth: 700 }}>
           Ask anything.<br />
           <span style={{ background: 'linear-gradient(135deg, #FF8C3A, #C65F2E)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
             Get boardroom-grade answers.
@@ -234,7 +234,7 @@ export default function SoundboardPage() {
       </section>
 
       {/* â”€â”€ Mode selector â”€â”€ */}
-      <div style={{ background: '#07121E', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 16px' }}>
+      <div style={{ background: '#0B1120', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 16px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', gap: 8, overflowX: 'auto', padding: '12px 0', scrollbarWidth: 'none' }}>
           {MODES.map((m, i) => (
             <button
@@ -260,7 +260,7 @@ export default function SoundboardPage() {
       </div>
 
       {/* â”€â”€ Main demo area â”€â”€ */}
-      <section style={{ background: '#060E18', padding: '32px 16px 64px', minHeight: 600 }}>
+      <section style={{ background: '#080C14', padding: '32px 16px 64px', minHeight: 600 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24, alignItems: 'start' }}>
 
           {/* LEFT: Example browser */}
@@ -269,7 +269,7 @@ export default function SoundboardPage() {
             <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: `${mode.color}08` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <mode.icon size={15} style={{ color: mode.color }} />
-                <span style={{ fontFamily: fontFamily.display, color: '#F4F7FA', fontSize: 14, fontWeight: 700 }}>{mode.label}</span>
+                <span style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 14, fontWeight: 700 }}>{mode.label}</span>
               </div>
               <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 12, lineHeight: 1.5, margin: 0 }}>
                 {mode.description}
@@ -302,7 +302,7 @@ export default function SoundboardPage() {
                     }}
                   >
                     <ChevronRight size={12} style={{ color: i === activeExample ? mode.color : '#64748B', flexShrink: 0, marginTop: 2 }} />
-                    <span style={{ fontFamily: fontFamily.body, color: i === activeExample ? '#F4F7FA' : '#9FB0C3', fontSize: 12, lineHeight: 1.5 }}>
+                    <span style={{ fontFamily: fontFamily.body, color: i === activeExample ? '#EDF1F7' : '#9FB0C3', fontSize: 12, lineHeight: 1.5 }}>
                       {ex.q}
                     </span>
                   </button>
@@ -345,14 +345,14 @@ export default function SoundboardPage() {
       </section>
 
       {/* â”€â”€ Bottom CTA â”€â”€ */}
-      <section style={{ background: '#070D1A', padding: '64px 24px', textAlign: 'center' }}>
+      <section style={{ background: '#080C14', padding: '64px 24px', textAlign: 'center' }}>
         <h2 style={{ fontFamily: fontFamily.display, color: '#E6EEF7', fontSize: 28, fontWeight: 700, marginBottom: 12 }}>
           Your Soundboard is calibrated to your business.
         </h2>
         <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 15, marginBottom: 28, maxWidth: 480, margin: '0 auto 28px' }}>
           These examples use generic data. Your account uses live signals from Xero, HubSpot, Outlook, and every other connected tool.
         </p>
-        <Link to="/register-supabase" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: '#fff', borderRadius: 12, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 8px 32px rgba(255,122,24,0.25)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <Link to="/register-supabase" style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: '#fff', borderRadius: 12, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 8px 32px rgba(255,122,24,0.25)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           Start Free Trial <ArrowRight size={16} />
         </Link>
         <p style={{ fontFamily: fontFamily.mono, color: '#4A5568', fontSize: 11, marginTop: 16 }}>

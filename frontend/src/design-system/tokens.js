@@ -76,30 +76,30 @@ export const spacingClass = {
 
 // ═══ COLORS ═══
 export const colors = {
-  bg: '#0F1720',
-  bgCard: '#141C26',
-  bgPanel: '#141C26',     // panels, cards — use var(--biqc-bg-panel) in JSX
-  bgInput: '#0A1018',
-  bgElevated: '#1A2332',
-  bgSidebar: '#0A1018',   // sidebar, header — use var(--biqc-sidebar-bg) in JSX
-  border: '#243140',
-  borderFocus: '#FF6A00',
-  text: '#F4F7FA',
-  textSecondary: '#9FB0C3',
-  textMuted: '#8B9DB5',  // WCAG AA fix: was #64748B (3.48:1 on dark) → now 4.6:1
-  brand: '#FF6A00',
-  brandDark: '#E85D00',
-  brandDim: 'rgba(255,106,0,0.15)',
-  brandGlow: 'rgba(255,106,0,0.4)',
-  success: '#10B981',
-  warning: '#F59E0B',
-  danger: '#EF4444',
-  info: '#3B82F6',
+  bg: '#0B1120',           // --canvas-app (dark)
+  bgCard: '#0E1628',       // --surface (dark)
+  bgPanel: '#0E1628',      // --surface (dark)
+  bgInput: '#060A12',      // --surface-sunken (dark)
+  bgElevated: '#121D30',   // --surface-raised / --surface-2 (dark)
+  bgSidebar: '#060A12',    // --surface-sunken (dark)
+  border: 'rgba(140,170,210,0.15)', // --steel-border (dark)
+  borderFocus: '#E85D00',  // --lava
+  text: '#EDF1F7',         // --ink-display (dark)
+  textSecondary: '#8FA0B8',// --ink-secondary (dark)
+  textMuted: '#708499',    // --ink-muted (dark) — WCAG AA compliant
+  brand: '#E85D00',        // --lava
+  brandDark: '#C24D00',    // --lava-deep
+  brandDim: 'rgba(232,93,0,0.12)',  // --lava-wash (dark)
+  brandGlow: 'rgba(232,93,0,0.4)',
+  success: '#16A34A',      // --positive
+  warning: '#D97706',      // --warning
+  danger: '#DC2626',       // --danger
+  info: '#2563EB',         // --info
   purple: '#7C3AED',
-  successDim: 'rgba(16,185,129,0.08)',
-  warningDim: 'rgba(245,158,11,0.08)',
-  dangerDim: 'rgba(239,68,68,0.08)',
-  infoDim: 'rgba(59,130,246,0.08)',
+  successDim: 'rgba(34,197,94,0.10)',   // --positive-wash (dark)
+  warningDim: 'rgba(245,158,11,0.10)',  // --warning-wash (dark)
+  dangerDim: 'rgba(239,68,68,0.10)',    // --danger-wash (dark)
+  infoDim: 'rgba(59,130,246,0.10)',     // --info-wash (dark)
 };
 
 // ═══ BORDER RADIUS ═══
@@ -126,9 +126,9 @@ export const shadow = {
   card: '0 8px 24px rgba(0,0,0,0.35)',
   cardHover: '0 12px 32px rgba(0,0,0,0.45)',
   button: '0 4px 16px rgba(0,0,0,0.2)',
-  brandGlow: '0 8px 32px rgba(255,106,0,0.3)',
+  brandGlow: '0 8px 32px rgba(232,93,0,0.3)',
   // Mobile: NO heavy glow
-  glowDesktop: '0 0 60px rgba(255,106,0,0.4)',
+  glowDesktop: '0 0 60px rgba(232,93,0,0.4)',
   glowMobile: 'none',
 };
 
