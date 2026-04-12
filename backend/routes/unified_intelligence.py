@@ -10,7 +10,7 @@ import asyncio
 import os
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from intelligence_live_truth import get_live_integration_truth, get_latest_snapshot_context, get_recent_observation_events
 from supabase_client import init_supabase
 from integration_snapshot_cache import get_snapshot, set_snapshot
@@ -708,111 +708,135 @@ def _compute_market_signals(data: Dict) -> Dict:
 @router.get("/unified/advisor")
 async def advisor_intelligence(current_user: dict = Depends(get_current_user)):
     """Unified intelligence for BIQc Overview — surfaces TOP signals across ALL integrations."""
-    sb = init_supabase()
-    data = await _fetch_all_integration_data(sb, current_user['id'])
+    try:
+        sb = init_supabase()
+        data = await _fetch_all_integration_data(sb, current_user['id'])
 
-    revenue = _compute_revenue_signals(data)
-    risk = _compute_risk_signals(data)
-    people = _compute_people_signals(data)
-    market = _compute_market_signals(data)
+        revenue = _compute_revenue_signals(data)
+        risk = _compute_risk_signals(data)
+        people = _compute_people_signals(data)
+        market = _compute_market_signals(data)
 
-    # Top alerts: highest severity items across ALL categories
-    all_alerts = []
-    for item in revenue.get('at_risk', []):
-        all_alerts.append({**item, 'category': 'revenue'})
-    for item in revenue.get('overdue_invoices', []):
-        all_alerts.append({**item, 'category': 'money', 'severity': 'high'})
-    for cat_name, cat_data in risk.items():
-        if isinstance(cat_data, list):
-            for item in cat_data:
-                if isinstance(item, dict):
-                    all_alerts.append({**item, 'category': cat_name.replace('_risks', '')})
+        # Top alerts: highest severity items across ALL categories
+        all_alerts = []
+        for item in revenue.get('at_risk', []):
+            all_alerts.append({**item, 'category': 'revenue'})
+        for item in revenue.get('overdue_invoices', []):
+            all_alerts.append({**item, 'category': 'money', 'severity': 'high'})
+        for cat_name, cat_data in risk.items():
+            if isinstance(cat_data, list):
+                for item in cat_data:
+                    if isinstance(item, dict):
+                        all_alerts.append({**item, 'category': cat_name.replace('_risks', '')})
 
-    seen_event_ids = set()
-    deduped_alerts = []
-    for alert in all_alerts:
-        event_id = alert.get("event_id") or alert.get("id") or f"{alert.get('signal_name', '')}|{alert.get('source', '')}|{alert.get('entity', '')}"
-        if event_id not in seen_event_ids:
-            seen_event_ids.add(event_id)
-            deduped_alerts.append(alert)
-    all_alerts = deduped_alerts
+        seen_event_ids = set()
+        deduped_alerts = []
+        for alert in all_alerts:
+            event_id = alert.get("event_id") or alert.get("id") or f"{alert.get('signal_name', '')}|{alert.get('source', '')}|{alert.get('entity', '')}"
+            if event_id not in seen_event_ids:
+                seen_event_ids.add(event_id)
+                deduped_alerts.append(alert)
+        all_alerts = deduped_alerts
 
-    all_alerts.sort(key=lambda x: {'high': 0, 'medium': 1, 'low': 2}.get(x.get('severity', 'low'), 3))
+        all_alerts.sort(key=lambda x: {'high': 0, 'medium': 1, 'low': 2}.get(x.get('severity', 'low'), 3))
 
-    response = {
-        'integrations': {
-            'crm': data['crm']['connected'],
-            'accounting': data['accounting']['connected'],
-            'email': data['email']['connected'],
-            'marketing': data['marketing']['connected'],
-        },
-        'top_alerts': all_alerts[:10],
-        'revenue_summary': {
-            'pipeline': revenue['pipeline_total'],
-            'stalled': revenue['stalled_deals'],
-            'concentration_risk': revenue['concentration_risk'],
-            'overdue_count': len(revenue['overdue_invoices']),
-        },
-        'risk_level': risk['overall_risk'],
-        'people': {'capacity': people['capacity'], 'fatigue': people['fatigue']},
-        'market': {'positioning': market['positioning']},
-    }
-    response.update(_build_data_contract(data, 'advisor'))
-    return response
+        response = {
+            'integrations': {
+                'crm': data['crm']['connected'],
+                'accounting': data['accounting']['connected'],
+                'email': data['email']['connected'],
+                'marketing': data['marketing']['connected'],
+            },
+            'top_alerts': all_alerts[:10],
+            'revenue_summary': {
+                'pipeline': revenue['pipeline_total'],
+                'stalled': revenue['stalled_deals'],
+                'concentration_risk': revenue['concentration_risk'],
+                'overdue_count': len(revenue['overdue_invoices']),
+            },
+            'risk_level': risk['overall_risk'],
+            'people': {'capacity': people['capacity'], 'fatigue': people['fatigue']},
+            'market': {'positioning': market['positioning']},
+        }
+        response.update(_build_data_contract(data, 'advisor'))
+        return response
+    except Exception as e:
+        logger.error(f"[unified/advisor] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/unified/revenue")
 async def revenue_intelligence(current_user: dict = Depends(get_current_user)):
     """Full revenue intelligence from CRM + accounting + marketing."""
-    sb = init_supabase()
-    data = await _fetch_all_integration_data(sb, current_user['id'])
-    signals = _compute_revenue_signals(data)
-    brain_summary = await _brain_page_summary(sb, current_user, 'revenue')
-    response = {'connected': data['crm']['connected'] or data['accounting']['connected'], 'signals': signals, 'brain_summary': brain_summary}
-    response.update(_build_data_contract(data, 'revenue', lineage_extra={'brain_summary_items': len(brain_summary)}))
-    return response
+    try:
+        sb = init_supabase()
+        data = await _fetch_all_integration_data(sb, current_user['id'])
+        signals = _compute_revenue_signals(data)
+        brain_summary = await _brain_page_summary(sb, current_user, 'revenue')
+        response = {'connected': data['crm']['connected'] or data['accounting']['connected'], 'signals': signals, 'brain_summary': brain_summary}
+        response.update(_build_data_contract(data, 'revenue', lineage_extra={'brain_summary_items': len(brain_summary)}))
+        return response
+    except Exception as e:
+        logger.error(f"[unified/revenue] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/unified/operations")
 async def operations_intelligence(current_user: dict = Depends(get_current_user)):
     """Operations intelligence from CRM + accounting + snapshot."""
-    sb = init_supabase()
-    data = await _fetch_all_integration_data(sb, current_user['id'])
-    signals = _compute_operations_signals(data)
-    response = {'connected': data['crm']['connected'], 'signals': signals}
-    response.update(_build_data_contract(data, 'operations'))
-    return response
+    try:
+        sb = init_supabase()
+        data = await _fetch_all_integration_data(sb, current_user['id'])
+        signals = _compute_operations_signals(data)
+        response = {'connected': data['crm']['connected'], 'signals': signals}
+        response.update(_build_data_contract(data, 'operations'))
+        return response
+    except Exception as e:
+        logger.error(f"[unified/operations] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/unified/risk")
 async def risk_intelligence(current_user: dict = Depends(get_current_user)):
     """Cross-department risk surfacing from ALL integrations."""
-    sb = init_supabase()
-    data = await _fetch_all_integration_data(sb, current_user['id'])
-    signals = _compute_risk_signals(data)
-    brain_summary = await _brain_page_summary(sb, current_user, 'risk')
-    response = {'connected': any([data['crm']['connected'], data['accounting']['connected'], data['email']['connected']]), 'signals': signals, 'brain_summary': brain_summary}
-    response.update(_build_data_contract(data, 'risk', lineage_extra={'brain_summary_items': len(brain_summary)}))
-    return response
+    try:
+        sb = init_supabase()
+        data = await _fetch_all_integration_data(sb, current_user['id'])
+        signals = _compute_risk_signals(data)
+        brain_summary = await _brain_page_summary(sb, current_user, 'risk')
+        response = {'connected': any([data['crm']['connected'], data['accounting']['connected'], data['email']['connected']]), 'signals': signals, 'brain_summary': brain_summary}
+        response.update(_build_data_contract(data, 'risk', lineage_extra={'brain_summary_items': len(brain_summary)}))
+        return response
+    except Exception as e:
+        logger.error(f"[unified/risk] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/unified/people")
 async def people_intelligence(current_user: dict = Depends(get_current_user)):
     """Workforce intelligence from email + calendar + CRM."""
-    sb = init_supabase()
-    data = await _fetch_all_integration_data(sb, current_user['id'])
-    signals = _compute_people_signals(data)
-    response = {'connected': data['email']['connected'], 'signals': signals}
-    response.update(_build_data_contract(data, 'people'))
-    return response
+    try:
+        sb = init_supabase()
+        data = await _fetch_all_integration_data(sb, current_user['id'])
+        signals = _compute_people_signals(data)
+        response = {'connected': data['email']['connected'], 'signals': signals}
+        response.update(_build_data_contract(data, 'people'))
+        return response
+    except Exception as e:
+        logger.error(f"[unified/people] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/unified/market")
 async def market_intelligence_unified(current_user: dict = Depends(get_current_user)):
     """Market intelligence from scrape + benchmarks + snapshot."""
-    sb = init_supabase()
-    data = await _fetch_all_integration_data(sb, current_user['id'])
-    signals = _compute_market_signals(data)
-    response = {'connected': True, 'signals': signals}
-    response.update(_build_data_contract(data, 'market'))
-    return response
+    try:
+        sb = init_supabase()
+        data = await _fetch_all_integration_data(sb, current_user['id'])
+        signals = _compute_market_signals(data)
+        response = {'connected': True, 'signals': signals}
+        response.update(_build_data_contract(data, 'market'))
+        return response
+    except Exception as e:
+        logger.error(f"[unified/market] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

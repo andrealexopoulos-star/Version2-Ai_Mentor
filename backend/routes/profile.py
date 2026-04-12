@@ -135,35 +135,49 @@ class BusinessProfileUpdate(BaseModel):
 async def get_business_profile(current_user: dict = Depends(get_current_user)):
     """Get user's business profile — reads from business_profiles (authoritative).
     Falls back to users table, mapping company_name → business_name."""
-    profile = await get_business_profile_supabase(get_sb(), current_user["id"])
-    if not profile:
-        return {
-            "user_id": current_user["id"],
-            "business_name": current_user.get("company_name") or current_user.get("business_name"),
-            "industry": current_user.get("industry")
-        }
-    return profile
+    try:
+        profile = await get_business_profile_supabase(get_sb(), current_user["id"])
+        if not profile:
+            return {
+                "user_id": current_user["id"],
+                "business_name": current_user.get("company_name") or current_user.get("business_name"),
+                "industry": current_user.get("industry")
+            }
+        return profile
+    except Exception as e:
+        logger.error(f"[business-profile] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/business-profile/versioned")
 async def get_versioned_profile(current_user: dict = Depends(get_current_user)):
     """Get full versioned business profile with all metadata"""
-    profile = await get_active_profile(current_user["id"])
-    
-    if not profile:
-        raise HTTPException(status_code=404, detail="No business profile found")
-    
-    return profile
+    try:
+        profile = await get_active_profile(current_user["id"])
+
+        if not profile:
+            raise HTTPException(status_code=404, detail="No business profile found")
+
+        return profile
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[business-profile/versioned] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/business-profile/history")
 async def get_profile_history(current_user: dict = Depends(get_current_user)):
     """Get all profile versions (active and archived)"""
-    result = get_sb().table("business_profiles_versioned").select("*").eq(
-        "user_id", current_user["id"]
-    ).order("created_at", desc=True).limit(100).execute()
+    try:
+        result = get_sb().table("business_profiles_versioned").select("*").eq(
+            "user_id", current_user["id"]
+        ).order("created_at", desc=True).limit(100).execute()
 
-    return result.data if result.data else []
+        return result.data if result.data else []
+    except Exception as e:
+        logger.error(f"[business-profile/history] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 class ProfileUpdateRequest(BaseModel):
@@ -181,43 +195,47 @@ async def request_profile_update(
     Request a business profile update - creates new immutable version.
     This is the ONLY way to update a profile in the versioned system.
     """
-    user_id = current_user["id"]
-    
-    # Get current active profile
-    current_profile = await get_active_profile(user_id)
-    
-    # Merge current data with updates
-    if current_profile:
-        # Extract current flat data from domains
-        current_data = {
-            **current_profile["domains"]["business_identity"],
-            **current_profile["domains"]["market"],
-            **current_profile["domains"]["offer"],
-            **current_profile["domains"]["team"],
-            **current_profile["domains"]["strategy"]
+    try:
+        user_id = current_user["id"]
+
+        # Get current active profile
+        current_profile = await get_active_profile(user_id)
+
+        # Merge current data with updates
+        if current_profile:
+            # Extract current flat data from domains
+            current_data = {
+                **current_profile["domains"]["business_identity"],
+                **current_profile["domains"]["market"],
+                **current_profile["domains"]["offer"],
+                **current_profile["domains"]["team"],
+                **current_profile["domains"]["strategy"]
+            }
+            # Remove metadata fields
+            current_data = {k: v for k, v in current_data.items() if k not in ['confidence_level', 'completeness_percentage', 'last_updated_at']}
+        else:
+            current_data = {}
+
+        # Merge with updates
+        updated_data = {**current_data, **request.updated_fields}
+
+        # Create new version
+        new_profile_id = await create_profile_version(
+            user_id=user_id,
+            profile_data=updated_data,
+            change_type=request.change_type,
+            reason=request.reason_summary,
+            initiated_by=user_id
+        )
+
+        return {
+            "success": True,
+            "new_profile_id": new_profile_id,
+            "message": "Profile updated successfully. New version created."
         }
-        # Remove metadata fields
-        current_data = {k: v for k, v in current_data.items() if k not in ['confidence_level', 'completeness_percentage', 'last_updated_at']}
-    else:
-        current_data = {}
-    
-    # Merge with updates
-    updated_data = {**current_data, **request.updated_fields}
-    
-    # Create new version
-    new_profile_id = await create_profile_version(
-        user_id=user_id,
-        profile_data=updated_data,
-        change_type=request.change_type,
-        reason=request.reason_summary,
-        initiated_by=user_id
-    )
-    
-    return {
-        "success": True,
-        "new_profile_id": new_profile_id,
-        "message": "Profile updated successfully. New version created."
-    }
+    except Exception as e:
+        logger.error(f"[business-profile/request-update] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 class BusinessProfileBuildRequest(BaseModel):
@@ -235,32 +253,32 @@ class BusinessProfileBuildResponse(BaseModel):
 @router.post("/business-profile/autofill", response_model=BusinessProfileAutofillResponse)
 async def business_profile_autofill(req: BusinessProfileAutofillRequest, current_user: dict = Depends(get_current_user)):
     """Autofill business profile from uploaded docs + website URL + existing profile."""
+    try:
+        files_text = ""
+        used_files = []
+        if req.data_file_ids:
+            files_result = get_sb().table("data_files").select(
+                "id,filename,extracted_text,category"
+            ).eq("user_id", current_user["id"]).in_("id", req.data_file_ids).execute()
+            files = files_result.data if files_result.data else []
+            for f in files:
+                used_files.append({"id": f.get("id"), "filename": f.get("filename"), "category": f.get("category")})
+                if f.get("extracted_text"):
+                    files_text += f"\n\n--- FILE: {f.get('filename')} ---\n{f.get('extracted_text')[:6000]}"
 
-    files_text = ""
-    used_files = []
-    if req.data_file_ids:
-        files_result = get_sb().table("data_files").select(
-            "id,filename,extracted_text,category"
-        ).eq("user_id", current_user["id"]).in_("id", req.data_file_ids).execute()
-        files = files_result.data if files_result.data else []
-        for f in files:
-            used_files.append({"id": f.get("id"), "filename": f.get("filename"), "category": f.get("category")})
-            if f.get("extracted_text"):
-                files_text += f"\n\n--- FILE: {f.get('filename')} ---\n{f.get('extracted_text')[:6000]}"
+        website_text = ""
+        if req.website_url:
+            website_text = await fetch_website_text(req.website_url)
+            website_text = website_text[:8000]
 
-    website_text = ""
-    if req.website_url:
-        website_text = await fetch_website_text(req.website_url)
-        website_text = website_text[:8000]
+        existing_profile = await get_business_profile_supabase(get_sb(), current_user["id"])
 
-    existing_profile = await get_business_profile_supabase(get_sb(), current_user["id"])
-
-    # Try DB prompt first, fall back to inline
-    db_autofill = await get_prompt("profile_autofill_v1")
-    if db_autofill:
-        prompt = db_autofill
-    else:
-        prompt = f"""You are a business analyst helping autofill a structured business profile.
+        # Try DB prompt first, fall back to inline
+        db_autofill = await get_prompt("profile_autofill_v1")
+        if db_autofill:
+            prompt = db_autofill
+        else:
+            prompt = f"""You are a business analyst helping autofill a structured business profile.
 Return ONLY a valid JSON object with keys matching the profile schema.
 Do not include markdown or commentary.
 
@@ -297,122 +315,125 @@ Rules:
 - Prefer business_name from user input if provided.
 """
 
-    session_id = f"autofill_{uuid.uuid4()}"
-    ai = await get_ai_response(
-        prompt,
-        "general",
-        session_id,
-        user_id=current_user["id"],
-        user_data={
-            "name": current_user.get("full_name") or current_user.get("name"),
-            "business_name": current_user.get("company_name") or current_user.get("business_name"),
-            "industry": current_user.get("industry"),
-        },
-        use_advanced=True,
-    )
+        session_id = f"autofill_{uuid.uuid4()}"
+        ai = await get_ai_response(
+            prompt,
+            "general",
+            session_id,
+            user_id=current_user["id"],
+            user_data={
+                "name": current_user.get("full_name") or current_user.get("name"),
+                "business_name": current_user.get("company_name") or current_user.get("business_name"),
+                "industry": current_user.get("industry"),
+            },
+            use_advanced=True,
+        )
 
-    patch: Dict[str, Any] = {}
-    try:
-        import json
-        patch = json.loads(ai)
-    except Exception:
-        patch = {}
+        patch: Dict[str, Any] = {}
+        try:
+            import json
+            patch = json.loads(ai)
+        except Exception:
+            patch = {}
 
-    if req.business_name:
-        patch["business_name"] = req.business_name
-    if req.abn:
-        patch["abn"] = req.abn
-    if req.website_url and not patch.get("website"):
-        patch["website"] = req.website_url
+        if req.business_name:
+            patch["business_name"] = req.business_name
+        if req.abn:
+            patch["abn"] = req.abn
+        if req.website_url and not patch.get("website"):
+            patch["website"] = req.website_url
 
-    if not patch.get("target_country"):
-        patch["target_country"] = "Australia"
+        if not patch.get("target_country"):
+            patch["target_country"] = "Australia"
 
-    missing_fields = compute_missing_profile_fields(patch)
+        missing_fields = compute_missing_profile_fields(patch)
 
-    return {
-        "patch": patch,
-        "missing_fields": missing_fields,
-        "sources": {
-            "website_url": req.website_url,
-            "used_files": used_files,
-            "has_existing_profile": bool(existing_profile),
-        },
-    }
+        return {
+            "patch": patch,
+            "missing_fields": missing_fields,
+            "sources": {
+                "website_url": req.website_url,
+                "used_files": used_files,
+                "has_existing_profile": bool(existing_profile),
+            },
+        }
+    except Exception as e:
+        logger.error(f"[business-profile/autofill] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/business-profile/build", response_model=BusinessProfileBuildResponse)
 async def business_profile_build(req: BusinessProfileBuildRequest, current_user: dict = Depends(get_current_user)):
     """Build the business profile by searching external web + scraping top sources, plus in-app sources."""
+    try:
+        name = (req.business_name or "").strip() or current_user.get("business_name") or ""
+        abn = (req.abn or "").strip()
+        website = (req.website_url or "").strip()
 
-    name = (req.business_name or "").strip() or current_user.get("business_name") or ""
-    abn = (req.abn or "").strip()
-    website = (req.website_url or "").strip()
+        queries = []
+        if name:
+            queries.append(f"{name} Australia")
+            queries.append(f"{name} company profile Australia")
+        if abn and name:
+            queries.append(f"{name} ABN {abn}")
+            queries.append(f"ABN {abn} business")
+        if website:
+            queries.append(f"site:{website} about")
+            queries.append(f"site:{website} services")
 
-    queries = []
-    if name:
-        queries.append(f"{name} Australia")
-        queries.append(f"{name} company profile Australia")
-    if abn and name:
-        queries.append(f"{name} ABN {abn}")
-        queries.append(f"ABN {abn} business")
-    if website:
-        queries.append(f"site:{website} about")
-        queries.append(f"site:{website} services")
+        serp_results = []
+        serp_errors = []
+        for q in queries[:5]:
+            sr = await serper_search(q, gl="au", hl="en", num=5)
+            if sr.get("error"):
+                serp_errors.append(sr.get("error"))
+            serp_results.extend(sr.get("results") or [])
 
-    serp_results = []
-    serp_errors = []
-    for q in queries[:5]:
-        sr = await serper_search(q, gl="au", hl="en", num=5)
-        if sr.get("error"):
-            serp_errors.append(sr.get("error"))
-        serp_results.extend(sr.get("results") or [])
+        # Persist web sources (for "Why" citations)
+        await upsert_web_sources(current_user["id"], serp_results)
 
-    # Persist web sources (for "Why" citations)
-    await upsert_web_sources(current_user["id"], serp_results)
+        seen = set()
+        top_urls = []
+        for r in serp_results:
+            link = (r.get("link") or "").strip()
+            if not link:
+                continue
+            if link in seen:
+                continue
+            seen.add(link)
+            top_urls.append(link)
+            if len(top_urls) >= 6:
+                break
 
-    seen = set()
-    top_urls = []
-    for r in serp_results:
-        link = (r.get("link") or "").strip()
-        if not link:
-            continue
-        if link in seen:
-            continue
-        seen.add(link)
-        top_urls.append(link)
-        if len(top_urls) >= 6:
-            break
+        scraped = []
+        for u in top_urls:
+            txt = await scrape_url_text(u)
+            if txt:
+                scraped.append({"url": u, "text": txt[:6000]})
 
-    scraped = []
-    for u in top_urls:
-        txt = await scrape_url_text(u)
-        if txt:
-            scraped.append({"url": u, "text": txt[:6000]})
+        recent_chats = await get_chat_history_supabase(get_sb(), current_user["id"], limit=6)
 
-    recent_chats = await get_chat_history_supabase(get_sb(), current_user["id"], limit=6)
+        recent_docs = await get_user_documents_supabase(
+            get_sb(),
+            current_user["id"],
+            limit=6
+        )
 
-    recent_docs = await get_user_documents_supabase(
-        get_sb(),
-        current_user["id"],
-        limit=6
-    )
+        recent_files_result = get_sb().table("data_files").select(
+            "filename,extracted_text,category,created_at"
+        ).eq("user_id", current_user["id"]).order("created_at", desc=True).limit(6).execute()
+        recent_files = recent_files_result.data if recent_files_result.data else []
 
-    recent_files_result = get_sb().table("data_files").select(
-        "filename,extracted_text,category,created_at"
-    ).eq("user_id", current_user["id"]).order("created_at", desc=True).limit(6).execute()
-    recent_files = recent_files_result.data if recent_files_result.data else []
+        website_text = ""
+        if website:
+            website_text = await fetch_website_text(website)
+            website_text = website_text[:8000]
 
-    website_text = ""
-    if website:
-        website_text = await fetch_website_text(website)
-        website_text = website_text[:8000]
-
-    db_build = await get_prompt("profile_build_v1")
-    if db_build:
-        prompt = db_build
-    else:
-        prompt = f"""You are building a structured Australian SMB business profile for a Personalised AI Business Advisory platform.
+        db_build = await get_prompt("profile_build_v1")
+        if db_build:
+            prompt = db_build
+        else:
+            prompt = f"""You are building a structured Australian SMB business profile for a Personalised AI Business Advisory platform.
 
 Return ONLY valid JSON.
 Do not include markdown.
@@ -461,49 +482,52 @@ Rules:
 - If you cannot infer a value, omit it.
 """
 
-    session_id = f"build_profile_{uuid.uuid4()}"
-    ai = await get_ai_response(
-        prompt,
-        "general",
-        session_id,
-        user_id=current_user["id"],
-        user_data={
-            "name": current_user.get("name"),
-            "business_name": name,
-            "industry": current_user.get("industry"),
-        },
-        use_advanced=True,
-    )
+        session_id = f"build_profile_{uuid.uuid4()}"
+        ai = await get_ai_response(
+            prompt,
+            "general",
+            session_id,
+            user_id=current_user["id"],
+            user_data={
+                "name": current_user.get("name"),
+                "business_name": name,
+                "industry": current_user.get("industry"),
+            },
+            use_advanced=True,
+        )
 
-    patch: Dict[str, Any] = {}
-    try:
-        import json
-        patch = json.loads(ai)
-    except Exception:
-        patch = {}
+        patch: Dict[str, Any] = {}
+        try:
+            import json
+            patch = json.loads(ai)
+        except Exception:
+            patch = {}
 
-    if name:
-        patch["business_name"] = name
-    if abn:
-        patch["abn"] = abn
-    if website:
-        patch["website"] = website
+        if name:
+            patch["business_name"] = name
+        if abn:
+            patch["abn"] = abn
+        if website:
+            patch["website"] = website
 
-    if not patch.get("target_country"):
-        patch["target_country"] = "Australia"
+        if not patch.get("target_country"):
+            patch["target_country"] = "Australia"
 
-    missing_fields = compute_missing_profile_fields(patch)
+        missing_fields = compute_missing_profile_fields(patch)
 
-    return {
-        "patch": patch,
-        "missing_fields": missing_fields,
-        "sources": {
-            "queries": queries[:5],
-            "serp_count": len(serp_results),
-            "serp_error": serp_errors[0] if serp_errors else None,
-            "scraped_urls": top_urls,
-        },
-    }
+        return {
+            "patch": patch,
+            "missing_fields": missing_fields,
+            "sources": {
+                "queries": queries[:5],
+                "serp_count": len(serp_results),
+                "serp_error": serp_errors[0] if serp_errors else None,
+                "scraped_urls": top_urls,
+            },
+        }
+    except Exception as e:
+        logger.error(f"[business-profile/build] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/business-profile")
 async def update_business_profile(profile: BusinessProfileUpdate, current_user: dict = Depends(get_current_user)):
@@ -511,68 +535,72 @@ async def update_business_profile(profile: BusinessProfileUpdate, current_user: 
     Update user's business profile - creates new immutable version.
     This maintains backward compatibility while using versioned system.
     """
-    now = datetime.now(timezone.utc).isoformat()
-    user_id = current_user["id"]
-    
-    profile_data = {k: v for k, v in profile.model_dump().items() if v is not None}
-
-    # FIELD NORMALIZATION: map model fields to actual DB column names
-    if "products_services" in profile_data:
-        profile_data["main_products_services"] = profile_data.pop("products_services")
-    if "annual_revenue" in profile_data:
-        profile_data["annual_revenue_range"] = profile_data.pop("annual_revenue")
-    if "acn" in profile_data:
-        profile_data.pop("acn")  # column doesn't exist in DB
-    if "retention_known" in profile_data:
-        profile_data.pop("retention_known")  # not a DB column
-    if "retention_rate_range" in profile_data:
-        profile_data.pop("retention_rate_range")  # not a DB column
-
-    # Compute retention score (AU baselines) if inputs are present
-    computed_rag = compute_retention_rag(
-        profile_data.get("industry"),
-        profile_data.get("retention_known"),
-        profile_data.get("retention_rate_range"),
-    )
-    if computed_rag:
-        profile_data["retention_rag"] = computed_rag
-
-    profile_data["user_id"] = user_id
-    profile_data["updated_at"] = now
-    
-    # Update user's basic info
-    user_updates = {}
-    # Update user info in Supabase
-    user_updates = {}
-    if profile.business_name:
-        user_updates["company_name"] = profile.business_name
-    if profile.industry:
-        user_updates["industry"] = profile.industry
-    
-    if user_updates:
-        try:
-            get_sb().table("users").update(user_updates).eq("id", user_id).execute()
-            logger.info(f"✅ User profile updated in Supabase for {user_id}")
-        except Exception as e:
-            logger.error(f"Failed to update Supabase user: {e}")
-            # Non-blocking - continue with business profile update
-    
-    # Update business profile in Supabase
-    await update_business_profile_supabase(get_sb(), user_id, profile_data)
-    
-    # Create new versioned profile (non-blocking — schema may differ)
     try:
-        await create_profile_version(
-            user_id=user_id,
-            profile_data=profile_data,
-            change_type="minor",
-            reason="Profile update via UI",
-            initiated_by=user_id
+        now = datetime.now(timezone.utc).isoformat()
+        user_id = current_user["id"]
+
+        profile_data = {k: v for k, v in profile.model_dump().items() if v is not None}
+
+        # FIELD NORMALIZATION: map model fields to actual DB column names
+        if "products_services" in profile_data:
+            profile_data["main_products_services"] = profile_data.pop("products_services")
+        if "annual_revenue" in profile_data:
+            profile_data["annual_revenue_range"] = profile_data.pop("annual_revenue")
+        if "acn" in profile_data:
+            profile_data.pop("acn")  # column doesn't exist in DB
+        if "retention_known" in profile_data:
+            profile_data.pop("retention_known")  # not a DB column
+        if "retention_rate_range" in profile_data:
+            profile_data.pop("retention_rate_range")  # not a DB column
+
+        # Compute retention score (AU baselines) if inputs are present
+        computed_rag = compute_retention_rag(
+            profile_data.get("industry"),
+            profile_data.get("retention_known"),
+            profile_data.get("retention_rate_range"),
         )
-    except Exception as ver_err:
-        logger.warning(f"[business-profile] Versioning failed (non-blocking): {ver_err}")
-    
-    return await get_business_profile(current_user)
+        if computed_rag:
+            profile_data["retention_rag"] = computed_rag
+
+        profile_data["user_id"] = user_id
+        profile_data["updated_at"] = now
+
+        # Update user's basic info
+        user_updates = {}
+        # Update user info in Supabase
+        user_updates = {}
+        if profile.business_name:
+            user_updates["company_name"] = profile.business_name
+        if profile.industry:
+            user_updates["industry"] = profile.industry
+
+        if user_updates:
+            try:
+                get_sb().table("users").update(user_updates).eq("id", user_id).execute()
+                logger.info(f"✅ User profile updated in Supabase for {user_id}")
+            except Exception as e:
+                logger.error(f"Failed to update Supabase user: {e}")
+                # Non-blocking - continue with business profile update
+
+        # Update business profile in Supabase
+        await update_business_profile_supabase(get_sb(), user_id, profile_data)
+
+        # Create new versioned profile (non-blocking — schema may differ)
+        try:
+            await create_profile_version(
+                user_id=user_id,
+                profile_data=profile_data,
+                change_type="minor",
+                reason="Profile update via UI",
+                initiated_by=user_id
+            )
+        except Exception as ver_err:
+            logger.warning(f"[business-profile] Versioning failed (non-blocking): {ver_err}")
+
+        return await get_business_profile(current_user)
+    except Exception as e:
+        logger.error(f"[business-profile PUT] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ═══ DATA CENTER — Extracted to routes/data_center.py ═══
@@ -1261,75 +1289,76 @@ async def admin_set_subscription(user_id: str, update: SubscriptionUpdate, admin
 
 @router.get("/oac/recommendations")
 async def get_oac_recommendations(current_user: dict = Depends(get_current_user)):
-    now = datetime.now(timezone.utc)
-    mk = month_key(now)
-    user_id = current_user["id"]
+    try:
+        now = datetime.now(timezone.utc)
+        mk = month_key(now)
+        user_id = current_user["id"]
 
-    # Load user + profile
-    user = await get_user_by_id(user_id) # Supabase
-    profile = await get_business_profile_supabase(get_sb(), user_id)
+        # Load user + profile
+        user = await get_user_by_id(user_id) # Supabase
+        profile = await get_business_profile_supabase(get_sb(), user_id)
 
-    tier = tier_from_user(user or {})
-    base_limit = oac_monthly_limit_for_tier(tier)
+        tier = tier_from_user(user or {})
+        base_limit = oac_monthly_limit_for_tier(tier)
 
-    # prorate if started this month and not free
-    limit = base_limit
-    started_at_iso = (user or {}).get("subscription_started_at")
-    if tier != "free" and started_at_iso:
-        try:
-            started_at = datetime.fromisoformat(started_at_iso)
-            if month_key(started_at) == mk:
-                limit = prorated_allowance(base_limit, started_at, now)
-        except Exception:
-            pass
+        # prorate if started this month and not free
+        limit = base_limit
+        started_at_iso = (user or {}).get("subscription_started_at")
+        if tier != "free" and started_at_iso:
+            try:
+                started_at = datetime.fromisoformat(started_at_iso)
+                if month_key(started_at) == mk:
+                    limit = prorated_allowance(base_limit, started_at, now)
+            except Exception:
+                pass
 
-    usage = await get_oac_usage_supabase(get_sb(), user_id, mk)
-    used = int((usage or {}).get("used", 0))
+        usage = await get_oac_usage_supabase(get_sb(), user_id, mk)
+        used = int((usage or {}).get("used", 0))
 
-    if used >= limit:
-        return {
-            "locked": True,
-            "usage": {"used": used, "limit": limit, "tier": tier, "month": mk}
-        }
+        if used >= limit:
+            return {
+                "locked": True,
+                "usage": {"used": used, "limit": limit, "tier": tier, "month": mk}
+            }
 
-    # cache per day
-    day_key = now.strftime("%Y-%m-%d")
-    cached = await get_oac_recommendations_supabase(get_sb(), user_id, day_key)
-    if cached:
-        return {
-            "locked": False,
-            "meta": {"date": day_key, "cached": True},
-            "items": cached.get("items", []),
-            "usage": {"used": used, "limit": limit, "tier": tier, "month": mk}
-        }
+        # cache per day
+        day_key = now.strftime("%Y-%m-%d")
+        cached = await get_oac_recommendations_supabase(get_sb(), user_id, day_key)
+        if cached:
+            return {
+                "locked": False,
+                "meta": {"date": day_key, "cached": True},
+                "items": cached.get("items", []),
+                "usage": {"used": used, "limit": limit, "tier": tier, "month": mk}
+            }
 
-    # Build context snippets
-    recent_chats = await get_chat_history_supabase(get_sb(), user_id, limit=8)
+        # Build context snippets
+        recent_chats = await get_chat_history_supabase(get_sb(), user_id, limit=8)
 
-    recent_docs = await get_user_documents_supabase(
-        get_sb(),
-        user_id,
-        limit=8
-    )
+        recent_docs = await get_user_documents_supabase(
+            get_sb(),
+            user_id,
+            limit=8
+        )
 
-    recent_files_result = get_sb().table("data_files").select(
-        "filename,category,description,created_at"
-    ).eq("user_id", user_id).order("created_at", desc=True).limit(8).execute()
-    recent_files = recent_files_result.data if recent_files_result.data else []
+        recent_files_result = get_sb().table("data_files").select(
+            "filename,category,description,created_at"
+        ).eq("user_id", user_id).order("created_at", desc=True).limit(8).execute()
+        recent_files = recent_files_result.data if recent_files_result.data else []
 
-    # Prompt: strict, non-generic, actionable
-    biz_name = (user or {}).get("business_name") or (profile or {}).get("business_name") or "this business"
-    industry = (profile or {}).get("industry") or (user or {}).get("industry")
+        # Prompt: strict, non-generic, actionable
+        biz_name = (user or {}).get("business_name") or (profile or {}).get("business_name") or "this business"
+        industry = (profile or {}).get("industry") or (user or {}).get("industry")
 
-    # Build a compact evidence list for citations
-    evidence_web = await get_web_sources_supabase(get_sb(), user_id)
+        # Build a compact evidence list for citations
+        evidence_web = await get_web_sources_supabase(get_sb(), user_id)
 
-    # Try DB prompt, fall back to inline
-    db_oac = await get_prompt("oac_recommendations_v1")
-    if db_oac:
-        prompt = db_oac
-    else:
-        prompt = f"""You are the Ops Advisory Centre (OAC) for The Strategy Squad.
+        # Try DB prompt, fall back to inline
+        db_oac = await get_prompt("oac_recommendations_v1")
+        if db_oac:
+            prompt = db_oac
+        else:
+            prompt = f"""You are the Ops Advisory Centre (OAC) for The Strategy Squad.
 Your job: produce deeply customised operational recommendations that are SPECIFIC to this business and NOT generic.
 
 Business name: {biz_name}
@@ -1372,41 +1401,44 @@ Citations:
 - [document] <title>
 """
 
-    session_id = f"oac_{uuid.uuid4()}"
-    try:
-        ai_text = await get_ai_response(prompt, "general", session_id, user_id=user_id, user_data={
-            "name": (user or {}).get("name"),
-            "business_name": biz_name,
-            "industry": industry,
-        }, use_advanced=True)
-        items = parse_oac_items_with_why(ai_text, max_items=5)
-    except Exception as ai_err:
-        logger.warning(f"[oac/recommendations] AI generation unavailable, using deterministic fallback: {ai_err}")
-        items = _build_oac_fallback_items(profile, recent_docs, recent_files, evidence_web, recent_chats)
+        session_id = f"oac_{uuid.uuid4()}"
+        try:
+            ai_text = await get_ai_response(prompt, "general", session_id, user_id=user_id, user_data={
+                "name": (user or {}).get("name"),
+                "business_name": biz_name,
+                "industry": industry,
+            }, use_advanced=True)
+            items = parse_oac_items_with_why(ai_text, max_items=5)
+        except Exception as ai_err:
+            logger.warning(f"[oac/recommendations] AI generation unavailable, using deterministic fallback: {ai_err}")
+            items = _build_oac_fallback_items(profile, recent_docs, recent_files, evidence_web, recent_chats)
 
-    if not items:
-        items = _build_oac_fallback_items(profile, recent_docs, recent_files, evidence_web, recent_chats)
+        if not items:
+            items = _build_oac_fallback_items(profile, recent_docs, recent_files, evidence_web, recent_chats)
 
-    # persist cache + increment usage by 1 (daily batch counts as 1)
-    rec_doc = {
-        "id": str(uuid.uuid4()),
-        "user_id": user_id,
-        "month_key": day_key,
-        "date": day_key,
-        "items": items,
-        "created_at": now.isoformat()
-    }
-    await update_oac_recommendations_supabase(get_sb(), user_id, day_key, rec_doc)
+        # persist cache + increment usage by 1 (daily batch counts as 1)
+        rec_doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "month_key": day_key,
+            "date": day_key,
+            "items": items,
+            "created_at": now.isoformat()
+        }
+        await update_oac_recommendations_supabase(get_sb(), user_id, day_key, rec_doc)
 
-    used_after = used + 1
-    await update_oac_usage_supabase(get_sb(), user_id, mk, {"used": used_after})
+        used_after = used + 1
+        await update_oac_usage_supabase(get_sb(), user_id, mk, {"used": used_after})
 
-    return {
-        "locked": False,
-        "meta": {"date": day_key, "cached": False},
-        "items": items,
-        "usage": {"used": used_after, "limit": limit, "tier": tier, "month": mk}
-    }
+        return {
+            "locked": False,
+            "meta": {"date": day_key, "cached": False},
+            "items": items,
+            "usage": {"used": used_after, "limit": limit, "tier": tier, "month": mk}
+        }
+    except Exception as e:
+        logger.error(f"[oac/recommendations] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 
@@ -1687,62 +1719,70 @@ def calculate_profile_strength(profile: dict, onboarding: dict = None) -> int:
 @router.get("/business-profile/scores")
 async def get_profile_scores(current_user: dict = Depends(get_current_user)):
     """Get profile scores — reads from business_profiles (authoritative)"""
-    user_id = current_user["id"]
-    cache_key = f"profile_scores_{user_id}"
-    cached = _get_cached(cache_key)
-    if cached:
-        return cached
+    try:
+        user_id = current_user["id"]
+        cache_key = f"profile_scores_{user_id}"
+        cached = _get_cached(cache_key)
+        if cached:
+            return cached
 
-    profile = await get_business_profile_supabase(get_sb(), user_id)
-    onboarding = await get_onboarding_supabase(get_sb(), user_id)
-    files_count = await count_user_data_files_supabase(get_sb(), user_id)
-    
-    completeness = calculate_profile_completeness(profile) if profile else 0
-    business_score = await calculate_business_score(profile, onboarding, user_id, sb_client=get_sb()) if profile else 0
-    
-    result = {
-        "completeness": completeness,
-        "strength": business_score,
-        "business_score": business_score,
-        "has_documents": files_count > 0,
-        "document_count": files_count,
-        "onboarding_completed": onboarding.get("completed", False) if onboarding else False
-    }
-    _set_cached(cache_key, result)
-    return result
+        profile = await get_business_profile_supabase(get_sb(), user_id)
+        onboarding = await get_onboarding_supabase(get_sb(), user_id)
+        files_count = await count_user_data_files_supabase(get_sb(), user_id)
+
+        completeness = calculate_profile_completeness(profile) if profile else 0
+        business_score = await calculate_business_score(profile, onboarding, user_id, sb_client=get_sb()) if profile else 0
+
+        result = {
+            "completeness": completeness,
+            "strength": business_score,
+            "business_score": business_score,
+            "has_documents": files_count > 0,
+            "document_count": files_count,
+            "onboarding_completed": onboarding.get("completed", False) if onboarding else False
+        }
+        _set_cached(cache_key, result)
+        return result
+    except Exception as e:
+        logger.error(f"[business-profile/scores] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ==================== DASHBOARD STATS ====================
 
 @router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
-    user_id = current_user["id"]
-    cache_key = f"dashboard_stats_{user_id}"
-    cached = _get_cached(cache_key)
-    if cached:
-        return cached
+    try:
+        user_id = current_user["id"]
+        cache_key = f"dashboard_stats_{user_id}"
+        cached = _get_cached(cache_key)
+        if cached:
+            return cached
 
-    analysis_result = get_sb().table("analyses").select("id", count="exact").eq("user_id", user_id).execute()
-    analysis_count = analysis_result.count if analysis_result.count is not None else 0
-    document_count = await count_user_documents_supabase(get_sb(), user_id)
-    chat_result = get_sb().table("chat_history").select("session_id").eq("user_id", user_id).execute()
-    session_ids = {row.get("session_id") for row in (chat_result.data or []) if row.get("session_id")}
-    
-    recent_analyses_result = get_sb().table("analyses").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
-    recent_analyses = recent_analyses_result.data if recent_analyses_result.data else []
-    
-    recent_docs_result = get_sb().table("documents").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
-    recent_documents = recent_docs_result.data if recent_docs_result.data else []
-    
-    result = {
-        "total_analyses": analysis_count,
-        "total_documents": document_count,
-        "total_chat_sessions": len(session_ids),
-        "recent_analyses": recent_analyses,
-        "recent_documents": recent_documents
-    }
-    _set_cached(cache_key, result)
-    return result
+        analysis_result = get_sb().table("analyses").select("id", count="exact").eq("user_id", user_id).execute()
+        analysis_count = analysis_result.count if analysis_result.count is not None else 0
+        document_count = await count_user_documents_supabase(get_sb(), user_id)
+        chat_result = get_sb().table("chat_history").select("session_id").eq("user_id", user_id).execute()
+        session_ids = {row.get("session_id") for row in (chat_result.data or []) if row.get("session_id")}
+
+        recent_analyses_result = get_sb().table("analyses").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
+        recent_analyses = recent_analyses_result.data if recent_analyses_result.data else []
+
+        recent_docs_result = get_sb().table("documents").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
+        recent_documents = recent_docs_result.data if recent_docs_result.data else []
+
+        result = {
+            "total_analyses": analysis_count,
+            "total_documents": document_count,
+            "total_chat_sessions": len(session_ids),
+            "recent_analyses": recent_analyses,
+            "recent_documents": recent_documents
+        }
+        _set_cached(cache_key, result)
+        return result
+    except Exception as e:
+        logger.error(f"[dashboard/stats] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/dashboard/focus")
@@ -1751,80 +1791,84 @@ async def get_dashboard_focus(current_user: dict = Depends(get_current_user)):
     Generate ONE clear business focus for the user based on available data.
     This is the AI mentor's primary output on the dashboard.
     """
-    user_id = current_user["id"]
-    
-    # Gather available data signals
-    data_signals = {
-        "has_profile": False,
-        "profile_completeness": 0,
-        "has_outlook": False,
-        "emails_synced": 0,
-        "has_calendar": False,
-        "upcoming_meetings": 0,
-        "has_documents": False,
-        "document_count": 0,
-        "has_chat_history": False,
-        "recent_activity": False,
-        "email_priority_high": 0,
-        "days_since_last_activity": 0
-    }
-    
-    # Check business profile
-    profile = await get_business_profile_supabase(get_sb(), user_id)
-    if profile:
-        data_signals["has_profile"] = True
-        # Calculate simple completeness
-        fields = ["business_name", "industry", "business_model", "target_market", "main_challenges", "short_term_goals"]
-        filled = sum(1 for f in fields if profile.get(f))
-        data_signals["profile_completeness"] = int((filled / len(fields)) * 100)
-    
-    # Check Outlook connection
-    user_doc = await get_user_by_id(user_id) # Supabase
-    if user_doc and user_doc.get("outlook_access_token"):
-        data_signals["has_outlook"] = True
-        # Count emails using Supabase
-        email_result = get_sb().table("outlook_emails").select("id", count="exact").eq("user_id", user_id).execute()
-        email_count = email_result.count if hasattr(email_result, 'count') else 0
-        data_signals["emails_synced"] = email_count
-        
-        # Check high priority emails
-        priority = await get_priority_analysis_supabase(get_sb(), user_id)
-        if priority and priority.get("analysis"):
-            high_priority = priority["analysis"].get("high_priority", [])
-            data_signals["email_priority_high"] = len(high_priority)
-    
-    # Check calendar
-    calendar_count = 0 # Migrated to outlook_calendar_events
-    if calendar_count > 0:
-        data_signals["has_calendar"] = True
-        data_signals["upcoming_meetings"] = calendar_count
-    
-    # Check documents
-    doc_count = await count_user_documents_supabase(get_sb(), user_id)
-    if doc_count > 0:
-        data_signals["has_documents"] = True
-        data_signals["document_count"] = doc_count
-    
-    # Check recent activity
-    recent_chats_result = get_sb().table("chat_history").select("created_at").eq("user_id", user_id).order("created_at", desc=True).limit(1).execute()
-    recent_chats = recent_chats_result.data if recent_chats_result.data else []
-    
-    if recent_chats:
-        data_signals["has_chat_history"] = True
-        last_activity = recent_chats[0].get("created_at")
-        if last_activity:
-            try:
-                last_date = datetime.fromisoformat(last_activity.replace("Z", "+00:00"))
-                days_diff = (datetime.now(timezone.utc) - last_date).days
-                data_signals["days_since_last_activity"] = days_diff
-                data_signals["recent_activity"] = days_diff < 7
-            except:
-                pass
-    
-    # Determine focus based on available signals
-    focus = await generate_focus_insight(data_signals, profile, user_doc)
-    
-    return focus
+    try:
+        user_id = current_user["id"]
+
+        # Gather available data signals
+        data_signals = {
+            "has_profile": False,
+            "profile_completeness": 0,
+            "has_outlook": False,
+            "emails_synced": 0,
+            "has_calendar": False,
+            "upcoming_meetings": 0,
+            "has_documents": False,
+            "document_count": 0,
+            "has_chat_history": False,
+            "recent_activity": False,
+            "email_priority_high": 0,
+            "days_since_last_activity": 0
+        }
+
+        # Check business profile
+        profile = await get_business_profile_supabase(get_sb(), user_id)
+        if profile:
+            data_signals["has_profile"] = True
+            # Calculate simple completeness
+            fields = ["business_name", "industry", "business_model", "target_market", "main_challenges", "short_term_goals"]
+            filled = sum(1 for f in fields if profile.get(f))
+            data_signals["profile_completeness"] = int((filled / len(fields)) * 100)
+
+        # Check Outlook connection
+        user_doc = await get_user_by_id(user_id) # Supabase
+        if user_doc and user_doc.get("outlook_access_token"):
+            data_signals["has_outlook"] = True
+            # Count emails using Supabase
+            email_result = get_sb().table("outlook_emails").select("id", count="exact").eq("user_id", user_id).execute()
+            email_count = email_result.count if hasattr(email_result, 'count') else 0
+            data_signals["emails_synced"] = email_count
+
+            # Check high priority emails
+            priority = await get_priority_analysis_supabase(get_sb(), user_id)
+            if priority and priority.get("analysis"):
+                high_priority = priority["analysis"].get("high_priority", [])
+                data_signals["email_priority_high"] = len(high_priority)
+
+        # Check calendar
+        calendar_count = 0 # Migrated to outlook_calendar_events
+        if calendar_count > 0:
+            data_signals["has_calendar"] = True
+            data_signals["upcoming_meetings"] = calendar_count
+
+        # Check documents
+        doc_count = await count_user_documents_supabase(get_sb(), user_id)
+        if doc_count > 0:
+            data_signals["has_documents"] = True
+            data_signals["document_count"] = doc_count
+
+        # Check recent activity
+        recent_chats_result = get_sb().table("chat_history").select("created_at").eq("user_id", user_id).order("created_at", desc=True).limit(1).execute()
+        recent_chats = recent_chats_result.data if recent_chats_result.data else []
+
+        if recent_chats:
+            data_signals["has_chat_history"] = True
+            last_activity = recent_chats[0].get("created_at")
+            if last_activity:
+                try:
+                    last_date = datetime.fromisoformat(last_activity.replace("Z", "+00:00"))
+                    days_diff = (datetime.now(timezone.utc) - last_date).days
+                    data_signals["days_since_last_activity"] = days_diff
+                    data_signals["recent_activity"] = days_diff < 7
+                except:
+                    pass
+
+        # Determine focus based on available signals
+        focus = await generate_focus_insight(data_signals, profile, user_doc)
+
+        return focus
+    except Exception as e:
+        logger.error(f"[dashboard/focus] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def generate_focus_insight(signals: dict, profile: dict, user: dict) -> dict:
@@ -1905,178 +1949,186 @@ async def get_smart_notifications(current_user: dict = Depends(get_current_user)
     AI-powered notifications that surface important business signals.
     Analyzes emails, calendar, web data to identify material impacts.
     """
-    user_id = current_user["id"]
-    notifications = []
-    
-    # Check for high priority emails (customer complaints, urgent issues)
-    priority_analysis = await get_priority_analysis_supabase(get_sb(), user_id)
-    
-    if priority_analysis and priority_analysis.get("analysis"):
-        high_priority = priority_analysis["analysis"].get("high_priority", [])
-        for email in high_priority[:3]:
-            notifications.append({
-                "id": f"email_{email.get('email_id', 'unknown')}",
-                "type": "email",
-                "severity": "high",
-                "title": "Important email needs attention",
-                "message": f"From {email.get('from', 'Unknown')}: {email.get('subject', 'No subject')[:50]}",
-                "action": email.get("suggested_action", "Review and respond"),
-                "source": "Email Intelligence",
-                "timestamp": email.get("received") or datetime.now(timezone.utc).isoformat()
-            })
-    
-    # Check recent emails for complaint keywords
-    recent_emails_result = get_sb().table("outlook_emails").select(
-        "subject,body_preview,from_name,from_address,received_date,id"
-    ).eq("user_id", user_id).order("received_date", desc=True).limit(50).execute()
-    recent_emails = recent_emails_result.data if recent_emails_result.data else []
-    
-    complaint_keywords = ["complaint", "unhappy", "disappointed", "refund", "cancel", "frustrated", "unacceptable", "terrible", "worst", "issue", "problem", "urgent"]
-    
-    for email in recent_emails:
-        subject = (email.get("subject") or "").lower()
-        preview = (email.get("body_preview") or "").lower()
-        content = subject + " " + preview
-        
-        for keyword in complaint_keywords:
-            if keyword in content:
-                notifications.append({
-                    "id": f"complaint_{email.get('id', 'unknown')}",
-                    "type": "complaint",
-                    "severity": "high",
-                    "title": "Potential customer concern detected",
-                    "message": f"Email from {email.get('from_name') or email.get('from_address', 'Unknown')}: {email.get('subject', '')[:40]}",
-                    "action": "Review and respond promptly",
-                    "source": "Email Analysis",
-                    "timestamp": email.get("received_date") or datetime.now(timezone.utc).isoformat()
-                })
-                break  # Only one notification per email
-    
-    # Check calendar for important upcoming meetings
-    calendar_events = await get_user_calendar_events_supabase(get_sb(), user_id)
-    
-    now = datetime.now(timezone.utc)
-    important_keywords = ["review", "client", "investor", "board", "presentation", "pitch", "deadline", "important", "urgent", "critical"]
-    
-    for event in calendar_events:
-        try:
-            event_start = datetime.fromisoformat(event.get("start", "").replace("Z", "+00:00"))
-            hours_until = (event_start - now).total_seconds() / 3600
-            
-            # Check if it's within 24 hours and has important keywords
-            if 0 < hours_until < 24:
-                subject = (event.get("subject") or "").lower()
-                is_important = any(kw in subject for kw in important_keywords) or event.get("importance") == "high"
-                
-                if is_important:
-                    notifications.append({
-                        "id": f"meeting_{event.get('id', 'unknown')}",
-                        "type": "meeting",
-                        "severity": "medium",
-                        "title": "Important meeting coming up",
-                        "message": f"{event.get('subject', 'Meeting')} in {int(hours_until)} hours",
-                        "action": "Prepare materials and review agenda",
-                        "source": "Calendar",
-                        "timestamp": event.get("start")
-                    })
-        except:
-            pass
-    
-    # Check for operational patterns in emails
-    email_intel = await get_email_intelligence_supabase(get_sb(), user_id)
-    if email_intel:
-        # Check for declining engagement with key clients
-        top_clients = email_intel.get("top_clients", [])
-        for client in top_clients[:5]:
-            if client.get("trend") == "declining":
-                notifications.append({
-                    "id": f"client_{client.get('email', 'unknown')}",
-                    "type": "relationship",
-                    "severity": "medium",
-                    "title": "Client engagement declining",
-                    "message": f"Communication with {client.get('name', client.get('email', 'key contact'))} has decreased",
-                    "action": "Consider reaching out to maintain relationship",
-                    "source": "Relationship Intelligence",
-                    "timestamp": datetime.now(timezone.utc).isoformat()
-                })
-    
-    # Deduplicate notifications by ID AND by title (catch same-content from different sources)
-    seen_ids = set()
-    seen_titles = set()
-    unique_notifications = []
-    
-    # Filter out dismissed notifications first
     try:
-        dismissed = get_sb().table("dismissed_notifications").select("notification_id").eq("user_id", user_id).execute()
-        dismissed_ids = {d["notification_id"] for d in (dismissed.data or [])}
-    except Exception:
-        dismissed_ids = set()
-    
-    for notif in notifications:
-        nid = notif["id"]
-        title = notif.get("title", "").lower().strip()
-        if nid in dismissed_ids:
-            continue
-        if nid in seen_ids:
-            continue
-        if title and title in seen_titles:
-            continue
-        seen_ids.add(nid)
-        if title:
-            seen_titles.add(title)
-        unique_notifications.append(notif)
-    
-    # Sort by severity (high first) then by timestamp
-    severity_order = {"high": 0, "medium": 1, "low": 2}
-    unique_notifications.sort(key=lambda x: (severity_order.get(x["severity"], 2), x.get("timestamp", "")))
-    
-    # Limit to top 10 notifications
-    unique_notifications = unique_notifications[:10]
+        user_id = current_user["id"]
+        notifications = []
 
-    if not unique_notifications:
-        try:
-            observation_state = get_recent_observation_events(get_sb(), user_id, limit=15)
-            fallback_events = build_watchtower_events(observation_state.get("events") or [], limit=10)
-            for event in fallback_events:
-                unique_notifications.append({
-                    "id": f"obs_{event.get('id')}",
-                    "type": event.get("domain") or "signal",
-                    "severity": event.get("severity") or "medium",
-                    "title": event.get("title") or "Live signal detected",
-                    "message": event.get("detail") or event.get("impact") or "A live business signal needs review.",
-                    "action": event.get("action") or event.get("recommendation") or "Review the signal and take corrective action.",
-                    "source": event.get("source") or "Live Signals",
-                    "timestamp": event.get("created_at") or datetime.now(timezone.utc).isoformat()
+        # Check for high priority emails (customer complaints, urgent issues)
+        priority_analysis = await get_priority_analysis_supabase(get_sb(), user_id)
+
+        if priority_analysis and priority_analysis.get("analysis"):
+            high_priority = priority_analysis["analysis"].get("high_priority", [])
+            for email in high_priority[:3]:
+                notifications.append({
+                    "id": f"email_{email.get('email_id', 'unknown')}",
+                    "type": "email",
+                    "severity": "high",
+                    "title": "Important email needs attention",
+                    "message": f"From {email.get('from', 'Unknown')}: {email.get('subject', 'No subject')[:50]}",
+                    "action": email.get("suggested_action", "Review and respond"),
+                    "source": "Email Intelligence",
+                    "timestamp": email.get("received") or datetime.now(timezone.utc).isoformat()
                 })
-            unique_notifications = unique_notifications[:10]
+
+        # Check recent emails for complaint keywords
+        recent_emails_result = get_sb().table("outlook_emails").select(
+            "subject,body_preview,from_name,from_address,received_date,id"
+        ).eq("user_id", user_id).order("received_date", desc=True).limit(50).execute()
+        recent_emails = recent_emails_result.data if recent_emails_result.data else []
+
+        complaint_keywords = ["complaint", "unhappy", "disappointed", "refund", "cancel", "frustrated", "unacceptable", "terrible", "worst", "issue", "problem", "urgent"]
+
+        for email in recent_emails:
+            subject = (email.get("subject") or "").lower()
+            preview = (email.get("body_preview") or "").lower()
+            content = subject + " " + preview
+
+            for keyword in complaint_keywords:
+                if keyword in content:
+                    notifications.append({
+                        "id": f"complaint_{email.get('id', 'unknown')}",
+                        "type": "complaint",
+                        "severity": "high",
+                        "title": "Potential customer concern detected",
+                        "message": f"Email from {email.get('from_name') or email.get('from_address', 'Unknown')}: {email.get('subject', '')[:40]}",
+                        "action": "Review and respond promptly",
+                        "source": "Email Analysis",
+                        "timestamp": email.get("received_date") or datetime.now(timezone.utc).isoformat()
+                    })
+                    break  # Only one notification per email
+
+        # Check calendar for important upcoming meetings
+        calendar_events = await get_user_calendar_events_supabase(get_sb(), user_id)
+
+        now = datetime.now(timezone.utc)
+        important_keywords = ["review", "client", "investor", "board", "presentation", "pitch", "deadline", "important", "urgent", "critical"]
+
+        for event in calendar_events:
+            try:
+                event_start = datetime.fromisoformat(event.get("start", "").replace("Z", "+00:00"))
+                hours_until = (event_start - now).total_seconds() / 3600
+
+                # Check if it's within 24 hours and has important keywords
+                if 0 < hours_until < 24:
+                    subject = (event.get("subject") or "").lower()
+                    is_important = any(kw in subject for kw in important_keywords) or event.get("importance") == "high"
+
+                    if is_important:
+                        notifications.append({
+                            "id": f"meeting_{event.get('id', 'unknown')}",
+                            "type": "meeting",
+                            "severity": "medium",
+                            "title": "Important meeting coming up",
+                            "message": f"{event.get('subject', 'Meeting')} in {int(hours_until)} hours",
+                            "action": "Prepare materials and review agenda",
+                            "source": "Calendar",
+                            "timestamp": event.get("start")
+                        })
+            except:
+                pass
+
+        # Check for operational patterns in emails
+        email_intel = await get_email_intelligence_supabase(get_sb(), user_id)
+        if email_intel:
+            # Check for declining engagement with key clients
+            top_clients = email_intel.get("top_clients", [])
+            for client in top_clients[:5]:
+                if client.get("trend") == "declining":
+                    notifications.append({
+                        "id": f"client_{client.get('email', 'unknown')}",
+                        "type": "relationship",
+                        "severity": "medium",
+                        "title": "Client engagement declining",
+                        "message": f"Communication with {client.get('name', client.get('email', 'key contact'))} has decreased",
+                        "action": "Consider reaching out to maintain relationship",
+                        "source": "Relationship Intelligence",
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    })
+
+        # Deduplicate notifications by ID AND by title (catch same-content from different sources)
+        seen_ids = set()
+        seen_titles = set()
+        unique_notifications = []
+
+        # Filter out dismissed notifications first
+        try:
+            dismissed = get_sb().table("dismissed_notifications").select("notification_id").eq("user_id", user_id).execute()
+            dismissed_ids = {d["notification_id"] for d in (dismissed.data or [])}
         except Exception:
-            pass
+            dismissed_ids = set()
+
+        for notif in notifications:
+            nid = notif["id"]
+            title = notif.get("title", "").lower().strip()
+            if nid in dismissed_ids:
+                continue
+            if nid in seen_ids:
+                continue
+            if title and title in seen_titles:
+                continue
+            seen_ids.add(nid)
+            if title:
+                seen_titles.add(title)
+            unique_notifications.append(notif)
+
+        # Sort by severity (high first) then by timestamp
+        severity_order = {"high": 0, "medium": 1, "low": 2}
+        unique_notifications.sort(key=lambda x: (severity_order.get(x["severity"], 2), x.get("timestamp", "")))
+
+        # Limit to top 10 notifications
+        unique_notifications = unique_notifications[:10]
+
+        if not unique_notifications:
+            try:
+                observation_state = get_recent_observation_events(get_sb(), user_id, limit=15)
+                fallback_events = build_watchtower_events(observation_state.get("events") or [], limit=10)
+                for event in fallback_events:
+                    unique_notifications.append({
+                        "id": f"obs_{event.get('id')}",
+                        "type": event.get("domain") or "signal",
+                        "severity": event.get("severity") or "medium",
+                        "title": event.get("title") or "Live signal detected",
+                        "message": event.get("detail") or event.get("impact") or "A live business signal needs review.",
+                        "action": event.get("action") or event.get("recommendation") or "Review the signal and take corrective action.",
+                        "source": event.get("source") or "Live Signals",
+                        "timestamp": event.get("created_at") or datetime.now(timezone.utc).isoformat()
+                    })
+                unique_notifications = unique_notifications[:10]
+            except Exception:
+                pass
     
-    # Calculate summary counts
-    high_count = sum(1 for n in unique_notifications if n["severity"] == "high")
-    medium_count = sum(1 for n in unique_notifications if n["severity"] == "medium")
-    
-    return {
-        "notifications": unique_notifications,
-        "summary": {
-            "total": len(unique_notifications),
-            "high": high_count,
-            "medium": medium_count,
-            "low": len(unique_notifications) - high_count - medium_count
-        },
-        "has_alerts": len(unique_notifications) > 0
-    }
+        # Calculate summary counts
+        high_count = sum(1 for n in unique_notifications if n["severity"] == "high")
+        medium_count = sum(1 for n in unique_notifications if n["severity"] == "medium")
+
+        return {
+            "notifications": unique_notifications,
+            "summary": {
+                "total": len(unique_notifications),
+                "high": high_count,
+                "medium": medium_count,
+                "low": len(unique_notifications) - high_count - medium_count
+            },
+            "has_alerts": len(unique_notifications) > 0
+        }
+    except Exception as e:
+        logger.error(f"[notifications/alerts] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/notifications/dismiss/{notification_id}")
 async def dismiss_notification(notification_id: str, current_user: dict = Depends(get_current_user)):
     """Dismiss a notification"""
-    get_sb().table("dismissed_notifications").upsert({
-        "user_id": current_user["id"],
-        "notification_id": notification_id,
-        "dismissed_at": datetime.now(timezone.utc).isoformat()
-    }, on_conflict="user_id,notification_id").execute()
-    return {"status": "dismissed"}
+    try:
+        get_sb().table("dismissed_notifications").upsert({
+            "user_id": current_user["id"],
+            "notification_id": notification_id,
+            "dismissed_at": datetime.now(timezone.utc).isoformat()
+        }, on_conflict="user_id,notification_id").execute()
+        return {"status": "dismissed"}
+    except Exception as e:
+        logger.error(f"[notifications/dismiss] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ==================== ROOT ====================

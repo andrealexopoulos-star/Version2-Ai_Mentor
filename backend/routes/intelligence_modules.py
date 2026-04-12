@@ -445,22 +445,46 @@ async def _rpc_truth_gateway(fn_name: str, workspace_id: str):
 
 @router.get("/intelligence/workforce")
 async def get_workforce_health(current_user: dict = Depends(get_current_user)):
-    return await _rpc('compute_workforce_health', current_user['id'])
+    try:
+        return await _rpc('compute_workforce_health', current_user['id'])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[workforce] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/intelligence/scenarios")
 async def get_revenue_scenarios(current_user: dict = Depends(get_current_user)):
-    return await _rpc('compute_revenue_scenarios', current_user['id'])
+    try:
+        return await _rpc('compute_revenue_scenarios', current_user['id'])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[scenarios] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/intelligence/scores")
 async def get_insight_scores(current_user: dict = Depends(get_current_user)):
-    return await _rpc('compute_insight_scores', current_user['id'])
+    try:
+        return await _rpc('compute_insight_scores', current_user['id'])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[scores] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/intelligence/concentration")
 async def get_concentration_risk(current_user: dict = Depends(get_current_user)):
-    return await _rpc('compute_concentration_risk', current_user['id'])
+    try:
+        return await _rpc('compute_concentration_risk', current_user['id'])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[concentration] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ═══ NEW ENDPOINTS (from 023) ═══
@@ -468,57 +492,111 @@ async def get_concentration_risk(current_user: dict = Depends(get_current_user))
 @router.get("/intelligence/contradictions")
 async def get_contradictions(current_user: dict = Depends(get_current_user)):
     """Detect priority mismatches, action-inaction gaps, repeated ignores."""
-    return await _rpc('detect_contradictions', current_user['id'])
+    try:
+        return await _rpc('detect_contradictions', current_user['id'])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[contradictions] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/intelligence/pressure")
 async def get_pressure_levels(current_user: dict = Depends(get_current_user)):
     """Compute pressure levels across all domains."""
-    return await _rpc('compute_pressure_levels', current_user['id'])
+    try:
+        return await _rpc('compute_pressure_levels', current_user['id'])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[pressure] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/intelligence/freshness")
 async def get_evidence_freshness(current_user: dict = Depends(get_current_user)):
     """Track signal age and decay scoring per domain."""
-    wid = current_user['id']
-    return await _rpc_truth_gateway('compute_evidence_freshness', wid)
+    try:
+        wid = current_user['id']
+        return await _rpc_truth_gateway('compute_evidence_freshness', wid)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[freshness] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/intelligence/silence")
 async def get_silence_detection(current_user: dict = Depends(get_current_user)):
     """Detect user absence and unactioned critical signals."""
-    return await _rpc('detect_silence', current_user['id'])
+    try:
+        return await _rpc('detect_silence', current_user['id'])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[silence] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/intelligence/escalations")
 async def get_escalation_summary(current_user: dict = Depends(get_current_user)):
     """Get active escalation history and patterns."""
-    return await _rpc('get_escalation_summary', current_user['id'])
+    try:
+        return await _rpc('get_escalation_summary', current_user['id'])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[escalations] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/intelligence/completeness")
 async def get_profile_completeness(current_user: dict = Depends(get_current_user)):
     """Compute business profile completeness score."""
-    return await _rpc('compute_profile_completeness', current_user['id'])
+    try:
+        return await _rpc('compute_profile_completeness', current_user['id'])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[completeness] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/intelligence/readiness")
 async def get_data_readiness(current_user: dict = Depends(get_current_user)):
     """Compute workspace data readiness score with checklist."""
-    return await _rpc('compute_data_readiness', current_user['id'])
+    try:
+        return await _rpc('compute_data_readiness', current_user['id'])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[readiness] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/intelligence/watchtower/positions")
 async def get_watchtower_positions(current_user: dict = Depends(get_current_user)):
     """Raw watchtower positions RPC (non-canonical helper endpoint)."""
-    return await _rpc('compute_watchtower_positions', current_user['id'])
+    try:
+        return await _rpc('compute_watchtower_positions', current_user['id'])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[watchtower-positions] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/intelligence/summary")
 async def get_full_summary(current_user: dict = Depends(get_current_user)):
     """Build complete intelligence summary across all modules."""
-    wid = current_user['id']
-    return await _rpc_truth_gateway('build_intelligence_summary', wid)
+    try:
+        wid = current_user['id']
+        return await _rpc_truth_gateway('build_intelligence_summary', wid)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[summary] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ═══ INTEGRATION STATUS (direct table query) ═══
@@ -572,3 +650,146 @@ async def get_governance_summary(current_user: dict = Depends(get_current_user))
     except Exception as e:
         logger.warning(f"Governance summary query failed: {e}")
         return {"events": [], "total_count": 0, "avg_confidence": 0, "sources": []}
+
+
+# ═══ CMO REPORT ═══
+
+@router.get("/intelligence/cmo-report")
+async def get_cmo_report(current_user: dict = Depends(get_current_user)):
+    """Build a CMO-style intelligence report from the user's workspace data."""
+    user_id = current_user["id"]
+    try:
+        sb = init_supabase()
+
+        # Fetch business profile for company name
+        profile_result = sb.table("business_profiles") \
+            .select("company_name, industry, market_position") \
+            .eq("user_id", user_id) \
+            .limit(1) \
+            .execute()
+        profile = (profile_result.data or [{}])[0] if profile_result.data else {}
+
+        # Fetch recent intelligence actions for report data
+        actions_result = sb.table("intelligence_actions") \
+            .select("source, title, description, severity, status, created_at") \
+            .eq("user_id", user_id) \
+            .order("created_at", desc=True) \
+            .limit(100) \
+            .execute()
+        actions = actions_result.data or []
+
+        # Fetch watchtower positions for competitive data
+        watchtower_data = {}
+        try:
+            wt_result = sb.rpc("compute_watchtower_positions", {"p_workspace_id": user_id}).execute()
+            watchtower_data = wt_result.data or {}
+        except Exception:
+            pass
+
+        # Fetch intelligence summary for scores
+        summary_data = {}
+        try:
+            sum_result = sb.rpc("build_intelligence_summary", {"p_workspace_id": user_id}).execute()
+            summary_data = sum_result.data or {}
+        except Exception:
+            pass
+
+        # Build market position from summary
+        market_intel = summary_data.get("market_intelligence", {}) if isinstance(summary_data, dict) else {}
+        modules = summary_data.get("modules", {}) if isinstance(summary_data, dict) else {}
+
+        market_position = {
+            "overall": market_intel.get("market_position_score", 0) if isinstance(market_intel, dict) else 0,
+            "brand": market_intel.get("brand_strength", 0) if isinstance(market_intel, dict) else 0,
+            "digital": market_intel.get("digital_presence", 0) if isinstance(market_intel, dict) else 0,
+            "sentiment": market_intel.get("sentiment_score", 0) if isinstance(market_intel, dict) else 0,
+            "competitive": market_intel.get("competitive_position", 0) if isinstance(market_intel, dict) else 0,
+        }
+
+        # Build competitors from watchtower data
+        competitors = []
+        if isinstance(watchtower_data, dict):
+            for comp in watchtower_data.get("competitors", []):
+                if isinstance(comp, dict):
+                    competitors.append({
+                        "name": comp.get("name", "Unknown"),
+                        "market_share": comp.get("market_share", "N/A"),
+                        "strengths": comp.get("strengths", "N/A"),
+                        "digital_visibility": comp.get("digital_visibility", "N/A"),
+                        "threat_level": comp.get("threat_level", "low"),
+                        "is_you": comp.get("is_you", False),
+                    })
+
+        # Build SWOT from intelligence actions
+        swot = {"strengths": [], "weaknesses": [], "opportunities": [], "threats": []}
+        for action in actions:
+            sev = (action.get("severity") or "").lower()
+            title = action.get("title") or ""
+            if sev == "positive" or action.get("status") == "complete":
+                if len(swot["strengths"]) < 5:
+                    swot["strengths"].append(title)
+            elif sev == "critical" or sev == "high":
+                if len(swot["threats"]) < 5:
+                    swot["threats"].append(title)
+            elif sev == "warning" or sev == "medium":
+                if len(swot["weaknesses"]) < 5:
+                    swot["weaknesses"].append(title)
+            elif sev == "info" or sev == "low":
+                if len(swot["opportunities"]) < 5:
+                    swot["opportunities"].append(title)
+
+        # Build reviews summary
+        reviews = {
+            "rating": market_intel.get("review_rating", 0) if isinstance(market_intel, dict) else 0,
+            "count": market_intel.get("review_count", 0) if isinstance(market_intel, dict) else 0,
+            "positive_pct": market_intel.get("positive_pct", 0) if isinstance(market_intel, dict) else 0,
+            "neutral_pct": market_intel.get("neutral_pct", 0) if isinstance(market_intel, dict) else 0,
+            "negative_pct": market_intel.get("negative_pct", 0) if isinstance(market_intel, dict) else 0,
+        }
+
+        # Build roadmap from action plan
+        action_plan = summary_data.get("action_plan", {}) if isinstance(summary_data, dict) else {}
+        roadmap = {
+            "quick_wins": action_plan.get("quick_wins", []) if isinstance(action_plan, dict) else [],
+            "priorities": action_plan.get("priorities", []) if isinstance(action_plan, dict) else [],
+            "strategic": action_plan.get("strategic", []) if isinstance(action_plan, dict) else [],
+        }
+
+        # Build geographic data
+        geographic = {
+            "established": market_intel.get("established_regions", []) if isinstance(market_intel, dict) else [],
+            "growth": market_intel.get("growth_regions", []) if isinstance(market_intel, dict) else [],
+        }
+
+        # Compute confidence
+        data_points = len(actions) + (1 if watchtower_data else 0) + (1 if summary_data else 0)
+        confidence = min(95, max(10, data_points * 2))
+
+        return {
+            "company_name": profile.get("company_name", "Your Business"),
+            "report_date": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
+            "executive_summary": f"Intelligence report for {profile.get('company_name', 'your business')} based on {len(actions)} data signals across all connected sources.",
+            "market_position": market_position,
+            "competitors": competitors,
+            "swot": swot,
+            "reviews": reviews,
+            "roadmap": roadmap,
+            "geographic": geographic,
+            "confidence": confidence,
+            "report_id": f"CMO-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{user_id[:8]}",
+        }
+    except Exception as e:
+        logger.warning(f"CMO report generation failed: {e}")
+        return {
+            "company_name": "Your Business",
+            "report_date": datetime.now(timezone.utc).strftime("%d/%m/%Y"),
+            "executive_summary": None,
+            "market_position": {"overall": 0, "brand": 0, "digital": 0, "sentiment": 0, "competitive": 0},
+            "competitors": [],
+            "swot": {"strengths": [], "weaknesses": [], "opportunities": [], "threats": []},
+            "reviews": {"rating": 0, "count": 0, "positive_pct": 0, "neutral_pct": 0, "negative_pct": 0},
+            "roadmap": {"quick_wins": [], "priorities": [], "strategic": []},
+            "geographic": {"established": [], "growth": []},
+            "confidence": 0,
+            "report_id": "",
+        }

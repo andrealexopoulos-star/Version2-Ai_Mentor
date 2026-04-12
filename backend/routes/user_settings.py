@@ -59,26 +59,34 @@ def _ensure_settings_row(sb, user_id: str) -> Dict[str, Any]:
 @router.get("/settings/notifications")
 async def get_notifications(user=Depends(get_current_user)):
     """Load 6 notification toggle states."""
-    sb = get_sb()
-    row = _ensure_settings_row(sb, user["id"])
-    return {
-        "notify_morning_brief": row.get("notify_morning_brief", True),
-        "notify_critical_alerts": row.get("notify_critical_alerts", True),
-        "notify_high_alerts": row.get("notify_high_alerts", True),
-        "notify_weekly_report": row.get("notify_weekly_report", True),
-        "notify_nudges": row.get("notify_nudges", True),
-        "notify_marketing": row.get("notify_marketing", False),
-    }
+    try:
+        sb = get_sb()
+        row = _ensure_settings_row(sb, user["id"])
+        return {
+            "notify_morning_brief": row.get("notify_morning_brief", True),
+            "notify_critical_alerts": row.get("notify_critical_alerts", True),
+            "notify_high_alerts": row.get("notify_high_alerts", True),
+            "notify_weekly_report": row.get("notify_weekly_report", True),
+            "notify_nudges": row.get("notify_nudges", True),
+            "notify_marketing": row.get("notify_marketing", False),
+        }
+    except Exception as e:
+        logger.error(f"[get-notifications] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.put("/settings/notifications")
 async def save_notifications(prefs: NotificationPreferences, user=Depends(get_current_user)):
     """Save 6 notification toggle states."""
-    sb = get_sb()
-    data = prefs.model_dump()
-    data["user_id"] = user["id"]
-    sb.table("user_settings").upsert(data, on_conflict="user_id").execute()
-    return {"status": "saved", **prefs.model_dump()}
+    try:
+        sb = get_sb()
+        data = prefs.model_dump()
+        data["user_id"] = user["id"]
+        sb.table("user_settings").upsert(data, on_conflict="user_id").execute()
+        return {"status": "saved", **prefs.model_dump()}
+    except Exception as e:
+        logger.error(f"[save-notifications] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ───────────────────────── Signal Threshold Endpoints ─────────────────────────
@@ -86,25 +94,33 @@ async def save_notifications(prefs: NotificationPreferences, user=Depends(get_cu
 @router.get("/settings/thresholds")
 async def get_thresholds(user=Depends(get_current_user)):
     """Load 5 signal threshold values."""
-    sb = get_sb()
-    row = _ensure_settings_row(sb, user["id"])
-    return {
-        "threshold_deal_stall_days": row.get("threshold_deal_stall_days", 14),
-        "threshold_cash_runway_months": row.get("threshold_cash_runway_months", 6),
-        "threshold_meeting_overload_pct": row.get("threshold_meeting_overload_pct", 60),
-        "threshold_churn_silence_days": row.get("threshold_churn_silence_days", 21),
-        "threshold_invoice_aging_pct": row.get("threshold_invoice_aging_pct", 15),
-    }
+    try:
+        sb = get_sb()
+        row = _ensure_settings_row(sb, user["id"])
+        return {
+            "threshold_deal_stall_days": row.get("threshold_deal_stall_days", 14),
+            "threshold_cash_runway_months": row.get("threshold_cash_runway_months", 6),
+            "threshold_meeting_overload_pct": row.get("threshold_meeting_overload_pct", 60),
+            "threshold_churn_silence_days": row.get("threshold_churn_silence_days", 21),
+            "threshold_invoice_aging_pct": row.get("threshold_invoice_aging_pct", 15),
+        }
+    except Exception as e:
+        logger.error(f"[get-thresholds] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.put("/settings/thresholds")
 async def save_thresholds(thresholds: SignalThresholds, user=Depends(get_current_user)):
     """Save 5 signal threshold values."""
-    sb = get_sb()
-    data = thresholds.model_dump()
-    data["user_id"] = user["id"]
-    sb.table("user_settings").upsert(data, on_conflict="user_id").execute()
-    return {"status": "saved", **thresholds.model_dump()}
+    try:
+        sb = get_sb()
+        data = thresholds.model_dump()
+        data["user_id"] = user["id"]
+        sb.table("user_settings").upsert(data, on_conflict="user_id").execute()
+        return {"status": "saved", **thresholds.model_dump()}
+    except Exception as e:
+        logger.error(f"[save-thresholds] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ───────────────────────── Data Export ─────────────────────────
@@ -112,58 +128,66 @@ async def save_thresholds(thresholds: SignalThresholds, user=Depends(get_current
 @router.post("/user/export")
 async def request_export(user=Depends(get_current_user)):
     """Queue a full data export (background job via Redis)."""
-    sb = get_sb()
-    user_id = user["id"]
-
-    # Check for existing pending export
-    existing = (
-        sb.table("data_exports")
-        .select("id, status")
-        .eq("user_id", user_id)
-        .in_("status", ["queued", "processing"])
-        .maybe_single()
-        .execute()
-    )
-    if existing.data:
-        return {"status": "already_queued", "export_id": existing.data["id"]}
-
-    result = sb.table("data_exports").insert({
-        "user_id": user_id,
-        "status": "queued",
-    }).execute()
-    export_id = result.data[0]["id"]
-
-    # Enqueue Redis job if available
     try:
-        from biqc_jobs import biqc_jobs
-        if biqc_jobs:
-            await biqc_jobs.enqueue({
-                "type": "data-export",
-                "user_id": user_id,
-                "export_id": export_id,
-            })
-    except Exception as e:
-        logger.warning(f"Redis unavailable for export job, will process on next worker cycle: {e}")
+        sb = get_sb()
+        user_id = user["id"]
 
-    return {"status": "queued", "export_id": export_id}
+        # Check for existing pending export
+        existing = (
+            sb.table("data_exports")
+            .select("id, status")
+            .eq("user_id", user_id)
+            .in_("status", ["queued", "processing"])
+            .maybe_single()
+            .execute()
+        )
+        if existing.data:
+            return {"status": "already_queued", "export_id": existing.data["id"]}
+
+        result = sb.table("data_exports").insert({
+            "user_id": user_id,
+            "status": "queued",
+        }).execute()
+        export_id = result.data[0]["id"]
+
+        # Enqueue Redis job if available
+        try:
+            from biqc_jobs import biqc_jobs
+            if biqc_jobs:
+                await biqc_jobs.enqueue({
+                    "type": "data-export",
+                    "user_id": user_id,
+                    "export_id": export_id,
+                })
+        except Exception as e:
+            logger.warning(f"Redis unavailable for export job, will process on next worker cycle: {e}")
+
+        return {"status": "queued", "export_id": export_id}
+    except Exception as e:
+        logger.error(f"[request-export] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/user/export/status")
 async def export_status(user=Depends(get_current_user)):
     """Check latest export status."""
-    sb = get_sb()
-    result = (
-        sb.table("data_exports")
-        .select("*")
-        .eq("user_id", user["id"])
-        .order("created_at", desc=True)
-        .limit(1)
-        .maybe_single()
-        .execute()
-    )
-    if not result.data:
-        return {"status": "none"}
-    return result.data
+    try:
+        sb = get_sb()
+        result = (
+            sb.table("data_exports")
+            .select("*")
+            .eq("user_id", user["id"])
+            .order("created_at", desc=True)
+            .limit(1)
+            .maybe_single()
+            .execute()
+        )
+        if not result.data:
+            return {"status": "none"}
+        return result.data
+    except Exception as e:
+        logger.error(f"[export-status] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ───────────────────────── Danger Zone ─────────────────────────
@@ -171,29 +195,33 @@ async def export_status(user=Depends(get_current_user)):
 @router.post("/user/disconnect-all")
 async def disconnect_all(user=Depends(get_current_user)):
     """Disconnect all active integrations for the current user."""
-    sb = get_sb()
-    user_id = user["id"]
-    disconnected = []
+    try:
+        sb = get_sb()
+        user_id = user["id"]
+        disconnected = []
 
-    # Token/connection tables to clear
-    tables = [
-        "outlook_oauth_tokens",
-        "gmail_connections",
-        "imap_connections",
-        "icloud_connections",
-        "email_connections",
-        "integration_accounts",
-    ]
+        # Token/connection tables to clear
+        tables = [
+            "outlook_oauth_tokens",
+            "gmail_connections",
+            "imap_connections",
+            "icloud_connections",
+            "email_connections",
+            "integration_accounts",
+        ]
 
-    for table in tables:
-        try:
-            sb.table(table).delete().eq("user_id", user_id).execute()
-            disconnected.append(table)
-        except Exception as e:
-            # Table may not exist or may have no rows — not an error
-            logger.debug(f"disconnect-all: {table} — {e}")
+        for table in tables:
+            try:
+                sb.table(table).delete().eq("user_id", user_id).execute()
+                disconnected.append(table)
+            except Exception as e:
+                # Table may not exist or may have no rows — not an error
+                logger.debug(f"disconnect-all: {table} — {e}")
 
-    return {"status": "disconnected", "cleared": disconnected}
+        return {"status": "disconnected", "cleared": disconnected}
+    except Exception as e:
+        logger.error(f"[disconnect-all] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/user/account")
@@ -203,32 +231,38 @@ async def delete_account(user=Depends(get_current_user)):
     Marks user as inactive. Does NOT hard-delete data — a scheduled job
     can clean PII after 30 days per data retention policy.
     """
-    sb = get_sb()
-    user_id = user["id"]
-
-    # Mark business profile as deleted
     try:
-        sb.table("business_profiles").update({
-            "subscription_tier": "deleted",
-        }).eq("user_id", user_id).execute()
+        sb = get_sb()
+        user_id = user["id"]
+
+        # Mark business profile as deleted
+        try:
+            sb.table("business_profiles").update({
+                "subscription_tier": "deleted",
+            }).eq("user_id", user_id).execute()
+        except Exception as e:
+            logger.warning(f"Failed to mark business_profiles: {e}")
+
+        # Mark user row as inactive
+        try:
+            sb.table("users").update({
+                "is_active": False,
+            }).eq("id", user_id).execute()
+        except Exception as e:
+            logger.warning(f"Failed to mark users: {e}")
+
+        # Disconnect all integrations
+        try:
+            await disconnect_all.__wrapped__(user) if hasattr(disconnect_all, '__wrapped__') else None
+        except Exception:
+            pass
+
+        return {"status": "account_scheduled_for_deletion", "retention_days": 30}
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.warning(f"Failed to mark business_profiles: {e}")
-
-    # Mark user row as inactive
-    try:
-        sb.table("users").update({
-            "is_active": False,
-        }).eq("id", user_id).execute()
-    except Exception as e:
-        logger.warning(f"Failed to mark users: {e}")
-
-    # Disconnect all integrations
-    try:
-        await disconnect_all.__wrapped__(user) if hasattr(disconnect_all, '__wrapped__') else None
-    except Exception:
-        pass
-
-    return {"status": "account_scheduled_for_deletion", "retention_days": 30}
+        logger.error(f"[delete-account] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ───────────────────────── Sync Log ─────────────────────────
@@ -236,18 +270,22 @@ async def delete_account(user=Depends(get_current_user)):
 @router.get("/sync/log")
 async def get_sync_log(user=Depends(get_current_user), limit: int = 50):
     """Get unified sync log across all connectors."""
-    sb = get_sb()
-    if limit > 200:
-        limit = 200
-    result = (
-        sb.table("sync_log")
-        .select("*")
-        .eq("user_id", user["id"])
-        .order("created_at", desc=True)
-        .limit(limit)
-        .execute()
-    )
-    return {"logs": result.data or []}
+    try:
+        sb = get_sb()
+        if limit > 200:
+            limit = 200
+        result = (
+            sb.table("sync_log")
+            .select("*")
+            .eq("user_id", user["id"])
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return {"logs": result.data or []}
+    except Exception as e:
+        logger.error(f"[get-sync-log] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ───────────────────────── Feature Flags ─────────────────────────

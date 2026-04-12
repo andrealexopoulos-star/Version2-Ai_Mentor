@@ -3719,6 +3719,7 @@ async def get_forensic_calibration(current_user: dict = Depends(get_current_user
 
 
 @router.post("/reports/save")
+@router.post("/calibration/reports/save")
 async def save_calibration_report(payload: ReportSaveRequest, current_user: dict = Depends(get_current_user)):
     user_id = current_user.get("id", "")
     try:
