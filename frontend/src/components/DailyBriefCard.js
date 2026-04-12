@@ -174,7 +174,7 @@ export const DailyBriefBanner = ({ onOpen }) => {
 
   return (
     <div
-      className="pointer-events-none fixed top-14 left-0 right-0 z-40 flex items-center justify-center px-4 py-3"
+      className="pointer-events-none fixed top-[60px] left-0 right-0 z-40 flex items-center justify-center px-4 py-3"
       style={{ background: '#E85D0010', borderBottom: '1px solid #E85D0030', backdropFilter: 'blur(8px)' }}
       data-testid="daily-brief-banner"
     >

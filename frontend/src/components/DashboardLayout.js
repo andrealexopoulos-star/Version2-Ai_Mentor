@@ -111,7 +111,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true');
   const [sidebarWidthPx, setSidebarWidthPx] = useState(() => {
     const stored = Number(localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY));
-    return Number.isFinite(stored) ? clamp(stored, 220, 420) : 256;
+    return Number.isFinite(stored) ? clamp(stored, 220, 420) : 248;
   });
   const [soundboardWidthPx, setSoundboardWidthPx] = useState(() => {
     const stored = Number(localStorage.getItem(SOUNDBOARD_WIDTH_STORAGE_KEY));
@@ -355,7 +355,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       return next;
     });
   }, [visibleSections, isSA, isActive]);
-  const activeSidebarWidth = sidebarCollapsed ? 64 : sidebarWidthPx;
+  const activeSidebarWidth = sidebarCollapsed ? 68 : sidebarWidthPx;
   const startSidebarResize = (event) => {
     if (sidebarCollapsed) return;
     event.preventDefault();
@@ -390,7 +390,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: `var(--biqc-bg, ${colors.bg})`, color: `var(--biqc-text, ${colors.text})` }}>
       {/* ═══ TOP BAR ═══ */}
-      <header className="fixed top-0 left-0 right-0 h-14 px-4 lg:px-6 flex items-center justify-between" style={{ background: `var(--biqc-bg-input, ${colors.bgInput})`, borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
+      <header className="fixed top-0 left-0 right-0 h-[60px] px-4 lg:px-6 flex items-center justify-between" style={{ background: `var(--biqc-bg-input, ${colors.bgInput})`, borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
         <div className="flex items-center gap-3">
           <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: 'var(--biqc-text-2)' }} aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'} data-testid="mobile-menu-toggle">
             {isNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -528,7 +528,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       </header>
 
       {/* ═══ SIDEBAR ═══ */}
-      <aside className={`fixed left-0 transition-all duration-300 ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-14 h-[calc(100vh-3.5rem)]`}
+      <aside className={`fixed left-0 transition-all duration-300 ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-[60px] h-[calc(100vh-60px)]`}
         style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, #0A1018)', borderRight: '1px solid var(--biqc-border, rgba(140,170,210,0.15))', width: `${activeSidebarWidth}px` }}
         role="navigation" aria-label="Main navigation">
 
@@ -724,14 +724,14 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       )}
 
       <div
-        className="pt-14 pb-[76px] lg:pb-0 transition-all duration-300 flex"
+        className="pt-[60px] pb-[76px] lg:pb-0 transition-all duration-300 flex"
         style={{
           minHeight: '100dvh',
           marginLeft: isDesktopViewport ? `${activeSidebarWidth}px` : undefined,
           paddingTop: trialDaysLeft !== null ? 32 : 0,
         }}
       >
-        <main id="main-content" className="flex-1" style={{ background: 'var(--biqc-bg, #0F1720)', overflowY: 'visible' }}>
+        <main id="main-content" className="flex-1" style={{ background: 'var(--biqc-bg, #0B1120)', overflowY: 'visible' }}>
           <div className="px-4 py-4 md:px-6 md:py-6">
             <div className="mb-4 flex items-center justify-between gap-3" data-testid="page-navigation-row">
               <button
