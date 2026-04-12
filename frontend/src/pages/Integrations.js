@@ -530,16 +530,19 @@ export default function Integrations() {
   }, []);
 
   const handleConnect = useCallback(async (integration) => {
-    if (integration.type === 'outlook') {
+    if (integration.type === 'outlook' || integration.type === 'gmail') {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) { toast.error('Please log in'); return; }
-      window.location.assign(`${getBackendUrl()}/api/auth/outlook/login?token=${session.access_token}&returnTo=/integrations`);
-      return;
-    }
-    if (integration.type === 'gmail') {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) { toast.error('Please log in'); return; }
-      window.location.assign(`${getBackendUrl()}/api/auth/gmail/login?token=${session.access_token}&returnTo=/integrations`);
+      try {
+        const initResp = await fetch(`${getBackendUrl()}/api/auth/email-connect/initiate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+          body: JSON.stringify({ provider: integration.type, returnTo: '/integrations' }),
+        });
+        if (!initResp.ok) throw new Error('Failed to initiate connection');
+        const { redirect_url } = await initResp.json();
+        window.location.assign(`${getBackendUrl()}${redirect_url}`);
+      } catch (e) { toast.error(`Failed to connect ${integration.type}: ${e.message}`); }
       return;
     }
     if (integration.type === 'gcal') {

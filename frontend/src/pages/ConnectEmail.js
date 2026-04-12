@@ -11,6 +11,7 @@ import {
   AlertCircle, Inbox, X
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 import AdminConsentModal from '../components/AdminConsentModal';
 
 const ConnectEmail = () => {
@@ -151,10 +152,15 @@ const ConnectEmail = () => {
       
       // console.log("✅ Token obtained, redirecting to OAuth...");
       
-      // EXPLICIT: Pass provider parameter
-      window.location.assign(
-        `${getBackendUrl()}/api/auth/outlook/login?token=${token}&returnTo=/connect-email&provider=outlook`
-      );
+      // Secure: POST token via header, get short-lived auth code for redirect
+      const initResp = await fetch(`${getBackendUrl()}/api/auth/email-connect/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ provider: 'outlook', returnTo: '/connect-email' }),
+      });
+      if (!initResp.ok) throw new Error('Failed to initiate Outlook connection');
+      const { redirect_url } = await initResp.json();
+      window.location.assign(`${getBackendUrl()}${redirect_url}`);
       
     } catch (error) {
       console.error("Outlook connect error:", error);
@@ -197,10 +203,15 @@ const ConnectEmail = () => {
       
       // console.log("✅ Token obtained, redirecting to OAuth...");
       
-      // EXPLICIT: Pass provider parameter
-      window.location.assign(
-        `${getBackendUrl()}/api/auth/gmail/login?token=${token}&returnTo=/connect-email&provider=gmail`
-      );
+      // Secure: POST token via header, get short-lived auth code for redirect
+      const initResp = await fetch(`${getBackendUrl()}/api/auth/email-connect/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ provider: 'gmail', returnTo: '/connect-email' }),
+      });
+      if (!initResp.ok) throw new Error('Failed to initiate Gmail connection');
+      const { redirect_url } = await initResp.json();
+      window.location.assign(`${getBackendUrl()}${redirect_url}`);
       
     } catch (error) {
       console.error("Gmail connect error:", error);
@@ -256,10 +267,13 @@ const ConnectEmail = () => {
         <div className="space-y-6">
           {/* Header */}
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              Connectors
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+              — Email Setup
+            </div>
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              Connect your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>inbox</em>.
             </h1>
-            <p className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
               Connect Outlook or Gmail to activate email and calendar intelligence
             </p>
           </div>

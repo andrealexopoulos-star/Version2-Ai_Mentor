@@ -33,17 +33,17 @@ const AlertItem = ({ alert }) => {
         <div className="px-5 pb-4 pt-3 space-y-3" style={{ borderTop: '1px solid rgba(140,170,210,0.15)' }}>
           <div>
             <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Business Impact</span>
-            <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{alert.impact}</p>
+            <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{alert.impact}</p>
           </div>
           <div>
             <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Suggested Action</span>
-            <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{alert.action}</p>
+            <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{alert.action}</p>
           </div>
           {alert.actions.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
-              {alert.actions.includes('email') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#3B82F6' + '15', color: '#3B82F6', border: '1px solid #3B82F620', fontFamily: fontFamily.body }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
-              {alert.actions.includes('sms') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B981' + '15', color: '#10B981', border: '1px solid #10B98120', fontFamily: fontFamily.body }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-              {alert.actions.includes('handoff') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#E85D00' + '15', color: '#E85D00', border: '1px solid #E85D0020', fontFamily: fontFamily.body }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+              {alert.actions.includes('email') && <button onClick={() => window.location.assign('/login-supabase')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#3B82F6' + '15', color: '#3B82F6', border: '1px solid #3B82F620', fontFamily: fontFamily.body }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
+              {alert.actions.includes('sms') && <button onClick={() => window.location.assign('/login-supabase')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B981' + '15', color: '#10B981', border: '1px solid #10B98120', fontFamily: fontFamily.body }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
+              {alert.actions.includes('handoff') && <button onClick={() => window.location.assign('/login-supabase')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#E85D00' + '15', color: '#E85D00', border: '1px solid #E85D0020', fontFamily: fontFamily.body }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
             </div>
           )}
         </div>
@@ -62,7 +62,7 @@ const AlertsPage = () => {
           {[{ label: 'Critical', count: counts.critical, color: '#E85D00' }, { label: 'Moderate', count: counts.moderate, color: '#F59E0B' }, { label: 'Info', count: counts.info, color: '#3B82F6' }].map(s => (
             <div key={s.label} className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
               <div className="w-2 h-2 rounded-full" style={{ background: s.color }} />
-              <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{s.label}</span>
+              <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{s.label}</span>
               <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{s.count}</span>
             </div>
           ))}

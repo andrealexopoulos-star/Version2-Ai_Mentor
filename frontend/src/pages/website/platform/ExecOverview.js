@@ -35,18 +35,18 @@ const AttentionCard = ({ severity, title, impact, action, actions }) => {
         <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c, boxShadow: `0 0 8px ${c}50` }} />
         <div className="flex-1 min-w-0">
           <span className="text-sm font-semibold text-[#EDF1F7] block" style={{ fontFamily: fontFamily.display }}>{title}</span>
-          <span className="text-xs text-[#9FB0C3] mt-0.5 block" style={{ fontFamily: fontFamily.body }}>{impact}</span>
+          <span className="text-xs text-[#8FA0B8] mt-0.5 block" style={{ fontFamily: fontFamily.body }}>{impact}</span>
         </div>
         <span className="text-[10px] px-2 py-0.5 rounded uppercase tracking-wider shrink-0" style={{ fontFamily: fontFamily.mono, color: c, background: c + '15' }}>{severity}</span>
         {open ? <ChevronUp className="w-4 h-4 text-[#64748B] shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#64748B] shrink-0" />}
       </button>
       {open && (
         <div className="px-5 pb-4 space-y-3" style={{ borderTop: '1px solid rgba(140,170,210,0.15)' }}>
-          <p className="text-sm text-[#9FB0C3] pt-3" style={{ fontFamily: fontFamily.body }}>{action}</p>
+          <p className="text-sm text-[#8FA0B8] pt-3" style={{ fontFamily: fontFamily.body }}>{action}</p>
           <div className="flex flex-wrap gap-2">
-            {actions?.includes('email') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style={{ background: '#3B82F6' + '15', color: '#3B82F6', border: '1px solid #3B82F6' + '30', fontFamily: fontFamily.body }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
-            {actions?.includes('sms') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style={{ background: '#10B981' + '15', color: '#10B981', border: '1px solid #10B981' + '30', fontFamily: fontFamily.body }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-            {actions?.includes('handoff') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style={{ background: '#E85D00' + '15', color: '#E85D00', border: '1px solid #E85D00' + '30', fontFamily: fontFamily.body }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+            {actions?.includes('email') && <button onClick={() => window.location.assign('/login-supabase')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style={{ background: '#3B82F6' + '15', color: '#3B82F6', border: '1px solid #3B82F6' + '30', fontFamily: fontFamily.body }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
+            {actions?.includes('sms') && <button onClick={() => window.location.assign('/login-supabase')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style={{ background: '#10B981' + '15', color: '#10B981', border: '1px solid #10B981' + '30', fontFamily: fontFamily.body }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
+            {actions?.includes('handoff') && <button onClick={() => window.location.assign('/login-supabase')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style={{ background: '#E85D00' + '15', color: '#E85D00', border: '1px solid #E85D00' + '30', fontFamily: fontFamily.body }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
           </div>
         </div>
       )}
@@ -72,7 +72,7 @@ const ExecOverview = () => (
       {/* Greeting */}
       <div>
         <h2 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Good afternoon, Andre.</h2>
-        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Last intelligence update: 12 minutes ago</p>
+        <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Last intelligence update: 12 minutes ago</p>
       </div>
 
       {/* Health Strip */}

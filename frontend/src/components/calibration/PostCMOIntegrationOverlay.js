@@ -162,11 +162,15 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
         sessionStorage.setItem('biqc_resume_after_oauth', 'integration_connect');
       } catch {}
 
-      if (integration.authType === 'gmail') {
-        window.location.href = `${backendUrl}/api/auth/gmail/login?token=${session.access_token}&returnTo=${encodeURIComponent(returnTo)}`;
-      } else if (integration.authType === 'outlook') {
-        window.location.href = `${backendUrl}/api/auth/outlook/login?token=${session.access_token}&returnTo=${encodeURIComponent(returnTo)}`;
-      }
+      const providerType = integration.authType === 'gmail' ? 'gmail' : 'outlook';
+      const initResp = await fetch(`${backendUrl}/api/auth/email-connect/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ provider: providerType, returnTo }),
+      });
+      if (!initResp.ok) throw new Error('Failed to initiate connection');
+      const { redirect_url } = await initResp.json();
+      window.location.href = `${backendUrl}${redirect_url}`;
     } catch (e) {
       console.error('Connect error:', e);
       setConnecting(null);
@@ -217,7 +221,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
           <h1 className="text-2xl font-semibold mb-3" style={{ color: 'var(--biqc-text, #EDF1F7)', fontFamily: fontFamily.display }}>
             Your intelligence foundation is ready.{firstName ? ` Hi ${firstName}!` : ''}
           </h1>
-          <p className="text-sm max-w-sm mx-auto leading-relaxed mb-3" style={{ color: 'var(--biqc-text-2, #9FB0C3)', fontFamily: fontFamily.body }}>
+          <p className="text-sm max-w-sm mx-auto leading-relaxed mb-3" style={{ color: 'var(--biqc-text-2, #8FA0B8)', fontFamily: fontFamily.body }}>
             Connect your email to activate priority inbox, calendar intelligence and client signals. Takes 30 seconds.
           </p>
           {!statusLoading && connected.length > 0 && (

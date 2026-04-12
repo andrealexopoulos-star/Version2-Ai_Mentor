@@ -27,14 +27,14 @@ const AutomationCard = ({ auto }) => (
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <button className="p-1.5 rounded-md hover:bg-white/5 text-[#64748B]"><Edit className="w-3.5 h-3.5" /></button>
-        <button className="p-1.5 rounded-md hover:bg-white/5 text-[#64748B]"><FileText className="w-3.5 h-3.5" /></button>
+        <button onClick={() => window.location.assign('/login-supabase')} className="p-1.5 rounded-md hover:bg-white/5 text-[#64748B]"><Edit className="w-3.5 h-3.5" /></button>
+        <button onClick={() => window.location.assign('/login-supabase')} className="p-1.5 rounded-md hover:bg-white/5 text-[#64748B]"><FileText className="w-3.5 h-3.5" /></button>
         {auto.active ? (
-          <div className="w-9 h-5 rounded-full cursor-pointer flex items-center px-0.5" style={{ background: '#E85D00' }}>
+          <div onClick={() => window.location.assign('/login-supabase')} className="w-9 h-5 rounded-full cursor-pointer flex items-center px-0.5" style={{ background: '#E85D00' }}>
             <div className="w-4 h-4 rounded-full bg-white ml-auto" />
           </div>
         ) : (
-          <div className="w-9 h-5 rounded-full cursor-pointer flex items-center px-0.5" style={{ background: 'rgba(140,170,210,0.15)' }}>
+          <div onClick={() => window.location.assign('/login-supabase')} className="w-9 h-5 rounded-full cursor-pointer flex items-center px-0.5" style={{ background: 'rgba(140,170,210,0.15)' }}>
             <div className="w-4 h-4 rounded-full bg-[#64748B]" />
           </div>
         )}
@@ -46,13 +46,13 @@ const AutomationCard = ({ auto }) => (
       <div className="flex gap-3 pt-3">
         <span className="text-[10px] font-semibold px-2 py-1 rounded uppercase tracking-wider shrink-0 h-fit" style={{ fontFamily: fontFamily.mono, color: '#3B82F6', background: '#3B82F6' + '15', border: '1px solid #3B82F620' }}>IF</span>
         <div className="flex-1 p-3 rounded-md" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
-          <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{auto.condition}</p>
+          <p className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{auto.condition}</p>
         </div>
       </div>
       <div className="flex gap-3">
         <span className="text-[10px] font-semibold px-2 py-1 rounded uppercase tracking-wider shrink-0 h-fit" style={{ fontFamily: fontFamily.mono, color: '#10B981', background: '#10B981' + '15', border: '1px solid #10B98120' }}>THEN</span>
         <div className="flex-1 p-3 rounded-md" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
-          <p className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{auto.action}</p>
+          <p className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{auto.action}</p>
         </div>
       </div>
     </div>
@@ -65,9 +65,9 @@ const AutomationsPage = () => (
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Automated workflows triggered by business signals.</p>
+          <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Automated workflows triggered by business signals.</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white" style={{ background: '#E85D00', fontFamily: fontFamily.body }}>
+        <button onClick={() => window.location.assign('/login-supabase')} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white" style={{ background: '#E85D00', fontFamily: fontFamily.body }}>
           <Workflow className="w-4 h-4" /> New Automation
         </button>
       </div>
@@ -75,15 +75,15 @@ const AutomationsPage = () => (
       {/* Summary */}
       <div className="flex gap-4">
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
-          <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Active</span>
+          <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Active</span>
           <span className="text-sm font-semibold text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>{automations.filter(a => a.active).length}</span>
         </div>
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
-          <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Paused</span>
+          <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Paused</span>
           <span className="text-sm font-semibold text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{automations.filter(a => !a.active).length}</span>
         </div>
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
-          <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Total Runs</span>
+          <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Total Runs</span>
           <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{automations.reduce((s, a) => s + a.runs, 0)}</span>
         </div>
       </div>
