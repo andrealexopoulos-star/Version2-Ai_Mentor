@@ -17,9 +17,12 @@ const TRUST_ITEMS = [
 ];
 
 const NAV_LINKS = [
-  { label: 'Meet BIQc', path: '/platform', dropdown: 'meet' },
+  { label: 'Platform', path: '/platform' },
+  { label: 'Intelligence', path: '/intelligence' },
+  { label: 'Integrations', path: '/integrations-platform' },
   { label: 'Pricing', path: '/pricing' },
-  { label: 'Trust', path: '/trust', dropdown: 'trust' },
+  { label: 'About', path: '/about' },
+  { label: 'Trust', path: '/trust/centre' },
 ];
 
 const MEET_BIQC_ITEMS = [
@@ -86,9 +89,8 @@ const WebsiteNav = () => {
     <nav className="fixed top-0 left-0 right-0 z-50" style={{ background: 'rgba(15,23,32,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }} data-testid="website-nav">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5" data-testid="nav-logo">
-          <img src={brandLogoHead} alt="BIQc logo mark" className="h-9 w-auto object-contain" />
-          <span className="text-[34px] leading-none font-semibold tracking-tight text-white" style={{ fontFamily: fontFamily.display }}>
+        <Link to="/" className="flex items-center" data-testid="nav-logo">
+          <span className="text-[28px] leading-none font-bold tracking-tight text-white" style={{ fontFamily: fontFamily.display }}>
             BIQc
           </span>
         </Link>
@@ -97,35 +99,12 @@ const WebsiteNav = () => {
         <div className="hidden md:flex items-center gap-1">
           {NAV_LINKS.map((link) => {
             const isActive = location.pathname === link.path
-              || (link.dropdown === 'trust' && location.pathname.startsWith('/trust'))
-              || (link.dropdown === 'meet' && location.pathname.startsWith('/platform'));
+              || (link.label === 'Trust' && location.pathname.startsWith('/trust'))
+              || (link.label === 'Platform' && location.pathname.startsWith('/platform'));
             return (
-              <div key={link.label} className="relative">
-                {link.dropdown ? (
-                  <button
-                    onClick={() => {
-                      if (link.dropdown === 'trust') {
-                        setTrustOpen(!trustOpen);
-                        setMeetOpen(false);
-                      } else if (link.dropdown === 'meet') {
-                        setMeetOpen(!meetOpen);
-                        setTrustOpen(false);
-                      }
-                    }}
-                    className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm transition-all"
-                    style={{ color: isActive ? '#E85D00' : '#8FA0B8', fontFamily: fontFamily.display }}
-                    data-testid={link.dropdown === 'meet' ? 'nav-meet-biqc' : 'nav-trust'}
-                  >
-                    {link.label} <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                ) : (
-                  <Link to={link.path} className="px-4 py-2 rounded-lg text-sm transition-all hover:text-white" style={{ color: isActive ? '#E85D00' : '#8FA0B8', fontFamily: fontFamily.display }} data-testid={`nav-${link.label.toLowerCase()}`}>
-                    {link.label}
-                  </Link>
-                )}
-                {link.dropdown === 'trust' && <TrustDropdown open={trustOpen} onClose={() => setTrustOpen(false)} />}
-                {link.dropdown === 'meet' && <MeetDropdown open={meetOpen} onClose={() => setMeetOpen(false)} />}
-              </div>
+              <Link key={link.label} to={link.path} className="px-4 py-2 rounded-lg text-sm transition-all hover:text-white" style={{ color: isActive ? '#E85D00' : '#8FA0B8', fontFamily: fontFamily.display }} data-testid={`nav-${link.label.toLowerCase()}`}>
+                {link.label}
+              </Link>
             );
           })}
         </div>
@@ -134,7 +113,7 @@ const WebsiteNav = () => {
         <div className="flex items-center gap-3">
           <Link to="/login-supabase" className="hidden md:block px-4 py-2 rounded-lg text-sm text-[#8FA0B8] hover:text-white transition-colors" style={{ fontFamily: fontFamily.display }} data-testid="nav-login">Log in</Link>
           <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #E85D00, #E85D00)', fontFamily: fontFamily.display, boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }} data-testid="nav-get-started">
-            Try It Free
+            Start Free
           </Link>
           {/* Mobile: Log In text + hamburger */}
           <Link to="/login-supabase" className="md:hidden text-xs text-[#8FA0B8] hover:text-white" style={{ fontFamily: fontFamily.display }} data-testid="nav-mobile-login">Log in</Link>
@@ -223,13 +202,19 @@ const WebsiteFooter = () => (
   </footer>
 );
 
-const WebsiteLayout = ({ children }) => (
-  <div className="min-h-screen" style={{ background: '#0F1720', color: '#EDF1F7' }}>
-    <a href="#main-content" className="skip-link">Skip to main content</a>
-    <WebsiteNav />
-    <main id="main-content" className="pt-16">{children}</main>
-    <WebsiteFooter />
-  </div>
-);
+const WebsiteLayout = ({ children }) => {
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }, []);
+
+  return (
+    <div className="min-h-screen" style={{ background: '#0F1720', color: '#EDF1F7' }}>
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <WebsiteNav />
+      <main id="main-content" className="pt-16">{children}</main>
+      <WebsiteFooter />
+    </div>
+  );
+};
 
 export default WebsiteLayout;
