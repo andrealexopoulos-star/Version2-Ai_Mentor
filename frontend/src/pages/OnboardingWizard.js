@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import {
   Building2, ArrowRight, ArrowLeft,
   CheckCircle, Target, Users, TrendingUp,
-  Zap, Brain, Globe, ExternalLink, Package, Check
+  Zap, Brain, Globe, ExternalLink, Package, Check, Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
@@ -27,6 +27,7 @@ const STEPS = [
   { id: 'team', label: 'Team', icon: Users },
   { id: 'goals', label: 'Goals & Strategy', icon: TrendingUp },
   { id: 'preferences', label: 'BIQC Preferences', icon: Brain },
+  { id: 'signals', label: 'Tune Signals', icon: Activity },
 ];
 
 /* Sidebar steps match the mockup's 5-step wizard chrome */
@@ -48,6 +49,15 @@ const OnboardingWizard = () => {
   const [existingProfile, setExistingProfile] = useState({});
   const [resolvedFieldsMap, setResolvedFieldsMap] = useState({});
   const [enriching, setEnriching] = useState(false);
+  const [signalToggles, setSignalToggles] = useState({
+    deal_stalled: true,
+    cash_runway: true,
+    churn_risk: true,
+    invoice_aging: true,
+    meeting_overload: false,
+    competitor_mentions: true,
+    press_mentions: false,
+  });
   const [enrichPreview, setEnrichPreview] = useState(null);
   const saveTimerRef = useRef(null);
 
@@ -195,10 +205,14 @@ const OnboardingWizard = () => {
     }
   };
 
+  const toggleSignal = (key) => {
+    setSignalToggles(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const completeOnboarding = async () => {
     setSaving(true);
     try {
-      await apiClient.put('/business-profile', formData);
+      await apiClient.put('/business-profile', { ...formData, signal_preferences: signalToggles });
       await apiClient.post('/onboarding/complete');
       markOnboardingComplete();
       trackActivationStep('onboarding_complete', { entrypoint: 'onboarding_wizard' });
@@ -296,8 +310,13 @@ const OnboardingWizard = () => {
     );
   }
 
-  /* Sidebar step 2 = all internal wizard steps (1-7); step 1 = account created (always done) */
-  const sidebarActive = 2;
+  /* Map internal wizard steps to the 5-step sidebar:
+     Sidebar 1 = Account created (always done)
+     Sidebar 2 = What's your business? (steps 0-7: welcome through preferences)
+     Sidebar 3 = Connect your tools (handled externally)
+     Sidebar 4 = Tune your signals (step 8: signal tuning)
+     Sidebar 5 = Your first brief (handled externally) */
+  const sidebarActive = currentStep >= 8 ? 4 : 2;
 
   return (
     <div className="min-h-screen flex flex-col relative" style={{ background: '#080C14' }} data-testid="onboarding-wizard">
@@ -789,6 +808,64 @@ const OnboardingWizard = () => {
                       </label>
                     ))}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 8: Tune Signals — matches calibration.html mockup */}
+            {currentStep === 8 && (
+              <div className="space-y-6" data-testid="step-signals">
+                <WizStepHeader step={9} total={STEPS.length} title={<>Which signals matter <em style={{ fontStyle: 'italic', color: '#E85D00' }}>most to you</em>?</>} subtitle="BIQc starts with default signals tuned for your business type. Toggle anything you don't care about — you can adjust thresholds later." />
+
+                <div className="flex flex-col gap-3">
+                  {[
+                    { key: 'deal_stalled', title: 'Deal stalled in pipeline', hint: 'Active opportunity with no inbox activity for N days', threshold: 'Default threshold \u00b7 14 days' },
+                    { key: 'cash_runway', title: 'Cash runway alert', hint: 'Burn rate \u00f7 cash on hand drops below threshold', threshold: 'Default threshold \u00b7 6 months' },
+                    { key: 'churn_risk', title: 'Customer churn risk', hint: 'Engagement drop or sentiment shift in inbound emails', threshold: 'Default threshold \u00b7 21 days silence' },
+                    { key: 'invoice_aging', title: 'Invoice aging spike', hint: 'AR over 60 days as % of total trending up', threshold: 'Default threshold \u00b7 15% of AR' },
+                    { key: 'meeting_overload', title: 'Meeting overload', hint: 'Calendar density above your historical baseline', threshold: 'Default threshold \u00b7 60% above 4-week avg' },
+                    { key: 'competitor_mentions', title: 'Competitor mentions', hint: 'Inbound emails referencing named competitors', threshold: 'Default threshold \u00b7 3 mentions / 7 days' },
+                    { key: 'press_mentions', title: 'Press / media mentions', hint: 'Your business name surfacing in news, blogs, social', threshold: 'Default threshold \u00b7 Any mention' },
+                  ].map(signal => (
+                    <div key={signal.key} className="flex items-center justify-between gap-4 p-5 rounded-xl transition-all" style={{ background: '#0E1628', border: `1px solid ${signalToggles[signal.key] ? 'rgba(232,93,0,0.3)' : 'rgba(140,170,210,0.15)'}` }}>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[15px] font-semibold" style={{ color: '#EDF1F7' }}>{signal.title}</div>
+                        <div className="text-[13px] mt-0.5" style={{ color: '#8FA0B8' }}>{signal.hint}</div>
+                        <div className="text-[11px] mt-2 uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>{signal.threshold}</div>
+                      </div>
+                      <button
+                        onClick={() => toggleSignal(signal.key)}
+                        className="relative shrink-0 rounded-full transition-all duration-200"
+                        style={{
+                          width: 44, height: 26,
+                          background: signalToggles[signal.key] ? '#E85D00' : 'rgba(140,170,210,0.3)',
+                          cursor: 'pointer', border: 'none',
+                        }}
+                        aria-label={`${signal.title} signal ${signalToggles[signal.key] ? 'enabled' : 'disabled'}`}
+                        data-testid={`toggle-${signal.key}`}
+                      >
+                        <span className="absolute top-[3px] rounded-full transition-all duration-200" style={{
+                          width: 20, height: 20,
+                          background: 'white',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                          left: signalToggles[signal.key] ? 21 : 3,
+                        }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between pt-4">
+                  <span className="text-xs" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                    {Object.values(signalToggles).filter(Boolean).length} of 7 signals active
+                  </span>
+                  <button
+                    onClick={() => setSignalToggles({ deal_stalled: true, cash_runway: true, churn_risk: true, invoice_aging: true, meeting_overload: false, competitor_mentions: true, press_mentions: false })}
+                    className="text-xs transition-colors"
+                    style={{ color: '#E85D00', background: 'none', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}
+                  >
+                    Use defaults
+                  </button>
                 </div>
               </div>
             )}

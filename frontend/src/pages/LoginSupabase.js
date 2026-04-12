@@ -307,7 +307,7 @@ const LoginSupabase = () => {
             <span className="text-lg font-semibold text-white" style={{ fontFamily: DISPLAY }}>BIQc</span>
           </div>
 
-          <h1 className="font-semibold mb-2" style={{ fontFamily: DISPLAY, color: '#EDF1F7', fontSize: '28px', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+          <h1 className="font-semibold mb-2" style={{ fontFamily: DISPLAY, color: '#EDF1F7', fontSize: '48px', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
             Sign in to <em style={{ fontStyle: 'italic', color: '#E85D00' }}>BIQc</em>.
           </h1>
           <p className="text-sm mb-7" style={{ fontFamily: fontFamily.body, color: '#708499' }}>

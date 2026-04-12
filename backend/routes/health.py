@@ -36,9 +36,23 @@ def _check_supabase():
         return {"status": "error", "reachable": False, "error": str(e)[:100]}
 
 
+def _workers_enabled() -> bool:
+    """Return True only when workers are explicitly configured to run in this environment."""
+    return (os.environ.get("WORKERS_ENABLED") or "").strip().lower() in {"1", "true", "yes"}
+
+
 def _check_worker(name, pid_check=None):
-    """Check if a worker process is running via supervisor."""
-    import subprocess
+    """Check if a worker process is running via supervisor.
+
+    Returns 'not_configured' when supervisorctl is unavailable (e.g. inside a
+    Docker container that only runs the API) so the health endpoint can
+    distinguish "workers aren't here" from "workers crashed".
+    """
+    import subprocess, shutil
+
+    if not shutil.which("supervisorctl"):
+        return {"status": "not_configured", "detail": "supervisorctl not available in this environment"}
+
     try:
         result = subprocess.run(
             ["supervisorctl", "status", name],
@@ -47,6 +61,8 @@ def _check_worker(name, pid_check=None):
         output = result.stdout.strip()
         is_running = "RUNNING" in output
         return {"status": "running" if is_running else "stopped", "detail": output}
+    except FileNotFoundError:
+        return {"status": "not_configured", "detail": "supervisorctl not installed"}
     except Exception as e:
         return {"status": "unknown", "error": str(e)[:100]}
 
@@ -82,12 +98,22 @@ async def detailed_health():
         },
     }
 
-    all_ok = (
+    # Core services: API + Supabase + Redis must be healthy.
+    core_ok = (
         checks["supabase"].get("reachable", False)
-        and checks["workers"]["email_sync"].get("status") == "running"
-        and checks["workers"]["intelligence"].get("status") == "running"
+        and checks["redis"].get("status") != "error"
     )
-    checks["overall"] = "healthy" if all_ok else "degraded"
+
+    # Workers only affect overall status when WORKERS_ENABLED is set.
+    # Without that flag the workers are expected to run elsewhere (or not at all).
+    workers_ok = True
+    if _workers_enabled():
+        workers_ok = (
+            checks["workers"]["email_sync"].get("status") == "running"
+            and checks["workers"]["intelligence"].get("status") == "running"
+        )
+
+    checks["overall"] = "healthy" if (core_ok and workers_ok) else "degraded"
 
     return checks
 
