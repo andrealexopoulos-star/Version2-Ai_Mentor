@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
-import { FileText, DollarSign, Plug, Download, Shield, AlertTriangle } from 'lucide-react';
+import { FileText, DollarSign, Plug, Download, Shield, AlertTriangle, Clock } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
@@ -261,6 +261,65 @@ const ReportsPage = () => {
             <button key={tab} className="px-4 py-3 text-sm font-medium whitespace-nowrap transition-all" style={{ color: i === 0 ? '#EDF1F7' : '#8FA0B8', borderBottom: i === 0 ? '2px solid #E85D00' : '2px solid transparent' }}>
               {tab}
             </button>
+          ))}
+        </div>
+
+        {/* Report Card Grid — matches mockup reports-grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+          {[
+            { title: 'Morning Brief — Apr 10', desc: 'Pipeline down 43% this fortnight. Bramwell silent 9 days. Cash runway stable at 4.2 months.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Today, 7:00 AM', metaSub: 'Auto-generated', previewBg: 'linear-gradient(135deg, rgba(232,93,0,0.08), rgba(140,170,210,0.06))' },
+            { title: 'Weekly Revenue Summary', desc: '$26.7K MRR, 8 active deals, 23% close rate. Bookings on track for $29K this month.', type: 'Weekly', typeBg: 'rgba(59,130,246,0.12)', typeColor: '#3B82F6', meta: 'Apr 7', metaSub: 'Every Monday', previewBg: 'rgba(140,170,210,0.06)' },
+            { title: 'Pipeline Health Diagnosis', desc: '2 deals at risk (Bramwell, Meridian), 3 healthy, 3 new. Negotiation bottleneck identified.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Apr 9', metaSub: 'On demand', previewBg: 'rgba(140,170,210,0.06)' },
+            { title: 'Operations Scorecard', desc: 'Ops score 74 (-3). Lead response healthy. Invoice approval and deal follow-up below target.', type: 'Weekly', typeBg: 'rgba(59,130,246,0.12)', typeColor: '#3B82F6', meta: 'Apr 7', metaSub: 'Every Monday', previewBg: 'rgba(140,170,210,0.06)' },
+            { title: 'Team Performance — Q1 2026', desc: '38 tasks completed this week across 3 team members. Andreas leads but is meeting-overloaded.', type: 'Manual', typeBg: 'rgba(140,170,210,0.08)', typeColor: '#8FA0B8', meta: 'Apr 1', metaSub: 'Quarterly', previewBg: 'rgba(140,170,210,0.06)' },
+            { title: 'Cash Flow Projection', desc: '4.2 months runway at current $38K/mo burn. Extends to 6.1 months if Bramwell closes.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Apr 8', metaSub: 'Auto-generated', previewBg: 'linear-gradient(135deg, rgba(217,119,6,0.08), rgba(140,170,210,0.06))' },
+          ].map(r => (
+            <div key={r.title} className="rounded-2xl overflow-hidden cursor-pointer transition-all hover:border-[rgba(140,170,210,0.25)] hover:-translate-y-0.5" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)' }}>
+              <div className="h-[120px] flex items-center justify-center relative" style={{ background: r.previewBg }}>
+                <span className="absolute top-3 left-3 text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full" style={{ background: r.typeBg, color: r.typeColor, fontFamily: fontFamily.mono }}>{r.type}</span>
+                <FileText className="w-8 h-8" style={{ color: 'rgba(140,170,210,0.3)' }} />
+              </div>
+              <div className="p-5">
+                <h3 className="text-sm font-semibold mb-1" style={{ color: '#EDF1F7' }}>{r.title}</h3>
+                <p className="text-xs leading-relaxed mb-3" style={{ color: '#8FA0B8', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{r.desc}</p>
+                <div className="flex items-center gap-3 text-[11px]" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                  <span>{r.meta}</span>
+                  <span className="w-1 h-1 rounded-full" style={{ background: '#708499' }} />
+                  <span>{r.metaSub}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Scheduled Reports — matches mockup sched-card */}
+        <div className="rounded-2xl p-6 mb-8" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)' }}>
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" style={{ color: '#3B82F6' }} />
+              <span className="text-sm font-semibold" style={{ color: '#EDF1F7' }}>Scheduled reports</span>
+            </div>
+            <button className="text-xs font-medium" style={{ color: '#8FA0B8' }}>+ Add schedule</button>
+          </div>
+          {[
+            { name: 'Morning Brief', detail: 'Sent to andreas@thestrategysquad.com.au at 7:00 AM AEST', freq: 'Daily', on: true },
+            { name: 'Weekly Revenue Summary', detail: 'Generated every Monday at 8:00 AM AEST', freq: 'Weekly', on: true },
+            { name: 'Operations Scorecard', detail: 'Generated every Monday at 8:00 AM AEST', freq: 'Weekly', on: true },
+            { name: 'Cash Flow Alert', detail: 'Triggered when runway drops below 4 months', freq: 'Threshold', on: false },
+          ].map((s, i) => (
+            <div key={s.name} className="flex items-center gap-4 py-4" style={{ borderBottom: i < 3 ? '1px solid rgba(140,170,210,0.08)' : 'none' }}>
+              <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#3B82F6' }}>
+                <FileText className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: '#EDF1F7' }}>{s.name}</p>
+                <p className="text-xs" style={{ color: '#8FA0B8' }}>{s.detail}</p>
+              </div>
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full whitespace-nowrap" style={{ background: 'rgba(140,170,210,0.06)', color: '#708499', fontFamily: fontFamily.mono }}>{s.freq}</span>
+              <div className="w-9 h-5 rounded-full relative cursor-pointer shrink-0" style={{ background: s.on ? '#16A34A' : 'rgba(140,170,210,0.2)' }}>
+                <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all" style={{ left: s.on ? '18px' : '2px' }} />
+              </div>
+            </div>
           ))}
         </div>
 

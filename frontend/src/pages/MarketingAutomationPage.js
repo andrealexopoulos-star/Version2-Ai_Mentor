@@ -107,6 +107,72 @@ const MarketingAutomationPage = () => {
           <p className="text-sm" style={{ color: '#8FA0B8' }}>Generate marketing content grounded in your business data and intelligence.</p>
         </div>
 
+        {/* KPI Strip — matches mockup ma-kpis */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: 'Active Campaigns', value: '4', delta: '+1 this week', up: true },
+            { label: 'Emails Sent (30d)', value: '1,247', delta: '+18% vs prev', up: true },
+            { label: 'Avg Open Rate', value: '34.2%', delta: '+2.1pts', up: true },
+            { label: 'Conversions', value: '23', delta: '-3 vs prev', up: false },
+          ].map(kpi => (
+            <div key={kpi.label} className="rounded-2xl p-4" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)' }}>
+              <span className="text-xs font-semibold uppercase tracking-wider block mb-1" style={{ color: '#708499' }}>{kpi.label}</span>
+              <span className="text-[28px] font-bold block" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7', lineHeight: 1 }}>{kpi.value}</span>
+              <span className="text-xs font-medium mt-1 block" style={{ color: kpi.up ? '#16A34A' : '#DC2626' }}>{kpi.delta}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* AI Suggestion — matches mockup ai-suggestion */}
+        <div className="rounded-2xl p-5" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', borderLeft: '3px solid #E85D00' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="w-2 h-2 rounded-full" style={{ background: '#E85D00', boxShadow: '0 0 6px #E85D00' }} />
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#E85D00' }}>AI Recommendation</span>
+          </div>
+          <p className="text-sm font-semibold mb-2" style={{ color: '#EDF1F7' }}>Re-engage stalled Bramwell Holdings with a case-study drip</p>
+          <p className="text-sm leading-relaxed mb-4" style={{ color: '#8FA0B8' }}>Bramwell Holdings has been in the Negotiation stage for 28 days with declining engagement. A 3-email case study sequence targeting their specific pain points has a 67% predicted re-engagement rate based on similar deal patterns.</p>
+          <div className="flex gap-3">
+            <button className="px-4 py-2 rounded-md text-xs font-semibold text-white" style={{ background: 'linear-gradient(135deg, #E85D00, #FF7A1A)' }}>Create sequence</button>
+            <button className="px-4 py-2 rounded-md text-xs font-semibold" style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}>View analysis</button>
+          </div>
+        </div>
+
+        {/* Campaign Tabs — matches mockup ma-tabs */}
+        <div className="flex gap-1 border-b overflow-x-auto" style={{ borderColor: 'rgba(140,170,210,0.12)' }}>
+          {['All Campaigns', 'Active', 'Scheduled', 'Drafts', 'Completed'].map((tab, i) => (
+            <button key={tab} className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ color: i === 0 ? '#EDF1F7' : '#8FA0B8', borderBottom: i === 0 ? '2px solid #E85D00' : '2px solid transparent' }}>{tab}</button>
+          ))}
+        </div>
+
+        {/* Campaign Cards — matches mockup campaign-list */}
+        <div className="space-y-4">
+          {[
+            { status: 'Active', statusBg: '#D1FAE5', statusColor: '#065F46', type: 'Email Sequence - 5 steps', title: 'Q2 Pipeline Nurture', desc: 'Automated 5-touch email sequence for Q2 pipeline leads.', metrics: [{ l: 'Sent', v: '486' }, { l: 'Opens', v: '38.2%' }, { l: 'Clicks', v: '12.4%' }, { l: 'Replies', v: '8' }, { l: 'Meetings', v: '3' }], progress: 65, progressLabel: 'Step 4 of 5' },
+            { status: 'Active', statusBg: '#D1FAE5', statusColor: '#065F46', type: 'Re-engagement - 3 steps', title: 'Churn Risk Outreach', desc: 'Triggered when customer health score drops below 40.', metrics: [{ l: 'Sent', v: '42' }, { l: 'Opens', v: '52.1%' }, { l: 'Clicks', v: '19.3%' }, { l: 'Replies', v: '5' }, { l: 'Saved', v: '2' }], progress: 33, progressLabel: 'Ongoing - 3 contacts' },
+            { status: 'Scheduled', statusBg: '#DBEAFE', statusColor: '#1E40AF', type: 'Event Invite - Single send', title: 'Q2 Webinar — Cash Flow Mastery for SMBs', desc: 'Invitation for the upcoming live webinar on cash flow management.', metrics: [{ l: 'Recipients', v: '84' }, { l: 'Scheduled', v: '14 Apr' }, { l: 'Webinar', v: '21 Apr' }, { l: 'RSVPs', v: '-' }, { l: 'Status', v: 'Ready' }], progress: 0, progressLabel: 'Sends in 4 days' },
+          ].map(c => (
+            <div key={c.title} className="rounded-2xl p-5 cursor-pointer transition-all hover:border-[rgba(140,170,210,0.25)]" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)' }}>
+              <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background: c.statusBg, color: c.statusColor }}>{c.status}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#708499' }}>{c.type}</span>
+              </div>
+              <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', letterSpacing: '-0.01em' }}>{c.title}</h3>
+              <p className="text-sm mb-4" style={{ color: '#8FA0B8' }}>{c.desc}</p>
+              <div className="grid grid-cols-5 gap-3 p-3 rounded-lg mb-4" style={{ background: 'rgba(140,170,210,0.06)' }}>
+                {c.metrics.map(m => (
+                  <div key={m.l}><span className="text-[10px] uppercase tracking-wider block" style={{ color: '#708499' }}>{m.l}</span><span className="text-sm font-bold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>{m.v}</span></div>
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.12)' }}>
+                  <div className="h-1.5 rounded-full" style={{ width: `${c.progress}%`, background: 'linear-gradient(90deg, #E85D00, #FF7A1A)' }} />
+                </div>
+                <span className="text-xs whitespace-nowrap" style={{ color: '#708499' }}>{c.progressLabel}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6">
           {/* Left: Config */}
           <div className="space-y-5">

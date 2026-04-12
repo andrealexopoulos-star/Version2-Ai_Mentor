@@ -109,14 +109,23 @@ export default function DecisionsPage() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto" data-testid="decisions-page">
-        <div className="mb-8">
-          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Governance</div>
-          <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="decisions-title">
-            Decisions <em style={{ fontStyle: 'italic', color: '#E85D00' }}>log</em>.
-          </h1>
-          <p className="text-sm mt-1" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
-            BIQc detects when your business signals require a leadership decision. Respond here. Outcomes tracked at 30, 60, and 90 days.
-          </p>
+        <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Governance</div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="decisions-title">
+              Decisions <em style={{ fontStyle: 'italic', color: '#E85D00' }}>log</em>.
+            </h1>
+            <p className="text-sm mt-1" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+              Track what you decided, why, and what happened next. Outcomes tracked at 30, 60, and 90 days.
+            </p>
+          </div>
+          <Button
+            onClick={() => toast.info('Decision logging coming soon')}
+            className="gap-1.5 text-sm font-semibold shrink-0"
+            style={{ background: 'linear-gradient(135deg, #E85D00, #FF7A1A)', color: 'white' }}
+          >
+            <Zap className="w-4 h-4" /> Log decision
+          </Button>
         </div>
 
         {/* Stats strip — mirrors mockup (Open / Decided / Deferred / Avg time) */}
@@ -132,6 +141,20 @@ export default function DecisionsPage() {
                 <span className="text-[10px] font-semibold uppercase tracking-wider block mb-1" style={{ color: colors.textMuted, fontFamily: fontFamily.mono }}>{stat.label}</span>
                 <span className="text-2xl font-bold" style={{ color: colors.text, fontFamily: fontFamily.display }}>{stat.value}</span>
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* Filter pills — matches mockup dec-toolbar */}
+        {!loading && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {['All', 'Urgent', 'Pending', 'Decided', 'Deferred'].map((pill, i) => (
+              <button key={pill} className="px-3.5 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider transition-all" style={{
+                background: i === 0 ? '#E85D00' : 'transparent',
+                color: i === 0 ? 'white' : '#8FA0B8',
+                border: i === 0 ? '1px solid #E85D00' : '1px solid rgba(140,170,210,0.12)',
+                fontFamily: fontFamily.mono,
+              }}>{pill}</button>
             ))}
           </div>
         )}
