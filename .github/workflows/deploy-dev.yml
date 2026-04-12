@@ -1,0 +1,129 @@
+name: Deploy to DEV Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_backend:
+        description: 'Deploy backend'
+        required: true
+        default: true
+        type: boolean
+      deploy_frontend:
+        description: 'Deploy frontend'
+        required: true
+        default: true
+        type: boolean
+
+env:
+  REGISTRY: biqcregistry.azurecr.io
+  FRONTEND_IMAGE: biqcregistry.azurecr.io/biqc-frontend-dev
+  BACKEND_IMAGE: biqcregistry.azurecr.io/biqc-backend-dev
+  IMAGE_TAG: ${{ github.sha }}
+  AZURE_WEBAPP_FRONTEND: biqc-web-dev
+  AZURE_WEBAPP_BACKEND: biqc-api-dev
+  AZURE_RESOURCE_GROUP: biqc-production
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-and-deploy-backend:
+    name: Backend (DEV)
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deploy_backend }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: biqcregistry.azurecr.io
+          username: ${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_4CB986AB71414AD8BAE99B213E28D54D }}
+          password: ${{ secrets.AZUREAPPSERVICE_CONTAINERPASSWORD_44FDAFCBE67146C68680C04F67A9FB3C }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile.backend
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.BACKEND_IMAGE }}:latest
+
+      - name: Deploy to Azure Web App (DEV Backend)
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_BACKEND }}
+          images: ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}
+        env:
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND_DEV }}
+
+      - name: Health check
+        run: |
+          echo "Waiting for backend to start..."
+          sleep 30
+          for i in {1..10}; do
+            if curl -sf https://biqc-api-dev.azurewebsites.net/api/health; then
+              echo "Backend is healthy!"
+              exit 0
+            fi
+            echo "Attempt $i failed, waiting..."
+            sleep 15
+          done
+          echo "Backend health check failed after 10 attempts"
+          exit 1
+
+  build-and-deploy-frontend:
+    name: Frontend (DEV)
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deploy_frontend }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: biqcregistry.azurecr.io
+          username: ${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_4CB986AB71414AD8BAE99B213E28D54D }}
+          password: ${{ secrets.AZUREAPPSERVICE_CONTAINERPASSWORD_44FDAFCBE67146C68680C04F67A9FB3C }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile.frontend
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.FRONTEND_IMAGE }}:latest
+          build-args: |
+            REACT_APP_BACKEND_URL=https://biqc-api-dev.azurewebsites.net
+            REACT_APP_SUPABASE_URL=https://xdqwclwsgksbapxmwjaq.supabase.co
+            REACT_APP_SUPABASE_ANON_KEY=${{ secrets.REACT_APP_SUPABASE_ANON_KEY_DEV }}
+            REACT_APP_GOOGLE_CLIENT_ID=${{ secrets.REACT_APP_GOOGLE_CLIENT_ID }}
+            REACT_APP_RECAPTCHA_MODE=disabled
+            REACT_APP_RECAPTCHA_PROVIDER=google
+            REACT_APP_BIQC_MASTER_ADMIN_EMAIL=andre@thestrategysquad.com.au
+            REACT_APP_ENABLE_PREVIEW_ROUTES=true
+
+      - name: Deploy to Azure Web App (DEV Frontend)
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_FRONTEND }}
+          images: ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
+        env:
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_FRONTEND_DEV }}
+
+      - name: Verify frontend
+        run: |
+          echo "Waiting for frontend to start..."
+          sleep 30
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://biqc-web-dev.azurewebsites.net)
+          if [ "$STATUS" = "200" ]; then
+            echo "Frontend is live! (HTTP $STATUS)"
+          else
+            echo "Frontend returned HTTP $STATUS"
+          fi
