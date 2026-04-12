@@ -8,6 +8,7 @@ import { trackEvent, EVENTS } from '../lib/analytics';
 import { PageLoadingState } from '../components/PageStateComponents';
 import { fontFamily, colors } from '../design-system/tokens';
 import { AlertTriangle, TrendingDown, Clock, CheckCircle2, XCircle, ArrowRight, Loader2, Zap, DollarSign, Users, BarChart3 } from 'lucide-react';
+import DecisionPatterns from '../components/intelligence/DecisionPatterns';
 
 const SIGNAL_TO_DECISION = {
   deal_stall: { title: 'Pipeline Stagnation Detected', icon: Clock, domain: 'Revenue', action: 'Kill or reactivate stalled deals', color: colors.warning },
@@ -187,6 +188,14 @@ export default function DecisionsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Decision Intelligence Patterns */}
+        <div className="mt-8 mb-8">
+          <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: colors.textMuted, fontFamily: fontFamily.mono }}>
+            Decision Intelligence
+          </p>
+          <DecisionPatterns />
+        </div>
 
         {/* Decision History */}
         {history.length > 0 && (

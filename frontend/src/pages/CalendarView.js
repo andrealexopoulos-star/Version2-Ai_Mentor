@@ -11,6 +11,7 @@ import {
 import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState } from '../components/PageStateComponents';
 import SemanticContractBanner from '../components/SemanticContractBanner';
+import MeetingPrepCard from '../components/intelligence/MeetingPrepCard';
 
 const CalendarView = () => {
   const location = useLocation();
@@ -537,6 +538,9 @@ const CalendarView = () => {
               })}
             </div>
             <div className="space-y-4" data-testid="calendar-side-panel">
+              {/* AI Meeting Prep Intelligence */}
+              <MeetingPrepCard />
+
               <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
                 <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Execution cadence</p>
                 <p className="mt-2 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Keep tomorrow’s schedule decision-ready.</p>

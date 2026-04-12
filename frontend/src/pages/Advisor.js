@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { DailyBriefCard } from '../components/DailyBriefCard';
+import ProactiveAlerts from '../components/intelligence/ProactiveAlerts';
+import PredictionsPanel from '../components/intelligence/PredictionsPanel';
 import { fontFamily } from '../design-system/tokens';
 import { extractEmailEvidence, extractCalendarEvidence, extractCRMEvidence, generateFastInsight } from '../lib/fastEvidence';
 
@@ -574,6 +576,11 @@ const Advisor = () => {
         {/* ── 2-Column Grid ── */}
         <style>{`.advisor-grid { display: grid; grid-template-columns: 1fr; gap: 24px; } @media (min-width: 1180px) { .advisor-grid { grid-template-columns: 2fr 1fr; } }`}</style>
         <div className="advisor-grid">
+
+          {/* PROACTIVE INTELLIGENCE ALERTS */}
+          <div style={{ gridColumn: '1 / -1' }}>
+            <ProactiveAlerts userId={user?.id} />
+          </div>
 
           {/* LEFT: Signal Feed / Focus Areas */}
           <div className="rounded-xl overflow-hidden" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
