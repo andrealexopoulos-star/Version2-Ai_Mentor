@@ -116,7 +116,31 @@ jobs:
           az webapp config appsettings set \
             --name ${{ env.AZURE_WEBAPP_BACKEND }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --settings WEBSITES_PORT=8001 PORT=8001
+            --settings \
+              WEBSITES_PORT=8001 \
+              PORT=8001 \
+              ENVIRONMENT=development \
+              PRODUCTION=0 \
+              JWT_SECRET_KEY="${{ secrets.JWT_SECRET }}" \
+              SUPABASE_URL=https://xdqwclwsgksbapxmwjaq.supabase.co \
+              SUPABASE_ANON_KEY="${{ secrets.REACT_APP_SUPABASE_ANON_KEY_DEV }}" \
+              SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY_DEV }}" \
+              OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
+              ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
+              GOOGLE_API_KEY="${{ secrets.GOOGLE_API_KEY }}" \
+              GOOGLE_CLIENT_ID="${{ secrets.REACT_APP_GOOGLE_CLIENT_ID }}" \
+              AZURE_CLIENT_ID="${{ secrets.REACT_APP_AZURE_CLIENT_ID }}" \
+              FRONTEND_URL=https://biqc-web-dev.azurewebsites.net \
+              PUBLIC_FRONTEND_URL=https://biqc-web-dev.azurewebsites.net \
+              BACKEND_URL=https://biqc-api-dev.azurewebsites.net \
+              OAUTH_REDIRECT_BASE_URL=https://biqc-api-dev.azurewebsites.net \
+              BIQC_MASTER_ADMIN_EMAIL=andre@thestrategysquad.com.au \
+              CORS_ALLOW_ORIGINS="https://biqc-web-dev.azurewebsites.net,http://localhost:3000" \
+              STRIPE_API_KEY="${{ secrets.STRIPE_API_KEY }}" \
+              OPENAI_MODEL_DEEP="${{ secrets.OPENAI_MODEL_DEEP }}" \
+              OPENAI_MODEL_NORMAL="${{ secrets.OPENAI_MODEL_NORMAL }}" \
+              ANTHROPIC_MODEL_OPUS="${{ secrets.ANTHROPIC_MODEL_OPUS }}" \
+              ANTHROPIC_MODEL_SONNET="${{ secrets.ANTHROPIC_MODEL_SONNET }}"
 
       - name: Deploy frontend to Azure App Service
         if: needs.build-frontend.result == 'success'
