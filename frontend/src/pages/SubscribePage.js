@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { resolveTier } from '../lib/tierResolver';
 import { apiClient } from '../lib/api';
-import { Lock, ArrowRight, Check, Loader2, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { Lock, ArrowRight, Check, Loader2, CheckCircle2, XCircle, Sparkles, ChevronDown, Minus } from 'lucide-react';
 import { PRICING_TIERS } from '../config/pricingTiers';
 import { FOUNDATION_FEATURES, WAITLIST_FEATURES } from '../config/launchConfig';
 import { fontFamily } from '../design-system/tokens';
@@ -294,7 +294,146 @@ const SubscribePage = () => {
         </div>
       )}
 
-      <Link to="/advisor" className="text-xs text-[#64748B] hover:text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Back to Intelligence Platform</Link>
+      {/* Feature Comparison Table */}
+      <FeatureComparisonTable />
+
+      {/* FAQ Accordion */}
+      <FAQAccordion />
+
+      {/* Bottom CTA */}
+      <div className="w-full max-w-4xl text-center py-8">
+        <p className="text-sm mb-2" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Still exploring?</p>
+        <Link to="/advisor" className="text-xs hover:underline" style={{ color: 'var(--lava, #E85D00)', fontFamily: fontFamily.mono }}>
+          Back to Intelligence Platform
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+/* ── Feature Comparison Table ─────────────────────────────────────────────── */
+const COMPARISON_DATA = [
+  { category: 'Core platform', features: [
+    { name: 'Advisor (daily brief)', free: true, growth: true, pro: true },
+    { name: 'Email inbox + priority scoring', free: true, growth: true, pro: true },
+    { name: 'Calendar intelligence', free: true, growth: true, pro: true },
+    { name: 'Alert centre', free: true, growth: true, pro: true },
+    { name: 'Ask BIQc queries', free: '10 / day', growth: 'Unlimited', pro: 'Unlimited' },
+    { name: 'Market position', free: true, growth: true, pro: true },
+    { name: 'Business DNA', free: true, growth: true, pro: true },
+    { name: 'Integrations', free: '4', growth: '10', pro: 'Unlimited' },
+  ]},
+  { category: 'Growth intelligence', features: [
+    { name: 'BoardRoom AI', free: false, growth: true, pro: true },
+    { name: 'Revenue analytics', free: false, growth: true, pro: true },
+    { name: 'Operations metrics', free: false, growth: true, pro: true },
+    { name: 'Reports', free: false, growth: true, pro: true },
+    { name: 'Decision tracker', free: false, growth: true, pro: true },
+    { name: 'SOP generator', free: false, growth: true, pro: true },
+    { name: 'Marketing automation', free: false, growth: true, pro: true },
+    { name: 'Marketing intelligence', free: false, growth: true, pro: true },
+    { name: 'Exposure scan', free: false, growth: true, pro: true },
+  ]},
+  { category: 'Pro intelligence', features: [
+    { name: 'WarRoom crisis AI', free: false, growth: false, pro: true },
+    { name: 'Risk matrix', free: false, growth: false, pro: true },
+    { name: 'Compliance tracking', free: false, growth: false, pro: true },
+    { name: 'Cross-domain signals', free: false, growth: false, pro: true },
+    { name: 'Watchtower', free: false, growth: false, pro: true },
+    { name: 'Document library', free: false, growth: false, pro: true },
+    { name: 'Intel centre', free: false, growth: false, pro: true },
+    { name: 'Audit log', free: false, growth: false, pro: true },
+  ]},
+  { category: 'Support', features: [
+    { name: 'Community', free: true, growth: true, pro: true },
+    { name: 'Email support', free: false, growth: true, pro: true },
+    { name: 'Priority support', free: false, growth: false, pro: true },
+  ]},
+];
+
+const CellIcon = ({ value }) => {
+  if (value === true) return <Check className="w-4 h-4 mx-auto" style={{ color: 'var(--positive, #16A34A)' }} />;
+  if (value === false) return <Minus className="w-3.5 h-3.5 mx-auto" style={{ color: 'var(--ink-muted, #708499)' }} />;
+  return <span className="text-xs font-medium" style={{ color: 'var(--ink, #C8D4E4)' }}>{value}</span>;
+};
+
+const FeatureComparisonTable = () => (
+  <div className="w-full max-w-4xl mt-12">
+    <h2 className="text-xl font-semibold text-center mb-6" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+      Compare every feature.
+    </h2>
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border, rgba(140,170,210,0.12))', background: 'var(--surface, #0E1628)' }}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr style={{ background: 'var(--surface-sunken, #060A12)' }}>
+            <th className="text-left px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-muted)' }}>Feature</th>
+            <th className="text-center px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-muted)' }}>Free</th>
+            <th className="text-center px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--lava, #E85D00)' }}>Growth $69</th>
+            <th className="text-center px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-muted)' }}>Pro $199</th>
+          </tr>
+        </thead>
+        <tbody>
+          {COMPARISON_DATA.map(section => (
+            <React.Fragment key={section.category}>
+              <tr style={{ background: 'var(--surface-sunken, #060A12)' }}>
+                <td colSpan={4} className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider"
+                  style={{ color: 'var(--ink-muted, #708499)', borderBottom: '1px solid var(--border)' }}>
+                  {section.category}
+                </td>
+              </tr>
+              {section.features.map(f => (
+                <tr key={f.name} className="hover:bg-white/[0.02]">
+                  <td className="px-4 py-2.5" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--border)' }}>{f.name}</td>
+                  <td className="px-4 py-2.5 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.free} /></td>
+                  <td className="px-4 py-2.5 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.growth} /></td>
+                  <td className="px-4 py-2.5 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.pro} /></td>
+                </tr>
+              ))}
+            </React.Fragment>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
+/* ── FAQ Accordion ────────────────────────────────────────────────────────── */
+const FAQ_ITEMS = [
+  { q: 'What happens when my 14-day Pro trial ends?', a: 'You\'ll be moved to the Free plan automatically. No charges, no surprises. You keep access to Advisor, Alerts, Email, Calendar, Ask BIQc, Market, Business DNA, and up to 4 integrations. Paid features (BoardRoom, WarRoom, advanced analytics) lock until you upgrade.' },
+  { q: 'Can I switch plans later?', a: 'Absolutely. Upgrade or downgrade at any time from Settings → Billing. When you upgrade, you get instant access to all features in your new tier. When you downgrade, you keep access until the end of your current billing period.' },
+  { q: 'How do integrations work across tiers?', a: 'Free: up to 4 integrations (email, calendar, CRM, accounting). Growth: up to 10 integrations with deeper sync. Pro: unlimited integrations with real-time webhook processing and advanced data enrichment.' },
+  { q: 'Is my data secure?', a: 'Yes. All data is encrypted in transit (TLS 1.3) and at rest (AES-256). We never use your data for AI model training. You retain full ownership and can export or delete everything at any time. We\'re SOC 2 compliant and GDPR/APPs aligned.' },
+  { q: 'Do you offer discounts for annual billing?', a: 'Yes — save 20% with annual billing. Growth drops from $69/month to $55/month ($660/year). Pro drops from $199/month to $159/month ($1,908/year). All annual plans include priority onboarding.' },
+  { q: 'What payment methods do you accept?', a: 'We accept all major credit and debit cards (Visa, Mastercard, Amex) via Stripe. For Enterprise plans, we also offer invoice billing with NET 30 terms. All prices are in AUD.' },
+];
+
+const FAQAccordion = () => {
+  const [openIdx, setOpenIdx] = useState(null);
+  return (
+    <div className="w-full max-w-3xl mt-12 mb-8">
+      <h2 className="text-xl font-semibold text-center mb-6" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+        Frequently asked questions
+      </h2>
+      <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border)', background: 'var(--surface, #0E1628)' }}>
+        {FAQ_ITEMS.map((item, i) => (
+          <div key={i} style={{ borderBottom: i < FAQ_ITEMS.length - 1 ? '1px solid var(--border, rgba(140,170,210,0.12))' : 'none' }}>
+            <button
+              onClick={() => setOpenIdx(openIdx === i ? null : i)}
+              className="w-full flex items-center justify-between px-5 py-4 text-left text-sm font-medium transition-colors hover:bg-white/[0.02]"
+              style={{ color: 'var(--ink-display, #EDF1F7)' }}
+            >
+              <span>{item.q}</span>
+              <ChevronDown className="w-4 h-4 shrink-0 ml-3 transition-transform duration-200"
+                style={{ color: 'var(--ink-muted)', transform: openIdx === i ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+            </button>
+            {openIdx === i && (
+              <div className="px-5 pb-4">
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{item.a}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
