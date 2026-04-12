@@ -793,3 +793,284 @@ async def get_cmo_report(current_user: dict = Depends(get_current_user)):
             "confidence": 0,
             "report_id": "",
         }
+
+
+# ═══════════════════════════════════════════════════════════════
+# SUPERNATURAL INTELLIGENCE ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+
+# --- Proactive Intelligence ---
+
+@router.post("/intelligence/proactive-scan")
+async def trigger_proactive_scan(user=Depends(get_current_user)):
+    """Run all proactive intelligence detectors."""
+    try:
+        sb = init_supabase()
+        from proactive_intelligence import ProactiveIntelligenceEngine
+        engine = ProactiveIntelligenceEngine(sb)
+        alerts = engine.run_full_scan(user["id"])
+        return {"alerts_generated": len(alerts), "alerts": alerts}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Proactive scan failed: {e}", exc_info=True)
+        raise HTTPException(500, "Proactive scan failed")
+
+
+@router.get("/intelligence/proactive-alerts")
+async def get_proactive_alerts(domain: str = None, severity: str = None, limit: int = 20, user=Depends(get_current_user)):
+    """Get proactive intelligence alerts for user."""
+    try:
+        sb = init_supabase()
+        query = sb.table("intelligence_actions") \
+            .select("*") \
+            .eq("user_id", user["id"]) \
+            .eq("action_type", "proactive_alert") \
+            .eq("status", "action_required") \
+            .order("created_at", desc=True) \
+            .limit(limit)
+        if domain:
+            query = query.eq("domain", domain)
+        if severity:
+            query = query.eq("severity", severity)
+        result = query.execute()
+        return {"alerts": result.data or [], "count": len(result.data or [])}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Proactive alerts fetch failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to fetch proactive alerts")
+
+
+# --- Predictive Intelligence ---
+
+@router.get("/intelligence/predictions")
+async def get_predictions(model: str = None, user=Depends(get_current_user)):
+    """Get latest predictions for user."""
+    try:
+        sb = init_supabase()
+        query = sb.table("predictions") \
+            .select("*") \
+            .eq("user_id", user["id"]) \
+            .order("prediction_date", desc=True) \
+            .limit(30)
+        if model:
+            query = query.eq("model_name", model)
+        result = query.execute()
+        return {"predictions": result.data or []}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Predictions fetch failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to fetch predictions")
+
+
+@router.post("/intelligence/predict")
+async def trigger_predictions(user=Depends(get_current_user)):
+    """Manually trigger prediction models."""
+    try:
+        sb = init_supabase()
+        from predictive_intelligence import PredictiveIntelligenceEngine
+        engine = PredictiveIntelligenceEngine(sb)
+        results = engine.run_all_predictions(user["id"])
+        return {"predictions": results}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Predictions failed: {e}", exc_info=True)
+        raise HTTPException(500, "Prediction models failed")
+
+
+# --- External Intelligence Feed ---
+
+@router.get("/intelligence/external-feed")
+async def get_external_intelligence_feed(source_type: str = None, limit: int = 50, user=Depends(get_current_user)):
+    """Get unified external intelligence feed."""
+    try:
+        sb = init_supabase()
+        # Query individual tables and combine (view may not exist yet)
+        feed = []
+        tables_map = {
+            "news": ("industry_news", "headline"),
+            "regulatory": ("regulatory_signals", "title"),
+            "reputation": ("reputation_signals", "platform"),
+            "supply_chain": ("supply_chain_signals", "signal_type"),
+            "job_market": ("job_market_signals", "company_name"),
+        }
+        targets = {source_type: tables_map[source_type]} if source_type and source_type in tables_map else tables_map
+        for stype, (table, _) in targets.items():
+            try:
+                result = sb.table(table) \
+                    .select("*") \
+                    .eq("user_id", user["id"]) \
+                    .order("created_at", desc=True) \
+                    .limit(limit // len(targets)) \
+                    .execute()
+                for row in (result.data or []):
+                    row["_source_type"] = stype
+                    feed.append(row)
+            except Exception:
+                pass  # Table may not exist yet
+        feed.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+        return {"feed": feed[:limit], "count": len(feed)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"External feed failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to fetch external intelligence")
+
+
+# --- Strategic Narratives ---
+
+@router.get("/intelligence/narrative")
+async def get_latest_narrative(narrative_type: str = "weekly", user=Depends(get_current_user)):
+    """Get latest strategic narrative."""
+    try:
+        sb = init_supabase()
+        result = sb.table("strategic_narratives") \
+            .select("*") \
+            .eq("user_id", user["id"]) \
+            .eq("narrative_type", narrative_type) \
+            .order("period_end", desc=True) \
+            .limit(1) \
+            .execute()
+        return result.data[0] if result.data else {"message": "No narrative generated yet"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Narrative fetch failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to fetch narrative")
+
+
+@router.post("/intelligence/narrative/generate")
+async def generate_narrative(user=Depends(get_current_user)):
+    """Generate a weekly strategic narrative."""
+    try:
+        sb = init_supabase()
+        from narrative_synthesis import NarrativeSynthesisEngine
+        engine = NarrativeSynthesisEngine(sb)
+        result = engine.generate_weekly_narrative(user["id"])
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Narrative generation failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to generate narrative")
+
+
+# --- Calendar Intelligence ---
+
+@router.get("/calendar/intelligence")
+async def get_calendar_intelligence(user=Depends(get_current_user)):
+    """Get calendar intelligence: daily brief, time allocation, network."""
+    try:
+        sb = init_supabase()
+        from calendar_intelligence import CalendarIntelligenceEngine
+        engine = CalendarIntelligenceEngine(sb)
+        return engine.store_intelligence(user["id"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Calendar intelligence failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to generate calendar intelligence")
+
+
+@router.get("/calendar/prep-brief")
+async def get_meeting_prep_brief(user=Depends(get_current_user)):
+    """Get today's meeting prep brief."""
+    try:
+        sb = init_supabase()
+        from calendar_intelligence import CalendarIntelligenceEngine
+        engine = CalendarIntelligenceEngine(sb)
+        return engine.generate_daily_brief(user["id"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Meeting prep failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to generate meeting brief")
+
+
+# --- Decision Intelligence ---
+
+@router.post("/decisions")
+async def create_decision(request_obj: dict, user=Depends(get_current_user)):
+    """Create a new decision entry."""
+    try:
+        sb = init_supabase()
+        from decision_intelligence import DecisionIntelligenceEngine
+        engine = DecisionIntelligenceEngine(sb)
+        return engine.create_decision(user["id"], request_obj)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Decision create failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to create decision")
+
+
+@router.post("/decisions/{decision_id}/outcome")
+async def record_decision_outcome(decision_id: str, request_obj: dict, user=Depends(get_current_user)):
+    """Record decision outcome."""
+    try:
+        sb = init_supabase()
+        from decision_intelligence import DecisionIntelligenceEngine
+        engine = DecisionIntelligenceEngine(sb)
+        return engine.record_outcome(user["id"], decision_id, request_obj)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Decision outcome failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to record outcome")
+
+
+@router.get("/decisions/patterns")
+async def get_decision_patterns(user=Depends(get_current_user)):
+    """Get decision pattern analysis."""
+    try:
+        sb = init_supabase()
+        from decision_intelligence import DecisionIntelligenceEngine
+        engine = DecisionIntelligenceEngine(sb)
+        return engine.get_decision_patterns(user["id"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Decision patterns failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to get patterns")
+
+
+@router.get("/decisions/pending-reviews")
+async def get_pending_reviews(user=Depends(get_current_user)):
+    """Get decisions due for review."""
+    try:
+        sb = init_supabase()
+        from decision_intelligence import DecisionIntelligenceEngine
+        engine = DecisionIntelligenceEngine(sb)
+        reviews = engine.get_pending_reviews(user["id"])
+        return {"reviews": reviews, "count": len(reviews)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Pending reviews failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to get pending reviews")
+
+
+@router.get("/decisions")
+async def list_decisions(status: str = None, domain: str = None, limit: int = 50, user=Depends(get_current_user)):
+    """List user decisions."""
+    try:
+        sb = init_supabase()
+        query = sb.table("decision_log") \
+            .select("*") \
+            .eq("user_id", user["id"]) \
+            .order("created_at", desc=True) \
+            .limit(limit)
+        if status:
+            query = query.eq("status", status)
+        if domain:
+            query = query.eq("domain", domain)
+        result = query.execute()
+        return {"decisions": result.data or []}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Decisions list failed: {e}", exc_info=True)
+        raise HTTPException(500, "Failed to list decisions")
