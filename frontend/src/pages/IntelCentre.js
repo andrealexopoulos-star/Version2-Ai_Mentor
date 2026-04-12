@@ -1,210 +1,421 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '../components/ui/card';
-import { Progress } from '../components/ui/progress';
+import { useState, useMemo } from 'react';
 import {
-  Target, Stethoscope, BarChart3, TrendingUp, ArrowRight,
-  Brain, BookOpen, Globe, GitBranch
+  FileText, Plus, Globe, ArrowRight, Clock
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { fontFamily } from '../design-system/tokens';
-import { apiClient } from '../lib/api';
-import PredictionsPanel from '../components/intelligence/PredictionsPanel';
-import NarrativePanel from '../components/intelligence/NarrativePanel';
-import ExternalIntelFeed from '../components/intelligence/ExternalIntelFeed';
-import DecisionPatterns from '../components/intelligence/DecisionPatterns';
+import { fontFamily, colors, radius } from '../design-system/tokens';
 
-const TABS = [
-  { key: 'tools',       label: 'Tools',         icon: Target },
-  { key: 'predictions', label: 'Predictions',   icon: Brain },
-  { key: 'narrative',   label: 'Narrative',      icon: BookOpen },
-  { key: 'external',    label: 'External Intel', icon: Globe },
-  { key: 'decisions',   label: 'Decisions',      icon: GitBranch },
+/* ───────────────────────── CATEGORY CONFIG ───────────────────────── */
+const CATEGORY_COLORS = {
+  Competitor:  { bg: '#FEE2E2', text: '#991B1B', accent: '#DC2626' },
+  Market:      { bg: 'rgba(59,130,246,0.10)', text: '#2563EB', accent: '#2563EB' },
+  Regulatory:  { bg: '#F3E8FF', text: '#7C3AED', accent: '#7C3AED' },
+  Industry:    { bg: 'rgba(34,197,94,0.10)', text: '#16A34A', accent: '#0891B2' },
+  Technology:  { bg: 'rgba(245,158,11,0.10)', text: '#D97706', accent: '#16A34A' },
+};
+
+const RELEVANCE_STYLES = {
+  High:   { bg: '#FEE2E2', text: '#991B1B' },
+  Medium: { bg: '#FEF3C7', text: '#92400E' },
+  Low:    { bg: 'rgba(140,170,210,0.08)', text: '#708499' },
+};
+
+const TABS = ['All', 'Competitor', 'Market', 'Regulatory', 'Industry', 'Technology'];
+
+/* ───────────────────────── STATIC INTEL ITEMS ───────────────────────── */
+const INTEL_ITEMS = [
+  {
+    id: 1,
+    category: 'Competitor',
+    relevance: 'High',
+    title: 'Trillion Software drops Enterprise tier pricing 15% across AU market',
+    summary: 'New pricing page published overnight. Enterprise now starts at $169/seat (was $199). Feature parity overlap with BIQc Growth tier on pipeline analytics and reporting modules.',
+    source: 'Web monitoring',
+    time: '2h ago',
+  },
+  {
+    id: 2,
+    category: 'Regulatory',
+    relevance: 'High',
+    title: 'OAIC publishes draft guidance for 2026 Privacy Act amendments',
+    summary: 'New guidance covers enhanced consent requirements for automated profiling, mandatory data breach response windows (72h to 48h), and cross-border data flow restrictions for AU entities.',
+    source: 'Gov feed',
+    time: '6h ago',
+  },
+  {
+    id: 3,
+    category: 'Market',
+    relevance: 'Medium',
+    title: 'AU SMB SaaS spending projected to grow 18% in FY2027',
+    summary: 'Gartner forecast shows Australian small-medium businesses increasing SaaS budget allocations, driven by AI-assisted operations tooling. Business intelligence and workflow automation lead growth categories.',
+    source: 'Market research',
+    time: 'Yesterday',
+  },
+  {
+    id: 4,
+    category: 'Competitor',
+    relevance: 'High',
+    title: 'DataPulse AU raises $8.2M Series A — entering pipeline analytics',
+    summary: 'Melbourne-based DataPulse announced funding to build CRM analytics layer targeting AU SMBs using HubSpot and Pipedrive. Direct overlap with BIQc core market.',
+    source: 'News monitoring',
+    time: 'Yesterday',
+  },
+  {
+    id: 5,
+    category: 'Industry',
+    relevance: 'Medium',
+    title: 'HubSpot launches native AI deal scoring for Sales Hub Enterprise',
+    summary: 'New feature uses conversation intelligence to score deals. Potential to reduce reliance on third-party analytics for HubSpot Enterprise users. BIQc users on HubSpot Starter/Pro unaffected.',
+    source: 'Product feed',
+    time: '2 days ago',
+  },
+  {
+    id: 6,
+    category: 'Technology',
+    relevance: 'Low',
+    title: 'Anthropic Claude 4.5 GA — enhanced tool use for agentic workflows',
+    summary: 'Latest model release improves structured output reliability and multi-step reasoning. Relevant to BIQc\'s signal enrichment and diagnostic engine pipelines.',
+    source: 'Tech feed',
+    time: '3 days ago',
+  },
+  {
+    id: 7,
+    category: 'Market',
+    relevance: 'High',
+    title: 'Deloitte: 62% of AU mid-market firms plan AI operations investment in 2026',
+    summary: 'Survey of 480 Australian mid-market businesses reveals strong appetite for AI-driven operational tools. Budget reallocation from legacy BI platforms is the primary funding source.',
+    source: 'Market research',
+    time: '3 days ago',
+  },
+  {
+    id: 8,
+    category: 'Regulatory',
+    relevance: 'Medium',
+    title: 'ACCC launches consultation on AI transparency in B2B SaaS pricing',
+    summary: 'New consultation paper examines algorithmic pricing practices in B2B software. Potential disclosure requirements for AI-driven pricing recommendations could affect dynamic pricing features.',
+    source: 'Gov feed',
+    time: '4 days ago',
+  },
+  {
+    id: 9,
+    category: 'Technology',
+    relevance: 'Medium',
+    title: 'OpenAI releases Codex 2 with improved structured data extraction',
+    summary: 'New model capabilities for parsing unstructured business documents. Competitive consideration for BIQc document intelligence pipeline that currently uses Claude-based extraction.',
+    source: 'Tech feed',
+    time: '5 days ago',
+  },
+  {
+    id: 10,
+    category: 'Industry',
+    relevance: 'Low',
+    title: 'Salesforce acquires AU-based workflow automation startup FlowLogic',
+    summary: 'Acquisition strengthens Salesforce ecosystem with AU-native workflow tooling. May affect BIQc integration strategy with Salesforce customers who used FlowLogic connectors.',
+    source: 'News monitoring',
+    time: '5 days ago',
+  },
 ];
 
+/* ───────────────────────── TRACKED ENTITIES ───────────────────────── */
+const TRACKED_ENTITIES = [
+  { name: 'Trillion Software', type: 'Competitor',      stats: [{ label: 'Mentions', value: '28' }, { label: 'Alerts', value: '3', color: '#DC2626' }, { label: 'Trend', value: '\u2191', color: '#DC2626' }] },
+  { name: 'DataPulse AU',      type: 'Competitor',      stats: [{ label: 'Mentions', value: '12' }, { label: 'Alerts', value: '1', color: '#D97706' }, { label: 'Trend', value: '\u2191', color: '#DC2626' }] },
+  { name: 'Bramwell Holdings', type: 'Key Account',     stats: [{ label: 'Mentions', value: '6' },  { label: 'Signals', value: '2', color: '#D97706' }, { label: 'Trend', value: '\u2014' }] },
+  { name: 'OAIC / Privacy Act',type: 'Regulatory',      stats: [{ label: 'Updates', value: '4' },  { label: 'Actions', value: '1', color: '#D97706' }, { label: 'Trend', value: '\u2191', color: '#DC2626' }] },
+  { name: 'HubSpot',           type: 'Platform',        stats: [{ label: 'Updates', value: '8' },  { label: 'Signals', value: '0' }, { label: 'Trend', value: '\u2014' }] },
+  { name: 'AU SMB SaaS Market',type: 'Market Segment',  stats: [{ label: 'Reports', value: '3' },  { label: 'Signals', value: '1' }, { label: 'Trend', value: '\u2191', color: '#16A34A' }] },
+];
+
+/* ───────────────────────── HELPERS ───────────────────────── */
+const formatToday = () => {
+  const d = new Date();
+  return d.toLocaleDateString('en-AU', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+/* ───────────────────────── COMPONENT ───────────────────────── */
 const IntelCentre = () => {
-  const navigate = useNavigate();
-  const [businessScore, setBusinessScore] = useState(0);
-  const [activeTab, setActiveTab] = useState('tools');
+  const [activeTab, setActiveTab] = useState('All');
 
-  useEffect(() => {
-    fetchBusinessScore();
-  }, []);
+  const filteredItems = useMemo(() => {
+    if (activeTab === 'All') return INTEL_ITEMS;
+    return INTEL_ITEMS.filter((item) => item.category === activeTab);
+  }, [activeTab]);
 
-  const fetchBusinessScore = async () => {
-    try {
-      const response = await apiClient.get('/business-profile/scores');
-      setBusinessScore(response.data?.strength || 0);
-    } catch (error) {
-      console.error('Failed to fetch business score:', error);
-    }
-  };
-
-  const tools = [
-    {
-      icon: Stethoscope,
-      title: 'Diagnosis',
-      description: 'Quick business health diagnosis with root cause analysis',
-      path: '/diagnosis',
-      color: '#7C3AED'
-    },
-    {
-      icon: BarChart3,
-      title: 'Analysis',
-      description: 'Comprehensive business analysis and strategic insights',
-      path: '/analysis',
-      color: '#0066FF'
-    },
-    {
-      icon: TrendingUp,
-      title: 'Market Intel',
-      description: 'Competitive market analysis and positioning insights',
-      path: '/market-analysis',
-      color: '#FF9500'
-    }
-  ];
-
-  const getScoreColor = (score) => {
-    if (score >= 70) return 'var(--accent-success)';
-    if (score >= 40) return '#F59E0B';
-    return '#EF4444';
-  };
-
-  const getScoreLabel = (score) => {
-    if (score >= 70) return 'Strong';
-    if (score >= 40) return 'Developing';
-    return 'Needs Attention';
-  };
+  /* ─── shared styles ─── */
+  const cardBg = colors.bgCard;
+  const borderColor = colors.border;
+  const lava = colors.brand;
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
-              — Intelligence
-            </div>
-            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-              Intel <em style={{ fontStyle: 'italic', color: '#E85D00' }}>Centre</em>.
-            </h1>
-            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
-              Business intelligence, diagnostics, and market insights powered by AI
-            </p>
-          </div>
+      <div className="intel-centre-root" style={{ padding: '32px 32px 48px', maxWidth: 1280, margin: '0 auto' }}>
 
-          {/* Business Score Card */}
-          <div
-            className="p-6 rounded-xl mb-6"
+        {/* ═══════ HEADER ═══════ */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+          <h1 style={{ fontFamily: fontFamily.display, fontSize: 28, fontWeight: 700, color: colors.text, letterSpacing: '-0.02em', margin: 0 }}>
+            Intel Centre
+          </h1>
+          <button
             style={{
-              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, var(--bg-card) 100%)',
-              border: `1px solid ${getScoreColor(businessScore)}40`
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '10px 20px', borderRadius: radius.badge,
+              background: `linear-gradient(135deg, ${lava}, #FF7A1A)`,
+              color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: fontFamily.body,
+              border: 'none', cursor: 'pointer',
+              transition: 'box-shadow 0.2s, transform 0.2s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(232,93,0,0.35)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
+          >
+            <FileText size={16} />
+            Generate Brief
+          </button>
+        </div>
+
+        {/* ═══════ AI DAILY BRIEF ═══════ */}
+        <div
+          style={{
+            background: cardBg,
+            border: `1px solid ${borderColor}`,
+            borderLeft: `3px solid ${lava}`,
+            borderRadius: radius.card,
+            padding: 20,
+            marginBottom: 32,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: lava }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: colors.brandDark, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: fontFamily.body }}>
+              AI Daily Intelligence Brief
+            </span>
+            <span style={{ fontSize: 12, color: colors.textMuted, marginLeft: 'auto', fontFamily: fontFamily.body }}>
+              {formatToday()}
+            </span>
+          </div>
+          <div style={{ fontSize: 14, color: colors.textSecondary, lineHeight: 1.6, fontFamily: fontFamily.body }}>
+            <strong style={{ color: colors.text }}>3 high-relevance developments</strong> detected overnight.
+            Trillion Software's enterprise pricing drop is gaining traction on LinkedIn — 14 mentions across your target AU SMB segment.
+            Meanwhile, <strong style={{ color: colors.text }}>OAIC released draft guidance</strong> on the 2026 Privacy Act amendments that affects your data handling disclosures.
+            Your market share of voice held steady at <strong style={{ color: colors.text }}>12%</strong> despite Trillion's push, suggesting brand loyalty is holding in existing accounts.
+          </div>
+          <button
+            style={{
+              marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 13, fontWeight: 600, color: lava, background: 'none', border: 'none',
+              cursor: 'pointer', fontFamily: fontFamily.body, padding: 0,
             }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" style={{ color: getScoreColor(businessScore) }} />
-                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Business Score</span>
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full"
-                  style={{
-                    background: `${getScoreColor(businessScore)}20`,
-                    color: getScoreColor(businessScore)
-                  }}
-                >
-                  {getScoreLabel(businessScore)}
-                </span>
-              </div>
-              <span className="text-4xl font-serif" style={{ color: getScoreColor(businessScore) }}>
-                {businessScore}<span className="text-lg">/100</span>
-              </span>
-            </div>
-            <Progress value={businessScore} className="h-2 mb-2" />
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              Based on your business performance, profile completeness, and activity
-            </p>
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1" style={{ borderBottom: '1px solid var(--border-default)' }}>
-            {TABS.map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  className="flex items-center gap-1.5 px-4 py-2.5 text-sm whitespace-nowrap transition-all relative"
-                  style={{
-                    color: isActive ? '#E85D00' : '#708499',
-                    fontFamily: fontFamily.body,
-                    fontWeight: isActive ? 600 : 400,
-                  }}
-                  onClick={() => setActiveTab(tab.key)}
-                >
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                  {isActive && (
-                    <div className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full" style={{ background: '#E85D00' }} />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Tab Content */}
-          {activeTab === 'tools' && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {tools.map((tool) => {
-                  const Icon = tool.icon;
-                  return (
-                    <Card
-                      key={tool.path}
-                      className="card cursor-pointer hover:shadow-lg transition-all"
-                      onClick={() => navigate(tool.path)}
-                    >
-                      <CardContent className="p-6">
-                        <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                          style={{ background: `${tool.color}15` }}
-                        >
-                          <Icon className="w-6 h-6" style={{ color: tool.color }} />
-                        </div>
-                        <h3 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                          {tool.title}
-                        </h3>
-                        <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-                          {tool.description}
-                        </p>
-                        <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--accent-primary)' }}>
-                          <span>Open tool</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-
-              {/* Quick Info */}
-              <div className="mt-8 p-6 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                <h3 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                  About Intel Centre
-                </h3>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  Your central hub for business intelligence. Each tool provides AI-powered insights
-                  tailored to your business profile, with evidence-based recommendations and actionable steps.
-                </p>
-              </div>
-            </>
-          )}
-
-          {activeTab === 'predictions' && <PredictionsPanel />}
-          {activeTab === 'narrative' && <NarrativePanel />}
-          {activeTab === 'external' && <ExternalIntelFeed />}
-          {activeTab === 'decisions' && <DecisionPatterns />}
+            Read full brief <ArrowRight size={14} />
+          </button>
         </div>
+
+        {/* ═══════ 2-COLUMN LAYOUT: FEED + TRACKED ═══════ */}
+        <div className="intel-main-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, alignItems: 'start' }}>
+
+          {/* ─── LEFT: INTELLIGENCE FEED ─── */}
+          <div>
+            <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, fontWeight: 700, color: colors.text, marginBottom: 16, marginTop: 0 }}>
+              Intelligence Feed
+            </h2>
+
+            {/* Tab pills */}
+            <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    style={{
+                      padding: '6px 14px',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      fontFamily: fontFamily.body,
+                      color: isActive ? '#fff' : colors.textMuted,
+                      background: isActive ? '#1E293B' : 'transparent',
+                      border: 'none',
+                      borderRadius: radius.badge,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = 'rgba(140,170,210,0.08)'; e.currentTarget.style.color = colors.text; } }}
+                    onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = colors.textMuted; } }}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Feed items */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {filteredItems.map((item) => {
+                const catColor = CATEGORY_COLORS[item.category] || CATEGORY_COLORS.Market;
+                const relStyle = RELEVANCE_STYLES[item.relevance] || RELEVANCE_STYLES.Low;
+                return (
+                  <div
+                    key={item.id}
+                    className="intel-feed-item"
+                    style={{
+                      background: cardBg,
+                      border: `1px solid ${borderColor}`,
+                      borderRadius: radius.card,
+                      padding: '16px 20px',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto',
+                      gap: 16,
+                      alignItems: 'start',
+                      cursor: 'pointer',
+                      transition: 'border-color 0.15s, box-shadow 0.15s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.3)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = borderColor; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    {/* Left content */}
+                    <div>
+                      {/* Category badge */}
+                      <span
+                        style={{
+                          fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+                          padding: '3px 8px', borderRadius: radius.full,
+                          display: 'inline-block', marginBottom: 8,
+                          background: catColor.bg, color: catColor.text,
+                          fontFamily: fontFamily.body,
+                        }}
+                      >
+                        {item.category}
+                      </span>
+
+                      {/* Title */}
+                      <div style={{ fontSize: 14, fontWeight: 600, color: colors.text, marginBottom: 4, lineHeight: 1.4, fontFamily: fontFamily.body }}>
+                        {item.title}
+                      </div>
+
+                      {/* Summary */}
+                      <div style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, fontFamily: fontFamily.body }}>
+                        {item.summary}
+                      </div>
+
+                      {/* Meta row: source + time + analyse button */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, fontSize: 12, color: colors.textMuted, fontFamily: fontFamily.body }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Globe size={12} />
+                          {item.source}
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Clock size={12} />
+                          {item.time}
+                        </span>
+                        <button
+                          style={{
+                            marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4,
+                            fontSize: 12, fontWeight: 600, color: lava,
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            fontFamily: fontFamily.body, padding: 0,
+                          }}
+                        >
+                          Analyse <ArrowRight size={12} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Relevance badge */}
+                    <span
+                      style={{
+                        fontSize: 10, fontWeight: 700, padding: '3px 8px',
+                        borderRadius: radius.full, whiteSpace: 'nowrap',
+                        background: relStyle.bg, color: relStyle.text,
+                        fontFamily: fontFamily.body,
+                      }}
+                    >
+                      {item.relevance}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ─── RIGHT: TRACKED ENTITIES ─── */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, fontWeight: 700, color: colors.text, margin: 0 }}>
+                Tracked Entities
+              </h2>
+              <button
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontSize: 12, fontWeight: 600, color: lava,
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontFamily: fontFamily.body, padding: 0,
+                }}
+              >
+                <Plus size={14} /> Add entity
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {TRACKED_ENTITIES.map((entity) => (
+                <div
+                  key={entity.name}
+                  style={{
+                    background: cardBg,
+                    border: `1px solid ${borderColor}`,
+                    borderRadius: radius.card,
+                    padding: 16,
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.3)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = borderColor; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  {/* Head: name + type */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: colors.text, fontFamily: fontFamily.body }}>
+                      {entity.name}
+                    </span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: fontFamily.body }}>
+                      {entity.type}
+                    </span>
+                  </div>
+
+                  {/* Stats row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 12 }}>
+                    {entity.stats.map((stat) => (
+                      <div key={stat.label}>
+                        <div style={{ fontSize: 10, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: fontFamily.body, marginBottom: 2 }}>
+                          {stat.label}
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: stat.color || colors.text, fontFamily: fontFamily.mono }}>
+                          {stat.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
       </div>
+
+      {/* ═══════ RESPONSIVE: stack columns on mobile ═══════ */}
+      <style>{`
+        @media (max-width: 900px) {
+          .intel-main-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .intel-centre-root {
+            padding: 16px 16px 32px !important;
+          }
+          .intel-feed-item {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </DashboardLayout>
   );
 };

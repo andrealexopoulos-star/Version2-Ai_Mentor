@@ -10,7 +10,7 @@ import {
   AlertTriangle, Shield, DollarSign, TrendingDown, CheckCircle2,
   Users, UserX, Clock, Plug, Activity, Heart, Info, ArrowRight,
   ExternalLink, ChevronDown, ChevronUp, Mail, Calendar, Loader2,
-  XCircle, Zap,
+  XCircle, Zap, Sparkles,
 } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
@@ -165,6 +165,248 @@ const ACRONYMS = [
   { label: 'CDR', title: 'Cash Deviation Ratio', desc: 'How far your actual cash position diverges from expected. High = unexpected outflows or shortfalls.' },
   { label: 'ADS', title: 'Anomaly Density Score', desc: 'Frequency of unusual signals across all connected data. High = something unusual is happening.' },
 ];
+
+// ── Risk Register static data ────────────────────────────────────────────────
+const RISK_REGISTER_ROWS = [
+  { id: 1, risk: 'Cash flow concentration', severity: 'Critical', likelihood: 'Likely', impact: 'High', owner: 'CFO', status: 'In Progress' },
+  { id: 2, risk: 'Key person dependency', severity: 'High', likelihood: 'Possible', impact: 'High', owner: 'CEO', status: 'Monitoring' },
+  { id: 3, risk: 'Regulatory non-compliance', severity: 'High', likelihood: 'Unlikely', impact: 'Critical', owner: 'Legal', status: 'Planned' },
+  { id: 4, risk: 'Supplier chain disruption', severity: 'Medium', likelihood: 'Possible', impact: 'Medium', owner: 'Ops', status: 'In Progress' },
+  { id: 5, risk: 'Data breach exposure', severity: 'Critical', likelihood: 'Rare', impact: 'Critical', owner: 'CTO', status: 'Complete' },
+  { id: 6, risk: 'Market position erosion', severity: 'Medium', likelihood: 'Likely', impact: 'Medium', owner: 'CMO', status: 'Monitoring' },
+  { id: 7, risk: 'Contract renewal risk', severity: 'High', likelihood: 'Possible', impact: 'High', owner: 'Sales', status: 'Planned' },
+];
+
+const SEV_STYLE = {
+  Critical: { bg: '#FEE2E2', color: '#991B1B' },
+  High:     { bg: '#FEF3C7', color: '#92400E' },
+  Medium:   { bg: '#DBEAFE', color: '#1E40AF' },
+};
+
+const STATUS_STYLE = {
+  Complete:      { bg: '#D1FAE5', color: '#065F46' },
+  'In Progress': { bg: '#FEF3C7', color: '#92400E' },
+  Planned:       { bg: '#DBEAFE', color: '#1E40AF' },
+  Monitoring:    { bg: '#F1F5F9', color: '#475569' },
+};
+
+// Heat map cell colors — rows = Impact (Critical..Low top-to-bottom), cols = Likelihood (Rare..Likely left-to-right)
+const HEAT_COLORS = [
+  // Impact: Critical
+  ['#92400E', '#991B1B', '#991B1B', '#991B1B'],
+  // Impact: High
+  ['#92400E', '#92400E', '#991B1B', '#991B1B'],
+  // Impact: Medium
+  ['#166534', '#92400E', '#92400E', '#991B1B'],
+  // Impact: Low
+  ['#166534', '#166534', '#92400E', '#92400E'],
+];
+
+// Risk dots placed on heat map cells — [row, col] where row 0=Critical, col 0=Rare
+const HEAT_DOTS = [
+  { id: 1, row: 1, col: 3, severity: 'Critical', name: 'Cash flow concentration' },
+  { id: 2, row: 1, col: 2, severity: 'High',     name: 'Key person dependency' },
+  { id: 3, row: 0, col: 1, severity: 'High',     name: 'Regulatory non-compliance' },
+  { id: 4, row: 2, col: 2, severity: 'Medium',   name: 'Supplier chain disruption' },
+  { id: 5, row: 0, col: 0, severity: 'Critical', name: 'Data breach exposure' },
+  { id: 6, row: 2, col: 3, severity: 'Medium',   name: 'Market position erosion' },
+  { id: 7, row: 1, col: 2, severity: 'High',     name: 'Contract renewal risk' },
+];
+
+const DOT_COLOR = { Critical: '#DC2626', High: '#D97706', Medium: '#2563EB' };
+const CELL_BG_ALPHA = { '#166534': 'rgba(22,101,52,0.18)', '#92400E': 'rgba(146,64,14,0.18)', '#991B1B': 'rgba(153,27,27,0.22)' };
+
+const Y_LABELS = ['Critical', 'High', 'Medium', 'Low'];
+const X_LABELS = ['Rare', 'Unlikely', 'Possible', 'Likely'];
+
+// ── HeatMapDot with tooltip ──────────────────────────────────────────────────
+const HeatMapDot = ({ dot }) => {
+  const [hover, setHover] = useState(false);
+  return (
+    <span
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      className="relative inline-flex items-center justify-center cursor-pointer"
+      style={{
+        width: 24, height: 24, borderRadius: '50%', fontSize: 10, fontWeight: 700,
+        color: '#fff', background: DOT_COLOR[dot.severity] || '#64748B',
+        fontFamily: fontFamily.mono, transition: 'transform 150ms ease', transform: hover ? 'scale(1.35)' : 'scale(1)',
+        zIndex: 2,
+      }}>
+      {dot.id}
+      {hover && (
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg text-[11px] leading-snug z-50 whitespace-nowrap"
+          style={{ background: '#1E2D3D', color: '#EDF1F7', border: '1px solid #334155', fontFamily: fontFamily.body, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+          {dot.name}
+        </span>
+      )}
+    </span>
+  );
+};
+
+// ── KPI Strip ────────────────────────────────────────────────────────────────
+const RiskKPIStrip = ({ riskData }) => {
+  // Try to compute from risk snapshot data if available, fallback to static
+  const totalRisks = riskData?.total_risks ?? 12;
+  const critHigh = riskData?.critical_high ?? 4;
+  const mitigated = riskData?.mitigated_this_month ?? 3;
+  const exposure = riskData?.exposure_score ?? 67;
+
+  const kpis = [
+    { label: 'Total Risks', value: totalRisks, icon: Shield, delta: '+2 this quarter', deltaDir: 'up' },
+    { label: 'Critical + High', value: critHigh, icon: AlertTriangle, colorClass: '#DC2626', delta: '+1 this month', deltaDir: 'up' },
+    { label: 'Mitigated This Month', value: mitigated, icon: CheckCircle2, colorClass: '#16A34A', delta: '+1 resolved', deltaDir: 'down' },
+    { label: 'Exposure Score', value: `${exposure}/100`, icon: Activity, colorClass: '#D97706', delta: '-4pts from last month', deltaDir: 'down' },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="risk-kpi-strip">
+      {kpis.map((kpi, i) => (
+        <div key={i} className="rounded-xl p-4"
+          style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <kpi.icon className="w-3.5 h-3.5" style={{ color: kpi.colorClass || '#64748B' }} />
+            <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{kpi.label}</span>
+          </div>
+          <div className="text-2xl font-bold" style={{ color: kpi.colorClass || '#EDF1F7', fontFamily: fontFamily.mono, lineHeight: 1 }}>
+            {kpi.value}
+          </div>
+          <div className="text-xs mt-1 font-medium" style={{ color: kpi.deltaDir === 'up' ? '#DC2626' : '#16A34A', fontFamily: fontFamily.mono }}>
+            {kpi.delta}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ── AI Risk Insight Card ─────────────────────────────────────────────────────
+const AIRiskInsightCard = () => (
+  <div className="rounded-xl p-5" data-testid="risk-ai-insight"
+    style={{
+      background: 'linear-gradient(135deg, rgba(220,38,38,0.06), rgba(220,38,38,0.02))',
+      border: '1px solid var(--biqc-border)',
+      borderLeft: '4px solid #DC2626',
+    }}>
+    <div className="flex items-center gap-2 mb-3">
+      <Sparkles className="w-4 h-4" style={{ color: '#DC2626' }} />
+      <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#991B1B', fontFamily: fontFamily.mono }}>BIQc Risk AI</span>
+      <span className="w-2 h-2 rounded-full" style={{ background: '#DC2626', animation: 'pulse 2s ease-in-out infinite' }} />
+    </div>
+    <p className="text-sm leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+      <strong style={{ color: '#EDF1F7' }}>Your risk posture shows elevated exposure across financial and operational domains.</strong>{' '}
+      Cash flow concentration at a single major client creates a cascading dependency path. Key person risk
+      combined with regulatory gaps amplifies the exposure window. Prioritise supplier diversification and
+      accelerate the compliance review to reduce the aggregate risk score below 50 within the next 30 days.
+    </p>
+  </div>
+);
+
+// ── Risk Heat Map ────────────────────────────────────────────────────────────
+const RiskHeatMap = () => {
+  // Build a lookup: "row-col" => [dots]
+  const dotMap = {};
+  HEAT_DOTS.forEach(d => {
+    const key = `${d.row}-${d.col}`;
+    if (!dotMap[key]) dotMap[key] = [];
+    dotMap[key].push(d);
+  });
+
+  return (
+    <div className="rounded-xl p-5" data-testid="risk-heat-map"
+      style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+      <h2 className="text-base font-semibold mb-4" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>Risk Heat Map</h2>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '48px repeat(4, 1fr)', gridTemplateRows: 'repeat(4, 72px) 28px', gap: 2 }}>
+        {/* Y-axis labels */}
+        {Y_LABELS.map((label, ri) => (
+          <div key={`yl-${ri}`} className="flex items-center justify-end pr-2"
+            style={{ gridColumn: 1, gridRow: ri + 1, fontSize: 10, fontWeight: 600, color: '#64748B', fontFamily: fontFamily.mono, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {label}
+          </div>
+        ))}
+
+        {/* 16 cells */}
+        {HEAT_COLORS.map((row, ri) =>
+          row.map((cellColor, ci) => {
+            const dots = dotMap[`${ri}-${ci}`] || [];
+            return (
+              <div key={`c-${ri}-${ci}`} className="rounded-md flex items-center justify-center gap-1 flex-wrap"
+                style={{ gridColumn: ci + 2, gridRow: ri + 1, background: CELL_BG_ALPHA[cellColor] || cellColor, minHeight: 0 }}>
+                {dots.map(d => <HeatMapDot key={d.id} dot={d} />)}
+              </div>
+            );
+          })
+        )}
+
+        {/* X-axis labels */}
+        <div style={{ gridColumn: 1, gridRow: 5 }} />
+        {X_LABELS.map((label, ci) => (
+          <div key={`xl-${ci}`} className="flex items-center justify-center"
+            style={{ gridColumn: ci + 2, gridRow: 5, fontSize: 10, fontWeight: 600, color: '#64748B', fontFamily: fontFamily.mono, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {label}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between mt-3 px-12">
+        <span className="text-[10px] font-semibold" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>IMPACT ^</span>
+        <span className="text-[10px] font-semibold" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>LIKELIHOOD &rarr;</span>
+      </div>
+    </div>
+  );
+};
+
+// ── Risk Register Table ──────────────────────────────────────────────────────
+const RiskRegisterTable = () => (
+  <div className="rounded-xl overflow-hidden" data-testid="risk-register-table"
+    style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+    <div className="px-5 pt-5 pb-3">
+      <h2 className="text-base font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>Risk Register</h2>
+    </div>
+    <div className="overflow-x-auto">
+      <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ borderBottom: '1px solid var(--biqc-border)' }}>
+            {['ID', 'Risk', 'Severity', 'Likelihood', 'Impact', 'Owner', 'Mitigation Status'].map(h => (
+              <th key={h} className="text-left px-4 py-2.5"
+                style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B', fontFamily: fontFamily.mono, background: 'rgba(30,45,61,0.5)' }}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {RISK_REGISTER_ROWS.map((r) => {
+            const sev = SEV_STYLE[r.severity] || SEV_STYLE.Medium;
+            const stat = STATUS_STYLE[r.status] || STATUS_STYLE.Monitoring;
+            return (
+              <tr key={r.id} className="transition-colors hover:bg-white/[0.03]"
+                style={{ borderBottom: '1px solid rgba(140,170,210,0.08)' }}>
+                <td className="px-4 py-3 text-sm" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>{r.id}</td>
+                <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>{r.risk}</td>
+                <td className="px-4 py-3">
+                  <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                    style={{ background: sev.bg, color: sev.color, fontFamily: fontFamily.mono }}>
+                    {r.severity}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>{r.likelihood}</td>
+                <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>{r.impact}</td>
+                <td className="px-4 py-3 text-xs" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{r.owner}</td>
+                <td className="px-4 py-3">
+                  <span className="inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                    style={{ background: stat.bg, color: stat.color, fontFamily: fontFamily.mono }}>
+                    {r.status}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
 
 // ── Main component ────────────────────────────────────────────────────────────
 const RiskPage = () => {
@@ -362,6 +604,18 @@ const RiskPage = () => {
         <div className="flex flex-wrap items-center gap-2" data-testid="risk-lineage-badge">
           <LineageBadge lineage={riskIntelLineage} data_freshness={riskIntelFreshness} confidence_score={riskIntelConfidence} compact />
         </div>
+
+        {/* ═══ NEW: KPI Strip ═══ */}
+        <RiskKPIStrip riskData={unifiedRisk} />
+
+        {/* ═══ NEW: AI Risk Insight ═══ */}
+        <AIRiskInsightCard />
+
+        {/* ═══ NEW: Risk Heat Map ═══ */}
+        <RiskHeatMap />
+
+        {/* ═══ NEW: Risk Register Table ═══ */}
+        <RiskRegisterTable />
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]" data-testid="risk-ux-main-grid">
           <div className="space-y-4" data-testid="risk-priority-column">
