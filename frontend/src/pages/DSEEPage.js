@@ -40,8 +40,11 @@ const DSEEPage = () => {
       <div className="space-y-4 max-w-[900px]" style={{ fontFamily: fontFamily.body }} data-testid="dsee-page">
         <div>
           <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display, WebkitTextStroke: '0.2px #EDF1F7' }}>Structural Exposure Analysis</h1>
-          <p className="text-sm text-[#8FA0B8] mb-3">
+          <p className="text-sm text-[#8FA0B8] mb-1">
             Deterministic competitive intelligence — no financial projections. Analyses your digital structure, competitors and strategic vulnerabilities from public data.
+          </p>
+          <p className="text-xs mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
+            Score gauge, category breakdown and vulnerability cards appear after scan completes.
           </p>
           <div className="p-3 rounded-lg" style={{ background: 'rgba(232,93,0,0.04)', border: '1px solid rgba(232,93,0,0.12)' }}>
             <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>

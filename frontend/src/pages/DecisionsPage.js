@@ -119,6 +119,23 @@ export default function DecisionsPage() {
           </p>
         </div>
 
+        {/* Stats strip — mirrors mockup (Open / Decided / Deferred / Avg time) */}
+        {!loading && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8" data-testid="decisions-stats">
+            {[
+              { label: 'Open', value: String(prompts.length) },
+              { label: 'Decided', value: String(history.length) },
+              { label: 'Deferred', value: String(history.filter(h => (h.decision_statement || '').toLowerCase().includes('defer')).length) },
+              { label: 'Avg time to decide', value: history.length > 0 ? `${Math.round(history.reduce((s, h) => s + (h.expected_time_horizon || 30), 0) / history.length)}d` : '--' },
+            ].map(stat => (
+              <div key={stat.label} className="rounded-lg p-4" style={{ background: colors.bgCard, border: `1px solid ${colors.border}` }}>
+                <span className="text-[10px] font-semibold uppercase tracking-wider block mb-1" style={{ color: colors.textMuted, fontFamily: fontFamily.mono }}>{stat.label}</span>
+                <span className="text-2xl font-bold" style={{ color: colors.text, fontFamily: fontFamily.display }}>{stat.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Active Decision Prompts — from signals */}
         {loading ? (
           <PageLoadingState message="Scanning for decision triggers…" />

@@ -34,6 +34,8 @@ const GRADIENTS = [
 export default function BlogPage() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [email, setEmail] = useState('');
+  const [subscribeStatus, setSubscribeStatus] = useState('idle'); // idle | subscribing | subscribed
 
   const filtered = BLOG_ARTICLES
     .filter(a => activeCategory === 'All' || a.category === activeCategory)
@@ -209,16 +211,32 @@ export default function BlogPage() {
             <p className="text-base mb-7 max-w-[440px] mx-auto" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
               Get the latest insights on AI, business intelligence, and data-driven strategy delivered to your inbox.
             </p>
-            <form className="flex flex-col sm:flex-row gap-2.5 max-w-[440px] mx-auto" onSubmit={(e) => e.preventDefault()}>
+            <form className="flex flex-col sm:flex-row gap-2.5 max-w-[440px] mx-auto"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (subscribeStatus !== 'idle') return;
+                setSubscribeStatus('subscribing');
+                setTimeout(() => {
+                  setSubscribeStatus('subscribed');
+                  setEmail('');
+                  setTimeout(() => setSubscribeStatus('idle'), 3000);
+                }, 1000);
+              }}>
               <input type="email" placeholder="Enter your email" required
-                className="flex-1 px-3.5 py-2.5 rounded-lg text-sm outline-none transition-all focus:ring-2 focus:ring-[#E85D00]/20 focus:border-[#E85D00]"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                disabled={subscribeStatus !== 'idle'}
+                className="flex-1 px-3.5 py-2.5 rounded-lg text-sm outline-none transition-all focus:ring-2 focus:ring-[#E85D00]/20 focus:border-[#E85D00] disabled:opacity-60"
                 style={{ background: 'var(--bg-secondary, #0B1120)', border: '1px solid var(--border-card, rgba(140,170,210,0.12))', color: 'var(--ink-body, #C8D4E4)' }} />
               <button type="submit"
-                className="px-6 py-2.5 rounded-lg text-sm font-semibold text-white whitespace-nowrap transition-all hover:brightness-110"
-                style={{ background: 'var(--lava, #E85D00)' }}>
-                Subscribe
+                disabled={subscribeStatus !== 'idle'}
+                className="px-6 py-2.5 rounded-lg text-sm font-semibold text-white whitespace-nowrap transition-all hover:brightness-110 disabled:opacity-70 disabled:cursor-not-allowed"
+                style={{ background: subscribeStatus === 'subscribed' ? '#16A34A' : 'var(--lava, #E85D00)' }}>
+                {subscribeStatus === 'subscribing' ? 'Subscribing...' : subscribeStatus === 'subscribed' ? 'Subscribed' : 'Subscribe'}
               </button>
             </form>
+            <p className="text-xs mt-4 max-w-[440px] mx-auto" style={{ color: '#5C6E82' }}>
+              No spam. Unsubscribe anytime. We respect your privacy.
+            </p>
           </div>
         </div>
       </section>

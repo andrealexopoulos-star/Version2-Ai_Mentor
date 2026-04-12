@@ -286,6 +286,25 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
+
+      {/* Bottom CTA */}
+      <section className="py-24 px-6 text-center" style={{ background: 'var(--bg-primary, #080C14)' }}>
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+            Ready to See Your Business Clearly?
+          </h2>
+          <p className="text-lg mb-8" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            Start free. No credit card required. Intelligence in minutes.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/register"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white transition-all hover:brightness-110"
+              style={{ background: 'var(--lava, #E85D00)', boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }}>
+              Start Free Today <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
     </WebsiteLayout>
   );
 }

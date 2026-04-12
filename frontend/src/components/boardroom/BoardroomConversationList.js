@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, MessageSquare, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { colors, fontFamily } from '../../design-system/tokens';
 
 function groupConversations(conversations) {
@@ -31,7 +31,16 @@ export default function BoardroomConversationList({
   collapsed = false,
   onToggle,
 }) {
-  const groups = groupConversations(conversations);
+  const [searchQuery, setSearchQuery] = useState('');
+  const filteredConversations = useMemo(() => {
+    if (!searchQuery.trim()) return conversations;
+    const q = searchQuery.toLowerCase();
+    return conversations.filter((c) =>
+      (c.title || '').toLowerCase().includes(q) ||
+      (c.focus_area || '').toLowerCase().includes(q)
+    );
+  }, [conversations, searchQuery]);
+  const groups = groupConversations(filteredConversations);
   const sections = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['older', 'Older']];
   const modeLabel = mode === 'boardroom' ? 'Boardroom' : 'War Room';
 
@@ -59,6 +68,27 @@ export default function BoardroomConversationList({
           <Plus className="w-4 h-4" />
           New session
         </button>
+      </div>
+
+      <div className="px-3 pb-2">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: colors.textMuted }} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search sessions..."
+            className="w-full text-xs pl-8 pr-3 py-2 rounded-lg border focus:outline-none focus:ring-1"
+            style={{
+              background: colors.bgInput,
+              borderColor: colors.border,
+              color: colors.text,
+              fontFamily: fontFamily.body,
+            }}
+            aria-label="Search conversations"
+            data-testid="boardroom-conversation-search"
+          />
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">

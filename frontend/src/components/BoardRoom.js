@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ArrowLeft, Plus, RefreshCw, Loader2 } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Plus, RefreshCw, Loader2, Send, Paperclip } from 'lucide-react';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
@@ -60,6 +60,13 @@ const BOARDROOM_GUIDES = [
   'Escalate when evidence chain shows cross-domain compounding.',
 ];
 
+const FOCUS_PILLS = [
+  { id: 'revenue', label: 'Revenue' },
+  { id: 'operations', label: 'Operations' },
+  { id: 'market', label: 'Market' },
+  { id: 'team', label: 'Team' },
+];
+
 const focusRingClass = 'focus-visible:outline-none focus-visible:ring-2';
 
 function formatFreshnessTime(iso) {
@@ -91,6 +98,9 @@ export function BoardRoomBody({
   });
   const [currentConvId, setCurrentConvId] = useState(conversationId || null);
   const [streamingCardVisible, setStreamingCardVisible] = useState(false);
+  const [activeFocusPill, setActiveFocusPill] = useState(null);
+  const [chatInput, setChatInput] = useState('');
+  const textareaRef = useRef(null);
 
   const {
     stream,
@@ -322,6 +332,80 @@ export function BoardRoomBody({
     resetStream();
   };
 
+  const userName = session?.user?.user_metadata?.full_name || session?.user?.email || '';
+
+  const handleSendMessage = useCallback(async () => {
+    const text = chatInput.trim();
+    if (!text || isStreaming) return;
+    setChatInput('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+
+    let conv = conversation;
+    if (!conv) {
+      try {
+        conv = await create({ title: text.slice(0, 60) });
+        setCurrentConvId(conv.id);
+        onConversationChange?.(conv.id);
+        await refreshConversations();
+      } catch (e) {
+        setDiagError(e.message || 'Unable to create conversation');
+        return;
+      }
+    }
+
+    try {
+      await appendMessage(conv.id, {
+        role: 'user',
+        content: text,
+        focus_area: activeFocusPill || activeDiagnosis || null,
+      });
+    } catch (_error) {
+      // Non-blocking
+    }
+
+    await stream({
+      url: '/api/boardroom/respond',
+      body: { message: text, history: messages.slice(-10).map((m) => ({ role: m.role === 'advisor' ? 'assistant' : m.role, content: m.content })) },
+      headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+      onComplete: async (evt, fullText) => {
+        try {
+          await appendMessage(conv.id, {
+            role: 'advisor',
+            content: fullText,
+            focus_area: activeFocusPill || activeDiagnosis || null,
+            explainability: evt.explainability || {},
+            evidence_chain: evt.evidence_chain || [],
+            lineage: evt.lineage || {},
+            confidence_score: evt.confidence_score,
+            degraded: Boolean(evt.degraded),
+          });
+        } catch (_error) {
+          // Best-effort persistence
+        }
+        await refreshConversations();
+      },
+      onError: (e) => {
+        setDiagError(e.message || 'Response failed');
+      },
+    });
+  }, [chatInput, isStreaming, conversation, create, setCurrentConvId, onConversationChange, refreshConversations, appendMessage, activeFocusPill, activeDiagnosis, stream, session?.access_token, messages]);
+
+  const handleInputKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  }, [handleSendMessage]);
+
+  const handleTextareaChange = useCallback((e) => {
+    setChatInput(e.target.value);
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }, []);
+
   const explainability = {
     whyVisible: integrationLabels.length
       ? `Boardroom is escalating this based on ${integrationLabels.length} connected systems (${integrationLabels.join(', ')}).`
@@ -372,6 +456,30 @@ export function BoardRoomBody({
             Refresh
           </button>
         </header>
+
+        {/* Focus area pills */}
+        <div className="flex items-center gap-2 px-6 py-2 border-b" style={{ borderColor: colors.border }} aria-label="Focus area filters" data-testid="boardroom-focus-pills">
+          {FOCUS_PILLS.map((pill) => {
+            const isActive = activeFocusPill === pill.id;
+            return (
+              <button
+                key={pill.id}
+                onClick={() => setActiveFocusPill(isActive ? null : pill.id)}
+                className={`text-xs px-3 py-1.5 rounded-full transition-all ${focusRingClass}`}
+                style={{
+                  background: isActive ? colors.brand : 'transparent',
+                  color: isActive ? '#fff' : colors.textSecondary,
+                  border: `1px solid ${isActive ? colors.brand : colors.border}`,
+                }}
+                aria-pressed={isActive}
+                aria-label={`Filter by ${pill.label}`}
+                data-testid={`focus-pill-${pill.id}`}
+              >
+                {pill.label}
+              </button>
+            );
+          })}
+        </div>
 
         <div className="h-[2px]" style={{ background: colors.border }}>
           <motion.div initial={{ width: 0 }} animate={{ width: `${pressurePct}%` }} transition={{ duration: 0.7 }} className="h-full rounded-r-full" style={{ background: st.dot }} />
@@ -532,13 +640,13 @@ export function BoardRoomBody({
             </div>
             <div className="space-y-2">
               {diagnosisHistory.map((msg, index) => (
-                <BoardroomMessageBubble key={msg.id || `msg-${index}`} message={msg} index={index} />
+                <BoardroomMessageBubble key={msg.id || `msg-${index}`} message={msg} index={index} userName={userName} />
               ))}
 
               <AnimatePresence>
                 {isStreaming && streamingText && (
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} aria-live="polite" aria-atomic="false">
-                    <BoardroomMessageBubble message={{ role: 'advisor', content: streamingText, explainability: streamMeta?.explainability, degraded: Boolean(streamMeta?.degraded) }} index={diagnosisHistory.length + 1} streaming />
+                    <BoardroomMessageBubble message={{ role: 'advisor', content: streamingText, explainability: streamMeta?.explainability, degraded: Boolean(streamMeta?.degraded) }} index={diagnosisHistory.length + 1} streaming userName={userName} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -606,6 +714,61 @@ export function BoardRoomBody({
             <button aria-label="Boardroom hidden keyboard target three" />
             <button aria-label="Boardroom hidden keyboard target four" />
             <button aria-label="Boardroom hidden keyboard target five" />
+          </div>
+        </div>
+
+        {/* Chat input bar */}
+        <div
+          className="px-6 py-3 border-t"
+          style={{ borderColor: colors.border, background: colors.bgCard }}
+          data-testid="boardroom-input-bar"
+        >
+          <div className="text-[10px] mb-2" style={{ color: colors.textMuted }}>
+            BIQc reads your connected sources in real time...
+          </div>
+          <div className="flex items-end gap-2">
+            <button
+              className={`p-2 rounded-lg border ${focusRingClass}`}
+              style={{ borderColor: colors.border, color: colors.textMuted }}
+              aria-label="Attach file"
+              data-testid="boardroom-attach-btn"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+            <textarea
+              ref={textareaRef}
+              value={chatInput}
+              onChange={handleTextareaChange}
+              onKeyDown={handleInputKeyDown}
+              placeholder="Ask BIQc BoardRoom..."
+              rows={1}
+              disabled={isStreaming}
+              className="flex-1 text-sm px-3 py-2 rounded-xl border resize-none focus:outline-none focus:ring-1"
+              style={{
+                background: colors.bgInput,
+                borderColor: colors.border,
+                color: colors.text,
+                fontFamily: fontFamily.body,
+                maxHeight: 160,
+                opacity: isStreaming ? 0.5 : 1,
+              }}
+              aria-label="Type your message"
+              data-testid="boardroom-chat-input"
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={isStreaming || !chatInput.trim()}
+              className={`p-2 rounded-lg transition-colors ${focusRingClass}`}
+              style={{
+                background: chatInput.trim() && !isStreaming ? colors.brand : `${colors.brand}30`,
+                color: chatInput.trim() && !isStreaming ? '#fff' : colors.textMuted,
+                cursor: isStreaming || !chatInput.trim() ? 'not-allowed' : 'pointer',
+              }}
+              aria-label="Send message"
+              data-testid="boardroom-send-btn"
+            >
+              <Send className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>

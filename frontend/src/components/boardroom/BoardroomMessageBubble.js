@@ -4,10 +4,66 @@ import { colors, fontFamily, radius } from '../../design-system/tokens';
 import InsightExplainabilityStrip from '../InsightExplainabilityStrip';
 import LineageBadge from '../LineageBadge';
 
-export default function BoardroomMessageBubble({ message, index = 0, streaming = false }) {
+/* Three bouncing dots for typing indicator */
+const typingDotStyle = {
+  width: 6,
+  height: 6,
+  borderRadius: '50%',
+  background: colors.brand,
+  display: 'inline-block',
+};
+
+function TypingDots() {
+  return (
+    <span className="inline-flex items-center gap-1" aria-label="BIQc is typing" role="status">
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          style={typingDotStyle}
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
+        />
+      ))}
+    </span>
+  );
+}
+
+/* Avatar circle */
+function MessageAvatar({ isUser, userName }) {
+  if (isUser) {
+    const initials = (userName || 'You')
+      .split(' ')
+      .filter(Boolean)
+      .map((w) => w[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'U';
+    return (
+      <div
+        className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-semibold"
+        style={{ background: `${colors.brand}25`, color: colors.brand, border: `1px solid ${colors.brand}40` }}
+        aria-hidden="true"
+      >
+        {initials}
+      </div>
+    );
+  }
+  return (
+    <div
+      className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold"
+      style={{ background: 'linear-gradient(135deg, #E85D00, #C24D00)', color: '#fff' }}
+      aria-hidden="true"
+    >
+      B
+    </div>
+  );
+}
+
+export default function BoardroomMessageBubble({ message, index = 0, streaming = false, userName }) {
   const isUser = message.role === 'user';
   const isAdvisor = message.role === 'advisor';
   const testIdPrefix = isUser ? 'br-msg-user' : 'br-msg-advisor';
+  const displayName = isUser ? 'You' : 'BIQc BoardRoom';
 
   return (
     <motion.article
@@ -19,6 +75,9 @@ export default function BoardroomMessageBubble({ message, index = 0, streaming =
       aria-label={`${isUser ? 'Your' : 'Advisor'} message`}
       data-testid={`${testIdPrefix}-${index}`}
     >
+      {/* AI avatar on left */}
+      {!isUser && <div className="mr-2 mt-1"><MessageAvatar isUser={false} /></div>}
+
       <div
         className="max-w-[85%] rounded-2xl px-4 py-3"
         style={{
@@ -27,6 +86,11 @@ export default function BoardroomMessageBubble({ message, index = 0, streaming =
           borderRadius: radius.card,
         }}
       >
+        {/* Name label */}
+        <div className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: isUser ? colors.brand : colors.textMuted }}>
+          {displayName}
+        </div>
+
         {message.focus_area && (
           <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: colors.textMuted }}>
             {message.focus_area.replace(/_/g, ' ')}
@@ -35,7 +99,7 @@ export default function BoardroomMessageBubble({ message, index = 0, streaming =
 
         <div className="text-sm whitespace-pre-wrap" style={{ color: colors.text, fontFamily: fontFamily.body, lineHeight: 1.5 }} aria-live={streaming ? 'polite' : undefined}>
           {message.content}
-          {streaming && <span className="inline-block w-1 h-4 ml-0.5 animate-pulse" style={{ background: colors.brand }} />}
+          {streaming && <span className="ml-1"><TypingDots /></span>}
         </div>
 
         {isAdvisor && message.degraded && (
@@ -77,6 +141,9 @@ export default function BoardroomMessageBubble({ message, index = 0, streaming =
           </div>
         )}
       </div>
+
+      {/* User avatar on right */}
+      {isUser && <div className="ml-2 mt-1"><MessageAvatar isUser userName={userName} /></div>}
     </motion.article>
   );
 }

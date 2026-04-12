@@ -3,14 +3,15 @@ import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
-import { Bell, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircle, Plug, ArrowRight, Shield } from 'lucide-react';
+import { Bell, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircle, Plug, ArrowRight, Shield, Download, CheckCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
 import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
 import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 
-const sevMap = { critical: { color: '#E85D00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, high: { color: '#E85D00', label: 'Critical' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
+const sevMap = { critical: { color: '#E85D00', label: 'Critical' }, high: { color: '#F97316', label: 'High' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
 
 const AlertItem = ({ alert, onAction }) => {
   const [open, setOpen] = useState(false);
@@ -21,7 +22,10 @@ const AlertItem = ({ alert, onAction }) => {
     setActioned(action);
     try {
       await apiClient.post('/intelligence/alerts/action', { alert_id: alert.id, action });
-    } catch {}
+      toast.success(action === 'complete' ? 'Alert marked as complete' : 'Alert dismissed');
+    } catch {
+      toast.error('Action failed — please try again');
+    }
   };
 
   if (actioned === 'complete' || actioned === 'ignore') {
@@ -156,15 +160,17 @@ const AlertsPageAuth = () => {
       return 0;
     });
 
-  const critCount = loading ? null : alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
+  const critCount = loading ? null : alerts.filter(a => a.severity === 'critical').length;
+  const highCount = loading ? null : alerts.filter(a => a.severity === 'high').length;
   const modCount = loading ? null : alerts.filter(a => a.severity === 'moderate' || a.severity === 'medium').length;
   const infoCount = loading ? null : alerts.filter(a => a.severity === 'info' || a.severity === 'low').length;
+  const urgentCount = (critCount || 0) + (highCount || 0);
   const explainability = {
     whyVisible: hasAnyData
       ? `BIQc is reading ${totalConnected} connected system${totalConnected === 1 ? '' : 's'} and ranking active operational risk signals.`
       : 'Alert Centre activates when integrations are connected and producing live events.',
     whyNow: alerts.length > 0
-      ? `${alerts.length} active alert${alerts.length === 1 ? '' : 's'} detected, including ${critCount || 0} critical priority item${critCount === 1 ? '' : 's'}.`
+      ? `${alerts.length} active alert${alerts.length === 1 ? '' : 's'} detected, including ${urgentCount} critical priority item${urgentCount === 1 ? '' : 's'}.`
       : 'No active alerts at this moment, but monitoring remains active for new anomalies.',
     nextAction: alerts.length > 0
       ? 'Open each critical alert, assign action owner, and mark complete/ignore with rationale.'
@@ -174,14 +180,14 @@ const AlertsPageAuth = () => {
       : 'Without connected data, true issues can remain invisible until they become severe.',
   };
   const actionOwnership = {
-    owner: (critCount || 0) > 0 ? 'Duty manager' : alerts.length > 0 ? 'Operations lead' : 'Monitoring owner',
-    deadline: (critCount || 0) > 0 ? 'Within 4 hours' : alerts.length > 0 ? 'By next business day' : 'Continuous',
-    checkpoint: (critCount || 0) > 0
-      ? `Close ${critCount} critical alert${critCount === 1 ? '' : 's'} with owner + rationale.`
+    owner: urgentCount > 0 ? 'Duty manager' : alerts.length > 0 ? 'Operations lead' : 'Monitoring owner',
+    deadline: urgentCount > 0 ? 'Within 4 hours' : alerts.length > 0 ? 'By next business day' : 'Continuous',
+    checkpoint: urgentCount > 0
+      ? `Close ${urgentCount} critical/high alert${urgentCount === 1 ? '' : 's'} with owner + rationale.`
       : alerts.length > 0
         ? 'Review all open alerts and classify complete vs ignore with notes.'
         : 'Maintain daily watch cycle and keep integrations healthy.',
-    successMetric: `Open alerts ${alerts.length} · critical ${critCount || 0} · moderate ${modCount || 0}`,
+    successMetric: `Open alerts ${alerts.length} · critical ${critCount || 0} · high ${highCount || 0} · moderate ${modCount || 0}`,
   };
 
   return (
@@ -223,8 +229,8 @@ const AlertsPageAuth = () => {
           testIdPrefix="alerts-action-ownership"
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[['Critical', critCount, '#E85D00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[['Critical', critCount, '#E85D00'], ['High', highCount, '#F97316'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
             <div key={l} className="rounded-lg p-4 text-center" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
               {loading
                 ? <Loader2 className="w-6 h-6 animate-spin mx-auto mb-1" style={{ color: c }} />
@@ -238,7 +244,7 @@ const AlertsPageAuth = () => {
         {/* Filter + Sort toolbar */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex gap-1.5 flex-wrap">
-            {[['all','All'],['critical','Critical'],['moderate','Moderate'],['info','Info']].map(([val,label]) => (
+            {[['all','All'],['critical','Critical'],['high','High'],['moderate','Moderate'],['info','Info']].map(([val,label]) => (
               <button key={val} onClick={() => setFilter(val)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                 style={{ background: filter === val ? '#E85D00' : '#0E1628', color: filter === val ? 'white' : '#8FA0B8', border: `1px solid ${filter === val ? '#E85D00' : 'rgba(140,170,210,0.15)'}`, fontFamily: fontFamily.mono }}
@@ -259,6 +265,36 @@ const AlertsPageAuth = () => {
             ))}
           </div>
           <div className="ml-auto flex items-center gap-1.5">
+            <button
+              onClick={() => {
+                setAlerts(prev => prev.map(a => ({ ...a, read: true })));
+                toast.success('All alerts marked as read');
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-white/5"
+              style={{ background: '#0E1628', color: '#8FA0B8', border: '1px solid rgba(140,170,210,0.15)', fontFamily: fontFamily.mono }}
+              title="Mark all read"
+              data-testid="alerts-mark-all-read">
+              <CheckCheck className="w-3.5 h-3.5" /> Mark all read
+            </button>
+            <button
+              onClick={() => {
+                const data = alerts.map(({ id, severity, title, impact, action, time, created_at }) => ({ id, severity, title, impact, action, time, created_at }));
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `biqc-alerts-${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success(`Exported ${data.length} alert${data.length !== 1 ? 's' : ''}`);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-white/5"
+              style={{ background: '#0E1628', color: '#8FA0B8', border: '1px solid rgba(140,170,210,0.15)', fontFamily: fontFamily.mono }}
+              title="Export alerts"
+              data-testid="alerts-export">
+              <Download className="w-3.5 h-3.5" /> Export
+            </button>
+            <div className="h-4 w-px bg-[rgba(140,170,210,0.15)]" />
             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Sort:</span>
             {[['severity','Severity'],['date','Date']].map(([val,label]) => (
               <button key={val} onClick={() => setSortBy(val)}

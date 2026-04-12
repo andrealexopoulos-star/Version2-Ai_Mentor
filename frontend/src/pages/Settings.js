@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Switch } from '../components/ui/switch';
-import { User, Settings as SettingsIcon, Bell, Activity, Loader2, Save, CreditCard, RefreshCw, AlertTriangle, Lock, ArrowRight, Trash2, Download, Unplug } from 'lucide-react';
+import { User, Settings as SettingsIcon, Bell, Activity, Loader2, Save, CreditCard, RefreshCw, AlertTriangle, Lock, ArrowRight, Trash2, Download, Unplug, Globe, KeyRound, Plus } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { fontFamily } from '../design-system/tokens';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
@@ -106,6 +106,39 @@ const SettingsBillingContent = ({ navigate, user }) => {
         </div>
       )}
 
+      {/* Payment Method */}
+      <div className="rounded-xl border p-5" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+        <p className="text-[10px] uppercase tracking-widest mb-3" style={{ color: '#94A3B8', fontFamily: 'var(--font-mono, monospace)' }}>Payment Method</p>
+        {overview?.billing_connectors?.stripe_connected ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CreditCard className="w-5 h-5" style={{ color: '#E85D00' }} />
+              <div>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Card on file</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Managed through Stripe</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => navigate('/billing')} style={{ borderColor: '#E85D00', color: '#E85D00' }}>
+              Manage
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>No card on file</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/billing')}
+              className="flex items-center gap-2"
+              style={{ borderColor: '#E85D00', color: '#E85D00' }}
+            >
+              <Plus className="w-4 h-4" />
+              Add card
+            </Button>
+          </div>
+        )}
+      </div>
+
       <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
         Billing questions? <a href="mailto:billing@biqc.com.au" style={{ color: '#E85D00' }}>billing@biqc.com.au</a>
       </p>
@@ -125,8 +158,11 @@ const Settings = () => {
   const [syncing, setSyncing] = useState(false);
   const [accountData, setAccountData] = useState({
     name: user?.name || '',
-    email: user?.email || ''
+    email: user?.email || '',
+    company: user?.company || '',
   });
+  const [timezone, setTimezone] = useState('Australia/Sydney');
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [memberSince, setMemberSince] = useState(null);
 
   // Notifications state (6 toggles from mockup)
@@ -471,6 +507,78 @@ const Settings = () => {
                       />
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Email cannot be changed</p>
                     </div>
+                  </div>
+
+                  {/* Company */}
+                  <div>
+                    <Label>Company</Label>
+                    <Input
+                      value={accountData.company}
+                      onChange={(e) => setAccountData({ ...accountData, company: e.target.value })}
+                      placeholder="Your company name"
+                      className="mt-2"
+                    />
+                  </div>
+
+                  {/* Timezone */}
+                  <div>
+                    <Label className="flex items-center gap-2">
+                      <Globe className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                      Timezone
+                    </Label>
+                    <Select value={timezone} onValueChange={setTimezone}>
+                      <SelectTrigger className="mt-2" data-testid="settings-select-timezone">
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Australia/Sydney">Australia/Sydney</SelectItem>
+                        <SelectItem value="Australia/Melbourne">Australia/Melbourne</SelectItem>
+                        <SelectItem value="Australia/Brisbane">Australia/Brisbane</SelectItem>
+                        <SelectItem value="Australia/Perth">Australia/Perth</SelectItem>
+                        <SelectItem value="Australia/Adelaide">Australia/Adelaide</SelectItem>
+                        <SelectItem value="Australia/Hobart">Australia/Hobart</SelectItem>
+                        <SelectItem value="Australia/Darwin">Australia/Darwin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Password */}
+                  <div>
+                    <Label className="flex items-center gap-2">
+                      <KeyRound className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                      Password
+                    </Label>
+                    <div className="flex items-center gap-3 mt-2">
+                      <Input
+                        type="password"
+                        value="••••••••"
+                        disabled
+                        className="flex-1"
+                        style={{ background: 'var(--biqc-bg-card)' }}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowPasswordChange(true);
+                          supabase.auth.resetPasswordForEmail(user?.email, {
+                            redirectTo: `${window.location.origin}/settings`,
+                          }).then(() => {
+                            toast.success('Password reset email sent. Check your inbox.');
+                          }).catch(() => {
+                            toast.error('Failed to send password reset email');
+                          });
+                        }}
+                        style={{ borderColor: '#E85D00', color: '#E85D00', whiteSpace: 'nowrap' }}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                    {showPasswordChange && (
+                      <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                        A password reset link has been sent to your email address.
+                      </p>
+                    )}
                   </div>
 
                   {/* Onboarding Section */}

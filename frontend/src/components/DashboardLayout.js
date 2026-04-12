@@ -16,7 +16,8 @@ import {
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity,
   Radar, HelpCircle, LayoutDashboard, AlertTriangle, Link2,
   ClipboardList, MessageSquare, Lock, Eye, FlaskConical,
-  BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox, CreditCard
+  BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox, CreditCard,
+  Search
 } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
 import { getRouteAccess } from '../lib/tierResolver';
@@ -403,6 +404,51 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           </div>
         </div>
 
+        {/* ═══ SEARCH BAR (center of topbar) ═══ */}
+        <div className="hidden md:flex flex-1 justify-center px-4" style={{ maxWidth: 560 }}>
+          <button
+            onClick={() => {/* future: open command palette / search modal */}}
+            className="flex items-center gap-2 w-full px-3 rounded-lg transition-colors hover:border-[rgba(140,170,210,0.25)]"
+            style={{
+              maxWidth: 520,
+              height: 36,
+              background: `var(--biqc-bg-input, ${colors.bgInput})`,
+              border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))',
+              borderRadius: 'var(--r-md, 8px)',
+              cursor: 'text',
+            }}
+            aria-label="Search signals, actions, insights"
+            data-testid="topbar-search"
+          >
+            <Search className="w-4 h-4 shrink-0" style={{ color: 'var(--ink-muted, #708499)' }} />
+            <span className="flex-1 text-left text-sm" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
+              Search signals, actions, insights...
+            </span>
+            <kbd
+              className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium"
+              style={{
+                background: 'rgba(140,170,210,0.08)',
+                border: '1px solid rgba(140,170,210,0.15)',
+                color: 'var(--ink-muted, #708499)',
+                fontFamily: fontFamily.mono,
+                lineHeight: 1,
+              }}
+            >
+              ⌘K
+            </kbd>
+          </button>
+        </div>
+        {/* Mobile: search icon only */}
+        <button
+          className="md:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+          style={{ color: 'var(--biqc-text-2)' }}
+          aria-label="Search"
+          data-testid="topbar-search-mobile"
+          onClick={() => {/* future: open search modal */}}
+        >
+          <Search className="w-5 h-5" />
+        </button>
+
         <div className="flex items-center gap-2">
           {tutorial && <HelpButton onClick={openTutorial} />}
 
@@ -684,6 +730,48 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
               <Scale className="w-4 h-4 shrink-0" style={{ color: isActive('/biqc-legal') ? 'var(--lava, #E85D00)' : 'var(--ink-muted, #708499)' }} />
               {!sidebarCollapsed && <span className="flex-1 text-left">BIQc Legal</span>}
             </button>
+          </div>
+
+          {/* ═══ USER PROFILE BLOCK ═══ */}
+          <div
+            className="mx-2 mb-2 flex items-center gap-2.5 rounded-xl"
+            style={{
+              background: `var(--biqc-bg-input, ${colors.bgInput})`,
+              padding: sidebarCollapsed ? '8px' : '12px',
+              borderRadius: 'var(--r-lg, 12px)',
+            }}
+            data-testid="sidebar-user-profile"
+          >
+            {/* Avatar */}
+            <div
+              className="shrink-0 flex items-center justify-center rounded-full text-xs font-semibold text-white"
+              style={{
+                width: 36,
+                height: 36,
+                background: 'linear-gradient(135deg, #E85D00, #FF8A3D)',
+                fontFamily: fontFamily.body,
+              }}
+            >
+              {user?.full_name
+                ? user.full_name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+                : (user?.email?.charAt(0).toUpperCase() || 'U')}
+            </div>
+            {!sidebarCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-sm font-medium truncate"
+                  style={{ color: 'var(--biqc-text, #EDF1F7)', fontFamily: fontFamily.body, lineHeight: 1.3 }}
+                >
+                  {user?.full_name || user?.email || 'User'}
+                </p>
+                <p
+                  className="text-[11px] capitalize"
+                  style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono, lineHeight: 1.3 }}
+                >
+                  {(user?.subscription_tier || 'free').replace('_', ' ')}
+                </p>
+              </div>
+            )}
           </div>
         </nav>
       </aside>

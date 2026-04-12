@@ -7,7 +7,8 @@ import { toast } from 'sonner';
 import {
   TrendingUp, DollarSign, Zap, Users, Target,
   RefreshCw, AlertTriangle, ArrowRight, MessageSquare,
-  Activity, CheckCircle2, Clock, Calendar
+  Activity, CheckCircle2, Clock, Calendar,
+  Mail, CheckSquare, Puzzle
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { DailyBriefCard } from '../components/DailyBriefCard';
@@ -79,6 +80,26 @@ const Advisor = () => {
   const [narrativeState, setNarrativeState] = useState({ text: '', confidence: 'minimal signal', loading: true });
   const [fastInsights, setFastInsights] = useState([]);
   const [signalFilter, setSignalFilter] = useState('all');
+
+  // Activity timeline state
+  const [activityItems, setActivityItems] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+
+  // Fetch activity timeline from notifications/alerts
+  useEffect(() => {
+    const fetchActivity = async () => {
+      try {
+        const res = await apiClient.get('/notifications/alerts');
+        const items = (res.data?.notifications || res.data || []).slice(0, 6);
+        setActivityItems(items);
+      } catch {
+        setActivityItems([]);
+      } finally {
+        setActivityLoading(false);
+      }
+    };
+    fetchActivity();
+  }, []);
 
   // Detect intelligence thresholds using existing data
   useEffect(() => {
@@ -570,9 +591,6 @@ const Advisor = () => {
           ))}
         </div>
 
-        {/* ── Daily Brief Card ── */}
-        <DailyBriefCard />
-
         {/* ── 2-Column Grid ── */}
         <style>{`.advisor-grid { display: grid; grid-template-columns: 1fr; gap: 24px; } @media (min-width: 1180px) { .advisor-grid { grid-template-columns: 2fr 1fr; } }`}</style>
         <div className="advisor-grid">
@@ -640,53 +658,131 @@ const Advisor = () => {
             </div>
           </div>
 
-          {/* RIGHT: Quick Actions + Sources */}
+          {/* RIGHT: Daily Brief + Quick Actions + Activity Timeline */}
           <div className="flex flex-col gap-5">
-            {/* Focus area quick-select */}
-            <div className="rounded-xl p-5" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
-              <div className="text-[10px] uppercase tracking-[0.08em] mb-3" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>— Focus area</div>
+
+            {/* ── Daily Brief Card ── */}
+            <DailyBriefCard />
+
+            {/* ── Quick Action Cards (2x2) ── */}
+            <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card, #0E1628)', border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}>
+              <div className="text-[10px] uppercase tracking-[0.08em] mb-4" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>— Quick actions</div>
               <div className="grid grid-cols-2 gap-3">
-                {focusAreas.map((area) => {
-                  const Icon = area.icon;
-                  const isSelected = selectedFocus === area.id;
+                {[
+                  { title: 'Ask BIQc anything', desc: 'Get instant business answers', icon: MessageSquare, path: '/soundboard' },
+                  { title: 'Inbox triage', desc: 'Review prioritised emails', icon: Mail, path: '/email-inbox' },
+                  { title: 'Action queue', desc: 'Tasks that need attention', icon: CheckSquare, path: '/actions' },
+                  { title: 'Add an integration', desc: 'Connect a new data source', icon: Puzzle, path: '/integrations' },
+                ].map((action) => {
+                  const Icon = action.icon;
                   return (
                     <button
-                      key={area.id}
-                      onClick={() => handleFocusSelect(area.id)}
-                      className="flex flex-col gap-2 p-4 rounded-lg text-left transition-all"
+                      key={action.path}
+                      onClick={() => navigate(action.path)}
+                      className="flex flex-col gap-2 p-4 rounded-lg text-left transition-all group"
                       style={{
-                        background: isSelected ? 'rgba(232,93,0,0.08)' : '#121D30',
-                        border: `1px solid ${isSelected ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
+                        background: 'var(--biqc-bg-input, #121D30)',
+                        border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))',
                         cursor: 'pointer',
                       }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--lava, #E85D00)';
+                        e.currentTarget.style.background = 'rgba(232,93,0,0.06)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--biqc-border, rgba(140,170,210,0.15))';
+                        e.currentTarget.style.background = 'var(--biqc-bg-input, #121D30)';
+                      }}
                     >
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: isSelected ? '#E85D00' : 'rgba(232,93,0,0.12)', color: isSelected ? 'white' : '#E85D00' }}>
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(232,93,0,0.12)', color: 'var(--lava, #E85D00)' }}>
                         <Icon className="w-4 h-4" />
                       </div>
-                      <div className="text-xs font-semibold" style={{ color: '#EDF1F7' }}>{area.title}</div>
-                      <div className="text-[11px] leading-tight" style={{ color: '#708499' }}>{area.description}</div>
+                      <div className="text-xs font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{action.title}</div>
+                      <div className="text-[11px] leading-tight" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>{action.desc}</div>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Integration status */}
-            <div className="rounded-xl p-5" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
-              <div className="text-[10px] uppercase tracking-[0.08em] mb-4" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>— Connected sources</div>
-              <div className="flex flex-col gap-3">
-                {sourceCards.map((card) => (
-                  <div key={card.key} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: card.connected ? '#10B981' : '#475569' }} />
-                      <span className="text-sm" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>{card.label}</span>
-                    </div>
-                    <span className="text-xs" style={{ color: card.connected ? '#10B981' : '#708499', fontFamily: fontFamily.mono }}>
-                      {card.connected ? 'Live' : 'Not connected'}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            {/* ── Activity Timeline ── */}
+            <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card, #0E1628)', border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}>
+              <div className="text-[10px] uppercase tracking-[0.08em] mb-4" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>— Last 24h activity</div>
+
+              {activityLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="w-4 h-4 animate-spin" style={{ color: 'var(--ink-muted, #708499)' }} />
+                </div>
+              ) : activityItems.length > 0 ? (
+                <div className="relative flex flex-col gap-0">
+                  {activityItems.map((item, idx) => {
+                    const isLast = idx === activityItems.length - 1;
+                    const severityColor =
+                      item.severity === 'high' || item.severity === 'critical'
+                        ? 'var(--lava, #E85D00)'
+                        : item.severity === 'medium'
+                        ? '#F59E0B'
+                        : 'var(--ink-muted, #708499)';
+
+                    let timeLabel = '';
+                    if (item.timestamp) {
+                      try {
+                        const d = new Date(item.timestamp);
+                        const diffMs = Date.now() - d.getTime();
+                        const diffH = Math.floor(diffMs / 3600000);
+                        const diffM = Math.floor(diffMs / 60000);
+                        if (diffH > 0) timeLabel = `${diffH}h ago`;
+                        else if (diffM > 0) timeLabel = `${diffM}m ago`;
+                        else timeLabel = 'Just now';
+                      } catch {
+                        timeLabel = '';
+                      }
+                    }
+
+                    return (
+                      <div key={item.id || idx} className="flex gap-3 relative" style={{ paddingBottom: isLast ? 0 : 16 }}>
+                        {/* Vertical line + dot */}
+                        <div className="flex flex-col items-center" style={{ width: 16 }}>
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0 mt-1" style={{ background: severityColor, boxShadow: `0 0 6px ${severityColor}40` }} />
+                          {!isLast && (
+                            <div className="flex-1 w-px mt-1" style={{ background: 'var(--biqc-border, rgba(140,170,210,0.15))' }} />
+                          )}
+                        </div>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 pb-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-semibold truncate" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+                              {item.title || 'Activity'}
+                            </span>
+                            {timeLabel && (
+                              <span className="text-[10px] shrink-0" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>
+                                {timeLabel}
+                              </span>
+                            )}
+                          </div>
+                          {item.message && (
+                            <p className="text-[11px] leading-relaxed mt-0.5 truncate" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
+                              {item.message}
+                            </p>
+                          )}
+                          {item.source && (
+                            <span className="inline-block text-[9px] uppercase tracking-[0.06em] mt-1 px-1.5 py-0.5 rounded" style={{ background: 'rgba(232,93,0,0.08)', color: 'var(--lava, #E85D00)', fontFamily: fontFamily.mono }}>
+                              {item.source}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <Clock className="w-6 h-6 mx-auto mb-2" style={{ color: 'var(--ink-muted, #708499)' }} />
+                  <p className="text-xs" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
+                    No recent activity. Connect your inbox and CRM to start tracking signals.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

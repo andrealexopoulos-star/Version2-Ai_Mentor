@@ -239,15 +239,29 @@ const ReportsPage = () => {
             <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Reports <em style={{ fontStyle: 'italic', color: '#E85D00' }}>centre</em>.</h1>
             <p className="text-sm" style={{ color: '#8FA0B8' }}>Verified intelligence from connected data sources only.</p>
           </div>
-          {hasEvents && (
-            <button onClick={handleExportPDF} disabled={generating}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-white/5 disabled:opacity-50"
-              style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}
-              data-testid="export-pdf-btn">
-              <Download className="w-3.5 h-3.5" />
-              {generating ? 'Generating...' : 'Export PDF'}
+          <div className="flex items-center gap-2">
+            {hasEvents && (
+              <button onClick={handleExportPDF} disabled={generating}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-white/5 disabled:opacity-50"
+                style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}
+                data-testid="export-pdf-btn">
+                <Download className="w-3.5 h-3.5" />
+                {generating ? 'Generating...' : 'Export PDF'}
+              </button>
+            )}
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: '#E85D00' }} data-testid="new-report-btn">
+              <FileText className="w-3.5 h-3.5" /> New report
             </button>
-          )}
+          </div>
+        </div>
+
+        {/* Report category tabs — matches mockup */}
+        <div className="flex gap-1 border-b overflow-x-auto mb-6" style={{ borderColor: 'var(--biqc-border)' }} data-testid="reports-tabs">
+          {['All reports', 'Revenue', 'Operations', 'Pipeline', 'Team', 'Scheduled'].map((tab, i) => (
+            <button key={tab} className="px-4 py-3 text-sm font-medium whitespace-nowrap transition-all" style={{ color: i === 0 ? '#EDF1F7' : '#8FA0B8', borderBottom: i === 0 ? '2px solid #E85D00' : '2px solid transparent' }}>
+              {tab}
+            </button>
+          ))}
         </div>
 
         {/* ── FORENSIC REPORTS SECTION ── */}
