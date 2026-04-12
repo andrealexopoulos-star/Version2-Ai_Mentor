@@ -251,7 +251,7 @@ const DataHealthPage = () => {
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Connected Systems</h3>
             {systems.map((sys, i) => (
-              <Panel key={i}>
+              <div key={i} className="rounded-lg p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', borderLeft: `4px solid ${sys.color}` }}>
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-sm" style={{ background: sys.color }}>
                     {sys.name[0]}
@@ -280,7 +280,7 @@ const DataHealthPage = () => {
                     <CheckCircle2 className="w-5 h-5 text-[#10B981]" />
                   </div>
                 </div>
-              </Panel>
+              </div>
             ))}
           </div>
         )}
@@ -373,8 +373,8 @@ const DataHealthPage = () => {
                     <p className="text-[10px] text-[#64748B] mt-0.5">{src.desc}</p>
                   </div>
                   <Link to={`/integrations?category=${src.cat}`}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 whitespace-nowrap ml-3"
-                    style={{ background: '#E85D0015', color: '#E85D00', border: '1px solid #E85D0030' }}>
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-110 whitespace-nowrap ml-3"
+                    style={{ background: '#E85D00', color: '#FFFFFF', border: '1px solid #E85D00' }}>
                     <Plug className="w-3 h-3" /> Connect <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>

@@ -74,12 +74,12 @@ const WHAT_YOU_GET_CARDS = [
     iconColor: '#10B981',
     border: 'rgba(16,185,129,0.2)',
     title: 'Revenue Leakage & Missed Opportunities',
-    subtitle: "Identify revenue you're losing—without realising it.",
+    subtitle: "Identify revenue you're losing \u2014 without realising it.",
     bullets: [
-      'Missed follow-ups and unconverted leads',
-      'Deals stalling in your pipeline',
-      'Customers disengaging or reducing spend',
-      'Revenue concentrated in too few clients',
+      'Missed follow-ups and abandoned leads slipping through your pipeline',
+      'Deals stalling at critical stages without intervention',
+      'Customers disengaging before renewal without early warning',
+      'Revenue concentrated in too few clients, increasing risk',
     ],
     cta: 'Recover lost revenue and close gaps before they widen',
     ctaColor: '#10B981',
@@ -92,10 +92,10 @@ const WHAT_YOU_GET_CARDS = [
     title: 'Cost & Payroll Blowouts',
     subtitle: 'Stop costs creeping up unnoticed.',
     bullets: [
-      'Payroll exceeding expected output',
-      'Overtime and staffing inefficiencies',
-      'Underperforming roles or resource misallocation',
-      'Rising operational costs without clear return',
+      'Payroll exceeding output value without visibility',
+      'Overtime and contractor costs growing unchecked',
+      'Underperforming roles consuming budget without ROI',
+      'Rising operational costs with no clear driver identified',
     ],
     cta: 'Control costs and protect your margins',
     ctaColor: '#3B82F6',
@@ -108,10 +108,10 @@ const WHAT_YOU_GET_CARDS = [
     title: 'Customer & Operational Risk',
     subtitle: 'Catch issues before they impact your reputation.',
     bullets: [
-      'Customer complaints and negative patterns',
-      'Missed service expectations or delays',
-      'Internal communication breakdowns',
-      'Processes not being followed by staff',
+      'Customer complaints surfacing too late for recovery',
+      'Missed service-level expectations eroding trust',
+      'Communication breakdowns between teams and clients',
+      'Processes not followed, creating inconsistent outcomes',
     ],
     cta: 'Fix problems early — before customers feel them',
     ctaColor: '#F59E0B',
@@ -124,10 +124,10 @@ const WHAT_YOU_GET_CARDS = [
     title: 'Compliance & Legal Exposure',
     subtitle: 'Reduce risk before it becomes a liability.',
     bullets: [
-      'Gaps in compliance or documentation',
-      'Missed obligations, deadlines, or policies',
-      'Inconsistent processes that create legal exposure',
-      'Audit and governance blind spots',
+      'Gaps in compliance documentation going unnoticed',
+      'Missed regulatory obligations creating legal exposure',
+      'Inconsistent processes across teams and locations',
+      'Audit blind spots that compound over time',
     ],
     cta: 'Protect your business from avoidable risk',
     ctaColor: '#EF4444',
@@ -398,6 +398,12 @@ const HomePage = () => (
         WHAT YOU GET — pain-point framing
     ══════════════════════════════════════════════════════════ */}
     <section className="pb-16 sm:pb-24" style={{ background: '#0B1120' }} data-testid="what-you-get">
+      <style>{`
+        .wyg-card-enhanced:hover {
+          box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(140,170,210,0.08) !important;
+          border-color: rgba(160,185,220,0.22) !important;
+        }
+      `}</style>
       <div className="max-w-5xl mx-auto px-6">
 
         {/* Section header */}
@@ -421,13 +427,17 @@ const HomePage = () => (
           {WHAT_YOU_GET_CARDS.map((card) => (
             <div
               key={card.title}
-              className="rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-0.5"
+              className="wyg-card-enhanced relative rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-1.5 overflow-hidden"
               style={{
-                background: 'rgba(255,255,255,0.025)',
+                background: 'linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
                 border: `1px solid ${card.border}`,
                 boxShadow: `0 4px 32px ${card.iconColor}0a`,
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
               }}
             >
+              {/* Top accent bar matching mockup */}
+              <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: card.iconColor, opacity: 0.6 }} />
               {/* Card header */}
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: card.iconBg }}>
@@ -570,7 +580,13 @@ const HomePage = () => (
     </section>
 
     {/* SOCIAL PROOF */}
-    <section className="py-14 sm:py-20" style={{ background: '#080C14' }} data-testid="testimonials-section">
+    <section className="py-14 sm:py-20" style={{ background: 'radial-gradient(ellipse 60% 50% at 70% 30%, rgba(46,74,110,0.06) 0%, transparent 60%), linear-gradient(180deg, #0B1120 0%, #080C14 100%)' }} data-testid="testimonials-section">
+      <style>{`
+        .testimonial-card-enhanced:hover {
+          box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(140,170,210,0.08) !important;
+          border-color: rgba(160,185,220,0.22) !important;
+        }
+      `}</style>
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -582,61 +598,92 @@ const HomePage = () => (
             Built for operators, not analysts.
           </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             {
-              quote: "BIQc flagged a cash flow issue two weeks before it would have hit. We were able to collect early and avoid a painful overdraft.",
+              quote: "We had no idea how much revenue was leaking through missed follow-ups and stalled deals. BIQc surfaced it within the first week \u2014 and the daily briefs keep us on top of it now.",
               author: "Operations Director",
               company: "Manufacturing SMB, NSW",
               metric: "$47K recovered",
             },
             {
-              quote: "I used to spend 6 hours a week pulling together reports for our board. Now I walk in with the BIQc brief and it's done.",
+              quote: "I used to spend half my Monday pulling data from five different systems just to understand where we stood. Now I get a brief before I\u2019ve finished my coffee. It\u2019s changed how I run my week.",
               author: "Founder & CEO",
               company: "Professional Services, VIC",
               metric: "6hrs saved weekly",
             },
             {
-              quote: "The competitive benchmark showed us we were invisible online while our competitors had 4× more review presence. We fixed it in 30 days.",
+              quote: "We caught a compliance gap that would have cost us our largest contract. BIQc flagged it three weeks before our internal audit would have found it. That alone paid for the year.",
               author: "Marketing Manager",
               company: "Retail Group, QLD",
               metric: "83% faster detection",
             },
           ].map((t, i) => (
-            <GlassCard key={i} className="flex flex-col">
+            <div
+              key={i}
+              className="testimonial-card-enhanced flex flex-col rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1"
+              style={{
+                background: 'linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
+                border: '1px solid rgba(140,170,210,0.15)',
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+              }}
+            >
+              {/* Prominent stat header */}
+              <p style={{
+                fontFamily: fontFamily.display,
+                fontSize: '28px',
+                fontWeight: 700,
+                color: '#FF7A18',
+                marginBottom: '12px',
+                lineHeight: 1.2,
+              }}>
+                {t.metric}
+              </p>
+
+              {/* Quote */}
               <div className="flex-1">
-                <p className="text-sm leading-relaxed mb-4" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+                <p className="text-sm leading-relaxed mb-5" style={{
+                  fontFamily: fontFamily.body,
+                  color: '#8FA0B8',
+                  fontStyle: 'italic',
+                  lineHeight: 1.7,
+                }}>
                   &ldquo;{t.quote}&rdquo;
                 </p>
               </div>
-              <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid rgba(232,93,0,0.15)' }}>
-                <div>
-                  <p className="text-xs font-semibold" style={{ color: '#E6EEF7', fontFamily: fontFamily.display }}>{t.author}</p>
-                  <p className="text-[10px] mt-0.5" style={{ color: '#6B7B8D', fontFamily: fontFamily.body }}>{t.company}</p>
-                </div>
-                <span className="text-[11px] px-2.5 py-1 rounded-full font-semibold" style={{ background: 'rgba(232,93,0,0.12)', color: '#E85D00', fontFamily: fontFamily.mono }}>
-                  {t.metric}
-                </span>
+
+              {/* Author */}
+              <div>
+                <p className="text-[13px] font-semibold" style={{ color: '#EDF1F7' }}>{t.author}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#5C6E82' }}>{t.company}</p>
               </div>
-            </GlassCard>
+            </div>
           ))}
         </div>
       </div>
     </section>
 
     {/* CTA */}
-    <section className="py-14 sm:py-20" style={{ background: '#0A1520' }} data-testid="cta-section">
-      <div className="max-w-3xl mx-auto px-6 text-center">
+    <section className="relative py-20 sm:py-24 overflow-hidden" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }} data-testid="cta-section">
+      {/* Decorative orb behind content */}
+      <div className="absolute pointer-events-none" style={{
+        width: 600, height: 600, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(255,122,24,0.05), rgba(140,170,210,0.03) 50%, transparent 70%)',
+        top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+      }} />
+      <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
         <h2 className="text-2xl sm:text-3xl font-medium mb-4" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>
           Stop reacting. Start <span style={{ color: '#E85D00' }}>preventing.</span>
         </h2>
-        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: '#8FA0B8', lineHeight: 1.7 }}>
           Join the operators who replaced reactive firefighting with autonomous intelligence.
         </p>
-        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(232,93,0,0.25)' }} data-testid="bottom-cta">
+        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="bottom-cta">
           Try It For Free <ArrowRight className="w-4 h-4" />
         </Link>
-        <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#8FA0B8', opacity: 0.3, fontSize: '12px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
+        <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#5C6E82', fontSize: '13px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
       </div>
     </section>
 

@@ -302,11 +302,18 @@ const SubscribePage = () => {
       {/* FAQ Accordion */}
       <FAQAccordion />
 
-      {/* Bottom CTA */}
-      <div className="w-full max-w-4xl text-center py-8">
-        <p className="text-sm mb-2" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Still exploring?</p>
-        <Link to="/advisor" className="text-xs hover:underline" style={{ color: 'var(--lava, #E85D00)', fontFamily: fontFamily.mono }}>
-          Back to Intelligence Platform
+      {/* Bottom CTA — gradient hero */}
+      <div className="w-full max-w-4xl mt-14 rounded-2xl text-center relative overflow-hidden" style={{ padding: '3rem 1.5rem', background: 'linear-gradient(160deg, #111827, #1A1A2E)' }}>
+        {/* Lava radial glow */}
+        <div style={{ position: 'absolute', top: '-40%', right: '-20%', width: 400, height: 400, background: 'radial-gradient(circle, #E85D00 0%, transparent 60%)', opacity: 0.35, pointerEvents: 'none' }} />
+        <h3 className="font-medium relative mb-4" style={{ fontFamily: fontFamily.display, color: '#FFFFFF', fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+          Still exploring?
+        </h3>
+        <p className="relative text-sm mb-6 mx-auto" style={{ color: 'rgba(255,255,255,0.7)', maxWidth: '48ch' }}>
+          Every feature is unlocked during your trial — use them, break them, ask BIQc anything. When you're ready, pick the plan that fits.
+        </p>
+        <Link to="/advisor" className="relative inline-flex items-center gap-2 text-sm font-semibold text-white rounded-lg transition-all hover:-translate-y-0.5" style={{ padding: '14px 28px', background: 'linear-gradient(135deg, #E85D00, #FF7A1A)', boxShadow: '0 4px 20px rgba(232,93,0,0.25)' }}>
+          Back to Advisor <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     </div>
