@@ -9,6 +9,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { Shield, Lock, Eye, FileText, ArrowRight, MapPin, Brain, Scale } from 'lucide-react';
+import { fontFamily } from '../../design-system/tokens';
 
 /* ── Trust Pillars ── */
 const PILLARS = [
@@ -56,7 +57,13 @@ const BADGES = [
 const DATA_FAQ = [
   {
     q: 'What data we collect',
-    a: 'We collect only the data necessary to deliver and improve BIQc: account information (name, email, company), business data you connect via integrations, usage analytics (anonymised and aggregated), and support communications.',
+    a: 'We collect only the data necessary to deliver and improve BIQc:',
+    bullets: [
+      'Account information (name, email, company)',
+      'Business data you connect via integrations',
+      'Usage analytics (anonymised and aggregated)',
+      'Support communications',
+    ],
   },
   {
     q: 'How your data is used',
@@ -199,6 +206,17 @@ export default function TrustLandingPage() {
               <div key={item.q} className="rounded-xl p-7" style={{ background: cardBg, border: cardBorder }}>
                 <h3 className="text-[15px] font-semibold mb-3" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{item.q}</h3>
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{item.a}</p>
+                {item.bullets && (
+                  <ul className="mt-2 space-y-1.5">
+                    {item.bullets.map((b) => (
+                      <li key={b} className="text-sm leading-relaxed pl-4 relative"
+                        style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        <span className="absolute left-0 top-[9px] w-1.5 h-1.5 rounded-full" style={{ background: '#E85D00' }} />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
@@ -217,9 +235,11 @@ export default function TrustLandingPage() {
             Our team is here to discuss your specific compliance and security requirements.
           </p>
           <Link to="/contact"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg text-sm font-semibold transition-all hover:bg-white/5"
-            style={{ color: 'var(--ink-display, #EDF1F7)', border: '1px solid rgba(140,170,210,0.2)' }}>
-            Contact Us <ArrowRight className="w-4 h-4" />
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all hover:text-white"
+            style={{ color: '#E85D00', border: '1.5px solid #E85D00', background: 'transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#E85D00'; e.currentTarget.style.color = '#FFFFFF'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#E85D00'; }}>
+            Contact Us
           </Link>
         </div>
       </section>

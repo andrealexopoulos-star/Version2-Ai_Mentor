@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import WebsiteLayout from '../components/website/WebsiteLayout';
 import { BLOG_ARTICLES } from '../data/blogArticles';
 import { Clock, ArrowRight, Search } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
 const CATEGORIES = ['All', ...new Set(BLOG_ARTICLES.map(a => a.category))];
 

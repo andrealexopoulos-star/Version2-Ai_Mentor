@@ -192,20 +192,23 @@ const IntegrationsPage = () => {
         <div className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cpath d='M30 3L57 30L30 57L3 30z' stroke='%23ffffff' stroke-opacity='0.025' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E")`, backgroundSize: '60px 60px' }} />
         <div className="max-w-5xl mx-auto px-6 pt-20 pb-16 relative z-10">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-4"
-              style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
-              500+ Integrations
+          <div className="max-w-2xl mx-auto text-center sm:text-left sm:mx-0">
+            <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-4"
+              style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: '#EDF1F7', letterSpacing: '-1px' }}>
+              Connect everything. Miss nothing.
             </h1>
-            <p className="text-xl sm:text-2xl font-medium mb-6"
-              style={{ fontFamily: fontFamily.display, color: '#E85D00' }}>
-              Connects to the tools your business already uses.
-            </p>
             <p className="text-base sm:text-lg mb-8 leading-relaxed max-w-xl"
               style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
-              Connect your CRM, accounting, email and HR tools to give BIQc the full picture. All data is Australian-hosted, encrypted at rest, and read-only — you can revoke access at any time.
+              BIQc integrates with your existing tools via Merge.dev &mdash; no custom setup required. One connection, every signal.
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-8 mb-8 justify-center sm:justify-start">
+              <span className="text-[15px] font-semibold" style={{ color: '#EDF1F7' }}>40+ integrations</span>
+              <span className="w-1 h-1 rounded-full" style={{ background: '#5C6E82' }} />
+              <span className="text-[15px] font-semibold" style={{ color: '#EDF1F7' }}>8 categories</span>
+              <span className="w-1 h-1 rounded-full" style={{ background: '#5C6E82' }} />
+              <span className="text-[15px] font-semibold" style={{ color: '#EDF1F7' }}>5-minute setup</span>
+            </div>
+            <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
               <a href="#integrations-grid"
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
                 style={{ background: '#E85D00', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(232,93,0,0.28)' }}>
@@ -341,24 +344,62 @@ const IntegrationsPage = () => {
         </div>
       </section>
 
+      {/* ── MERGE.DEV BANNER ── */}
+      <section className="py-14 px-4 sm:px-6" style={{ background: '#080C14' }} data-testid="integrations-merge-banner">
+        <div className="max-w-6xl mx-auto">
+          <div className="rounded-2xl p-10 sm:p-14 grid grid-cols-1 lg:grid-cols-5 gap-10 items-center"
+            style={{ background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)' }}>
+            <div className="lg:col-span-3">
+              <h3 className="text-2xl sm:text-[32px] font-bold leading-snug mb-3"
+                style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: '#EDF1F7', letterSpacing: '-0.5px' }}>
+                Powered by Merge.dev
+              </h3>
+              <p className="text-base leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+                BIQc partners with Merge.dev &mdash; the unified API for B2B integrations &mdash; so you never wait for a custom connector. Add a system, sync starts in under 60 seconds, and BIQc picks up signals on the next cycle.
+              </p>
+            </div>
+            <div className="lg:col-span-2 flex flex-row lg:flex-col gap-6 sm:gap-8">
+              {[
+                { num: '40+', label: 'Connectors live' },
+                { num: '60s', label: 'Average sync handshake' },
+                { num: '8', label: 'Integration categories' },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <div className="text-[40px] font-bold leading-none"
+                    style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: '#E85D00' }}>
+                    {stat.num}
+                  </div>
+                  <div className="text-[13px] font-medium mt-0.5" style={{ color: '#8FA0B8' }}>
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA ── */}
-      <section className="py-14 px-6 text-center" style={{ background: '#0B1120' }}>
-        <div className="max-w-lg mx-auto">
-          <h2 className="text-2xl font-bold mb-3" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
-            Ready to unify your business?
+      <section className="py-20 px-6 text-center" style={{ background: '#080C14' }}>
+        <div className="max-w-xl mx-auto rounded-2xl p-14"
+          style={{
+            background: 'linear-gradient(105deg, rgba(200,220,240,0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0) 55%), linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
+            border: '1px solid rgba(140,170,210,0.15)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          }}>
+          <h2 className="text-[28px] font-semibold mb-3 tracking-tight"
+            style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: '#EDF1F7' }}>
+            Connect everything. Miss nothing.
           </h2>
-          <p className="text-sm mb-6" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
-            Connect your first system in under 30 seconds. No credit card required.
+          <p className="text-base mb-7" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+            Start free. Connect your first system in under five minutes. No credit card required.
           </p>
           <Link to="/register-supabase?source=integrations-page"
-            className="inline-flex items-center gap-2 px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #E85D00, #C44F00)', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(232,93,0,0.28)' }}
+            className="inline-flex items-center gap-2 px-7 py-3 rounded-[10px] text-[15px] font-semibold text-white transition-all hover:brightness-110"
+            style={{ background: '#E85D00', fontFamily: fontFamily.body }}
             data-testid="integrations-final-cta">
-            Start Free — Connect Now <ArrowRight className="w-4 h-4" />
+            Start Free
           </Link>
-          <p className="text-xs mt-4" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>
-            Read-only access · Australian hosted · Revoke anytime
-          </p>
         </div>
       </section>
     </WebsiteLayout>
