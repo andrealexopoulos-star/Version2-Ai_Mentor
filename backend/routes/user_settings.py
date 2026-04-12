@@ -190,6 +190,52 @@ async def export_status(user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/user/export/download")
+async def export_download(user=Depends(get_current_user)):
+    """Download the most recent completed export ZIP."""
+    from fastapi.responses import JSONResponse
+    try:
+        sb = get_sb()
+        result = (
+            sb.table("data_exports")
+            .select("*")
+            .eq("user_id", user["id"])
+            .eq("status", "ready")
+            .order("created_at", desc=True)
+            .limit(1)
+            .maybe_single()
+            .execute()
+        )
+        if not result.data:
+            raise HTTPException(status_code=404, detail="No completed export available")
+
+        export_row = result.data
+        file_path = export_row.get("file_path")
+
+        if not file_path:
+            raise HTTPException(status_code=404, detail="Export file not found")
+
+        # If stored in Supabase Storage, generate a signed URL
+        try:
+            signed = sb.storage.from_("exports").create_signed_url(file_path, 300)
+            return {"download_url": signed.get("signedURL") or signed.get("signedUrl"), "expires_in": 300}
+        except Exception:
+            # Fallback: return file metadata so frontend can handle
+            return {
+                "export_id": export_row["id"],
+                "file_path": file_path,
+                "file_size_bytes": export_row.get("file_size_bytes"),
+                "created_at": export_row.get("created_at"),
+                "status": "ready",
+                "message": "Export ready — download link generation requires storage configuration",
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[export-download] Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ───────────────────────── Danger Zone ─────────────────────────
 
 @router.post("/user/disconnect-all")

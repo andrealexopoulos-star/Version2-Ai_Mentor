@@ -108,6 +108,7 @@ jobs:
             REACT_APP_RECAPTCHA_PROVIDER=google
             REACT_APP_BIQC_MASTER_ADMIN_EMAIL=andre@thestrategysquad.com.au
             REACT_APP_ENABLE_PREVIEW_ROUTES=true
+            NGINX_CONF=deploy/nginx-dev.conf
 
       - name: Deploy to Azure Web App (DEV Frontend)
         uses: azure/webapps-deploy@v2

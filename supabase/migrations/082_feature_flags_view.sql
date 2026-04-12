@@ -1,24 +1,17 @@
 -- 082_feature_flags_view.sql
 -- Public-facing view on intelligence_core.feature_flags for frontend access.
 -- The base table exists from migration 037 (cognition platform).
--- This creates a safe, read-only view for authenticated users.
+-- Actual table columns: id, flag_name, enabled, description, created_at
+-- Maps to view columns: flag_key, flag_value, is_enabled, description
 
-DO $$
-BEGIN
-    -- Only create the view if the source table exists
-    IF EXISTS (
-        SELECT 1
-        FROM information_schema.tables
-        WHERE table_schema = 'intelligence_core'
-          AND table_name = 'feature_flags'
-    ) THEN
-        EXECUTE '
-            CREATE OR REPLACE VIEW public.active_feature_flags AS
-            SELECT flag_key, flag_value, description, is_enabled
-            FROM intelligence_core.feature_flags
-            WHERE is_enabled = true
-        ';
-        EXECUTE 'GRANT SELECT ON public.active_feature_flags TO authenticated';
-        EXECUTE 'GRANT SELECT ON public.active_feature_flags TO anon';
-    END IF;
-END $$;
+CREATE OR REPLACE VIEW public.active_feature_flags AS
+SELECT
+    flag_name AS flag_key,
+    CASE WHEN enabled THEN 'true' ELSE 'false' END AS flag_value,
+    description,
+    enabled AS is_enabled
+FROM intelligence_core.feature_flags
+WHERE enabled = true;
+
+GRANT SELECT ON public.active_feature_flags TO authenticated;
+GRANT SELECT ON public.active_feature_flags TO anon;

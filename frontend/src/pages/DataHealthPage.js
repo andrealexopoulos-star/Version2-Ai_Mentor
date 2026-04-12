@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
-import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Loader2, Wifi, XCircle, Database, Plug, ArrowRight, Info } from 'lucide-react';
+import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Loader2, Wifi, XCircle, Database, Plug, ArrowRight, Info, Clock, FileText } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -44,18 +44,27 @@ const MetricBar = ({ label, value, color, desc }) => (
   </div>
 );
 
+const SYNC_STATUS_STYLES = {
+  ok: { bg: 'rgba(16,185,129,0.1)', color: '#10B981', label: 'OK' },
+  partial: { bg: 'rgba(245,158,11,0.1)', color: '#F59E0B', label: 'Partial' },
+  error: { bg: 'rgba(239,68,68,0.1)', color: '#EF4444', label: 'Error' },
+  timeout: { bg: 'rgba(245,158,11,0.1)', color: '#F59E0B', label: 'Timeout' },
+};
+
 const DataHealthPage = () => {
   const [connected, setConnected] = useState(null);
   const [readiness, setReadiness] = useState(null);
+  const [syncLogs, setSyncLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const { status: integrationStatus, refresh: refreshIntegrations } = useIntegrationStatus();
 
   const fetchData = async () => {
     try {
-      const [connRes, readRes] = await Promise.allSettled([
+      const [connRes, readRes, logRes] = await Promise.allSettled([
         apiClient.get('/user/integration-status'),
         apiClient.get('/intelligence/data-readiness'),
+        apiClient.get('/sync/log?limit=20'),
       ]);
       if (connRes.status === 'fulfilled') {
         setConnected(connRes.value.data);
@@ -65,6 +74,7 @@ const DataHealthPage = () => {
         setConnected(fallback.data);
       }
       if (readRes.status === 'fulfilled') setReadiness(readRes.value.data);
+      if (logRes.status === 'fulfilled') setSyncLogs(logRes.value.data?.logs || []);
     } catch {} finally { setLoading(false); }
   };
 
@@ -372,6 +382,66 @@ const DataHealthPage = () => {
             </div>
           </Panel>
         )}
+
+        {/* Sync Log — real entries from sync_log table */}
+        <Panel>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#8FA0B8]" />
+              <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Sync Log</h3>
+            </div>
+            {syncLogs.length > 0 && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#1E2D3D', color: '#64748B', fontFamily: fontFamily.mono }}>
+                Last {syncLogs.length} entries
+              </span>
+            )}
+          </div>
+
+          {syncLogs.length === 0 ? (
+            <div className="text-center py-6">
+              <Clock className="w-6 h-6 mx-auto mb-2" style={{ color: '#4A5568' }} />
+              <p className="text-xs text-[#64748B]">
+                {hasAnyData ? 'No sync events recorded yet. They will appear after the next scheduled sync.' : 'Connect integrations to see sync activity.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#1E2D3D transparent' }}>
+              {syncLogs.map((log) => {
+                const st = SYNC_STATUS_STYLES[log.status] || SYNC_STATUS_STYLES.ok;
+                return (
+                  <div key={log.id} className="flex items-center gap-3 px-3 py-2 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: st.color }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-[#EDF1F7] truncate" style={{ fontFamily: fontFamily.mono }}>
+                          {log.connector}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: st.bg, color: st.color, fontFamily: fontFamily.mono }}>
+                          {st.label}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#1E2D3D', color: '#64748B', fontFamily: fontFamily.mono }}>
+                          {log.sync_type}
+                        </span>
+                      </div>
+                      {log.error_detail && (
+                        <p className="text-[10px] text-[#EF4444] mt-0.5 truncate" title={log.error_detail}>{log.error_detail}</p>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                        {log.records_processed > 0 ? `${log.records_processed} records` : '—'}
+                      </div>
+                      <div className="text-[10px] text-[#4A5568]" style={{ fontFamily: fontFamily.mono }}>
+                        {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : ''}
+                        {log.created_at ? ` · ${timeAgo(log.created_at)}` : ''}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Panel>
       </div>
     </DashboardLayout>
   );
