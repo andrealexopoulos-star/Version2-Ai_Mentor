@@ -1,300 +1,318 @@
-import { RadarSweep } from '../components/LoadingSystems';
-import { useState, useEffect } from 'react';
-import { useSupabaseAuth } from '../context/SupabaseAuthContext';
-import { apiClient } from '../lib/api';
-import { toast } from 'sonner';
-import { Loader2, Save, Shield, TrendingUp, Users, Globe, Clock, Bell } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUp, TrendingDown, Minus, Sparkles, Calendar, Activity } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { fontFamily } from '../design-system/tokens';
+import { fontFamily, colors, radius } from '../design-system/tokens';
 
+/* ─── Domain data ─── */
 const DOMAINS = [
-  { key: 'finance', label: 'Finance', desc: 'Cash flow, invoices, revenue signals' },
-  { key: 'sales', label: 'Sales', desc: 'Pipeline, deals, client communication' },
-  { key: 'operations', label: 'Operations', desc: 'Meetings, capacity, process drift' },
-  { key: 'team', label: 'Team', desc: 'Capacity, strain, gaps' },
-  { key: 'market', label: 'Market', desc: 'Competitors, regulatory, external shifts' },
+  {
+    name: 'Revenue', score: 60, color: '#E85D00',
+    status: 'below', statusLabel: 'Below Baseline',
+    metrics: [
+      { label: 'Pipeline', value: '$135K', delta: '-38.6%', direction: 'down' },
+      { label: 'Win Rate', value: '24%', delta: '-8%', direction: 'down' },
+      { label: 'Avg Deal', value: '$18K', delta: '+20%', direction: 'up' },
+      { label: 'Cycle', value: '34d', delta: '+6d', direction: 'down' },
+    ],
+  },
+  {
+    name: 'Operations', score: 70, color: '#2563EB',
+    status: 'declining', statusLabel: 'Declining',
+    metrics: [
+      { label: 'Invoice Cycle', value: '4.5d', delta: '+2.5d', direction: 'down' },
+      { label: 'Meeting Load', value: '32/wk', delta: '+12', direction: 'down' },
+      { label: 'Task Completion', value: '78%', delta: '-7%', direction: 'down' },
+      { label: 'SLA Adherence', value: '82%', delta: '-8%', direction: 'down' },
+    ],
+  },
+  {
+    name: 'Customer', score: 75, color: '#16A34A',
+    status: 'declining', statusLabel: 'Declining',
+    metrics: [
+      { label: 'Churn Risk', value: '3 accts', delta: '+2', direction: 'down' },
+      { label: 'NPS', value: '42', delta: '-6', direction: 'down' },
+      { label: 'MRR at Risk', value: '$4.5K', delta: '+$3.5K', direction: 'down' },
+      { label: 'Retention', value: '91%', delta: '-4%', direction: 'down' },
+    ],
+  },
+  {
+    name: 'Financial', score: 68, color: '#F59E0B',
+    status: 'below', statusLabel: 'Below Baseline',
+    metrics: [
+      { label: 'Runway', value: '4.2mo', delta: '-1.8mo', direction: 'down' },
+      { label: 'Burn Rate', value: '$38K', delta: '+$6K', direction: 'down' },
+      { label: 'Gross Margin', value: '71%', delta: '-3%', direction: 'down' },
+      { label: 'Collections', value: '28d', delta: '+7d', direction: 'down' },
+    ],
+  },
+  {
+    name: 'Compliance', score: 88, color: '#7C3AED',
+    status: 'at', statusLabel: 'At Baseline',
+    metrics: [
+      { label: 'Privacy', value: '92%', delta: '+2%', direction: 'up' },
+      { label: 'E8', value: '95%', delta: '+3%', direction: 'up' },
+      { label: 'BAS', value: '68%', delta: '-2%', direction: 'down' },
+      { label: 'ASIC', value: '100%', delta: '0%', direction: 'flat' },
+    ],
+  },
+  {
+    name: 'Security', score: 93, color: '#0891B2',
+    status: 'above', statusLabel: 'Above Baseline',
+    metrics: [
+      { label: 'MFA', value: '88%', delta: '+3%', direction: 'up' },
+      { label: 'Access Review', value: '100%', delta: '0%', direction: 'flat' },
+      { label: 'Data Encrypt', value: '100%', delta: '0%', direction: 'flat' },
+      { label: 'Vuln Scan', value: 'Weekly', delta: 'on track', direction: 'flat' },
+    ],
+  },
 ];
 
-const SENSITIVITY_OPTIONS = [
-  { value: 'low', label: 'Low', desc: 'Only major shifts' },
-  { value: 'medium', label: 'Medium', desc: 'Meaningful changes' },
-  { value: 'high', label: 'High', desc: 'Early detection' },
+const CALIBRATION_HISTORY = [
+  { date: 'Q1 2026', trigger: 'Quarterly Review', domains: 'All', delta: '+4.2', status: 'Complete' },
+  { date: 'Mar 2026', trigger: 'Manual', domains: 'Revenue, Financial', delta: '-1.8', status: 'Complete' },
+  { date: 'Feb 2026', trigger: 'Alert Trigger', domains: 'Security', delta: '+8.1', status: 'Complete' },
+  { date: 'Jan 2026', trigger: 'Quarterly Review', domains: 'All', delta: '+2.7', status: 'Complete' },
+  { date: 'Dec 2025', trigger: 'Initial Baseline', domains: 'All', delta: '\u2014', status: 'Complete' },
 ];
 
-const ALERT_OPTIONS = [
-  { value: 'silent', label: 'Silent', desc: 'Only critical escalations' },
-  { value: 'moderate', label: 'Moderate', desc: 'Balanced awareness' },
-  { value: 'aggressive', label: 'Aggressive', desc: 'Maximum visibility' },
-];
+/* ─── Status badge colors (dark theme) ─── */
+const STATUS_STYLES = {
+  above:    { bg: 'rgba(22,163,74,0.15)', color: '#4ADE80', border: 'rgba(22,163,74,0.3)' },
+  at:       { bg: 'rgba(37,99,235,0.15)', color: '#60A5FA', border: 'rgba(37,99,235,0.3)' },
+  below:    { bg: 'rgba(245,158,11,0.15)', color: '#FBBF24', border: 'rgba(245,158,11,0.3)' },
+  declining:{ bg: 'rgba(220,38,38,0.15)', color: '#F87171', border: 'rgba(220,38,38,0.3)' },
+};
 
-const FREQUENCY_OPTIONS = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'fortnightly', label: 'Fortnightly' },
-  { value: 'monthly', label: 'Monthly' },
-];
+/* ─── Delta icon ─── */
+const DeltaIcon = ({ direction }) => {
+  if (direction === 'up') return <TrendingUp style={{ width: 12, height: 12, color: colors.success }} />;
+  if (direction === 'down') return <TrendingDown style={{ width: 12, height: 12, color: colors.danger }} />;
+  return <Minus style={{ width: 12, height: 12, color: colors.textMuted }} />;
+};
 
-const HORIZON_OPTIONS = [
-  { value: 'weekly', label: 'This week' },
-  { value: 'monthly', label: 'This month' },
-  { value: 'quarterly', label: 'This quarter' },
-  { value: 'annual', label: 'This year' },
-];
-
-const FOCUS_OPTIONS = [
-  { value: 'growth', label: 'Growth', desc: 'Prioritise opportunity signals' },
-  { value: 'balanced', label: 'Balanced', desc: 'Equal weight' },
-  { value: 'efficiency', label: 'Efficiency', desc: 'Prioritise risk and waste signals' },
-];
-
-const Toggle = ({ checked, onChange, label, desc }) => (
-  <label data-testid={`toggle-${label.toLowerCase().replace(/\s/g, '-')}`} className="flex items-center justify-between py-3 cursor-pointer group">
-    <div>
-      <div className="text-sm text-white/80 group-hover:text-white transition-colors">{label}</div>
-      {desc && <div className="text-xs text-white/30 mt-0.5">{desc}</div>}
-    </div>
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative w-10 h-5 rounded-full transition-colors ${checked ? 'bg-white/30' : 'bg-white/8'}`}
+/* ─── Domain Card ─── */
+const DomainCard = ({ domain }) => {
+  const sts = STATUS_STYLES[domain.status];
+  return (
+    <div
+      style={{
+        background: colors.bgCard,
+        border: `1px solid rgba(140,170,210,0.12)`,
+        borderRadius: radius.card,
+        padding: 20,
+        transition: 'border-color 0.2s, box-shadow 0.2s',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)'; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.12)'; e.currentTarget.style.boxShadow = 'none'; }}
     >
-      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${checked ? 'translate-x-5 bg-white' : 'translate-x-0 bg-white/40'}`} />
-    </button>
-  </label>
-);
+      {/* Head: name + score */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontFamily: fontFamily.body, fontWeight: 600, fontSize: 15, color: colors.text }}>{domain.name}</span>
+        <span style={{ fontFamily: fontFamily.mono, fontWeight: 700, fontSize: 28, color: domain.color, lineHeight: 1 }}>{domain.score}</span>
+      </div>
 
-const RadioGroup = ({ value, onChange, options, name }) => (
-  <div className="flex flex-wrap gap-2">
-    {options.map(opt => (
-      <button
-        key={opt.value}
-        type="button"
-        data-testid={`radio-${name}-${opt.value}`}
-        onClick={() => onChange(opt.value)}
-        className={`px-4 py-2 text-xs tracking-wider border transition-all ${
-          value === opt.value
-            ? 'border-white/40 bg-white/10 text-white'
-            : 'border-white/8 bg-transparent text-white/40 hover:border-white/20 hover:text-white/60'
-        }`}
-      >
-        <div>{opt.label}</div>
-        {opt.desc && <div className="text-[10px] mt-0.5 opacity-60">{opt.desc}</div>}
-      </button>
-    ))}
-  </div>
-);
+      {/* Status badge */}
+      <div style={{ marginBottom: 12 }}>
+        <span style={{
+          display: 'inline-block',
+          fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
+          padding: '3px 10px', borderRadius: 9999,
+          background: sts.bg, color: sts.color, border: `1px solid ${sts.border}`,
+        }}>
+          {domain.statusLabel}
+        </span>
+      </div>
 
-const Section = ({ icon: Icon, title, children }) => (
-  <div className="border border-white/6 p-6 space-y-4">
-    <div className="flex items-center gap-3">
-      <Icon className="w-4 h-4 text-white/30" />
-      <h3 className="text-xs tracking-[0.25em] uppercase text-white/50">{title}</h3>
+      {/* Progress bar */}
+      <div style={{ height: 6, background: colors.bgInput, borderRadius: 9999, overflow: 'hidden', marginBottom: 16 }}>
+        <div style={{ height: '100%', width: `${domain.score}%`, background: domain.color, borderRadius: 9999, transition: 'width 0.6s ease' }} />
+      </div>
+
+      {/* 4 metrics (2x2 grid) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {domain.metrics.map((m, i) => (
+          <div key={i} style={{ padding: '6px 0' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: colors.textMuted, marginBottom: 2 }}>
+              {m.label}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontFamily: fontFamily.mono, fontSize: 14, fontWeight: 600, color: colors.text }}>{m.value}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 11, color: m.direction === 'up' ? colors.success : m.direction === 'down' ? colors.danger : colors.textMuted }}>
+                <DeltaIcon direction={m.direction} />
+                {m.delta}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
-    {children}
-  </div>
-);
+  );
+};
 
+/* ─── Main Page ─── */
 const IntelligenceBaselinePage = () => {
-  const { user } = useSupabaseAuth();
-  const [baseline, setBaseline] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [configured, setConfigured] = useState(false);
-
-  useEffect(() => { loadBaseline(); }, []);
-
-  const loadBaseline = async () => {
-    try {
-      const res = await apiClient.get('/baseline');
-      setBaseline(res.data.baseline);
-      setConfigured(res.data.configured);
-    } catch (e) {
-      console.error('[baseline] Load failed:', e);
-      toast.error('Failed to load configuration');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await apiClient.post('/baseline', { baseline });
-      setConfigured(true);
-      toast.success('Intelligence baseline saved');
-    } catch (e) {
-      console.error('[baseline] Save failed:', e);
-      toast.error('Failed to save configuration');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const update = (path, value) => {
-    setBaseline(prev => {
-      const next = JSON.parse(JSON.stringify(prev));
-      const keys = path.split('.');
-      let obj = next;
-      for (let i = 0; i < keys.length - 1; i++) obj = obj[keys[i]];
-      obj[keys[keys.length - 1]] = value;
-      return next;
-    });
-  };
-
-  if (loading || !baseline) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-full">
-          <RadarSweep compact />
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  const domains = baseline.monitored_domains || {};
-  const thresholds = baseline.escalation_thresholds || {};
+  const [hoveredRow, setHoveredRow] = useState(null);
 
   return (
     <DashboardLayout>
-      <div data-testid="intelligence-baseline-page" className="min-h-screen bg-[#050505] text-white/80">
-        <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+      <div data-testid="intelligence-baseline-page" style={{ minHeight: '100vh', background: colors.bg, color: colors.textSecondary }}>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '40px 24px' }}>
 
           {/* Header */}
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Configuration</div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Intelligence <em style={{ fontStyle: 'italic', color: '#E85D00' }}>baseline</em>.</h1>
-            <p className="text-xs mt-2 leading-relaxed max-w-lg" style={{ color: '#8FA0B8' }}>
-              Configure what BIQc monitors, how often it briefs, and how aggressively it escalates. This drives all downstream intelligence.
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+            <h1 style={{ fontFamily: fontFamily.display, fontSize: 28, fontWeight: 700, color: colors.text, letterSpacing: '-0.02em', margin: 0 }}>
+              Intelligence Baseline
+            </h1>
+            <button
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '10px 20px', borderRadius: radius.button, border: 'none',
+                background: `linear-gradient(135deg, ${colors.brand}, ${colors.brandDark})`,
+                color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                transition: 'box-shadow 0.2s, transform 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(232,93,0,0.35)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
+            >
+              <Activity style={{ width: 16, height: 16 }} />
+              Recalibrate
+            </button>
+          </div>
+          <p style={{ fontSize: 14, color: colors.textSecondary, lineHeight: 1.5, maxWidth: 640, marginBottom: 32, marginTop: 0 }}>
+            Your intelligence baseline is a personalised benchmark that BIQc uses to detect drift, anomalies, and emerging patterns. It recalibrates quarterly.
+          </p>
+
+          {/* AI Insight Banner */}
+          <div style={{
+            background: `linear-gradient(135deg, rgba(232,93,0,0.08) 0%, ${colors.bgCard} 40%)`,
+            border: `1px solid rgba(140,170,210,0.12)`,
+            borderLeft: `3px solid ${colors.brand}`,
+            borderRadius: radius.card,
+            padding: 20, marginBottom: 32,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <Sparkles style={{ width: 16, height: 16, color: colors.brand }} />
+              <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: colors.brand }}>
+                Baseline Intelligence
+              </span>
+            </div>
+            <p style={{ fontSize: 14, color: colors.textSecondary, lineHeight: 1.6, margin: 0 }}>
+              <strong style={{ color: colors.text }}>Operations and Financial domains show below-baseline drift</strong> this quarter.
+              Revenue dropped from 78 to 60 (driven by Bramwell stall + pipeline decay). Operations dropped from 82 to 70
+              (invoice approval bottleneck). Both crossed their alert thresholds — your Watchtower and WarRoom escalations are
+              calibrated to these baselines.
             </p>
-            {!configured && (
-              <div className="mt-3 text-xs text-amber-400/70 border border-amber-400/20 px-3 py-2 inline-block">
-                Not yet configured. Set your preferences and save.
-              </div>
-            )}
           </div>
 
-          {/* Monitored Domains */}
-          <Section icon={Shield} title="Monitored Domains">
-            {DOMAINS.map(d => (
-              <Toggle
-                key={d.key}
-                checked={domains[d.key] || false}
-                onChange={v => update(`monitored_domains.${d.key}`, v)}
-                label={d.label}
-                desc={d.desc}
-              />
-            ))}
-          </Section>
+          {/* 6 Domain Baseline Cards (3x2 grid) */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 16, marginBottom: 40,
+          }}>
+            {DOMAINS.map(d => <DomainCard key={d.name} domain={d} />)}
+          </div>
 
-          {/* Risk Sensitivity */}
-          <Section icon={TrendingUp} title="Risk Sensitivity">
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs text-white/40 mb-2">Client Risk</div>
-                <RadioGroup
-                  name="client-risk"
-                  value={baseline.client_risk_sensitivity}
-                  onChange={v => update('client_risk_sensitivity', v)}
-                  options={SENSITIVITY_OPTIONS}
-                />
-              </div>
-              <div>
-                <div className="text-xs text-white/40 mb-2">Team Risk</div>
-                <RadioGroup
-                  name="team-risk"
-                  value={baseline.team_risk_sensitivity}
-                  onChange={v => update('team_risk_sensitivity', v)}
-                  options={SENSITIVITY_OPTIONS}
-                />
-              </div>
+          {/* Responsive override for the grid (injected as a style tag) */}
+          <style>{`
+            @media (max-width: 900px) {
+              [data-testid="intelligence-baseline-page"] > div > div:nth-child(4) {
+                grid-template-columns: repeat(2, 1fr) !important;
+              }
+            }
+            @media (max-width: 600px) {
+              [data-testid="intelligence-baseline-page"] > div > div:nth-child(4) {
+                grid-template-columns: 1fr !important;
+              }
+            }
+            @media (max-width: 767px) {
+              .ib-table-wrap th:nth-child(4),
+              .ib-table-wrap td:nth-child(4),
+              .ib-table-wrap th:nth-child(5),
+              .ib-table-wrap td:nth-child(5) { display: none; }
+            }
+          `}</style>
+
+          {/* Calibration History Table */}
+          <div style={{ marginBottom: 40 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <Calendar style={{ width: 18, height: 18, color: colors.textMuted }} />
+              <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, fontWeight: 700, color: colors.text, margin: 0 }}>
+                Calibration History
+              </h2>
             </div>
-          </Section>
-
-          {/* Strategic Focus */}
-          <Section icon={Globe} title="Strategic Focus">
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs text-white/40 mb-2">Growth vs Efficiency</div>
-                <RadioGroup
-                  name="focus"
-                  value={baseline.growth_vs_efficiency}
-                  onChange={v => update('growth_vs_efficiency', v)}
-                  options={FOCUS_OPTIONS}
-                />
-              </div>
-              <div>
-                <div className="text-xs text-white/40 mb-2">Time Horizon</div>
-                <RadioGroup
-                  name="horizon"
-                  value={baseline.time_horizon}
-                  onChange={v => update('time_horizon', v)}
-                  options={HORIZON_OPTIONS}
-                />
-              </div>
+            <div className="ib-table-wrap" style={{
+              background: colors.bgCard,
+              border: `1px solid rgba(140,170,210,0.12)`,
+              borderRadius: radius.card,
+              overflow: 'hidden',
+            }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {['Date', 'Trigger', 'Domains Affected', 'Score Delta', 'Status'].map(h => (
+                      <th key={h} style={{
+                        textAlign: 'left', padding: '12px 16px',
+                        fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
+                        color: colors.textMuted, background: colors.bgInput,
+                        borderBottom: `1px solid rgba(140,170,210,0.12)`,
+                      }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {CALIBRATION_HISTORY.map((row, i) => (
+                    <tr
+                      key={i}
+                      onMouseEnter={() => setHoveredRow(i)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                      style={{ background: hoveredRow === i ? colors.bgInput : 'transparent', transition: 'background 0.15s' }}
+                    >
+                      <td style={{
+                        padding: '12px 16px', fontSize: 14, fontWeight: 500,
+                        color: colors.text,
+                        borderBottom: i < CALIBRATION_HISTORY.length - 1 ? '1px solid rgba(140,170,210,0.06)' : 'none',
+                      }}>
+                        {row.date}
+                      </td>
+                      <td style={{
+                        padding: '12px 16px', fontSize: 14, color: colors.textSecondary,
+                        borderBottom: i < CALIBRATION_HISTORY.length - 1 ? '1px solid rgba(140,170,210,0.06)' : 'none',
+                      }}>
+                        {row.trigger}
+                      </td>
+                      <td style={{
+                        padding: '12px 16px', fontSize: 14, color: colors.textSecondary,
+                        borderBottom: i < CALIBRATION_HISTORY.length - 1 ? '1px solid rgba(140,170,210,0.06)' : 'none',
+                      }}>
+                        {row.domains}
+                      </td>
+                      <td style={{
+                        padding: '12px 16px', fontFamily: fontFamily.mono, fontSize: 14, fontWeight: 600,
+                        color: row.delta.startsWith('+') ? colors.success : row.delta.startsWith('-') ? colors.danger : colors.textMuted,
+                        borderBottom: i < CALIBRATION_HISTORY.length - 1 ? '1px solid rgba(140,170,210,0.06)' : 'none',
+                      }}>
+                        {row.delta}
+                      </td>
+                      <td style={{
+                        padding: '12px 16px', fontSize: 14,
+                        borderBottom: i < CALIBRATION_HISTORY.length - 1 ? '1px solid rgba(140,170,210,0.06)' : 'none',
+                      }}>
+                        <span style={{
+                          display: 'inline-block', fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
+                          letterSpacing: '0.06em', padding: '2px 8px', borderRadius: 9999,
+                          background: 'rgba(22,163,74,0.15)', color: '#4ADE80', border: '1px solid rgba(22,163,74,0.3)',
+                        }}>
+                          {row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </Section>
-
-          {/* Briefing Preferences */}
-          <Section icon={Clock} title="Briefing Preferences">
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs text-white/40 mb-2">Briefing Frequency</div>
-                <RadioGroup
-                  name="frequency"
-                  value={baseline.briefing_frequency}
-                  onChange={v => update('briefing_frequency', v)}
-                  options={FREQUENCY_OPTIONS}
-                />
-              </div>
-            </div>
-          </Section>
-
-          {/* Alert Tolerance */}
-          <Section icon={Bell} title="Alert Tolerance">
-            <RadioGroup
-              name="alerts"
-              value={baseline.alert_tolerance}
-              onChange={v => update('alert_tolerance', v)}
-              options={ALERT_OPTIONS}
-            />
-          </Section>
-
-          {/* Escalation Thresholds */}
-          <Section icon={Users} title="Escalation Thresholds">
-            <p className="text-xs text-white/30 mb-3">Confidence threshold before escalation. Lower = more sensitive.</p>
-            {DOMAINS.filter(d => domains[d.key]).map(d => (
-              <div key={d.key} className="flex items-center justify-between py-2">
-                <span className="text-sm text-white/60">{d.label}</span>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min="0.4"
-                    max="0.95"
-                    step="0.05"
-                    value={thresholds[d.key] || 0.7}
-                    onChange={e => update(`escalation_thresholds.${d.key}`, parseFloat(e.target.value))}
-                    className="w-32 accent-white/50"
-                    data-testid={`threshold-${d.key}`}
-                  />
-                  <span className="text-xs text-white/40 w-10 text-right">{(thresholds[d.key] || 0.7).toFixed(2)}</span>
-                </div>
-              </div>
-            ))}
-          </Section>
-
-          {/* Save */}
-          <div className="flex justify-end pt-4 border-t border-white/6">
-            <button
-              data-testid="save-baseline"
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 px-6 py-2.5 text-xs tracking-[0.2em] uppercase bg-white/10 border border-white/20 text-white/80 hover:bg-white/15 transition-colors disabled:opacity-30"
-            >
-              {saving ? null : <Save className="w-3.5 h-3.5" />}
-              {saving ? 'Saving...' : 'Save Configuration'}
-            </button>
           </div>
 
         </div>
