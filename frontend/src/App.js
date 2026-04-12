@@ -108,6 +108,8 @@ import BillingPage from './pages/BillingPage';
 import AdminPricingPage from './pages/AdminPricingPage';
 import AdminUxFeedbackPage from './pages/AdminUxFeedbackPage';
 import AdminScopeCheckpointsPage from './pages/AdminScopeCheckpointsPage';
+import CMOReportPage from './pages/CMOReportPage';
+import AboutPage from './pages/website/AboutPage';
 
 // ── Conditional imports (pages that may not exist) ────────────────────────────
 let CognitiveV2Mockup, LoadingPreview, CalibrationPreview, ProfileImport;
@@ -248,6 +250,7 @@ function AppRoutes() {
         <Route path="/trust/dpa" element={<SiteDPAPage />} />
         <Route path="/trust/security" element={<SiteSecurityPage />} />
         <Route path="/trust/centre" element={<SiteTrustCentrePage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
         <Route path="/blog" element={<BlogPage />} />
@@ -353,6 +356,7 @@ function AppRoutes() {
         <Route path="/intelligence-baseline" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="watchtower"><IntelligenceBaseline /></LaunchRoute></ProtectedRoute>} />
         <Route path="/operator" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="operations-intelligence"><OperatorDashboard /></LaunchRoute></ProtectedRoute>} />
         <Route path="/market-analysis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="market-analysis"><MarketAnalysis /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/cmo-report" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="cmo-report"><CMOReportPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/ops-advisory" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="ops-advisory"><OpsAdvisoryCentre /></LaunchRoute></ProtectedRoute>} />
         <Route path="/oac" element={<Navigate to="/ops-advisory" replace />} />
         <Route path="/marketing-automation" element={<ProtectedRoute><LaunchRoute access="foundation"><MarketingAutomationPage /></LaunchRoute></ProtectedRoute>} />
