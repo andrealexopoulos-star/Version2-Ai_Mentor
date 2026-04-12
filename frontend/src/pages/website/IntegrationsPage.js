@@ -27,7 +27,7 @@ const Logo = ({ domain, name, size = 44 }) => {
         width: size,
         height: size,
         background: `linear-gradient(135deg, hsla(${hue}, 70%, 45%, 0.28), hsla(${(hue + 36) % 360}, 70%, 38%, 0.28))`,
-        border: '1px solid #243140',
+        border: '1px solid rgba(140,170,210,0.15)',
         color: '#E2E8F0',
         fontSize: size * 0.28,
         fontFamily: fontFamily.mono,
@@ -124,8 +124,8 @@ const IntegrationCard = ({ integration, index, comingSoon = false }) => (
   <div
     className="rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 hover:-translate-y-1 group"
     style={{
-      background: '#141C26',
-      border: '1px solid #243140',
+      background: '#0E1628',
+      border: '1px solid rgba(140,170,210,0.15)',
       boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
       animation: `fadeInUp 0.4s ease-out ${index * 60}ms both`,
     }}
@@ -133,9 +133,9 @@ const IntegrationCard = ({ integration, index, comingSoon = false }) => (
     <div className="flex items-center gap-3">
       <Logo domain={integration.domain} name={integration.name} size={44} />
       <div>
-        <p className="font-semibold text-sm" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{integration.name}</p>
+        <p className="font-semibold text-sm" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>{integration.name}</p>
         <span className="text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider"
-          style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', fontFamily: fontFamily.mono }}>
+          style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', fontFamily: fontFamily.mono }}>
           {integration.cat === 'storage' ? 'File Storage' : integration.cat.toUpperCase()}
         </span>
       </div>
@@ -155,9 +155,9 @@ const IntegrationCard = ({ integration, index, comingSoon = false }) => (
     ) : (
       <Link to={`/register-supabase?integration=${integration.id}`}
         className="w-full py-2.5 rounded-xl text-xs font-semibold text-center transition-all"
-        style={{ border: '1px solid rgba(255,106,0,0.35)', color: '#FF6A00', background: 'transparent', fontFamily: fontFamily.body }}
-        onMouseEnter={e => { e.currentTarget.style.background = '#FF6A00'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#FF6A00'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#FF6A00'; e.currentTarget.style.borderColor = 'rgba(255,106,0,0.35)'; }}
+        style={{ border: '1px solid rgba(232,93,0,0.35)', color: '#E85D00', background: 'transparent', fontFamily: fontFamily.body }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#E85D00'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#E85D00'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#E85D00'; e.currentTarget.style.borderColor = 'rgba(232,93,0,0.35)'; }}
         data-testid={`integration-card-${integration.id}`}
       >
         Connect
@@ -188,17 +188,17 @@ const IntegrationsPage = () => {
 
       {/* ── HERO ── */}
       <section className="relative overflow-hidden" data-testid="integrations-hero"
-        style={{ background: 'linear-gradient(180deg, #070E18 0%, #0F1720 100%)' }}>
+        style={{ background: 'linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }}>
         <div className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cpath d='M30 3L57 30L30 57L3 30z' stroke='%23ffffff' stroke-opacity='0.025' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E")`, backgroundSize: '60px 60px' }} />
         <div className="max-w-5xl mx-auto px-6 pt-20 pb-16 relative z-10">
           <div className="max-w-2xl">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-4"
-              style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
+              style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
               500+ Integrations
             </h1>
             <p className="text-xl sm:text-2xl font-medium mb-6"
-              style={{ fontFamily: fontFamily.display, color: '#FF6A00' }}>
+              style={{ fontFamily: fontFamily.display, color: '#E85D00' }}>
               Connects to the tools your business already uses.
             </p>
             <p className="text-base sm:text-lg mb-8 leading-relaxed max-w-xl"
@@ -208,7 +208,7 @@ const IntegrationsPage = () => {
             <div className="flex flex-wrap gap-3">
               <a href="#integrations-grid"
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
-                style={{ background: '#FF6A00', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(255,106,0,0.28)' }}>
+                style={{ background: '#E85D00', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(232,93,0,0.28)' }}>
                 Connect Now <ArrowRight className="w-4 h-4" />
               </a>
               <Link to="/trust"
@@ -223,7 +223,7 @@ const IntegrationsPage = () => {
 
       {/* ── FILTER CHIPS + GRID ── */}
       <section id="integrations-grid" className="py-14 px-4 sm:px-6"
-        style={{ background: '#0F1720' }} data-testid="integrations-grid">
+        style={{ background: '#0B1120' }} data-testid="integrations-grid">
         <div className="max-w-6xl mx-auto">
 
           {/* Filter chips */}
@@ -234,9 +234,9 @@ const IntegrationsPage = () => {
                   onClick={() => setActiveFilter(f.id)}
                   className="px-4 py-2 rounded-full text-xs font-semibold transition-all"
                   style={{
-                    background: activeFilter === f.id ? '#FF6A00' : '#141C26',
+                    background: activeFilter === f.id ? '#E85D00' : '#0E1628',
                     color: activeFilter === f.id ? '#FFFFFF' : '#9FB0C3',
-                    border: `1px solid ${activeFilter === f.id ? '#FF6A00' : '#243140'}`,
+                    border: `1px solid ${activeFilter === f.id ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
                     fontFamily: fontFamily.mono,
                   }}
                   aria-pressed={activeFilter === f.id}
@@ -251,14 +251,14 @@ const IntegrationsPage = () => {
           {/* Active category tooltip hint */}
           {activeCatTooltip && (
             <div className="flex items-start gap-2 mb-6 p-3 rounded-xl text-xs"
-              style={{ background: 'rgba(255,106,0,0.06)', border: '1px solid rgba(255,106,0,0.15)', color: '#9FB0C3', fontFamily: fontFamily.body, maxWidth: 480 }}>
-              <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#FF6A00' }} />
+              style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.15)', color: '#9FB0C3', fontFamily: fontFamily.body, maxWidth: 480 }}>
+              <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#E85D00' }} />
               {activeCatTooltip}
             </div>
           )}
 
           <div className="mb-4">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.14em]" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }}>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.14em]" style={{ color: '#EDF1F7', fontFamily: fontFamily.mono }}>
               Available integrations
             </h2>
           </div>
@@ -272,7 +272,7 @@ const IntegrationsPage = () => {
 
           {!activeFilter || activeFilter === 'all' ? (
             <div className="mt-10" data-testid="integrations-coming-soon-section">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.14em]" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }}>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.14em]" style={{ color: '#EDF1F7', fontFamily: fontFamily.mono }}>
                 Coming soon
               </h2>
               <p className="mt-2 text-xs" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
@@ -295,10 +295,10 @@ const IntegrationsPage = () => {
               { icon: Globe, label: 'Custom Sync', desc: 'Encrypted, role-based data sync' },
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-3 p-4 rounded-xl"
-                style={{ background: '#141C26', border: '1px solid #243140' }}>
-                <item.icon className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#FF6A00' }} />
+                style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
+                <item.icon className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#E85D00' }} />
                 <div>
-                  <p className="text-xs font-semibold mb-0.5" style={{ color: '#F4F7FA', fontFamily: fontFamily.mono }}>{item.label}</p>
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: '#EDF1F7', fontFamily: fontFamily.mono }}>{item.label}</p>
                   <p className="text-xs" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{item.desc}</p>
                 </div>
               </div>
@@ -308,14 +308,14 @@ const IntegrationsPage = () => {
       </section>
 
       {/* ── SECURE & UNIFIED ── */}
-      <section className="py-14 px-4 sm:px-6" style={{ background: '#07121E' }} data-testid="integrations-security">
+      <section className="py-14 px-4 sm:px-6" style={{ background: '#080C14' }} data-testid="integrations-security">
         <div className="max-w-4xl mx-auto text-center">
           <span className="text-xs font-semibold tracking-widest uppercase mb-4 block"
-            style={{ fontFamily: fontFamily.mono, color: '#FF6A00' }}>
+            style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
             Secure & Unified
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold mb-4"
-            style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
+            style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
             Your data stays yours — always.
           </h2>
           <p className="text-base mb-10 max-w-2xl mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
@@ -328,12 +328,12 @@ const IntegrationsPage = () => {
               { icon: RefreshCw,    title: 'Revoke Anytime',          desc: 'Disconnect any integration instantly. Your data is purged within 24 hours.' },
             ].map((item, i) => (
               <div key={i} className="flex flex-col items-center text-center gap-3 p-6 rounded-2xl"
-                style={{ background: '#141C26', border: '1px solid #243140' }}>
+                style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                  style={{ background: 'rgba(255,106,0,0.08)', border: '1px solid rgba(255,106,0,0.15)' }}>
-                  <item.icon className="w-5 h-5" style={{ color: '#FF6A00' }} />
+                  style={{ background: 'rgba(232,93,0,0.08)', border: '1px solid rgba(232,93,0,0.15)' }}>
+                  <item.icon className="w-5 h-5" style={{ color: '#E85D00' }} />
                 </div>
-                <p className="text-sm font-bold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>{item.title}</p>
+                <p className="text-sm font-bold" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>{item.title}</p>
                 <p className="text-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item.desc}</p>
               </div>
             ))}
@@ -342,9 +342,9 @@ const IntegrationsPage = () => {
       </section>
 
       {/* ── CTA ── */}
-      <section className="py-14 px-6 text-center" style={{ background: '#0F1720' }}>
+      <section className="py-14 px-6 text-center" style={{ background: '#0B1120' }}>
         <div className="max-w-lg mx-auto">
-          <h2 className="text-2xl font-bold mb-3" style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
+          <h2 className="text-2xl font-bold mb-3" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
             Ready to unify your business?
           </h2>
           <p className="text-sm mb-6" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
@@ -352,7 +352,7 @@ const IntegrationsPage = () => {
           </p>
           <Link to="/register-supabase?source=integrations-page"
             className="inline-flex items-center gap-2 px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #FF6A00, #E55F00)', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(255,106,0,0.28)' }}
+            style={{ background: 'linear-gradient(135deg, #E85D00, #C44F00)', fontFamily: fontFamily.body, boxShadow: '0 6px 24px rgba(232,93,0,0.28)' }}
             data-testid="integrations-final-cta">
             Start Free — Connect Now <ArrowRight className="w-4 h-4" />
           </Link>

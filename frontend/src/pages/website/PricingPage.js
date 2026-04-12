@@ -9,7 +9,7 @@ const PricingPage = () => (
   <WebsiteLayout>
     {/* HERO */}
     <section className="relative overflow-hidden" data-testid="pricing-hero">
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.03]" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.03]" style={{ background: 'radial-gradient(circle, #E85D00 0%, transparent 70%)' }} />
       <div className="max-w-4xl mx-auto px-6 pt-16 sm:pt-28 pb-10 relative z-10 text-center">
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-medium leading-[1.12] mb-4 sm:mb-5 tracking-tight" style={{ fontFamily: fontFamily.display, color: '#FFFFFF', textShadow: '0 1px 8px rgba(0,0,0,0.5)', WebkitTextStroke: '0.3px #FFFFFF' }}>
           Multiply the Capability<br />of Your Entire Team.
@@ -30,7 +30,7 @@ const PricingPage = () => (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
               <h2 className="text-xl font-bold text-white" style={{ fontFamily: fontFamily.display }}>Executive Market Assessment</h2>
-              <span className="text-[11px] tracking-[0.15em] uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Complimentary</span>
+              <span className="text-[11px] tracking-[0.15em] uppercase" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Complimentary</span>
             </div>
           </div>
 
@@ -50,7 +50,7 @@ const PricingPage = () => (
               'Data confidence indicator',
             ].map((f, i) => (
               <div key={i} className="flex items-start gap-2.5">
-                <Check className="w-3.5 h-3.5 text-[#FF6A00] shrink-0 mt-0.5" />
+                <Check className="w-3.5 h-3.5 text-[#E85D00] shrink-0 mt-0.5" />
                 <span className="text-xs text-[#C8D4E0]" style={{ fontFamily: fontFamily.body }}>{f}</span>
               </div>
             ))}
@@ -62,7 +62,7 @@ const PricingPage = () => (
 
           <Link to="/register-supabase"
             className="inline-flex items-center gap-2 px-7 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
+            style={{ background: '#E85D00', fontFamily: fontFamily.body }}
             data-testid="cta-market-assessment">
             Request Market Assessment <ArrowRight className="w-4 h-4" />
           </Link>
@@ -81,10 +81,10 @@ const PricingPage = () => (
         {/* Free tier compact bar */}
         <div className="rounded-xl p-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ background: 'rgba(255,106,0,0.03)', border: '1px solid rgba(255,106,0,0.12)' }} data-testid="free-tier-bar">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-0.5 rounded-full" style={{ background: '#FF6A00' }} />
+            <div className="w-8 h-0.5 rounded-full" style={{ background: '#E85D00' }} />
             <div>
               <span className="text-sm font-bold text-white" style={{ fontFamily: fontFamily.display }}>Market Intelligence Brief</span>
-              <span className="text-[10px] tracking-[0.12em] uppercase ml-2" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Free</span>
+              <span className="text-[10px] tracking-[0.12em] uppercase ml-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Free</span>
             </div>
           </div>
           <p className="text-xs text-[#7A8FA3] text-center sm:text-left flex-1 px-4" style={{ fontFamily: fontFamily.body }}>
@@ -92,7 +92,7 @@ const PricingPage = () => (
           </p>
           <Link to="/register-supabase"
             className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-xs font-semibold text-white shrink-0 transition-all hover:brightness-110"
-            style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
+            style={{ background: '#E85D00', fontFamily: fontFamily.body }}
             data-testid="cta-free-bar">
             Request Market Assessment <ArrowRight className="w-3 h-3" />
           </Link>
@@ -201,11 +201,11 @@ const PricingPage = () => (
           ].map(a => (
             <div key={a.name} className="rounded-xl p-5 flex items-start gap-4" style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(255,106,0,0.06)' }}>
-                <Plus className="w-3.5 h-3.5 text-[#FF6A00]" />
+                <Plus className="w-3.5 h-3.5 text-[#E85D00]" />
               </div>
               <div>
                 <h4 className="text-sm font-semibold text-white" style={{ fontFamily: fontFamily.display }}>{a.name}</h4>
-                <span className="text-[11px] text-[#FF6A00] block mb-1" style={{ fontFamily: fontFamily.mono }}>{a.price}</span>
+                <span className="text-[11px] text-[#E85D00] block mb-1" style={{ fontFamily: fontFamily.mono }}>{a.price}</span>
                 <p className="text-xs text-[#5A6B7D]" style={{ fontFamily: fontFamily.body }}>{a.desc}</p>
               </div>
             </div>
@@ -226,7 +226,7 @@ const PricingPage = () => (
         <div className="mt-8">
           <Link to="/register-supabase"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', fontFamily: fontFamily.body, boxShadow: '0 8px 32px rgba(255,106,0,0.2)' }}
+            style={{ background: 'linear-gradient(135deg, #E85D00, #E85D00)', fontFamily: fontFamily.body, boxShadow: '0 8px 32px rgba(255,106,0,0.2)' }}
             data-testid="pricing-bottom-cta">
             Request Market Assessment <ArrowRight className="w-4 h-4" />
           </Link>
@@ -238,7 +238,7 @@ const PricingPage = () => (
 
 // ═══ Plan Card Component ═══
 const PlanCard = ({ name, tagline, price, period, color, highlight, badge, description, includesFrom, features, cta, link }) => (
-  <div className={`relative rounded-2xl p-6 flex flex-col transition-all ${highlight ? 'ring-2 ring-[#FF6A00]' : ''}`}
+  <div className={`relative rounded-2xl p-6 flex flex-col transition-all ${highlight ? 'ring-2 ring-[#E85D00]' : ''}`}
     style={{
       background: highlight ? 'rgba(255,106,0,0.025)' : 'rgba(255,255,255,0.015)',
       border: `1px solid ${highlight ? 'rgba(255,106,0,0.2)' : 'rgba(255,255,255,0.05)'}`,
@@ -247,7 +247,7 @@ const PlanCard = ({ name, tagline, price, period, color, highlight, badge, descr
 
     {badge && (
       <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-        <span className="text-[9px] font-semibold tracking-[0.12em] uppercase px-4 py-1 rounded-full text-white whitespace-nowrap" style={{ background: '#FF6A00', fontFamily: fontFamily.mono }}>
+        <span className="text-[9px] font-semibold tracking-[0.12em] uppercase px-4 py-1 rounded-full text-white whitespace-nowrap" style={{ background: '#E85D00', fontFamily: fontFamily.mono }}>
           {badge}
         </span>
       </div>
@@ -268,7 +268,7 @@ const PlanCard = ({ name, tagline, price, period, color, highlight, badge, descr
     <Link to={link}
       className={`w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold mb-5 transition-all hover:brightness-110`}
       style={{
-        background: highlight ? '#FF6A00' : 'rgba(255,255,255,0.04)',
+        background: highlight ? '#E85D00' : 'rgba(255,255,255,0.04)',
         color: highlight ? 'white' : '#E2E8F0',
         border: highlight ? 'none' : '1px solid rgba(255,255,255,0.08)',
         fontFamily: fontFamily.body,

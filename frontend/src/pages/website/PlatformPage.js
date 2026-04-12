@@ -13,7 +13,7 @@ import { fontFamily } from '../../design-system/tokens';
 const MOCK_BG   = 'rgba(10,16,24,0.98)';
 const MOCK_CARD = 'rgba(255,255,255,0.04)';
 const MOCK_BORD = 'rgba(255,255,255,0.07)';
-const O = '#FF7A18';   // orange
+const O = '#E85D00';   // orange
 const G = '#10B981';   // green
 const R = '#EF4444';   // red
 const B = '#3B82F6';   // blue
@@ -52,7 +52,7 @@ const MockBadge = ({ color, label }) => (
 const DashboardMock = () => (
   <div style={{ background: MOCK_BG, borderRadius: 12, overflow: 'hidden', fontSize: 11, fontFamily: fontFamily.body }}>
     <div style={{ padding: '14px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
-      <div style={{ color: '#F4F7FA', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Good afternoon, Andre.</div>
+      <div style={{ color: '#EDF1F7', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Good afternoon, Andre.</div>
       <div style={{ color: '#64748B', fontSize: 10, marginTop: 2 }}>Last intelligence update: 12 minutes ago</div>
     </div>
     <div style={{ display: 'flex', gap: 6, padding: '10px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
@@ -65,7 +65,7 @@ const DashboardMock = () => (
     </div>
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 10, padding: '10px 16px' }}>
       <div>
-        <div style={{ color: '#F4F7FA', fontWeight: 600, fontSize: 11, marginBottom: 8 }}>What Needs Attention <span style={{ background: `${O}20`, color: O, borderRadius: 10, padding: '1px 7px', fontSize: 9 }}>5 items</span></div>
+        <div style={{ color: '#EDF1F7', fontWeight: 600, fontSize: 11, marginBottom: 8 }}>What Needs Attention <span style={{ background: `${O}20`, color: O, borderRadius: 10, padding: '1px 7px', fontSize: 9 }}>5 items</span></div>
         {[
           ['Invoice #1847 — $3,200 overdue 12 days', 'CRITICAL', R],
           ['3 enterprise deals stalled at proposal', 'CRITICAL', R],
@@ -109,7 +109,7 @@ const RevenueMock = () => (
   <div style={{ background: MOCK_BG, borderRadius: 12, overflow: 'hidden' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
       <div>
-        <div style={{ color: '#F4F7FA', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Revenue Health</div>
+        <div style={{ color: '#EDF1F7', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Revenue Health</div>
         <div style={{ color: '#64748B', fontSize: 10, marginTop: 2 }}>Overall position based on pipeline, concentration & churn</div>
       </div>
       <div style={{ textAlign: 'right' }}>
@@ -134,7 +134,7 @@ const RevenueMock = () => (
           <span style={{ color: '#9FB0C3', fontSize: 10 }}>Entropy Level</span>
           <Tag color={R}>HIGH</Tag>
         </div>
-        <div style={{ color: '#9FB0C3', fontSize: 10, marginBottom: 6 }}>Top 2 Deals: <strong style={{ color: '#F4F7FA' }}>60%</strong></div>
+        <div style={{ color: '#9FB0C3', fontSize: 10, marginBottom: 6 }}>Top 2 Deals: <strong style={{ color: '#EDF1F7' }}>60%</strong></div>
         {[['Deal Alpha', '$45K · 65%', G], ['Deal Beta', '$28K · 40%', O], ['Deal Gamma', '$15K · 80%', B]].map(([n, v, c]) => (
           <div key={n} style={{ marginBottom: 5 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 2 }}>
@@ -173,7 +173,7 @@ const RevenueMock = () => (
 const AlertsMock = () => (
   <div style={{ background: MOCK_BG, borderRadius: 12, overflow: 'hidden' }}>
     <div style={{ padding: '14px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
-      <div style={{ color: '#F4F7FA', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Alerts &amp; Actions</div>
+      <div style={{ color: '#EDF1F7', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Alerts &amp; Actions</div>
     </div>
     <div style={{ display: 'flex', gap: 8, padding: '10px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
       {[[R, 'Critical', '2'], [Y, 'Moderate', '3'], [B, 'Info', '2']].map(([c, l, n]) => (
@@ -217,7 +217,7 @@ const AlertsMock = () => (
 const AutomationsMock = () => (
   <div style={{ background: MOCK_BG, borderRadius: 12, overflow: 'hidden' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
-      <div style={{ color: '#F4F7FA', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Automations</div>
+      <div style={{ color: '#EDF1F7', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Automations</div>
       <div style={{ background: O, color: '#fff', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 600 }}>+ New Automation</div>
     </div>
     <div style={{ display: 'flex', gap: 8, padding: '10px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
@@ -239,7 +239,7 @@ const AutomationsMock = () => (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ background: `${color}18`, borderRadius: 7, padding: 5 }}><Icon size={12} style={{ color }} /></div>
               <div>
-                <div style={{ color: '#F4F7FA', fontSize: 11, fontWeight: 600 }}>{name}</div>
+                <div style={{ color: '#EDF1F7', fontSize: 11, fontWeight: 600 }}>{name}</div>
                 <div style={{ color: '#64748B', fontSize: 9 }}>{runs}</div>
               </div>
             </div>
@@ -265,7 +265,7 @@ const InboxMock = () => (
   <div style={{ background: MOCK_BG, borderRadius: 12, overflow: 'hidden' }}>
     <div style={{ padding: '14px 16px', borderBottom: `1px solid ${MOCK_BORD}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div>
-        <div style={{ color: '#F4F7FA', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Priority Inbox</div>
+        <div style={{ color: '#EDF1F7', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Priority Inbox</div>
         <div style={{ color: '#64748B', fontSize: 10, marginTop: 2 }}>AI-triaged — highest-impact messages first</div>
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
@@ -284,7 +284,7 @@ const InboxMock = () => (
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: read ? 'transparent' : tagC, flexShrink: 0, marginTop: 4 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-              <span style={{ color: read ? '#9FB0C3' : '#F4F7FA', fontSize: 11, fontWeight: read ? 400 : 600 }}>{from}</span>
+              <span style={{ color: read ? '#9FB0C3' : '#EDF1F7', fontSize: 11, fontWeight: read ? 400 : 600 }}>{from}</span>
               <span style={{ color: '#64748B', fontSize: 9, flexShrink: 0, marginLeft: 8 }}>{time}</span>
             </div>
             <div style={{ color: read ? '#64748B' : '#CBD5E1', fontSize: 10, fontWeight: read ? 400 : 500, marginBottom: 2 }}>{subject}</div>
@@ -315,7 +315,7 @@ const CalendarMock = () => {
   return (
     <div style={{ background: MOCK_BG, borderRadius: 12, overflow: 'hidden' }}>
       <div style={{ padding: '14px 16px', borderBottom: `1px solid ${MOCK_BORD}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ color: '#F4F7FA', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Calendar</div>
+        <div style={{ color: '#EDF1F7', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Calendar</div>
         <div style={{ display: 'flex', gap: 6 }}><Tag color={G}>3 AI Booked</Tag><Tag color={R}>2 Deadlines</Tag></div>
       </div>
       <div style={{ padding: '10px 16px' }}>
@@ -350,7 +350,7 @@ const CalendarMock = () => {
 const MarketMock = () => (
   <div style={{ background: MOCK_BG, borderRadius: 12, overflow: 'hidden' }}>
     <div style={{ padding: '14px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
-      <div style={{ color: '#F4F7FA', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Market &amp; Insights</div>
+      <div style={{ color: '#EDF1F7', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Market &amp; Insights</div>
       <div style={{ color: '#64748B', fontSize: 10, marginTop: 2 }}>Competitive position and demand intelligence</div>
     </div>
     <div style={{ padding: '10px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -415,7 +415,7 @@ const MarketMock = () => (
 const ComplianceMock = () => (
   <div style={{ background: MOCK_BG, borderRadius: 12, overflow: 'hidden' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
-      <div style={{ color: '#F4F7FA', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Compliance</div>
+      <div style={{ color: '#EDF1F7', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Compliance</div>
       <div style={{ textAlign: 'right' }}>
         <div style={{ color: G, fontWeight: 800, fontSize: 24 }}>96%</div>
         <div style={{ color: '#64748B', fontSize: 9 }}>OVERALL SCORE</div>
@@ -471,7 +471,7 @@ const ComplianceMock = () => (
 const DataHealthMock = () => (
   <div style={{ background: MOCK_BG, borderRadius: 12, overflow: 'hidden' }}>
     <div style={{ padding: '14px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
-      <div style={{ color: '#F4F7FA', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Data Health</div>
+      <div style={{ color: '#EDF1F7', fontWeight: 700, fontSize: 14, fontFamily: fontFamily.display }}>Data Health</div>
       <div style={{ color: '#64748B', fontSize: 10, marginTop: 2 }}>Live connection status and data freshness</div>
     </div>
     <div style={{ padding: '10px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -633,14 +633,14 @@ export default function PlatformPage() {
       `}</style>
 
       {/* ── Hero ── */}
-      <section style={{ background: 'linear-gradient(180deg, #070D1A 0%, #07121E 100%)', paddingTop: 80, paddingBottom: 48 }}>
+      <section style={{ background: 'linear-gradient(180deg, #080C14 0%, #0B1120 100%)', paddingTop: 80, paddingBottom: 48 }}>
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
           <span style={{ fontFamily: fontFamily.mono, color: O, fontSize: 11, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
             The Platform
           </span>
-          <h1 style={{ fontFamily: fontFamily.display, color: '#F4F7FA', fontSize: 'clamp(32px, 5vw, 56px)', lineHeight: 1.08, fontWeight: 700, margin: '12px 0 16px' }}>
+          <h1 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(32px, 5vw, 56px)', lineHeight: 1.08, fontWeight: 700, margin: '12px 0 16px' }}>
             Every flagship page.<br />
-            <span style={{ background: 'linear-gradient(135deg, #FF8C3A, #C65F2E)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            <span style={{ background: 'linear-gradient(135deg, #E85D00, #C44F00)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
               Built for business owners.
             </span>
           </h1>
@@ -649,7 +649,7 @@ export default function PlatformPage() {
             BIQc covers every dimension of your business in one platform.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/register-supabase" style={{ background: 'linear-gradient(135deg, #D06832, #A64F26)', color: '#fff', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 6px 24px rgba(198,95,46,0.3)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Link to="/register-supabase" style={{ background: 'var(--lava, #E85D00)', color: '#fff', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 6px 24px rgba(232,93,0,0.3)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               Start Free Trial <ArrowRight size={15} />
             </Link>
             <Link to="/meet/soundboard" style={{ background: 'rgba(255,255,255,0.04)', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none' }}>
@@ -660,7 +660,7 @@ export default function PlatformPage() {
       </section>
 
       {/* ── Tab bar ── */}
-      <div style={{ background: '#07121E', borderBottom: '1px solid rgba(255,255,255,0.07)', position: 'sticky', top: 64, zIndex: 30 }}>
+      <div style={{ background: '#0B1120', borderBottom: '1px solid rgba(255,255,255,0.07)', position: 'sticky', top: 64, zIndex: 30 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px', display: 'flex', overflowX: 'auto', scrollbarWidth: 'none' }}>
           {SLIDES.map((s, i) => (
             <button
@@ -682,7 +682,7 @@ export default function PlatformPage() {
       </div>
 
       {/* ── Main showcase ── */}
-      <section style={{ background: '#07121E', padding: '48px 16px 64px' }}>
+      <section style={{ background: '#0B1120', padding: '48px 16px 64px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 40, alignItems: 'start' }}>
 
@@ -692,7 +692,7 @@ export default function PlatformPage() {
                 <slide.icon size={14} style={{ color: O }} />
                 <span style={{ fontFamily: fontFamily.mono, color: O, fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{slide.label}</span>
               </div>
-              <h2 style={{ fontFamily: fontFamily.display, color: '#F4F7FA', fontSize: 22, lineHeight: 1.3, fontWeight: 700, marginBottom: 12 }}>
+              <h2 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 22, lineHeight: 1.3, fontWeight: 700, marginBottom: 12 }}>
                 {slide.tagline}
               </h2>
               <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 13, lineHeight: 1.7, marginBottom: 20 }}>
@@ -730,7 +730,7 @@ export default function PlatformPage() {
             </div>
 
             {/* Right: mockup */}
-            <div key={slide.id} className="slide-enter" style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,140,40,0.12)', boxShadow: '0 0 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)', opacity: animating ? 0 : 1, transition: 'opacity 0.28s ease' }}>
+            <div key={slide.id} className="slide-enter" style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(232,93,0,0.12)', boxShadow: '0 0 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)', opacity: animating ? 0 : 1, transition: 'opacity 0.28s ease' }}>
               {slide.mockup}
             </div>
 
@@ -739,15 +739,15 @@ export default function PlatformPage() {
       </section>
 
       {/* ── Bottom CTA ── */}
-      <section style={{ background: '#060E18', padding: '64px 24px', textAlign: 'center' }}>
-        <h2 style={{ fontFamily: fontFamily.display, color: '#E6EEF7', fontSize: 28, fontWeight: 700, marginBottom: 12 }}>
+      <section style={{ background: '#080C14', padding: '64px 24px', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, fontWeight: 700, marginBottom: 12 }}>
           Ready to run your business on intelligence?
         </h2>
         <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 15, marginBottom: 28, maxWidth: 480, margin: '0 auto 28px' }}>
           Connect your first platform in 2 minutes. No credit card required.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/register-supabase" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', color: '#fff', borderRadius: 12, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 8px 32px rgba(255,122,24,0.25)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Link to="/register-supabase" style={{ background: 'var(--lava, #E85D00)', color: '#fff', borderRadius: 12, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 8px 32px rgba(232,93,0,0.25)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             Try It Free <ArrowRight size={16} />
           </Link>
           <Link to="/pricing" style={{ background: 'rgba(255,255,255,0.04)', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 12, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none' }}>
