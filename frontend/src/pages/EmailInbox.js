@@ -13,6 +13,7 @@ import {
 import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import SemanticContractBanner from '../components/SemanticContractBanner';
+import { fontFamily } from '../design-system/tokens';
 
 const EmailInbox = () => {
   const navigate = useNavigate();
@@ -456,7 +457,7 @@ const EmailInbox = () => {
               <p className="text-xs mb-1.5 line-clamp-1" style={{ color: '#64748B' }}>{email.snippet}</p>
             )}
             {email.reason && (
-              <p className="text-xs mb-1" style={{ color: 'var(--biqc-text-2, #9FB0C3)' }}>
+              <p className="text-xs mb-1" style={{ color: 'var(--biqc-text-2, #8FA0B8)' }}>
                 <span className="font-medium">Why:</span> {email.reason}
               </p>
             )}
@@ -831,31 +832,23 @@ const EmailInbox = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl animate-fade-in">
-        {/* Header with Active Provider Badge */}
+        {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Inbox className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
-              <span className="badge badge-primary">
-                <Sparkles className="w-3 h-3" />
-                AI-Powered
-              </span>
-              {activeProvider && (
-                <span className="badge badge-secondary">
-                  <Mail className="w-3 h-3 mr-1 inline-block" />
-                  {providerLabel}
-                </span>
-              )}
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+              — Email Intelligence
             </div>
-            <h1 style={{ color: 'var(--text-primary)' }}>Priority Inbox</h1>
-            <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
-              {activeProvider 
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              Your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>inbox</em>, prioritised.
+            </h1>
+            <p className="mt-2 text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+              {activeProvider
                 ? `AI-prioritized emails from ${providerLabel}`
                 : 'Connect an email provider to get started'}
             </p>
             {connectedEmail && (
-              <p className="mt-1 text-xs" style={{ color: '#94A3B8' }}>
-                Connected account: {connectedEmail}
+              <p className="mt-1 text-xs" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                Connected: {connectedEmail}
               </p>
             )}
           </div>
@@ -1118,7 +1111,7 @@ const EmailInbox = () => {
                     {selectedEmailData.snippet && (
                       <div>
                         <p className="text-xs uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Preview</p>
-                        <p className="mt-2 text-sm text-[#9FB0C3]">{selectedEmailData.snippet}</p>
+                        <p className="mt-2 text-sm text-[#8FA0B8]">{selectedEmailData.snippet}</p>
                       </div>
                     )}
                     <div className="flex flex-wrap gap-2">

@@ -12,7 +12,7 @@ import { DelegateActionModal } from '../components/advisor/DelegateActionModal';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>{children}</div>
 );
 
 const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: { bg: '#F59E0B10', b: '#F59E0B25', d: '#F59E0B' }, low: { bg: '#10B98110', b: '#10B98125', d: '#10B981' } };
@@ -166,8 +166,13 @@ const ActionsPage = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="actions-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Resolution Centre</h1>
-          <p className="text-sm text-[#9FB0C3]">AI-detected issues requiring action. Each item maps to a one-click resolution.</p>
+          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+            — Resolution Centre
+          </div>
+          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+            Resolution <em style={{ fontStyle: 'italic', color: '#E85D00' }}>centre</em>.
+          </h1>
+          <p className="text-sm" style={{ color: '#8FA0B8' }}>AI-detected issues requiring action. Each item maps to a one-click resolution.</p>
         </div>
 
         {loading && <CognitiveMesh message="Scanning resolution queue..." />}
@@ -180,7 +185,7 @@ const ActionsPage = () => {
                   <div className="max-w-3xl">
                     <p className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Advisor handoff</p>
                     <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{advisorAssignment.title}</p>
-                    <p className="mt-2 text-xs text-[#9FB0C3] leading-relaxed">{advisorAssignment.summary}</p>
+                    <p className="mt-2 text-xs text-[#8FA0B8] leading-relaxed">{advisorAssignment.summary}</p>
                     <p className="mt-2 text-xs text-[#64748B]">Why now: {advisorAssignment.whyNow}</p>
                     <p className="mt-2 text-xs text-[#64748B]">If ignored: {advisorAssignment.ifIgnored}</p>
                   </div>
@@ -208,7 +213,7 @@ const ActionsPage = () => {
                 )}
                 {cleanPriority.secondary && (
                   <div className="mb-2">
-                    <span className="text-sm text-[#9FB0C3]">{cleanPriority.secondary}</span>
+                    <span className="text-sm text-[#8FA0B8]">{cleanPriority.secondary}</span>
                     {cleanPriority.delegate && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: fontFamily.mono }}>Delegate: {cleanPriority.delegate}</span>}
                   </div>
                 )}
@@ -229,7 +234,7 @@ const ActionsPage = () => {
                           <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
-                            {item.detail && <p className="text-xs mt-1 text-[#9FB0C3] leading-relaxed">{item.detail}</p>}
+                            {item.detail && <p className="text-xs mt-1 text-[#8FA0B8] leading-relaxed">{item.detail}</p>}
                             <div className="flex flex-wrap gap-2 mt-3">
                               {(item.actions || []).includes('auto-email') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630', fontFamily: fontFamily.mono }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
                               {(item.actions || []).includes('quick-sms') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: fontFamily.mono }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
@@ -261,7 +266,7 @@ const ActionsPage = () => {
                         <ArrowRight className="w-4 h-4 text-[#3B82F6] shrink-0 mt-0.5" />
                         <div>
                           <p className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{r.action}</p>
-                          <p className="text-xs text-[#9FB0C3] mt-1">{r.impact}</p>
+                          <p className="text-xs text-[#8FA0B8] mt-1">{r.impact}</p>
                         </div>
                       </div>
                     </Panel>

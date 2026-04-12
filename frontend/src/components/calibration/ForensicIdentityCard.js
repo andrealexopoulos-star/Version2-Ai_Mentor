@@ -175,7 +175,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
         <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-6">
           <div className="text-center mb-4">
             <h1 className="text-2xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Edit Business Details</h1>
-            <p className="text-sm text-[#9FB0C3] mt-1">Correct any details below, then regenerate the scan.</p>
+            <p className="text-sm text-[#8FA0B8] mt-1">Correct any details below, then regenerate the scan.</p>
           </div>
           {[
             { key: 'businessName', label: 'Business Legal / Trading Name', val: editFields.businessName ?? signals.businessName },
@@ -210,7 +210,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
         <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-6">
           <div className="text-center mb-4">
             <h1 className="text-2xl font-semibold text-[#EF4444]" style={{ fontFamily: fontFamily.display }}>Not Your Business</h1>
-            <p className="text-sm text-[#9FB0C3] mt-1">Please provide at least one identifier so we can find the correct business.</p>
+            <p className="text-sm text-[#8FA0B8] mt-1">Please provide at least one identifier so we can find the correct business.</p>
           </div>
           {[
             { key: 'legalName', label: 'Legal Business Name', ph: 'Your registered business name' },
@@ -251,7 +251,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
           <h1 className="text-2xl sm:text-3xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>
             Is this your business?
           </h1>
-          <p className="text-sm text-[#9FB0C3]">
+          <p className="text-sm text-[#8FA0B8]">
             Verify the details extracted from your domain before BIQc generates your footprint report.
           </p>
         </div>
@@ -277,10 +277,10 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             </div>
             <div className="space-y-1">
               {signals.emails?.length > 0 ? signals.emails.map((e, i) => (
-                <span key={i} className="text-sm text-[#9FB0C3] block">{e}</span>
+                <span key={i} className="text-sm text-[#8FA0B8] block">{e}</span>
               )) : <span className="text-sm text-[#64748B]">No email found</span>}
               {signals.phones?.length > 0 && signals.phones.map((p, i) => (
-                <span key={i} className="text-sm text-[#9FB0C3] block flex items-center gap-1.5">
+                <span key={i} className="text-sm text-[#8FA0B8] block flex items-center gap-1.5">
                   <Phone className="w-3 h-3 text-[#64748B]" />{p}
                 </span>
               ))}
@@ -339,15 +339,15 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
                   <div className="space-y-1">
                     <p className="text-xs text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>Match found in Australian Business Register</p>
                     {lookupResult.legal_name && <p className="text-sm text-[#EDF1F7]">Legal name: {lookupResult.legal_name}</p>}
-                    {lookupResult.abn && <p className="text-sm text-[#9FB0C3]">ABN: {lookupResult.abn}</p>}
-                    {lookupResult.address && <p className="text-sm text-[#9FB0C3]">Location: {lookupResult.address}</p>}
+                    {lookupResult.abn && <p className="text-sm text-[#8FA0B8]">ABN: {lookupResult.abn}</p>}
+                    {lookupResult.address && <p className="text-sm text-[#8FA0B8]">Location: {lookupResult.address}</p>}
                   </div>
                 )}
                 {lookupResult.status === 'ambiguous' && lookupResult.suggestions?.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-xs text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>Multiple matches — review below</p>
                     {lookupResult.suggestions.slice(0, 3).map((s, i) => (
-                      <p key={i} className="text-[11px] text-[#9FB0C3]">{s.name} (ABN: {s.abn}) — {s.state}</p>
+                      <p key={i} className="text-[11px] text-[#8FA0B8]">{s.name} (ABN: {s.abn}) — {s.state}</p>
                     ))}
                   </div>
                 )}

@@ -20,7 +20,7 @@ const AILearningGuarantee = () => (
         <h1 className="text-3xl sm:text-4xl font-semibold text-[#EDF1F7] mb-4" style={{ fontFamily: fontFamily.display }}>
           BIQc AI Learning Guarantee
         </h1>
-        <p className="text-lg text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+        <p className="text-lg text-[#8FA0B8] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
           BIQc is designed to prevent customer data from being used for public model training and applies provider controls to enforce this posture.
         </p>
       </div>
@@ -38,7 +38,7 @@ const AILearningGuarantee = () => (
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-3">
               <Lock className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-              <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{item}</p>
+              <p className="text-sm text-[#8FA0B8] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{item}</p>
             </div>
           ))}
         </div>
@@ -50,7 +50,7 @@ const AILearningGuarantee = () => (
           <Server className="w-4 h-4 text-[#3B82F6]" />
           <h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>How BIQc Processes Your Data</h2>
         </div>
-        <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+        <p className="text-sm text-[#8FA0B8] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
           BIQc uses API-based processing with provider-level training restrictions and platform retention controls. Data handling follows documented privacy and sub-processor terms.
         </p>
       </div>
@@ -66,7 +66,7 @@ const AILearningGuarantee = () => (
             <span className="text-[10px] font-semibold tracking-widest uppercase block mb-3" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>{seg.label}</span>
             <div className="space-y-2">
               {seg.items.map((item, i) => (
-                <p key={i} className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{item}</p>
+                <p key={i} className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{item}</p>
               ))}
             </div>
           </div>
@@ -75,7 +75,7 @@ const AILearningGuarantee = () => (
 
       {/* Legal Alignment */}
       <div className="pt-6" style={{ borderTop: '1px solid var(--biqc-border)' }}>
-        <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+        <p className="text-sm text-[#8FA0B8] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
           Our <Link to="/trust/terms" className="text-[#E85D00] hover:underline">Terms of Service</Link> explicitly state that you own your inputs and your outputs.
         </p>
       </div>

@@ -68,7 +68,7 @@ export default function UpgradePage({ success = false }) {
           <h1 className="text-4xl sm:text-5xl" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
             BIQc Foundation is now active
           </h1>
-          <p className="mx-auto max-w-2xl text-sm sm:text-base" style={{ color: '#9FB0C3' }}>
+          <p className="mx-auto max-w-2xl text-sm sm:text-base" style={{ color: '#8FA0B8' }}>
             Your subscription has been confirmed. You can now access BIQc Foundation modules from the platform menu.
           </p>
           <div className="mx-auto flex max-w-md flex-col gap-3 sm:flex-row">
@@ -102,8 +102,10 @@ export default function UpgradePage({ success = false }) {
             <Lock className="h-4 w-4" style={{ color: '#E85D00' }} />
             <span className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Upgrade required</span>
           </div>
-          <h1 className="mt-6 text-4xl sm:text-5xl" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>Unlock paid BIQc tiers</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base" style={{ color: '#9FB0C3' }}>
+          <h1 className="mt-6 font-medium" style={{ color: '#EDF1F7', fontFamily: fontFamily.display, fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+            Unlock <em style={{ fontStyle: 'italic', color: '#E85D00' }}>everything</em>.
+          </h1>
+          <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-base" style={{ color: '#8FA0B8' }}>
             Choose Starter, Pro, or Enterprise based on required depth. Custom Build is available for contracted integrations and entitlements.
           </p>
         </div>
@@ -125,7 +127,7 @@ export default function UpgradePage({ success = false }) {
                 <span className="text-4xl" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>{tier.price}</span>
                 <span className="pb-1 text-sm" style={{ color: '#64748B' }}>{tier.period}</span>
               </div>
-              <p className="mt-2 text-xs" style={{ color: '#9FB0C3' }}>{tier.subtitle}</p>
+              <p className="mt-2 text-xs" style={{ color: '#8FA0B8' }}>{tier.subtitle}</p>
             </button>
           ))}
         </div>

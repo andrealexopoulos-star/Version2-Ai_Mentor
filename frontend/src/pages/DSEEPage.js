@@ -40,7 +40,7 @@ const DSEEPage = () => {
       <div className="space-y-4 max-w-[900px]" style={{ fontFamily: fontFamily.body }} data-testid="dsee-page">
         <div>
           <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display, WebkitTextStroke: '0.2px #EDF1F7' }}>Structural Exposure Analysis</h1>
-          <p className="text-sm text-[#9FB0C3] mb-3">
+          <p className="text-sm text-[#8FA0B8] mb-3">
             Deterministic competitive intelligence — no financial projections. Analyses your digital structure, competitors and strategic vulnerabilities from public data.
           </p>
           <div className="p-3 rounded-lg" style={{ background: 'rgba(232,93,0,0.04)', border: '1px solid rgba(232,93,0,0.12)' }}>
@@ -53,7 +53,7 @@ const DSEEPage = () => {
 
         {/* Input */}
         <div className="rounded-2xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-          <label className="text-xs font-semibold mb-2 block" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+          <label className="text-xs font-semibold mb-2 block" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>
             Website URL <span style={{ color: '#EF4444' }}>*</span> <span style={{ color: '#4A5568' }}>(required)</span>
           </label>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -90,7 +90,7 @@ const DSEEPage = () => {
             ].map((stage, i) => (
               <div key={i} className="flex items-center gap-2 mt-1.5">
                 <div className={`w-1.5 h-1.5 rounded-full ${stage.done ? 'bg-green-500' : 'bg-[#E85D00] animate-pulse'}`} />
-                <p className="text-xs" style={{ color: stage.done ? '#10B981' : '#9FB0C3', fontFamily: fontFamily.mono }}>{stage.label}</p>
+                <p className="text-xs" style={{ color: stage.done ? '#10B981' : '#8FA0B8', fontFamily: fontFamily.mono }}>{stage.label}</p>
               </div>
             ))}
           </div>
@@ -108,7 +108,7 @@ const DSEEPage = () => {
                 </div>
                 <h2 className="text-xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{r.business_name}</h2>
                 <div className="flex items-center gap-3 mt-1">
-                  {r.location && <span className="text-xs text-[#9FB0C3] flex items-center gap-1"><MapPin className="w-3 h-3" />{r.location}</span>}
+                  {r.location && <span className="text-xs text-[#8FA0B8] flex items-center gap-1"><MapPin className="w-3 h-3" />{r.location}</span>}
                   <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{r.domain?.resolved_domain}</span>
                 </div>
               </div>
@@ -160,7 +160,7 @@ const DSEEPage = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div className="p-2 rounded" style={{ background: 'var(--biqc-bg)' }}>
                           <span className="text-[10px] text-[#64748B] block mb-0.5" style={{ fontFamily: fontFamily.mono }}>You</span>
-                          <span className="text-[#9FB0C3]">{a.subject_metric}</span>
+                          <span className="text-[#8FA0B8]">{a.subject_metric}</span>
                         </div>
                         <div className="p-2 rounded" style={{ background: 'var(--biqc-bg)' }}>
                           <span className="text-[10px] text-[#64748B] block mb-0.5" style={{ fontFamily: fontFamily.mono }}>Competitor</span>
@@ -202,7 +202,7 @@ const DSEEPage = () => {
                   {sdd.normalization && (
                     <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Normalization</span>
-                      <span className="text-xs text-[#9FB0C3]">Volume factor: {sdd.normalization.volume_adjustment_factor} | Pages: {sdd.normalization.pages_crawled_subject} vs avg {sdd.normalization.pages_crawled_competitor_avg} | Cap: {sdd.normalization.per_page_cap}/page | Boilerplate: suppressed</span>
+                      <span className="text-xs text-[#8FA0B8]">Volume factor: {sdd.normalization.volume_adjustment_factor} | Pages: {sdd.normalization.pages_crawled_subject} vs avg {sdd.normalization.pages_crawled_competitor_avg} | Cap: {sdd.normalization.per_page_cap}/page | Boilerplate: suppressed</span>
                     </div>
                   )}
                 </div>
@@ -224,7 +224,7 @@ const DSEEPage = () => {
                 {Object.entries(conf.confidence_components || {}).map(([k, v]) => (
                   <div key={k}>
                     <div className="flex justify-between mb-0.5">
-                      <span className="text-xs text-[#9FB0C3] capitalize">{k.replace(/_/g, ' ')}</span>
+                      <span className="text-xs text-[#8FA0B8] capitalize">{k.replace(/_/g, ' ')}</span>
                       <span className="text-xs font-semibold" style={{ fontFamily: fontFamily.mono, color: v >= 0.7 ? '#10B981' : v >= 0.4 ? '#F59E0B' : '#EF4444' }}>{Math.round(v * 100)}%</span>
                     </div>
                     <div className="h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.15)' }}>
@@ -236,7 +236,7 @@ const DSEEPage = () => {
                   <div className="mt-2 p-2 rounded" style={{ background: '#EF444408', border: '1px solid #EF444415' }}>
                     <span className="text-[10px] text-[#EF4444] block mb-1" style={{ fontFamily: fontFamily.mono }}>Penalties Applied ({conf.penalty_total})</span>
                     {Object.entries(conf.penalties_applied).map(([k, v]) => (
-                      <span key={k} className="text-[10px] text-[#9FB0C3] block">{k.replace(/_/g, ' ')}: {v}</span>
+                      <span key={k} className="text-[10px] text-[#8FA0B8] block">{k.replace(/_/g, ' ')}: {v}</span>
                     ))}
                   </div>
                 )}

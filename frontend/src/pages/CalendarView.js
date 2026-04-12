@@ -302,8 +302,8 @@ const CalendarView = () => {
                 {syncBadge.label}
               </span>
             </div>
-            <h1 style={{ color: 'var(--text-primary)' }}>Calendar Intelligence</h1>
-            <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily?.display || 'Inter', color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Your week, read by <em style={{ fontStyle: 'italic', color: '#E85D00' }}>BIQc</em>.</h1>
+            <p className="mt-2" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
               {loadError ? 'Calendar data has partial issues. Review status and retry sync if needed.' : `Your ${calendarProvider === 'gmail' ? 'Gmail' : 'Outlook'} schedule synced for AI-powered insights`}
             </p>
           </div>

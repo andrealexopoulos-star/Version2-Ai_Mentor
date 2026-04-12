@@ -423,7 +423,7 @@ export function BoardRoomBody({
 
           <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.04 }} data-testid="diagnosis-zone" aria-label="Diagnosis selection zone">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs uppercase tracking-widest" style={{ color: colors.textMuted }}>Diagnosis — Select an area</h2>
+              <h2 className="text-[11px] uppercase tracking-[0.08em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>— Diagnosis</h2>
               <button onClick={handleNewSession} className={`inline-flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg border ${focusRingClass}`} style={{ color: colors.textSecondary, borderColor: colors.border }} aria-label="Start new boardroom session from diagnosis zone">
                 <Plus className="w-3.5 h-3.5" />
                 New session

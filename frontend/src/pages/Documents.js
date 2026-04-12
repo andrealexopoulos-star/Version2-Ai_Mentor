@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent } from '../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { fontFamily } from '../design-system/tokens';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -90,8 +91,8 @@ const Documents = () => {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-              <p className="overline text-[#9FB0C3] mb-2">Library</p>
-              <h1 className="text-3xl md:text-4xl font-serif text-[#EDF1F7]">My Documents</h1>
+              <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Library</div>
+              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Document <em style={{ fontStyle: 'italic', color: '#E85D00' }}>vault</em>.</h1>
             </div>
             <Button 
               onClick={() => navigate('/sop-generator')}
@@ -160,7 +161,7 @@ const Documents = () => {
                     <h3 className="font-serif text-lg text-[#EDF1F7] mb-2 line-clamp-2">
                       {doc.title}
                     </h3>
-                    <p className="text-sm text-[#9FB0C3] line-clamp-3 mb-4">
+                    <p className="text-sm text-[#8FA0B8] line-clamp-3 mb-4">
                       {doc.content.substring(0, 150)}...
                     </p>
                     <div className="flex items-center justify-between text-xs text-[#64748B]">
@@ -184,7 +185,7 @@ const Documents = () => {
               <CardContent className="p-12 text-center">
                 <FolderOpen className="w-16 h-16 text-[#EDF1F7]/20 mx-auto mb-4" />
                 <h3 className="text-xl font-serif text-[#EDF1F7] mb-2">No documents yet</h3>
-                <p className="text-[#9FB0C3] mb-6">
+                <p className="text-[#8FA0B8] mb-6">
                   {searchQuery || filterType !== 'all' 
                     ? 'No documents match your search criteria'
                     : 'Start creating SOPs, analyses, and action plans'

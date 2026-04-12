@@ -79,7 +79,7 @@ const SoundboardFlagshipStage = () => (
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-[11px] font-semibold" style={{ color: '#E7EEF7', fontFamily: fontFamily.body }}>{item.label}</p>
-                  <p className="truncate text-[10px]" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item.detail}</p>
+                  <p className="truncate text-[10px]" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{item.detail}</p>
                 </div>
               </div>
             </div>
@@ -112,7 +112,7 @@ const SoundboardFlagshipStage = () => (
                 <p className="text-[11px] sm:text-xs mb-1" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
                   Hold headline price, launch a targeted retention offer, and defend margin while monitoring competitor churn.
                 </p>
-                <span className="inline-flex items-center gap-1 text-[10px]" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+                <span className="inline-flex items-center gap-1 text-[10px]" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>
                   drafting
                   <span style={{ animation: 'sbTyping 1.2s linear infinite' }}>.</span>
                   <span style={{ animation: 'sbTyping 1.2s linear infinite 0.2s' }}>.</span>

@@ -60,7 +60,7 @@ const HeroLayer = ({ variant, phase, zIndex }) => {
       </h1>
       {variant.h2 && (
         <h2 className="text-[13px] sm:text-[16px] lg:text-[18px] max-w-xl mx-auto leading-[1.6] px-4"
-          style={{ fontFamily: fontFamily.body, fontWeight: 300, color: '#9FB0C3' }}>
+          style={{ fontFamily: fontFamily.body, fontWeight: 300, color: '#8FA0B8' }}>
           <RichText text={variant.h2} />
         </h2>
       )}
@@ -142,16 +142,16 @@ export const LiquidSteelHeroRotator = () => {
       {nextIndex !== null && <HeroLayer variant={VARIANTS[nextIndex]} phase={transitioning ? 'next-entering' : 'next-staged'} zIndex={2} />}
       <button onClick={goPrev} data-testid="hero-prev" aria-label="Previous"
         className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200"
-        style={{ zIndex: 5, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#9FB0C3', opacity: transitioning ? 0.2 : 0.4, pointerEvents: transitioning ? 'none' : 'auto' }}
+        style={{ zIndex: 5, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#8FA0B8', opacity: transitioning ? 0.2 : 0.4, pointerEvents: transitioning ? 'none' : 'auto' }}
         onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.borderColor = 'rgba(198,95,46,0.3)'; e.currentTarget.style.color = '#C65F2E'; }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '0.4'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#9FB0C3'; }}>
+        onMouseLeave={e => { e.currentTarget.style.opacity = '0.4'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#8FA0B8'; }}>
         <ChevronLeft className="w-5 h-5" />
       </button>
       <button onClick={goNext} data-testid="hero-next" aria-label="Next"
         className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200"
-        style={{ zIndex: 5, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#9FB0C3', opacity: transitioning ? 0.2 : 0.4, pointerEvents: transitioning ? 'none' : 'auto' }}
+        style={{ zIndex: 5, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#8FA0B8', opacity: transitioning ? 0.2 : 0.4, pointerEvents: transitioning ? 'none' : 'auto' }}
         onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.borderColor = 'rgba(198,95,46,0.3)'; e.currentTarget.style.color = '#C65F2E'; }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '0.4'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#9FB0C3'; }}>
+        onMouseLeave={e => { e.currentTarget.style.opacity = '0.4'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#8FA0B8'; }}>
         <ChevronRight className="w-5 h-5" />
       </button>
     </div>

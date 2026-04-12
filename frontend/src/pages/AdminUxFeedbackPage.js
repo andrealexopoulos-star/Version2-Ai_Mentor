@@ -212,7 +212,7 @@ const AdminUxFeedbackPage = () => {
                   {item.integration_key}
                 </span>
                 <span className="text-xs text-[#EDF1F7] flex-1">{item.display_name}</span>
-                <span className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>P{item.priority}</span>
+                <span className="text-[10px] text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>P{item.priority}</span>
                 <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{item.status}</span>
               </div>
             ))}

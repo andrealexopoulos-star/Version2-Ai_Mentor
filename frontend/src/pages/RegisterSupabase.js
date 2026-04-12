@@ -5,7 +5,7 @@ import { apiClient } from '../lib/api';
 import { Input } from '../components/ui/input';
 import RecaptchaGate from '../components/RecaptchaGate';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Eye, EyeOff, Shield, Lock, Zap, Activity } from 'lucide-react';
+import { Eye, EyeOff, Check } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { EVENTS, trackActivationStep, trackEvent } from '../lib/analytics';
 
@@ -214,29 +214,30 @@ const RegisterSupabase = () => {
 
   const set = (k, v) => setFormData(p => ({ ...p, [k]: v }));
 
-  const inputStyle = { fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid rgba(140,170,210,0.15)', color: '#EDF1F7', caretColor: '#EDF1F7' };
+  const inputStyle = { fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', color: '#EDF1F7', caretColor: '#EDF1F7' };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#0F1720' }}>
-      {/* Left: Form */}
-      <div className="flex-1 flex flex-col justify-center px-8 md:px-16 lg:px-20 py-12 overflow-y-auto">
-        <div className="max-w-sm w-full mx-auto">
-          <Link to="/" className="inline-flex items-center gap-2 mb-8 text-sm transition-colors hover:text-[#E85D00]" style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="register-back-to-home-link">
-            <ArrowLeft className="w-4 h-4" /> Back to home
-          </Link>
-
-          <div className="flex items-center gap-3 mb-8">
-            <div className="rounded-xl flex items-center justify-center shrink-0" style={{ background: '#E85D00', width: 40, height: 40, minWidth: 40 }}>
-              <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily.mono }}>B</span>
-            </div>
-            <div className="min-w-0">
-              <span className="text-xl font-semibold text-[#EDF1F7] block" style={{ fontFamily: DISPLAY }}>BIQc</span>
-              <span className="text-[10px] text-[#64748B] -mt-0.5 block truncate" style={{ fontFamily: fontFamily.mono }}>powered by Business Intelligence Quotient Centre</span>
-            </div>
+    <div className="min-h-screen flex" style={{ background: '#080C14' }}>
+      {/* Left: Registration Form */}
+      <div className="flex-[1.1] flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-12 overflow-y-auto" style={{ background: '#080C14' }}>
+        <div className="max-w-[460px] w-full mx-auto">
+          {/* Mobile-only brand */}
+          <div className="flex items-center gap-2 mb-8 lg:hidden">
+            <span className="inline-block rounded-full" style={{ width: 10, height: 10, background: '#E85D00' }} />
+            <span className="text-lg font-semibold text-white" style={{ fontFamily: DISPLAY }}>BIQc</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-semibold text-[#EDF1F7] mb-2" style={{ fontFamily: DISPLAY }}>Get started</h1>
-          <p className="text-sm text-[#9FB0C3] mb-4" style={{ fontFamily: fontFamily.body }}>Create your account to access sovereign intelligence.</p>
+          <span className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full text-[11px] font-medium uppercase tracking-[0.08em]" style={{ background: 'rgba(232,93,0,0.12)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)', fontFamily: fontFamily.mono }}>
+            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: '#E85D00', boxShadow: '0 0 8px #E85D00' }} />
+            14 days of Pro · No card
+          </span>
+
+          <h1 className="font-semibold mb-2" style={{ fontFamily: DISPLAY, color: '#EDF1F7', fontSize: '48px', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+            Start your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>free trial</em>.
+          </h1>
+          <p className="text-base mb-4" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+            Connect Outlook or Gmail and BIQc starts reading the room within 90 seconds.
+          </p>
 
           {!hasSupabaseConfig && (
             <div
@@ -252,156 +253,174 @@ const RegisterSupabase = () => {
             </div>
           )}
 
-          {/* Contextual integration hint — shown when arriving from the integrations page */}
+          {/* Contextual integration hint */}
           {integrationLabel && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl mb-4"
               style={{ background: 'rgba(232,93,0,0.07)', border: '1px solid rgba(232,93,0,0.2)' }}>
-              <Zap className="w-4 h-4 flex-shrink-0" style={{ color: '#E85D00' }} />
-              <p className="text-xs" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+              <span className="text-xs" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
                 After setup you'll connect <span style={{ color: '#E85D00' }}>{integrationLabel}</span> to power your AI intelligence.
-              </p>
+              </span>
             </div>
           )}
 
-          {/* OAuth */}
-          <div className="space-y-3 mb-5">
+          {/* SSO row */}
+          <div className="flex flex-col gap-3 mt-7 mb-6">
             <button type="button" onClick={() => handleOAuthSignIn('google')} disabled={!hasSupabaseConfig || oauthLoading || loading}
-              className="w-full h-11 flex items-center justify-center gap-3 rounded-xl text-sm font-medium transition-all hover:bg-white/10 disabled:opacity-50"
-              style={{ fontFamily: fontFamily.body, color: '#EDF1F7', background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}
+              className="w-full flex items-center justify-center gap-3 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
+              style={{ fontFamily: fontFamily.body, color: '#EDF1F7', background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', padding: '14px 18px', cursor: 'pointer' }}
               data-testid="register-google-btn">
-              {oauthLoading ? <span className="text-xs" style={{ color: "#E85D00", fontFamily: "\x27JetBrains Mono\x27, monospace" }}>connecting...</span> : (
-                <><svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EF4444" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Continue with Google</>
+              {oauthLoading ? <span className="text-xs" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>connecting...</span> : (
+                <><svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EF4444" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Continue with Google</>
               )}
             </button>
             <button type="button" onClick={() => handleOAuthSignIn('azure')} disabled={!hasSupabaseConfig || oauthLoading || loading}
-              className="w-full h-11 flex items-center justify-center gap-3 rounded-xl text-sm font-medium transition-all hover:bg-white/10 disabled:opacity-50"
-              style={{ fontFamily: fontFamily.body, color: '#EDF1F7', background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}
+              className="w-full flex items-center justify-center gap-3 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
+              style={{ fontFamily: fontFamily.body, color: '#EDF1F7', background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', padding: '14px 18px', cursor: 'pointer' }}
               data-testid="register-microsoft-btn">
-              {oauthLoading ? <span className="text-xs" style={{ color: "#E85D00", fontFamily: "\x27JetBrains Mono\x27, monospace" }}>connecting...</span> : (
-                <><svg className="w-5 h-5" viewBox="0 0 23 23"><rect x="1" y="1" width="10" height="10" fill="#F25022"/><rect x="12" y="1" width="10" height="10" fill="#7FBA00"/><rect x="1" y="12" width="10" height="10" fill="#00A4EF"/><rect x="12" y="12" width="10" height="10" fill="#FFB900"/></svg>Continue with Microsoft</>
+              {oauthLoading ? <span className="text-xs" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>connecting...</span> : (
+                <><svg className="w-5 h-5 shrink-0" viewBox="0 0 23 23"><rect x="1" y="1" width="10" height="10" fill="#F25022"/><rect x="12" y="1" width="10" height="10" fill="#7FBA00"/><rect x="1" y="12" width="10" height="10" fill="#00A4EF"/><rect x="12" y="12" width="10" height="10" fill="#FFB900"/></svg>Continue with Microsoft</>
               )}
             </button>
           </div>
 
-          <div className="flex items-center gap-3 mb-5">
+          <div className="flex items-center gap-4 mb-7">
             <div className="flex-1 h-px" style={{ background: 'rgba(140,170,210,0.15)' }} />
-            <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>or register with email</span>
+            <span className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>or use email</span>
             <div className="flex-1 h-px" style={{ background: 'rgba(140,170,210,0.15)' }} />
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Full Name <span className="text-[#EF4444]">*</span></label>
-              <Input id="full_name" type="text" value={formData.full_name} onChange={(e) => set('full_name', e.target.value)} placeholder="John Doe" className="h-11 text-sm rounded-xl" style={inputStyle} required data-testid="register-name-input" />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Email <span className="text-[#EF4444]">*</span></label>
-              <Input id="email" type="email" value={formData.email} onChange={(e) => set('email', e.target.value)} placeholder="you@company.com" className="h-11 text-sm rounded-xl" style={inputStyle} required data-testid="register-email-input" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Company</label>
-                <Input id="company_name" type="text" value={formData.company_name} onChange={(e) => set('company_name', e.target.value)} placeholder="Your Company" className="h-11 text-sm rounded-xl" style={inputStyle} data-testid="register-company-input" />
+          <form onSubmit={handleSubmit}>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="full_name" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Full name</label>
+                <Input id="full_name" type="text" value={formData.full_name} onChange={(e) => set('full_name', e.target.value)} placeholder="John Doe" className="h-12 text-sm rounded-xl" style={inputStyle} required data-testid="register-name-input" />
               </div>
-              <div>
-                <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Industry</label>
-                <Input id="industry" type="text" value={formData.industry} onChange={(e) => set('industry', e.target.value)} placeholder="Technology" className="h-11 text-sm rounded-xl" style={inputStyle} data-testid="register-industry-input" />
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="email" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Work email</label>
+                <Input id="email" type="email" value={formData.email} onChange={(e) => set('email', e.target.value)} placeholder="you@yourbusiness.com.au" className="h-12 text-sm rounded-xl" style={inputStyle} required data-testid="register-email-input" />
               </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Password <span className="text-[#EF4444]">*</span></label>
-              <div className="relative">
-                <Input id="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => set('password', e.target.value)} placeholder="Min 6 characters" className="h-11 pr-12 text-sm rounded-xl" style={{ ...inputStyle, WebkitTextSecurity: showPassword ? 'none' : 'disc' }} required minLength={6} data-testid="register-password-input" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#9FB0C3]" data-testid="register-toggle-password">
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="company_name" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Business name</label>
+                  <Input id="company_name" type="text" value={formData.company_name} onChange={(e) => set('company_name', e.target.value)} placeholder="The Strategy Squad" className="h-12 text-sm rounded-xl" style={inputStyle} data-testid="register-company-input" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="industry" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Team size</label>
+                  <select id="industry" value={formData.industry} onChange={(e) => set('industry', e.target.value)} className="h-12 text-sm rounded-xl px-4 appearance-none cursor-pointer" style={inputStyle} data-testid="register-industry-input">
+                    <option value="">Just me</option>
+                    <option value="2-10">2–10</option>
+                    <option value="11-50">11–50</option>
+                    <option value="51-200">51–200</option>
+                    <option value="200+">200+</option>
+                  </select>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Confirm Password <span className="text-[#EF4444]">*</span></label>
-              <Input id="confirmPassword" type={showPassword ? 'text' : 'password'} value={formData.confirmPassword} onChange={(e) => set('confirmPassword', e.target.value)} placeholder="Re-enter password" className="h-11 text-sm rounded-xl"
-                style={{ ...inputStyle, borderColor: formData.confirmPassword && !passwordsMatch ? '#EF4444' : 'rgba(140,170,210,0.15)', WebkitTextSecurity: showPassword ? 'none' : 'disc' }}
-                required minLength={6} data-testid="register-confirm-password-input" />
-              {formData.confirmPassword && !passwordsMatch && <p className="text-xs mt-1 text-[#EF4444]" data-testid="password-mismatch-error">Passwords do not match</p>}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="password" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Password</label>
+                <div className="relative">
+                  <Input id="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => set('password', e.target.value)} placeholder="Min 6 characters" className="h-12 pr-12 text-sm rounded-xl" style={inputStyle} required minLength={6} data-testid="register-password-input" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors" style={{ color: '#708499' }} data-testid="register-toggle-password">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="confirmPassword" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Confirm password</label>
+                <Input id="confirmPassword" type={showPassword ? 'text' : 'password'} value={formData.confirmPassword} onChange={(e) => set('confirmPassword', e.target.value)} placeholder="Re-enter password" className="h-12 text-sm rounded-xl"
+                  style={{ ...inputStyle, borderColor: formData.confirmPassword && !passwordsMatch ? '#EF4444' : 'rgba(140,170,210,0.15)' }}
+                  required minLength={6} data-testid="register-confirm-password-input" />
+                {formData.confirmPassword && !passwordsMatch && <p className="text-xs mt-1 text-[#EF4444]" data-testid="password-mismatch-error">Passwords do not match</p>}
+              </div>
             </div>
 
             <button type="submit" disabled={!hasSupabaseConfig || loading || oauthLoading || !isFormValid}
-              className="w-full h-12 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 disabled:opacity-50"
-              style={{ background: '#E85D00', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(232,93,0,0.3)', width: '100%', minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              className="w-full flex items-center justify-center gap-2 mt-6 rounded-xl text-[15px] font-semibold transition-all disabled:opacity-50"
+              style={{ background: '#E85D00', color: 'white', height: 48, fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(232,93,0,0.3)', border: 'none', cursor: 'pointer' }}
               data-testid="register-submit-btn">
-              {loading ? "Creating account..." : "Create account"}
+              {loading ? 'Creating account...' : <>Create account<span className="ml-1">→</span></>}
             </button>
+
             {recaptchaEnabled && (
-              <RecaptchaGate
-                onTokenChange={setCaptchaToken}
-                onStatusChange={handleRecaptchaStatus}
-                action={recaptchaAction}
-                testId="register-recaptcha"
-              />
+              <div className="mt-4">
+                <RecaptchaGate
+                  onTokenChange={setCaptchaToken}
+                  onStatusChange={handleRecaptchaStatus}
+                  action={recaptchaAction}
+                  testId="register-recaptcha"
+                />
+              </div>
             )}
             {fallbackRequired && fallbackChallenge && (
-              <div
-                className="rounded-xl border px-3 py-3"
-                style={{ borderColor: '#334155', background: 'rgba(15,23,42,0.5)' }}
-                data-testid="register-fallback-captcha"
-              >
-                <p className="text-xs mb-2" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
+              <div className="rounded-xl border px-3 py-3 mt-4" style={{ borderColor: 'rgba(140,170,210,0.15)', background: 'rgba(14,22,40,0.5)' }} data-testid="register-fallback-captcha">
+                <p className="text-xs mb-2" style={{ color: '#708499', fontFamily: fontFamily.body }}>
                   Verification required: solve {fallbackChallenge.prompt}
                 </p>
-                <Input
-                  type="number"
-                  value={fallbackAnswer}
-                  onChange={(e) => setFallbackAnswer(e.target.value)}
-                  placeholder="Your answer"
-                  className="h-10 text-sm rounded-lg"
-                  style={{ fontFamily: fontFamily.body, background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
-                  data-testid="register-fallback-captcha-input"
-                />
+                <Input type="number" value={fallbackAnswer} onChange={(e) => setFallbackAnswer(e.target.value)} placeholder="Your answer" className="h-10 text-sm rounded-lg" style={inputStyle} data-testid="register-fallback-captcha-input" />
               </div>
             )}
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.body }}>
-              Already have an account?{' '}
-              <Link to="/login-supabase" className="font-semibold text-[#E85D00] hover:text-[#FF8C33] transition-colors" data-testid="register-login-link">Sign in</Link>
-            </p>
-          </div>
+          <p className="text-xs text-center mt-4 leading-relaxed" style={{ fontFamily: fontFamily.body, color: '#708499' }}>
+            By creating an account you agree to our <Link to="/trust#terms" style={{ color: '#E85D00', textDecoration: 'none' }}>terms</Link> and <Link to="/trust#privacy" style={{ color: '#E85D00', textDecoration: 'none' }}>privacy policy</Link>. SOC 2 in progress. Australian-sovereign data.
+          </p>
+
+          <p className="text-sm mt-7 text-center" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+            Already a customer?{' '}
+            <Link to="/login-supabase" className="font-medium" style={{ color: '#E85D00', textDecoration: 'none' }} data-testid="register-login-link">
+              Sign in →
+            </Link>
+          </p>
         </div>
       </div>
 
-      {/* Right: Trust Panel */}
-      <div className="hidden lg:flex flex-1 items-center justify-center px-12" style={{ background: '#0A1018', borderLeft: '1px solid rgba(140,170,210,0.15)' }}>
-        <div className="max-w-sm">
-          <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#E85D00] block mb-5" style={{ fontFamily: fontFamily.mono }}>Sovereign Intelligence</span>
-          <h2 className="text-3xl font-normal text-[#EDF1F7] mb-3 leading-snug" style={{ fontFamily: DISPLAY }}>
-            Transform chaos into strategic clarity.
-          </h2>
-          <p className="text-sm text-[#9FB0C3] mb-8 leading-relaxed" style={{ fontFamily: fontFamily.body }}>Join forward-thinking leaders leveraging sovereign AI for competitive advantage.</p>
+      {/* Right: Brand Panel — #0A0A0A hardcoded per mockup auth spec */}
+      <aside className="hidden lg:flex flex-col justify-between flex-1 relative overflow-hidden" style={{ background: '#0A0A0A', color: '#FFFFFF', padding: '48px 40px' }}>
+        {/* Animated orbs */}
+        <div className="absolute -top-[200px] -left-[200px] w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #E85D00 0%, transparent 60%)', opacity: 0.3, filter: 'blur(80px)', animation: 'orbDrift 16s ease-in-out infinite' }} />
+        <div className="absolute -bottom-[200px] -right-[200px] w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #C0C8D4 0%, transparent 60%)', opacity: 0.2, filter: 'blur(60px)', animation: 'orbDrift 20s ease-in-out infinite reverse' }} />
+        <style>{`@keyframes orbDrift { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px, 40px) scale(1.18); } }`}</style>
 
-          <div className="space-y-3">
-            {[
-              { icon: Zap, label: '15+ hours saved weekly', desc: 'Automated intelligence gathering' },
-              { icon: Activity, label: '8-12% cash bleed detected', desc: 'Revenue protection on autopilot' },
-              { icon: Shield, label: '97% SOP compliance', desc: 'Operational consistency assured' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3.5 rounded-xl" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
-                <item.icon className="w-4 h-4 text-[#E85D00] shrink-0" />
-                <div>
-                  <span className="text-sm font-medium text-[#EDF1F7] block" style={{ fontFamily: fontFamily.body }}>{item.label}</span>
-                  <span className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{item.desc}</span>
+        <Link to="/" className="relative z-10 flex items-center gap-3" style={{ color: '#FFFFFF', textDecoration: 'none' }}>
+          <span className="inline-block rounded-full" style={{ width: 10, height: 10, background: '#E85D00', boxShadow: '0 0 16px #E85D00' }} />
+          <span className="text-2xl font-semibold" style={{ fontFamily: DISPLAY }}>BIQc</span>
+        </Link>
+
+        <div className="relative z-10 max-w-[480px] mt-12">
+          <h2 className="font-medium leading-[1.05] mb-4" style={{ fontFamily: DISPLAY, color: '#FFFFFF', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.02em' }}>
+            The only feed that <em style={{ fontStyle: 'italic', color: '#E85D00' }}>knows what changed</em> while you slept.
+          </h2>
+          <p className="text-base leading-relaxed mb-7" style={{ fontFamily: fontFamily.body, color: 'rgba(255,255,255,0.65)', maxWidth: 420 }}>
+            Two minutes from sign-up to your first quiet brief. No setup calls. No 14-step wizard. Just connect your inbox and watch the room.
+          </p>
+
+          <div className="flex flex-col gap-3 mb-8">
+            {['14 days of Pro features, no credit card', 'Auto-detects 19 of the 23 most common SMB risks', 'Read-only by default — we never write to your tools', 'Cancel in two clicks. Export your data anytime.'].map((item, i) => (
+              <div key={i} className="flex items-start gap-3 text-sm" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                <div className="w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: '#E85D00' }}>
+                  <Check className="w-3 h-3 text-white" />
                 </div>
+                <span style={{ fontFamily: fontFamily.body }}>{item}</span>
               </div>
             ))}
           </div>
 
-          <div className="mt-8 flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: '#10B98110', border: '1px solid #10B98120' }}>
-            <Lock className="w-4 h-4 text-[#10B981]" />
-            <span className="text-xs text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>100% Australian data sovereignty guaranteed</span>
+          <div className="p-5 rounded-r-xl" style={{ borderLeft: '2px solid #E85D00', background: 'rgba(255,255,255,0.04)' }}>
+            <p className="text-sm leading-relaxed mb-3" style={{ fontFamily: fontFamily.body, color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>
+              "I signed up on a Tuesday. By Wednesday morning BIQc had already flagged a $12k churn risk we'd missed in the inbox. Paid for itself the first week."
+            </p>
+            <span className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+              — Marcus Tate, founder · Northbridge Logistics
+            </span>
           </div>
         </div>
-      </div>
+
+        <div className="relative z-10 flex items-center gap-6 flex-wrap">
+          {['SOC 2 in progress', 'Sovereign AU', 'Read-only default'].map((t, i) => (
+            <span key={i} className="text-[11px] uppercase tracking-[0.04em]" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.4)' }}>{t}</span>
+          ))}
+        </div>
+      </aside>
     </div>
   );
 };

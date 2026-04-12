@@ -21,7 +21,7 @@ const PlatformLogin = () => (
         </div>
 
         <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>Welcome back</h1>
-        <p className="text-sm text-[#9FB0C3] mb-8" style={{ fontFamily: fontFamily.body }}>Demo preview. Use secure sign-in to access the live platform.</p>
+        <p className="text-sm text-[#8FA0B8] mb-8" style={{ fontFamily: fontFamily.body }}>Demo preview. Use secure sign-in to access the live platform.</p>
 
         {/* Social Logins */}
         <div className="space-y-3 mb-6">
@@ -44,11 +44,11 @@ const PlatformLogin = () => (
         {/* Form */}
         <div className="space-y-4 mb-6">
           <div>
-            <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5" style={{ fontFamily: fontFamily.body }}>EMAIL</label>
+            <label className="text-xs font-medium text-[#8FA0B8] block mb-1.5" style={{ fontFamily: fontFamily.body }}>EMAIL</label>
             <input type="email" placeholder="you@company.com" className="w-full px-3.5 py-2.5 rounded-lg text-sm text-[#EDF1F7] outline-none transition-all focus:border-[#E85D00]" style={{ fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid rgba(140,170,210,0.15)' }} data-testid="email-input" />
           </div>
           <div>
-            <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5" style={{ fontFamily: fontFamily.body }}>PASSWORD</label>
+            <label className="text-xs font-medium text-[#8FA0B8] block mb-1.5" style={{ fontFamily: fontFamily.body }}>PASSWORD</label>
             <input type="password" placeholder="••••••••" className="w-full px-3.5 py-2.5 rounded-lg text-sm text-[#EDF1F7] outline-none transition-all focus:border-[#E85D00]" style={{ fontFamily: fontFamily.body, background: '#0A1018', border: '1px solid rgba(140,170,210,0.15)' }} data-testid="password-input" />
           </div>
         </div>
@@ -68,7 +68,7 @@ const PlatformLogin = () => (
       <div className="max-w-sm">
         <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[#E85D00] block mb-4" style={{ fontFamily: fontFamily.mono }}>Sovereign Intelligence</span>
         <h2 className="text-2xl font-semibold text-[#EDF1F7] mb-3 leading-tight" style={{ fontFamily: fontFamily.display }}>Your business intelligence, protected by design.</h2>
-        <p className="text-sm text-[#9FB0C3] mb-8 leading-relaxed" style={{ fontFamily: fontFamily.body }}>100% Australian data sovereignty. Zero leakage. Military-grade encryption.</p>
+        <p className="text-sm text-[#8FA0B8] mb-8 leading-relaxed" style={{ fontFamily: fontFamily.body }}>100% Australian data sovereignty. Zero leakage. Military-grade encryption.</p>
 
         <div className="space-y-3">
           {[

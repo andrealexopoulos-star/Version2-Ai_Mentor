@@ -194,14 +194,15 @@ const OperationsPage = () => {
         {/* Header — operations-specific copy + connection badges */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1.5" style={{ fontFamily: fontFamily.display }}>Delivery & Operations</h1>
-            <p className="text-sm text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Operations</div>
+            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Operations <em style={{ fontStyle: 'italic', color: '#E85D00' }}>overview</em>.</h1>
+            <p className="text-sm text-[#8FA0B8] mb-2" style={{ fontFamily: fontFamily.body }}>
               Track fulfilment timelines, task throughput, SOP compliance and resource utilisation — updated from your connected systems.
             </p>
             <div className="flex flex-wrap items-center gap-2">
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(100,116,139,0.12)', color: '#8FA0B8', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying CRM
                 </span>
               ) : hasCRM ? (
@@ -220,7 +221,7 @@ const OperationsPage = () => {
               )}
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(100,116,139,0.12)', color: '#8FA0B8', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying Accounting
                 </span>
               ) : hasAccounting ? (
@@ -335,7 +336,7 @@ const OperationsPage = () => {
             <div className="text-center mb-5">
               <Settings className="w-10 h-10 text-[#E85D00] mx-auto mb-3 opacity-60" />
               <h3 className="text-base font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Activate Operations Intelligence</h3>
-              <p className="text-sm text-[#9FB0C3] max-w-md mx-auto" style={{ fontFamily: fontFamily.body }}>
+              <p className="text-sm text-[#8FA0B8] max-w-md mx-auto" style={{ fontFamily: fontFamily.body }}>
                 Connect your CRM to monitor task delivery, SLA performance and workflow bottlenecks. Connect accounting to track project profitability and resource costs.
               </p>
             </div>
@@ -397,7 +398,7 @@ const OperationsPage = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Active Bottleneck</h3>
-                    <p className="text-sm text-[#9FB0C3] leading-relaxed">{exec.bottleneck}</p>
+                    <p className="text-sm text-[#8FA0B8] leading-relaxed">{exec.bottleneck}</p>
                   </div>
                 </div>
               </Panel>
@@ -410,7 +411,7 @@ const OperationsPage = () => {
                 <div className="space-y-2">
                   {exec.recs.map((r, i) => (
                     <div key={i} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                      <p className="text-sm text-[#9FB0C3] leading-relaxed">{r}</p>
+                      <p className="text-sm text-[#8FA0B8] leading-relaxed">{r}</p>
                     </div>
                   ))}
                 </div>
@@ -470,7 +471,7 @@ const OperationsPage = () => {
                         <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#E85D0008', border: '1px solid #E85D0025' }}>
                           <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#E85D00' }} />
                           <div>
-                            <p className="text-xs text-[#9FB0C3]">{b.detail}</p>
+                            <p className="text-xs text-[#8FA0B8]">{b.detail}</p>
                             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Source: {b.source}</span>
                           </div>
                         </div>
@@ -490,7 +491,7 @@ const OperationsPage = () => {
                         <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
                           <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#F59E0B' }} />
                           <div>
-                            <p className="text-xs text-[#9FB0C3]">{a.detail}</p>
+                            <p className="text-xs text-[#8FA0B8]">{a.detail}</p>
                             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Source: {a.source}</span>
                           </div>
                         </div>

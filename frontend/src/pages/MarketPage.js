@@ -271,7 +271,7 @@ const MarketPage = () => {
               )}
             </div>
           </div>
-          {interpretation && <p className="text-sm text-[#9FB0C3] leading-relaxed">{interpretation}</p>}
+          {interpretation && <p className="text-sm text-[#8FA0B8] leading-relaxed">{interpretation}</p>}
           {!hasLiveMarketContext && <p className="text-sm text-[#64748B]">Connect your tools and complete calibration to see where your business stands.</p>}
         </div>
 
@@ -365,7 +365,7 @@ const MarketPage = () => {
         <div className="flex gap-1 p-1 rounded-lg overflow-x-auto" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="market-tabs">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors shrink-0 ${activeTab === tab.id ? 'text-[#EDF1F7]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors shrink-0 ${activeTab === tab.id ? 'text-[#EDF1F7]' : 'text-[#64748B] hover:text-[#8FA0B8]'}`}
               style={{ background: activeTab === tab.id ? '#E85D0015' : 'transparent', fontFamily: fontFamily.mono }}
               data-testid={`tab-${tab.id}`}>
               <tab.icon className="w-3.5 h-3.5" />
@@ -388,7 +388,7 @@ const MarketPage = () => {
               <div className="mb-2" data-testid="market-lineage-badge-brief">
                 <LineageBadge lineage={marketIntelLineage} data_freshness={marketIntelFreshness} confidence_score={marketIntelConfidence} compact />
               </div>
-              <p className="text-xs text-[#9FB0C3] leading-relaxed">{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
+              <p className="text-xs text-[#8FA0B8] leading-relaxed">{filteredMemo.substring(0, 400)}{filteredMemo.length > 400 ? '...' : ''}</p>
               <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--biqc-border)' }}>
                 <span className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Full reports available under Governance → Reports</span>
                 <button onClick={() => navigate('/reports')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded hover:bg-white/5 transition-colors" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
@@ -407,7 +407,7 @@ const MarketPage = () => {
                       <span className="text-sm font-bold text-[#E85D00] mt-0.5" style={{ fontFamily: fontFamily.mono }}>#{i + 1}</span>
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>{m.move}</p>
-                        <p className="text-xs text-[#9FB0C3] leading-relaxed mb-3">{m.rationale}</p>
+                        <p className="text-xs text-[#8FA0B8] leading-relaxed mb-3">{m.rationale}</p>
                         <div className="flex flex-wrap gap-3">
                           {m.expected_impact && <span className="text-[11px] text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>{m.expected_impact}</span>}
                           {m.confidence != null && <span className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{m.confidence}% confidence</span>}
@@ -449,13 +449,13 @@ const MarketPage = () => {
             </div>
           )}
           {filteredMoves.length === 0 && snapshot && (
-            <Panel><p className="text-sm text-[#9FB0C3]">Complete forensic calibration and connect integrations to unlock personalised action priorities.</p></Panel>
+            <Panel><p className="text-sm text-[#8FA0B8]">Complete forensic calibration and connect integrations to unlock personalised action priorities.</p></Panel>
           )}
           {filteredBlindside && (
             <div className="rounded-xl p-5" style={{ background: '#EF444406', border: '1px solid #EF444420' }} data-testid="risk-section">
               <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-4 h-4 text-[#EF4444]" /><h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Biggest Risk Right Now</h2></div>
               <p className="text-sm text-[#EDF1F7] mb-2">{filteredBlindside.risk}</p>
-              {filteredBlindside.evidence && <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{filteredBlindside.evidence}</p>}
+              {filteredBlindside.evidence && <p className="text-xs text-[#8FA0B8] leading-relaxed mb-2">{filteredBlindside.evidence}</p>}
               {filteredBlindside.prevention_action && <p className="text-xs text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>What to do: {filteredBlindside.prevention_action}</p>}
             </div>
           )}
@@ -463,15 +463,15 @@ const MarketPage = () => {
             <div className="rounded-xl p-5" style={{ background: '#10B98106', border: '1px solid #10B98120' }} data-testid="opportunity-section">
               <div className="flex items-center gap-2 mb-3"><TrendingUp className="w-4 h-4 text-[#10B981]" /><h2 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Growth Opportunity You're Missing</h2></div>
               <p className="text-sm text-[#EDF1F7] mb-2">{filteredLever.lever}</p>
-              {filteredLever.evidence && <p className="text-xs text-[#9FB0C3] mb-2">{filteredLever.evidence}</p>}
+              {filteredLever.evidence && <p className="text-xs text-[#8FA0B8] mb-2">{filteredLever.evidence}</p>}
               {filteredLever.potential_value && <span className="text-xs text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>Potential: {filteredLever.potential_value}</span>}
             </div>
           )}
           {(goalProb != null || filteredAlignment) && (
             <Panel data-testid="track-section">
               <h2 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Are You On Track?</h2>
-              {goalProb != null && <div className="flex items-center gap-4 mb-3"><span className="text-3xl font-bold" style={{ fontFamily: fontFamily.mono, color: goalProb > 60 ? '#10B981' : '#F59E0B' }}>{goalProb}%</span><span className="text-sm text-[#9FB0C3]">chance of hitting your goals</span></div>}
-              {filteredAlignment && <p className="text-sm text-[#9FB0C3] leading-relaxed">{filteredAlignment}</p>}
+              {goalProb != null && <div className="flex items-center gap-4 mb-3"><span className="text-3xl font-bold" style={{ fontFamily: fontFamily.mono, color: goalProb > 60 ? '#10B981' : '#F59E0B' }}>{goalProb}%</span><span className="text-sm text-[#8FA0B8]">chance of hitting your goals</span></div>}
+              {filteredAlignment && <p className="text-sm text-[#8FA0B8] leading-relaxed">{filteredAlignment}</p>}
             </Panel>
           )}
           <GapsSection channelsData={channelsData} hasCRM={hasCRM} pipeline={pipeline} gapsOpen={gapsOpen} setGapsOpen={setGapsOpen} navigate={navigate} />
@@ -557,7 +557,7 @@ const MarketPage = () => {
                         return (
                           <div key={domain} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs text-[#9FB0C3] capitalize">{domain}</span>
+                              <span className="text-xs text-[#8FA0B8] capitalize">{domain}</span>
                               <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: posColor, background: posColor + '15', fontFamily: fontFamily.mono }}>{pos.position}</span>
                             </div>
                             <div className="flex gap-3 text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
@@ -619,7 +619,7 @@ const MarketPage = () => {
                         return (
                           <div key={domain}>
                             <div className="flex justify-between mb-1">
-                              <span className="text-xs text-[#9FB0C3] capitalize">{domain}</span>
+                              <span className="text-xs text-[#8FA0B8] capitalize">{domain}</span>
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: levelColor, background: levelColor + '15', fontFamily: fontFamily.mono }}>{p.level}</span>
                                 <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{p.events_14d} signals</span>
@@ -675,7 +675,7 @@ const MarketPage = () => {
                         return (
                           <div key={domain} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs text-[#9FB0C3] capitalize">{domain}</span>
+                              <span className="text-xs text-[#8FA0B8] capitalize">{domain}</span>
                               <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: fColor, background: fColor + '15', fontFamily: fontFamily.mono }}>{f.status}</span>
                             </div>
                             <span className="text-lg font-bold block" style={{ color: fColor, fontFamily: fontFamily.mono }}>{f.hours_old != null ? (f.hours_old < 24 ? Math.round(f.hours_old) + 'h' : Math.round(f.hours_old / 24) + 'd') : '—'}</span>

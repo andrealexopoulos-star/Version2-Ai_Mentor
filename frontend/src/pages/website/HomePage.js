@@ -27,7 +27,7 @@ const StatCard = ({ stat, body, biqc }) => (
     }}
   >
     <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: '#FFFFFF', fontFamily: fontFamily.body }}>{stat}</p>
-    <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{body}</p>
+    <p className="text-sm leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{body}</p>
     <p className="text-sm italic leading-relaxed" style={{ color: '#E85D00', fontFamily: fontFamily.body }}>{biqc}</p>
   </div>
 );
@@ -409,7 +409,7 @@ const HomePage = () => (
             What You Get
           </h2>
           <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
-            style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+            style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
             Full visibility over where you&rsquo;re <strong style={{ color: '#EDF1F7' }}>losing money</strong>;
             {' '}where risk is building, and where <strong style={{ color: '#EDF1F7' }}>growth</strong> is being{' '}
             <strong style={{ color: '#EDF1F7' }}>missed</strong>&mdash;<strong style={{ color: '#EDF1F7' }}>in real time.</strong>
@@ -448,7 +448,7 @@ const HomePage = () => (
                 {card.bullets.map((b) => (
                   <li key={b} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: card.iconColor }} />
-                    <span className="text-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{b}</span>
+                    <span className="text-xs leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{b}</span>
                   </li>
                 ))}
               </ul>
@@ -497,7 +497,7 @@ const HomePage = () => (
           What Businesses Are Achieving In The AI Era
         </h2>
         <p className="text-base sm:text-lg mb-10 max-w-2xl mx-auto leading-relaxed text-center"
-          style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
           Business leaders make hundreds of decisions every day, and research shows up to{' '}
           <span style={{ color: '#C65F2E', fontWeight: 600 }}>40%</span> of those decisions are made without the right data.
         </p>
@@ -545,7 +545,7 @@ const HomePage = () => (
           <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
-          <p className="text-base max-w-xl" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>Businesses embedding AI-driven decision systems experience:</p>
+          <p className="text-base max-w-xl" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>Businesses embedding AI-driven decision systems experience:</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -562,7 +562,7 @@ const HomePage = () => (
                 <item.icon className="w-5 h-5" style={{ color: '#E85D00' }} />
               </div>
               <h3 className="text-base font-semibold mb-2" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>{item.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>{item.desc}</p>
+              <p className="text-sm leading-relaxed" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>{item.desc}</p>
             </GlassCard>
           ))}
         </div>
@@ -605,7 +605,7 @@ const HomePage = () => (
           ].map((t, i) => (
             <GlassCard key={i} className="flex flex-col">
               <div className="flex-1">
-                <p className="text-sm leading-relaxed mb-4" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+                <p className="text-sm leading-relaxed mb-4" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
                   &ldquo;{t.quote}&rdquo;
                 </p>
               </div>
@@ -630,13 +630,13 @@ const HomePage = () => (
         <h2 className="text-2xl sm:text-3xl font-medium mb-4" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>
           Stop reacting. Start <span style={{ color: '#E85D00' }}>preventing.</span>
         </h2>
-        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
           Join the operators who replaced reactive firefighting with autonomous intelligence.
         </p>
         <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(232,93,0,0.25)' }} data-testid="bottom-cta">
           Try It For Free <ArrowRight className="w-4 h-4" />
         </Link>
-        <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.3, fontSize: '12px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
+        <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#8FA0B8', opacity: 0.3, fontSize: '12px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
       </div>
     </section>
 

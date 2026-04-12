@@ -68,7 +68,7 @@ const MarketingAutomationPage = () => {
   const renderContent = (content) => {
     if (!content) return null;
     if (typeof content === 'string') {
-      try { content = JSON.parse(content); } catch { return <p className="text-sm text-[#9FB0C3] whitespace-pre-wrap">{content}</p>; }
+      try { content = JSON.parse(content); } catch { return <p className="text-sm text-[#8FA0B8] whitespace-pre-wrap">{content}</p>; }
     }
     return (
       <div className="space-y-4">
@@ -78,7 +78,7 @@ const MarketingAutomationPage = () => {
             {Array.isArray(value) ? (
               <div className="space-y-2">
                 {value.map((item, i) => (
-                  <div key={i} className="text-sm text-[#9FB0C3]">
+                  <div key={i} className="text-sm text-[#8FA0B8]">
                     {typeof item === 'object' ? (
                       <div className="pl-3 border-l-2 border-[rgba(140,170,210,0.15)]">
                         {Object.entries(item).map(([k, v]) => (
@@ -102,8 +102,9 @@ const MarketingAutomationPage = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="marketing-automation-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Marketing Automation</h1>
-          <p className="text-sm text-[#9FB0C3]">Generate marketing content grounded in your business data and intelligence.</p>
+          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Content Engine</div>
+          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Marketing <em style={{ fontStyle: 'italic', color: '#E85D00' }}>automation</em>.</h1>
+          <p className="text-sm" style={{ color: '#8FA0B8' }}>Generate marketing content grounded in your business data and intelligence.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6">
@@ -232,7 +233,7 @@ const MarketingAutomationPage = () => {
                 <div className="flex items-center justify-center h-[300px]">
                   <div className="text-center">
                     <Loader2 className="w-8 h-8 text-[#E85D00] mx-auto mb-3 animate-spin" />
-                    <p className="text-sm text-[#9FB0C3]">Generating content from your business intelligence...</p>
+                    <p className="text-sm text-[#8FA0B8]">Generating content from your business intelligence...</p>
                   </div>
                 </div>
               )}

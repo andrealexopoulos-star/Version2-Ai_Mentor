@@ -30,12 +30,12 @@ const IntegrationsPlatform = () => {
           <div className="flex gap-4">
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
               <Link2 className="w-4 h-4 text-[#10B981]" />
-              <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Connected</span>
+              <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Connected</span>
               <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{connected.length}</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
-              <Clock className="w-4 h-4 text-[#9FB0C3]" />
-              <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Last sync</span>
+              <Clock className="w-4 h-4 text-[#8FA0B8]" />
+              <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Last sync</span>
               <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>1 min ago</span>
             </div>
           </div>
@@ -47,7 +47,7 @@ const IntegrationsPlatform = () => {
               {connected.map(i => (
                 <button key={i.name} onClick={() => setSelected(i)} className="flex items-center gap-3 px-4 py-3.5 rounded-lg text-left transition-all hover:border-[#E85D00]/30 group" style={{ background: '#0E1628', border: `1px solid ${selected?.name === i.name ? '#E85D00' + '50' : 'rgba(140,170,210,0.15)'}` }}>
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
-                    <span className="text-sm font-bold text-[#9FB0C3] group-hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.mono }}>{i.name.charAt(0)}</span>
+                    <span className="text-sm font-bold text-[#8FA0B8] group-hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.mono }}>{i.name.charAt(0)}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-medium text-[#EDF1F7] block" style={{ fontFamily: fontFamily.display }}>{i.name}</span>
@@ -72,7 +72,7 @@ const IntegrationsPlatform = () => {
                     <span className="text-sm font-bold text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{i.name.charAt(0)}</span>
                   </div>
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-[#9FB0C3]" style={{ fontFamily: fontFamily.display }}>{i.name}</span>
+                    <span className="text-sm font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.display }}>{i.name}</span>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>{i.category}</span>
                   </div>
                   <button className="text-xs px-3 py-1.5 rounded-md font-medium" style={{ color: '#E85D00', background: '#E85D00' + '15', border: '1px solid #E85D0020', fontFamily: fontFamily.body }}>Connect</button>
@@ -94,7 +94,7 @@ const IntegrationsPlatform = () => {
                 <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-2" style={{ fontFamily: fontFamily.mono }}>Data Types Ingested</span>
                 <div className="flex flex-wrap gap-1.5">
                   {selected.data.map(d => (
-                    <span key={d} className="text-[11px] px-2 py-1 rounded" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>{d}</span>
+                    <span key={d} className="text-[11px] px-2 py-1 rounded" style={{ fontFamily: fontFamily.mono, color: '#8FA0B8', background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>{d}</span>
                   ))}
                 </div>
               </div>
@@ -108,7 +108,7 @@ const IntegrationsPlatform = () => {
                   {selected.permissions.map(p => (
                     <div key={p} className="flex items-center gap-2">
                       <Shield className="w-3 h-3 text-[#10B981]" />
-                      <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{p}</span>
+                      <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{p}</span>
                     </div>
                   ))}
                 </div>

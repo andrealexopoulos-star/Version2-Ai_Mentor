@@ -46,7 +46,7 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
         <Zap className="w-3.5 h-3.5 flex-shrink-0" style={{ color: barColor }} />
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-semibold whitespace-nowrap"
-            style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+            style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>
             {pct}%
           </span>
           <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
@@ -66,7 +66,7 @@ const IntelligenceCoverageBar = ({ integrationStatus, loading = false }) => {
           <div className="space-y-1.5">
             {cats.map(cat => (
               <div key={cat.key} className="flex items-center justify-between">
-                <span className="text-xs" style={{ color: '#9FB0C3' }}>{cat.label}</span>
+                <span className="text-xs" style={{ color: '#8FA0B8' }}>{cat.label}</span>
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
                   style={{
                     background: cat.state === 'live' ? 'rgba(16,185,129,0.1)' : cat.connected ? 'rgba(245,158,11,0.12)' : 'rgba(232,93,0,0.08)',

@@ -1800,20 +1800,13 @@ export default function AdvisorWatchtower() {
                   </button>
                 </div>
               )}
-              <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-header-kicker">
-                Today · Your Business Advisor
-              </p>
+              <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }} data-testid="advisor-header-kicker">
+                — Watchtower · {greetingDateTime}
+              </div>
               <div className="flex flex-wrap items-end gap-3" data-testid="advisor-header-title-row">
-                <h1 className="text-xl sm:text-2xl lg:text-[2rem]" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-header-title">
-                  Good {displayTimeOfDay}, {displayName}.
+                <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="advisor-header-title">
+                  Good {displayTimeOfDay}, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>{displayName}</em>.
                 </h1>
-                <p
-                  className="pb-1 text-[10px]"
-                  style={{ color: 'var(--biqc-text-muted)', fontFamily: fontFamily.mono }}
-                  data-testid="advisor-header-datetime"
-                >
-                  {greetingDateTime}
-                </p>
               </div>
               <p className="text-xs sm:text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-header-subtitle">
                 {brainLoading

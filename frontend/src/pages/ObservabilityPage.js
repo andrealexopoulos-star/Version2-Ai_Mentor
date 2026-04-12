@@ -88,7 +88,7 @@ const ObservabilityPage = () => {
             <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>By Model</h3>
             {Object.entries(d.byModel || {}).map(([model, count]) => (
               <div key={model} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-                <span className="text-xs text-[#9FB0C3]">{model}</span>
+                <span className="text-xs text-[#8FA0B8]">{model}</span>
                 <span className="text-xs font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{count}</span>
               </div>
             ))}
@@ -98,7 +98,7 @@ const ObservabilityPage = () => {
             <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>By Endpoint</h3>
             {Object.entries(d.byEndpoint || {}).map(([ep, count]) => (
               <div key={ep} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-                <span className="text-xs text-[#9FB0C3]">{ep}</span>
+                <span className="text-xs text-[#8FA0B8]">{ep}</span>
                 <span className="text-xs font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{count}</span>
               </div>
             ))}
@@ -112,7 +112,7 @@ const ObservabilityPage = () => {
             {(d.recent || []).map((c, i) => (
               <div key={i} className="flex items-center gap-2 py-1.5 text-xs" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c.output_valid !== false ? '#10B981' : '#EF4444' }} />
-                <span className="text-[#9FB0C3] flex-1 truncate">{c.endpoint || c.model_name}</span>
+                <span className="text-[#8FA0B8] flex-1 truncate">{c.endpoint || c.model_name}</span>
                 <span className="text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{c.total_tokens || 0} tok</span>
                 <span className="text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{c.latency_ms || 0}ms</span>
                 <span className="text-[10px] text-[#64748B]">{c.created_at ? new Date(c.created_at).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : ''}</span>

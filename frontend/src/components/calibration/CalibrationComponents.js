@@ -3,7 +3,7 @@ import { Shield, Lock, Database, RefreshCw, X, ChevronRight, DollarSign, Target,
 
 const CREAM = '#0F1720';
 const CHARCOAL = '#EDF1F7';
-const MUTED = '#9FB0C3';
+const MUTED = '#8FA0B8';
 const GOLD = '#E85D00';
 const CARD_BG = '#0E1628';
 const CARD_BORDER = 'rgba(140,170,210,0.15)';

@@ -39,7 +39,7 @@ export const IntegrationCarousel = () => (
       <span className="font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#E85D00', fontSize: '12px' }}>
         500+ Integrations
       </span>
-      <p className="text-sm sm:text-base mt-3" style={{ fontFamily: fontFamily.body, color: '#9FB0C3', opacity: 0.45, fontWeight: 300 }}>
+      <p className="text-sm sm:text-base mt-3" style={{ fontFamily: fontFamily.body, color: '#8FA0B8', opacity: 0.45, fontWeight: 300 }}>
         Connects to the tools your business already uses
       </p>
     </div>

@@ -126,10 +126,10 @@ const ForensicAuditPage = () => {
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body }} data-testid="forensic-audit-page">
         <div>
           <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Forensic Ingestion Audit</h1>
-          <p className="text-sm text-[#9FB0C3] mb-2">3-layer deterministic analysis of a public URL — tests data extraction quality, DOM cleaning, and synthesis integrity.</p>
+          <p className="text-sm text-[#8FA0B8] mb-2">3-layer deterministic analysis of a public URL — tests data extraction quality, DOM cleaning, and synthesis integrity.</p>
           <div className="p-3 rounded-lg" style={{ background: 'rgba(232,93,0,0.04)', border: '1px solid rgba(232,93,0,0.12)' }}>
             <p className="text-[11px] font-semibold mb-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>WHAT THIS DOES</p>
-            <p className="text-xs text-[#9FB0C3] mb-2">
+            <p className="text-xs text-[#8FA0B8] mb-2">
               Enter any public business URL and BIQc will analyse how cleanly data can be extracted from it. Use this to verify your own website or a competitor's page before connecting it as a data source.
             </p>
             <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
@@ -275,7 +275,7 @@ const ForensicAuditPage = () => {
                   ))}
                 </div>
                 {result.canonical_url && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-[#9FB0C3]">
+                  <div className="mt-3 flex items-center gap-2 text-xs text-[#8FA0B8]">
                     <ExternalLink className="w-3 h-3" /> Canonical: <span style={{ fontFamily: fontFamily.mono }}>{result.canonical_url}</span>
                   </div>
                 )}
@@ -339,7 +339,7 @@ const ForensicAuditPage = () => {
                     return (
                       <div key={k}>
                         <div className="flex justify-between mb-1">
-                          <span className="text-xs text-[#9FB0C3] capitalize">{k.replace(/_/g, ' ')}</span>
+                          <span className="text-xs text-[#8FA0B8] capitalize">{k.replace(/_/g, ' ')}</span>
                           <span className="text-xs font-semibold" style={{ color, fontFamily: fontFamily.mono }}>{isNegative ? '' : '+'}{v}</span>
                         </div>
                         <div className="h-1.5 rounded-full" style={{ background: color + '20' }}>
@@ -374,7 +374,7 @@ const ForensicAuditPage = () => {
                 </span>
               </div>
               {verdict.secondary_failure_layer && (
-                <p className="text-xs text-[#9FB0C3]">Secondary: {verdict.secondary_failure_layer}</p>
+                <p className="text-xs text-[#8FA0B8]">Secondary: {verdict.secondary_failure_layer}</p>
               )}
               {verdict.failure_codes?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
@@ -405,7 +405,7 @@ const ForensicAuditPage = () => {
                   <span className="text-lg font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{ext.fetch_time_ms}ms</span>
                 </div>
               </div>
-              <div className="space-y-2 text-xs text-[#9FB0C3]">
+              <div className="space-y-2 text-xs text-[#8FA0B8]">
                 <div className="flex justify-between"><span>Final URL</span><span className="text-[#EDF1F7] truncate ml-4" style={{ fontFamily: fontFamily.mono }}>{ext.final_url}</span></div>
                 <div className="flex justify-between"><span>Canonical URL</span><span className="text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{ext.canonical_url || 'Not set'}</span></div>
                 <div className="flex justify-between"><span>Main Content</span><span style={{ color: ext.main_content_present ? '#10B981' : '#EF4444' }}>{ext.main_content_present ? 'Detected' : 'Not found'}</span></div>
@@ -513,7 +513,7 @@ const ForensicAuditPage = () => {
 
             {/* Metadata */}
             <CollapsibleSection title="Metadata & Freshness" icon={Clock} color="#F59E0B" status={meta.failure_codes?.length > 0 ? 'warning' : 'pass'}>
-              <div className="space-y-2 text-xs text-[#9FB0C3]">
+              <div className="space-y-2 text-xs text-[#8FA0B8]">
                 <div className="flex justify-between"><span>Copyright Year</span><span style={{ color: meta.copyright_year && meta.copyright_year < 2025 ? '#F59E0B' : '#10B981', fontFamily: fontFamily.mono }}>{meta.copyright_year || 'Not found'}</span></div>
                 <div className="flex justify-between"><span>Latest Blog Date</span><span style={{ fontFamily: fontFamily.mono }}>{meta.latest_blog_date || 'Not found'}</span></div>
                 <div className="flex justify-between"><span>Freshness</span><span style={{ color: meta.freshness_status === 'current' ? '#10B981' : meta.freshness_status === 'stale' ? '#EF4444' : '#F59E0B', fontFamily: fontFamily.mono }}>{meta.freshness_status}</span></div>
@@ -534,7 +534,7 @@ const ForensicAuditPage = () => {
                       <div key={i} className="flex items-start gap-3 p-3 rounded" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <span className="text-[10px] px-2 py-0.5 rounded shrink-0 mt-0.5" style={{ color: prColor, background: prColor + '15', fontFamily: fontFamily.mono }}>{r.priority}</span>
                         <div>
-                          <span className="text-xs font-semibold text-[#9FB0C3] capitalize">{r.layer}</span>
+                          <span className="text-xs font-semibold text-[#8FA0B8] capitalize">{r.layer}</span>
                           <p className="text-xs text-[#64748B] mt-0.5">{r.action}</p>
                         </div>
                       </div>

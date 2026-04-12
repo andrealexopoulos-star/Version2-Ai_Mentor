@@ -100,12 +100,12 @@
 /* Text overrides: dark-theme white/grey text → dark text in light mode */
 [data-theme="light"] .text-\[#EDF1F7\]  { color: #0F172A !important; }
 [data-theme="light"] .text-\[#E6EEF7\]  { color: #0F172A !important; }
-[data-theme="light"] .text-\[#9FB0C3\]  { color: #475569 !important; }
+[data-theme="light"] .text-\[#8FA0B8\]  { color: #475569 !important; }
 [data-theme="light"] .text-\[#64748B\]  { color: #64748B !important; }  /* already good */
 [data-theme="light"] .text-\[#8B9DB5\]  { color: #64748B !important; }
 
 /* Mono/label text */
-[data-theme="light"] .text-\[#9FB0C3\][style*="JetBrains"] { color: #475569 !important; }
+[data-theme="light"] .text-\[#8FA0B8\][style*="JetBrains"] { color: #475569 !important; }
 
 /* Border overrides */
 [data-theme="light"] .border-\[#243140\] { border-color: #CBD5E0 !important; }

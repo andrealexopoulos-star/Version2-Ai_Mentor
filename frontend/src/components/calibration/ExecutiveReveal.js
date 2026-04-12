@@ -26,7 +26,7 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
         <h2 className="text-2xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
           Calibration Complete{firstName ? `, ${firstName}` : ''}.
         </h2>
-        <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+        <p className="text-sm text-[#8FA0B8] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
           Your Business DNA has been captured. Your AI agents are now calibrated to your communication style, risk posture, and decision-making approach.
         </p>
 
@@ -63,7 +63,7 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
           Thank you{firstName ? `, ${firstName}` : ''}.
         </p>
         {lastResponse && (
-          <p className="text-sm text-[#9FB0C3] mb-8" style={{ fontFamily: fontFamily.body }}>
+          <p className="text-sm text-[#8FA0B8] mb-8" style={{ fontFamily: fontFamily.body }}>
             Your alignment preferences have been integrated into your Decision DNA.
           </p>
         )}

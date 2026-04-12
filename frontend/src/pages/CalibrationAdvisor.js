@@ -23,7 +23,7 @@ import { SkipForward, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CHARCOAL = '#EDF1F7';
-const MUTED = '#9FB0C3';
+const MUTED = '#8FA0B8';
 const CARD_BORDER = 'rgba(140,170,210,0.15)';
 
 const CalibrationAdvisor = () => {
@@ -77,11 +77,15 @@ const CalibrationAdvisor = () => {
 
       {cal.entry !== "loading" && cal.user && (
         <div className="flex items-center justify-between px-5 py-2.5" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} data-testid="identity-bar">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full" style={{ background: '#10B981' }} />
-            <span className="text-xs" style={{ color: MUTED }}>
-              Signed in as <span style={{ color: CHARCOAL }}>{cal.userEmail}</span>
-            </span>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: "'Inter', sans-serif", color: '#E85D00' }}>— Calibration</span>
+            <div className="w-px h-4" style={{ background: CARD_BORDER }} />
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full" style={{ background: '#10B981' }} />
+              <span className="text-xs" style={{ color: MUTED }}>
+                <span style={{ color: CHARCOAL }}>{cal.userEmail}</span>
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {isSuperAdmin && (

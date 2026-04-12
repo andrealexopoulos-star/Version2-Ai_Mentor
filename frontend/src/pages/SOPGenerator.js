@@ -10,6 +10,7 @@ import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { Loader2, FileText, CheckSquare, Target, Save, Copy, Check, Upload } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 
 
@@ -150,9 +151,11 @@ const SOPGenerator = () => {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <p className="overline text-[#9FB0C3] mb-2">Documentation</p>
-            <h1 className="text-3xl md:text-4xl font-serif text-[#EDF1F7]">SOP Generator</h1>
-            <p className="text-[#9FB0C3] mt-2">
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Documentation</div>
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              SOP <em style={{ fontStyle: 'italic', color: '#E85D00' }}>generator</em>.
+            </h1>
+            <p className="text-sm" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
               Create professional SOPs, checklists, and action plans instantly
             </p>
           </div>
@@ -361,7 +364,7 @@ const SOPGenerator = () => {
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
                     <FileText className="w-12 h-12 text-[#EDF1F7]/20 mx-auto mb-4" />
-                    <p className="text-[#9FB0C3]">
+                    <p className="text-[#8FA0B8]">
                       Select a document type and fill in the details to generate
                     </p>
                   </CardContent>

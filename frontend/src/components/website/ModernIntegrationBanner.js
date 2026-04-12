@@ -95,7 +95,7 @@ export const ModernIntegrationBanner = () => (
       <h3 className="mt-2 text-2xl sm:text-3xl font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
         One connection layer across your operating stack.
       </h3>
-      <p className="mt-3 text-sm sm:text-base max-w-2xl mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+      <p className="mt-3 text-sm sm:text-base max-w-2xl mx-auto" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
         BIQc ingests signal from finance, sales, operations, and communication tools so Soundboard can reason on live evidence.
       </p>
     </div>

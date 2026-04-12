@@ -29,7 +29,7 @@ const MetricBar = ({ label, value, color, desc }) => (
   <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
     <div className="flex items-center justify-between mb-1.5">
       <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>{label}</span>
+        <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>{label}</span>
         {desc && (
           <span title={desc}>
             <Info className="w-3 h-3 text-[#4A5568]" />
@@ -173,8 +173,13 @@ const DataHealthPage = () => {
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Data Health</h1>
-          <p className="text-sm text-[#9FB0C3]">
+          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+            — System Health
+          </div>
+          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+            Data <em style={{ fontStyle: 'italic', color: '#E85D00' }}>health</em>.
+          </h1>
+          <p className="text-sm text-[#8FA0B8]">
             {hasAnyData
               ? `${connectedCount} integration${connectedCount !== 1 ? 's' : ''} active — monitoring data quality in real time.`
               : 'Connect integrations to start monitoring data quality and sync status.'}
@@ -191,7 +196,7 @@ const DataHealthPage = () => {
                 <h2 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
                   {connectedCount > 0 ? `${connectedCount} System${connectedCount > 1 ? 's' : ''} Connected` : 'No Systems Connected'}
                 </h2>
-                <p className="text-sm text-[#9FB0C3]">{sourcesCount} active data source{sourcesCount !== 1 ? 's' : ''}</p>
+                <p className="text-sm text-[#8FA0B8]">{sourcesCount} active data source{sourcesCount !== 1 ? 's' : ''}</p>
               </div>
             </div>
             {/* Req 8: Disable Force Sync when no connections */}
@@ -222,7 +227,7 @@ const DataHealthPage = () => {
                 <p className="text-sm font-semibold text-amber-300" style={{ fontFamily: fontFamily.display }}>
                   Verification in progress
                 </p>
-                <p className="text-xs text-[#9FB0C3] mt-1">
+                <p className="text-xs text-[#8FA0B8] mt-1">
                   We detected {truthConnectedCount} connected source(s), but only {providerEvidenceCount} are provider-verified right now.
                   {` ${missingEvidenceCount} source(s) will not be shown as connected until verification finishes.`}
                 </p>
@@ -259,7 +264,7 @@ const DataHealthPage = () => {
                   <div className="flex items-center gap-3 shrink-0">
                     <Link to="/integrations"
                       className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110"
-                      style={{ background: '#1E2D3D', color: '#9FB0C3', border: '1px solid rgba(140,170,210,0.15)' }}>
+                      style={{ background: '#1E2D3D', color: '#8FA0B8', border: '1px solid rgba(140,170,210,0.15)' }}>
                       Reconnect
                     </Link>
                     <CheckCircle2 className="w-5 h-5 text-[#10B981]" />
@@ -284,7 +289,7 @@ const DataHealthPage = () => {
           {!hasAnyData ? (
             <div className="text-center py-6">
               <Database className="w-8 h-8 mx-auto mb-3" style={{ color: '#4A5568' }} />
-              <p className="text-sm font-medium text-[#9FB0C3] mb-1" style={{ fontFamily: fontFamily.display }}>No data yet</p>
+              <p className="text-sm font-medium text-[#8FA0B8] mb-1" style={{ fontFamily: fontFamily.display }}>No data yet</p>
               <p className="text-xs max-w-xs mx-auto" style={{ color: '#64748B' }}>
                 Data quality metrics — completeness, accuracy, sources and consistency — will appear once you've connected at least one integration.
               </p>
@@ -307,14 +312,14 @@ const DataHealthPage = () => {
               ) : (
                 <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Accuracy</span>
+                    <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>Accuracy</span>
                     <span className="text-xs italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>Insufficient data</span>
                   </div>
                 </div>
               )}
               <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-medium text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Active Sources</span>
+                  <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>Active Sources</span>
                   <span className="text-lg font-bold" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>{sourcesCount}</span>
                 </div>
               </div>
@@ -328,7 +333,7 @@ const DataHealthPage = () => {
               ) : (
                 <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Consistency</span>
+                    <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>Consistency</span>
                     <span className="text-xs italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>Needs 2+ sources</span>
                   </div>
                 </div>

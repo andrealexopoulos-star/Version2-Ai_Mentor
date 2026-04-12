@@ -34,7 +34,7 @@ const PricingPage = () => (
             </div>
           </div>
 
-          <p className="text-sm text-[#9FB0C3] mb-6" style={{ fontFamily: fontFamily.body, lineHeight: 1.7 }}>
+          <p className="text-sm text-[#8FA0B8] mb-6" style={{ fontFamily: fontFamily.body, lineHeight: 1.7 }}>
             A forensic review of your public digital footprint and competitive position.
           </p>
 
@@ -287,7 +287,7 @@ const PlanCard = ({ name, tagline, price, period, color, highlight, badge, descr
       {features.map((f, i) => (
         <div key={i} className="flex items-start gap-2">
           <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color }} />
-          <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{f}</span>
+          <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{f}</span>
         </div>
       ))}
     </div>

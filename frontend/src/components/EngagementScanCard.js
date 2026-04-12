@@ -113,7 +113,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div>
                       <span className="text-[10px] text-[#64748B] block mb-0.5" style={{ fontFamily: fontFamily.mono }}>You</span>
-                      <span className="text-[#9FB0C3]">{a.subject_signal}</span>
+                      <span className="text-[#8FA0B8]">{a.subject_signal}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-[#64748B] block mb-0.5" style={{ fontFamily: fontFamily.mono }}>Competitor</span>
@@ -147,7 +147,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
                 <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-[#10B981]" /><span className="text-xs text-[#EDF1F7]">Google Maps</span></div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>{r.reviews.google_maps.rating}/5</span>
-                  <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>{r.reviews.google_maps.reviews} reviews</span>
+                  <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>{r.reviews.google_maps.reviews} reviews</span>
                 </div>
               </div>
             ) : (
@@ -155,7 +155,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
             )}
             {r.reviews?.platforms_found?.map(p => (
               <div key={p} className="flex items-center gap-2 p-2 rounded" style={{ background: '#10B98108' }}>
-                <CheckCircle2 className="w-3 h-3 text-[#10B981]" /><span className="text-xs text-[#9FB0C3]">{p}</span>
+                <CheckCircle2 className="w-3 h-3 text-[#10B981]" /><span className="text-xs text-[#8FA0B8]">{p}</span>
               </div>
             ))}
             {r.reviews?.platforms_absent?.map(p => (
@@ -192,7 +192,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
               )}
               {r.search_dominance.top_competitors?.slice(0, 3).map((c, i) => (
                 <div key={i} className="flex items-center justify-between p-2 rounded mb-1" style={{ background: 'var(--biqc-bg)' }}>
-                  <span className="text-xs text-[#9FB0C3] truncate flex-1">{c.name}</span>
+                  <span className="text-xs text-[#8FA0B8] truncate flex-1">{c.name}</span>
                   <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Position {c.position}</span>
                 </div>
               ))}
@@ -212,7 +212,7 @@ const EngagementScanCard = ({ url, businessName, location }) => {
             </div>
             {r.competitor_reviews.filter(c => c.reviews > 0).map((c, i) => (
               <div key={i} className="flex items-center justify-between p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                <span className="text-xs text-[#9FB0C3] truncate">{c.name}</span>
+                <span className="text-xs text-[#8FA0B8] truncate">{c.name}</span>
                 <div className="flex items-center gap-2">
                   {c.rating && <span className="text-xs text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>{c.rating}/5</span>}
                   <span className="text-xs font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{c.reviews} reviews</span>

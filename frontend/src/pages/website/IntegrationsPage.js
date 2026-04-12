@@ -109,7 +109,7 @@ const Tooltip = ({ text }) => {
       </button>
       {show && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-56 px-3 py-2.5 rounded-xl text-xs leading-relaxed pointer-events-none"
-          style={{ background: '#1A2332', border: '1px solid #2D3E50', color: '#9FB0C3', fontFamily: fontFamily.body, boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
+          style={{ background: '#1A2332', border: '1px solid #2D3E50', color: '#8FA0B8', fontFamily: fontFamily.body, boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
           {text}
           <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0"
             style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #2D3E50' }} />
@@ -140,7 +140,7 @@ const IntegrationCard = ({ integration, index, comingSoon = false }) => (
         </span>
       </div>
     </div>
-    <p className="text-xs leading-relaxed flex-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+    <p className="text-xs leading-relaxed flex-1" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
       {integration.benefit}
     </p>
     {comingSoon ? (
@@ -202,7 +202,7 @@ const IntegrationsPage = () => {
               Connects to the tools your business already uses.
             </p>
             <p className="text-base sm:text-lg mb-8 leading-relaxed max-w-xl"
-              style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+              style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
               Connect your CRM, accounting, email and HR tools to give BIQc the full picture. All data is Australian-hosted, encrypted at rest, and read-only — you can revoke access at any time.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -213,7 +213,7 @@ const IntegrationsPage = () => {
               </a>
               <Link to="/trust"
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-semibold transition-all hover:bg-white/5"
-                style={{ border: '1px solid rgba(255,255,255,0.15)', color: '#9FB0C3', fontFamily: fontFamily.body }}>
+                style={{ border: '1px solid rgba(255,255,255,0.15)', color: '#8FA0B8', fontFamily: fontFamily.body }}>
                 <Shield className="w-4 h-4" /> Security & Privacy
               </Link>
             </div>
@@ -235,7 +235,7 @@ const IntegrationsPage = () => {
                   className="px-4 py-2 rounded-full text-xs font-semibold transition-all"
                   style={{
                     background: activeFilter === f.id ? '#E85D00' : '#0E1628',
-                    color: activeFilter === f.id ? '#FFFFFF' : '#9FB0C3',
+                    color: activeFilter === f.id ? '#FFFFFF' : '#8FA0B8',
                     border: `1px solid ${activeFilter === f.id ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
                     fontFamily: fontFamily.mono,
                   }}
@@ -251,7 +251,7 @@ const IntegrationsPage = () => {
           {/* Active category tooltip hint */}
           {activeCatTooltip && (
             <div className="flex items-start gap-2 mb-6 p-3 rounded-xl text-xs"
-              style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.15)', color: '#9FB0C3', fontFamily: fontFamily.body, maxWidth: 480 }}>
+              style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.15)', color: '#8FA0B8', fontFamily: fontFamily.body, maxWidth: 480 }}>
               <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#E85D00' }} />
               {activeCatTooltip}
             </div>
@@ -275,7 +275,7 @@ const IntegrationsPage = () => {
               <h2 className="text-sm font-semibold uppercase tracking-[0.14em]" style={{ color: '#EDF1F7', fontFamily: fontFamily.mono }}>
                 Coming soon
               </h2>
-              <p className="mt-2 text-xs" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+              <p className="mt-2 text-xs" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
                 Planned connectors currently in rollout.
               </p>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -318,7 +318,7 @@ const IntegrationsPage = () => {
             style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
             Your data stays yours — always.
           </h2>
-          <p className="text-base mb-10 max-w-2xl mx-auto" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          <p className="text-base mb-10 max-w-2xl mx-auto" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
             Integrations are routed through supported connector layers with audit trails and revocation controls. Processing location may vary by enabled provider.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -334,7 +334,7 @@ const IntegrationsPage = () => {
                   <item.icon className="w-5 h-5" style={{ color: '#E85D00' }} />
                 </div>
                 <p className="text-sm font-bold" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>{item.title}</p>
-                <p className="text-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item.desc}</p>
+                <p className="text-xs leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{item.desc}</p>
               </div>
             ))}
           </div>
@@ -347,7 +347,7 @@ const IntegrationsPage = () => {
           <h2 className="text-2xl font-bold mb-3" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
             Ready to unify your business?
           </h2>
-          <p className="text-sm mb-6" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          <p className="text-sm mb-6" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
             Connect your first system in under 30 seconds. No credit card required.
           </p>
           <Link to="/register-supabase?source=integrations-page"

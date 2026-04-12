@@ -149,7 +149,7 @@ const MobileNav = () => {
                           className="flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all min-h-[64px]"
                           style={{
                             background: active ? 'rgba(148,163,184,0.14)' : 'transparent',
-                            color: active ? '#E2E8F0' : 'var(--biqc-text-2, #9FB0C3)',
+                            color: active ? '#E2E8F0' : 'var(--biqc-text-2, #8FA0B8)',
                           }}
                           aria-current={active ? 'page' : undefined}
                           data-testid={`more-${item.label.toLowerCase().replace(/[\s&]/g, '-')}`}

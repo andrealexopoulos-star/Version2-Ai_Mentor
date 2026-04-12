@@ -222,7 +222,7 @@ const HeroExperienceTabs = () => {
             className="px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
             style={{
               fontFamily: fontFamily.body,
-              color: activeTab === 'meet' ? '#EDF1F7' : '#9FB0C3',
+              color: activeTab === 'meet' ? '#EDF1F7' : '#8FA0B8',
               background: activeTab === 'meet' ? 'rgba(198,95,46,0.18)' : 'transparent',
             }}
           >
@@ -234,7 +234,7 @@ const HeroExperienceTabs = () => {
             className="px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
             style={{
               fontFamily: fontFamily.body,
-              color: activeTab === 'soundboard' ? '#EDF1F7' : '#9FB0C3',
+              color: activeTab === 'soundboard' ? '#EDF1F7' : '#8FA0B8',
               background: activeTab === 'soundboard' ? 'rgba(198,95,46,0.18)' : 'transparent',
             }}
           >
@@ -301,7 +301,7 @@ const HeroExperienceTabs = () => {
                   </div>
                   <div>
                     <p className="text-[11px] font-semibold" style={{ color: '#E7EEF7', fontFamily: fontFamily.body }}>{item.role}</p>
-                    <p className="text-[10px]" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{item.line}</p>
+                    <p className="text-[10px]" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{item.line}</p>
                   </div>
                 </div>
               </div>
@@ -311,7 +311,7 @@ const HeroExperienceTabs = () => {
           <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(91,143,168,0.25)', background: 'rgba(15,23,32,0.82)' }}>
             <div className="space-y-2">
               <div className="ml-auto max-w-[92%] rounded-xl border px-3 py-2" style={{ borderColor: 'rgba(91,143,168,0.25)', background: 'rgba(20,28,38,0.9)' }}>
-                <p className="text-[10px] uppercase tracking-[0.12em] mb-1" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+                <p className="text-[10px] uppercase tracking-[0.12em] mb-1" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>
                   {userIntent}
                 </p>
                 <p className="text-xs sm:text-sm" style={{ color: '#E7EEF7', fontFamily: fontFamily.body }}>
@@ -332,7 +332,7 @@ const HeroExperienceTabs = () => {
                       {responseText}
                       <span style={{ animation: 'liveCursor 1.3s ease-in-out infinite' }}>|</span>
                     </p>
-                    <span className="inline-flex items-center gap-1 text-[10px]" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+                    <span className="inline-flex items-center gap-1 text-[10px]" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>
                       drafting
                       <span style={{ animation: 'typingDots 1.2s linear infinite' }}>.</span>
                       <span style={{ animation: 'typingDots 1.2s linear infinite 0.2s' }}>.</span>

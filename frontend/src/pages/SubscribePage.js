@@ -137,14 +137,16 @@ const SubscribePage = () => {
       )}
 
       <div className="text-center mb-10 max-w-xl">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: '#E85D0015' }}>
-          <Lock className="w-6 h-6 text-[#E85D00]" />
+        <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+          — Pricing
         </div>
+        <h1 className="font-medium mb-3" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+          Choose your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>plan</em>.
+        </h1>
         {featureLabel && <p className="text-xs text-[#E85D00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
-        <h1 className="text-3xl font-bold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Choose your paid BIQc tier</h1>
-        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#EDF1F7] capitalize">{currentTier}</strong></p>
-        <p className="mt-2 text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>
-          Transparent billing: shown amount is charged exactly as displayed. No hidden onboarding or compliance fees.
+        <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#EDF1F7] capitalize">{currentTier}</strong></p>
+        <p className="mt-2 text-xs" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+          Transparent billing: shown amount is charged exactly as displayed. No hidden fees.
         </p>
       </div>
 
@@ -180,7 +182,7 @@ const SubscribePage = () => {
                 {plan.features.map(f => (
                   <div key={f} className="flex items-center gap-2">
                     <Check className="w-3.5 h-3.5 shrink-0" style={{ color: plan.color }} />
-                    <span className="text-xs text-[#9FB0C3]">{f}</span>
+                    <span className="text-xs text-[#8FA0B8]">{f}</span>
                   </div>
                 ))}
               </div>
@@ -201,7 +203,7 @@ const SubscribePage = () => {
       <div className="w-full max-w-4xl mb-8 rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
         <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Custom Build</p>
         <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-[#9FB0C3]">
+          <p className="text-sm text-[#8FA0B8]">
             Need bespoke module packaging, custom entitlements, or contracted integration delivery?
           </p>
           <button
@@ -228,7 +230,7 @@ const SubscribePage = () => {
           {FOUNDATION_FEATURES.map((feature) => (
             <div key={feature.key} className="rounded-lg border p-3" style={{ borderColor: 'rgba(140,170,210,0.15)' }}>
               <p className="text-sm font-semibold text-[#EDF1F7]">{feature.title}</p>
-              <p className="text-xs mt-1 text-[#9FB0C3]">{feature.summary}</p>
+              <p className="text-xs mt-1 text-[#8FA0B8]">{feature.summary}</p>
               <div className="mt-2 flex items-center justify-between">
                 <span
                   className="text-[10px] px-2 py-1 rounded-full"
@@ -266,7 +268,7 @@ const SubscribePage = () => {
             More Features Roadmap
           </p>
         </div>
-        <p className="text-xs mt-2 text-[#9FB0C3]">
+        <p className="text-xs mt-2 text-[#8FA0B8]">
           These are staged modules. Join waitlist for priority rollout and packaging feedback.
         </p>
         <div className="mt-3 space-y-3">
@@ -277,7 +279,7 @@ const SubscribePage = () => {
                 {features.map((feature) => (
                   <div key={feature.key} className="rounded-md border px-3 py-2" style={{ borderColor: '#1F2937' }}>
                     <p className="text-sm text-[#EDF1F7]">{feature.title}</p>
-                    <p className="text-[11px] mt-1 text-[#9FB0C3] line-clamp-2">{feature.about}</p>
+                    <p className="text-[11px] mt-1 text-[#8FA0B8] line-clamp-2">{feature.about}</p>
                   </div>
                 ))}
               </div>

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../components/ui/switch';
 import { User, Settings as SettingsIcon, Bell, Activity, Loader2, Save, CreditCard, RefreshCw, AlertTriangle, Lock, ArrowRight, Trash2, Download, Unplug } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
@@ -361,10 +362,13 @@ const Settings = () => {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-heading mb-2" style={{ color: 'var(--text-primary)' }}>
-              Settings
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+              — Preferences
+            </div>
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              Your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>settings</em>.
             </h1>
-            <p style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
               Manage your account, preferences, and billing
             </p>
           </div>

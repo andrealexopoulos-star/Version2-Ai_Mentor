@@ -48,7 +48,7 @@ const Row = ({ icon: Icon, label, value, status, onClick }) => (
     {Icon && <Icon className="w-4 h-4 text-[#64748B] shrink-0" />}
     {status && <StatusDot status={status} />}
     <span className="text-sm text-[#EDF1F7] flex-1" style={{ fontFamily: B }}>{label}</span>
-    <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: M }}>{value}</span>
+    <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: M }}>{value}</span>
     {onClick && <ChevronRight className="w-3.5 h-3.5 text-[#64748B]" />}
   </div>
 );
@@ -175,7 +175,7 @@ const AdminDashboard = () => {
               <h1 className="text-2xl font-normal text-[#EDF1F7]" style={{ fontFamily: D }}>Super Admin</h1>
               <p className="text-xs text-[#64748B]" style={{ fontFamily: B }}>Enterprise governance & control plane</p>
             </div>
-            <button onClick={loadData} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[#9FB0C3] hover:bg-white/5" style={{ border: '1px solid var(--biqc-border)', fontFamily: B }}>
+            <button onClick={loadData} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[#8FA0B8] hover:bg-white/5" style={{ border: '1px solid var(--biqc-border)', fontFamily: B }}>
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </button>
           </div>
@@ -226,11 +226,11 @@ const AdminDashboard = () => {
                 <div className="space-y-2">
                   <div className="p-4 rounded-lg" style={{ background: '#E85D00' + '08', border: '1px solid #E85D0020' }}>
                     <div className="flex items-center gap-2 mb-1"><StatusDot status="critical" /><span className="text-sm font-medium text-[#EDF1F7]" style={{ fontFamily: B }}>No billing connected — $0 MRR</span></div>
-                    <p className="text-xs text-[#9FB0C3] ml-4" style={{ fontFamily: B }}>Revenue: $0. All users on free tier. Connect Stripe to enable subscriptions.</p>
+                    <p className="text-xs text-[#8FA0B8] ml-4" style={{ fontFamily: B }}>Revenue: $0. All users on free tier. Connect Stripe to enable subscriptions.</p>
                   </div>
                   <div className="p-4 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20' }}>
                     <div className="flex items-center gap-2 mb-1"><StatusDot status="warning" /><span className="text-sm font-medium text-[#EDF1F7]" style={{ fontFamily: B }}>2 Edge Functions without source control</span></div>
-                    <p className="text-xs text-[#9FB0C3] ml-4" style={{ fontFamily: B }}>intelligence-snapshot and signal-evaluator deployed but not in git. Recovery needed.</p>
+                    <p className="text-xs text-[#8FA0B8] ml-4" style={{ fontFamily: B }}>intelligence-snapshot and signal-evaluator deployed but not in git. Recovery needed.</p>
                   </div>
                 </div>
               </Sec>
@@ -285,7 +285,7 @@ const AdminDashboard = () => {
                       <div className="space-y-3 mb-4" style={{ borderTop: '1px solid var(--biqc-border)', paddingTop: 12 }}>
                         <div>
                           <span className="text-[10px] text-[#64748B] uppercase" style={{ fontFamily: M }}>AI Rate Limits</span>
-                          <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: B }}>
+                          <p className="text-[11px] text-[#8FA0B8]" style={{ fontFamily: B }}>
                             Tier: {rateLimitDetail.tier} {rateLimitDetail.admin_bypass ? '• Andre bypass active' : '• monthly quota + burst window'}
                           </p>
                         </div>
@@ -581,7 +581,7 @@ const AdminDashboard = () => {
                     <div key={t.name} className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <span className="text-sm font-medium text-[#EDF1F7]" style={{ fontFamily: B }}>{t.name}</span>
                       <span className="text-lg font-bold text-[#E85D00] block mb-2" style={{ fontFamily: M }}>{t.price}</span>
-                      {t.f.map(f => <div key={f} className="flex items-center gap-1.5 text-xs text-[#9FB0C3] mb-1" style={{ fontFamily: B }}><CheckCircle className="w-3 h-3 text-[#10B981]" />{f}</div>)}
+                      {t.f.map(f => <div key={f} className="flex items-center gap-1.5 text-xs text-[#8FA0B8] mb-1" style={{ fontFamily: B }}><CheckCircle className="w-3 h-3 text-[#10B981]" />{f}</div>)}
                     </div>
                   ))}
                 </div>

@@ -132,7 +132,7 @@ const CategoryCard = ({ cat }) => {
           <li key={j} className="flex items-start gap-2">
             <div className="w-1 h-1 rounded-full mt-[7px] flex-shrink-0" style={{ background: cat.color }} />
             <span className="text-xs leading-relaxed"
-              style={{ color: 'var(--biqc-text-2, #9FB0C3)', fontFamily: fontFamily.body }}>
+              style={{ color: 'var(--biqc-text-2, #8FA0B8)', fontFamily: fontFamily.body }}>
               {item}
             </span>
           </li>
@@ -168,7 +168,7 @@ export function HowItWorks() {
           <span style={{ color: '#E85D00' }}>autonomous intelligence.</span>
         </h2>
         <p className="text-sm sm:text-base max-w-xl mx-auto"
-          style={{ color: 'var(--biqc-text-2, #9FB0C3)', fontFamily: fontFamily.body }}>
+          style={{ color: 'var(--biqc-text-2, #8FA0B8)', fontFamily: fontFamily.body }}>
           BIQc connects your systems, monitors every signal, and surfaces what matters — before it becomes a problem.
         </p>
       </div>
@@ -226,7 +226,7 @@ export function HowItWorks() {
                   {item.title}
                 </h4>
                 <p className="text-xs leading-relaxed"
-                  style={{ color: 'var(--biqc-text-2, #9FB0C3)', fontFamily: fontFamily.body }}>
+                  style={{ color: 'var(--biqc-text-2, #8FA0B8)', fontFamily: fontFamily.body }}>
                   {item.desc}
                 </p>
               </div>
@@ -270,7 +270,7 @@ export function HowItWorks() {
                   {item.title}
                 </h4>
                 <p className="text-xs leading-relaxed"
-                  style={{ color: 'var(--biqc-text-2, #9FB0C3)', fontFamily: fontFamily.body }}>
+                  style={{ color: 'var(--biqc-text-2, #8FA0B8)', fontFamily: fontFamily.body }}>
                   {item.desc}
                 </p>
               </div>
@@ -292,7 +292,7 @@ export function HowItWorks() {
             Six categories of business intelligence.
           </h3>
           <p className="text-sm mb-8"
-            style={{ color: 'var(--biqc-text-2, #9FB0C3)', fontFamily: fontFamily.body }}>
+            style={{ color: 'var(--biqc-text-2, #8FA0B8)', fontFamily: fontFamily.body }}>
             Every data point mapped, monitored, and cross-referenced autonomously.
           </p>
 
@@ -343,7 +343,7 @@ export function HowItWorks() {
                     {step.title}
                   </h4>
                   <p className="text-xs leading-relaxed"
-                    style={{ color: 'var(--biqc-text-2, #9FB0C3)', fontFamily: fontFamily.body }}>
+                    style={{ color: 'var(--biqc-text-2, #8FA0B8)', fontFamily: fontFamily.body }}>
                     {step.desc}
                   </p>
                 </div>
@@ -353,7 +353,7 @@ export function HowItWorks() {
 
           {/* ── CTA ── */}
           <div className="text-center pt-6" style={{ borderTop: '1px solid var(--biqc-border, #1E2D3D)' }}>
-            <p className="text-sm mb-5" style={{ color: 'var(--biqc-text-2, #9FB0C3)', fontFamily: fontFamily.body }}>
+            <p className="text-sm mb-5" style={{ color: 'var(--biqc-text-2, #8FA0B8)', fontFamily: fontFamily.body }}>
               Connect your first platform in under 2 minutes. No credit card required.
             </p>
             <Link

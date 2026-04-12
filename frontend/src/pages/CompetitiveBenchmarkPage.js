@@ -201,7 +201,7 @@ const PillarBar = ({ pillar, score, isReal, isWeakest }) => {
       </div>
       {expanded && (
         <div className="mt-2 ml-11 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid rgba(140,170,210,0.15)' }}>
-          <p className="text-xs text-[#9FB0C3] mb-2">{pillar.desc}</p>
+          <p className="text-xs text-[#8FA0B8] mb-2">{pillar.desc}</p>
           {isReal && score != null && (
             <div className="flex items-start gap-1.5">
               <Zap className="w-3 h-3 shrink-0 mt-0.5" style={{ color: '#E85D00' }} />
@@ -368,10 +368,13 @@ export default function CompetitiveBenchmarkPage() {
         {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
-              Competitive Benchmark
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+              — Market Position
+            </div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              Competitive <em style={{ fontStyle: 'italic', color: '#E85D00' }}>benchmark</em>.
             </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
+            <p className="text-sm mt-2" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
               {hasRealData
                 ? `Digital footprint analysis${data?.scanDomain ? ` for ${data.scanDomain}` : ''}. Last scanned: ${data?.lastUpdated ? new Date(data.lastUpdated).toLocaleDateString('en-AU') : 'recently'}.`
                 : 'Complete calibration with your business website to generate your Digital Footprint score.'
@@ -593,7 +596,7 @@ export default function CompetitiveBenchmarkPage() {
                             <th className="text-left pb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono, fontWeight: 500 }}>Pillar</th>
                             <th className="text-center pb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono, fontWeight: 700 }}>You</th>
                             {competitorResults.map(r => (
-                              <th key={r.domain} className="text-center pb-2 max-w-[80px] truncate" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+                              <th key={r.domain} className="text-center pb-2 max-w-[80px] truncate" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>
                                 {r.domain.replace('www.', '').split('.')[0]}
                               </th>
                             ))}
@@ -616,7 +619,7 @@ export default function CompetitiveBenchmarkPage() {
                                 const worse = cScore != null && youScore != null && youScore < cScore;
                                 return (
                                   <td key={r.domain} className="text-center py-2 font-semibold" style={{
-                                    color: worse ? '#EF4444' : better ? '#10B981' : '#9FB0C3',
+                                    color: worse ? '#EF4444' : better ? '#10B981' : '#8FA0B8',
                                     fontFamily: fontFamily.mono,
                                   }}>
                                     {cScore ?? '—'}

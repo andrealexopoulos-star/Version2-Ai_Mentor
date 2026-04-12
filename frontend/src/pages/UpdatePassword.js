@@ -61,7 +61,7 @@ const UpdatePassword = () => {
           <div className="text-center" data-testid="password-updated">
             <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-4" />
             <h1 className="text-2xl font-normal text-[#EDF1F7] mb-2" style={{ fontFamily: DISPLAY }}>Password updated</h1>
-            <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Redirecting to your dashboard...</p>
+            <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Redirecting to your dashboard...</p>
           </div>
         ) : !sessionReady ? (
           <div className="text-center" data-testid="password-loading">
@@ -72,11 +72,11 @@ const UpdatePassword = () => {
         ) : (
           <>
             <h1 className="text-2xl font-normal text-[#EDF1F7] mb-2" style={{ fontFamily: DISPLAY }}>Set new password</h1>
-            <p className="text-sm text-[#9FB0C3] mb-8" style={{ fontFamily: fontFamily.body }}>Choose a strong password for your account.</p>
+            <p className="text-sm text-[#8FA0B8] mb-8" style={{ fontFamily: fontFamily.body }}>Choose a strong password for your account.</p>
 
             <form onSubmit={handleUpdate} className="space-y-5" data-testid="update-password-form">
               <div>
-                <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>New Password</label>
+                <label className="text-xs font-medium text-[#8FA0B8] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>New Password</label>
                 <div className="relative">
                   <Input type={showPwd ? 'text' : 'password'} value={password}
                     onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" required minLength={8}
@@ -90,7 +90,7 @@ const UpdatePassword = () => {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-[#9FB0C3] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Confirm Password</label>
+                <label className="text-xs font-medium text-[#8FA0B8] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Confirm Password</label>
                 <Input type="password" value={confirm}
                   onChange={(e) => setConfirm(e.target.value)} placeholder="Confirm password" required
                   className="h-12 text-sm rounded-xl"

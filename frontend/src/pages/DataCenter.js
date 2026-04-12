@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Progress } from '../components/ui/progress';
+import { fontFamily } from '../design-system/tokens';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -193,9 +194,9 @@ const DataCenter = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <p className="overline text-[#9FB0C3] mb-2">Knowledge Base</p>
-            <h1 className="text-3xl md:text-4xl font-serif text-[#EDF1F7]">Data Center</h1>
-            <p className="text-[#9FB0C3] mt-2">
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Knowledge Base</div>
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Data <em style={{ fontStyle: 'italic', color: '#E85D00' }}>centre</em>.</h1>
+            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
               Upload your business documents to make the AI your subject matter expert
             </p>
           </div>
@@ -283,11 +284,11 @@ const DataCenter = () => {
                             </button>
                           </div>
                           <h3 className="font-medium text-[#EDF1F7] truncate mb-1">{file.filename}</h3>
-                          <p className="text-xs text-[#9FB0C3] mb-2">
+                          <p className="text-xs text-[#8FA0B8] mb-2">
                             {fileCategories.find(c => c.value === file.category)?.label || file.category}
                           </p>
                           {file.description && (
-                            <p className="text-sm text-[#9FB0C3] line-clamp-2 mb-2">{file.description}</p>
+                            <p className="text-sm text-[#8FA0B8] line-clamp-2 mb-2">{file.description}</p>
                           )}
                           <div className="flex items-center justify-between text-xs text-[#64748B]">
                             <span>{formatFileSize(file.file_size)}</span>
@@ -311,7 +312,7 @@ const DataCenter = () => {
                   <CardContent className="p-12 text-center">
                     <Database className="w-16 h-16 text-[#EDF1F7]/20 mx-auto mb-4" />
                     <h3 className="text-xl font-serif text-[#EDF1F7] mb-2">No files yet</h3>
-                    <p className="text-[#9FB0C3] mb-6">
+                    <p className="text-[#8FA0B8] mb-6">
                       Upload your business documents to help the AI understand your business better
                     </p>
                     <Button onClick={() => setActiveTab('upload')} className="btn-lime">
@@ -330,7 +331,7 @@ const DataCenter = () => {
                     <Building2 className="w-5 h-5" />
                     Business Profile
                   </CardTitle>
-                  <p className="text-sm text-[#9FB0C3]">
+                  <p className="text-sm text-[#8FA0B8]">
                     Complete your profile to get more personalized AI recommendations
                   </p>
                   {stats?.profile_completeness !== undefined && (
@@ -482,7 +483,7 @@ const DataCenter = () => {
               <Card className="rounded-lg">
                 <CardHeader>
                   <CardTitle className="font-serif">Upload Documents</CardTitle>
-                  <p className="text-sm text-[#9FB0C3]">
+                  <p className="text-sm text-[#8FA0B8]">
                     Supported formats: PDF, Word, Excel, CSV, TXT, JSON (Max 10MB)
                   </p>
                 </CardHeader>
@@ -511,7 +512,7 @@ const DataCenter = () => {
                       </div>
                     ) : (
                       <>
-                        <p className="text-[#9FB0C3] mb-2">Drag and drop your file here, or</p>
+                        <p className="text-[#8FA0B8] mb-2">Drag and drop your file here, or</p>
                         <label className="btn-lime px-6 py-2 rounded-sm cursor-pointer inline-block">
                           Browse Files
                           <input
@@ -565,8 +566,8 @@ const DataCenter = () => {
 
                   <div className="p-4 bg-[#0F1720] rounded-sm">
                     <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-[#9FB0C3] flex-shrink-0 mt-0.5" />
-                      <div className="text-sm text-[#9FB0C3]">
+                      <AlertCircle className="w-5 h-5 text-[#8FA0B8] flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-[#8FA0B8]">
                         <p className="font-medium mb-1">How your data is used:</p>
                         <ul className="space-y-1 text-xs">
                           <li>• Text is extracted from your documents automatically</li>

@@ -67,9 +67,9 @@ const MarketAnalysis = () => {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <p className="overline text-[#9FB0C3] mb-2">Market Intelligence</p>
+            <p className="overline text-[#8FA0B8] mb-2">Market Intelligence</p>
             <h1 className="text-3xl md:text-4xl font-serif text-[#EDF1F7]">Market Analysis</h1>
-            <p className="text-[#9FB0C3] mt-2">
+            <p className="text-[#8FA0B8] mt-2">
               Understand your market, competitors, and growth opportunities
             </p>
           </div>
@@ -99,7 +99,7 @@ const MarketAnalysis = () => {
                       className="min-h-[250px] bg-[#0E1628]"
                       data-testid="market-context-input"
                     />
-                    <p className="text-xs text-[#9FB0C3]">
+                    <p className="text-xs text-[#8FA0B8]">
                       Include: your industry, products/services, geographic focus, known competitors, and specific questions.
                     </p>
                   </div>
@@ -127,7 +127,7 @@ const MarketAnalysis = () => {
                 {/* Quick Tips */}
                 <div className="mt-6 p-4 bg-[#0F1720] rounded-sm">
                   <h4 className="font-medium text-[#EDF1F7] mb-2 text-sm">Tips for Better Analysis</h4>
-                  <ul className="text-xs text-[#9FB0C3] space-y-1">
+                  <ul className="text-xs text-[#8FA0B8] space-y-1">
                     <li>• Be specific about your target market segment</li>
                     <li>• Name your main competitors if known</li>
                     <li>• Include your current market position</li>
@@ -144,7 +144,7 @@ const MarketAnalysis = () => {
                   <CardContent className="p-8 text-center">
                     <CognitiveMesh compact />
                     <p className="text-[#EDF1F7] font-medium">Analyzing market data...</p>
-                    <p className="text-sm text-[#9FB0C3] mt-1">This may take a moment</p>
+                    <p className="text-sm text-[#8FA0B8] mt-1">This may take a moment</p>
                   </CardContent>
                 </Card>
               )}
@@ -202,7 +202,7 @@ const MarketAnalysis = () => {
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
                     <Target className="w-12 h-12 text-[#EDF1F7]/20 mx-auto mb-4" />
-                    <p className="text-[#9FB0C3]">
+                    <p className="text-[#8FA0B8]">
                       Describe your market and business to get comprehensive analysis
                     </p>
                   </CardContent>

@@ -5,6 +5,7 @@ import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
 import { Loader2, Save, Shield, TrendingUp, Users, Globe, Clock, Bell } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 
 const DOMAINS = [
   { key: 'finance', label: 'Finance', desc: 'Cash flow, invoices, revenue signals' },
@@ -162,10 +163,10 @@ const IntelligenceBaselinePage = () => {
 
           {/* Header */}
           <div>
-            <div className="text-[10px] tracking-[0.4em] uppercase text-white/25 mb-1">BIQC</div>
-            <h1 className="text-lg tracking-[0.15em] text-white/70 font-semibold">Intelligence Baseline</h1>
-            <p className="text-xs text-white/30 mt-2 leading-relaxed max-w-lg">
-              Configure what BIQC monitors, how often it briefs, and how aggressively it escalates. This drives all downstream intelligence.
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Configuration</div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Intelligence <em style={{ fontStyle: 'italic', color: '#E85D00' }}>baseline</em>.</h1>
+            <p className="text-xs mt-2 leading-relaxed max-w-lg" style={{ color: '#8FA0B8' }}>
+              Configure what BIQc monitors, how often it briefs, and how aggressively it escalates. This drives all downstream intelligence.
             </p>
             {!configured && (
               <div className="mt-3 text-xs text-amber-400/70 border border-amber-400/20 px-3 py-2 inline-block">

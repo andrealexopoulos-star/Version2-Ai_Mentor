@@ -44,7 +44,7 @@ export const Inevitability = ({ title, why, impact, window: w, severity = 'high'
       </button>
       {open && (
         <div className="px-4 pb-4 pt-2 space-y-2" style={{ borderTop: '1px solid rgba(140,170,210,0.15)' }}>
-          <div><span className="text-[10px] text-[#64748B] uppercase" style={{ fontFamily: fontFamily.mono }}>Why</span><p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{why}</p></div>
+          <div><span className="text-[10px] text-[#64748B] uppercase" style={{ fontFamily: fontFamily.mono }}>Why</span><p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{why}</p></div>
           <div><span className="text-[10px] text-[#64748B] uppercase" style={{ fontFamily: fontFamily.mono }}>Financial Impact</span><p className="text-sm text-[#E85D00]" style={{ fontFamily: fontFamily.mono }}>{impact}</p></div>
           <div><span className="text-[10px] text-[#64748B] uppercase" style={{ fontFamily: fontFamily.mono }}>Intervention Window</span><p className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{w}</p></div>
         </div>
@@ -72,14 +72,14 @@ export const DecisionPressure = ({ score = 7 }) => {
 export const ExecMemo = ({ memo }) => (
   <Panel>
     <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Executive Memo</h3>
-    <p className="text-sm text-[#9FB0C3] leading-relaxed whitespace-pre-line" style={{ fontFamily: fontFamily.body }}>{memo}</p>
+    <p className="text-sm text-[#8FA0B8] leading-relaxed whitespace-pre-line" style={{ fontFamily: fontFamily.body }}>{memo}</p>
   </Panel>
 );
 
 export const HeatBar = ({ label, value, max = 100, color = '#E85D00', suffix = '%', alert = false }) => (
   <div className="mb-3">
     <div className="flex justify-between mb-1">
-      <span className="text-xs text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{label}</span>
+      <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{label}</span>
       <span className="text-xs font-semibold" style={{ fontFamily: fontFamily.mono, color: alert ? '#E85D00' : '#EDF1F7' }}>{value}{suffix}</span>
     </div>
     <div className="h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.15)' }}>

@@ -370,7 +370,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
             <div className={`max-w-[85%] px-3.5 py-2.5 rounded-xl text-sm leading-relaxed`}
               style={{
                 background: msg.role === 'user' ? '#E85D00' : msg.type === 'integration_prompt' ? '#F59E0B10' : '#0E1628',
-                color: msg.role === 'user' ? 'white' : '#9FB0C3',
+                color: msg.role === 'user' ? 'white' : '#8FA0B8',
                 border: msg.role === 'user' ? 'none' : msg.type === 'integration_prompt' ? '1px solid #F59E0B25' : '1px solid rgba(140,170,210,0.15)',
                 fontFamily: fontFamily.body,
                 whiteSpace: 'pre-line',
@@ -428,7 +428,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
         {pendingBnaUpdate && (
           <div className="flex justify-start">
             <div className="max-w-[85%] px-3.5 py-2.5 rounded-xl" style={{ background: '#3B82F610', border: '1px solid #3B82F625' }}>
-              <p className="text-sm text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>
+              <p className="text-sm text-[#8FA0B8] mb-2" style={{ fontFamily: fontFamily.body }}>
                 Update <strong className="text-[#EDF1F7]">{pendingBnaUpdate.field}</strong> to <strong className="text-[#EDF1F7]">"{pendingBnaUpdate.value}"</strong>?
               </p>
               <div className="flex gap-2">

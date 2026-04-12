@@ -756,10 +756,13 @@ const MySoundBoard = () => {
             </button>
 
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg md:text-xl font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                Ask BIQc
+              <div className="text-[11px] uppercase tracking-[0.08em] mb-1 hidden md:block" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+                — Soundboard
+              </div>
+              <h1 className="text-lg md:text-xl font-medium truncate" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
+                Ask <em style={{ fontStyle: 'italic', color: '#E85D00' }}>BIQc</em>.
               </h1>
-              <p className="text-xs md:text-sm truncate hidden md:block" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-xs truncate hidden md:block" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
                 Your AI workspace for grounded business decisions
               </p>
             </div>

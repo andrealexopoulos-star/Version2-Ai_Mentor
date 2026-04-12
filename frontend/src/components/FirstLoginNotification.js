@@ -60,7 +60,7 @@ const FirstLoginNotification = () => {
           </button>
         </div>
 
-        <p className="text-xs text-[#9FB0C3] mb-4 leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+        <p className="text-xs text-[#8FA0B8] mb-4 leading-relaxed" style={{ fontFamily: fontFamily.body }}>
           Connect your email and integrations to unlock full intelligence capabilities.
         </p>
 

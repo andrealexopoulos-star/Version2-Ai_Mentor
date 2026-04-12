@@ -162,7 +162,7 @@ export const ProactiveInsightBubble = () => {
 
           {/* Message */}
           <p className="text-xs leading-relaxed mb-3"
-            style={{ color: '#9FB0C3', fontFamily: fontFamily.body, marginLeft: 44 }}>
+            style={{ color: '#8FA0B8', fontFamily: fontFamily.body, marginLeft: 44 }}>
             {insight.message}
           </p>
 

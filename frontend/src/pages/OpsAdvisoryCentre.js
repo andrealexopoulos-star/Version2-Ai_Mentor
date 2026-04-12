@@ -56,12 +56,11 @@ const OpsAdvisoryCentre = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px] animate-fade-in" data-testid="ops-advisory-page" style={{ fontFamily: fontFamily.body }}>
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-5 h-5" style={{ color: '#E85D00' }} />
-            <span className="text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest" style={{ background: '#E85D0015', color: '#E85D00', fontFamily: fontFamily.mono }} data-testid="ops-advisory-badge">Ops Advisory</span>
+          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }} data-testid="ops-advisory-badge">
+            — Ops Advisory
           </div>
-          <h1 className="text-2xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }} data-testid="ops-advisory-title">Strategic Intelligence</h1>
-          <p className="mt-2 text-sm" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }} data-testid="ops-advisory-subtitle">
+          <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="ops-advisory-title">Ops <em style={{ fontStyle: 'italic', color: '#E85D00' }}>advisory</em>.</h1>
+          <p className="mt-2 text-sm" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }} data-testid="ops-advisory-subtitle">
             Evidence-backed strategic intelligence based on your profile and recent activity
           </p>
         </div>
@@ -98,11 +97,11 @@ const OpsAdvisoryCentre = () => {
               <Lock className="w-4 h-4 mt-0.5" style={{ color: '#E85D00' }} />
               <div>
                 <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Upgrade to unlock more recommendations</h3>
-                <p className="text-xs mt-1" style={{ color: '#9FB0C3' }}>You&apos;ve reached your monthly limit for your current plan.</p>
+                <p className="text-xs mt-1" style={{ color: '#8FA0B8' }}>You&apos;ve reached your monthly limit for your current plan.</p>
               </div>
             </div>
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="text-sm" style={{ color: '#9FB0C3' }}>
+              <div className="text-sm" style={{ color: '#8FA0B8' }}>
                 Used {data?.usage?.used || 0} of {data?.usage?.limit || 0} this month.
               </div>
               <Link to="/upgrade" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold" style={{ background: '#E85D00', color: '#fff' }} data-testid="ops-advisory-view-plans-button">
@@ -133,12 +132,12 @@ const OpsAdvisoryCentre = () => {
                         {item.title}
                       </div>
                       {item.reason && (
-                        <div className="text-sm mt-1 break-words" style={{ color: '#9FB0C3' }}>
+                        <div className="text-sm mt-1 break-words" style={{ color: '#8FA0B8' }}>
                           {item.reason}
                         </div>
                       )}
                       {item.actions?.length ? (
-                        <ul className="mt-3 list-disc pl-5 space-y-1 text-sm" style={{ color: '#9FB0C3' }}>
+                        <ul className="mt-3 list-disc pl-5 space-y-1 text-sm" style={{ color: '#8FA0B8' }}>
                           {item.actions.map((a, i) => (
                             <li key={i}>{a}</li>
                           ))}
@@ -147,10 +146,10 @@ const OpsAdvisoryCentre = () => {
 
                       {(item.why || item.citations?.length) ? (
                         <details className="mt-4" data-testid={`ops-advisory-item-details-${idx}`}>
-                          <summary className="text-sm cursor-pointer" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>Why this recommendation?</summary>
+                          <summary className="text-sm cursor-pointer" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>Why this recommendation?</summary>
                           <div className="pt-2">
                                 {item.why ? (
-                                  <div className="text-sm break-words" style={{ color: '#9FB0C3' }}>
+                                  <div className="text-sm break-words" style={{ color: '#8FA0B8' }}>
                                     {item.why}
                                   </div>
                                 ) : null}
@@ -167,7 +166,7 @@ const OpsAdvisoryCentre = () => {
                                     <ul className="mt-2 space-y-2">
                                       {item.citations.map((c, i) => (
                                         <li key={i} className="text-sm">
-                                          <div style={{ color: '#9FB0C3' }}>
+                                          <div style={{ color: '#8FA0B8' }}>
                                             <span className="mr-2 text-xs" style={{ color: '#64748B' }}>[{c.source_type}]</span>
                                             {c.url ? (
                                               <a href={c.url} target="_blank" rel="noreferrer" className="underline">

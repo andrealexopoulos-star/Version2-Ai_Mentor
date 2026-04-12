@@ -109,10 +109,11 @@ export default function DecisionsPage() {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto" data-testid="decisions-page">
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: colors.text, fontFamily: fontFamily.display }} data-testid="decisions-title">
-            Decision Centre
+          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Governance</div>
+          <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="decisions-title">
+            Decisions <em style={{ fontStyle: 'italic', color: '#E85D00' }}>log</em>.
           </h1>
-          <p className="text-sm mt-1" style={{ color: colors.textSecondary, fontFamily: fontFamily.body }}>
+          <p className="text-sm mt-1" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
             BIQc detects when your business signals require a leadership decision. Respond here. Outcomes tracked at 30, 60, and 90 days.
           </p>
         </div>

@@ -88,7 +88,7 @@ const ABTestingPage = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>A/B Testing</h1>
-            <p className="text-sm text-[#9FB0C3]">Create and manage experiments to optimise your intelligence outputs.</p>
+            <p className="text-sm text-[#8FA0B8]">Create and manage experiments to optimise your intelligence outputs.</p>
           </div>
           <Button
             onClick={() => setShowCreate(!showCreate)}
@@ -149,7 +149,7 @@ const ABTestingPage = () => {
                   Create Experiment
                 </Button>
                 <Button onClick={() => setShowCreate(false)} variant="outline"
-                  className="border-[rgba(140,170,210,0.15)] text-[#9FB0C3]">
+                  className="border-[rgba(140,170,210,0.15)] text-[#8FA0B8]">
                   Cancel
                 </Button>
               </div>
@@ -161,7 +161,7 @@ const ABTestingPage = () => {
         {loading && (
           <Panel className="text-center py-12">
             <Loader2 className="w-6 h-6 text-[#E85D00] mx-auto mb-3 animate-spin" />
-            <p className="text-sm text-[#9FB0C3]">Loading experiments...</p>
+            <p className="text-sm text-[#8FA0B8]">Loading experiments...</p>
           </Panel>
         )}
 

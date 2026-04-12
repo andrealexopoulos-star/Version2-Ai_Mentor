@@ -76,8 +76,8 @@ const CompliancePage = () => {
     <DashboardLayout>
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-10" style={{ fontFamily: fontFamily.body }} data-testid="compliance-page">
         <SurfaceHeader
-          eyebrow="BIQc insights · compliance"
-          title="What must be verified right now?"
+          eyebrow="Compliance"
+          title={<>Compliance <em style={{ fontStyle: 'italic', color: '#E85D00' }}>verification</em>.</>}
           question="This page only shows real obligations, dependencies, and alignment risks that could expose the business."
           summary={summary}
           testIdPrefix="compliance"

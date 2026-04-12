@@ -6,7 +6,7 @@ const ConsultingView = () => (
     <div className="space-y-6 max-w-[1200px]">
       <div>
         <h2 className="text-xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: SORA }}>Good morning, Andre.</h2>
-        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: INTER }}>Professional Services Intelligence &middot; Last scan: 4 minutes ago</p>
+        <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: INTER }}>Professional Services Intelligence &middot; Last scan: 4 minutes ago</p>
       </div>
 
       <SystemState state="DRIFT" confidence={81} velocity="stable" />

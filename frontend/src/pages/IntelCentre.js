@@ -4,6 +4,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
 import { Target, Stethoscope, BarChart3, TrendingUp, ArrowRight } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 import { apiClient } from '../lib/api';
 
 const IntelCentre = () => {
@@ -65,14 +66,13 @@ const IntelCentre = () => {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Target className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
-              <span className="badge badge-primary">Intelligence Hub</span>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+              — Intelligence
             </div>
-            <h1 className="text-3xl md:text-4xl font-serif mb-2" style={{ color: 'var(--text-primary)' }}>
-              MyIntel
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              Intel <em style={{ fontStyle: 'italic', color: '#E85D00' }}>Centre</em>.
             </h1>
-            <p style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
               Business intelligence, diagnostics, and market insights powered by AI
             </p>
           </div>

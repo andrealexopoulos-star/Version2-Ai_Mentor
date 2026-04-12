@@ -10,6 +10,7 @@ import {
   UserMinus, LineChart, Cog, Scale, MessageSquare
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 
 // Expanded business categories with BIQC-style explanations
@@ -409,8 +410,9 @@ const Diagnosis = ({ embedded = false }) => {
       {!embedded && (
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Business Diagnosis</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Diagnostics</div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Business <em style={{ fontStyle: 'italic', color: '#E85D00' }}>diagnosis</em>.</h1>
+            <p className="text-sm mt-1" style={{ color: '#8FA0B8' }}>
               Select areas to focus your advisory intelligence on
             </p>
           </div>

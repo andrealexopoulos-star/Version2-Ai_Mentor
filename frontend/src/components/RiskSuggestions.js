@@ -270,7 +270,7 @@ export const RiskSuggestions = () => {
             </div>
 
             {/* Detail */}
-            <p className="text-xs leading-relaxed mb-1.5 ml-10" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+            <p className="text-xs leading-relaxed mb-1.5 ml-10" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
               {risk.detail}
             </p>
 

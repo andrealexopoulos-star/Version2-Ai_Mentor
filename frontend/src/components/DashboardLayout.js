@@ -65,7 +65,7 @@ const VerificationBadge = ({ navigate }) => {
           <div className="h-1.5 rounded-full mb-3" style={{ background: colors.border }}>
             <div className="h-1.5 rounded-full" style={{ width: `${score}%`, background: color }} />
           </div>
-          <p className="text-[11px] text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
+          <p className="text-[11px] text-[#8FA0B8] mb-3" style={{ fontFamily: fontFamily.body }}>
             {score > 70 ? 'Strong data coverage. Intelligence is well-grounded.' : score > 40 ? 'Moderate coverage. Connect more systems to improve.' : 'Limited data. Most insights based on public signals.'}
           </p>
           <button onClick={() => { setShowTooltip(false); navigate('/integrations'); }}
@@ -512,12 +512,12 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                 <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{user?.email}</p>
               </div>
               <DropdownMenuSeparator style={{ background: 'rgba(140,170,210,0.15)' }} />
-              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/subscribe')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Zap className="w-4 h-4 mr-2" /> Subscription: plans and feature unlocks</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/subscribe')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Zap className="w-4 h-4 mr-2" /> Subscription: plans and feature unlocks</DropdownMenuItem>
               {(user?.role === 'admin' || user?.role === 'superadmin' || isPrivilegedUser(user)) && (
                 <>
-                  <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Shield className="w-4 h-4 mr-2" /> Super Admin</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/calibration')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Settings className="w-4 h-4 mr-2" /> Recalibrate</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Shield className="w-4 h-4 mr-2" /> Super Admin</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/calibration')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Settings className="w-4 h-4 mr-2" /> Recalibrate</DropdownMenuItem>
                 </>
               )}
               <DropdownMenuSeparator style={{ background: 'rgba(140,170,210,0.15)' }} />
@@ -589,7 +589,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                       aria-current={sectionActive ? 'page' : undefined}
                       style={{
                         fontFamily: fontFamily.body,
-                        color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #9FB0C3)',
+                        color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
                         background: sectionActive ? 'var(--lava-wash, rgba(232,93,0,0.12))' : 'transparent',
                         borderLeft: sectionActive ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                       }}
@@ -649,7 +649,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                           aria-current={active ? 'page' : undefined}
                           style={{
                             fontFamily: fontFamily.body,
-                            color: locked ? '#4A5568' : active ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #9FB0C3)',
+                            color: locked ? '#4A5568' : active ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
                             background: active ? '#E85D0015' : 'transparent',
                             borderLeft: active ? '2px solid #E85D00' : '2px solid transparent',
                             cursor: 'pointer',
@@ -674,7 +674,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
               onClick={() => { navigate('/biqc-legal'); closeAll(); }}
               className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all hover:bg-white/5"
               style={{
-                color: isActive('/biqc-legal') ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #9FB0C3)',
+                color: isActive('/biqc-legal') ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
                 background: isActive('/biqc-legal') ? 'var(--lava-wash, rgba(232,93,0,0.12))' : 'transparent',
                 borderLeft: isActive('/biqc-legal') ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                 fontFamily: fontFamily.body,
@@ -797,7 +797,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       <button
         onClick={() => setFeedbackOpen(true)}
         className="fixed bottom-20 left-4 z-40 px-3 py-2 rounded-full text-xs"
-        style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#9FB0C3', fontFamily: fontFamily.mono }}
+        style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#8FA0B8', fontFamily: fontFamily.mono }}
         data-testid="ux-feedback-fab"
       >
         Feedback

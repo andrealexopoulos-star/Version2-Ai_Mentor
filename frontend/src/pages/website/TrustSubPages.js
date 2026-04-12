@@ -12,20 +12,20 @@ const TrustPageShell = ({ title, lastUpdated, children }) => (
   <WebsiteLayout>
     <section className="py-24">
       <div className="max-w-3xl mx-auto px-6">
-        <Link to="/trust" className="inline-flex items-center gap-2 text-sm text-[#9FB0C3] hover:text-[#E85D00] transition-colors mb-8" style={{ fontFamily: fontFamily.mono }}>
+        <Link to="/trust" className="inline-flex items-center gap-2 text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors mb-8" style={{ fontFamily: fontFamily.mono }}>
           <ArrowLeft className="w-4 h-4" /> Back to Trust
         </Link>
         <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>{title}</h1>
-        <p className="text-xs text-[#9FB0C3]/50 mb-10" style={{ fontFamily: fontFamily.mono }}>Last updated: {lastUpdated}</p>
+        <p className="text-xs text-[#8FA0B8]/50 mb-10" style={{ fontFamily: fontFamily.mono }}>Last updated: {lastUpdated}</p>
         <div className="prose-steel space-y-6">{children}</div>
       </div>
     </section>
     <style>{`
       .prose-steel h2 { font-family: ${HEADING}; font-size: 1.25rem; font-weight: 700; color: #EDF1F7; margin-top: 2.5rem; margin-bottom: 0.75rem; }
       .prose-steel h3 { font-family: ${HEADING}; font-size: 1rem; font-weight: 600; color: #EDF1F7; margin-top: 1.5rem; margin-bottom: 0.5rem; }
-      .prose-steel p { font-family: ${BODY}; font-size: 0.875rem; line-height: 1.7; color: #9FB0C3; }
+      .prose-steel p { font-family: ${BODY}; font-size: 0.875rem; line-height: 1.7; color: #8FA0B8; }
       .prose-steel ul { list-style: none; padding: 0; }
-      .prose-steel li { font-family: ${BODY}; font-size: 0.875rem; color: #9FB0C3; padding-left: 1.25rem; position: relative; margin-bottom: 0.5rem; line-height: 1.6; }
+      .prose-steel li { font-family: ${BODY}; font-size: 0.875rem; color: #8FA0B8; padding-left: 1.25rem; position: relative; margin-bottom: 0.5rem; line-height: 1.6; }
       .prose-steel li::before { content: ''; position: absolute; left: 0; top: 0.6rem; width: 4px; height: 4px; border-radius: 50%; background: #E85D00; }
     `}</style>
   </WebsiteLayout>

@@ -81,7 +81,7 @@ export default function AdminScopeCheckpointsPage() {
                   FAIL
                 </span>
                 <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{entry.gate_id}</span>
-                <span className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
+                <span className="text-[10px] text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
                 <span className="ml-auto text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{entry.artifact}</span>
               </div>
             ))}
@@ -107,7 +107,7 @@ export default function AdminScopeCheckpointsPage() {
                   {entry.status}
                 </span>
                 <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{entry.gate_id}</span>
-                <span className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
+                <span className="text-[10px] text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
                 <span className="ml-auto text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{entry.artifact}</span>
               </div>
             ))}

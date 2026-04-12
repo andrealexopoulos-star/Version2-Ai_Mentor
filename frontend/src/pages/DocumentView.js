@@ -91,7 +91,7 @@ const DocumentView = () => {
           <div className="mb-8">
             <button
               onClick={() => navigate('/documents')}
-              className="inline-flex items-center gap-2 text-[#9FB0C3] hover:text-[#EDF1F7] mb-6 transition-colors"
+              className="inline-flex items-center gap-2 text-[#8FA0B8] hover:text-[#EDF1F7] mb-6 transition-colors"
               data-testid="back-to-documents-btn"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -102,7 +102,7 @@ const DocumentView = () => {
               <div>
                 <span className="badge badge-lime text-xs mb-2">{document?.document_type}</span>
                 <h1 className="text-3xl md:text-4xl font-serif text-[#EDF1F7]">{document?.title}</h1>
-                <div className="flex items-center gap-4 mt-3 text-sm text-[#9FB0C3]">
+                <div className="flex items-center gap-4 mt-3 text-sm text-[#8FA0B8]">
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
                     {new Date(document?.created_at).toLocaleDateString()}

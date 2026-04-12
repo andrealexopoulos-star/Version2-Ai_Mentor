@@ -26,7 +26,7 @@ const AlertItem = ({ alert, onAction }) => {
 
   if (actioned === 'complete' || actioned === 'ignore') {
     return (
-      <div className="rounded-lg px-5 py-3 flex items-center gap-3" style={{ background: 'var(--biqc-bg-card)', border: '1px solid rgba(140,170,210,0.15)50', opacity: 0.5 }}>
+      <div className="rounded-lg px-5 py-3 flex items-center gap-3" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)50', opacity: 0.5 }}>
         {actioned === 'complete' ? <CheckCircle2 className="w-4 h-4 text-[#10B981]" /> : <XCircle className="w-4 h-4 text-[#64748B]" />}
         <span className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.body }}>{alert.title}</span>
         <span className="ml-auto text-[10px] px-2 py-0.5 rounded" style={{ color: actioned === 'complete' ? '#10B981' : '#64748B', background: actioned === 'complete' ? '#10B98115' : '#64748B15', fontFamily: fontFamily.mono }}>{actioned}</span>
@@ -35,7 +35,7 @@ const AlertItem = ({ alert, onAction }) => {
   }
 
   return (
-    <div className="rounded-lg overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${s.color}20` }} data-testid={`alert-${alert.id}`}>
+    <div className="rounded-lg overflow-hidden" style={{ background: '#0E1628', border: `1px solid ${s.color}20` }} data-testid={`alert-${alert.id}`}>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors" data-testid={`alert-toggle-${alert.id}`}>
         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color, boxShadow: alert.severity === 'critical' || alert.severity === 'high' ? `0 0 10px ${s.color}40` : 'none' }} />
         <div className="flex-1 min-w-0">
@@ -46,14 +46,14 @@ const AlertItem = ({ alert, onAction }) => {
         {open ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
       </button>
       {open && (
-        <div className="px-5 pb-4 pt-3 space-y-3" style={{ borderTop: '1px solid var(--biqc-border)' }}>
+        <div className="px-5 pb-4 pt-3 space-y-3" style={{ borderTop: '1px solid rgba(140,170,210,0.15)' }}>
           <div>
             <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Business Impact</span>
-            <p className="text-sm text-[#9FB0C3] break-words whitespace-pre-wrap">{alert.impact}</p>
+            <p className="text-sm text-[#8FA0B8] break-words whitespace-pre-wrap">{alert.impact}</p>
           </div>
           <div>
             <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Recommended Action</span>
-            <p className="text-sm text-[#9FB0C3] break-words whitespace-pre-wrap">{alert.action}</p>
+            <p className="text-sm text-[#8FA0B8] break-words whitespace-pre-wrap">{alert.action}</p>
           </div>
           <div className="flex flex-wrap gap-2 pt-1">
             {alert.actions?.includes('email') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630' }} data-testid={`alert-auto-email-${alert.id}`}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
@@ -187,10 +187,11 @@ const AlertsPageAuth = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[900px]" style={{ fontFamily: fontFamily.body }} data-testid="alerts-page">
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Alert Centre</h1>
-            <p className="text-sm text-[#9FB0C3]">
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Alert Centre</div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>What needs your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>attention</em>.</h1>
+            <p className="text-sm text-[#8FA0B8]">
               {loading || integrationLoading
                 ? 'Scanning connected data sources...'
                 : alerts.length > 0
@@ -224,7 +225,7 @@ const AlertsPageAuth = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[['Critical', critCount, '#E85D00'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
-            <div key={l} className="rounded-lg p-4 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+            <div key={l} className="rounded-lg p-4 text-center" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
               {loading
                 ? <Loader2 className="w-6 h-6 animate-spin mx-auto mb-1" style={{ color: c }} />
                 : <span className="text-2xl font-bold block" style={{ fontFamily: fontFamily.mono, color: c }}>{v}</span>
@@ -240,7 +241,7 @@ const AlertsPageAuth = () => {
             {[['all','All'],['critical','Critical'],['moderate','Moderate'],['info','Info']].map(([val,label]) => (
               <button key={val} onClick={() => setFilter(val)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{ background: filter === val ? '#E85D00' : '#0E1628', color: filter === val ? 'white' : '#9FB0C3', border: `1px solid ${filter === val ? '#E85D00' : 'rgba(140,170,210,0.15)'}`, fontFamily: fontFamily.mono }}
+                style={{ background: filter === val ? '#E85D00' : '#0E1628', color: filter === val ? 'white' : '#8FA0B8', border: `1px solid ${filter === val ? '#E85D00' : 'rgba(140,170,210,0.15)'}`, fontFamily: fontFamily.mono }}
                 data-testid={`alerts-filter-${val}`}>
                 {label}
               </button>
@@ -279,14 +280,14 @@ const AlertsPageAuth = () => {
           ) : !loading ? (
             hasAnyData ? (
               /* Connected but no alerts — genuinely all clear */
-              <div className="rounded-xl p-8 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <div className="rounded-xl p-8 text-center" style={{ background: '#0E1628', border: '1px solid rgba(16,185,129,0.2)' }}>
                 <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.1)' }}>
                   <Shield className="w-7 h-7 text-[#10B981]" />
                 </div>
                 <p className="text-base font-semibold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>
                   All clear — no issues detected.
                 </p>
-                <p className="text-sm text-[#9FB0C3] max-w-md mx-auto mb-1" style={{ fontFamily: fontFamily.body }}>
+                <p className="text-sm text-[#8FA0B8] max-w-md mx-auto mb-1" style={{ fontFamily: fontFamily.body }}>
                   BIQc is actively monitoring {totalConnected} connected system{totalConnected !== 1 ? 's' : ''} in real time.
                   {hasCRM && ' Your HubSpot pipeline, deals and contacts are being watched.'}
                   {hasEmail && ' Your Outlook emails and calendar signals are being analysed.'}
@@ -297,7 +298,7 @@ const AlertsPageAuth = () => {
               </div>
             ) : (
               /* No integrations connected — explain WHY there are no alerts */
-              <div className="rounded-xl p-8" style={{ background: 'var(--biqc-bg-card)', border: '1px solid rgba(232,93,0,0.2)' }}>
+              <div className="rounded-xl p-8" style={{ background: '#0E1628', border: '1px solid rgba(232,93,0,0.2)' }}>
                 <div className="flex items-start gap-4 mb-5">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(232,93,0,0.1)' }}>
                     <Bell className="w-6 h-6 text-[#E85D00]" />
@@ -306,7 +307,7 @@ const AlertsPageAuth = () => {
                     <p className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>
                       No alerts — because no data is being monitored yet.
                     </p>
-                    <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+                    <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>
                       The Alert Centre can only surface issues from data it can see.
                       Without connected integrations, BIQc has nothing to watch — so zero alerts simply means zero visibility, not zero risk.
                     </p>
@@ -321,7 +322,7 @@ const AlertsPageAuth = () => {
                   ].map(item => (
                     <div key={item.label} className="rounded-lg p-4" style={{ background: '#0A1018', border: `1px solid ${item.color}20` }}>
                       <p className="text-xs font-semibold mb-1" style={{ color: item.color, fontFamily: fontFamily.mono }}>{item.label}</p>
-                      <p className="text-xs text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>{item.desc}</p>
+                      <p className="text-xs text-[#8FA0B8] mb-2" style={{ fontFamily: fontFamily.body }}>{item.desc}</p>
                       <p className="text-[10px] italic" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>e.g. {item.example}</p>
                     </div>
                   ))}

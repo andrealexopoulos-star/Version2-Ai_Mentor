@@ -42,7 +42,7 @@ const RadarChart = ({ data }) => {
       <polygon points={compPoints.map(p => `${p.x},${p.y}`).join(' ')} fill="rgba(100,116,139,0.15)" stroke="#64748B" strokeWidth="1.5" strokeDasharray="4" />
       <polygon points={subjectPoints.map(p => `${p.x},${p.y}`).join(' ')} fill="rgba(232,93,0,0.15)" stroke="#E85D00" strokeWidth="2" />
       {subjectPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="4" fill="#E85D00" />)}
-      {data.labels.map((label, i) => { const p = getPoint(1.2, i); return <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fill="#9FB0C3" fontSize="9" fontFamily={MONO}>{label}</text>; })}
+      {data.labels.map((label, i) => { const p = getPoint(1.2, i); return <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fill="#8FA0B8" fontSize="9" fontFamily={MONO}>{label}</text>; })}
     </svg>
   );
 };
@@ -95,10 +95,11 @@ const MarketingIntelPage = () => {
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body }} data-testid="marketing-intel-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Marketing Intelligence</h1>
-            <p className="text-sm text-[#9FB0C3]">5-pillar competitive benchmark. Evidence-based scoring.</p>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Marketing</div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Marketing <em style={{ fontStyle: 'italic', color: '#E85D00' }}>intelligence</em>.</h1>
+            <p className="text-sm mt-1" style={{ color: '#8FA0B8' }}>5-pillar competitive benchmark. Evidence-based scoring.</p>
           </div>
-          {benchmark && <button onClick={runBenchmark} disabled={running || !canRun} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs hover:text-[#EDF1F7] disabled:opacity-50" style={{ border: '1px solid var(--biqc-border)', color: canRun ? '#9FB0C3' : '#64748B' }}>
+          {benchmark && <button onClick={runBenchmark} disabled={running || !canRun} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs hover:text-[#EDF1F7] disabled:opacity-50" style={{ border: '1px solid var(--biqc-border)', color: canRun ? '#8FA0B8' : '#64748B' }}>
             {!isPaid && !canRun ? (
               <><Clock className="w-3 h-3" /> Next scan in {daysLeft}d</>
             ) : (
@@ -153,7 +154,7 @@ const MarketingIntelPage = () => {
             <div className="rounded-2xl p-6 text-center" style={{ background: '#E85D0008', border: '1px solid #E85D0025' }}>
               <span className="text-5xl font-bold" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>{Math.round((benchmark.overall || benchmark.scores?.overall || 0) * 100)}</span>
               <span className="text-lg text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>/100</span>
-              <p className="text-sm text-[#9FB0C3] mt-1">Overall Marketing Intelligence Score</p>
+              <p className="text-sm text-[#8FA0B8] mt-1">Overall Marketing Intelligence Score</p>
             </div>
 
             {/* Radar + Pillars */}
@@ -177,7 +178,7 @@ const MarketingIntelPage = () => {
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between mb-1">
-                          <span className="text-xs text-[#9FB0C3]">{label}</span>
+                          <span className="text-xs text-[#8FA0B8]">{label}</span>
                           <span className="text-xs font-bold" style={{ fontFamily: fontFamily.mono, color }}>{Math.round(score * 100)}%</span>
                         </div>
                         <div className="h-1.5 rounded-full" style={{ background: color + '20' }}>

@@ -13,6 +13,7 @@ import {
   Loader2, Save, CheckCircle, AlertCircle, Package
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
@@ -205,10 +206,13 @@ const BusinessProfile = () => {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-3xl md:text-4xl mb-2" style={{ fontFamily: "var(--font-heading)", color: 'var(--text-primary)' }}>
-                Business DNA
+              <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+                — Business Profile
+              </div>
+              <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+                Business <em style={{ fontStyle: 'italic', color: '#E85D00' }}>DNA</em>.
               </h1>
-              <p style={{ color: 'var(--text-secondary)' }}>
+              <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
                 Your live baselines — the strategic foundation BIQc monitors for drift
               </p>
             </div>

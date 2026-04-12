@@ -355,7 +355,7 @@ export function WarRoomConsoleBody({
               <a href="/advisor" className={`text-xs px-3 py-1.5 rounded-lg hover:bg-white/5 ${focusRingClass}`} style={{ color: colors.textMuted }} data-testid="console-home-btn" aria-label="Return to intelligence platform">
                 Intelligence Platform
               </a>
-              <span className="text-sm font-semibold" style={{ color: colors.text }}>Strategic Console</span>
+              <span className="text-[11px] uppercase tracking-[0.08em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>— War Room</span>
               <div className="px-2 py-1 rounded-full border inline-flex items-center gap-2" style={{ borderColor: st.border, background: st.bg }} aria-label={`War room state ${st.label}`}>
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
                 <span className="text-[10px] font-semibold" style={{ color: st.color, fontFamily: fontFamily.mono }}>{st.label}</span>
@@ -369,7 +369,7 @@ export function WarRoomConsoleBody({
 
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
             <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="p-6 rounded-2xl border" style={{ borderColor: colors.border, background: colors.bgCard, boxShadow: shadow.card }} aria-label="War room briefing card">
-              <h1 className="text-xl font-semibold" style={{ color: colors.text }}>Good {displayTimeOfDay}, {displayName}.</h1>
+              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Strategic <em style={{ fontStyle: 'italic', color: '#E85D00' }}>console</em>.</h1>
               <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
                 {c.executive_memo || (connectedSystems.length
                   ? `BIQc can see ${connectedSystems.join(', ')} signals. Ask your highest-stakes question now.`

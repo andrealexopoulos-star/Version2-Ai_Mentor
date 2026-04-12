@@ -72,7 +72,7 @@ const PlatformLayout = ({ children, title }) => {
                     className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all"
                     style={{
                       fontFamily: fontFamily.body,
-                      color: isActive ? '#EDF1F7' : '#9FB0C3',
+                      color: isActive ? '#EDF1F7' : '#8FA0B8',
                       background: isActive ? '#E85D00' + '15' : 'transparent',
                       borderLeft: isActive ? '2px solid #E85D00' : '2px solid transparent',
                     }}
@@ -107,7 +107,7 @@ const PlatformLayout = ({ children, title }) => {
         {/* Top bar */}
         <header className="h-16 flex items-center justify-between px-6 shrink-0" style={{ background: '#0A1018', borderBottom: '1px solid rgba(140,170,210,0.15)' }} data-testid="platform-topbar">
           <div className="flex items-center gap-3">
-            <button onClick={() => setMobileSidebar(true)} className="lg:hidden p-1.5 rounded-md hover:bg-white/5 text-[#9FB0C3]">
+            <button onClick={() => setMobileSidebar(true)} className="lg:hidden p-1.5 rounded-md hover:bg-white/5 text-[#8FA0B8]">
               <Menu className="w-5 h-5" />
             </button>
             {title && <h1 className="text-base font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{title}</h1>}
@@ -115,11 +115,11 @@ const PlatformLayout = ({ children, title }) => {
 
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
             <div className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Production Environment</span>
+            <span className="text-[11px] text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>Production Environment</span>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative p-2 rounded-md hover:bg-white/5 text-[#9FB0C3]" data-testid="notifications-btn">
+            <button className="relative p-2 rounded-md hover:bg-white/5 text-[#8FA0B8]" data-testid="notifications-btn">
               <Bell className="w-4.5 h-4.5" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: '#E85D00' }} />
             </button>

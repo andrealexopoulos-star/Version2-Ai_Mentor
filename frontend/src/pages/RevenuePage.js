@@ -248,7 +248,8 @@ const RevenuePage = () => {
         {/* Header with connection status badges */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1.5" style={{ fontFamily: fontFamily.display }}>Revenue Engine</h1>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Revenue</div>
+            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Revenue <em style={{ fontStyle: 'italic', color: '#E85D00' }}>intelligence</em>.</h1>
             {(crmConnected || accountingConnected) && (
               <LineageBadge
                 lineage={{ connected_sources: [crmConnected && (crmIntegration?.provider || 'CRM'), accountingConnected && (accountingIntegration?.provider || 'Accounting')].filter(Boolean) }}
@@ -260,7 +261,7 @@ const RevenuePage = () => {
             <div className="flex flex-wrap items-center gap-2">
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(100,116,139,0.12)', color: '#8FA0B8', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying CRM
                 </span>
               ) : crmConnected ? (
@@ -280,7 +281,7 @@ const RevenuePage = () => {
               )}
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(100,116,139,0.12)', color: '#8FA0B8', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying Accounting
                 </span>
               ) : accountingConnected ? (
@@ -427,7 +428,7 @@ const RevenuePage = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Revenue Health Score</h2>
-                <p className="text-sm text-[#9FB0C3]">Based on pipeline stability, concentration risk, and deal velocity.</p>
+                <p className="text-sm text-[#8FA0B8]">Based on pipeline stability, concentration risk, and deal velocity.</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
@@ -445,7 +446,7 @@ const RevenuePage = () => {
           <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="revenue-tabs">
             {TABS.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id ? 'text-[#EDF1F7]' : 'text-[#64748B] hover:text-[#9FB0C3]'}`}
+                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id ? 'text-[#EDF1F7]' : 'text-[#64748B] hover:text-[#8FA0B8]'}`}
                 style={{ background: activeTab === tab.id ? '#E85D0015' : 'transparent', fontFamily: fontFamily.mono }}
                 data-testid={`revenue-tab-${tab.id}`}>
                 {tab.label}
@@ -464,9 +465,9 @@ const RevenuePage = () => {
                   </div>
                   <div className="space-y-3 mb-4">
                     {[['Total Pipeline', '$' + (totalPipeline || 0).toLocaleString()], ['Active Deals', String(activeDeals || 0)], ['Win Rate', (winRate || 0) + '%'], ['Avg Deal Size', avgDealSize ? '$' + avgDealSize.toLocaleString() : '—']].map(([k, v]) => (
-                      <div key={k} className="flex justify-between"><span className="text-xs text-[#9FB0C3]">{k}</span><span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{v}</span></div>
+                      <div key={k} className="flex justify-between"><span className="text-xs text-[#8FA0B8]">{k}</span><span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{v}</span></div>
                     ))}
-                    <div className="flex justify-between"><span className="text-xs text-[#9FB0C3]">Stalled (&gt;7d)</span><span className="text-sm font-semibold" style={{ fontFamily: fontFamily.mono, color: stalledCount > 0 ? '#E85D00' : '#10B981' }}>{stalledCount}</span></div>
+                    <div className="flex justify-between"><span className="text-xs text-[#8FA0B8]">Stalled (&gt;7d)</span><span className="text-sm font-semibold" style={{ fontFamily: fontFamily.mono, color: stalledCount > 0 ? '#E85D00' : '#10B981' }}>{stalledCount}</span></div>
                   </div>
                 </Panel>
 
@@ -501,7 +502,7 @@ const RevenuePage = () => {
                     <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Churn Signals</h3>
                   </div>
                   {c.revenue?.churn ? (
-                    <p className="text-xs text-[#9FB0C3] leading-relaxed">{c.revenue.churn}</p>
+                    <p className="text-xs text-[#8FA0B8] leading-relaxed">{c.revenue.churn}</p>
                   ) : (
                     <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Insufficient data to assess churn risk. Connect CRM with engagement tracking.</p>
                   )}
@@ -567,7 +568,7 @@ const RevenuePage = () => {
                     return (
                       <div key={tier.label}>
                         <div className="flex justify-between mb-1">
-                          <span className="text-xs text-[#9FB0C3]">{tier.label}</span>
+                          <span className="text-xs text-[#8FA0B8]">{tier.label}</span>
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-semibold" style={{ fontFamily: fontFamily.mono, color: tier.color }}>{tier.deals.length} deals</span>
                             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>${Math.round(tierValue / 1000)}K ({tierPct}%)</span>

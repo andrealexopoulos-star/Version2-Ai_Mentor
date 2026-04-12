@@ -144,8 +144,8 @@ const SupportConsolePage = () => {
                     return (
                       <tr key={u.id} style={{ borderBottom: '1px solid var(--biqc-border)' }} className={u.is_disabled ? 'opacity-50' : ''}>
                         <td className="px-3 py-2 text-[#EDF1F7]">{u.email}</td>
-                        <td className="px-3 py-2 text-[#9FB0C3]">{u.full_name || '—'}</td>
-                        <td className="px-3 py-2 text-[#9FB0C3]">{u.business_name || '—'}</td>
+                        <td className="px-3 py-2 text-[#8FA0B8]">{u.full_name || '—'}</td>
+                        <td className="px-3 py-2 text-[#8FA0B8]">{u.business_name || '—'}</td>
                         <td className="px-3 py-2">
                           <select value={u.subscription_tier || 'free'} onChange={e => updateTier(u.id, e.target.value)}
                             className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: (TIER_COLORS[u.subscription_tier] || '#64748B') + '15', color: TIER_COLORS[u.subscription_tier] || '#64748B', border: 'none', fontFamily: fontFamily.mono }}>
@@ -208,11 +208,11 @@ const SupportConsolePage = () => {
                   {contacts.map(c => (
                     <tr key={c.id} style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                       <td className="px-3 py-2 text-[#EDF1F7]">{c.name}</td>
-                      <td className="px-3 py-2 text-[#9FB0C3]">{c.business_name || '—'}</td>
-                      <td className="px-3 py-2 text-[#9FB0C3]">{c.email}</td>
-                      <td className="px-3 py-2 text-[#9FB0C3]">{c.phone || '—'}</td>
+                      <td className="px-3 py-2 text-[#8FA0B8]">{c.business_name || '—'}</td>
+                      <td className="px-3 py-2 text-[#8FA0B8]">{c.email}</td>
+                      <td className="px-3 py-2 text-[#8FA0B8]">{c.phone || '—'}</td>
                       <td className="px-3 py-2"><span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#E85D0015', color: '#E85D00', fontFamily: fontFamily.mono }}>{c.feature_requested || '—'}</span></td>
-                      <td className="px-3 py-2 text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono, fontSize: '10px' }}>{c.callback_date} {c.callback_time}</td>
+                      <td className="px-3 py-2 text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono, fontSize: '10px' }}>{c.callback_date} {c.callback_time}</td>
                       <td className="px-3 py-2 text-[#64748B] max-w-[200px]"><span className="line-clamp-2">{c.description}</span></td>
                       <td className="px-3 py-2 text-[#64748B]" style={{ fontFamily: fontFamily.mono, fontSize: '10px' }}>{c.created_at ? new Date(c.created_at).toLocaleDateString('en-AU') : ''}</td>
                     </tr>

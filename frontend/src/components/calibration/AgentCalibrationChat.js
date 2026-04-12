@@ -73,7 +73,7 @@ const IntroScreen = ({ firstName, onStart }) => (
     </h1>
 
     <p className="text-sm leading-relaxed max-w-sm mb-6"
-      style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+      style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
       We're going to ask you{' '}
       <span style={{ color: '#E85D00', fontWeight: 600 }}>6 questions</span>{' '}
       about how you think, communicate and make decisions. Your answers will be used
@@ -85,7 +85,7 @@ const IntroScreen = ({ firstName, onStart }) => (
       {['Communication style', 'Risk posture', 'Strategic depth'].map((label, i) => (
         <div key={i} className="rounded-xl p-3 text-center"
           style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.15)' }}>
-          <p className="text-[10px] leading-snug" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{label}</p>
+          <p className="text-[10px] leading-snug" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{label}</p>
         </div>
       ))}
     </div>
@@ -209,7 +209,7 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
         <h2 className="text-2xl font-semibold mb-3" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
           Agent calibrated.
         </h2>
-        <p className="text-sm max-w-xs" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+        <p className="text-sm max-w-xs" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
           Your BIQc Intelligence Agent has been personalised. Building your intelligence snapshot…
         </p>
         <div className="mt-6 flex gap-1">

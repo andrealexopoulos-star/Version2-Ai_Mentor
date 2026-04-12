@@ -2,15 +2,17 @@ import { CognitiveMesh } from '../components/LoadingSystems';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
-import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
-import { 
+import {
   TrendingUp, DollarSign, Zap, Users, Target,
-  RefreshCw, Loader2, Eye, AlertCircle
+  RefreshCw, AlertTriangle, ArrowRight, MessageSquare,
+  Activity, CheckCircle2, Clock, Calendar
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import WatchtowerEvent from '../components/WatchtowerEvent';
+import { DailyBriefCard } from '../components/DailyBriefCard';
+import { fontFamily } from '../design-system/tokens';
+import { extractEmailEvidence, extractCalendarEvidence, extractCRMEvidence, generateFastInsight } from '../lib/fastEvidence';
 
 const focusAreas = [
   {
@@ -62,8 +64,19 @@ const Advisor = () => {
   // Integration state
   const [integrationData, setIntegrationData] = useState({
     email: { connected: false, provider: null },
+    calendar: { connected: false },
+    crm: { connected: false },
+    accounting: { connected: false },
     hasData: false
   });
+
+  // Missing state declarations (were referenced but never declared)
+  const [selectedFocus, setSelectedFocus] = useState(null);
+  const [activeTab, setActiveTab] = useState('focus');
+  const [intelligenceState, setIntelligenceState] = useState({});
+  const [narrativeState, setNarrativeState] = useState({ text: '', confidence: 'minimal signal', loading: true });
+  const [fastInsights, setFastInsights] = useState([]);
+  const [signalFilter, setSignalFilter] = useState('all');
 
   // Detect intelligence thresholds using existing data
   useEffect(() => {
@@ -475,160 +488,201 @@ const Advisor = () => {
     },
   ];
 
+  /* Greeting time */
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const dateStr = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+  const timeStr = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
+
+  /* Connected count for KPI */
+  const connectedCount = [
+    integrationData.email?.connected,
+    integrationData.calendar?.connected,
+    integrationData.crm?.connected,
+    integrationData.accounting?.connected
+  ].filter(Boolean).length;
+
+  /* Filter pills */
+  const filters = ['All', 'Critical', 'Money', 'People'];
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+
+        {/* ── Greeting Header ── */}
+        <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>
-              BIQC Insights
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+              — {dateStr} · {timeStr}
+            </div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(2rem, 4vw, 2.8rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              {greeting}, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>{firstName}</em>.
             </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              What BIQC understands about your business right now
+            <p className="mt-2 text-base" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+              {narrativeState.loading
+                ? 'Reading the signals...'
+                : narrativeState.text || "Your business intelligence is warming up."
+              }
             </p>
           </div>
-          <Button 
-            onClick={handleRefresh}
-            variant="outline"
-            className="btn-secondary"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleRefresh}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+              style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', color: '#8FA0B8', fontFamily: fontFamily.body, cursor: 'pointer' }}
+            >
+              <RefreshCw className="w-4 h-4" /> Refresh
+            </button>
+            <button
+              onClick={() => navigate('/alerts')}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+              style={{ background: '#E85D00', color: 'white', fontFamily: fontFamily.body, border: 'none', cursor: 'pointer' }}
+            >
+              Open Alert Centre <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Connector visibility strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {sourceCards.map((card) => (
-            <div
-              key={card.key}
-              className="p-3 rounded-xl border"
-              style={{
-                background: 'var(--bg-card)',
-                borderColor: 'var(--border-light)',
-              }}
-            >
-              <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                {card.label}
-              </p>
-              <div className="mt-1 flex items-center gap-2">
-                <span
-                  className="inline-flex w-2 h-2 rounded-full"
-                  style={{ background: card.connected ? '#10B981' : '#64748B' }}
-                />
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                  {card.connected ? 'Connected' : 'Disconnected'}
-                </p>
+        {/* ── KPI Row ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: 'Open signals', value: watchtowerEvents.length || '—', delta: null, color: '#E85D00' },
+            { label: 'Sources connected', value: connectedCount, delta: `${4 - connectedCount} remaining`, color: connectedCount >= 2 ? '#10B981' : '#F59E0B' },
+            { label: 'Intelligence level', value: narrativeState.confidence || 'minimal', delta: null, color: '#E85D00', isText: true },
+            { label: 'Focus area', value: selectedFocus ? focusAreas.find(f => f.id === selectedFocus)?.title || '—' : 'Not set', delta: null, color: '#8FA0B8', isText: true },
+          ].map((kpi, i) => (
+            <div key={i} className="p-5 rounded-xl" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>{kpi.label}</span>
+                {kpi.color === '#E85D00' && <span className="w-2 h-2 rounded-full" style={{ background: '#E85D00', boxShadow: '0 0 8px #E85D00' }} />}
               </div>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                {card.detail}
-              </p>
+              <div className={kpi.isText ? 'text-sm font-semibold capitalize' : 'text-3xl font-medium'} style={{ fontFamily: fontFamily.display, color: '#EDF1F7', lineHeight: 1 }}>
+                {kpi.value}
+              </div>
+              {kpi.delta && (
+                <div className="text-xs mt-2" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>{kpi.delta}</div>
+              )}
             </div>
           ))}
         </div>
 
-        {/* PRIMARY NARRATIVE TEXT AREA */}
-        <div 
-          className="p-6 rounded-xl border"
-          style={{
-            background: 'var(--bg-card)',
-            borderColor: 'var(--border-light)',
-            minHeight: '120px'
-          }}
-        >
-          {narrativeState.loading ? (
-            <div className="flex items-center gap-3">
-              <CognitiveMesh compact />
-              <p className="text-base" style={{ color: 'var(--text-muted)' }}>
-                Reading the signals...
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <NarrativeTypewriter 
-                text={narrativeState.text}
-                trigger={`${activeTab}-${selectedFocus}-${integrationData.email.connected}-${integrationData.calendar.connected}-${integrationData.crm.connected}`}
-              />
-              <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                {narrativeState.confidence}
-              </p>
-            </div>
-          )}
-        </div>
+        {/* ── Daily Brief Card ── */}
+        <DailyBriefCard />
 
-        {/* TABS */}
-        <div className="border-b" style={{ borderColor: 'var(--border-light)' }}>
-          <div className="flex gap-6">
-            <button
-              onClick={() => setActiveTab('focus')}
-              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'focus'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              What would you like to work on?
-            </button>
-            <button
-              onClick={() => setActiveTab('diagnosis')}
-              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'diagnosis'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Diagnosis
-            </button>
-          </div>
-        </div>
+        {/* ── 2-Column Grid ── */}
+        <style>{`.advisor-grid { display: grid; grid-template-columns: 1fr; gap: 24px; } @media (min-width: 1180px) { .advisor-grid { grid-template-columns: 2fr 1fr; } }`}</style>
+        <div className="advisor-grid">
 
-        {/* TAB CONTENT */}
-        {activeTab === 'focus' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {focusAreas.map((area) => {
-              const Icon = area.icon;
-              const isSelected = selectedFocus === area.id;
-              
-              return (
-                <button
-                  key={area.id}
-                  onClick={() => handleFocusSelect(area.id)}
-                  className={`text-left p-4 rounded-xl border transition-all ${
-                    isSelected ? 'ring-2 ring-blue-500 border-blue-500' : 'hover:shadow-md'
-                  }`}
-                  style={{
-                    borderColor: isSelected ? '#0066FF' : 'var(--border-light)',
-                    background: isSelected ? 'rgba(0, 102, 255, 0.03)' : 'var(--bg-card)'
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ background: `${area.color}15` }}
-                    >
-                      <Icon className="w-5 h-5" style={{ color: area.color }} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                        {area.title}
-                      </h3>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                        {area.description}
-                      </p>
-                    </div>
+          {/* LEFT: Signal Feed / Focus Areas */}
+          <div className="rounded-xl overflow-hidden" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
+            <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid rgba(140,170,210,0.15)' }}>
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>— Live signal feed</div>
+                <h3 className="text-2xl font-medium mt-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', letterSpacing: '-0.02em' }}>What changed overnight</h3>
+              </div>
+              <div className="flex gap-2">
+                {filters.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setSignalFilter(f.toLowerCase())}
+                    className="px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[0.08em] transition-all"
+                    style={{
+                      fontFamily: fontFamily.mono,
+                      background: signalFilter === f.toLowerCase() ? '#E85D00' : '#121D30',
+                      color: signalFilter === f.toLowerCase() ? 'white' : '#8FA0B8',
+                      border: `1px solid ${signalFilter === f.toLowerCase() ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Signal rows from watchtower events */}
+            <div className="flex flex-col">
+              {watchtowerEvents.length > 0 ? watchtowerEvents.slice(0, 6).map((evt, i) => (
+                <div key={evt.id || i} className="grid gap-4 p-5 cursor-pointer transition-colors hover:bg-[#121D30]" style={{ gridTemplateColumns: '44px 1fr auto', borderBottom: i < Math.min(watchtowerEvents.length, 6) - 1 ? '1px solid rgba(140,170,210,0.15)' : 'none', alignItems: 'flex-start' }}>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: evt.severity === 'critical' ? 'rgba(239,68,68,0.12)' : evt.severity === 'high' ? 'rgba(232,93,0,0.12)' : 'rgba(245,158,11,0.12)', color: evt.severity === 'critical' ? '#EF4444' : evt.severity === 'high' ? '#E85D00' : '#F59E0B' }}>
+                    <AlertTriangle className="w-5 h-5" />
                   </div>
-                </button>
-              );
-            })}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.08em] mb-1" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>
+                      {evt.severity?.toUpperCase() || 'INFO'}
+                      <span className="w-[3px] h-[3px] rounded-full" style={{ background: '#708499' }} />
+                      {evt.domain || 'General'}
+                    </div>
+                    <div className="text-sm font-semibold leading-tight" style={{ color: '#EDF1F7' }}>{evt.title || evt.summary || 'Signal detected'}</div>
+                    {evt.description && <div className="text-[13px] mt-1 leading-relaxed" style={{ color: '#8FA0B8' }}>{evt.description}</div>}
+                  </div>
+                  <div className="text-[11px] shrink-0" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>{evt.time_ago || ''}</div>
+                </div>
+              )) : (
+                <div className="p-10 text-center">
+                  <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: '#708499' }} />
+                  <p className="text-sm font-medium" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>No signals yet</p>
+                  <p className="text-xs mt-1" style={{ color: '#708499', fontFamily: fontFamily.body }}>Connect your inbox and CRM to start surfacing business intelligence.</p>
+                  <button onClick={() => navigate('/connect-email')} className="mt-4 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: '#E85D00', color: 'white', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}>
+                    Connect inbox <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        )}
 
-        {activeTab === 'diagnosis' && (
-          <div>
-            <Diagnosis embedded={true} />
+          {/* RIGHT: Quick Actions + Sources */}
+          <div className="flex flex-col gap-5">
+            {/* Focus area quick-select */}
+            <div className="rounded-xl p-5" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
+              <div className="text-[10px] uppercase tracking-[0.08em] mb-3" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>— Focus area</div>
+              <div className="grid grid-cols-2 gap-3">
+                {focusAreas.map((area) => {
+                  const Icon = area.icon;
+                  const isSelected = selectedFocus === area.id;
+                  return (
+                    <button
+                      key={area.id}
+                      onClick={() => handleFocusSelect(area.id)}
+                      className="flex flex-col gap-2 p-4 rounded-lg text-left transition-all"
+                      style={{
+                        background: isSelected ? 'rgba(232,93,0,0.08)' : '#121D30',
+                        border: `1px solid ${isSelected ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: isSelected ? '#E85D00' : 'rgba(232,93,0,0.12)', color: isSelected ? 'white' : '#E85D00' }}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="text-xs font-semibold" style={{ color: '#EDF1F7' }}>{area.title}</div>
+                      <div className="text-[11px] leading-tight" style={{ color: '#708499' }}>{area.description}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Integration status */}
+            <div className="rounded-xl p-5" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
+              <div className="text-[10px] uppercase tracking-[0.08em] mb-4" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>— Connected sources</div>
+              <div className="flex flex-col gap-3">
+                {sourceCards.map((card) => (
+                  <div key={card.key} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: card.connected ? '#10B981' : '#475569' }} />
+                      <span className="text-sm" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>{card.label}</span>
+                    </div>
+                    <span className="text-xs" style={{ color: card.connected ? '#10B981' : '#708499', fontFamily: fontFamily.mono }}>
+                      {card.connected ? 'Live' : 'Not connected'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </DashboardLayout>
   );

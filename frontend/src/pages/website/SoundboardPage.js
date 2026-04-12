@@ -223,7 +223,7 @@ export default function SoundboardPage() {
             Get boardroom-grade answers.
           </span>
         </h1>
-        <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 16, lineHeight: 1.6, maxWidth: 560, margin: '0 auto 32px' }}>
+        <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 16, lineHeight: 1.6, maxWidth: 560, margin: '0 auto 32px' }}>
           Five AI modes. Infinite conversations. Each response is calibrated to your exact business â€” not generic advice.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -271,7 +271,7 @@ export default function SoundboardPage() {
                 <mode.icon size={15} style={{ color: mode.color }} />
                 <span style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 14, fontWeight: 700 }}>{mode.label}</span>
               </div>
-              <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+              <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 12, lineHeight: 1.5, margin: 0 }}>
                 {mode.description}
               </p>
             </div>
@@ -302,7 +302,7 @@ export default function SoundboardPage() {
                     }}
                   >
                     <ChevronRight size={12} style={{ color: i === activeExample ? mode.color : '#64748B', flexShrink: 0, marginTop: 2 }} />
-                    <span style={{ fontFamily: fontFamily.body, color: i === activeExample ? '#EDF1F7' : '#9FB0C3', fontSize: 12, lineHeight: 1.5 }}>
+                    <span style={{ fontFamily: fontFamily.body, color: i === activeExample ? '#EDF1F7' : '#8FA0B8', fontSize: 12, lineHeight: 1.5 }}>
                       {ex.q}
                     </span>
                   </button>
@@ -349,7 +349,7 @@ export default function SoundboardPage() {
         <h2 style={{ fontFamily: fontFamily.display, color: '#E6EEF7', fontSize: 28, fontWeight: 700, marginBottom: 12 }}>
           Your Soundboard is calibrated to your business.
         </h2>
-        <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 15, marginBottom: 28, maxWidth: 480, margin: '0 auto 28px' }}>
+        <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 15, marginBottom: 28, maxWidth: 480, margin: '0 auto 28px' }}>
           These examples use generic data. Your account uses live signals from Xero, HubSpot, Outlook, and every other connected tool.
         </p>
         <Link to="/register-supabase" style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', color: '#fff', borderRadius: 12, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 8px 32px rgba(232,93,0,0.25)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>

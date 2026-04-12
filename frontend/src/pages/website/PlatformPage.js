@@ -25,9 +25,9 @@ const Tag = ({ color = O, children }) => (
   </span>
 );
 
-const MockRow = ({ label, value, color = '#9FB0C3', dot }) => (
+const MockRow = ({ label, value, color = '#8FA0B8', dot }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: `1px solid ${MOCK_BORD}` }}>
-    <span style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 11 }}>{label}</span>
+    <span style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 11 }}>{label}</span>
     <span style={{ fontFamily: fontFamily.mono, color, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
       {dot && <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, display: 'inline-block' }} />}
       {value}
@@ -84,13 +84,13 @@ const DashboardMock = () => (
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <MockCard>
-          <div style={{ color: '#9FB0C3', fontSize: 9, marginBottom: 6 }}>Financial Snapshot</div>
+          <div style={{ color: '#8FA0B8', fontSize: 9, marginBottom: 6 }}>Financial Snapshot</div>
           <MockRow label="Cash Trend (30d)" value="+4.2%" color={G} />
           <MockRow label="Receivables Ageing" value="$12,400" color={O} />
           <MockRow label="Margin Variance" value="-3.1%" color={R} />
         </MockCard>
         <MockCard>
-          <div style={{ color: '#9FB0C3', fontSize: 9, marginBottom: 6 }}>Intelligence Pulse</div>
+          <div style={{ color: '#8FA0B8', fontSize: 9, marginBottom: 6 }}>Intelligence Pulse</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
             {[['6', G, 'Systems'], ['1,247', B, 'Signals'], ['23', O, 'Alerts (30d)'], ['8', G, 'Prevented']].map(([n, c, l]) => (
               <div key={l} style={{ background: `${c}10`, borderRadius: 6, padding: '6px 8px' }}>
@@ -131,10 +131,10 @@ const RevenueMock = () => (
       <MockCard>
         <div style={{ color: O, fontWeight: 700, fontSize: 11, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}><AlertTriangle size={11} /> Revenue Concentration</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-          <span style={{ color: '#9FB0C3', fontSize: 10 }}>Entropy Level</span>
+          <span style={{ color: '#8FA0B8', fontSize: 10 }}>Entropy Level</span>
           <Tag color={R}>HIGH</Tag>
         </div>
-        <div style={{ color: '#9FB0C3', fontSize: 10, marginBottom: 6 }}>Top 2 Deals: <strong style={{ color: '#EDF1F7' }}>60%</strong></div>
+        <div style={{ color: '#8FA0B8', fontSize: 10, marginBottom: 6 }}>Top 2 Deals: <strong style={{ color: '#EDF1F7' }}>60%</strong></div>
         {[['Deal Alpha', '$45K · 65%', G], ['Deal Beta', '$28K · 40%', O], ['Deal Gamma', '$15K · 80%', B]].map(([n, v, c]) => (
           <div key={n} style={{ marginBottom: 5 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 2 }}>
@@ -156,14 +156,14 @@ const RevenueMock = () => (
             <span style={{ color: '#CBD5E1', fontSize: 10, fontWeight: 600 }}>Key Account #1</span>
             <Tag color={R}>HIGH</Tag>
           </div>
-          <div style={{ color: '#9FB0C3', fontSize: 9 }}>Response time elevated. Engagement declining 30d.</div>
+          <div style={{ color: '#8FA0B8', fontSize: 9 }}>Response time elevated. Engagement declining 30d.</div>
         </div>
         <div style={{ borderRadius: 7, padding: '7px 9px', background: MOCK_CARD, border: `1px solid ${Y}25` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
             <span style={{ color: '#CBD5E1', fontSize: 10, fontWeight: 600 }}>Client F</span>
             <Tag color={Y}>MODERATE</Tag>
           </div>
-          <div style={{ color: '#9FB0C3', fontSize: 9 }}>Contract renewal in 45 days. No renewal discussion.</div>
+          <div style={{ color: '#8FA0B8', fontSize: 9 }}>Contract renewal in 45 days. No renewal discussion.</div>
         </div>
       </MockCard>
     </div>
@@ -223,7 +223,7 @@ const AutomationsMock = () => (
     <div style={{ display: 'flex', gap: 8, padding: '10px 16px', borderBottom: `1px solid ${MOCK_BORD}` }}>
       {[['Active', '3', G], ['Paused', '1', '#64748B'], ['Total Runs', '59', B]].map(([l, n, c]) => (
         <div key={l} style={{ background: MOCK_CARD, border: `1px solid ${MOCK_BORD}`, borderRadius: 7, padding: '5px 12px', display: 'flex', gap: 6, alignItems: 'center' }}>
-          <span style={{ color: '#9FB0C3', fontSize: 10 }}>{l}</span>
+          <span style={{ color: '#8FA0B8', fontSize: 10 }}>{l}</span>
           <span style={{ color: c, fontWeight: 700, fontSize: 11 }}>{n}</span>
         </div>
       ))}
@@ -248,10 +248,10 @@ const AutomationsMock = () => (
             </div>
           </div>
           <div style={{ padding: '7px 12px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ background: `${B}10`, borderRadius: 5, padding: '4px 8px', fontSize: 10, color: '#9FB0C3', display: 'flex', gap: 6, alignItems: 'center' }}>
+            <div style={{ background: `${B}10`, borderRadius: 5, padding: '4px 8px', fontSize: 10, color: '#8FA0B8', display: 'flex', gap: 6, alignItems: 'center' }}>
               <span style={{ color: B, fontWeight: 700, fontFamily: fontFamily.mono, fontSize: 9 }}>IF</span> {cond}
             </div>
-            <div style={{ background: `${G}10`, borderRadius: 5, padding: '4px 8px', fontSize: 10, color: '#9FB0C3', display: 'flex', gap: 6, alignItems: 'center' }}>
+            <div style={{ background: `${G}10`, borderRadius: 5, padding: '4px 8px', fontSize: 10, color: '#8FA0B8', display: 'flex', gap: 6, alignItems: 'center' }}>
               <span style={{ color: G, fontWeight: 700, fontFamily: fontFamily.mono, fontSize: 9 }}>THEN</span> {action}
             </div>
           </div>
@@ -284,7 +284,7 @@ const InboxMock = () => (
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: read ? 'transparent' : tagC, flexShrink: 0, marginTop: 4 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-              <span style={{ color: read ? '#9FB0C3' : '#EDF1F7', fontSize: 11, fontWeight: read ? 400 : 600 }}>{from}</span>
+              <span style={{ color: read ? '#8FA0B8' : '#EDF1F7', fontSize: 11, fontWeight: read ? 400 : 600 }}>{from}</span>
               <span style={{ color: '#64748B', fontSize: 9, flexShrink: 0, marginLeft: 8 }}>{time}</span>
             </div>
             <div style={{ color: read ? '#64748B' : '#CBD5E1', fontSize: 10, fontWeight: read ? 400 : 500, marginBottom: 2 }}>{subject}</div>
@@ -322,7 +322,7 @@ const CalendarMock = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '36px repeat(5, 1fr)', gap: 4 }}>
           <div />
           {days.map(d => (
-            <div key={d} style={{ textAlign: 'center', color: '#9FB0C3', fontSize: 9, fontFamily: fontFamily.mono, paddingBottom: 6 }}>{d}</div>
+            <div key={d} style={{ textAlign: 'center', color: '#8FA0B8', fontSize: 9, fontFamily: fontFamily.mono, paddingBottom: 6 }}>{d}</div>
           ))}
           {hours.map((hr, hi) => (
             <React.Fragment key={hr}>
@@ -355,7 +355,7 @@ const MarketMock = () => (
     </div>
     <div style={{ padding: '10px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
       <MockCard>
-        <div style={{ color: '#9FB0C3', fontSize: 9, marginBottom: 8 }}>Market Position Score</div>
+        <div style={{ color: '#8FA0B8', fontSize: 9, marginBottom: 8 }}>Market Position Score</div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 10 }}>
           <div style={{ color: G, fontWeight: 800, fontSize: 32, lineHeight: 1 }}>71</div>
           <div style={{ color: '#64748B', fontSize: 10, paddingBottom: 4 }}>/ 100 · STABLE</div>
@@ -363,7 +363,7 @@ const MarketMock = () => (
         {[['Website SEO', 68, G], ['Review Presence', 45, Y], ['Pricing Position', 82, G], ['Competitor Density', 55, Y], ['Brand Clarity', 74, G]].map(([l, v, c]) => (
           <div key={l} style={{ marginBottom: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, marginBottom: 2 }}>
-              <span style={{ color: '#9FB0C3' }}>{l}</span><span style={{ color: c }}>{v}</span>
+              <span style={{ color: '#8FA0B8' }}>{l}</span><span style={{ color: c }}>{v}</span>
             </div>
             <div style={{ height: 3, background: MOCK_BORD, borderRadius: 2 }}>
               <div style={{ height: '100%', width: `${v}%`, background: c, borderRadius: 2 }} />
@@ -373,7 +373,7 @@ const MarketMock = () => (
       </MockCard>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <MockCard>
-          <div style={{ color: '#9FB0C3', fontSize: 9, marginBottom: 6 }}>Competitor Signals (7d)</div>
+          <div style={{ color: '#8FA0B8', fontSize: 9, marginBottom: 6 }}>Competitor Signals (7d)</div>
           {[
             { name: 'Competitor A', signal: 'Pricing drop 8%', severity: R },
             { name: 'Competitor B', signal: 'New feature launch', severity: Y },
@@ -382,14 +382,14 @@ const MarketMock = () => (
             <div key={name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: `1px solid ${MOCK_BORD}` }}>
               <span style={{ color: '#CBD5E1', fontSize: 10 }}>{name}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ color: '#9FB0C3', fontSize: 9 }}>{signal}</span>
+                <span style={{ color: '#8FA0B8', fontSize: 9 }}>{signal}</span>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: severity }} />
               </div>
             </div>
           ))}
         </MockCard>
         <MockCard>
-          <div style={{ color: '#9FB0C3', fontSize: 9, marginBottom: 6 }}>Demand Capture</div>
+          <div style={{ color: '#8FA0B8', fontSize: 9, marginBottom: 6 }}>Demand Capture</div>
           <div style={{ color: G, fontWeight: 700, fontSize: 20 }}>38%</div>
           <div style={{ color: '#64748B', fontSize: 9, marginBottom: 6 }}>of available demand captured</div>
           <div style={{ background: `${O}10`, borderRadius: 5, padding: '5px 7px', borderLeft: `2px solid ${O}` }}>
@@ -397,11 +397,11 @@ const MarketMock = () => (
           </div>
         </MockCard>
         <MockCard>
-          <div style={{ color: '#9FB0C3', fontSize: 9, marginBottom: 4 }}>90-Day Trajectory</div>
+          <div style={{ color: '#8FA0B8', fontSize: 9, marginBottom: 4 }}>90-Day Trajectory</div>
           <div style={{ display: 'flex', gap: 6 }}>
             {[['Best', '+22%', G], ['Base', '+8%', B], ['Worst', '-4%', R]].map(([l, v, c]) => (
               <div key={l} style={{ flex: 1, background: `${c}10`, borderRadius: 5, padding: '5px 0', textAlign: 'center' }}>
-                <div style={{ color: '#9FB0C3', fontSize: 8 }}>{l}</div>
+                <div style={{ color: '#8FA0B8', fontSize: 8 }}>{l}</div>
                 <div style={{ color: c, fontWeight: 700, fontSize: 12 }}>{v}</div>
               </div>
             ))}
@@ -423,7 +423,7 @@ const ComplianceMock = () => (
     </div>
     <div style={{ padding: '10px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
       <div>
-        <div style={{ color: '#9FB0C3', fontSize: 9, fontFamily: fontFamily.mono, letterSpacing: '0.12em', marginBottom: 6 }}>UPCOMING DEADLINES</div>
+        <div style={{ color: '#8FA0B8', fontSize: 9, fontFamily: fontFamily.mono, letterSpacing: '0.12em', marginBottom: 6 }}>UPCOMING DEADLINES</div>
         {[
           { name: 'BAS Q3 Lodgement', days: '18 days', color: Y },
           { name: 'Workers Comp Renewal', days: '32 days', color: Y },
@@ -442,11 +442,11 @@ const ComplianceMock = () => (
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <MockCard>
-          <div style={{ color: '#9FB0C3', fontSize: 9, marginBottom: 6 }}>Compliance Areas</div>
+          <div style={{ color: '#8FA0B8', fontSize: 9, marginBottom: 6 }}>Compliance Areas</div>
           {[['Tax & Payroll', 100, G], ['Employment Law', 94, G], ['Data Privacy', 88, Y], ['WHS Requirements', 96, G], ['Licensing', 100, G]].map(([l, v, c]) => (
             <div key={l} style={{ marginBottom: 5 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, marginBottom: 2 }}>
-                <span style={{ color: '#9FB0C3' }}>{l}</span><span style={{ color: c }}>{v}%</span>
+                <span style={{ color: '#8FA0B8' }}>{l}</span><span style={{ color: c }}>{v}%</span>
               </div>
               <div style={{ height: 4, background: MOCK_BORD, borderRadius: 2 }}>
                 <div style={{ height: '100%', width: `${v}%`, background: c, borderRadius: 2 }} />
@@ -455,11 +455,11 @@ const ComplianceMock = () => (
           ))}
         </MockCard>
         <MockCard>
-          <div style={{ color: '#9FB0C3', fontSize: 9, marginBottom: 6 }}>Open Actions</div>
+          <div style={{ color: '#8FA0B8', fontSize: 9, marginBottom: 6 }}>Open Actions</div>
           {[['Update staff privacy notice', R], ['Review subcontractor ABN', Y], ['Lodge BAS Q3', Y]].map(([t, c]) => (
             <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', borderBottom: `1px solid ${MOCK_BORD}` }}>
               <AlertTriangle size={9} style={{ color: c }} />
-              <span style={{ color: '#9FB0C3', fontSize: 9 }}>{t}</span>
+              <span style={{ color: '#8FA0B8', fontSize: 9 }}>{t}</span>
             </div>
           ))}
         </MockCard>
@@ -476,7 +476,7 @@ const DataHealthMock = () => (
     </div>
     <div style={{ padding: '10px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
       <div>
-        <div style={{ color: '#9FB0C3', fontSize: 9, fontFamily: fontFamily.mono, letterSpacing: '0.12em', marginBottom: 6 }}>CONNECTED SYSTEMS</div>
+        <div style={{ color: '#8FA0B8', fontSize: 9, fontFamily: fontFamily.mono, letterSpacing: '0.12em', marginBottom: 6 }}>CONNECTED SYSTEMS</div>
         {[
           { name: 'Xero', type: 'Accounting', status: 'Live', fresh: '2 min ago', c: G },
           { name: 'HubSpot', type: 'CRM', status: 'Live', fresh: '4 min ago', c: G },
@@ -502,7 +502,7 @@ const DataHealthMock = () => (
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <MockCard>
-          <div style={{ color: '#9FB0C3', fontSize: 9, marginBottom: 6 }}>Overall Data Health</div>
+          <div style={{ color: '#8FA0B8', fontSize: 9, marginBottom: 6 }}>Overall Data Health</div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             {[['Live', '5', G], ['Syncing', '1', Y], ['Error', '1', R]].map(([l, n, c]) => (
               <div key={l} style={{ flex: 1, background: `${c}10`, borderRadius: 6, padding: '6px 0', textAlign: 'center' }}>
@@ -516,11 +516,11 @@ const DataHealthMock = () => (
           <MockRow label="Confidence score" value="91%" color={G} />
         </MockCard>
         <MockCard>
-          <div style={{ color: '#9FB0C3', fontSize: 9, marginBottom: 6 }}>Data Gaps Affecting Intelligence</div>
+          <div style={{ color: '#8FA0B8', fontSize: 9, marginBottom: 6 }}>Data Gaps Affecting Intelligence</div>
           {['Google Drive disconnected — Doc signals missing', 'BambooHR delay — Staff signals 12min stale', 'No Payroll data — Cash projections estimated'].map(g => (
             <div key={g} style={{ display: 'flex', gap: 5, padding: '4px 0', borderBottom: `1px solid ${MOCK_BORD}`, alignItems: 'flex-start' }}>
               <AlertTriangle size={9} style={{ color: Y, marginTop: 1, flexShrink: 0 }} />
-              <span style={{ color: '#9FB0C3', fontSize: 9 }}>{g}</span>
+              <span style={{ color: '#8FA0B8', fontSize: 9 }}>{g}</span>
             </div>
           ))}
         </MockCard>
@@ -644,7 +644,7 @@ export default function PlatformPage() {
               Built for business owners.
             </span>
           </h1>
-          <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 16, lineHeight: 1.6, maxWidth: 540, margin: '0 auto 28px' }}>
+          <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 16, lineHeight: 1.6, maxWidth: 540, margin: '0 auto 28px' }}>
             From your morning briefing to compliance deadlines, revenue health to competitor moves —
             BIQc covers every dimension of your business in one platform.
           </p>
@@ -695,7 +695,7 @@ export default function PlatformPage() {
               <h2 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 22, lineHeight: 1.3, fontWeight: 700, marginBottom: 12 }}>
                 {slide.tagline}
               </h2>
-              <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 13, lineHeight: 1.7, marginBottom: 20 }}>
+              <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 13, lineHeight: 1.7, marginBottom: 20 }}>
                 {slide.description}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
@@ -717,10 +717,10 @@ export default function PlatformPage() {
               </div>
 
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={prev} style={{ border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', color: '#9FB0C3', display: 'flex', alignItems: 'center' }}>
+                <button onClick={prev} style={{ border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', color: '#8FA0B8', display: 'flex', alignItems: 'center' }}>
                   <ChevronLeft size={16} />
                 </button>
-                <button onClick={next} style={{ border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', color: '#9FB0C3', display: 'flex', alignItems: 'center' }}>
+                <button onClick={next} style={{ border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', color: '#8FA0B8', display: 'flex', alignItems: 'center' }}>
                   <ChevronRight size={16} />
                 </button>
                 <span style={{ fontFamily: fontFamily.mono, color: '#64748B', fontSize: 11, display: 'flex', alignItems: 'center', paddingLeft: 4 }}>
@@ -743,7 +743,7 @@ export default function PlatformPage() {
         <h2 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, fontWeight: 700, marginBottom: 12 }}>
           Ready to run your business on intelligence?
         </h2>
-        <p style={{ fontFamily: fontFamily.body, color: '#9FB0C3', fontSize: 15, marginBottom: 28, maxWidth: 480, margin: '0 auto 28px' }}>
+        <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 15, marginBottom: 28, maxWidth: 480, margin: '0 auto 28px' }}>
           Connect your first platform in 2 minutes. No credit card required.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>

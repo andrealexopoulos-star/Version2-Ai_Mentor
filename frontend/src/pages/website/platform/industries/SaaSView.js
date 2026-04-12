@@ -6,7 +6,7 @@ const SaaSView = () => (
     <div className="space-y-6 max-w-[1200px]">
       <div>
         <h2 className="text-xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: SORA }}>Good morning, Andre.</h2>
-        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: INTER }}>SaaS Intelligence &middot; Last scan: 3 minutes ago</p>
+        <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: INTER }}>SaaS Intelligence &middot; Last scan: 3 minutes ago</p>
       </div>
       <SystemState state="DRIFT" confidence={82} velocity="stable" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -33,7 +33,7 @@ const SaaSView = () => (
                   <span className="text-xs font-medium text-[#EDF1F7]" style={{ fontFamily: SORA }}>{a.name}</span>
                   <span className="text-xs" style={{ fontFamily: MONO, color: a.risk === 'high' ? '#E85D00' : '#F59E0B' }}>{a.mrr}/mo</span>
                 </div>
-                <p className="text-[11px] text-[#9FB0C3]" style={{ fontFamily: INTER }}>{a.signal}</p>
+                <p className="text-[11px] text-[#8FA0B8]" style={{ fontFamily: INTER }}>{a.signal}</p>
                 <span className="text-[10px]" style={{ fontFamily: MONO, color: '#E85D00' }}>Usage: {a.usage}% (30d)</span>
               </div>
             ))}

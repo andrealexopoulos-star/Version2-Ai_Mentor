@@ -52,7 +52,7 @@ const ForensicCalibration = () => {
           <div className="text-center max-w-md">
             <Lock className="w-12 h-12 text-[#64748B] mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>Coming Soon</h1>
-            <p className="text-sm text-[#9FB0C3] mb-6">Forensic Market Calibration will be available in the Pro plan.</p>
+            <p className="text-sm text-[#8FA0B8] mb-6">Forensic Market Calibration will be available in the Pro plan.</p>
             <button onClick={() => navigate('/market')} className="px-6 py-2.5 rounded-xl text-sm" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)' }} data-testid="forensic-back-btn">Back to Market</button>
           </div>
         </div>
@@ -93,7 +93,7 @@ const ForensicCalibration = () => {
           <div className="text-center mb-8">
             <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>Forensic Calibration Complete</h1>
-            <p className="text-sm text-[#9FB0C3]">Your strategic profile has been scored and calibrated.</p>
+            <p className="text-sm text-[#8FA0B8]">Your strategic profile has been scored and calibrated.</p>
           </div>
 
           {/* Composite Score */}
@@ -156,7 +156,7 @@ const ForensicCalibration = () => {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Eye className="w-5 h-5 text-[#E85D00]" />
-            <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>Forensic Calibration</h1>
+            <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>Market Analysis</h1>
           </div>
           <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ color: '#E85D00', background: '#E85D0015', fontFamily: fontFamily.mono }}>{step + 1}/{QUESTIONS.length}</span>
         </div>

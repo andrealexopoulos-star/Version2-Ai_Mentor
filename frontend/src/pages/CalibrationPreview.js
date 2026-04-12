@@ -55,19 +55,19 @@ const OnboardPreview = ({ step }) => {
               <span className="text-2xl" style={{ color: '#E85D00' }}>&#9889;</span>
             </div>
             <h1 className="text-2xl font-bold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>{cfg.title}</h1>
-            <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{cfg.sub}</p>
+            <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{cfg.sub}</p>
           </div>
           {cfg.items && <div className="space-y-3 max-w-lg mx-auto">{cfg.items.map((item, i) => (
             <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#E85D0015' }}>
                 <span className="text-xs text-[#E85D00]" style={{ fontFamily: fontFamily.mono }}>{i+1}</span>
               </div>
-              <p className="text-sm text-[#9FB0C3]">{item}</p>
+              <p className="text-sm text-[#8FA0B8]">{item}</p>
             </div>
           ))}</div>}
           {cfg.fields && <div className="space-y-4 max-w-lg mx-auto">{cfg.fields.map((f, i) => (
             <div key={i}>
-              <label className="text-xs font-semibold text-[#9FB0C3] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>{f}</label>
+              <label className="text-xs font-semibold text-[#8FA0B8] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>{f}</label>
               <div className="h-10 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }} />
             </div>
           ))}</div>}
@@ -249,10 +249,10 @@ const CalibrationPreview = () => {
                   <span className="text-3xl">&#9889;</span>
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Welcome to BIQc</h1>
-                <p className="text-base text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Let's set up your intelligent advisor</p>
+                <p className="text-base text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Let's set up your intelligent advisor</p>
               </div>
               <div className="p-4 rounded-lg mb-8" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>BIQc learns about your business to provide personalized intelligence. This 5-minute setup helps us understand your context and deliver relevant insights.</p>
+                <p className="text-sm text-[#8FA0B8] leading-relaxed" style={{ fontFamily: fontFamily.body }}>BIQc learns about your business to provide personalized intelligence. This 5-minute setup helps us understand your context and deliver relevant insights.</p>
               </div>
               <div className="space-y-4">
                 <button className="w-full p-6 rounded-xl text-left transition-all" style={{ background: '#E85D0008', border: '2px solid #E85D0040' }}>
@@ -262,7 +262,7 @@ const CalibrationPreview = () => {
                         <span className="text-[#E85D00]">&#9889;</span>
                         <h3 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Complete Setup Now</h3>
                       </div>
-                      <p className="text-sm text-[#9FB0C3]">5 minutes to unlock personalized intelligence and insights</p>
+                      <p className="text-sm text-[#8FA0B8]">5 minutes to unlock personalized intelligence and insights</p>
                     </div>
                     <span className="text-[#E85D00] text-xl">&#8594;</span>
                   </div>
@@ -301,7 +301,7 @@ const CalibrationPreview = () => {
                   </div>
                   <button className="p-1 rounded-lg text-[#64748B]">&#10005;</button>
                 </div>
-                <p className="text-xs text-[#9FB0C3] mb-4 leading-relaxed" style={{ fontFamily: fontFamily.body }}>Connect your email and integrations to unlock full intelligence capabilities.</p>
+                <p className="text-xs text-[#8FA0B8] mb-4 leading-relaxed" style={{ fontFamily: fontFamily.body }}>Connect your email and integrations to unlock full intelligence capabilities.</p>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                     <span className="text-[#3B82F6]">&#9993;</span>
@@ -332,7 +332,7 @@ const CalibrationPreview = () => {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Weekly Check-In Available</p>
-                  <p className="text-xs mt-0.5 text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Schedule a video check-in with your BIQc advisor to review progress and priorities.</p>
+                  <p className="text-xs mt-0.5 text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Schedule a video check-in with your BIQc advisor to review progress and priorities.</p>
                   <div className="flex gap-2 mt-3">
                     <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg text-white" style={{ background: '#7C3AED', fontFamily: fontFamily.mono }}>Schedule Check-In</button>
                     <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}>Pick a Date</button>
@@ -346,7 +346,7 @@ const CalibrationPreview = () => {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Recalibration Recommended</p>
-                  <p className="text-xs mt-0.5 text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>Your business context may have changed. A quick recalibration keeps BIQc accurate.</p>
+                  <p className="text-xs mt-0.5 text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Your business context may have changed. A quick recalibration keeps BIQc accurate.</p>
                   <div className="flex gap-2 mt-3">
                     <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg text-white" style={{ background: '#E85D00', fontFamily: fontFamily.mono }}>Recalibrate Now</button>
                     <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg" style={{ color: 'var(--biqc-text-2)', border: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono }}>Pick a Date</button>

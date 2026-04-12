@@ -54,7 +54,7 @@ export const CognitiveIgnitionScreen = ({ onComplete, ownerName = '' }) => {
 
         {/* Phase 1: Subheader */}
         <div style={{ opacity: phase >= 1 ? 1 : 0, transform: phase >= 1 ? 'translateY(0)' : 'translateY(12px)', transition: 'all 0.8s ease' }}>
-          <p className="text-lg text-[#9FB0C3] mb-8" style={{ fontFamily: fontFamily.body }}>
+          <p className="text-lg text-[#8FA0B8] mb-8" style={{ fontFamily: fontFamily.body }}>
             This is not a dashboard. It's a strategic intelligence system.
           </p>
         </div>
@@ -152,7 +152,7 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
           <h2 className="text-2xl sm:text-3xl font-bold text-[#EDF1F7] mb-3 tracking-tight" style={{ fontFamily: fontFamily.display }}>
             {ownerName ? `${ownerName}, ` : ''}{pack.headline}
           </h2>
-          <p className="text-base text-[#9FB0C3] leading-relaxed mb-8" style={{ fontFamily: fontFamily.body }}>{pack.sub}</p>
+          <p className="text-base text-[#8FA0B8] leading-relaxed mb-8" style={{ fontFamily: fontFamily.body }}>{pack.sub}</p>
         </div>
 
         <div className="space-y-3 text-left max-w-sm mx-auto mb-8">
@@ -161,7 +161,7 @@ export const CognitiveLoadingScreen = ({ mode = 'first', ownerName = '' }) => {
               <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: ['#E85D00', '#3B82F6', '#10B981', '#7C3AED'][i % 4] + '20' }}>
                 <div className="w-1.5 h-1.5 rounded-full" style={{ background: ['#E85D00', '#3B82F6', '#10B981', '#7C3AED'][i % 4], animation: `cogDotStep 1.4s ease-in-out infinite ${i * 0.2}s` }} />
               </div>
-              <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>{step}</span>
+              <span className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>{step}</span>
             </div>
           ))}
         </div>

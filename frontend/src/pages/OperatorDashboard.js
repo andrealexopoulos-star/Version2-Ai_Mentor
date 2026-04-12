@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { apiClient } from '../lib/api';
 import { Loader2, AlertCircle, Plug, Activity, Radio } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 
 const POSITION_COLORS = {
   STABLE: 'text-emerald-400', ELEVATED: 'text-amber-400',
@@ -113,9 +114,9 @@ const OperatorDashboard = () => {
       <div data-testid="operator-dashboard" className="min-h-[calc(100vh-80px)] text-white/80 -mx-4 -my-4 md:-mx-6 md:-my-6 px-6 py-10" style={{ background: '#050505' }}>
         <div className="max-w-4xl mx-auto px-6 py-10 space-y-6">
           <div>
-            <div className="text-[10px] tracking-[0.4em] uppercase text-white/25 mb-1">BIQC</div>
-            <h1 className="text-lg tracking-[0.15em] text-white/70 font-semibold">Operator Dashboard</h1>
-            <p className="text-xs text-white/25 mt-1">Read-only intelligence state</p>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— System</div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>The <em style={{ fontStyle: 'italic', color: '#E85D00' }}>Operator</em>.</h1>
+            <p className="text-xs mt-1" style={{ color: '#708499' }}>Read-only intelligence state</p>
           </div>
 
           {!hasIntelligence && (

@@ -160,7 +160,7 @@ export const CheckInAlerts = () => {
                     className="px-3 py-2 rounded-lg text-xs font-medium transition-all"
                     style={{
                       background: selectedDate === d.value ? '#E85D00' : '#0F1720',
-                      color: selectedDate === d.value ? 'white' : '#9FB0C3',
+                      color: selectedDate === d.value ? 'white' : '#8FA0B8',
                       border: `1px solid ${selectedDate === d.value ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
                       fontFamily: fontFamily.mono,
                     }}>
@@ -179,7 +179,7 @@ export const CheckInAlerts = () => {
                     className="px-2 py-1.5 rounded-lg text-xs font-medium transition-all"
                     style={{
                       background: selectedTime === t ? '#E85D00' : '#0F1720',
-                      color: selectedTime === t ? 'white' : '#9FB0C3',
+                      color: selectedTime === t ? 'white' : '#8FA0B8',
                       border: `1px solid ${selectedTime === t ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
                       fontFamily: fontFamily.mono,
                     }}>

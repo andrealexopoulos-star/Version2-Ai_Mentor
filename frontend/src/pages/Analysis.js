@@ -12,6 +12,7 @@ import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { Loader2, BarChart3, ArrowRight, Save, FileText } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 
 
@@ -78,9 +79,9 @@ const Analysis = () => {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <p className="overline text-[#9FB0C3] mb-2">Business Intelligence</p>
-            <h1 className="text-3xl md:text-4xl font-serif text-[#EDF1F7]">Business Analysis</h1>
-            <p className="text-[#9FB0C3] mt-2">
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Intelligence</div>
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Deep <em style={{ fontStyle: 'italic', color: '#E85D00' }}>analysis</em>.</h1>
+            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
               Get AI-powered insights and recommendations for your business
             </p>
           </div>
@@ -115,7 +116,7 @@ const Analysis = () => {
                           <SelectItem key={type.value} value={type.value}>
                             <div>
                               <p className="font-medium">{type.label}</p>
-                              <p className="text-xs text-[#9FB0C3]">{type.desc}</p>
+                              <p className="text-xs text-[#8FA0B8]">{type.desc}</p>
                             </div>
                           </SelectItem>
                         ))}
@@ -132,7 +133,7 @@ const Analysis = () => {
                       className="min-h-[200px] bg-[#0E1628]"
                       data-testid="analysis-context-input"
                     />
-                    <p className="text-xs text-[#9FB0C3]">
+                    <p className="text-xs text-[#8FA0B8]">
                       Include details like industry, size, current revenue, main challenges, and goals.
                     </p>
                   </div>
@@ -166,7 +167,7 @@ const Analysis = () => {
                   <CardContent className="p-8 text-center">
                     <CognitiveMesh compact />
                     <p className="text-[#EDF1F7] font-medium">Analyzing your business...</p>
-                    <p className="text-sm text-[#9FB0C3] mt-1">This may take a moment</p>
+                    <p className="text-sm text-[#8FA0B8] mt-1">This may take a moment</p>
                   </CardContent>
                 </Card>
               )}
@@ -280,7 +281,7 @@ const Analysis = () => {
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
                     <BarChart3 className="w-12 h-12 text-[#EDF1F7]/20 mx-auto mb-4" />
-                    <p className="text-[#9FB0C3]">
+                    <p className="text-[#8FA0B8]">
                       Fill in the form and run analysis to get AI-powered insights
                     </p>
                   </CardContent>

@@ -79,14 +79,15 @@ const AuditLogPage = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="audit-log-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Governance Audit Log</h1>
-          <p className="text-sm text-[#9FB0C3]">Verified events from connected integrations. No AI-generated entries.</p>
+          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Governance</div>
+          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Audit <em style={{ fontStyle: 'italic', color: '#E85D00' }}>log</em>.</h1>
+          <p className="text-sm" style={{ color: '#8FA0B8' }}>Verified events from connected integrations. No AI-generated entries.</p>
         </div>
 
         {loading && (
           <Panel className="text-center py-8">
             <Loader2 className="w-6 h-6 text-[#E85D00] mx-auto mb-3 animate-spin" />
-            <p className="text-sm text-[#9FB0C3]">Loading audit trail...</p>
+            <p className="text-sm text-[#8FA0B8]">Loading audit trail...</p>
           </Panel>
         )}
 

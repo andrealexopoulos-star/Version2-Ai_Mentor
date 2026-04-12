@@ -235,8 +235,9 @@ const ReportsPage = () => {
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="reports-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Intelligence Reports</h1>
-            <p className="text-sm text-[#9FB0C3]">Verified intelligence from connected data sources only.</p>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Intelligence</div>
+            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Reports <em style={{ fontStyle: 'italic', color: '#E85D00' }}>centre</em>.</h1>
+            <p className="text-sm" style={{ color: '#8FA0B8' }}>Verified intelligence from connected data sources only.</p>
           </div>
           {hasEvents && (
             <button onClick={handleExportPDF} disabled={generating}
@@ -265,7 +266,7 @@ const ReportsPage = () => {
                       {formatDuration(memo.duration_seconds || 0)}
                     </span>
                   </div>
-                  <p className="text-xs text-[#9FB0C3] mb-2">{memo.summary}</p>
+                  <p className="text-xs text-[#8FA0B8] mb-2">{memo.summary}</p>
                   {Array.isArray(memo.action_items) && memo.action_items.length > 0 && (
                     <div className="space-y-1">
                       {memo.action_items.slice(0, 3).map((item, idx) => (
@@ -289,7 +290,7 @@ const ReportsPage = () => {
               {marketInsightsReport?.forensic_memo && (
                 <div className="rounded-lg p-3" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                   <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>CMO Forensic Memo</p>
-                  <p className="text-xs text-[#9FB0C3] mt-1.5 leading-relaxed">{marketInsightsReport.forensic_memo}</p>
+                  <p className="text-xs text-[#8FA0B8] mt-1.5 leading-relaxed">{marketInsightsReport.forensic_memo}</p>
                 </div>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -339,7 +340,7 @@ const ReportsPage = () => {
                   <Panel key={type}>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="w-2 h-2 rounded-full" style={{ background: connected ? '#10B981' : '#64748B' }} />
-                      <span className="text-[10px] text-[#9FB0C3] capitalize" style={{ fontFamily: fontFamily.mono }}>{type}</span>
+                      <span className="text-[10px] text-[#8FA0B8] capitalize" style={{ fontFamily: fontFamily.mono }}>{type}</span>
                     </div>
                     <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
                       {connected ? `Synced ${int?.last_sync_at ? new Date(int.last_sync_at).toLocaleDateString('en-AU') : 'recently'}` : 'Not connected'}
@@ -353,7 +354,7 @@ const ReportsPage = () => {
             {hasAccounting ? (
               <Panel>
                 <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Financial Snapshot</h3>
-                <p className="text-xs text-[#9FB0C3]">Financial data from connected accounting integration. Metrics computed from verified transaction records.</p>
+                <p className="text-xs text-[#8FA0B8]">Financial data from connected accounting integration. Metrics computed from verified transaction records.</p>
               </Panel>
             ) : renderFinancialNullState()}
 
@@ -379,7 +380,7 @@ const ReportsPage = () => {
                   {events.slice(0, 10).map(ev => (
                     <div key={ev.id} className="flex items-center gap-2 px-3 py-2 rounded" style={{ background: 'var(--biqc-bg)' }}>
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: ev.confidence_score >= 0.7 ? '#10B981' : '#F59E0B' }} />
-                      <span className="text-xs text-[#9FB0C3] flex-1 truncate">{ev.event_type}</span>
+                      <span className="text-xs text-[#8FA0B8] flex-1 truncate">{ev.event_type}</span>
                       <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{ev.source_system}</span>
                     </div>
                   ))}

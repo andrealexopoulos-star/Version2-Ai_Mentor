@@ -227,7 +227,7 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
         {/* Footer */}
         <div className="flex items-center justify-between px-6 pb-5 pt-1">
           <button onClick={onDismissForNow}
-            className="text-xs transition-colors hover:text-[#9FB0C3]"
+            className="text-xs transition-colors hover:text-[#8FA0B8]"
             style={{ color: '#64748B' }} data-testid="tutorial-dismiss-btn">
             Learn later
           </button>
