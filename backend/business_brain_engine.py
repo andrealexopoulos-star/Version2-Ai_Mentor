@@ -9,6 +9,7 @@ Design goals:
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 import uuid
@@ -18,6 +19,8 @@ from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta, date
 from typing import Any, Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 from intelligence_live_truth import get_connector_truth_summary, get_live_integration_truth
 from intelligence_spine import emit_spine_event, log_model_execution
