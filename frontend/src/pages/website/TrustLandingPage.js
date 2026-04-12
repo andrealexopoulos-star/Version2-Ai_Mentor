@@ -1,121 +1,228 @@
+/**
+ * TrustLandingPage — "Trust & Security" marketing page.
+ *
+ * Sections: Hero, Trust Pillars (4), Legal Documents (6),
+ * Compliance Badges (4), Data Handling (4 FAQ cards), CTA.
+ * Uses WebsiteLayout wrapper. No auth required.
+ */
 import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
-import { Shield, Lock, Server, Eye, FileText, ArrowRight, CheckCircle } from 'lucide-react';
-import { fontFamily } from '../../design-system/tokens';
+import { Shield, Lock, Eye, FileText, ArrowRight, MapPin, Brain, Scale } from 'lucide-react';
 
-
-const legalDocs = [
-  { icon: FileText, title: 'Terms & Conditions', path: '/trust/terms', summary: 'Governs your use of BIQc services, subscription terms, responsibilities, and dispute resolution procedures.' },
-  { icon: Eye, title: 'Privacy Policy', path: '/trust/privacy', summary: 'Details how we collect, use, store, and protect your personal and business information under Australian privacy law.' },
-  { icon: Lock, title: 'Data Processing Agreement', path: '/trust/dpa', summary: 'Defines the terms under which BIQc processes your business data, data controller/processor responsibilities, and sub-processor disclosures.' },
-  { icon: Server, title: 'Security & Infrastructure', path: '/trust/security', summary: 'Technical overview of our security architecture, encryption standards, access controls, and incident response procedures.' },
-  { icon: Shield, title: 'Trust Centre', path: '/trust/centre', summary: 'Central hub for all compliance certifications, audit reports, uptime status, and data sovereignty documentation.' },
+/* ── Trust Pillars ── */
+const PILLARS = [
+  {
+    icon: <MapPin className="w-5 h-5" />,
+    title: 'Australian Data Sovereignty',
+    description: 'All data hosted in Sydney and Melbourne. No offshore processing. Full audit trail for every access event, ensuring your information never leaves Australian jurisdiction.',
+  },
+  {
+    icon: <Lock className="w-5 h-5" />,
+    title: 'Encryption & Security',
+    description: 'AES-256 encryption at rest, TLS 1.3 in transit. Row-level security ensures tenant isolation. Our infrastructure is aligned with SOC 2 Type II standards.',
+  },
+  {
+    icon: <Scale className="w-5 h-5" />,
+    title: 'Privacy & Compliance',
+    description: 'Fully compliant with the Australian Privacy Act and Australian Privacy Principles. GDPR-ready for international clients. Data Processing Agreement available on request.',
+  },
+  {
+    icon: <Brain className="w-5 h-5" />,
+    title: 'AI Transparency',
+    description: 'We never train on your data. Every AI output comes with full explainability. Our AI Learning Guarantee is a binding commitment to protect your intellectual property.',
+  },
 ];
 
-const TrustLandingPage = () => (
-  <WebsiteLayout>
-    {/* HERO */}
-    <section className="relative overflow-hidden" data-testid="trust-hero">
-      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full opacity-[0.05]" style={{ background: 'radial-gradient(circle, #FF6A00 0%, transparent 70%)' }} />
-      <div className="max-w-5xl mx-auto px-6 pt-24 pb-20 relative z-10 text-center">
-        <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00] mb-6 block" style={{ fontFamily: fontFamily.mono }}>Trust & Security</span>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.2] mb-6 tracking-tight" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>
-          Built for Businesses That Take<br /><span style={{ color: '#FF6A00' }}>Data Seriously.</span>
-        </h1>
-        <p className="text-lg text-[#9FB0C3] max-w-xl mx-auto" style={{ fontFamily: fontFamily.body }}>
-          Australian sovereign hosting. Enterprise-grade security. Full transparency.
-        </p>
-      </div>
-    </section>
+/* ── Legal Documents ── */
+const LEGAL_DOCS = [
+  { icon: FileText, title: 'Terms of Service', path: '/trust/terms', summary: 'The agreement governing your use of the BIQc platform and services.' },
+  { icon: Eye, title: 'Privacy Policy', path: '/trust/privacy', summary: 'How we collect, use, and protect your personal information.' },
+  { icon: Lock, title: 'Data Processing Agreement', path: '/trust/dpa', summary: 'Contractual terms for how we process data on your behalf.' },
+  { icon: Shield, title: 'Security Disclosure', path: '/trust/security', summary: 'Our responsible disclosure policy and how to report vulnerabilities.' },
+  { icon: Brain, title: 'AI Learning Guarantee', path: '/trust/ai-learning-guarantee', summary: 'Our binding commitment: your data is never used for AI model training.' },
+  { icon: FileText, title: 'Enterprise Terms', path: '/trust/terms', summary: 'Custom licensing and service agreements for enterprise customers.' },
+];
 
-    {/* AUSTRALIAN SOVEREIGN */}
-    <section className="py-20" style={{ background: '#141C26' }} data-testid="sovereign-section">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
-              <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>Australian Sovereign Hosting</span>
-            </div>
-            <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>Australian-hosted data, transparent processing.</h2>
-            <p className="text-base text-[#9FB0C3] mb-6 leading-relaxed" style={{ fontFamily: fontFamily.body }}>
-              All data is hosted in Australian infrastructure. Some integrated providers may process limited data outside Australia depending on enabled services. Full compliance with Australian privacy law remains mandatory.
+/* ── Compliance Badges ── */
+const BADGES = [
+  'Australian Privacy Principles',
+  'AES-256 Encryption',
+  'TLS 1.3 In Transit',
+  'SOC 2 Aligned',
+];
+
+/* ── Data Handling FAQ ── */
+const DATA_FAQ = [
+  {
+    q: 'What data we collect',
+    a: 'We collect only the data necessary to deliver and improve BIQc: account information (name, email, company), business data you connect via integrations, usage analytics (anonymised and aggregated), and support communications.',
+  },
+  {
+    q: 'How your data is used',
+    a: 'Your connected business data is used exclusively to generate insights for your organisation. We never share, sell, or use your data for advertising. Aggregated usage patterns help us improve the product experience.',
+  },
+  {
+    q: 'Data retention policy',
+    a: 'Active account data is retained for the duration of your subscription. Upon cancellation, data is retained for 30 days to allow reactivation, then permanently deleted. Backups are purged within 90 days of account closure.',
+  },
+  {
+    q: 'Your deletion rights',
+    a: 'You can request full data deletion at any time. We will remove all personal and business data within 14 business days and provide written confirmation. This includes data in backups and logs.',
+  },
+];
+
+const cardBg = 'linear-gradient(105deg, rgba(200,220,240,0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0) 55%), linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)';
+const cardBorder = '1px solid rgba(140,170,210,0.15)';
+
+export default function TrustLandingPage() {
+  return (
+    <WebsiteLayout>
+      {/* Hero */}
+      <section className="py-20 md:py-24 text-center px-6"
+        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }}>
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-4xl md:text-[48px] font-bold leading-[1.15] tracking-tight mb-4"
+            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+            Trust & Security
+          </h1>
+          <p className="text-lg max-w-[520px] mx-auto leading-relaxed"
+            style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            Your data is protected by Australian-grade security, privacy, and compliance standards.
+          </p>
+        </div>
+      </section>
+
+      {/* Trust Pillars */}
+      <section className="py-20 px-6" style={{ background: 'var(--bg-primary, #080C14)' }}>
+        <div className="max-w-[1120px] mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-[28px] font-bold tracking-tight mb-3"
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              Our commitments to you
+            </h2>
+            <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+              Four pillars that underpin everything we build.
             </p>
-            <div className="space-y-3">
-              {['Sydney-based data centres', 'Australian-owned infrastructure', 'Compliant with the Privacy Act 1988', 'Sub-processor transparency', 'Data sovereignty controls by design'].map((item) => (
-                <div key={item} className="flex items-center gap-2.5">
-                  <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0" />
-                  <span className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>{item}</span>
+          </div>
+          <div className="grid md:grid-cols-2 gap-5">
+            {PILLARS.map((pillar) => (
+              <div key={pillar.title} className="rounded-xl p-7" style={{ background: cardBg, border: cardBorder }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
+                  style={{ background: 'rgba(232,93,0,0.12)', color: 'var(--lava, #E85D00)' }}>
+                  {pillar.icon}
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex justify-center">
-            <div className="w-48 h-48 rounded-full flex items-center justify-center" style={{ background: 'radial-gradient(circle at 35% 35%, #1E2A3A, #0F1720)', border: '2px solid rgba(255,106,0,0.2)', boxShadow: '0 0 60px rgba(255,106,0,0.1)' }}>
-              <div className="text-center">
-                <Shield className="w-10 h-10 text-[#FF6A00] mx-auto mb-2" />
-                <span className="text-xs text-[#9FB0C3]/60 block" style={{ fontFamily: fontFamily.mono }}>Sovereign</span>
-                <span className="text-xs text-[#9FB0C3]/60 block" style={{ fontFamily: fontFamily.mono }}>Hosting</span>
+                <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{pillar.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{pillar.description}</p>
               </div>
-            </div>
+            ))}
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    {/* SECURITY INFRASTRUCTURE */}
-    <section className="py-20" data-testid="security-section">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
-          <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>Security Infrastructure</span>
+      {/* Legal Documents */}
+      <section className="py-20 px-6" style={{ background: 'var(--bg-secondary, #0B1120)' }}>
+        <div className="max-w-[1120px] mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-[28px] font-bold tracking-tight mb-3"
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              Legal documents
+            </h2>
+            <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+              Transparent policies you can read, understand, and rely on.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-5">
+            {LEGAL_DOCS.map((doc) => (
+              <Link key={doc.title} to={doc.path}
+                className="flex items-start gap-4 rounded-xl p-6 transition-all hover:border-[#E85D00]/20 group"
+                style={{ background: cardBg, border: cardBorder }}
+                data-testid={`trust-link-${doc.title.toLowerCase().replace(/\s+/g, '-')}`}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: 'rgba(232,93,0,0.12)' }}>
+                  <doc.icon className="w-5 h-5" style={{ color: 'var(--lava, #E85D00)' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[15px] font-semibold mb-1 group-hover:text-[#E85D00] transition-colors"
+                    style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+                    {doc.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{doc.summary}</p>
+                </div>
+                <ArrowRight className="w-4 h-4 mt-1 shrink-0 opacity-30 group-hover:opacity-100 group-hover:text-[#E85D00] transition-all"
+                  style={{ color: 'var(--ink-secondary, #8FA0B8)' }} />
+              </Link>
+            ))}
+          </div>
         </div>
-        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>Enterprise-grade by default.</h2>
+      </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {[
-            { icon: Lock, title: 'Encryption at Rest', desc: 'AES-256 encryption for all stored data. Keys rotated automatically.' },
-            { icon: Shield, title: 'Encryption in Transit', desc: 'TLS 1.3 for all communications. No plain-text data transmission.' },
-            { icon: Eye, title: 'Access Controls', desc: 'Role-based access, MFA enforcement, and session management.' },
-            { icon: FileText, title: 'Audit Logs', desc: 'Complete audit trail of all data access, modifications, and system events.' },
-          ].map((item, i) => (
-            <div key={i} className="rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <item.icon className="w-5 h-5 text-[#FF6A00] mb-4" />
-              <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>{item.title}</h3>
-              <p className="text-xs text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    {/* LEGAL & GOVERNANCE */}
-    <section className="py-20" style={{ background: '#141C26' }} data-testid="legal-section">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-[2px]" style={{ background: '#FF6A00' }} />
-          <span className="text-xs font-medium tracking-widest uppercase text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>Legal & Governance</span>
-        </div>
-        <h2 className="text-3xl font-bold mb-10" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>Full transparency. No ambiguity.</h2>
-
-        <div className="space-y-4">
-          {legalDocs.map((doc) => (
-            <Link key={doc.path} to={doc.path} className="flex items-center gap-5 rounded-2xl p-6 transition-all hover:border-[#FF6A00]/20 group" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }} data-testid={`trust-link-${doc.title.toLowerCase().replace(/\s+/g,'-')}`}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(255,106,0,0.1)' }}>
-                <doc.icon className="w-5 h-5 text-[#FF6A00]" />
+      {/* Compliance Badges */}
+      <section className="py-16 px-6" style={{ background: 'var(--bg-primary, #080C14)', borderTop: '1px solid var(--border-card, rgba(140,170,210,0.12))' }}>
+        <div className="max-w-[1120px] mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-[28px] font-bold tracking-tight mb-3"
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              Compliance & standards
+            </h2>
+            <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+              The frameworks and protocols we adhere to.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-4">
+            {BADGES.map((badge) => (
+              <div key={badge}
+                className="flex items-center gap-2.5 px-5 py-3 rounded-lg"
+                style={{ background: cardBg, border: cardBorder }}>
+                <Shield className="w-4 h-4" style={{ color: 'var(--lava, #E85D00)' }} />
+                <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{badge}</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold mb-1 group-hover:text-[#FF6A00] transition-colors" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>{doc.title}</h3>
-                <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{doc.summary}</p>
-              </div>
-              <ArrowRight className="w-5 h-5 text-[#9FB0C3]/30 group-hover:text-[#FF6A00] transition-colors shrink-0" />
-            </Link>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
-  </WebsiteLayout>
-);
+      </section>
 
-export default TrustLandingPage;
+      {/* Data Handling */}
+      <section className="py-20 px-6" style={{ background: 'var(--bg-secondary, #0B1120)' }}>
+        <div className="max-w-[1120px] mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-[28px] font-bold tracking-tight mb-3"
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              How we handle your data
+            </h2>
+            <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+              Clear answers to common questions about data practices.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-5">
+            {DATA_FAQ.map((item) => (
+              <div key={item.q} className="rounded-xl p-7" style={{ background: cardBg, border: cardBorder }}>
+                <h3 className="text-[15px] font-semibold mb-3" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{item.q}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-20 px-6 text-center"
+        style={{ background: 'var(--bg-primary, #080C14)', borderTop: '1px solid var(--border-card, rgba(140,170,210,0.12))' }}>
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4"
+            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+            Questions about security?
+          </h2>
+          <p className="text-base mb-8" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            Our team is here to discuss your specific compliance and security requirements.
+          </p>
+          <Link to="/contact"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg text-sm font-semibold transition-all hover:bg-white/5"
+            style={{ color: 'var(--ink-display, #EDF1F7)', border: '1px solid rgba(140,170,210,0.2)' }}>
+            Contact Us <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
+    </WebsiteLayout>
+  );
+}
