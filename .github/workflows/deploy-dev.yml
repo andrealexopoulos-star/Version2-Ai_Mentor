@@ -1,0 +1,180 @@
+name: Deploy to DEV Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_backend:
+        description: 'Deploy backend'
+        required: true
+        default: true
+        type: boolean
+      deploy_frontend:
+        description: 'Deploy frontend'
+        required: true
+        default: true
+        type: boolean
+
+env:
+  REGISTRY: biqcregistry.azurecr.io
+  FRONTEND_IMAGE: biqcregistry.azurecr.io/biqc-frontend-dev
+  BACKEND_IMAGE: biqcregistry.azurecr.io/biqc-backend-dev
+  IMAGE_TAG: ${{ github.sha }}
+  AZURE_WEBAPP_FRONTEND: biqc-web-dev
+  AZURE_WEBAPP_BACKEND: biqc-api-dev
+  AZURE_RESOURCE_GROUP: biqc-production
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ─── BUILD BACKEND ─────────────────────────────────────────────────
+  build-backend:
+    name: Build Backend Image
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deploy_backend }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.backend
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.BACKEND_IMAGE }}:latest
+
+  # ─── BUILD FRONTEND ────────────────────────────────────────────────
+  build-frontend:
+    name: Build Frontend Image
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deploy_frontend }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.frontend
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.FRONTEND_IMAGE }}:latest
+          build-args: |
+            REACT_APP_BACKEND_URL=https://biqc-api-dev.azurewebsites.net
+            REACT_APP_SUPABASE_URL=https://xdqwclwsgksbapxmwjaq.supabase.co
+            REACT_APP_SUPABASE_ANON_KEY=${{ secrets.REACT_APP_SUPABASE_ANON_KEY_DEV }}
+            REACT_APP_GOOGLE_CLIENT_ID=${{ secrets.REACT_APP_GOOGLE_CLIENT_ID }}
+            REACT_APP_RECAPTCHA_MODE=disabled
+            REACT_APP_RECAPTCHA_PROVIDER=google
+            REACT_APP_BIQC_MASTER_ADMIN_EMAIL=andre@thestrategysquad.com.au
+            REACT_APP_ENABLE_PREVIEW_ROUTES=true
+            NGINX_CONF=deploy/nginx-dev.conf
+
+  # ─── DEPLOY TO AZURE ───────────────────────────────────────────────
+  deploy:
+    name: Deploy to Azure (DEV)
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    if: always() && (needs.build-backend.result == 'success' || needs.build-frontend.result == 'success')
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy backend to Azure App Service
+        if: needs.build-backend.result == 'success'
+        run: |
+          az webapp config container set \
+            --name ${{ env.AZURE_WEBAPP_BACKEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --docker-custom-image-name ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }} \
+            --docker-registry-server-url https://${{ env.REGISTRY }} \
+            --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
+            --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
+
+          az webapp config appsettings set \
+            --name ${{ env.AZURE_WEBAPP_BACKEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --settings WEBSITES_PORT=8001 PORT=8001
+
+      - name: Deploy frontend to Azure App Service
+        if: needs.build-frontend.result == 'success'
+        run: |
+          az webapp config container set \
+            --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --docker-custom-image-name ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }} \
+            --docker-registry-server-url https://${{ env.REGISTRY }} \
+            --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
+            --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
+
+          az webapp config appsettings set \
+            --name ${{ env.AZURE_WEBAPP_FRONTEND }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --settings WEBSITES_PORT=80
+
+      - name: Restart deployed services
+        run: |
+          if [ "${{ needs.build-backend.result }}" = "success" ]; then
+            az webapp restart --name ${{ env.AZURE_WEBAPP_BACKEND }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} || true
+          fi
+          if [ "${{ needs.build-frontend.result }}" = "success" ]; then
+            az webapp restart --name ${{ env.AZURE_WEBAPP_FRONTEND }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} || true
+          fi
+
+  # ─── HEALTH CHECK ──────────────────────────────────────────────────
+  health-check:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: deploy
+
+    steps:
+      - name: Wait for services to start
+        run: sleep 45
+
+      - name: Check backend health
+        if: ${{ inputs.deploy_backend }}
+        run: |
+          for i in {1..10}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://biqc-api-dev.azurewebsites.net/api/health || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Backend healthy (HTTP $STATUS)"
+              exit 0
+            fi
+            echo "⏳ Attempt $i — HTTP $STATUS, retrying in 15s..."
+            sleep 15
+          done
+          echo "❌ Backend health check failed after 10 attempts"
+          exit 1
+
+      - name: Check frontend
+        if: ${{ inputs.deploy_frontend }}
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://biqc-web-dev.azurewebsites.net)
+          echo "Frontend HTTP status: $STATUS"
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "304" ]; then
+            echo "✅ Frontend is live!"
+          else
+            echo "⚠️ Frontend returned HTTP $STATUS — may still be starting"
+          fi
