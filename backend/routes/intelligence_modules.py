@@ -825,7 +825,7 @@ async def get_proactive_alerts(domain: str = None, severity: str = None, limit: 
         query = sb.table("intelligence_actions") \
             .select("*") \
             .eq("user_id", user["id"]) \
-            .eq("action_type", "proactive_alert") \
+            .eq("source", "proactive_engine") \
             .eq("status", "action_required") \
             .order("created_at", desc=True) \
             .limit(limit)
