@@ -1,9 +1,10 @@
 import React, { useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { BoardRoomBody } from '../components/BoardRoom';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
+import { fontFamily } from '../design-system/tokens';
 
 function useBoardroomUrlState() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -67,7 +68,12 @@ export default function BoardRoomPage() {
 
   return (
     <DashboardLayout>
-      <div data-testid="board-room-shell-page" className="h-full min-h-[calc(100vh-72px)]" aria-label={shellLabel}>
+      <div
+        data-testid="board-room-shell-page"
+        className="h-full min-h-[calc(100vh-72px)]"
+        aria-label={shellLabel}
+        style={{ display: 'flex', flexDirection: 'column' }}
+      >
         <BoardroomUrlHints conversationId={conversationId} focusArea={focusArea} />
         <BoardroomStateBanner
           loading={loading}
@@ -77,15 +83,75 @@ export default function BoardRoomPage() {
         />
 
         {!hasBlockingState && (
-          <BoardRoomBody
-            embeddedShell
-            cognitive={cognitive}
-            briefingLoading={loading}
-            conversationId={conversationId}
-            initialFocusArea={focusArea}
-            onConversationChange={setConversationId}
-            onFocusAreaChange={setFocusArea}
-          />
+          <>
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <BoardRoomBody
+                embeddedShell
+                cognitive={cognitive}
+                briefingLoading={loading}
+                conversationId={conversationId}
+                initialFocusArea={focusArea}
+                onConversationChange={setConversationId}
+                onFocusAreaChange={setFocusArea}
+              />
+            </div>
+
+            {/* Pro upsell banner -- matches mockup */}
+            <div
+              style={{
+                margin: '0 24px 16px',
+                padding: '16px 20px',
+                background: 'linear-gradient(135deg, #111827, #1A1A2E)',
+                borderRadius: 12,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                color: '#fff',
+              }}
+              data-testid="boardroom-pro-upsell"
+            >
+              <div style={{ flex: 1 }}>
+                <strong
+                  style={{
+                    fontSize: 14,
+                    fontFamily: fontFamily.body,
+                    display: 'block',
+                    marginBottom: 2,
+                  }}
+                >
+                  Need crisis-level analysis? Unlock WarRoom.
+                </strong>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontFamily: fontFamily.body,
+                    color: 'rgba(255,255,255,0.6)',
+                  }}
+                >
+                  Pro tier adds real-time threat detection, cross-domain signal groups, and compliance tools.
+                </span>
+              </div>
+              <Link
+                to="/subscribe"
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 10,
+                  background: 'linear-gradient(135deg, #E85D00, #FF7A18)',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: fontFamily.body,
+                  whiteSpace: 'nowrap',
+                  textDecoration: 'none',
+                  transition: 'box-shadow 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(232,93,0,0.4)'; }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                Upgrade to Pro &rarr;
+              </Link>
+            </div>
+          </>
         )}
       </div>
     </DashboardLayout>

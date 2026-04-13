@@ -9,70 +9,69 @@ const DOMAINS = [
     name: 'Revenue', score: 60, color: '#E85D00',
     status: 'below', statusLabel: 'Below Baseline',
     metrics: [
-      { label: 'Pipeline', value: '$135K', delta: '-38.6%', direction: 'down' },
-      { label: 'Win Rate', value: '24%', delta: '-8%', direction: 'down' },
-      { label: 'Avg Deal', value: '$18K', delta: '+20%', direction: 'up' },
-      { label: 'Cycle', value: '34d', delta: '+6d', direction: 'down' },
+      { label: 'Pipeline', value: '$135K', baseline: '$220K', delta: '-38.6%', direction: 'down' },
+      { label: 'Win Rate', value: '24%', baseline: '32%', delta: '-8%', direction: 'down' },
+      { label: 'Avg Deal', value: '$18K', baseline: '$15K', delta: '+20%', direction: 'up' },
+      { label: 'Cycle', value: '34d', baseline: '28d', delta: '+6d', direction: 'down' },
     ],
   },
   {
     name: 'Operations', score: 70, color: '#2563EB',
     status: 'declining', statusLabel: 'Declining',
     metrics: [
-      { label: 'Invoice Cycle', value: '4.5d', delta: '+2.5d', direction: 'down' },
-      { label: 'Meeting Load', value: '32/wk', delta: '+12', direction: 'down' },
-      { label: 'Task Completion', value: '78%', delta: '-7%', direction: 'down' },
-      { label: 'SLA Adherence', value: '82%', delta: '-8%', direction: 'down' },
+      { label: 'Invoice Cycle', value: '4.5d', baseline: '2.0d', delta: '+2.5d', direction: 'down' },
+      { label: 'Meeting Load', value: '32/wk', baseline: '20/wk', delta: '+12', direction: 'down' },
+      { label: 'Task Completion', value: '78%', baseline: '85%', delta: '-7%', direction: 'down' },
+      { label: 'SLA Adherence', value: '82%', baseline: '90%', delta: '-8%', direction: 'down' },
     ],
   },
   {
     name: 'Customer', score: 75, color: '#16A34A',
     status: 'declining', statusLabel: 'Declining',
     metrics: [
-      { label: 'Churn Risk', value: '3 accts', delta: '+2', direction: 'down' },
-      { label: 'NPS', value: '42', delta: '-6', direction: 'down' },
-      { label: 'MRR at Risk', value: '$4.5K', delta: '+$3.5K', direction: 'down' },
-      { label: 'Retention', value: '91%', delta: '-4%', direction: 'down' },
+      { label: 'Churn Risk', value: '3 accts', baseline: '1', delta: '+2', direction: 'down' },
+      { label: 'NPS', value: '42', baseline: '48', delta: '-6', direction: 'down' },
+      { label: 'MRR at Risk', value: '$4.5K', baseline: '$1K', delta: '+$3.5K', direction: 'down' },
+      { label: 'Retention', value: '91%', baseline: '95%', delta: '-4%', direction: 'down' },
     ],
   },
   {
     name: 'Financial', score: 68, color: '#F59E0B',
     status: 'below', statusLabel: 'Below Baseline',
     metrics: [
-      { label: 'Runway', value: '4.2mo', delta: '-1.8mo', direction: 'down' },
-      { label: 'Burn Rate', value: '$38K', delta: '+$6K', direction: 'down' },
-      { label: 'Gross Margin', value: '71%', delta: '-3%', direction: 'down' },
-      { label: 'Collections', value: '28d', delta: '+7d', direction: 'down' },
+      { label: 'Runway', value: '4.2mo', baseline: '6mo', delta: '-1.8mo', direction: 'down' },
+      { label: 'Burn Rate', value: '$38K', baseline: '$32K', delta: '+$6K', direction: 'down' },
+      { label: 'Gross Margin', value: '71%', baseline: '74%', delta: '-3%', direction: 'down' },
+      { label: 'Collections', value: '28d', baseline: '21d', delta: '+7d', direction: 'down' },
     ],
   },
   {
     name: 'Compliance', score: 88, color: '#7C3AED',
     status: 'at', statusLabel: 'At Baseline',
     metrics: [
-      { label: 'Privacy', value: '92%', delta: '+2%', direction: 'up' },
-      { label: 'E8', value: '95%', delta: '+3%', direction: 'up' },
-      { label: 'BAS', value: '68%', delta: '-2%', direction: 'down' },
-      { label: 'ASIC', value: '100%', delta: '0%', direction: 'flat' },
+      { label: 'Privacy', value: '92%', baseline: '90%', delta: '+2%', direction: 'up' },
+      { label: 'E8', value: '95%', baseline: '92%', delta: '+3%', direction: 'up' },
+      { label: 'BAS', value: '68%', baseline: '70%', delta: '-2%', direction: 'down' },
+      { label: 'ASIC', value: '100%', baseline: '100%', delta: '0%', direction: 'flat' },
     ],
   },
   {
     name: 'Security', score: 93, color: '#0891B2',
     status: 'above', statusLabel: 'Above Baseline',
     metrics: [
-      { label: 'MFA', value: '88%', delta: '+3%', direction: 'up' },
-      { label: 'Access Review', value: '100%', delta: '0%', direction: 'flat' },
-      { label: 'Data Encrypt', value: '100%', delta: '0%', direction: 'flat' },
-      { label: 'Vuln Scan', value: 'Weekly', delta: 'on track', direction: 'flat' },
+      { label: 'MFA', value: '88%', baseline: '85%', delta: '+3%', direction: 'up' },
+      { label: 'Access Review', value: '100%', baseline: '100%', delta: '0%', direction: 'flat' },
+      { label: 'Data Encrypt', value: '100%', baseline: '100%', delta: '0%', direction: 'flat' },
+      { label: 'Vuln Scan', value: 'Weekly', baseline: 'Weekly', delta: 'on track', direction: 'flat' },
     ],
   },
 ];
 
 const CALIBRATION_HISTORY = [
-  { date: 'Q1 2026', trigger: 'Quarterly Review', domains: 'All', delta: '+4.2', status: 'Complete' },
-  { date: 'Mar 2026', trigger: 'Manual', domains: 'Revenue, Financial', delta: '-1.8', status: 'Complete' },
-  { date: 'Feb 2026', trigger: 'Alert Trigger', domains: 'Security', delta: '+8.1', status: 'Complete' },
-  { date: 'Jan 2026', trigger: 'Quarterly Review', domains: 'All', delta: '+2.7', status: 'Complete' },
-  { date: 'Dec 2025', trigger: 'Initial Baseline', domains: 'All', delta: '\u2014', status: 'Complete' },
+  { date: 'Apr 1, 2026', type: 'Quarterly', revenue: { val: 60, color: '#DC2626' }, operations: { val: 70, color: '#D97706' }, customer: { val: 75, color: '#D97706' }, compliance: { val: 88, color: '#16A34A' } },
+  { date: 'Jan 1, 2026', type: 'Quarterly', revenue: { val: 78 }, operations: { val: 82 }, customer: { val: 84 }, compliance: { val: 85 } },
+  { date: 'Oct 1, 2025', type: 'Quarterly', revenue: { val: 74 }, operations: { val: 80 }, customer: { val: 82 }, compliance: { val: 80 } },
+  { date: 'Jul 1, 2025', type: 'Initial', revenue: { val: 70 }, operations: { val: 75 }, customer: { val: 78 }, compliance: { val: 72 } },
 ];
 
 /* ─── Status badge colors (dark theme) ─── */
@@ -108,7 +107,7 @@ const DomainCard = ({ domain }) => {
       {/* Head: name + score */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <span style={{ fontFamily: fontFamily.body, fontWeight: 600, fontSize: 15, color: colors.text }}>{domain.name}</span>
-        <span style={{ fontFamily: fontFamily.mono, fontWeight: 700, fontSize: 28, color: domain.color, lineHeight: 1 }}>{domain.score}</span>
+        <span style={{ fontFamily: fontFamily.display, fontWeight: 700, fontSize: 28, color: domain.color, lineHeight: 1 }}>{domain.score}</span>
       </div>
 
       {/* Status badge */}
@@ -132,7 +131,7 @@ const DomainCard = ({ domain }) => {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         {domain.metrics.map((m, i) => (
           <div key={i} style={{ padding: '6px 0' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: colors.textMuted, marginBottom: 2 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: colors.textMuted, marginBottom: 2, fontFamily: fontFamily.mono }}>
               {m.label}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -142,6 +141,11 @@ const DomainCard = ({ domain }) => {
                 {m.delta}
               </span>
             </div>
+            {m.baseline && (
+              <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 1, fontFamily: fontFamily.body }}>
+                Baseline: {m.baseline}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -229,7 +233,9 @@ const IntelligenceBaselinePage = () => {
               .ib-table-wrap th:nth-child(4),
               .ib-table-wrap td:nth-child(4),
               .ib-table-wrap th:nth-child(5),
-              .ib-table-wrap td:nth-child(5) { display: none; }
+              .ib-table-wrap td:nth-child(5),
+              .ib-table-wrap th:nth-child(6),
+              .ib-table-wrap td:nth-child(6) { display: none; }
             }
           `}</style>
 
@@ -250,12 +256,13 @@ const IntelligenceBaselinePage = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {['Date', 'Trigger', 'Domains Affected', 'Score Delta', 'Status'].map(h => (
+                    {['Date', 'Type', 'Revenue', 'Operations', 'Customer', 'Compliance'].map(h => (
                       <th key={h} style={{
                         textAlign: 'left', padding: '12px 16px',
                         fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
                         color: colors.textMuted, background: colors.bgInput,
-                        borderBottom: `1px solid rgba(140,170,210,0.12)`,
+                        borderBottom: '1px solid rgba(140,170,210,0.12)',
+                        fontFamily: fontFamily.mono,
                       }}>
                         {h}
                       </th>
@@ -281,33 +288,21 @@ const IntelligenceBaselinePage = () => {
                         padding: '12px 16px', fontSize: 14, color: colors.textSecondary,
                         borderBottom: i < CALIBRATION_HISTORY.length - 1 ? '1px solid rgba(140,170,210,0.06)' : 'none',
                       }}>
-                        {row.trigger}
+                        {row.type}
                       </td>
-                      <td style={{
-                        padding: '12px 16px', fontSize: 14, color: colors.textSecondary,
-                        borderBottom: i < CALIBRATION_HISTORY.length - 1 ? '1px solid rgba(140,170,210,0.06)' : 'none',
-                      }}>
-                        {row.domains}
-                      </td>
-                      <td style={{
-                        padding: '12px 16px', fontFamily: fontFamily.mono, fontSize: 14, fontWeight: 600,
-                        color: row.delta.startsWith('+') ? colors.success : row.delta.startsWith('-') ? colors.danger : colors.textMuted,
-                        borderBottom: i < CALIBRATION_HISTORY.length - 1 ? '1px solid rgba(140,170,210,0.06)' : 'none',
-                      }}>
-                        {row.delta}
-                      </td>
-                      <td style={{
-                        padding: '12px 16px', fontSize: 14,
-                        borderBottom: i < CALIBRATION_HISTORY.length - 1 ? '1px solid rgba(140,170,210,0.06)' : 'none',
-                      }}>
-                        <span style={{
-                          display: 'inline-block', fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
-                          letterSpacing: '0.06em', padding: '2px 8px', borderRadius: 9999,
-                          background: 'rgba(22,163,74,0.15)', color: '#4ADE80', border: '1px solid rgba(22,163,74,0.3)',
+                      {[row.revenue, row.operations, row.customer, row.compliance].map((cell, ci) => (
+                        <td key={ci} style={{
+                          padding: '12px 16px',
+                          borderBottom: i < CALIBRATION_HISTORY.length - 1 ? '1px solid rgba(140,170,210,0.06)' : 'none',
                         }}>
-                          {row.status}
-                        </span>
-                      </td>
+                          <span style={{
+                            fontFamily: fontFamily.mono, fontSize: 14, fontWeight: 700,
+                            color: cell.color || colors.text,
+                          }}>
+                            {cell.val}
+                          </span>
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>

@@ -84,6 +84,13 @@ const OnboardingDecision = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-x-hidden" style={{ background: '#080C14' }}>
+      <style>{`
+        .path-card-btn { transition: all 300ms cubic-bezier(0.4,0,0.2,1); }
+        .path-card-btn:hover { transform: translateY(-6px); border-color: #E85D00 !important; box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(232,93,0,0.2) !important; }
+        .path-card-btn .path-cta { transition: all 200ms ease; }
+        .path-card-btn:hover .path-cta-primary { filter: brightness(1.1); }
+        .path-card-btn:hover .path-cta-secondary { border-color: rgba(232,93,0,0.4) !important; color: #E85D00 !important; }
+      `}</style>
       {/* Lava gradient glow */}
       <div className="fixed top-[-200px] left-1/2 -translate-x-1/2 w-[1100px] h-[600px] pointer-events-none" style={{ background: 'radial-gradient(ellipse, rgba(232,93,0,0.15) 0%, transparent 60%)', opacity: 0.5, filter: 'blur(100px)' }} />
 
@@ -118,10 +125,10 @@ const OnboardingDecision = () => {
             <button
               key={i}
               onClick={path.onClick}
-              className="relative rounded-2xl p-7 flex flex-col text-left transition-all hover:-translate-y-1.5 cursor-pointer group"
+              className="path-card-btn relative rounded-2xl p-7 flex flex-col text-left cursor-pointer group"
               style={{
                 background: path.recommended ? 'linear-gradient(180deg, #0E1628 0%, rgba(232,93,0,0.06) 200%)' : '#0E1628',
-                border: `1px solid ${path.recommended ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
+                border: `1px solid ${path.recommended ? '#E85D00' : 'rgba(140,170,210,0.12)'}`,
                 boxShadow: path.recommended ? '0 8px 32px rgba(0,0,0,0.3)' : '0 4px 16px rgba(0,0,0,0.2)',
               }}
             >
@@ -150,10 +157,10 @@ const OnboardingDecision = () => {
                 ))}
               </div>
 
-              <div className="mt-6 w-full text-center py-3 rounded-xl text-sm font-semibold transition-all" style={{
+              <div className={`path-cta mt-6 w-full text-center py-3 rounded-xl text-sm font-semibold ${path.primary ? 'path-cta-primary' : 'path-cta-secondary'}`} style={{
                 background: path.primary ? '#E85D00' : 'transparent',
                 color: path.primary ? 'white' : '#EDF1F7',
-                border: path.primary ? 'none' : '1px solid rgba(140,170,210,0.15)',
+                border: path.primary ? 'none' : '1px solid rgba(140,170,210,0.12)',
                 fontFamily: fontFamily.body,
               }}>
                 {path.cta} <span className="ml-1">→</span>

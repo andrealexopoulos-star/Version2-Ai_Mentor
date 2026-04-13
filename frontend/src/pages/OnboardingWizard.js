@@ -323,7 +323,15 @@ const OnboardingWizard = () => {
       {/* Background glow */}
       <div className="fixed -top-[300px] -right-[200px] w-[700px] h-[700px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,0,0.15) 0%, transparent 60%)', opacity: 0.4, filter: 'blur(100px)' }} />
 
-      <style>{`.wiz-shell { display: grid; grid-template-columns: 1fr; flex: 1; position: relative; z-index: 1; } .wiz-sidebar { display: none; } @media (min-width: 1100px) { .wiz-shell { grid-template-columns: 320px 1fr; } .wiz-sidebar { display: flex; } }`}</style>
+      <style>{`
+        .wiz-shell { display: grid; grid-template-columns: 1fr; flex: 1; position: relative; z-index: 1; }
+        .wiz-sidebar { display: none; }
+        @media (min-width: 1100px) { .wiz-shell { grid-template-columns: 320px 1fr; } .wiz-sidebar { display: flex; } }
+        .wiz-radio-card { transition: all 200ms cubic-bezier(0.4,0,0.2,1); cursor: pointer; }
+        .wiz-radio-card:hover { border-color: #E85D00 !important; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; }
+        .wiz-radio-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+        @media (min-width: 720px) { .wiz-radio-grid { grid-template-columns: 1fr 1fr; } }
+      `}</style>
       <div className="wiz-shell">
         {/* ── Wizard Sidebar ── */}
         <aside className="wiz-sidebar flex-col justify-between relative overflow-hidden" style={{ background: '#0A0A0A', color: '#FFFFFF', padding: '40px 32px' }}>
@@ -419,7 +427,64 @@ const OnboardingWizard = () => {
             {currentStep === 1 && (
               <div className="space-y-6" data-testid="step-basics">
                 <WizStepHeader step={2} total={STEPS.length} title={<>What kind of <em style={{ fontStyle: 'italic', color: '#E85D00' }}>business</em> are you?</>} subtitle="This shapes which signals BIQc surfaces and which thresholds we use. You can fine-tune later." />
-                
+
+                {/* Business type radio cards from mockup */}
+                <div style={{ marginTop: 40 }}>
+                  <h3 style={{ fontFamily: fontFamily.display, fontSize: 22, color: '#EDF1F7', marginBottom: 16 }}>Pick what fits closest</h3>
+                  <div className="wiz-radio-grid">
+                    {[
+                      { value: 'services', title: 'Services / consulting', desc: 'Project-based revenue, billable hours, retainers, proposals in flight.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h20M5 3v18h14V3M9 8h6M9 12h6M9 16h6"/></svg> },
+                      { value: 'saas', title: 'SaaS / software', desc: 'MRR, trials, churn, expansion. Product-led or sales-led growth.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> },
+                      { value: 'ecommerce', title: 'E-commerce / DTC', desc: 'Orders, AOV, inventory, marketing spend, ad performance.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg> },
+                      { value: 'agency', title: 'Agency / studio', desc: 'Client retainers, project profitability, team utilisation, scope creep.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg> },
+                      { value: 'trades', title: 'Trades / field services', desc: 'Job pipeline, quotes, scheduling, invoicing, AR aging.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
+                      { value: 'other', title: 'Something else', desc: 'Tell us in one line and BIQc will pick smart defaults.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20M2 12h20"/></svg> },
+                    ].map(opt => {
+                      const isSelected = formData.business_type === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          className="wiz-radio-card"
+                          onClick={() => updateField('business_type', opt.value)}
+                          style={{
+                            padding: 20,
+                            background: isSelected ? 'rgba(232,93,0,0.06)' : 'var(--surface, #0E1628)',
+                            border: isSelected ? '1px solid #E85D00' : '1px solid rgba(140,170,210,0.12)',
+                            borderRadius: 12,
+                            textAlign: 'left',
+                            boxShadow: isSelected ? '0 8px 24px rgba(0,0,0,0.3)' : 'none',
+                            position: 'relative',
+                          }}
+                          data-testid={`radio-type-${opt.value}`}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                            <div style={{
+                              width: 36, height: 36, borderRadius: 8,
+                              display: 'grid', placeItems: 'center',
+                              background: isSelected ? '#E85D00' : 'var(--surface-2, #121D30)',
+                              color: isSelected ? 'white' : '#EDF1F7',
+                            }}>
+                              {opt.icon}
+                            </div>
+                            <div style={{
+                              width: 22, height: 22, borderRadius: '50%',
+                              background: isSelected ? '#E85D00' : 'transparent',
+                              border: isSelected ? '2px solid #E85D00' : '2px solid rgba(140,170,210,0.12)',
+                              display: 'grid', placeItems: 'center',
+                              fontSize: 13, fontWeight: 700, color: 'white',
+                            }}>
+                              {isSelected && <Check style={{ width: 12, height: 12 }} />}
+                            </div>
+                          </div>
+                          <h4 style={{ fontSize: 16, fontWeight: 600, color: '#EDF1F7', fontFamily: fontFamily.body }}>{opt.title}</h4>
+                          <p style={{ marginTop: 8, color: '#8FA0B8', fontSize: 13, lineHeight: 1.5, fontFamily: fontFamily.body }}>{opt.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {renderField('business_name', 'Business Name',
                   <Input
                     value={formData.business_name || ''}

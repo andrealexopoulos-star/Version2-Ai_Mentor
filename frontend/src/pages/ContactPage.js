@@ -79,7 +79,7 @@ export default function ContactPage() {
         style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }}>
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-[48px] font-bold leading-[1.15] tracking-tight mb-4"
-            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
             {heading}
           </h1>
           <p className="text-lg max-w-[500px] mx-auto leading-relaxed"
@@ -267,7 +267,7 @@ export default function ContactPage() {
             {/* Map Info */}
             <div className="flex flex-col justify-center py-10 px-10">
               <h3 className="text-2xl font-semibold mb-4"
-                style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+                style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
                 Built in Australia, for Australia
               </h3>
               <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>

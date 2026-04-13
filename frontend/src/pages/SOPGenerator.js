@@ -4,7 +4,7 @@ import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import {
   FileText, CheckSquare, Target, Save, Copy, Check, Upload,
-  Sparkles, Clock, Users, Eye, Shield, DollarSign,
+  Sparkles, Clock, Users, Shield, DollarSign,
   Briefcase, ClipboardList, AlertTriangle, ShoppingCart, Scale, RefreshCw,
   X
 } from 'lucide-react';
@@ -129,15 +129,15 @@ const SOPCard = ({ sop }) => {
         background: '#0E1628',
         border: '1px solid rgba(140,170,210,0.12)',
         borderRadius: 16,
-        padding: 24,
+        padding: 20,
         display: 'flex',
         flexDirection: 'column',
-        gap: 14,
+        gap: 12,
         transition: 'border-color 0.2s, box-shadow 0.2s',
         cursor: 'pointer',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.borderColor = 'rgba(232,93,0,0.35)';
+        e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)';
         e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)';
       }}
       onMouseLeave={e => {
@@ -146,20 +146,20 @@ const SOPCard = ({ sop }) => {
       }}
     >
       {/* Badges */}
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <span style={{
-          fontSize: 11, fontWeight: 600, fontFamily: fontFamily.body,
-          padding: '3px 10px', borderRadius: 8,
+          fontSize: 10, fontWeight: 700, fontFamily: fontFamily.mono,
+          padding: '3px 8px', borderRadius: 999,
           background: src.bg, color: src.color,
-          letterSpacing: '0.02em',
+          letterSpacing: '0.06em', textTransform: 'uppercase',
         }}>
           {src.label}
         </span>
         <span style={{
-          fontSize: 11, fontWeight: 600, fontFamily: fontFamily.body,
-          padding: '3px 10px', borderRadius: 8,
+          fontSize: 10, fontWeight: 600, fontFamily: fontFamily.mono,
+          padding: '3px 8px', borderRadius: 999,
           background: st.bg, color: st.color,
-          letterSpacing: '0.02em',
+          letterSpacing: '0.06em', textTransform: 'uppercase',
         }}>
           {st.label}
         </span>
@@ -169,6 +169,7 @@ const SOPCard = ({ sop }) => {
       <h3 style={{
         fontFamily: fontFamily.display, fontSize: 20, fontWeight: 600,
         color: '#EDF1F7', margin: 0, lineHeight: 1.25,
+        letterSpacing: '-0.01em',
       }}>
         {sop.title}
       </h3>
@@ -176,38 +177,41 @@ const SOPCard = ({ sop }) => {
       {/* Description */}
       <p style={{
         fontFamily: fontFamily.body, fontSize: 14, color: '#8FA0B8',
-        margin: 0, lineHeight: 1.55,
+        margin: 0, lineHeight: 1.5,
       }}>
         {sop.description}
       </p>
 
       {/* Step dots */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 12, color: '#708499', fontFamily: fontFamily.body, marginRight: 4 }}>
-          {sop.completedSteps}/{sop.totalSteps} steps
+        <span style={{ fontSize: 12, color: '#708499', fontFamily: fontFamily.mono, marginRight: 4 }}>
+          {sop.totalSteps} steps
         </span>
-        {Array.from({ length: sop.totalSteps }).map((_, i) => (
-          <span
-            key={i}
-            style={{
-              width: 7, height: 7, borderRadius: '50%',
-              background: i < sop.completedSteps ? '#E85D00' : 'rgba(140,170,210,0.18)',
-            }}
-          />
-        ))}
+        <div style={{ display: 'flex', gap: 3 }}>
+          {Array.from({ length: sop.totalSteps }).map((_, i) => (
+            <span
+              key={i}
+              style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: i < sop.completedSteps ? '#E85D00' : 'rgba(140,170,210,0.18)',
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Meta row */}
       <div style={{
-        borderTop: '1px solid rgba(140,170,210,0.12)',
+        borderTop: '1px solid rgba(140,170,210,0.08)',
         paddingTop: 12, marginTop: 2,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        display: 'flex', alignItems: 'center', gap: 12,
+        fontSize: 12, color: '#708499',
       }}>
-        <span style={{ fontSize: 12, color: '#708499', fontFamily: fontFamily.body, display: 'flex', alignItems: 'center', gap: 4 }}>
-          <Clock size={13} /> Updated {sop.updatedAgo}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: fontFamily.body }}>
+          <Clock size={14} /> Updated {sop.updatedAgo}
         </span>
-        <span style={{ fontSize: 12, color: '#708499', fontFamily: fontFamily.body, display: 'flex', alignItems: 'center', gap: 4 }}>
-          <Eye size={13} /> {sop.usageCount} uses
+        <span style={{ marginLeft: 'auto', fontFamily: fontFamily.body }}>
+          Used {sop.usageCount} times
         </span>
       </div>
     </div>
@@ -223,8 +227,8 @@ const TemplateCard = ({ template, onClick }) => {
       style={{
         background: '#0E1628',
         border: '1px solid rgba(140,170,210,0.12)',
-        borderRadius: 16,
-        padding: 24,
+        borderRadius: 12,
+        padding: 16,
         cursor: 'pointer',
         transition: 'border-color 0.2s, box-shadow 0.2s',
         display: 'flex',
@@ -232,8 +236,8 @@ const TemplateCard = ({ template, onClick }) => {
         gap: 12,
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.borderColor = 'rgba(232,93,0,0.35)';
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)';
+        e.currentTarget.style.borderColor = '#E85D00';
+        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
       }}
       onMouseLeave={e => {
         e.currentTarget.style.borderColor = 'rgba(140,170,210,0.12)';
@@ -241,20 +245,20 @@ const TemplateCard = ({ template, onClick }) => {
       }}
     >
       <div style={{
-        width: 44, height: 44, borderRadius: '50%',
+        width: 40, height: 40, borderRadius: 10,
         background: 'rgba(232,93,0,0.12)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <Icon size={20} style={{ color: '#E85D00' }} />
       </div>
       <h4 style={{
-        fontFamily: fontFamily.display, fontSize: 16, fontWeight: 600,
+        fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600,
         color: '#EDF1F7', margin: 0,
       }}>
         {template.title}
       </h4>
       <p style={{
-        fontFamily: fontFamily.body, fontSize: 13, color: '#8FA0B8',
+        fontFamily: fontFamily.body, fontSize: 12, color: '#708499',
         margin: 0, lineHeight: 1.5,
       }}>
         {template.description}
@@ -441,20 +445,22 @@ const SOPGenerator = () => {
   /* ─── Shared styles ─── */
   const inputStyle = {
     width: '100%',
-    padding: '12px 16px',
+    padding: '10px 14px',
     fontSize: 14,
     fontFamily: fontFamily.body,
     color: '#EDF1F7',
     background: '#060A12',
     border: '1px solid rgba(140,170,210,0.12)',
-    borderRadius: 12,
+    borderRadius: 10,
     outline: 'none',
     transition: 'border-color 0.2s',
+    boxSizing: 'border-box',
   };
 
   const selectStyle = {
     ...inputStyle,
     appearance: 'none',
+    WebkitAppearance: 'none',
     backgroundImage: `url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23708499' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'right 14px center',
@@ -462,20 +468,20 @@ const SOPGenerator = () => {
   };
 
   const labelStyle = {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 500,
-    color: '#8FA0B8',
+    color: '#EDF1F7',
     fontFamily: fontFamily.body,
-    marginBottom: 6,
+    marginBottom: 4,
     display: 'block',
   };
 
   const gradientBtnStyle = {
-    background: 'linear-gradient(135deg, #E85D00, #FF7A1A)',
+    background: 'linear-gradient(135deg, #E85D00, #FF7A18)',
     color: '#fff',
     border: 'none',
-    borderRadius: 14,
-    padding: '12px 28px',
+    borderRadius: 10,
+    padding: '10px 24px',
     fontSize: 14,
     fontWeight: 600,
     fontFamily: fontFamily.body,
@@ -484,15 +490,14 @@ const SOPGenerator = () => {
     alignItems: 'center',
     gap: 8,
     transition: 'opacity 0.2s, box-shadow 0.2s',
-    boxShadow: '0 4px 16px rgba(232,93,0,0.3)',
   };
 
   const ghostBtnStyle = {
     background: 'transparent',
     color: '#8FA0B8',
-    border: '1px solid rgba(140,170,210,0.18)',
-    borderRadius: 14,
-    padding: '12px 28px',
+    border: '1px solid rgba(140,170,210,0.12)',
+    borderRadius: 10,
+    padding: '10px 24px',
     fontSize: 14,
     fontWeight: 500,
     fontFamily: fontFamily.body,
@@ -509,7 +514,7 @@ const SOPGenerator = () => {
       <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto' }} data-testid="sop-generator-page">
 
         {/* ────────── 1. HEADER ────────── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <h1 style={{
             fontFamily: fontFamily.display, fontSize: 28, fontWeight: 700,
             color: '#EDF1F7', margin: 0, letterSpacing: '-0.02em',
@@ -518,9 +523,12 @@ const SOPGenerator = () => {
           </h1>
           <button
             onClick={scrollToGenerator}
-            style={gradientBtnStyle}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+            style={{
+              ...gradientBtnStyle,
+              padding: '10px 20px',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(232,93,0,0.35)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
           >
             <Sparkles size={16} /> New SOP
           </button>
@@ -529,9 +537,9 @@ const SOPGenerator = () => {
         {/* ────────── 2. CATEGORY TABS ────────── */}
         <div style={{
           borderBottom: '1px solid rgba(140,170,210,0.12)',
-          marginBottom: 28,
+          marginBottom: 24,
           display: 'flex',
-          gap: 0,
+          gap: 4,
           overflowX: 'auto',
         }}>
           {CATEGORY_TABS.map(tab => {
@@ -544,9 +552,9 @@ const SOPGenerator = () => {
                   background: 'none',
                   border: 'none',
                   borderBottom: isActive ? '2px solid #E85D00' : '2px solid transparent',
-                  padding: '12px 20px',
+                  padding: '12px 16px',
                   fontSize: 14,
-                  fontWeight: isActive ? 600 : 400,
+                  fontWeight: isActive ? 600 : 500,
                   fontFamily: fontFamily.body,
                   color: isActive ? '#EDF1F7' : '#8FA0B8',
                   cursor: 'pointer',
@@ -567,7 +575,7 @@ const SOPGenerator = () => {
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
           gap: 20,
-          marginBottom: 48,
+          marginBottom: 32,
         }}>
           {filteredCards.map(sop => (
             <SOPCard key={sop.id} sop={sop} />
@@ -590,36 +598,36 @@ const SOPGenerator = () => {
             background: '#0E1628',
             border: '1px solid rgba(140,170,210,0.12)',
             borderRadius: 16,
-            padding: 32,
-            marginBottom: 48,
+            padding: 24,
+            marginBottom: 32,
           }}
         >
           <h2 style={{
             fontFamily: fontFamily.display, fontSize: 22, fontWeight: 600,
-            color: '#EDF1F7', margin: '0 0 6px',
+            color: '#EDF1F7', margin: '0 0 4px',
           }}>
             Generate New SOP
           </h2>
           <p style={{
             fontFamily: fontFamily.body, fontSize: 14, color: '#8FA0B8',
-            margin: '0 0 28px', lineHeight: 1.5,
+            margin: '0 0 20px', lineHeight: 1.5,
           }}>
-            Fill in the details below and let AI create a structured standard operating procedure for your team.
+            Describe the process and BIQc will generate a structured, step-by-step procedure from your business data.
           </p>
 
           <form onSubmit={generateSOP}>
             {/* Row 1: Title + Category */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div>
                 <label style={labelStyle}>SOP Title</label>
                 <input
                   type="text"
                   value={genTitle}
                   onChange={e => setGenTitle(e.target.value)}
-                  placeholder="e.g., Customer Onboarding Process"
+                  placeholder="e.g. Weekly Pipeline Review Process"
                   style={inputStyle}
-                  onFocus={e => { e.target.style.borderColor = '#E85D00'; }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; }}
+                  onFocus={e => { e.target.style.borderColor = '#E85D00'; e.target.style.boxShadow = '0 0 0 3px rgba(232,93,0,0.12)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; e.target.style.boxShadow = 'none'; }}
                   data-testid="sop-title-input"
                 />
               </div>
@@ -629,8 +637,8 @@ const SOPGenerator = () => {
                   value={genCategory}
                   onChange={e => setGenCategory(e.target.value)}
                   style={selectStyle}
-                  onFocus={e => { e.target.style.borderColor = '#E85D00'; }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; }}
+                  onFocus={e => { e.target.style.borderColor = '#E85D00'; e.target.style.boxShadow = '0 0 0 3px rgba(232,93,0,0.12)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; e.target.style.boxShadow = 'none'; }}
                 >
                   <option value="Sales">Sales</option>
                   <option value="Operations">Operations</option>
@@ -643,32 +651,32 @@ const SOPGenerator = () => {
             </div>
 
             {/* Row 2: Description (full width) */}
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 16 }}>
               <label style={labelStyle}>Describe the process</label>
               <textarea
                 value={genDescription}
                 onChange={e => setGenDescription(e.target.value)}
-                placeholder="Explain the process steps, goals, and any specific requirements..."
+                placeholder="Describe the process you want to document. Include key steps, decision points, and who is responsible for each stage. BIQc will structure this into a formal SOP with clear ownership and escalation paths."
                 rows={4}
-                style={{ ...inputStyle, resize: 'vertical', minHeight: 100 }}
-                onFocus={e => { e.target.style.borderColor = '#E85D00'; }}
-                onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; }}
+                style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }}
+                onFocus={e => { e.target.style.borderColor = '#E85D00'; e.target.style.boxShadow = '0 0 0 3px rgba(232,93,0,0.12)'; }}
+                onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; e.target.style.boxShadow = 'none'; }}
                 data-testid="sop-description-input"
               />
             </div>
 
             {/* Row 3: Owner + Frequency */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               <div>
                 <label style={labelStyle}>Process Owner</label>
                 <input
                   type="text"
                   value={genOwner}
                   onChange={e => setGenOwner(e.target.value)}
-                  placeholder="e.g., Operations Manager"
+                  placeholder="e.g. Andreas Alexopoulos"
                   style={inputStyle}
-                  onFocus={e => { e.target.style.borderColor = '#E85D00'; }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; }}
+                  onFocus={e => { e.target.style.borderColor = '#E85D00'; e.target.style.boxShadow = '0 0 0 3px rgba(232,93,0,0.12)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; e.target.style.boxShadow = 'none'; }}
                 />
               </div>
               <div>
@@ -677,8 +685,8 @@ const SOPGenerator = () => {
                   value={genFrequency}
                   onChange={e => setGenFrequency(e.target.value)}
                   style={selectStyle}
-                  onFocus={e => { e.target.style.borderColor = '#E85D00'; }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; }}
+                  onFocus={e => { e.target.style.borderColor = '#E85D00'; e.target.style.boxShadow = '0 0 0 3px rgba(232,93,0,0.12)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; e.target.style.boxShadow = 'none'; }}
                 >
                   <option value="Monthly">Monthly</option>
                   <option value="Quarterly">Quarterly</option>
@@ -689,7 +697,7 @@ const SOPGenerator = () => {
             </div>
 
             {/* Action buttons */}
-            <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <button
                 type="submit"
                 disabled={loading}
@@ -717,8 +725,8 @@ const SOPGenerator = () => {
                 type="button"
                 onClick={saveDraft}
                 style={ghostBtnStyle}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.35)'; e.currentTarget.style.color = '#EDF1F7'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.18)'; e.currentTarget.style.color = '#8FA0B8'; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; e.currentTarget.style.color = '#EDF1F7'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.12)'; e.currentTarget.style.color = '#8FA0B8'; }}
               >
                 <Save size={16} /> Save as draft
               </button>
@@ -727,17 +735,17 @@ const SOPGenerator = () => {
         </div>
 
         {/* ────────── 5. TEMPLATES SECTION ────────── */}
-        <div style={{ marginBottom: 48 }}>
+        <div style={{ marginBottom: 32 }}>
           <h2 style={{
             fontFamily: fontFamily.display, fontSize: 22, fontWeight: 600,
-            color: '#EDF1F7', margin: '0 0 20px',
+            color: '#EDF1F7', margin: '0 0 16px',
           }}>
             Start from a template
           </h2>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 20,
+            gap: 16,
           }}>
             {TEMPLATES.map(t => (
               <TemplateCard key={t.id} template={t} onClick={() => handleTemplateClick(t)} />
@@ -760,7 +768,7 @@ const SOPGenerator = () => {
         >
           <div style={{
             background: '#0E1628',
-            border: '1px solid rgba(140,170,210,0.15)',
+            border: '1px solid rgba(140,170,210,0.12)',
             borderRadius: 16,
             width: '100%',
             maxWidth: 720,
@@ -768,6 +776,7 @@ const SOPGenerator = () => {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
           }}>
             {/* Modal header */}
             <div style={{

@@ -229,8 +229,8 @@ export default function CMOReportPage() {
           background: V.surface, border: `1px solid ${V.border}`, borderRadius: 16,
           padding: '32px 32px 24px', marginBottom: 24, position: 'relative', overflow: 'hidden',
         }}>
-          {/* Lava top stripe */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${V.lava}, ${V.lavaWarm}, ${V.lava})` }} />
+          {/* Lava top stripe with shimmer */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${V.lava}, ${V.lavaWarm}, ${V.lava})`, backgroundSize: '200% 100%', animation: 'lava-shimmer 6s ease-in-out infinite' }} />
 
           {/* Top row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
@@ -610,11 +610,16 @@ export default function CMOReportPage() {
           ═══════════════════════════════════════════════════ */}
       <FloatingPDFButton onClick={handleDownloadPDF} />
 
-      {/* Pulse animation keyframes */}
+      {/* Animation keyframes matching mockup */}
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
+        }
+        @keyframes lava-shimmer {
+          0%   { background-position: 0% 50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
         }
         @media (max-width: 767px) {
           /* Stack gauge grid on mobile */
@@ -622,6 +627,9 @@ export default function CMOReportPage() {
           div[style*="grid-template-columns: 240px 1fr"] {
             grid-template-columns: 1fr !important;
           }
+        }
+        @media print {
+          .fab-pdf-btn { display: none !important; }
         }
       `}</style>
     </DashboardLayout>
@@ -645,6 +653,7 @@ function FloatingPDFButton({ onClick }) {
     <button
       onClick={onClick}
       aria-label="Download PDF"
+      className="fab-pdf-btn"
       style={{
         position: 'fixed', bottom: 32, right: 32, zIndex: 50,
         width: 56, height: 56, borderRadius: '50%', border: 'none',
@@ -655,8 +664,11 @@ function FloatingPDFButton({ onClick }) {
         opacity: visible ? 1 : 0, pointerEvents: visible ? 'auto' : 'none',
         transition: 'opacity 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease',
       }}
+      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(232,93,0,0.5), 0 0 0 6px rgba(232,93,0,0.16)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(232,93,0,0.4), 0 0 0 4px rgba(232,93,0,0.12)'; }}
     >
       <Download size={24} />
+      <span style={{ position: 'absolute', bottom: -20, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: V.inkMuted }}>PDF</span>
     </button>
   );
 }

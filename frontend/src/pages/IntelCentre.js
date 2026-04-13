@@ -185,7 +185,7 @@ const IntelCentre = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: lava }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: colors.brandDark, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: fontFamily.body }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: colors.brandDark, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: fontFamily.mono }}>
               AI Daily Intelligence Brief
             </span>
             <span style={{ fontSize: 12, color: colors.textMuted, marginLeft: 'auto', fontFamily: fontFamily.body }}>
@@ -228,13 +228,15 @@ const IntelCentre = () => {
                     onClick={() => setActiveTab(tab)}
                     style={{
                       padding: '6px 14px',
-                      fontSize: 14,
+                      fontSize: 11,
                       fontWeight: 500,
-                      fontFamily: fontFamily.body,
+                      fontFamily: fontFamily.mono,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
                       color: isActive ? '#fff' : colors.textMuted,
                       background: isActive ? '#1E293B' : 'transparent',
                       border: 'none',
-                      borderRadius: radius.badge,
+                      borderRadius: 999,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
                     }}
@@ -280,7 +282,7 @@ const IntelCentre = () => {
                           padding: '3px 8px', borderRadius: radius.full,
                           display: 'inline-block', marginBottom: 8,
                           background: catColor.bg, color: catColor.text,
-                          fontFamily: fontFamily.body,
+                          fontFamily: fontFamily.mono,
                         }}
                       >
                         {item.category}
@@ -325,7 +327,7 @@ const IntelCentre = () => {
                         fontSize: 10, fontWeight: 700, padding: '3px 8px',
                         borderRadius: radius.full, whiteSpace: 'nowrap',
                         background: relStyle.bg, color: relStyle.text,
-                        fontFamily: fontFamily.body,
+                        fontFamily: fontFamily.mono,
                       }}
                     >
                       {item.relevance}
@@ -374,7 +376,7 @@ const IntelCentre = () => {
                     <span style={{ fontSize: 14, fontWeight: 600, color: colors.text, fontFamily: fontFamily.body }}>
                       {entity.name}
                     </span>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: fontFamily.body }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: fontFamily.mono }}>
                       {entity.type}
                     </span>
                   </div>
@@ -383,7 +385,7 @@ const IntelCentre = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 12 }}>
                     {entity.stats.map((stat) => (
                       <div key={stat.label}>
-                        <div style={{ fontSize: 10, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: fontFamily.body, marginBottom: 2 }}>
+                        <div style={{ fontSize: 10, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: fontFamily.mono, marginBottom: 2 }}>
                           {stat.label}
                         </div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: stat.color || colors.text, fontFamily: fontFamily.mono }}>

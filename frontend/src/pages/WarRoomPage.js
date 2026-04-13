@@ -1,11 +1,11 @@
 import React, { useMemo, useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Shield, TrendingDown, Users, BarChart3, FileWarning, Radio } from 'lucide-react';
+import { AlertTriangle, Shield, TrendingDown, Users, BarChart3, FileWarning } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { WarRoomConsoleBody } from '../components/WarRoomConsole';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
-import { colors } from '../design-system/tokens';
+import { colors, fontFamily } from '../design-system/tokens';
 
 /* ── Static alert data ─────────────────────────────────────────────── */
 const STATIC_ALERTS = [
@@ -63,14 +63,42 @@ const STATIC_ALERTS = [
     description: 'No pipeline stage transitions recorded in 7 days. Average cycle time has increased from 28 to 41 days this quarter.',
     icon: BarChart3,
   },
+  {
+    id: 'alert-competitor',
+    severity: 'medium',
+    title: 'Competitor Trillion Software dropped price 15%',
+    source: 'Market',
+    timestamp: '6h ago',
+    description: 'Trillion Software reduced Enterprise pricing to $169/seat, directly targeting AU SMB segment with feature parity on pipeline analytics.',
+    icon: BarChart3,
+  },
+  {
+    id: 'alert-privacy',
+    severity: 'medium',
+    title: 'Privacy policy needs AU Privacy Act update',
+    source: 'Compliance',
+    timestamp: '1d ago',
+    description: 'Updated OAIC guidance requires privacy policy amendments. Data processing addendums for two partners are outstanding before April 28 deadline.',
+    icon: FileWarning,
+  },
+  {
+    id: 'alert-meetings',
+    severity: 'medium',
+    title: 'Meeting load 60% above baseline',
+    source: 'Team',
+    timestamp: '2d ago',
+    description: 'Weekly meeting count at 32 versus 20 baseline. Calendar analysis shows 40% of meetings lack clear agendas or outcomes.',
+    icon: Users,
+  },
 ];
 
 const SEVERITY_COLORS = {
   critical: '#DC2626',
   high: '#D97706',
+  medium: '#2563EB',
 };
 
-const FILTER_TABS = ['All', 'Critical', 'High'];
+const FILTER_TABS = ['All', 'Critical', 'High', 'Medium'];
 
 /* ── Shared sub-components ─────────────────────────────────────────── */
 
@@ -166,6 +194,7 @@ function AlertCard({ alert, isSelected, onClick }) {
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
             color: sevColor,
+            fontFamily: fontFamily.mono,
           }}
         >
           {alert.severity}
@@ -294,13 +323,14 @@ export default function WarRoomPage() {
               <h2
                 style={{
                   fontSize: '18px',
+                  fontFamily: fontFamily.display,
                   fontWeight: 600,
                   color: '#EDF1F7',
                   margin: 0,
                   marginBottom: '12px',
                 }}
               >
-                Active Alerts
+                Live Alerts
               </h2>
 
               {/* Filter tabs */}
@@ -337,6 +367,7 @@ export default function WarRoomPage() {
                         color: textColor,
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',
+                        fontFamily: fontFamily.mono,
                       }}
                     >
                       {tab}
@@ -370,7 +401,7 @@ export default function WarRoomPage() {
                 color: '#708499',
               }}
             >
-              <Radio size={12} style={{ color: colors.success }} />
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', animation: 'warRoomPulse 2s ease-in-out infinite', flexShrink: 0 }} />
               Realtime &middot; {filteredAlerts.length} active alert{filteredAlerts.length !== 1 ? 's' : ''}
             </div>
           </div>
@@ -400,6 +431,7 @@ export default function WarRoomPage() {
                 <h2
                   style={{
                     fontSize: '20px',
+                    fontFamily: fontFamily.display,
                     fontWeight: 600,
                     color: '#EDF1F7',
                     margin: 0,
@@ -419,31 +451,61 @@ export default function WarRoomPage() {
                       background: SEVERITY_COLORS[selectedAlert.severity] || '#708499',
                       color: '#FFFFFF',
                       whiteSpace: 'nowrap',
+                      fontFamily: fontFamily.mono,
                     }}
                   >
                     {selectedAlert.severity}
                   </span>
                 )}
               </div>
-              {selectedAlert && (
-                <button
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span
                   style={{
-                    padding: '6px 16px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '11px',
                     fontWeight: 600,
-                    background: colors.danger,
-                    color: '#FFFFFF',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'background 0.15s ease',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    padding: '4px 12px',
+                    borderRadius: '9999px',
+                    background: '#FEE2E2',
+                    color: '#991B1B',
+                    fontFamily: fontFamily.mono,
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#991B1B'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = colors.danger; }}
                 >
-                  Escalate
-                </button>
-              )}
+                  <span
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: '#DC2626',
+                      animation: 'warRoomPulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                  Elevated Alert
+                </span>
+                {selectedAlert && (
+                  <button
+                    style={{
+                      padding: '6px 16px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      background: colors.danger,
+                      color: '#FFFFFF',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#991B1B'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = colors.danger; }}
+                  >
+                    Escalate
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Console body */}
@@ -470,6 +532,18 @@ export default function WarRoomPage() {
             </div>
           </div>
         </div>
+
+        {/* Pulse animation for elevated alert badge */}
+        <style>{`
+          @keyframes warRoomPulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(220,38,38,0); }
+          }
+          @media (max-width: 900px) {
+            .war-room-left-panel { display: none !important; }
+            .war-room-layout { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
       </div>
     </DashboardLayout>
   );

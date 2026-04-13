@@ -90,7 +90,7 @@ export default function TrustLandingPage() {
         style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }}>
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-[48px] font-bold leading-[1.15] tracking-tight mb-4"
-            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
             Trust & Security
           </h1>
           <p className="text-lg max-w-[520px] mx-auto leading-relaxed"
@@ -105,7 +105,7 @@ export default function TrustLandingPage() {
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
               Our commitments to you
             </h2>
             <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
@@ -132,7 +132,7 @@ export default function TrustLandingPage() {
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
               Legal documents
             </h2>
             <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
@@ -169,7 +169,7 @@ export default function TrustLandingPage() {
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
               Compliance & standards
             </h2>
             <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
@@ -194,7 +194,7 @@ export default function TrustLandingPage() {
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
               How we handle your data
             </h2>
             <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
@@ -228,7 +228,7 @@ export default function TrustLandingPage() {
         style={{ background: 'var(--bg-primary, #080C14)', borderTop: '1px solid var(--border-card, rgba(140,170,210,0.12))' }}>
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4"
-            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
             Questions about security?
           </h2>
           <p className="text-base mb-8" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>

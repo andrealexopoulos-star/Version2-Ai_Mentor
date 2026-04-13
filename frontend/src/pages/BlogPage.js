@@ -52,7 +52,7 @@ export default function BlogPage() {
         style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }}>
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-[48px] font-bold leading-[1.15] tracking-tight mb-4"
-            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
             Blog
           </h1>
           <p className="text-lg max-w-[580px] mx-auto leading-relaxed mb-10"
@@ -103,7 +103,7 @@ export default function BlogPage() {
                 <div className="min-h-[280px] md:min-h-[320px] flex items-center justify-center relative overflow-hidden"
                   style={{ background: 'linear-gradient(135deg, #E85D00 0%, #FF8A3D 40%, #FFB980 100%)' }}>
                   <span className="text-[56px] font-bold relative z-10"
-                    style={{ color: 'rgba(255,255,255,0.25)', fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                    style={{ color: 'rgba(255,255,255,0.25)', fontFamily: fontFamily.display }}>
                     BIQc
                   </span>
                   <div className="absolute w-[200px] h-[200px] border-2 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -117,7 +117,7 @@ export default function BlogPage() {
                     {featured.category}
                   </span>
                   <h2 className="text-[26px] font-bold leading-snug tracking-tight mb-3.5"
-                    style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+                    style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
                     {featured.title}
                   </h2>
                   <p className="text-[15px] leading-relaxed mb-5" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
@@ -143,7 +143,7 @@ export default function BlogPage() {
         <div className="max-w-[1120px] mx-auto">
           {rest.length > 0 && (
             <h2 className="text-[28px] font-semibold tracking-tight mb-8"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
               Latest articles
             </h2>
           )}
@@ -159,7 +159,7 @@ export default function BlogPage() {
                   {/* Gradient image */}
                   <div className="h-40 flex items-center justify-center relative overflow-hidden" style={{ background: grad }}>
                     <span className="text-[32px] font-bold relative z-10"
-                      style={{ color: 'rgba(255,255,255,0.3)', fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                      style={{ color: 'rgba(255,255,255,0.3)', fontFamily: fontFamily.display }}>
                       {String(i + 1).padStart(2, '0')}
                     </span>
                   </div>
@@ -206,7 +206,7 @@ export default function BlogPage() {
               border: '1px solid rgba(140,170,210,0.15)',
             }}>
             <h2 className="text-[28px] font-semibold tracking-tight mb-2.5"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
               Stay informed
             </h2>
             <p className="text-base mb-7 max-w-[440px] mx-auto" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
