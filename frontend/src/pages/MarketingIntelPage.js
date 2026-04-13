@@ -110,10 +110,10 @@ const MarketingIntelPage = () => {
         {/* KPI Strip — matches mockup mi-kpis */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 32 }}>
           {[
-            { label: 'Campaigns Active', value: '12' },
-            { label: 'Total Reach', value: '48.2K' },
-            { label: 'Conversion Rate', value: '3.8%' },
-            { label: 'Cost per Lead', value: '$34' },
+            { label: 'Campaigns Active', value: '\u2014' },
+            { label: 'Total Reach', value: '\u2014' },
+            { label: 'Conversion Rate', value: '\u2014' },
+            { label: 'Cost per Lead', value: '\u2014' },
           ].map(kpi => (
             <div key={kpi.label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20 }}>
               <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
@@ -122,50 +122,25 @@ const MarketingIntelPage = () => {
           ))}
         </div>
 
-        {/* AI Insight — matches mockup ai-insight */}
-        <div className="rounded-2xl p-5" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', borderLeft: '3px solid #E85D00' }}>
+        {/* AI Insight -- shows real benchmark insight or empty state */}
+        <div className="rounded-2xl p-5" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderLeft: '3px solid #E85D00' }}>
           <div className="flex items-center gap-2 mb-3">
             <span className="w-2 h-2 rounded-full" style={{ background: '#E85D00', animation: 'pulse 2s ease-in-out infinite' }} />
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#E85D00' }}>AI Analysis</span>
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: '#8FA0B8' }}>
-            <strong style={{ color: '#EDF1F7' }}>Organic search is your strongest ROI channel</strong> with a $0 CAC and 41% of all lead conversions this month. However, your top-ranking blog post has dropped from position 2 to position 5 in the last 14 days — likely due to a competitor publishing a more comprehensive guide. Consider updating the post with current data and adding an interactive calculator to reclaim position.
-          </p>
+          {benchmark?.insight ? (
+            <p className="text-sm leading-relaxed" style={{ color: '#8FA0B8' }}>{benchmark.insight}</p>
+          ) : (
+            <p className="text-sm leading-relaxed" style={{ color: '#708499' }}>Connect marketing analytics to generate intelligence insights.</p>
+          )}
         </div>
 
-        {/* Channel Performance — matches mockup channel-grid */}
+        {/* Channel Performance -- empty state until marketing integrations are connected */}
         <div>
           <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Channel Performance</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { name: 'Organic Search', trend: '+18% traffic', up: true, visitors: '1,978', conversions: '19', rate: '0.96%', cost: '$0', pct: 41, color: '#16A34A', iconBg: '#D1FAE5', iconColor: '#065F46' },
-              { name: 'Paid Search', trend: '-4% traffic', up: false, visitors: '862', conversions: '11', rate: '1.28%', cost: '$680', pct: 23, color: '#2563EB', iconBg: '#DBEAFE', iconColor: '#1E40AF' },
-              { name: 'Social Media', trend: '+42% engagement', up: true, visitors: '724', conversions: '6', rate: '0.83%', cost: '2.1K followers', pct: 15, color: '#7C3AED', iconBg: '#EDE9FE', iconColor: '#5B21B6' },
-              { name: 'Email Marketing', trend: '+8% opens', up: true, visitors: '531', conversions: '7', rate: '1.32%', cost: '1,247 list', pct: 15, color: '#E85D00', iconBg: 'rgba(232,93,0,0.12)', iconColor: '#E85D00' },
-              { name: 'Referral', trend: '+15% visits', up: true, visitors: '412', conversions: '3', rate: '0.73%', cost: '18 sources', pct: 6, color: '#D97706', iconBg: '#FEF3C7', iconColor: '#92400E' },
-              { name: 'Direct', trend: 'flat', up: null, visitors: '314', conversions: '1', rate: '0.32%', cost: '$0', pct: 2, color: '#708499', iconBg: 'rgba(140,170,210,0.1)', iconColor: '#8FA0B8' },
-            ].map(ch => (
-              <div key={ch.name} className="rounded-2xl p-5 cursor-pointer transition-all hover:border-[rgba(140,170,210,0.25)]" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)' }}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: ch.iconBg, color: ch.iconColor }}>
-                    <BarChart3 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-semibold block" style={{ color: '#EDF1F7' }}>{ch.name}</span>
-                    <span className="text-xs font-medium" style={{ color: ch.up === true ? '#16A34A' : ch.up === false ? '#DC2626' : '#708499' }}>{ch.trend}</span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-[10px] uppercase tracking-wider block" style={{ color: '#708499' }}>Visitors</span><span className="text-sm font-bold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>{ch.visitors}</span></div>
-                  <div><span className="text-[10px] uppercase tracking-wider block" style={{ color: '#708499' }}>Conversions</span><span className="text-sm font-bold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>{ch.conversions}</span></div>
-                  <div><span className="text-[10px] uppercase tracking-wider block" style={{ color: '#708499' }}>Conv Rate</span><span className="text-sm font-bold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>{ch.rate}</span></div>
-                  <div><span className="text-[10px] uppercase tracking-wider block" style={{ color: '#708499' }}>Cost/Other</span><span className="text-sm font-bold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>{ch.cost}</span></div>
-                </div>
-                <div className="h-1.5 rounded-full mt-3" style={{ background: 'rgba(140,170,210,0.1)' }}>
-                  <div className="h-1.5 rounded-full" style={{ width: `${ch.pct}%`, background: ch.color }} />
-                </div>
-              </div>
-            ))}
+          <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}>
+            <Plug className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
+            <p className="text-sm" style={{ color: '#708499' }}>Channel performance data will appear when marketing integrations are connected.</p>
           </div>
         </div>
 

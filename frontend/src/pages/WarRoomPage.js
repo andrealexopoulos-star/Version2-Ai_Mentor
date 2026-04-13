@@ -4,93 +4,67 @@ import { AlertTriangle, Shield, TrendingDown, Users, BarChart3, FileWarning } fr
 import DashboardLayout from '../components/DashboardLayout';
 import { WarRoomConsoleBody } from '../components/WarRoomConsole';
 import { useSnapshot } from '../hooks/useSnapshot';
+import { useWatchtowerRealtime } from '../hooks/useWatchtowerRealtime';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { colors, fontFamily } from '../design-system/tokens';
 
-/* ── Static alert data ─────────────────────────────────────────────── */
-const STATIC_ALERTS = [
-  {
-    id: 'alert-cash-flow',
-    severity: 'critical',
-    title: 'Cash runway dropped below 5-month threshold',
-    source: 'Financial',
-    timestamp: '18 min ago',
-    description: 'Burn rate increased 12% while pipeline decayed 43%. Current runway is 4.2 months — below the 5-month safety threshold.',
-    icon: TrendingDown,
-  },
-  {
-    id: 'alert-security',
-    severity: 'critical',
-    title: 'Unusual login pattern detected — 3 geo anomalies',
-    source: 'Security',
-    timestamp: '42 min ago',
-    description: 'Three admin accounts authenticated from unrecognised geolocations in the last hour. MFA challenges were bypassed via legacy token.',
-    icon: Shield,
-  },
-  {
-    id: 'alert-compliance',
-    severity: 'high',
-    title: 'AU Privacy Act compliance deadline in 14 days',
-    source: 'Compliance',
-    timestamp: '2h ago',
-    description: 'Privacy policy update required before April 28. Legal review not yet initiated and two data-processing addendums are outstanding.',
-    icon: FileWarning,
-  },
-  {
-    id: 'alert-supplier',
-    severity: 'critical',
-    title: 'Pipeline concentration risk — Bramwell at 31%',
-    source: 'Supply Chain',
-    timestamp: '2 min ago',
-    description: 'Single-supplier dependency has reached 31% of active pipeline. If Bramwell stalls, $46.5K of pipeline value is at immediate risk.',
-    icon: AlertTriangle,
-  },
-  {
-    id: 'alert-churn',
-    severity: 'high',
-    title: '3 customer accounts showing churn signals',
-    source: 'Customer',
-    timestamp: '3h ago',
-    description: 'Usage decline, support ticket spike, and billing inquiry detected across three accounts representing $4,500 MRR combined.',
-    icon: Users,
-  },
-  {
-    id: 'alert-pipeline',
-    severity: 'high',
-    title: 'Pipeline velocity stalled — 0 deals advanced this week',
-    source: 'Revenue',
-    timestamp: '6h ago',
-    description: 'No pipeline stage transitions recorded in 7 days. Average cycle time has increased from 28 to 41 days this quarter.',
-    icon: BarChart3,
-  },
-  {
-    id: 'alert-competitor',
-    severity: 'medium',
-    title: 'Competitor Trillion Software dropped price 15%',
-    source: 'Market',
-    timestamp: '6h ago',
-    description: 'Trillion Software reduced Enterprise pricing to $169/seat, directly targeting AU SMB segment with feature parity on pipeline analytics.',
-    icon: BarChart3,
-  },
-  {
-    id: 'alert-privacy',
-    severity: 'medium',
-    title: 'Privacy policy needs AU Privacy Act update',
-    source: 'Compliance',
-    timestamp: '1d ago',
-    description: 'Updated OAIC guidance requires privacy policy amendments. Data processing addendums for two partners are outstanding before April 28 deadline.',
-    icon: FileWarning,
-  },
-  {
-    id: 'alert-meetings',
-    severity: 'medium',
-    title: 'Meeting load 60% above baseline',
-    source: 'Team',
-    timestamp: '2d ago',
-    description: 'Weekly meeting count at 32 versus 20 baseline. Calendar analysis shows 40% of meetings lack clear agendas or outcomes.',
-    icon: Users,
-  },
-];
+/* ── Map watchtower event domain to icon ──────────────────────────── */
+const DOMAIN_ICON_MAP = {
+  Financial: TrendingDown,
+  Pipeline: BarChart3,
+  Customer: Users,
+  Security: Shield,
+  Compliance: FileWarning,
+  Operations: BarChart3,
+  Market: BarChart3,
+  Team: Users,
+};
+
+const inferDomain = (event) => {
+  const raw = event.domain || event.signal_type || event.event_type || '';
+  const text = String(raw).toLowerCase();
+  if (/(pipeline|deal|sales|crm)/.test(text)) return 'Pipeline';
+  if (/(cash|finance|invoice|revenue|accounting)/.test(text)) return 'Financial';
+  if (/(customer|churn|nps|retention)/.test(text)) return 'Customer';
+  if (/(operations|delivery|sla|approval)/.test(text)) return 'Operations';
+  if (/(market|competitor|benchmark)/.test(text)) return 'Market';
+  if (/(team|meeting|burnout|capacity)/.test(text)) return 'Team';
+  if (/(compliance|privacy|policy|legal)/.test(text)) return 'Compliance';
+  if (/(security|mfa|auth|access)/.test(text)) return 'Security';
+  return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'General';
+};
+
+const normalizeSeverity = (value) => {
+  const s = String(value || 'medium').toLowerCase();
+  if (['critical', 'high', 'medium'].includes(s)) return s;
+  if (s === 'moderate') return 'medium';
+  if (s === 'low') return 'medium';
+  return 'medium';
+};
+
+const formatRelativeTime = (dateString) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) return '';
+  const diffMs = Date.now() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return diffMin + ' min ago';
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return diffH + 'h ago';
+  const diffD = Math.floor(diffH / 24);
+  return diffD + 'd ago';
+};
+
+const mapEventToAlert = (event) => ({
+  id: event.id || ('wt-' + Math.random().toString(36).slice(2)),
+  severity: normalizeSeverity(event.severity),
+  title: event.headline || event.title || event.finding || event.signal_type || 'Signal detected',
+  source: inferDomain(event),
+  timestamp: formatRelativeTime(event.created_at),
+  description: event.statement || event.description || event.detail || event.impact || '',
+  icon: DOMAIN_ICON_MAP[inferDomain(event)] || AlertTriangle,
+});
 
 const SEVERITY_COLORS = {
   critical: '#DC2626',
@@ -267,19 +241,25 @@ function ConsoleEmptyState() {
 
 export default function WarRoomPage() {
   const snapshot = useSnapshot();
+  const { alerts: watchtowerEvents, loading: alertsLoading } = useWatchtowerRealtime();
   const { conversationId, setConversationId } = useWarRoomUrlState();
   const [selectedAlertId, setSelectedAlertId] = useState(null);
   const [activeFilter, setActiveFilter] = useState('All');
 
+  const liveAlerts = useMemo(
+    () => watchtowerEvents.map(mapEventToAlert),
+    [watchtowerEvents]
+  );
+
   const selectedAlert = useMemo(
-    () => STATIC_ALERTS.find((a) => a.id === selectedAlertId) || null,
-    [selectedAlertId]
+    () => liveAlerts.find((a) => a.id === selectedAlertId) || null,
+    [selectedAlertId, liveAlerts]
   );
 
   const filteredAlerts = useMemo(() => {
-    if (activeFilter === 'All') return STATIC_ALERTS;
-    return STATIC_ALERTS.filter((a) => a.severity === activeFilter.toLowerCase());
-  }, [activeFilter]);
+    if (activeFilter === 'All') return liveAlerts;
+    return liveAlerts.filter((a) => a.severity === activeFilter.toLowerCase());
+  }, [activeFilter, liveAlerts]);
 
   const hasBlockingState = useMemo(() => {
     return (snapshot.loading && !snapshot.cognitive)
@@ -379,6 +359,21 @@ export default function WarRoomPage() {
 
             {/* Alert list */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+              {alertsLoading && filteredAlerts.length === 0 && (
+                <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                  <p style={{ fontSize: '13px', color: '#708499', lineHeight: 1.5 }}>
+                    Loading alerts...
+                  </p>
+                </div>
+              )}
+              {!alertsLoading && filteredAlerts.length === 0 && (
+                <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                  <AlertTriangle size={28} style={{ color: '#708499', opacity: 0.35, marginBottom: '12px' }} />
+                  <p style={{ fontSize: '13px', color: '#708499', lineHeight: 1.5, maxWidth: '260px', margin: '0 auto' }}>
+                    No active alerts. Crisis signals will appear here when detected by BIQc monitoring.
+                  </p>
+                </div>
+              )}
               {filteredAlerts.map((alert) => (
                 <AlertCard
                   key={alert.id}

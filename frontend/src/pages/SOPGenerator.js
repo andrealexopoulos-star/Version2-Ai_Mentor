@@ -12,81 +12,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 
-/* ─── Static SOP card data (fallback when no API) ─── */
-const STATIC_SOPS = [
-  {
-    id: 1,
-    title: 'Outbound Sales Sequence',
-    description: 'End-to-end outbound prospecting workflow from lead identification through meeting booked, including cadence timing and channel mix.',
-    source: 'ai',
-    status: 'published',
-    totalSteps: 8,
-    completedSteps: 8,
-    category: 'sales',
-    updatedAgo: '2 days ago',
-    usageCount: 142,
-  },
-  {
-    id: 2,
-    title: 'Invoice Approval Workflow',
-    description: 'Structured approval chain for vendor invoices with escalation thresholds, PO matching, and three-way reconciliation checks.',
-    source: 'ai',
-    status: 'published',
-    totalSteps: 6,
-    completedSteps: 6,
-    category: 'operations',
-    updatedAgo: '5 days ago',
-    usageCount: 89,
-  },
-  {
-    id: 3,
-    title: 'Deal Stall Recovery',
-    description: 'Re-engagement playbook for stalled pipeline deals including trigger criteria, outreach templates, and executive sponsor escalation.',
-    source: 'manual',
-    status: 'published',
-    totalSteps: 5,
-    completedSteps: 5,
-    category: 'sales',
-    updatedAgo: '1 week ago',
-    usageCount: 67,
-  },
-  {
-    id: 4,
-    title: 'New Client Onboarding',
-    description: 'Comprehensive onboarding checklist covering kickoff scheduling, access provisioning, training sessions, and 30-day success milestones.',
-    source: 'ai',
-    status: 'draft',
-    totalSteps: 12,
-    completedSteps: 7,
-    category: 'onboarding',
-    updatedAgo: '3 hours ago',
-    usageCount: 24,
-  },
-  {
-    id: 5,
-    title: 'Expense Reimbursement',
-    description: 'Employee expense submission and approval process with receipt requirements, spending limits, and reimbursement timeline.',
-    source: 'manual',
-    status: 'in_review',
-    totalSteps: 7,
-    completedSteps: 7,
-    category: 'finance',
-    updatedAgo: '1 day ago',
-    usageCount: 53,
-  },
-  {
-    id: 6,
-    title: 'Data Breach Response',
-    description: 'Incident response protocol for suspected data breaches including containment, notification, forensics, and regulatory reporting steps.',
-    source: 'ai',
-    status: 'published',
-    totalSteps: 10,
-    completedSteps: 10,
-    category: 'compliance',
-    updatedAgo: '4 days ago',
-    usageCount: 31,
-  },
-];
+/* No hardcoded SOPs -- grid shows generated SOPs or empty state */
 
 const CATEGORY_TABS = [
   { key: 'all', label: 'All SOPs' },
@@ -97,13 +23,14 @@ const CATEGORY_TABS = [
   { key: 'compliance', label: 'Compliance' },
 ];
 
+/* Templates are starter suggestions, not real data */
 const TEMPLATES = [
-  { id: 1, title: 'Employee Onboarding', description: 'New hire onboarding checklist', icon: Users, category: 'Onboarding' },
-  { id: 2, title: 'Quality Assurance', description: 'Product/service quality check', icon: ClipboardList, category: 'Operations' },
-  { id: 3, title: 'Incident Response', description: 'Security incident handling', icon: AlertTriangle, category: 'Compliance' },
-  { id: 4, title: 'Procurement', description: 'Vendor selection and purchase approval', icon: ShoppingCart, category: 'Operations' },
-  { id: 5, title: 'Contract Review', description: 'Legal review checklist', icon: Scale, category: 'Compliance' },
-  { id: 6, title: 'Change Management', description: 'Organizational change process', icon: RefreshCw, category: 'Operations' },
+  { id: 1, title: 'Employee Onboarding', description: 'New hire onboarding checklist', icon: Users, category: 'Onboarding', isTemplate: true },
+  { id: 2, title: 'Quality Assurance', description: 'Product/service quality check', icon: ClipboardList, category: 'Operations', isTemplate: true },
+  { id: 3, title: 'Incident Response', description: 'Security incident handling', icon: AlertTriangle, category: 'Compliance', isTemplate: true },
+  { id: 4, title: 'Procurement', description: 'Vendor selection and purchase approval', icon: ShoppingCart, category: 'Operations', isTemplate: true },
+  { id: 5, title: 'Contract Review', description: 'Legal review checklist', icon: Scale, category: 'Compliance', isTemplate: true },
+  { id: 6, title: 'Change Management', description: 'Organizational change process', icon: RefreshCw, category: 'Operations', isTemplate: true },
 ];
 
 /* ─── Helpers ─── */
@@ -208,10 +135,7 @@ const SOPCard = ({ sop }) => {
         fontSize: 12, color: '#708499',
       }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: fontFamily.body }}>
-          <Clock size={14} /> Updated {sop.updatedAgo}
-        </span>
-        <span style={{ marginLeft: 'auto', fontFamily: fontFamily.body }}>
-          Used {sop.usageCount} times
+          <Clock size={14} /> {sop.updatedAgo ? `Updated ${sop.updatedAgo}` : 'Just created'}
         </span>
       </div>
     </div>
@@ -225,7 +149,7 @@ const TemplateCard = ({ template, onClick }) => {
     <div
       onClick={onClick}
       style={{
-        background: '#0E1628',
+        background: 'var(--surface, #0E1628)',
         border: '1px solid rgba(140,170,210,0.12)',
         borderRadius: 12,
         padding: 16,
@@ -244,12 +168,22 @@ const TemplateCard = ({ template, onClick }) => {
         e.currentTarget.style.boxShadow = 'none';
       }}
     >
-      <div style={{
-        width: 40, height: 40, borderRadius: 10,
-        background: 'rgba(232,93,0,0.12)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <Icon size={20} style={{ color: '#E85D00' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: 10,
+          background: 'rgba(232,93,0,0.12)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Icon size={20} style={{ color: '#E85D00' }} />
+        </div>
+        <span style={{
+          fontSize: 9, fontWeight: 700, fontFamily: fontFamily.mono,
+          padding: '2px 8px', borderRadius: 999,
+          background: 'rgba(140,170,210,0.08)', color: '#708499',
+          letterSpacing: '0.1em', textTransform: 'uppercase',
+        }}>
+          Template
+        </span>
       </div>
       <h4 style={{
         fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600,
@@ -285,7 +219,7 @@ const SOPGenerator = () => {
 
   /* ─── State: new layout features ─── */
   const [activeCategory, setActiveCategory] = useState('all');
-  const [sopCards] = useState(STATIC_SOPS);
+  const [sopCards, setSopCards] = useState([]);
 
   /* Generator form fields */
   const [genTitle, setGenTitle] = useState('');
@@ -348,7 +282,19 @@ const SOPGenerator = () => {
         review_frequency: genFrequency,
         uploaded_file_id: uploadedFile?.id,
       });
-      setResult({ type: 'SOP', content: response.data.sop_content, title: topic });
+      const newSop = { type: 'SOP', content: response.data.sop_content, title: topic };
+      setResult(newSop);
+      setSopCards(prev => [{
+        id: Date.now(),
+        title: topic,
+        description: genDescription || 'AI-generated standard operating procedure.',
+        source: 'ai',
+        status: 'draft',
+        totalSteps: 1,
+        completedSteps: 0,
+        category: (genCategory || 'Custom').toLowerCase(),
+        updatedAgo: null,
+      }, ...prev]);
       toast.success('SOP generated!');
     } catch (error) {
       toast.error('Generation failed');
@@ -577,16 +523,30 @@ const SOPGenerator = () => {
           gap: 20,
           marginBottom: 32,
         }}>
-          {filteredCards.map(sop => (
+          {filteredCards.length > 0 ? filteredCards.map(sop => (
             <SOPCard key={sop.id} sop={sop} />
-          ))}
-          {filteredCards.length === 0 && (
+          )) : (
             <div style={{
               gridColumn: '1 / -1',
-              textAlign: 'center', padding: 48,
-              color: '#708499', fontFamily: fontFamily.body, fontSize: 14,
+              background: 'var(--surface, #0E1628)',
+              border: '1px solid rgba(140,170,210,0.12)',
+              borderRadius: 16,
+              padding: 48,
+              textAlign: 'center',
             }}>
-              No SOPs found in this category.
+              <FileText size={40} style={{ color: '#64748B', margin: '0 auto 16px', display: 'block' }} />
+              <h3 style={{
+                fontFamily: fontFamily.display, fontSize: 18, fontWeight: 600,
+                color: '#EDF1F7', margin: '0 0 8px',
+              }}>
+                No SOPs generated yet
+              </h3>
+              <p style={{
+                fontFamily: fontFamily.body, fontSize: 13, color: '#64748B',
+                maxWidth: 420, margin: '0 auto', lineHeight: 1.6,
+              }}>
+                Create your first SOP using the generator below.
+              </p>
             </div>
           )}
         </div>

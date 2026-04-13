@@ -270,17 +270,22 @@ const BillingPage = () => {
           <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Usage This Period</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { label: 'AI Queries', used: overview?.usage?.ai_queries_used ?? 247, limit: overview?.usage?.ai_queries_limit ?? 500, note: 'Resets 10 May 2026' },
-              { label: 'BoardRoom Sessions', used: overview?.usage?.boardroom_used ?? 18, limit: overview?.usage?.boardroom_limit ?? 30, note: 'Resets 10 May 2026' },
-              { label: 'Report Exports', used: overview?.usage?.exports_used ?? 5, limit: overview?.usage?.exports_limit ?? 20, note: 'Resets 10 May 2026' },
+              { label: 'AI Queries', used: overview?.usage?.ai_queries_used ?? 0, limit: overview?.usage?.ai_queries_limit ?? 500 },
+              { label: 'BoardRoom Sessions', used: overview?.usage?.boardroom_used ?? 0, limit: overview?.usage?.boardroom_limit ?? 30 },
+              { label: 'Report Exports', used: overview?.usage?.exports_used ?? 0, limit: overview?.usage?.exports_limit ?? 20 },
             ].map(m => {
-              const pct = m.limit > 0 ? Math.min((m.used / m.limit) * 100, 100) : 0;
-              const color = meterColor(m.used, m.limit);
+              const hasData = overview?.usage != null;
+              const displayUsed = hasData ? m.used : '--';
+              const displayLimit = hasData ? m.limit : '--';
+              const pct = (hasData && m.limit > 0) ? Math.min((m.used / m.limit) * 100, 100) : 0;
+              const color = hasData ? meterColor(m.used, m.limit) : 'rgba(140,170,210,0.2)';
+              const resetDate = overview?.usage?.period_reset || overview?.subscription?.current_period_end || null;
+              const remaining = hasData ? (m.limit - m.used) : '--';
               return (
                 <Panel key={m.label}>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-semibold" style={{ color: '#EDF1F7' }}>{m.label}</span>
-                    <span className="text-xs" style={{ fontFamily: fontFamily.mono, color: '#8FA0B8' }}>{m.used} / {m.limit}</span>
+                    <span className="text-xs" style={{ fontFamily: fontFamily.mono, color: '#8FA0B8' }}>{displayUsed} / {displayLimit}</span>
                   </div>
                   <div className="rounded-full mb-2 overflow-hidden" style={{ height: '8px', background: 'rgba(140,170,210,0.08)' }}>
                     <div
@@ -288,7 +293,9 @@ const BillingPage = () => {
                       style={{ width: `${pct}%`, background: color, transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
                     />
                   </div>
-                  <span className="text-xs" style={{ color: '#708499' }}>{m.note} · {m.limit - m.used} remaining</span>
+                  <span className="text-xs" style={{ color: '#708499' }}>
+                    {resetDate ? `Resets ${resetDate}` : 'Resets next billing cycle'} · {remaining} remaining
+                  </span>
                 </Panel>
               );
             })}
@@ -299,34 +306,63 @@ const BillingPage = () => {
         <div>
           <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Payment Method</h2>
           <Panel>
-            <div className="flex items-center gap-4 flex-wrap">
-              <div
-                className="w-14 h-9 rounded-md flex items-center justify-center text-white text-[11px] font-bold shrink-0"
-                style={{ background: 'linear-gradient(135deg, #1a1f71, #2b4acb)', letterSpacing: '0.05em' }}
-              >
-                VISA
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>
-                  {'\u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 4291'}
-                </p>
-                <p className="text-xs" style={{ color: '#708499' }}>Expires 08/2028</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7] hover:border-[rgba(140,170,210,0.25)]"
-                  style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}
+            {overview?.payment_method ? (
+              <div className="flex items-center gap-4 flex-wrap">
+                <div
+                  className="w-14 h-9 rounded-md flex items-center justify-center text-white text-[11px] font-bold shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #1a1f71, #2b4acb)', letterSpacing: '0.05em' }}
                 >
-                  Update card
-                </button>
-                <button
-                  className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7] hover:border-[rgba(140,170,210,0.25)]"
-                  style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}
+                  {(overview.payment_method.brand || 'CARD').toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>
+                    {'\u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 '}{overview.payment_method.last4 || '----'}
+                  </p>
+                  {overview.payment_method.exp_month && overview.payment_method.exp_year && (
+                    <p className="text-xs" style={{ color: '#708499' }}>
+                      Expires {String(overview.payment_method.exp_month).padStart(2, '0')}/{overview.payment_method.exp_year}
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7] hover:border-[rgba(140,170,210,0.25)]"
+                    style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}
+                  >
+                    Update card
+                  </button>
+                  <button
+                    className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7] hover:border-[rgba(140,170,210,0.25)]"
+                    style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}
+                  >
+                    Add new
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4 flex-wrap">
+                <div
+                  className="w-14 h-9 rounded-md flex items-center justify-center shrink-0"
+                  style={{ background: 'rgba(140,170,210,0.08)', border: '1px dashed rgba(140,170,210,0.2)' }}
                 >
-                  Add new
+                  <CreditCard className="w-5 h-5" style={{ color: '#708499' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ color: '#8FA0B8' }}>
+                    No payment method on file
+                  </p>
+                  <p className="text-xs" style={{ color: '#708499' }}>
+                    Add a card to enable automatic billing
+                  </p>
+                </div>
+                <button
+                  className="px-3.5 py-1.5 rounded-md text-xs font-semibold transition-colors hover:shadow-lg whitespace-nowrap"
+                  style={{ background: 'linear-gradient(135deg, #E85D00, #FF7A1A)', color: '#FFFFFF', border: 'none' }}
+                >
+                  Add payment method
                 </button>
               </div>
-            </div>
+            )}
           </Panel>
         </div>
 

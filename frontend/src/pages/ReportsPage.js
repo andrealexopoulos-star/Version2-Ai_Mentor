@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
@@ -114,15 +114,7 @@ const ForensicReportCard = () => {
 // Tab definitions matching mockup report-tabs
 const REPORT_TABS = ['All reports', 'Revenue', 'Operations', 'Pipeline', 'Team', 'Scheduled'];
 
-// Report cards with category tags for tab filtering
-const REPORT_CARDS = [
-  { title: 'Morning Brief \u2014 Apr 10', desc: 'Pipeline down 43% this fortnight. Bramwell silent 9 days. Cash runway stable at 4.2 months.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Today, 7:00 AM', metaSub: 'Auto-generated', previewBg: 'linear-gradient(135deg, rgba(232,93,0,0.08), rgba(140,170,210,0.06))', category: 'Revenue' },
-  { title: 'Weekly Revenue Summary', desc: '$26.7K MRR, 8 active deals, 23% close rate. Bookings on track for $29K this month.', type: 'Weekly', typeBg: 'rgba(59,130,246,0.12)', typeColor: '#3B82F6', meta: 'Apr 7', metaSub: 'Every Monday', previewBg: 'rgba(140,170,210,0.06)', category: 'Revenue' },
-  { title: 'Pipeline Health Diagnosis', desc: '2 deals at risk (Bramwell, Meridian), 3 healthy, 3 new. Negotiation bottleneck identified.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Apr 9', metaSub: 'On demand', previewBg: 'rgba(140,170,210,0.06)', category: 'Pipeline' },
-  { title: 'Operations Scorecard', desc: 'Ops score 74 (-3). Lead response healthy. Invoice approval and deal follow-up below target.', type: 'Weekly', typeBg: 'rgba(59,130,246,0.12)', typeColor: '#3B82F6', meta: 'Apr 7', metaSub: 'Every Monday', previewBg: 'rgba(140,170,210,0.06)', category: 'Operations' },
-  { title: 'Team Performance \u2014 Q1 2026', desc: '38 tasks completed this week across 3 team members. Andreas leads but is meeting-overloaded.', type: 'Manual', typeBg: 'rgba(140,170,210,0.08)', typeColor: '#8FA0B8', meta: 'Apr 1', metaSub: 'Quarterly', previewBg: 'rgba(140,170,210,0.06)', category: 'Team' },
-  { title: 'Cash Flow Projection', desc: '4.2 months runway at current $38K/mo burn. Extends to 6.1 months if Bramwell closes.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Apr 8', metaSub: 'Auto-generated', previewBg: 'linear-gradient(135deg, rgba(217,119,6,0.08), rgba(140,170,210,0.06))', category: 'Revenue' },
-];
+// No hardcoded report cards -- grid shows empty state until reports are generated
 
 const ReportsPage = () => {
   const { user } = useSupabaseAuth();
@@ -229,12 +221,7 @@ const ReportsPage = () => {
     }
   }, [integrations, events, avgConfidence]);
 
-  // Filter report cards by active tab
-  const filteredReportCards = useMemo(() => {
-    if (activeTab === 'All reports') return REPORT_CARDS;
-    if (activeTab === 'Scheduled') return REPORT_CARDS.filter(r => r.type === 'Weekly');
-    return REPORT_CARDS.filter(r => r.category === activeTab);
-  }, [activeTab]);
+  // No hardcoded report cards -- empty until real reports are generated
 
   const renderFinancialNullState = () => (
     <Panel>
@@ -296,52 +283,29 @@ const ReportsPage = () => {
           })}
         </div>
 
-        {/* Report Card Grid — mockup reports-grid: auto-fill minmax(300px,1fr), rounded-xl, 24px padding */}
+        {/* Report Card Grid — empty state until reports are generated */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', marginBottom: '32px' }} data-testid="reports-grid">
-          {filteredReportCards.map(r => (
-            <div
-              key={r.title}
-              className="cursor-pointer"
-              style={{
-                background: colors.bgCard,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '16px',
-                overflow: 'hidden',
-                transition: 'border-color 0.15s ease, box-shadow 0.15s ease, transform 0.2s ease',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border; e.currentTarget.style.transform = 'translateY(0)'; }}
-            >
-              {/* Preview area with category badge */}
-              <div className="flex items-center justify-center relative" style={{ height: '140px', background: r.previewBg || colors.bgInput }}>
-                <span style={{
-                  position: 'absolute', top: '12px', left: '12px',
-                  padding: '3px 10px', borderRadius: '999px',
-                  fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em',
-                  fontFamily: fontFamily.mono,
-                  background: r.typeBg, color: r.typeColor,
-                }}>{r.type}</span>
-                <FileText className="w-8 h-8" style={{ color: 'rgba(140,170,210,0.3)' }} />
-              </div>
-              {/* Card body */}
-              <div style={{ padding: '24px' }}>
-                <h3 style={{ fontFamily: fontFamily.display, fontSize: '18px', fontWeight: 600, color: colors.text, marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {r.title}
-                </h3>
-                <p style={{ fontSize: '12px', color: colors.textSecondary, marginBottom: '12px', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {r.desc}
-                </p>
-                <div className="flex items-center gap-3" style={{ fontSize: '11px', color: colors.textMuted, fontFamily: fontFamily.mono }}>
-                  <span>{r.meta}</span>
-                  <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: colors.textMuted }} />
-                  <span>{r.metaSub}</span>
-                </div>
-              </div>
-            </div>
-          ))}
+          <div
+            style={{
+              gridColumn: '1 / -1',
+              background: colors.bgCard,
+              border: `1px solid ${colors.border}`,
+              borderRadius: '16px',
+              padding: '48px 24px',
+              textAlign: 'center',
+            }}
+          >
+            <FileText className="w-10 h-10 mx-auto mb-4" style={{ color: '#64748B' }} />
+            <h3 style={{ fontFamily: fontFamily.display, fontSize: '18px', fontWeight: 600, color: '#EDF1F7', marginBottom: '8px' }}>
+              No reports generated yet
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748B', maxWidth: '420px', margin: '0 auto', lineHeight: 1.6, fontFamily: fontFamily.body }}>
+              Generate your first intelligence report using the buttons above.
+            </p>
+          </div>
         </div>
 
-        {/* Scheduled Reports — mockup sched-card: shown on All/Scheduled tabs */}
+        {/* Scheduled Reports — shown on All/Scheduled tabs */}
         {(activeTab === 'All reports' || activeTab === 'Scheduled') && <div className="rounded-2xl p-6 mb-8" style={{ background: colors.bgCard, border: `1px solid ${colors.border}` }}>
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -350,26 +314,13 @@ const ReportsPage = () => {
             </div>
             <button className="text-xs font-medium" style={{ color: '#8FA0B8' }}>+ Add schedule</button>
           </div>
-          {[
-            { name: 'Morning Brief', detail: 'Sent to andreas@thestrategysquad.com.au at 7:00 AM AEST', freq: 'Daily', on: true },
-            { name: 'Weekly Revenue Summary', detail: 'Generated every Monday at 8:00 AM AEST', freq: 'Weekly', on: true },
-            { name: 'Operations Scorecard', detail: 'Generated every Monday at 8:00 AM AEST', freq: 'Weekly', on: true },
-            { name: 'Cash Flow Alert', detail: 'Triggered when runway drops below 4 months', freq: 'Threshold', on: false },
-          ].map((s, i) => (
-            <div key={s.name} className="flex items-center gap-4 py-4" style={{ borderBottom: i < 3 ? '1px solid rgba(140,170,210,0.08)' : 'none' }}>
-              <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style={{ background: 'rgba(59,130,246,0.1)', color: '#3B82F6' }}>
-                <FileText className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold" style={{ color: '#EDF1F7' }}>{s.name}</p>
-                <p className="text-xs" style={{ color: '#8FA0B8' }}>{s.detail}</p>
-              </div>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-full whitespace-nowrap" style={{ background: 'rgba(140,170,210,0.06)', color: '#708499', fontFamily: fontFamily.mono }}>{s.freq}</span>
-              <div className="w-9 h-5 rounded-full relative cursor-pointer shrink-0" style={{ background: s.on ? '#16A34A' : 'rgba(140,170,210,0.2)' }}>
-                <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all" style={{ left: s.on ? '18px' : '2px' }} />
-              </div>
-            </div>
-          ))}
+          <div className="text-center py-8">
+            <Clock className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
+            <p className="text-sm font-medium mb-1" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>No scheduled reports configured</p>
+            <p className="text-xs" style={{ color: '#64748B', maxWidth: '380px', margin: '0 auto', lineHeight: 1.6, fontFamily: fontFamily.body }}>
+              Set up automated delivery to receive reports on a regular schedule.
+            </p>
+          </div>
         </div>}
 
         {/* ── FORENSIC REPORTS SECTION ── */}

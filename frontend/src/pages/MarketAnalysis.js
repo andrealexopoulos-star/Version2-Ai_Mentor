@@ -77,10 +77,10 @@ const MarketAnalysis = () => {
           {/* KPI Strip */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 32 }}>
             {[
-              { label: 'Market Size', value: result?.market_size ? `$${(result.market_size / 1e9).toFixed(1)}B` : '$2.4B' },
-              { label: 'Market Share', value: result?.market_share ? `${result.market_share}%` : '12%' },
-              { label: 'Growth Rate', value: result?.growth_rate ? `${result.growth_rate}%` : '+18%' },
-              { label: 'Competitors', value: result?.competitor_count || '4' },
+              { label: 'Market Size', value: result?.market_size ? `$${(result.market_size / 1e9).toFixed(1)}B` : '\u2014' },
+              { label: 'Market Share', value: result?.market_share ? `${result.market_share}%` : '\u2014' },
+              { label: 'Growth Rate', value: result?.growth_rate ? `${result.growth_rate}%` : '\u2014' },
+              { label: 'Competitors', value: result?.competitor_count || '\u2014' },
             ].map(kpi => (
               <div key={kpi.label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20 }}>
                 <div style={{ fontFamily: fontFamily.mono, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
@@ -230,12 +230,7 @@ const MarketAnalysis = () => {
           <div style={{ marginTop: 40, marginBottom: 40 }}>
             <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, color: '#EDF1F7', marginBottom: 20 }}>Competitive Landscape</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
-              {[
-                { name: 'Trillion Software', share: '28%', threat: 'high' },
-                { name: 'DataPulse AU', share: '8%', threat: 'medium' },
-                { name: 'InsightFlow', share: '15%', threat: 'medium' },
-                { name: 'SMBlytics', share: '4%', threat: 'low' },
-              ].map(comp => (
+              {result?.competitors?.length > 0 ? result.competitors.map(comp => (
                 <div key={comp.name} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #1a2a44, #2a3a5c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: '#EDF1F7' }}>
                     {comp.name.charAt(0)}
@@ -251,7 +246,14 @@ const MarketAnalysis = () => {
                     {comp.threat} threat
                   </span>
                 </div>
-              ))}
+              )) : (
+                <div style={{ gridColumn: '1 / -1', background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 32, textAlign: 'center' }}>
+                  <Target style={{ width: 32, height: 32, color: 'rgba(237,241,247,0.15)', margin: '0 auto 12px' }} />
+                  <p style={{ fontFamily: fontFamily.body, fontSize: 14, color: '#8FA0B8', lineHeight: 1.6 }}>
+                    Run a market analysis to discover competitor intelligence. Competitor insights will populate here automatically.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -259,11 +261,7 @@ const MarketAnalysis = () => {
           <div style={{ marginBottom: 40 }}>
             <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, color: '#EDF1F7', marginBottom: 20 }}>Market Opportunities</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-              {[
-                { title: 'AU SMB AI Operations', desc: 'No competitor has a cross-domain AI intelligence layer for AU SMBs. First-to-market window: 6-12 months.', impact: 'High' },
-                { title: 'HubSpot Starter/Pro Users', desc: 'HubSpot AI deal scoring is Enterprise-only. 180K+ Starter/Pro users in AU are underserved.', impact: 'High' },
-                { title: 'Compliance-First Buyers', desc: 'New OAIC requirements create compliance urgency. Built-in compliance scoring is a key differentiator.', impact: 'Medium' },
-              ].map(opp => (
+              {result?.opportunities?.length > 0 ? result.opportunities.map(opp => (
                 <div key={opp.title} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <span style={{
                     alignSelf: 'flex-start', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
@@ -282,7 +280,14 @@ const MarketAnalysis = () => {
                     Explore <ArrowUpRight size={14} />
                   </button>
                 </div>
-              ))}
+              )) : (
+                <div style={{ gridColumn: '1 / -1', background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 32, textAlign: 'center' }}>
+                  <TrendingUp style={{ width: 32, height: 32, color: 'rgba(237,241,247,0.15)', margin: '0 auto 12px' }} />
+                  <p style={{ fontFamily: fontFamily.body, fontSize: 14, color: '#8FA0B8', lineHeight: 1.6 }}>
+                    Market opportunities will appear after analysis.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
