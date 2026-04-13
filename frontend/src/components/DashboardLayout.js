@@ -396,11 +396,9 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: 'var(--biqc-text-2)' }} aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'} data-testid="mobile-menu-toggle">
             {isNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: colors.brand }}>
-              <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
-            </div>
-            <span className="font-semibold text-sm hidden sm:block" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)' }}>BIQc</span>
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: '#E85D00', boxShadow: '0 0 8px rgba(232,93,0,0.4)' }} />
+            <span className="font-semibold text-sm" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)' }}>BIQc</span>
           </div>
         </div>
 

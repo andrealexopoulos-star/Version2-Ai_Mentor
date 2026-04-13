@@ -3,7 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
-import { Bell, ChevronDown, ChevronUp, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircle, Plug, ArrowRight, Shield, Download, CheckCheck } from 'lucide-react';
+import { Bell, Search, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircle, Plug, ArrowRight, Shield, Download, CheckCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
@@ -13,10 +13,13 @@ import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 const sevMap = { critical: { color: '#E85D00', label: 'Critical' }, high: { color: '#F97316', label: 'High' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
 
+const sevBorderMap = { critical: '#DC2626', high: '#E85D00', moderate: '#D97706', medium: '#D97706', warning: '#D97706', info: '#64748B', low: '#10B981' };
+const sevPillBg = { critical: 'rgba(220,38,38,0.12)', high: 'rgba(232,93,0,0.12)', moderate: 'rgba(217,119,6,0.12)', medium: 'rgba(217,119,6,0.12)', warning: 'rgba(217,119,6,0.12)', info: 'rgba(100,116,139,0.12)', low: 'rgba(16,185,129,0.12)' };
+
 const AlertItem = ({ alert, onAction }) => {
-  const [open, setOpen] = useState(false);
   const [actioned, setActioned] = useState(null);
   const s = sevMap[alert.severity] || sevMap.info;
+  const borderColor = sevBorderMap[alert.severity] || '#64748B';
 
   const handleAction = async (action) => {
     setActioned(action);
@@ -28,44 +31,71 @@ const AlertItem = ({ alert, onAction }) => {
     }
   };
 
-  if (actioned === 'complete' || actioned === 'ignore') {
-    return (
-      <div className="rounded-lg px-5 py-3 flex items-center gap-3" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)50', opacity: 0.5 }}>
-        {actioned === 'complete' ? <CheckCircle2 className="w-4 h-4 text-[#10B981]" /> : <XCircle className="w-4 h-4 text-[#64748B]" />}
-        <span className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.body }}>{alert.title}</span>
-        <span className="ml-auto text-[10px] px-2 py-0.5 rounded" style={{ color: actioned === 'complete' ? '#10B981' : '#64748B', background: actioned === 'complete' ? '#10B98115' : '#64748B15', fontFamily: fontFamily.mono }}>{actioned}</span>
-      </div>
-    );
-  }
+  const isResolved = actioned === 'complete' || actioned === 'ignore';
 
   return (
-    <div className="rounded-lg overflow-hidden" style={{ background: '#0E1628', border: `1px solid ${s.color}20` }} data-testid={`alert-${alert.id}`}>
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors" data-testid={`alert-toggle-${alert.id}`}>
-        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color, boxShadow: alert.severity === 'critical' || alert.severity === 'high' ? `0 0 10px ${s.color}40` : 'none' }} />
-        <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-[#EDF1F7] block" style={{ fontFamily: fontFamily.display }}>{alert.title}</span>
+    <div
+      className="rounded-lg overflow-hidden mb-3"
+      style={{
+        background: isResolved ? 'var(--surface-2, #121D30)' : 'var(--surface, #0E1628)',
+        border: '1px solid var(--border, rgba(140,170,210,0.15))',
+        borderLeft: `4px solid ${borderColor}`,
+        opacity: isResolved ? 0.55 : 1,
+      }}
+      data-testid={`alert-${alert.id}`}
+    >
+      {/* Header: meta + severity pill + time */}
+      <div className="px-5 pt-4 pb-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full font-semibold" style={{ fontFamily: fontFamily.mono, color: borderColor, background: sevPillBg[alert.severity] || 'rgba(100,116,139,0.12)' }}>{s.label}</span>
+            {alert.source && <span className="text-[10px] px-2 py-0.5 rounded" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-secondary, #8FA0B8)', background: 'var(--surface-2, #121D30)' }}>{alert.source}</span>}
+          </div>
+          <span className="text-[11px] shrink-0" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{alert.time}</span>
         </div>
-        <span className="text-[10px] text-[#64748B] shrink-0" style={{ fontFamily: fontFamily.mono }}>{alert.time}</span>
-        <span className="text-[10px] px-2 py-0.5 rounded uppercase tracking-wider shrink-0" style={{ fontFamily: fontFamily.mono, color: s.color, background: s.color + '15' }}>{s.label}</span>
-        {open ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
-      </button>
-      {open && (
-        <div className="px-5 pb-4 pt-3 space-y-3" style={{ borderTop: '1px solid rgba(140,170,210,0.15)' }}>
-          <div>
-            <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Business Impact</span>
-            <p className="text-sm text-[#8FA0B8] break-words whitespace-pre-wrap">{alert.impact}</p>
-          </div>
-          <div>
-            <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>Recommended Action</span>
-            <p className="text-sm text-[#8FA0B8] break-words whitespace-pre-wrap">{alert.action}</p>
-          </div>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {alert.actions?.includes('email') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630' }} data-testid={`alert-auto-email-${alert.id}`}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
-            {alert.actions?.includes('sms') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130' }} data-testid={`alert-quick-sms-${alert.id}`}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-            {alert.actions?.includes('handoff') && <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#E85D0015', color: '#E85D00', border: '1px solid #E85D0030' }} data-testid={`alert-hand-off-${alert.id}`}><Users className="w-3.5 h-3.5" />Hand Off</button>}
-            <button onClick={() => handleAction('complete')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130' }} data-testid={`alert-complete-${alert.id}`}><CheckCircle2 className="w-3.5 h-3.5" />Complete</button>
-            <button onClick={() => handleAction('ignore')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium" style={{ background: '#64748B15', color: '#64748B', border: '1px solid #64748B30' }} data-testid={`alert-ignore-${alert.id}`}><XCircle className="w-3.5 h-3.5" />Ignore</button>
-          </div>
+        {/* Title */}
+        <h3 className="mt-2" style={{ fontFamily: fontFamily.display, fontSize: '18px', color: isResolved ? 'var(--ink-muted, #708499)' : 'var(--ink-display, #EDF1F7)', lineHeight: 1.2, letterSpacing: '-0.01em', textDecoration: isResolved ? 'line-through' : 'none' }}>
+          {alert.title}
+        </h3>
+        {/* Body text */}
+        {alert.impact && (
+          <p className="mt-1.5 text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>{alert.impact}</p>
+        )}
+      </div>
+
+      {/* Evidence block */}
+      {(alert.evidence || alert.action) && (
+        <div className="mx-5 mt-1 mb-3 px-4 py-3 rounded-lg flex flex-wrap gap-4" style={{ background: 'var(--surface-2, #121D30)' }}>
+          {alert.evidence ? (
+            (Array.isArray(alert.evidence) ? alert.evidence : [{ label: 'Recommended action', value: alert.action }]).map((ev, i) => (
+              <div key={i} className="flex flex-col gap-0.5">
+                <span className="text-[10px] uppercase tracking-wider" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{ev.label}</span>
+                <span className="text-sm font-medium" style={{ fontFamily: fontFamily.body, color: 'var(--ink-display, #EDF1F7)' }}>{ev.value}</span>
+              </div>
+            ))
+          ) : alert.action ? (
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] uppercase tracking-wider" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Recommended action</span>
+              <span className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-display, #EDF1F7)' }}>{alert.action}</span>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* Action buttons — always visible */}
+      {!isResolved && (
+        <div className="px-5 pb-4 flex flex-wrap gap-2">
+          {alert.actions?.includes('email') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:border-[#E85D00] hover:text-[#E85D00]" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))', color: 'var(--ink, #8FA0B8)' }} data-testid={`alert-auto-email-${alert.id}`}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
+          {alert.actions?.includes('sms') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:border-[#E85D00] hover:text-[#E85D00]" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))', color: 'var(--ink, #8FA0B8)' }} data-testid={`alert-quick-sms-${alert.id}`}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
+          {alert.actions?.includes('handoff') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:border-[#E85D00] hover:text-[#E85D00]" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))', color: 'var(--ink, #8FA0B8)' }} data-testid={`alert-hand-off-${alert.id}`}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+          <button onClick={() => handleAction('complete')} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-all hover:brightness-110" style={{ background: '#E85D00', color: 'white', border: '1px solid #E85D00' }} data-testid={`alert-complete-${alert.id}`}><CheckCircle2 className="w-3.5 h-3.5" />Take Action</button>
+          <button onClick={() => handleAction('ignore')} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:text-[var(--ink)]" style={{ background: 'transparent', border: '1px solid transparent', color: 'var(--ink-muted, #708499)' }} data-testid={`alert-ignore-${alert.id}`}><XCircle className="w-3.5 h-3.5" />Dismiss</button>
+        </div>
+      )}
+      {isResolved && (
+        <div className="px-5 pb-3 flex items-center gap-2">
+          {actioned === 'complete' ? <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" /> : <XCircle className="w-3.5 h-3.5 text-[#64748B]" />}
+          <span className="text-[11px] uppercase tracking-wider" style={{ fontFamily: fontFamily.mono, color: actioned === 'complete' ? '#10B981' : '#64748B' }}>{actioned === 'complete' ? 'Resolved' : 'Dismissed'}</span>
         </div>
       )}
     </div>
@@ -229,84 +259,51 @@ const AlertsPageAuth = () => {
           testIdPrefix="alerts-action-ownership"
         />
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[['Critical', critCount, '#E85D00'], ['High', highCount, '#F97316'], ['Moderate', modCount, '#F59E0B'], ['Info', infoCount, '#3B82F6']].map(([l, v, c]) => (
-            <div key={l} className="rounded-lg p-4 text-center" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
-              {loading
-                ? <Loader2 className="w-6 h-6 animate-spin mx-auto mb-1" style={{ color: c }} />
-                : <span className="text-2xl font-bold block" style={{ fontFamily: fontFamily.mono, color: c }}>{v}</span>
-              }
-              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{l}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Critical', value: critCount, color: '#DC2626', bgIcon: 'rgba(220,38,38,0.1)' },
+            { label: 'High', value: highCount, color: '#E85D00', bgIcon: 'rgba(232,93,0,0.1)' },
+            { label: 'Warning', value: modCount, color: '#D97706', bgIcon: 'rgba(217,119,6,0.1)' },
+            { label: 'Resolved', value: infoCount, color: '#16A34A', bgIcon: 'rgba(22,163,74,0.1)' },
+          ].map(({ label, value, color, bgIcon }) => (
+            <div key={label} className="rounded-lg p-5 transition-all hover:-translate-y-0.5" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))' }}>
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: bgIcon }}>
+                  {loading
+                    ? <Loader2 className="w-4 h-4 animate-spin" style={{ color }} />
+                    : <Bell className="w-4 h-4" style={{ color }} />
+                  }
+                </div>
+                <div>
+                  <span className="text-[32px] font-medium block leading-none" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{loading ? '—' : value}</span>
+                  <span className="text-[11px] uppercase tracking-wider mt-1 block" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{label}</span>
+                </div>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Filter + Sort toolbar */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Filter + Search toolbar — mockup: single bar with pills + search */}
+        <div className="flex items-center gap-4 flex-wrap rounded-lg px-4 py-3" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))' }}>
           <div className="flex gap-1.5 flex-wrap">
             {[['all','All'],['critical','Critical'],['high','High'],['moderate','Moderate'],['info','Info']].map(([val,label]) => (
               <button key={val} onClick={() => setFilter(val)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{ background: filter === val ? '#E85D00' : '#0E1628', color: filter === val ? 'white' : '#8FA0B8', border: `1px solid ${filter === val ? '#E85D00' : 'rgba(140,170,210,0.15)'}`, fontFamily: fontFamily.mono }}
+                className="px-3.5 py-1.5 rounded-full text-[11px] uppercase tracking-wider font-medium transition-all"
+                style={{ background: filter === val ? '#E85D00' : 'transparent', color: filter === val ? 'white' : 'var(--ink-secondary, #8FA0B8)', border: `1px solid ${filter === val ? '#E85D00' : 'var(--border, rgba(140,170,210,0.15))'}`, fontFamily: fontFamily.mono }}
                 data-testid={`alerts-filter-${val}`}>
                 {label}
               </button>
             ))}
           </div>
-          <div className="h-4 w-px bg-[rgba(140,170,210,0.15)] hidden sm:block" />
-          <div className="flex gap-1.5 flex-wrap">
-            {[['all','All time'],['today','Today'],['week','This week'],['month','This month']].map(([val,label]) => (
-              <button key={val} onClick={() => setDateRange(val)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{ background: dateRange === val ? 'rgba(140,170,210,0.15)' : 'transparent', color: dateRange === val ? '#EDF1F7' : '#64748B', border: `1px solid ${dateRange === val ? '#334155' : 'transparent'}`, fontFamily: fontFamily.mono }}
-                data-testid={`alerts-date-range-${val}`}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="ml-auto flex items-center gap-1.5">
-            <button
-              onClick={() => {
-                setAlerts(prev => prev.map(a => ({ ...a, read: true })));
-                toast.success('All alerts marked as read');
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-white/5"
-              style={{ background: '#0E1628', color: '#8FA0B8', border: '1px solid rgba(140,170,210,0.15)', fontFamily: fontFamily.mono }}
-              title="Mark all read"
-              data-testid="alerts-mark-all-read">
-              <CheckCheck className="w-3.5 h-3.5" /> Mark all read
-            </button>
-            <button
-              onClick={() => {
-                const data = alerts.map(({ id, severity, title, impact, action, time, created_at }) => ({ id, severity, title, impact, action, time, created_at }));
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `biqc-alerts-${new Date().toISOString().slice(0, 10)}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.success(`Exported ${data.length} alert${data.length !== 1 ? 's' : ''}`);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-white/5"
-              style={{ background: '#0E1628', color: '#8FA0B8', border: '1px solid rgba(140,170,210,0.15)', fontFamily: fontFamily.mono }}
-              title="Export alerts"
-              data-testid="alerts-export">
-              <Download className="w-3.5 h-3.5" /> Export
-            </button>
-            <div className="h-4 w-px bg-[rgba(140,170,210,0.15)]" />
-            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Sort:</span>
-            {[['severity','Severity'],['date','Date']].map(([val,label]) => (
-              <button key={val} onClick={() => setSortBy(val)}
-                className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-all"
-                style={{ background: sortBy === val ? '#E85D0015' : 'transparent', color: sortBy === val ? '#E85D00' : '#64748B', border: `1px solid ${sortBy === val ? '#E85D0030' : 'transparent'}`, fontFamily: fontFamily.mono }}
-                data-testid={`alerts-sort-${val}`}>
-                {label}
-              </button>
-            ))}
-            <button onClick={fetchAlerts} className="ml-1 p-1.5 rounded-lg hover:bg-white/5" title="Refresh" style={{ color: loading ? '#E85D00' : '#64748B' }} data-testid="alerts-refresh-button">
-              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
-            </button>
+          <div className="ml-auto flex items-center gap-2 rounded-lg px-3 py-1.5" style={{ background: 'var(--surface-2, #121D30)', border: '1px solid var(--border, rgba(140,170,210,0.15))', minWidth: 200 }}>
+            <Search className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--ink-muted, #708499)' }} />
+            <input
+              type="text"
+              placeholder="Search alerts..."
+              className="bg-transparent border-0 outline-0 text-[13px] w-full"
+              style={{ fontFamily: fontFamily.body, color: 'var(--ink, #8FA0B8)' }}
+              data-testid="alerts-search-input"
+            />
           </div>
         </div>
 

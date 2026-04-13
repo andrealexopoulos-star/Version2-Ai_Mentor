@@ -399,10 +399,10 @@ const Settings = () => {
           {/* Header */}
           <div className="mb-8">
             <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
-              — Preferences
+              — Settings
             </div>
             <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-              Your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>settings</em>.
+              Your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>account</em>.
             </h1>
             <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
               Manage your account, preferences, and billing
@@ -455,29 +455,43 @@ const Settings = () => {
             </CardContent>
           </Card>
 
-          {/* Settings Navigation — matches mockup 5-section sidebar layout */}
+          {/* Settings Navigation — mockup: 200px left sidebar + 1fr content */}
+          <style>{`.settings-layout { display: grid; grid-template-columns: 200px 1fr; gap: 24px; } @media (max-width: 900px) { .settings-layout { grid-template-columns: 1fr; } .settings-layout .settings-nav { flex-direction: row; flex-wrap: wrap; position: static; } }`}</style>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full mb-8 gap-1">
-              <TabsTrigger value="account" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                <span className="hidden sm:inline">Account</span>
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
-                <Bell className="w-4 h-4" />
-                <span className="hidden sm:inline">Notifications</span>
-              </TabsTrigger>
-              <TabsTrigger value="signals" className="flex items-center gap-2">
-                <Activity className="w-4 h-4" />
-                <span className="hidden sm:inline">Signals</span>
-              </TabsTrigger>
-              <TabsTrigger value="billing" className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4" />
-                <span className="hidden sm:inline">Billing</span>
-              </TabsTrigger>
-              <TabsTrigger value="danger-zone" className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="hidden sm:inline">Danger</span>
-              </TabsTrigger>
+            <div className="settings-layout">
+            {/* Settings Sidebar Nav */}
+            <nav className="settings-nav flex flex-col gap-1 sticky" style={{ top: 'calc(60px + 16px)', alignSelf: 'start' }}>
+              {[
+                { value: 'account', icon: User, label: 'Account' },
+                { value: 'notifications', icon: Bell, label: 'Notifications' },
+                { value: 'signals', icon: Activity, label: 'Signals' },
+                { value: 'billing', icon: CreditCard, label: 'Plan & Billing' },
+                { value: 'danger-zone', icon: AlertTriangle, label: 'Danger Zone' },
+              ].map(({ value, icon: Icon, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setActiveTab(value)}
+                  className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-[13px] transition-all text-left"
+                  style={{
+                    fontFamily: fontFamily.body,
+                    fontWeight: activeTab === value ? 500 : 400,
+                    background: activeTab === value ? 'rgba(232,93,0,0.08)' : 'transparent',
+                    color: activeTab === value ? '#E85D00' : 'var(--ink-secondary, #8FA0B8)',
+                  }}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+            {/* Settings Content */}
+            <div className="min-w-0">
+            <TabsList className="hidden">
+              <TabsTrigger value="account">Account</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
+              <TabsTrigger value="signals">Signals</TabsTrigger>
+              <TabsTrigger value="billing">Billing</TabsTrigger>
+              <TabsTrigger value="danger-zone">Danger</TabsTrigger>
             </TabsList>
 
             {/* ACCOUNT TAB */}
@@ -581,169 +595,11 @@ const Settings = () => {
                     )}
                   </div>
 
-                  {/* Onboarding Section */}
-                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Onboarding</h3>
-                    <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                      Complete your onboarding to help BIQC understand your business better.
-                    </p>
-                    <Button
-                      onClick={() => window.location.href = '/onboarding'}
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <SettingsIcon className="w-4 h-4" />
-                      Complete Onboarding
+                  {/* Save button for account fields */}
+                  <div className="flex justify-end pt-4">
+                    <Button onClick={handleSaveProfile} variant="outline" size="sm" disabled={saving} className="flex items-center gap-2" style={{ borderColor: '#E85D00', color: '#E85D00' }}>
+                      {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save Changes
                     </Button>
-                  </div>
-
-                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Business Profile</h3>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Business Name</Label>
-                          <Input value={profile.business_name || ''} onChange={(e) => updateProfile('business_name', e.target.value)} placeholder="Your Company Name" className="mt-1" />
-                        </div>
-                        <div>
-                          <Label>Industry</Label>
-                          <Input value={profile.industry || ''} onChange={(e) => updateProfile('industry', e.target.value)} placeholder="e.g., Technology" className="mt-1" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>ABN</Label>
-                          <Input value={profile.abn || ''} onChange={(e) => updateProfile('abn', e.target.value)} placeholder="12 345 678 901" className="mt-1" />
-                        </div>
-                        <div>
-                          <Label>Location</Label>
-                          <Input value={profile.location || ''} onChange={(e) => updateProfile('location', e.target.value)} placeholder="City, State" className="mt-1" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Website</Label>
-                          <Input value={profile.website || ''} onChange={(e) => updateProfile('website', e.target.value)} placeholder="www.company.com" className="mt-1" />
-                        </div>
-                        <div>
-                          <Label>Years Operating</Label>
-                          <Input value={profile.years_operating || ''} onChange={(e) => updateProfile('years_operating', e.target.value)} placeholder="e.g., 2-5 years" className="mt-1" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 gap-4">
-                        <div>
-                          <Label>Market Position</Label>
-                          <Input value={profile.market_position || ''} onChange={(e) => updateProfile('market_position', e.target.value)} placeholder="How your business is positioned in the current market" className="mt-1" />
-                        </div>
-                        <div>
-                          <Label>Competitor Intelligence Snapshot</Label>
-                          <Input value={profile.competitor_scan_result || ''} onChange={(e) => updateProfile('competitor_scan_result', e.target.value)} placeholder="Competitor SWOT / SEO / paid / social analysis summary" className="mt-1" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <Label>Business Stage</Label>
-                          <Select value={profile.business_stage || ''} onValueChange={(val) => updateProfile('business_stage', val)}>
-                            <SelectTrigger className="mt-1" data-testid="settings-select-stage">
-                              <SelectValue placeholder="Select stage" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="idea">Idea</SelectItem>
-                              <SelectItem value="startup">Startup</SelectItem>
-                              <SelectItem value="established">Established</SelectItem>
-                              <SelectItem value="enterprise">Enterprise</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>Growth Goals</Label>
-                          <Select value={profile.growth_goals || ''} onValueChange={(val) => updateProfile('growth_goals', val)}>
-                            <SelectTrigger className="mt-1" data-testid="settings-select-growth-goals">
-                              <SelectValue placeholder="Select goal" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="revenue_growth">Revenue Growth</SelectItem>
-                              <SelectItem value="market_expansion">Market Expansion</SelectItem>
-                              <SelectItem value="product_diversification">Product Diversification</SelectItem>
-                              <SelectItem value="operational_efficiency">Operational Efficiency</SelectItem>
-                              <SelectItem value="team_scaling">Team Scaling</SelectItem>
-                              <SelectItem value="profitability">Profitability Focus</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>Risk Profile</Label>
-                          <Select value={profile.risk_profile || ''} onValueChange={(val) => updateProfile('risk_profile', val)}>
-                            <SelectTrigger className="mt-1" data-testid="settings-select-risk-profile">
-                              <SelectValue placeholder="Select profile" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="conservative">Conservative</SelectItem>
-                              <SelectItem value="moderate">Moderate</SelectItem>
-                              <SelectItem value="aggressive">Aggressive</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="flex justify-end pt-2">
-                        <Button onClick={handleSaveProfile} variant="outline" size="sm" disabled={saving}>
-                          {saving ? null : <Save className="w-4 h-4 mr-1" />} Save
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Account Details</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-4 rounded-lg" style={{ background: 'var(--biqc-bg-card)' }}>
-                        <div>
-                          <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Account Type</p>
-                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Your current role and access level</p>
-                        </div>
-                        <span className="badge badge-primary text-xs px-3 py-1 rounded-full"
-                          style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)' }}>
-                          {user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'Business Owner'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center p-4 rounded-lg" style={{ background: 'var(--biqc-bg-card)' }}>
-                        <div>
-                          <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Member Since</p>
-                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Account creation date</p>
-                        </div>
-                        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {memberSince || 'Loading...'}
-                        </span>
-                      </div>
-
-                      {/* Email lock explanation */}
-                      <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Lock className="w-4 h-4" style={{ color: '#64748B' }} />
-                          <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Email Address</p>
-                        </div>
-                        <p className="text-sm mb-1" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
-                        <p className="text-xs" style={{ color: '#64748B' }}>
-                          Your email is managed by your authentication provider (Google or Microsoft) and cannot be changed here.
-                          To change it, update your email in Google or Microsoft account settings, then sign in again.
-                        </p>
-                      </div>
-
-                      {/* Calibration review link */}
-                      <div className="p-4 rounded-lg flex items-center justify-between"
-                        style={{ background: 'rgba(232,93,0,0.04)', border: '1px solid rgba(232,93,0,0.15)' }}>
-                        <div>
-                          <p className="font-medium" style={{ color: 'var(--text-primary)' }}>AI Calibration Answers</p>
-                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Review or update your calibration to refine your AI agent's behaviour</p>
-                        </div>
-                        <Button variant="outline" onClick={() => navigate('/calibration')}
-                          className="flex items-center gap-2 text-sm"
-                          style={{ borderColor: '#E85D00', color: '#E85D00' }}
-                          data-testid="recalibrate-btn">
-                          Review Calibration <ArrowRight className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -999,6 +855,8 @@ const Settings = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+          </div>{/* end settings content */}
+          </div>{/* end settings grid */}
           </Tabs>
         </div>
       </div>

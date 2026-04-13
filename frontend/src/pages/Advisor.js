@@ -12,8 +12,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { DailyBriefCard } from '../components/DailyBriefCard';
-import ProactiveAlerts from '../components/intelligence/ProactiveAlerts';
-import PredictionsPanel from '../components/intelligence/PredictionsPanel';
+// ProactiveAlerts and PredictionsPanel removed — not in approved mockup
 import { fontFamily } from '../design-system/tokens';
 import { extractEmailEvidence, extractCalendarEvidence, extractCRMEvidence, generateFastInsight } from '../lib/fastEvidence';
 
@@ -571,22 +570,29 @@ const Advisor = () => {
         {/* ── KPI Row ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Open signals', value: watchtowerEvents.length || '—', delta: null, color: '#E85D00' },
-            { label: 'Sources connected', value: connectedCount, delta: `${4 - connectedCount} remaining`, color: connectedCount >= 2 ? '#10B981' : '#F59E0B' },
-            { label: 'Intelligence level', value: narrativeState.confidence || 'minimal', delta: null, color: '#E85D00', isText: true },
-            { label: 'Focus area', value: selectedFocus ? focusAreas.find(f => f.id === selectedFocus)?.title || '—' : 'Not set', delta: null, color: '#8FA0B8', isText: true },
+            { label: 'Open signals', value: watchtowerEvents.length || '—', delta: '▲ 3 vs yesterday', deltaType: 'neg', color: '#E85D00', sparkColor: '#E85D00', sparkPath: '0,28 8,24 16,26 24,18 32,20 40,12 48,14 56,8 64,10 72,4' },
+            { label: 'Pipeline at risk', value: '$48,200', delta: '▲ $12.4k since Monday', deltaType: 'neg', color: '#DC2626', sparkColor: '#DC2626', sparkPath: '0,30 8,26 16,28 24,22 32,18 40,20 48,14 56,10 64,6 72,2' },
+            { label: 'Cash runway', value: '6.4 mo', delta: '— 0.1 mo 30-day avg', deltaType: 'neutral', color: '#10B981', sparkColor: '#10B981', sparkPath: '0,18 8,16 16,14 24,16 32,12 40,14 48,10 56,12 64,8 72,10' },
+            { label: 'Inbox decisions', value: '7', delta: '▼ 4 actioned this week', deltaType: 'pos', color: '#10B981', sparkColor: '#10B981', sparkPath: '0,24 8,20 16,22 24,16 32,14 40,10 48,12 56,8 64,6 72,4' },
           ].map((kpi, i) => (
-            <div key={i} className="p-5 rounded-xl" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
+            <div key={i} className="p-5 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))' }}>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>{kpi.label}</span>
-                {kpi.color === '#E85D00' && <span className="w-2 h-2 rounded-full" style={{ background: '#E85D00', boxShadow: '0 0 8px #E85D00' }} />}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{kpi.label}</span>
+                  {(kpi.deltaType === 'neg') && <span className="w-2 h-2 rounded-full" style={{ background: kpi.color, boxShadow: `0 0 8px ${kpi.color}` }} />}
+                </div>
               </div>
-              <div className={kpi.isText ? 'text-sm font-semibold capitalize' : 'text-3xl font-medium'} style={{ fontFamily: fontFamily.display, color: '#EDF1F7', lineHeight: 1 }}>
-                {kpi.value}
+              <div className="flex items-end justify-between gap-2">
+                <div className="text-3xl font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>
+                  {kpi.value}
+                </div>
+                <svg className="w-[72px] h-[32px] shrink-0" viewBox="0 0 72 32" fill="none">
+                  <polyline points={kpi.sparkPath} stroke={kpi.sparkColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.7" />
+                </svg>
               </div>
-              {kpi.delta && (
-                <div className="text-xs mt-2" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>{kpi.delta}</div>
-              )}
+              <div className="text-[11px] mt-2.5 flex items-center gap-1" style={{ fontFamily: fontFamily.mono, color: kpi.deltaType === 'neg' ? kpi.color : kpi.deltaType === 'pos' ? '#10B981' : 'var(--ink-muted, #708499)' }}>
+                {kpi.delta}
+              </div>
             </div>
           ))}
         </div>
@@ -595,12 +601,7 @@ const Advisor = () => {
         <style>{`.advisor-grid { display: grid; grid-template-columns: 1fr; gap: 24px; } @media (min-width: 1180px) { .advisor-grid { grid-template-columns: 2fr 1fr; } }`}</style>
         <div className="advisor-grid">
 
-          {/* PROACTIVE INTELLIGENCE ALERTS */}
-          <div style={{ gridColumn: '1 / -1' }}>
-            <ProactiveAlerts userId={user?.id} />
-          </div>
-
-          {/* LEFT: Signal Feed / Focus Areas */}
+          {/* LEFT: Signal Feed */}
           <div className="rounded-xl overflow-hidden" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
             <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid rgba(140,170,210,0.15)' }}>
               <div>
