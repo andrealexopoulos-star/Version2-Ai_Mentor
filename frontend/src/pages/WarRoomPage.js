@@ -180,7 +180,7 @@ function AlertCard({ alert, isSelected, onClick }) {
         style={{
           fontSize: '13px',
           fontWeight: 600,
-          color: '#EDF1F7',
+          color: 'var(--ink-display, #EDF1F7)',
           lineHeight: 1.35,
           marginBottom: '4px',
           margin: 0,
@@ -191,7 +191,7 @@ function AlertCard({ alert, isSelected, onClick }) {
       </h4>
 
       {/* Source + timestamp */}
-      <div style={{ fontSize: '11px', color: '#708499', marginBottom: '4px' }}>
+      <div style={{ fontSize: '11px', color: 'var(--ink-muted, #708499)', marginBottom: '4px' }}>
         {alert.source} &middot; {alert.timestamp}
       </div>
 
@@ -199,7 +199,7 @@ function AlertCard({ alert, isSelected, onClick }) {
       <p
         style={{
           fontSize: '11px',
-          color: '#8FA0B8',
+          color: 'var(--ink-secondary, #8FA0B8)',
           lineHeight: 1.4,
           margin: 0,
           display: '-webkit-box',
@@ -229,8 +229,8 @@ function ConsoleEmptyState() {
         padding: '40px',
       }}
     >
-      <AlertTriangle size={40} style={{ color: '#708499', opacity: 0.4 }} />
-      <p style={{ fontSize: '15px', color: '#708499', textAlign: 'center', maxWidth: '320px', lineHeight: 1.5 }}>
+      <AlertTriangle size={40} style={{ color: 'var(--ink-muted, #708499)', opacity: 0.4 }} />
+      <p style={{ fontSize: '15px', color: 'var(--ink-muted, #708499)', textAlign: 'center', maxWidth: '320px', lineHeight: 1.5 }}>
         Select an alert to begin crisis analysis
       </p>
     </div>
@@ -283,6 +283,7 @@ export default function WarRoomPage() {
 
           {/* ── LEFT PANEL: Active Alerts ── */}
           <div
+            className="war-room-sidebar"
             style={{
               width: '350px',
               flexShrink: 0,
@@ -290,7 +291,7 @@ export default function WarRoomPage() {
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              background: '#0E1628',
+              background: 'var(--surface, #0E1628)',
             }}
           >
             {/* Header */}
@@ -305,7 +306,7 @@ export default function WarRoomPage() {
                   fontSize: '18px',
                   fontFamily: fontFamily.display,
                   fontWeight: 600,
-                  color: '#EDF1F7',
+                  color: 'var(--ink-display, #EDF1F7)',
                   margin: 0,
                   marginBottom: '12px',
                 }}
@@ -320,7 +321,7 @@ export default function WarRoomPage() {
                   const isCritical = tab === 'Critical';
                   let bg = 'transparent';
                   let borderColor = 'rgba(140,170,210,0.15)';
-                  let textColor = '#708499';
+                  let textColor = 'var(--ink-muted, #708499)';
                   if (isActive && isCritical) {
                     bg = '#DC2626';
                     borderColor = '#DC2626';
@@ -361,15 +362,15 @@ export default function WarRoomPage() {
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
               {alertsLoading && filteredAlerts.length === 0 && (
                 <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '13px', color: '#708499', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: '13px', color: 'var(--ink-muted, #708499)', lineHeight: 1.5 }}>
                     Loading alerts...
                   </p>
                 </div>
               )}
               {!alertsLoading && filteredAlerts.length === 0 && (
                 <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-                  <AlertTriangle size={28} style={{ color: '#708499', opacity: 0.35, marginBottom: '12px' }} />
-                  <p style={{ fontSize: '13px', color: '#708499', lineHeight: 1.5, maxWidth: '260px', margin: '0 auto' }}>
+                  <AlertTriangle size={28} style={{ color: 'var(--ink-muted, #708499)', opacity: 0.35, marginBottom: '12px' }} />
+                  <p style={{ fontSize: '13px', color: 'var(--ink-muted, #708499)', lineHeight: 1.5, maxWidth: '260px', margin: '0 auto' }}>
                     No active alerts. Crisis signals will appear here when detected by BIQc monitoring.
                   </p>
                 </div>
@@ -393,7 +394,7 @@ export default function WarRoomPage() {
                 alignItems: 'center',
                 gap: '8px',
                 fontSize: '11px',
-                color: '#708499',
+                color: 'var(--ink-muted, #708499)',
               }}
             >
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', animation: 'warRoomPulse 2s ease-in-out infinite', flexShrink: 0 }} />
@@ -408,7 +409,7 @@ export default function WarRoomPage() {
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              background: '#0E1628',
+              background: 'var(--surface, #0E1628)',
             }}
           >
             {/* Console header — selected alert info */}
@@ -428,7 +429,7 @@ export default function WarRoomPage() {
                     fontSize: '20px',
                     fontFamily: fontFamily.display,
                     fontWeight: 600,
-                    color: '#EDF1F7',
+                    color: 'var(--ink-display, #EDF1F7)',
                     margin: 0,
                   }}
                 >
@@ -443,7 +444,7 @@ export default function WarRoomPage() {
                       textTransform: 'uppercase',
                       padding: '3px 10px',
                       borderRadius: '9999px',
-                      background: SEVERITY_COLORS[selectedAlert.severity] || '#708499',
+                      background: SEVERITY_COLORS[selectedAlert.severity] || 'var(--ink-muted, #708499)',
                       color: '#FFFFFF',
                       whiteSpace: 'nowrap',
                       fontFamily: fontFamily.mono,
@@ -535,8 +536,7 @@ export default function WarRoomPage() {
             50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(220,38,38,0); }
           }
           @media (max-width: 900px) {
-            .war-room-left-panel { display: none !important; }
-            .war-room-layout { grid-template-columns: 1fr !important; }
+            .war-room-sidebar { display: none !important; }
           }
         `}</style>
       </div>

@@ -111,7 +111,7 @@ const CalibrationPreview = () => {
         <span className="text-[10px] text-[#64748B] mr-1 shrink-0" style={{ fontFamily: fontFamily.mono }}>Screen:</span>
         {SCREENS.map(s => (
           <button key={s} onClick={() => setScreen(s)} className="px-2 py-1 rounded text-[10px] font-medium shrink-0"
-            style={{ background: screen === s ? '#E85D00' : '#0E1628', color: screen === s ? 'white' : '#64748B', border: `1px solid ${screen === s ? '#E85D00' : 'rgba(140,170,210,0.15)'}` }}>
+            style={{ background: screen === s ? '#E85D00' : 'var(--surface, #0E1628)', color: screen === s ? 'white' : '#64748B', border: `1px solid ${screen === s ? '#E85D00' : 'rgba(140,170,210,0.15)'}` }}>
             {s}
           </button>
         ))}

@@ -22,7 +22,7 @@ const FEED_TYPES = [
 const SENTIMENT_COLORS = {
   positive: '#22C55E',
   negative: '#EF4444',
-  neutral:  '#708499',
+  neutral:  'var(--ink-muted, #708499)',
   mixed:    '#F59E0B',
 };
 
@@ -70,7 +70,7 @@ const ExternalIntelFeed = () => {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all"
               style={{
                 background: isActive ? `${type.color}15` : 'transparent',
-                color: isActive ? type.color : '#708499',
+                color: isActive ? type.color : 'var(--ink-muted, #708499)',
                 border: isActive ? `1px solid ${type.color}30` : '1px solid transparent',
                 fontFamily: fontFamily.mono,
               }}
@@ -89,8 +89,8 @@ const ExternalIntelFeed = () => {
 
       {filteredFeed.length === 0 ? (
         <div className="text-center py-10">
-          <Newspaper className="w-8 h-8 mx-auto mb-2" style={{ color: '#708499' }} />
-          <p className="text-sm" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+          <Newspaper className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--ink-muted, #708499)' }} />
+          <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
             No external intelligence signals yet. Data populates as the system monitors your industry.
           </p>
         </div>
@@ -111,25 +111,25 @@ const ExternalIntelFeed = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-sm font-medium truncate" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
+                    <span className="text-sm font-medium truncate" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
                       {item.title || item.headline || item.indicator_name || 'Signal'}
                     </span>
                     {item.sentiment && (
                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: sentimentColor }} />
                     )}
                   </div>
-                  <p className="text-xs truncate" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+                  <p className="text-xs truncate" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
                     {item.summary || item.description || item.content || item.impact_narrative || ''}
                   </p>
                   <div className="flex items-center gap-3 mt-1.5">
                     {item.source_name && (
-                      <span className="text-[10px]" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                      <span className="text-[10px]" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                         {item.source_name}
                       </span>
                     )}
                     {item.severity && (
                       <span className="text-[10px] uppercase px-1.5 py-0.5 rounded"
-                        style={{ background: item.severity === 'critical' ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.04)', color: item.severity === 'critical' ? '#EF4444' : '#708499', fontFamily: fontFamily.mono }}>
+                        style={{ background: item.severity === 'critical' ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.04)', color: item.severity === 'critical' ? '#EF4444' : 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                         {item.severity}
                       </span>
                     )}
@@ -139,7 +139,7 @@ const ExternalIntelFeed = () => {
                   <a href={item.source_url} target="_blank" rel="noopener noreferrer"
                     className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 hover:bg-white/5"
                     onClick={e => e.stopPropagation()}>
-                    <ExternalLink className="w-3 h-3" style={{ color: '#708499' }} />
+                    <ExternalLink className="w-3 h-3" style={{ color: 'var(--ink-muted, #708499)' }} />
                   </a>
                 )}
               </div>

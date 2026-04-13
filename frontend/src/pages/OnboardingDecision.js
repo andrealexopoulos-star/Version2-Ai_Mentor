@@ -96,11 +96,11 @@ const OnboardingDecision = () => {
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-6">
-        <Link to="/" className="flex items-center gap-3" style={{ color: '#EDF1F7', textDecoration: 'none' }}>
+        <Link to="/" className="flex items-center gap-3" style={{ color: 'var(--ink-display, #EDF1F7)', textDecoration: 'none' }}>
           <span className="inline-block rounded-full" style={{ width: 10, height: 10, background: '#E85D00', boxShadow: '0 0 16px #E85D00' }} />
           <span className="text-[22px] font-semibold" style={{ fontFamily: DISPLAY }}>BIQc</span>
         </Link>
-        <div className="flex items-center gap-3" style={{ fontFamily: fontFamily.mono, fontSize: 11, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <div className="flex items-center gap-3" style={{ fontFamily: fontFamily.mono, fontSize: 11, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           <span className="w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: '#E85D00' }}>1</span>
           <span>Step 1 of 4 · Pick your path</span>
         </div>
@@ -111,10 +111,10 @@ const OnboardingDecision = () => {
         {/* Header */}
         <div className="text-center max-w-[700px] mx-auto mb-12">
           <div className="text-[11px] uppercase tracking-[0.08em] mb-3" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Welcome to BIQc</div>
-          <h1 className="font-medium mb-4" style={{ fontFamily: DISPLAY, color: '#EDF1F7', fontSize: 'clamp(2.5rem, 5vw, 4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+          <h1 className="font-medium mb-4" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(2.5rem, 5vw, 4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
             How would you like to <em style={{ fontStyle: 'italic', color: '#E85D00' }}>get started</em>?
           </h1>
-          <p className="text-lg leading-relaxed max-w-[580px] mx-auto" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+          <p className="text-lg leading-relaxed max-w-[580px] mx-auto" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
             You're three minutes away from your first quiet feed. Pick the path that fits you — you can switch later.
           </p>
         </div>
@@ -127,7 +127,7 @@ const OnboardingDecision = () => {
               onClick={path.onClick}
               className="path-card-btn relative rounded-2xl p-7 flex flex-col text-left cursor-pointer group"
               style={{
-                background: path.recommended ? 'linear-gradient(180deg, #0E1628 0%, rgba(232,93,0,0.06) 200%)' : '#0E1628',
+                background: path.recommended ? 'linear-gradient(180deg, var(--surface, #0E1628) 0%, rgba(232,93,0,0.06) 200%)' : 'var(--surface, #0E1628)',
                 border: `1px solid ${path.recommended ? '#E85D00' : 'rgba(140,170,210,0.12)'}`,
                 boxShadow: path.recommended ? '0 8px 32px rgba(0,0,0,0.3)' : '0 4px 16px rgba(0,0,0,0.2)',
               }}
@@ -142,13 +142,13 @@ const OnboardingDecision = () => {
                 {path.icon}
               </div>
 
-              <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>{path.time}</div>
-              <h3 className="text-[28px] font-medium mb-3" style={{ fontFamily: DISPLAY, color: '#EDF1F7', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{path.title}</h3>
-              <p className="text-sm leading-relaxed mb-6" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>{path.desc}</p>
+              <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{path.time}</div>
+              <h3 className="text-[28px] font-medium mb-3" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{path.title}</h3>
+              <p className="text-sm leading-relaxed mb-6" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>{path.desc}</p>
 
               <div className="flex flex-col gap-3 flex-1">
                 {path.features.map((feat, j) => (
-                  <div key={j} className="flex items-start gap-3 text-sm" style={{ color: '#EDF1F7' }}>
+                  <div key={j} className="flex items-start gap-3 text-sm" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
                     <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(232,93,0,0.12)', color: '#E85D00' }}>
                       <Check className="w-2.5 h-2.5" strokeWidth={3} />
                     </div>
@@ -159,7 +159,7 @@ const OnboardingDecision = () => {
 
               <div className={`path-cta mt-6 w-full text-center py-3 rounded-xl text-sm font-semibold ${path.primary ? 'path-cta-primary' : 'path-cta-secondary'}`} style={{
                 background: path.primary ? '#E85D00' : 'transparent',
-                color: path.primary ? 'white' : '#EDF1F7',
+                color: path.primary ? 'white' : 'var(--ink-display, #EDF1F7)',
                 border: path.primary ? 'none' : '1px solid rgba(140,170,210,0.12)',
                 fontFamily: fontFamily.body,
               }}>
@@ -170,7 +170,7 @@ const OnboardingDecision = () => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-12 text-sm" style={{ color: '#708499', fontFamily: fontFamily.body }}>
+        <div className="text-center mt-12 text-sm" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
           Not ready?{' '}
           <button onClick={handleDefer} className="font-medium" style={{ color: '#E85D00', background: 'none', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}>
             Skip and explore the demo →

@@ -28,11 +28,48 @@ const RevenuePage = () => {
   const [deals, setDeals] = useState(null);
   const [financials, setFinancials] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [syncProgress, setSyncProgress] = useState(0);
   const [activeTab, setActiveTab] = useState('pipeline');
   const [sqlScenarios, setSqlScenarios] = useState(null);
   const [unified, setUnified] = useState(null);
   const { status: integrationStatus, loading: integrationLoading, syncing: integrationSyncing, refresh: refreshIntegrations } = useIntegrationStatus();
+
+  const fetchRevenueData = async () => {
+    setSyncProgress(10);
+    setFetchError(null);
+    setLoading(true);
+    try {
+      setSyncProgress(30);
+      const [dealsRes, finRes, scenRes, unifiedRes, cognitionRes] = await Promise.allSettled([
+        apiClient.get('/integrations/crm/deals', { timeout: 20000 }),
+        apiClient.get('/integrations/accounting/summary', { timeout: 20000 }),
+        apiClient.get('/intelligence/scenarios', { timeout: 20000 }),
+        apiClient.get('/unified/revenue', { timeout: 20000 }),
+        apiClient.get('/cognition/revenue', { timeout: 20000 }),
+      ]);
+      setSyncProgress(80);
+      if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
+        setDeals(dealsRes.value.data.results);
+      }
+      if (finRes.status === 'fulfilled' && finRes.value.data?.connected) {
+        setFinancials(finRes.value.data);
+      }
+      if (scenRes.status === 'fulfilled' && scenRes.value.data?.has_data) {
+        setSqlScenarios(scenRes.value.data);
+      }
+      if (unifiedRes.status === 'fulfilled' && unifiedRes.value.data) {
+        setUnified(unifiedRes.value.data);
+      }
+      if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
+        setUnified(prev => ({ ...prev, ...cognitionRes.value.data }));
+      }
+      setSyncProgress(100);
+    } catch (err) {
+      console.error('[RevenuePage] fetch failed:', err);
+      setFetchError(err.message || 'Failed to load data');
+    } finally { setLoading(false); setSyncProgress(100); }
+  };
 
   useEffect(() => {
     if (authState === AUTH_STATE.LOADING && !session?.access_token) return;
@@ -40,37 +77,7 @@ const RevenuePage = () => {
       setLoading(false);
       return;
     }
-    const fetchData = async () => {
-      setSyncProgress(10);
-      try {
-        setSyncProgress(30);
-        const [dealsRes, finRes, scenRes, unifiedRes, cognitionRes] = await Promise.allSettled([
-          apiClient.get('/integrations/crm/deals', { timeout: 20000 }),
-          apiClient.get('/integrations/accounting/summary', { timeout: 20000 }),
-          apiClient.get('/intelligence/scenarios', { timeout: 20000 }),
-          apiClient.get('/unified/revenue', { timeout: 20000 }),
-          apiClient.get('/cognition/revenue', { timeout: 20000 }),
-        ]);
-        setSyncProgress(80);
-        if (dealsRes.status === 'fulfilled' && dealsRes.value.data?.results?.length > 0) {
-          setDeals(dealsRes.value.data.results);
-        }
-        if (finRes.status === 'fulfilled' && finRes.value.data?.connected) {
-          setFinancials(finRes.value.data);
-        }
-        if (scenRes.status === 'fulfilled' && scenRes.value.data?.has_data) {
-          setSqlScenarios(scenRes.value.data);
-        }
-        if (unifiedRes.status === 'fulfilled' && unifiedRes.value.data) {
-          setUnified(unifiedRes.value.data);
-        }
-        if (cognitionRes.status === 'fulfilled' && cognitionRes.value.data && cognitionRes.value.data.status !== 'MIGRATION_REQUIRED') {
-          setUnified(prev => ({ ...prev, ...cognitionRes.value.data }));
-        }
-        setSyncProgress(100);
-      } catch {} finally { setLoading(false); setSyncProgress(100); }
-    };
-    fetchData();
+    fetchRevenueData();
   }, [session?.access_token, authState]);
 
   // Get integration timestamps
@@ -216,7 +223,7 @@ const RevenuePage = () => {
         {/* Header with connection status badges */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Revenue.</h1>
+            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Revenue.</h1>
             <p className="text-sm text-[#8FA0B8] mb-2" style={{ fontFamily: fontFamily.body }}>Pipeline, bookings, and deal health — all in one view.</p>
             {(crmConnected || accountingConnected) && (
               <LineageBadge
@@ -229,7 +236,7 @@ const RevenuePage = () => {
             <div className="flex flex-wrap items-center gap-2">
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: '#8FA0B8', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(100,116,139,0.12)', color: 'var(--ink-secondary, #8FA0B8)', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying CRM
                 </span>
               ) : crmConnected ? (
@@ -249,7 +256,7 @@ const RevenuePage = () => {
               )}
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: '#8FA0B8', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(100,116,139,0.12)', color: 'var(--ink-secondary, #8FA0B8)', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying Accounting
                 </span>
               ) : accountingConnected ? (
@@ -272,6 +279,25 @@ const RevenuePage = () => {
           <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
 
+        {fetchError && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+            background: 'rgba(232, 93, 0, 0.08)', border: '1px solid rgba(232, 93, 0, 0.2)',
+            borderRadius: 12, marginBottom: 16,
+            fontFamily: "'Inter', sans-serif", fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)',
+          }}>
+            <span style={{ color: 'var(--lava, #E85D00)' }}>{'\u26A0'}</span>
+            <span style={{ flex: 1 }}>{fetchError}</span>
+            <button
+              onClick={() => { setFetchError(null); fetchRevenueData(); }}
+              style={{
+                background: 'var(--lava, #E85D00)', color: 'white', border: 'none',
+                padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              }}
+            >Retry</button>
+          </div>
+        )}
+
         {/* KPI Strip */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 32 }}>
           {[
@@ -285,7 +311,7 @@ const RevenuePage = () => {
               <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
               <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>{kpi.value}</div>
               {kpi.delta != null && (
-                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, color: (kpi.invert ? kpi.delta < 0 : kpi.delta > 0) ? '#10B981' : kpi.delta < 0 ? '#EF4444' : '#708499' }}>
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, color: (kpi.invert ? kpi.delta < 0 : kpi.delta > 0) ? '#10B981' : kpi.delta < 0 ? '#EF4444' : 'var(--ink-muted, #708499)' }}>
                   {kpi.delta > 0 ? '\u2191' : kpi.delta < 0 ? '\u2193' : '\u2192'} {Math.abs(kpi.delta)}%
                 </div>
               )}
@@ -464,7 +490,7 @@ const RevenuePage = () => {
                             <YAxis tick={{ fontSize: 10, fill: '#64748B', fontFamily: fontFamily.mono }} axisLine={false} tickLine={false} tickFormatter={v => `$${Math.round(v / 1000)}K`} width={45} />
                             <Tooltip
                               contentStyle={{ background: '#1A2332', border: '1px solid rgba(100,116,139,0.3)', borderRadius: 8, fontSize: 12, fontFamily: fontFamily.mono }}
-                              labelStyle={{ color: '#8FA0B8' }}
+                              labelStyle={{ color: 'var(--ink-secondary, #8FA0B8)' }}
                               itemStyle={{ color: '#E85D00' }}
                               formatter={(v) => [`$${v.toLocaleString()}`, 'MRR']}
                             />

@@ -6,10 +6,10 @@ import { fontFamily } from '../../../../design-system/tokens';
 
 // Shared components for all industry pages
 export const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>{children}</div>
 );
 
-export const MetricCard = ({ label, value, sub, color = '#EDF1F7', alert = false }) => (
+export const MetricCard = ({ label, value, sub, color = 'var(--ink-display, #EDF1F7)', alert = false }) => (
   <div className="p-4 rounded-lg" style={{ background: '#0F1720', border: `1px solid ${alert ? '#E85D00' + '40' : 'rgba(140,170,210,0.15)'}` }}>
     <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1" style={{ fontFamily: fontFamily.mono }}>{label}</span>
     <span className="text-xl font-bold block" style={{ fontFamily: fontFamily.mono, color }}>{value}</span>
@@ -35,7 +35,7 @@ export const Inevitability = ({ title, why, impact, window: w, severity = 'high'
   const sevC = { high: '#E85D00', medium: '#F59E0B', low: '#3B82F6' };
   const c = sevC[severity];
   return (
-    <div className="rounded-lg overflow-hidden" style={{ background: '#0E1628', border: `1px solid ${c}20` }}>
+    <div className="rounded-lg overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: `1px solid ${c}20` }}>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left">
         <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c, boxShadow: `0 0 8px ${c}50` }} />
         <span className="text-sm font-medium text-[#EDF1F7] flex-1" style={{ fontFamily: fontFamily.display }}>{title}</span>
@@ -80,7 +80,7 @@ export const HeatBar = ({ label, value, max = 100, color = '#E85D00', suffix = '
   <div className="mb-3">
     <div className="flex justify-between mb-1">
       <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{label}</span>
-      <span className="text-xs font-semibold" style={{ fontFamily: fontFamily.mono, color: alert ? '#E85D00' : '#EDF1F7' }}>{value}{suffix}</span>
+      <span className="text-xs font-semibold" style={{ fontFamily: fontFamily.mono, color: alert ? '#E85D00' : 'var(--ink-display, #EDF1F7)' }}>{value}{suffix}</span>
     </div>
     <div className="h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.15)' }}>
       <div className="h-1.5 rounded-full" style={{ width: `${Math.min((value / max) * 100, 100)}%`, background: color }} />

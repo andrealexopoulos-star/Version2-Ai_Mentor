@@ -19,7 +19,7 @@ const AlertItem = ({ alert }) => {
   const sevMap = { critical: { color: '#E85D00', label: 'Critical' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Informational' } };
   const s = sevMap[alert.severity];
   return (
-    <div className="rounded-lg overflow-hidden" style={{ background: '#0E1628', border: `1px solid ${s.color}20` }}>
+    <div className="rounded-lg overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: `1px solid ${s.color}20` }}>
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color, boxShadow: alert.severity === 'critical' ? `0 0 10px ${s.color}40` : 'none' }} />
         <div className="flex-1 min-w-0">
@@ -60,7 +60,7 @@ const AlertsPage = () => {
         {/* Summary */}
         <div className="flex gap-4">
           {[{ label: 'Critical', count: counts.critical, color: '#E85D00' }, { label: 'Moderate', count: counts.moderate, color: '#F59E0B' }, { label: 'Info', count: counts.info, color: '#3B82F6' }].map(s => (
-            <div key={s.label} className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
+            <div key={s.label} className="flex items-center gap-2 px-4 py-2.5 rounded-lg" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>
               <div className="w-2 h-2 rounded-full" style={{ background: s.color }} />
               <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>{s.label}</span>
               <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{s.count}</span>

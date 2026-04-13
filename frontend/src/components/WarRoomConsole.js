@@ -359,7 +359,7 @@ export function WarRoomConsoleBody({
 
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
             <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="p-6 rounded-2xl border" style={{ borderColor: colors.border, background: colors.bgCard, boxShadow: shadow.card }} aria-label="War room briefing card">
-              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Strategic <em style={{ fontStyle: 'italic', color: '#E85D00' }}>console</em>.</h1>
+              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Strategic <em style={{ fontStyle: 'italic', color: '#E85D00' }}>console</em>.</h1>
               <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
                 {c.executive_memo || (connectedSystems.length
                   ? `BIQc can see ${connectedSystems.join(', ')} signals. Ask your highest-stakes question now.`

@@ -149,7 +149,7 @@ export const ProactiveInsightBubble = () => {
                     · {insight.source}
                   </span>
                 </div>
-                <p className="text-sm font-semibold leading-snug" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
+                <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
                   {insight.title}
                 </p>
               </div>
@@ -162,7 +162,7 @@ export const ProactiveInsightBubble = () => {
 
           {/* Message */}
           <p className="text-xs leading-relaxed mb-3"
-            style={{ color: '#8FA0B8', fontFamily: fontFamily.body, marginLeft: 44 }}>
+            style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body, marginLeft: 44 }}>
             {insight.message}
           </p>
 

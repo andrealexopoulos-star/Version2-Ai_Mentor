@@ -608,6 +608,11 @@ const CalendarView = () => {
                 grid-template-columns: 1fr !important;
               }
             }
+            @media (max-width: 768px) {
+              .calendar-week-layout {
+                grid-template-columns: 1fr !important;
+              }
+            }
           `}</style>
           </>
         )}

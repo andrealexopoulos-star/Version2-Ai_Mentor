@@ -1804,7 +1804,7 @@ export default function AdvisorWatchtower() {
                 — Watchtower · {greetingDateTime}
               </div>
               <div className="flex flex-wrap items-end gap-3" data-testid="advisor-header-title-row">
-                <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="advisor-header-title">
+                <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="advisor-header-title">
                   Good {displayTimeOfDay}, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>{displayName}</em>.
                 </h1>
               </div>

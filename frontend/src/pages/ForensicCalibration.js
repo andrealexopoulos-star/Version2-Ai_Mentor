@@ -15,13 +15,13 @@ import { fontFamily } from '../design-system/tokens';
 /*  Design tokens (inline — keeps file portable)  */
 /* ────────────────────────────────────────────── */
 const C = {
-  surface:    '#0E1628',
+  surface:    'var(--surface, #0E1628)',
   border:     'rgba(140,170,210,0.12)',
   borderStrong: 'rgba(140,170,210,0.22)',
   surfaceSunken: 'rgba(140,170,210,0.06)',
   ink:        '#EDF1F7',
   inkSecondary: '#8FA0B8',
-  inkMuted:   '#708499',
+  inkMuted:   'var(--ink-muted, #708499)',
   lava:       '#E85D00',
   lavaWarm:   '#FF6A00',
   lavaDeep:   '#C44D00',

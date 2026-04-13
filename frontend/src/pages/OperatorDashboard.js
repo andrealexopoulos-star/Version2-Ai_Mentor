@@ -34,9 +34,9 @@ const Panel = ({ title, children, empty }) => (
 // ── Status Card ──────────────────────────────────────────────────────────────
 const StatusCard = ({ label, value, valueColor, sub }) => (
   <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card, rgba(255,255,255,0.02))', border: '1px solid var(--biqc-border, rgba(255,255,255,0.06))' }}>
-    <div className="text-[10px] uppercase tracking-[0.1em] font-semibold mb-1" style={{ color: '#708499', fontFamily: fontFamily.mono }}>{label}</div>
+    <div className="text-[10px] uppercase tracking-[0.1em] font-semibold mb-1" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>{label}</div>
     <div className="text-[28px] font-bold leading-none" style={{ color: valueColor || '#EDF1F7', fontFamily: fontFamily.mono }}>{value}</div>
-    {sub && <div className="text-xs mt-1" style={{ color: '#708499' }}>{sub}</div>}
+    {sub && <div className="text-xs mt-1" style={{ color: 'var(--ink-muted, #708499)' }}>{sub}</div>}
   </div>
 );
 
@@ -44,13 +44,13 @@ const StatusCard = ({ label, value, valueColor, sub }) => (
 const HealthItem = ({ name, indicatorOk, barPct, barColor, metaLeft, metaRight }) => (
   <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card, rgba(255,255,255,0.02))', border: '1px solid var(--biqc-border, rgba(255,255,255,0.06))' }}>
     <div className="flex items-center justify-between mb-2">
-      <span className="text-sm font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>{name}</span>
+      <span className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{name}</span>
       <span className="w-2.5 h-2.5 rounded-full" style={{ background: indicatorOk ? '#16A34A' : '#DC2626' }} />
     </div>
     <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background: 'rgba(255,255,255,0.06)' }}>
       <div className="h-full rounded-full transition-all" style={{ width: `${barPct}%`, background: barColor || '#16A34A' }} />
     </div>
-    <div className="flex justify-between text-xs" style={{ color: '#708499' }}>
+    <div className="flex justify-between text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>
       <span>{metaLeft}</span>
       <span>{metaRight}</span>
     </div>
@@ -60,7 +60,7 @@ const HealthItem = ({ name, indicatorOk, barPct, barColor, metaLeft, metaRight }
 // ── Empty State Card ────────────────────────────────────────────────────────
 const EmptyState = ({ message }) => (
   <div className="rounded-xl p-6 text-center" style={{ background: 'var(--biqc-bg-card, rgba(255,255,255,0.02))', border: '1px solid var(--biqc-border, rgba(255,255,255,0.06))' }}>
-    <p className="text-sm" style={{ color: '#708499', fontFamily: fontFamily.body }}>{message}</p>
+    <p className="text-sm" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>{message}</p>
   </div>
 );
 
@@ -148,10 +148,10 @@ const OperatorDashboard = () => {
         <div className="max-w-4xl mx-auto px-6 py-10 space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Operator Dashboard</h1>
-              <p className="text-xs mt-1" style={{ color: '#708499' }}>Read-only intelligence state</p>
+              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Operator Dashboard</h1>
+              <p className="text-xs mt-1" style={{ color: 'var(--ink-muted, #708499)' }}>Read-only intelligence state</p>
             </div>
-            <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#708499' }}>
+            <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--ink-muted, #708499)' }}>
               <span className="w-2 h-2 rounded-full" style={{ background: '#16A34A', animation: 'pulse 2s ease-in-out infinite' }} />
               All systems operational
             </div>
@@ -167,20 +167,20 @@ const OperatorDashboard = () => {
 
           {/* ═══ Automation Pipeline ═══ */}
           <div>
-            <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Automation Pipeline</h2>
+            <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Automation Pipeline</h2>
             <EmptyState message="No automation jobs configured. Automation pipelines will appear here when active." />
           </div>
 
           {/* ═══ Recent Runs Table ═══ */}
           <div>
-            <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Recent Runs</h2>
+            <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Recent Runs</h2>
             <div className="rounded-xl overflow-hidden" style={{ background: 'var(--biqc-bg-card, rgba(255,255,255,0.02))', border: '1px solid var(--biqc-border, rgba(255,255,255,0.06))' }}>
               <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                     {['Job', 'Started', 'Duration', 'Records', 'Result'].map(h => (
                       <th key={h} className="text-left px-4 py-2.5"
-                        style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#708499', fontFamily: fontFamily.mono, background: 'rgba(30,45,61,0.3)' }}>
+                        style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono, background: 'rgba(30,45,61,0.3)' }}>
                         {h}
                       </th>
                     ))}
@@ -188,7 +188,7 @@ const OperatorDashboard = () => {
                 </thead>
                 <tbody>
                   <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-sm" style={{ color: '#708499', fontFamily: fontFamily.body }}>
+                    <td colSpan={5} className="px-4 py-6 text-center text-sm" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
                       No recent runs to display.
                     </td>
                   </tr>
@@ -200,8 +200,8 @@ const OperatorDashboard = () => {
           {/* ═══ System Health ═══ */}
           <div>
             <div className="mb-4">
-              <h2 className="text-lg font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>System Health</h2>
-              <p className="text-xs mt-1" style={{ color: '#708499' }}>Connect monitoring to see live health data.</p>
+              <h2 className="text-lg font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>System Health</h2>
+              <p className="text-xs mt-1" style={{ color: 'var(--ink-muted, #708499)' }}>Connect monitoring to see live health data.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <HealthItem name="API Backend" indicatorOk={false} barPct={0} barColor="#475569" metaLeft="CPU: \u2014" metaRight="Memory: \u2014" />

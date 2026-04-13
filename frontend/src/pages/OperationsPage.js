@@ -166,14 +166,14 @@ const OperationsPage = () => {
         {/* Header — operations-specific copy + connection badges */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Operations.</h1>
+            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Operations.</h1>
             <p className="text-sm text-[#8FA0B8] mb-2" style={{ fontFamily: fontFamily.body }}>
               Process health, team velocity, and bottleneck detection.
             </p>
             <div className="flex flex-wrap items-center gap-2">
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: '#8FA0B8', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(100,116,139,0.12)', color: 'var(--ink-secondary, #8FA0B8)', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying CRM
                 </span>
               ) : hasCRM ? (
@@ -192,7 +192,7 @@ const OperationsPage = () => {
               )}
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: '#8FA0B8', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(100,116,139,0.12)', color: 'var(--ink-secondary, #8FA0B8)', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying Accounting
                 </span>
               ) : hasAccounting ? (
@@ -229,7 +229,7 @@ const OperationsPage = () => {
               <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
               <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: kpi.color || 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>{kpi.value}</div>
               {kpi.delta != null && (
-                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, color: kpi.delta > 0 ? '#10B981' : kpi.delta < 0 ? '#EF4444' : '#708499' }}>
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, color: kpi.delta > 0 ? '#10B981' : kpi.delta < 0 ? '#EF4444' : 'var(--ink-muted, #708499)' }}>
                   {kpi.delta > 0 ? '\u2191' : kpi.delta < 0 ? '\u2193' : '\u2192'} {Math.abs(kpi.delta)}%
                 </div>
               )}
@@ -367,15 +367,15 @@ const OperationsPage = () => {
         <Panel data-testid="operations-process-health">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-4 h-4" style={{ color: '#E85D00' }} />
-            <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Process Health</h3>
-            <span className="text-[10px] ml-auto" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>5 core processes monitored</span>
+            <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Process Health</h3>
+            <span className="text-[10px] ml-auto" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>5 core processes monitored</span>
           </div>
           {/* Table header */}
           <div className="grid gap-2" style={{ gridTemplateColumns: '1.5fr 0.7fr 0.7fr 1fr' }}>
-            <div className="text-[10px] uppercase tracking-[0.08em] pb-2" style={{ fontFamily: fontFamily.mono, color: '#708499', borderBottom: '1px solid var(--biqc-border)' }}>Process</div>
-            <div className="text-[10px] uppercase tracking-[0.08em] pb-2 text-right" style={{ fontFamily: fontFamily.mono, color: '#708499', borderBottom: '1px solid var(--biqc-border)' }}>Current</div>
-            <div className="text-[10px] uppercase tracking-[0.08em] pb-2 text-right" style={{ fontFamily: fontFamily.mono, color: '#708499', borderBottom: '1px solid var(--biqc-border)' }}>Target</div>
-            <div className="text-[10px] uppercase tracking-[0.08em] pb-2 text-right" style={{ fontFamily: fontFamily.mono, color: '#708499', borderBottom: '1px solid var(--biqc-border)' }}>Health</div>
+            <div className="text-[10px] uppercase tracking-[0.08em] pb-2" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', borderBottom: '1px solid var(--biqc-border)' }}>Process</div>
+            <div className="text-[10px] uppercase tracking-[0.08em] pb-2 text-right" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', borderBottom: '1px solid var(--biqc-border)' }}>Current</div>
+            <div className="text-[10px] uppercase tracking-[0.08em] pb-2 text-right" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', borderBottom: '1px solid var(--biqc-border)' }}>Target</div>
+            <div className="text-[10px] uppercase tracking-[0.08em] pb-2 text-right" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', borderBottom: '1px solid var(--biqc-border)' }}>Health</div>
           </div>
           {/* Table rows */}
           {[
@@ -386,9 +386,9 @@ const OperationsPage = () => {
             { process: 'Contract Processing', current: '3.1 days', target: '<2 days', pct: 64, color: '#16A34A' },
           ].map((row) => (
             <div key={row.process} className="grid items-center gap-2 py-3" style={{ gridTemplateColumns: '1.5fr 0.7fr 0.7fr 1fr', borderBottom: '1px solid var(--biqc-border)' }}>
-              <span className="text-sm font-medium" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>{row.process}</span>
-              <span className="text-sm text-right font-semibold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>{row.current}</span>
-              <span className="text-[11px] text-right" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>{row.target}</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{row.process}</span>
+              <span className="text-sm text-right font-semibold" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-display, #EDF1F7)' }}>{row.current}</span>
+              <span className="text-[11px] text-right" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{row.target}</span>
               <div className="flex items-center gap-2 justify-end">
                 <span className="text-[10px] font-semibold" style={{ fontFamily: fontFamily.mono, color: row.color }}>{row.pct}%</span>
                 <div className="w-[80px] h-[5px] rounded-full overflow-hidden" style={{ background: 'rgba(112,132,153,0.15)' }}>
@@ -403,8 +403,8 @@ const OperationsPage = () => {
         <Panel data-testid="operations-team-velocity">
           <div className="flex items-center gap-2 mb-4">
             <Users className="w-4 h-4" style={{ color: '#E85D00' }} />
-            <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Team Velocity</h3>
-            <span className="text-[10px] ml-auto" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Task throughput this week</span>
+            <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Team Velocity</h3>
+            <span className="text-[10px] ml-auto" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Task throughput this week</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
@@ -414,23 +414,23 @@ const OperationsPage = () => {
             ].map((member) => (
               <div key={member.initials} className="rounded-lg p-5 text-center" style={{ background: 'rgba(14,22,40,0.6)', border: '1px solid var(--biqc-border)' }}>
                 <div className="w-10 h-10 rounded-full mx-auto mb-3 flex items-center justify-center text-sm font-semibold"
-                  style={{ background: 'linear-gradient(135deg, #3B4F6B, #506680)', color: '#EDF1F7', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'linear-gradient(135deg, #3B4F6B, #506680)', color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.mono }}>
                   {member.initials}
                 </div>
-                <div className="text-sm font-semibold mb-0.5" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>{member.name}</div>
-                <div className="text-[11px] mb-3" style={{ color: '#708499' }}>{member.role}</div>
+                <div className="text-sm font-semibold mb-0.5" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>{member.name}</div>
+                <div className="text-[11px] mb-3" style={{ color: 'var(--ink-muted, #708499)' }}>{member.role}</div>
                 <div className="flex justify-center gap-4">
                   <div className="text-center">
-                    <div className="text-base font-semibold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>{member.tasks}</div>
-                    <div className="text-[9px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Tasks/wk</div>
+                    <div className="text-base font-semibold" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-display, #EDF1F7)' }}>{member.tasks}</div>
+                    <div className="text-[9px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Tasks/wk</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-base font-semibold" style={{ fontFamily: fontFamily.mono, color: member.meetings > 10 ? '#F59E0B' : '#EDF1F7' }}>{member.meetings}h</div>
-                    <div className="text-[9px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Meetings</div>
+                    <div className="text-base font-semibold" style={{ fontFamily: fontFamily.mono, color: member.meetings > 10 ? '#F59E0B' : 'var(--ink-display, #EDF1F7)' }}>{member.meetings}h</div>
+                    <div className="text-[9px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Meetings</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-base font-semibold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>{member.completion}%</div>
-                    <div className="text-[9px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Complete</div>
+                    <div className="text-base font-semibold" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-display, #EDF1F7)' }}>{member.completion}%</div>
+                    <div className="text-[9px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Complete</div>
                   </div>
                 </div>
               </div>
@@ -442,7 +442,7 @@ const OperationsPage = () => {
         <Panel data-testid="operations-meeting-load">
           <div className="flex items-center gap-2 mb-4">
             <Timer className="w-4 h-4" style={{ color: '#E85D00' }} />
-            <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Weekly Meeting Load</h3>
+            <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Weekly Meeting Load</h3>
           </div>
           <div style={{ position: 'relative', paddingBottom: '8px' }}>
             {/* Threshold line at 6h */}
@@ -464,9 +464,9 @@ const OperationsPage = () => {
                 const barColor = overThreshold ? '#F59E0B' : '#E85D00';
                 return (
                   <div key={d.day} className="flex-1 flex flex-col items-center gap-1.5">
-                    <span className="text-[11px] font-semibold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>{d.hours}h</span>
+                    <span className="text-[11px] font-semibold" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-display, #EDF1F7)' }}>{d.hours}h</span>
                     <div className="w-full max-w-[40px] rounded-t" style={{ height: `${barHeight}px`, background: barColor, transition: 'opacity 0.15s' }} />
-                    <span className="text-[10px] font-medium" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>{d.day}</span>
+                    <span className="text-[10px] font-medium" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{d.day}</span>
                   </div>
                 );
               })}

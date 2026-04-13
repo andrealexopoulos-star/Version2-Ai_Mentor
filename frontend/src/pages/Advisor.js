@@ -83,20 +83,77 @@ const Advisor = () => {
   const [activityItems, setActivityItems] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
 
+  // Real advisor data state (replaces hardcoded KPIs + morning brief)
+  const [advisorData, setAdvisorData] = useState(null);
+  const [advisorLoading, setAdvisorLoading] = useState(true);
+  const [executiveSurface, setExecutiveSurface] = useState(null);
+  const [snapshotData, setSnapshotData] = useState(null);
+  const [emailStats, setEmailStats] = useState({ total: 0, highPriority: 0 });
+
+  // Fetch real advisor data for KPIs and morning brief
+  useEffect(() => {
+    const controller = new AbortController();
+    const fetchAdvisorData = async () => {
+      try {
+        const [advisorRes, surfaceRes, snapshotRes] = await Promise.allSettled([
+          apiClient.get('/unified/advisor', { signal: controller.signal }),
+          apiClient.get('/advisor/executive-surface', { signal: controller.signal }),
+          apiClient.get('/snapshot/latest', { signal: controller.signal }),
+        ]);
+        if (!controller.signal.aborted) {
+          if (advisorRes.status === 'fulfilled') setAdvisorData(advisorRes.value.data);
+          if (surfaceRes.status === 'fulfilled') setExecutiveSurface(surfaceRes.value.data);
+          if (snapshotRes.status === 'fulfilled') setSnapshotData(snapshotRes.value.data);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) console.error('Advisor data fetch failed:', err);
+      } finally {
+        if (!controller.signal.aborted) setAdvisorLoading(false);
+      }
+    };
+    fetchAdvisorData();
+    return () => controller.abort();
+  }, []);
+
+  // Fetch email stats for quick action cards
+  useEffect(() => {
+    const controller = new AbortController();
+    const fetchEmailStats = async () => {
+      try {
+        const res = await apiClient.get('/email/priority-inbox', { signal: controller.signal });
+        if (!controller.signal.aborted) {
+          const data = res.data;
+          const high = (data?.high_priority || []).length;
+          const medium = (data?.medium_priority || []).length;
+          const low = (data?.low_priority || []).length;
+          setEmailStats({ total: high + medium + low, highPriority: high });
+        }
+      } catch {
+        if (!controller.signal.aborted) setEmailStats({ total: 0, highPriority: 0 });
+      }
+    };
+    fetchEmailStats();
+    return () => controller.abort();
+  }, []);
+
   // Fetch activity timeline from notifications/alerts
   useEffect(() => {
+    const controller = new AbortController();
     const fetchActivity = async () => {
       try {
-        const res = await apiClient.get('/notifications/alerts');
-        const items = (res.data?.notifications || res.data || []).slice(0, 6);
-        setActivityItems(items);
+        const res = await apiClient.get('/notifications/alerts', { signal: controller.signal });
+        if (!controller.signal.aborted) {
+          const items = (res.data?.notifications || res.data || []).slice(0, 6);
+          setActivityItems(items);
+        }
       } catch {
-        setActivityItems([]);
+        if (!controller.signal.aborted) setActivityItems([]);
       } finally {
-        setActivityLoading(false);
+        if (!controller.signal.aborted) setActivityLoading(false);
       }
     };
     fetchActivity();
+    return () => controller.abort();
   }, []);
 
   // Detect intelligence thresholds using existing data
@@ -186,33 +243,24 @@ const Advisor = () => {
           return;
         }
         
-        // Check email connection from email_connections table
-        const { data: emailRows } = await supabase
-          .from('email_connections')
-          .select('*')
-          .eq('user_id', session.user.id);
-        
+        // Parallel fetch all integration status (was sequential — 3× faster now)
+        const [emailResult, crmResult, accountingResult] = await Promise.allSettled([
+          supabase.from('email_connections').select('*').eq('user_id', session.user.id),
+          supabase.from('integration_accounts').select('*').eq('user_id', session.user.id).eq('category', 'crm'),
+          supabase.from('integration_accounts').select('*').eq('user_id', session.user.id).eq('category', 'accounting'),
+        ]);
+
+        const emailRows = emailResult.status === 'fulfilled' ? emailResult.value.data : null;
+        const crmRows = crmResult.status === 'fulfilled' ? crmResult.value.data : null;
+        const accountingRows = accountingResult.status === 'fulfilled' ? accountingResult.value.data : null;
+
         const emailConnected = emailRows && emailRows.length > 0;
         const emailProvider = emailConnected ? emailRows[0].provider : null;
         const emailConnectedAt = emailConnected ? emailRows[0].connected_at : null;
-        
-        // Check for CRM integration from integration_accounts
-        const { data: crmRows } = await supabase
-          .from('integration_accounts')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .eq('category', 'crm');
-        
+
         const crmConnected = crmRows && crmRows.length > 0;
         const crmConnectedAt = crmConnected ? crmRows[0].connected_at : null;
-        
-        // Check for Accounting integration (Xero)
-        const { data: accountingRows } = await supabase
-          .from('integration_accounts')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .eq('category', 'accounting');
-        
+
         const accountingConnected = accountingRows && accountingRows.length > 0;
         const accountingConnectedAt = accountingConnected ? accountingRows[0].connected_at : null;
         
@@ -511,10 +559,10 @@ const Advisor = () => {
             <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
               — {dateStr} · {timeStr}
             </div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(2rem, 4vw, 2.8rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(2rem, 4vw, 2.8rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
               {greeting}, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>{firstName}</em>.
             </h1>
-            <p className="mt-2 text-base" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+            <p className="mt-2 text-base" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
               {narrativeState.loading
                 ? 'Reading the signals...'
                 : narrativeState.text || "Your business intelligence is warming up."
@@ -525,7 +573,7 @@ const Advisor = () => {
             <button
               onClick={handleRefresh}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8', fontFamily: fontFamily.body, cursor: 'pointer' }}
+              style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body, cursor: 'pointer' }}
             >
               <RefreshCw className="w-4 h-4" /> Refresh
             </button>
@@ -539,33 +587,39 @@ const Advisor = () => {
           </div>
         </div>
 
-        {/* ── KPI Row ── */}
+        {/* ── KPI Row — ALL values from real APIs ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: 'Open signals', value: watchtowerEvents.length || '—', delta: '▲ 3', deltaContext: 'vs yesterday', deltaType: 'neg', color: '#E85D00', sparkColor: '#E85D00', sparkPath: '0,22 10,18 20,20 30,15 40,17 50,10 60,12 70,8 80,11 90,5 100,8', showDot: true },
-            { label: 'Pipeline at risk', value: '$48,200', delta: '▲ $12.4k', deltaContext: 'since Monday', deltaType: 'neg', color: '#DC2626', sparkColor: '#DC2626', sparkPath: '0,25 10,22 20,24 30,18 40,20 50,15 60,12 70,10 80,8 90,6 100,4', showDot: false },
-            { label: 'Cash runway', value: '6.4', valueSuffix: 'mo', delta: '— 0.1 mo', deltaContext: '30-day average', deltaType: 'neutral', color: '#10B981', sparkColor: 'var(--positive, #16A34A)', sparkPath: '0,12 10,14 20,11 30,13 40,12 50,14 60,11 70,13 80,12 90,14 100,12', showDot: false },
-            { label: 'Inbox decisions', value: '7', delta: '▼ 4', deltaContext: 'actioned this week', deltaType: 'pos', color: '#10B981', sparkColor: 'var(--positive, #16A34A)', sparkPath: '0,8 10,10 20,12 30,9 40,14 50,11 60,16 70,13 80,18 90,15 100,20', showDot: false },
-          ].map((kpi, i) => (
-            <div key={i} className="p-5 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{kpi.label}</span>
-                  {kpi.showDot && <span className="w-2 h-2 rounded-full" style={{ background: kpi.color, boxShadow: `0 0 8px ${kpi.color}` }} />}
+          {(() => {
+            const pipeline = advisorData?.revenue_summary?.pipeline;
+            const runway = snapshotData?.cognitive?.capital?.runway;
+            const highPriorityThreads = executiveSurface?.snapshot?.high_priority_threads;
+            const kpis = [
+              { label: 'Open signals', value: watchtowerEvents.length || '\u2014', hasData: true, color: '#E85D00', showDot: true },
+              { label: 'Pipeline at risk', value: pipeline != null ? `$${Number(pipeline).toLocaleString()}` : '\u2014', hasData: pipeline != null, color: '#DC2626', showDot: false, noDataHint: 'Connect CRM' },
+              { label: 'Cash runway', value: runway != null ? String(runway) : '\u2014', valueSuffix: runway != null ? 'mo' : '', hasData: runway != null, color: '#10B981', showDot: false, noDataHint: 'Connect accounting' },
+              { label: 'Inbox decisions', value: highPriorityThreads != null ? String(highPriorityThreads) : emailStats.highPriority > 0 ? String(emailStats.highPriority) : '\u2014', hasData: highPriorityThreads != null || emailStats.highPriority > 0, color: '#10B981', showDot: false, noDataHint: 'Connect inbox' },
+            ];
+            return kpis.map((kpi, i) => (
+              <div key={i} className="p-5 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{kpi.label}</span>
+                    {kpi.showDot && <span className="w-2 h-2 rounded-full" style={{ background: kpi.color, boxShadow: `0 0 8px ${kpi.color}` }} />}
+                  </div>
                 </div>
+                <div className="text-3xl font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>
+                  {advisorLoading ? (
+                    <span className="inline-block w-16 h-8 rounded animate-pulse" style={{ background: 'var(--surface-2, #121D30)' }} />
+                  ) : (
+                    <>{kpi.value}{kpi.valueSuffix && <span style={{ fontSize: '0.5em', color: 'var(--ink-secondary, #8FA0B8)' }}>{kpi.valueSuffix}</span>}</>
+                  )}
+                </div>
+                {!advisorLoading && !kpi.hasData && kpi.noDataHint && (
+                  <div className="text-[11px] mt-2.5" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{kpi.noDataHint}</div>
+                )}
               </div>
-              <div className="text-3xl font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>
-                {kpi.value}{kpi.valueSuffix && <span style={{ fontSize: '0.5em', color: 'var(--ink-secondary, #8FA0B8)' }}>{kpi.valueSuffix}</span>}
-              </div>
-              <div className="text-[11px] mt-2.5 flex items-center gap-1.5" style={{ fontFamily: fontFamily.mono }}>
-                <span style={{ color: kpi.deltaType === 'neg' ? kpi.color : kpi.deltaType === 'pos' ? '#10B981' : 'var(--ink-muted, #708499)', fontWeight: 600 }}>{kpi.delta}</span>
-                <span style={{ color: 'var(--ink-muted, #708499)' }}>{kpi.deltaContext}</span>
-              </div>
-              <svg className="w-full mt-3" viewBox="0 0 100 30" preserveAspectRatio="none" style={{ height: 30 }}>
-                <polyline points={kpi.sparkPath} stroke={kpi.sparkColor} strokeWidth="1.5" fill="none" />
-              </svg>
-            </div>
-          ))}
+            ));
+          })()}
         </div>
 
         {/* ── 2-Column Grid ── */}
@@ -576,8 +630,8 @@ const Advisor = () => {
           <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
             <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>— Live signal feed</div>
-                <h3 className="text-2xl font-medium mt-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', letterSpacing: '-0.02em' }}>What changed overnight</h3>
+                <div className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>— Live signal feed</div>
+                <h3 className="text-2xl font-medium mt-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>What changed overnight</h3>
               </div>
               <div className="flex gap-2">
                 {filters.map((f) => (
@@ -587,7 +641,7 @@ const Advisor = () => {
                     className="px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[0.08em] transition-all"
                     style={{
                       fontFamily: fontFamily.mono,
-                      background: signalFilter === f.toLowerCase() ? '#E85D00' : '#121D30',
+                      background: signalFilter === f.toLowerCase() ? '#E85D00' : 'var(--surface-2, #121D30)',
                       color: signalFilter === f.toLowerCase() ? 'white' : '#8FA0B8',
                       border: `1px solid ${signalFilter === f.toLowerCase() ? '#E85D00' : 'rgba(140,170,210,0.12)'}`,
                       cursor: 'pointer',
@@ -610,25 +664,25 @@ const Advisor = () => {
                     <AlertTriangle className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.08em] mb-1" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>
+                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.08em] mb-1" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>
                       {evt.severity?.toUpperCase() || 'INFO'}
-                      <span className="w-[3px] h-[3px] rounded-full" style={{ background: '#708499' }} />
+                      <span className="w-[3px] h-[3px] rounded-full" style={{ background: 'var(--ink-muted, #708499)' }} />
                       {evt.domain || 'General'}
                       {evt.time_ago && <>
-                        <span className="w-[3px] h-[3px] rounded-full" style={{ background: '#708499' }} />
+                        <span className="w-[3px] h-[3px] rounded-full" style={{ background: 'var(--ink-muted, #708499)' }} />
                         {evt.time_ago}
                       </>}
                     </div>
-                    <div className="text-sm font-semibold leading-tight" style={{ color: '#EDF1F7' }}>{evt.title || evt.summary || 'Signal detected'}</div>
-                    {evt.description && <div className="text-[13px] mt-1 leading-relaxed" style={{ color: '#8FA0B8' }}>{evt.description}</div>}
+                    <div className="text-sm font-semibold leading-tight" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{evt.title || evt.summary || 'Signal detected'}</div>
+                    {evt.description && <div className="text-[13px] mt-1 leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{evt.description}</div>}
                   </div>
-                  <div className="text-[11px] shrink-0" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>{evt.time_ago || ''}</div>
+                  <div className="text-[11px] shrink-0" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{evt.time_ago || ''}</div>
                 </div>
               )) : (
                 <div className="p-10 text-center">
-                  <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: '#708499' }} />
-                  <p className="text-sm font-medium" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>No signals yet</p>
-                  <p className="text-xs mt-1" style={{ color: '#708499', fontFamily: fontFamily.body }}>Connect your inbox and CRM to start surfacing business intelligence.</p>
+                  <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted, #708499)' }} />
+                  <p className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>No signals yet</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>Connect your inbox and CRM to start surfacing business intelligence.</p>
                   <button onClick={() => navigate('/connect-email')} className="mt-4 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: '#E85D00', color: 'white', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}>
                     Connect inbox <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
                   </button>
@@ -653,26 +707,59 @@ const Advisor = () => {
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#E85D00', animation: 'briefPulse 1.4s ease-in-out infinite' }} />
                   <span>Your morning brief &middot; {timeStr}</span>
                 </div>
-                <h2 className="mt-3" style={{ fontFamily: fontFamily.display, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.025em', color: 'white' }}>
-                  Two things to <em style={{ color: '#FF7A1A', fontStyle: 'italic' }}>do today</em>.
-                </h2>
-                <p className="mt-4 text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                  Reply to Bramwell ($24k at risk) before your 11am window closes. Eleanor at Olive Lane has gone quiet — a 2-line message will keep that $1.8k MRR. Everything else can wait until after lunch.
-                </p>
-                <div className="grid grid-cols-3 gap-4 mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div>
-                    <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: '#E85D00', lineHeight: 1 }}>2</div>
-                    <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>Need decisions</div>
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: 'white', lineHeight: 1 }}>$48k</div>
-                    <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>At risk</div>
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: 'white', lineHeight: 1 }}>90<span style={{ fontSize: '0.5em' }}>s</span></div>
-                    <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>To read</div>
-                  </div>
-                </div>
+                {advisorLoading ? (
+                  <>
+                    <div className="mt-3 h-10 w-3/4 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                    <div className="mt-4 h-4 w-full rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                    <div className="mt-2 h-4 w-2/3 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                  </>
+                ) : (() => {
+                  const memo = snapshotData?.cognitive?.executive_memo || snapshotData?.snapshot?.executive_memo;
+                  const decideNow = executiveSurface?.cards?.decide_now;
+                  const stalledDeals = executiveSurface?.snapshot?.stalled_deals_72h || 0;
+                  const overdueInvoices = executiveSurface?.snapshot?.overdue_invoices || 0;
+                  const totalOverdue = executiveSurface?.snapshot?.total_overdue || 0;
+                  const urgentCount = (decideNow ? 1 : 0) + (stalledDeals > 0 ? 1 : 0) + (overdueInvoices > 0 ? 1 : 0);
+                  const hasAnyData = memo || decideNow || stalledDeals > 0 || overdueInvoices > 0;
+                  if (!hasAnyData) {
+                    return (
+                      <>
+                        <h2 className="mt-3" style={{ fontFamily: fontFamily.display, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.025em', color: 'white' }}>
+                          Nothing urgent <em style={{ color: '#FF7A1A', fontStyle: 'italic' }}>right now</em>.
+                        </h2>
+                        <p className="mt-4 text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                          Connect your inbox and CRM to start receiving personalised intelligence briefs each morning.
+                        </p>
+                      </>
+                    );
+                  }
+                  const headline = urgentCount > 0 ? `${urgentCount} thing${urgentCount !== 1 ? 's' : ''} to` : 'All clear';
+                  const headlineEmphasis = urgentCount > 0 ? 'act on' : 'for now';
+                  return (
+                    <>
+                      <h2 className="mt-3" style={{ fontFamily: fontFamily.display, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.025em', color: 'white' }}>
+                        {headline} <em style={{ color: '#FF7A1A', fontStyle: 'italic' }}>{headlineEmphasis}</em>.
+                      </h2>
+                      <p className="mt-4 text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                        {memo || (decideNow?.signal_summary) || 'Your intelligence brief is being assembled.'}
+                      </p>
+                      <div className="grid grid-cols-3 gap-4 mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                        <div>
+                          <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: urgentCount > 0 ? '#E85D00' : 'white', lineHeight: 1 }}>{urgentCount}</div>
+                          <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>Need attention</div>
+                        </div>
+                        <div>
+                          <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: 'white', lineHeight: 1 }}>{totalOverdue > 0 ? `$${Math.round(totalOverdue / 1000)}k` : '\u2014'}</div>
+                          <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>At risk</div>
+                        </div>
+                        <div>
+                          <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: 'white', lineHeight: 1 }}>{stalledDeals > 0 ? stalledDeals : overdueInvoices > 0 ? overdueInvoices : '\u2014'}</div>
+                          <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>{stalledDeals > 0 ? 'Stalled deals' : overdueInvoices > 0 ? 'Overdue' : 'Signals'}</div>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
                 <button
                   onClick={() => navigate('/soundboard')}
                   className="mt-6 inline-flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-all"
@@ -689,8 +776,8 @@ const Advisor = () => {
             <div className="grid grid-cols-2 gap-3" style={{ marginTop: 'var(--sp-5, 20px)' }}>
               {[
                 { title: 'Ask BIQc anything', desc: '"What changed in the pipeline this week?"', icon: MessageSquare, path: '/soundboard' },
-                { title: 'Inbox triage', desc: '23 new emails. 7 need a decision.', icon: Mail, path: '/email-inbox' },
-                { title: 'Action queue', desc: '12 items waiting. 3 are overdue.', icon: CheckSquare, path: '/actions' },
+                { title: 'Inbox triage', desc: emailStats.total > 0 ? `${emailStats.total} email${emailStats.total !== 1 ? 's' : ''} analysed. ${emailStats.highPriority > 0 ? `${emailStats.highPriority} need${emailStats.highPriority !== 1 ? '' : 's'} a decision.` : 'None urgent.'}` : integrationData.email?.connected ? 'Inbox connected. Checking priorities...' : 'Connect your inbox to start triaging.', icon: Mail, path: '/email-inbox' },
+                { title: 'Action queue', desc: activityItems.length > 0 ? `${activityItems.length} recent item${activityItems.length !== 1 ? 's' : ''} tracked.` : 'No actions tracked yet.', icon: CheckSquare, path: '/actions' },
                 { title: 'Add an integration', desc: 'Xero, HubSpot, Slack — via Merge.dev', icon: Puzzle, path: '/integrations' },
               ].map((action) => {
                 const Icon = action.icon;

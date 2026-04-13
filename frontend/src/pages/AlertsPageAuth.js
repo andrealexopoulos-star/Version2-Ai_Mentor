@@ -209,7 +209,7 @@ const AlertsPageAuth = () => {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Alert centre · Live</div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>{alerts.length || 5} things <em style={{ fontStyle: 'italic', color: '#E85D00' }}>need a decision</em>.</h1>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>{alerts.length || 5} things <em style={{ fontStyle: 'italic', color: '#E85D00' }}>need a decision</em>.</h1>
             <p className="text-sm text-[#8FA0B8]">
               {loading || integrationLoading
                 ? 'Scanning connected data sources...'
@@ -235,9 +235,9 @@ const AlertsPageAuth = () => {
             <div key={label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: '20px' }}>
               <div className="flex items-center gap-2 mb-2">
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, display: 'inline-block' }} />
-                <span style={{ fontFamily: fontFamily.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8FA0B8' }}>{label}</span>
+                <span style={{ fontFamily: fontFamily.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-secondary, #8FA0B8)' }}>{label}</span>
               </div>
-              <span style={{ fontFamily: fontFamily.display, fontSize: 28, color: '#EDF1F7', display: 'block', lineHeight: 1 }}>{loading ? '\u2014' : value}</span>
+              <span style={{ fontFamily: fontFamily.display, fontSize: 28, color: 'var(--ink-display, #EDF1F7)', display: 'block', lineHeight: 1 }}>{loading ? '\u2014' : value}</span>
             </div>
           ))}
         </div>
@@ -249,7 +249,7 @@ const AlertsPageAuth = () => {
               className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
               style={{
                 background: filter === val ? 'var(--surface-sunken, #060A12)' : 'transparent',
-                color: filter === val ? '#EDF1F7' : '#8FA0B8',
+                color: filter === val ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
                 border: filter === val ? '1px solid rgba(140,170,210,0.2)' : '1px solid rgba(140,170,210,0.08)',
                 fontFamily: fontFamily.mono,
               }}
@@ -266,7 +266,7 @@ const AlertsPageAuth = () => {
             style={{
               background: 'var(--surface, #0E1628)',
               border: '1px solid rgba(140,170,210,0.12)',
-              color: '#EDF1F7',
+              color: 'var(--ink-display, #EDF1F7)',
               fontFamily: fontFamily.body,
               outline: 'none',
             }}
@@ -283,7 +283,7 @@ const AlertsPageAuth = () => {
           ) : !loading ? (
             hasAnyData ? (
               /* Connected but no alerts — genuinely all clear */
-              <div className="rounded-xl p-8 text-center" style={{ background: '#0E1628', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <div className="rounded-xl p-8 text-center" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(16,185,129,0.2)' }}>
                 <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.1)' }}>
                   <Shield className="w-7 h-7 text-[#10B981]" />
                 </div>
@@ -301,7 +301,7 @@ const AlertsPageAuth = () => {
               </div>
             ) : (
               /* No integrations connected — explain WHY there are no alerts */
-              <div className="rounded-xl p-8" style={{ background: '#0E1628', border: '1px solid rgba(232,93,0,0.2)' }}>
+              <div className="rounded-xl p-8" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(232,93,0,0.2)' }}>
                 <div className="flex items-start gap-4 mb-5">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(232,93,0,0.1)' }}>
                     <Bell className="w-6 h-6 text-[#E85D00]" />

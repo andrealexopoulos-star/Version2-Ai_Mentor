@@ -708,7 +708,7 @@ const EmailInbox = () => {
               <div style={{ fontFamily: fontFamily.mono, fontSize: 10, color: '#E85D00', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Inbox &middot; {providerLabel} &middot; Live
               </div>
-              <h1 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 22, letterSpacing: '-0.02em', marginTop: 2 }}>
+              <h1 style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 22, letterSpacing: '-0.02em', marginTop: 2 }}>
                 {allPriorityEmails.length || 0} emails <em style={{ fontStyle: 'italic', color: '#E85D00' }}>need a decision</em>
               </h1>
             </div>
@@ -717,11 +717,23 @@ const EmailInbox = () => {
             </Button>
           </div>
 
+          {/* Responsive breakpoints for inbox layout */}
+          <style>{`
+            @media (max-width: 1100px) {
+              .inbox-shell { grid-template-columns: 320px 1fr !important; }
+              .inbox-folders { display: none !important; }
+            }
+            @media (max-width: 800px) {
+              .inbox-shell { grid-template-columns: 1fr !important; }
+              .inbox-list { display: none !important; }
+            }
+          `}</style>
+
           {/* 3-panel grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '200px 360px 1fr', gap: 12, flex: 1, minHeight: 0 }}>
+          <div className="inbox-shell" style={{ display: 'grid', gridTemplateColumns: '200px 360px 1fr', gap: 12, flex: 1, minHeight: 0 }}>
 
             {/* ── PANEL 1: FOLDERS ── */}
-            <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 16, overflowY: 'auto' }}>
+            <div className="inbox-folders" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 16, overflowY: 'auto' }}>
               {/* Mailbox */}
               <div style={{ fontFamily: fontFamily?.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mailbox</div>
               {['inbox', 'sent', 'drafts', 'archive'].map(f => (
@@ -779,7 +791,7 @@ const EmailInbox = () => {
             </div>
 
             {/* ── PANEL 2: MESSAGE LIST ── */}
-            <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div className="inbox-list" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               {/* List header */}
               <div style={{ padding: 16, borderBottom: '1px solid rgba(140,170,210,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontFamily: fontFamily?.display, fontSize: 18, color: 'var(--ink-display, #EDF1F7)' }}>

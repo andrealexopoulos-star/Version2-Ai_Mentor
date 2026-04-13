@@ -245,9 +245,9 @@ const MarketPage = () => {
 
         {/* ═══ HEADER ═══ */}
         <div>
-          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>{'— Market & position \u00b7 '}{loading ? 'Loading...' : 'Live'}</div>
-          <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>You're <em style={{ fontStyle: 'italic', color: '#E85D00' }}>{hasLiveMarketContext ? st.label.toLowerCase() : 'calibrating'}</em>.</h1>
-          <p className="text-sm mt-2" style={{ color: '#8FA0B8' }}>BIQc reads market signals every 6 hours: competitor pricing, hiring, press, customer sentiment, and search intent in your category.</p>
+          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>{'— Market & position \u00b7 '}{loading ? 'Loading...' : 'Ready'}</div>
+          <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>You're <em style={{ fontStyle: 'italic', color: '#E85D00' }}>{hasLiveMarketContext ? st.label.toLowerCase() : 'calibrating'}</em>.</h1>
+          <p className="text-sm mt-2" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>BIQc reads market signals periodically: competitor pricing, hiring, press, customer sentiment, and search intent in your category.</p>
         </div>
 
         {/* ═══ POSITION HERO ═══ */}
@@ -256,25 +256,25 @@ const MarketPage = () => {
             {/* Left: Verdict */}
             <div>
               <div style={{ fontFamily: fontFamily.mono, fontSize: 11, color: '#E85D00', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Market Position</div>
-              <div style={{ fontFamily: fontFamily.display, fontSize: 'clamp(2.5rem, 5vw, 4rem)', color: '#EDF1F7', lineHeight: 1.05, letterSpacing: '-0.02em', margin: '12px 0 16px' }}>
+              <div style={{ fontFamily: fontFamily.display, fontSize: 'clamp(2.5rem, 5vw, 4rem)', color: 'var(--ink-display, #EDF1F7)', lineHeight: 1.05, letterSpacing: '-0.02em', margin: '12px 0 16px' }}>
                 {stateStatus === 'STABLE' ? <>Holding <em style={{ color: '#E85D00', fontStyle: 'italic' }}>steady</em>.</> :
                  stateStatus === 'DRIFT' ? <>Starting to <em style={{ color: '#E85D00', fontStyle: 'italic' }}>drift</em>.</> :
                  stateStatus === 'COMPRESSION' ? <>Under <em style={{ color: '#E85D00', fontStyle: 'italic' }}>pressure</em>.</> :
                  stateStatus === 'CRITICAL' ? <>Position <em style={{ color: '#E85D00', fontStyle: 'italic' }}>at risk</em>.</> :
                  <>Position <em style={{ color: '#E85D00', fontStyle: 'italic' }}>calibrating</em>.</>}
               </div>
-              <div style={{ color: '#8FA0B8', fontSize: 15, lineHeight: 1.6, maxWidth: '50ch' }}>
+              <div style={{ color: 'var(--ink-secondary, #8FA0B8)', fontSize: 15, lineHeight: 1.6, maxWidth: '50ch' }}>
                 {interpretation || 'BIQc evaluates your market position using signal data from connected integrations, competitive intel, and business calibration.'}
               </div>
               <div style={{ display: 'flex', gap: 24, marginTop: 24, flexWrap: 'wrap' }}>
                 {[
                   { label: 'Confidence', value: confidence ? `${confidence}%` : '—' },
                   { label: 'Data Sources', value: integrationStatus?.canonical_truth?.total_connected || '0' },
-                  { label: 'Last Signal', value: 'Live' },
+                  { label: 'Last Signal', value: snapshot?.last_updated ? new Date(snapshot.last_updated).toLocaleDateString() : '\u2014' },
                 ].map(item => (
                   <div key={item.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontFamily: fontFamily.mono, fontSize: 10, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{item.label}</span>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: '#EDF1F7' }}>{item.value}</span>
+                    <span style={{ fontFamily: fontFamily.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{item.label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)' }}>{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -295,8 +295,8 @@ const MarketPage = () => {
                   strokeDashoffset={2 * Math.PI * 100 * (1 - (confidence || 0) / 100)} />
               </svg>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                <span style={{ fontFamily: fontFamily.display, fontSize: 64, lineHeight: 1, color: '#EDF1F7', letterSpacing: '-0.04em' }}>{confidence || '—'}</span>
-                <span style={{ fontFamily: fontFamily.mono, fontSize: 11, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>Position Score</span>
+                <span style={{ fontFamily: fontFamily.display, fontSize: 64, lineHeight: 1, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.04em' }}>{confidence || '—'}</span>
+                <span style={{ fontFamily: fontFamily.mono, fontSize: 11, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>Position Score</span>
                 <span style={{ fontSize: 13, color: '#E85D00', fontWeight: 600, marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   {stateStatus === 'STABLE' ? '↑ Holding' : stateStatus === 'DRIFT' ? '↗ Drifting' : '↓ Declining'}
                 </span>
@@ -369,11 +369,11 @@ const MarketPage = () => {
               <div className="mt-4 space-y-3" data-testid="market-evidence-health-list">
                 <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid="market-pressure-status">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Pressure calibration</p>
-                  <p className="mt-2 text-sm text-[#CBD5E1]">{pressureAvailable ? `Live pressure available: ${marketPressureSummary || 'signal mix detected for this cycle.'}` : (pressureMessage || 'Pressure calibration is not available yet.')}</p>
+                  <p className="mt-2 text-sm text-[#CBD5E1]">{pressureAvailable ? `Pressure data available: ${marketPressureSummary || 'signal mix detected for this cycle.'}` : (pressureMessage || 'Pressure calibration is not available yet.')}</p>
                 </div>
                 <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid="market-freshness-status">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Evidence freshness</p>
-                  <p className="mt-2 text-sm text-[#CBD5E1]">{freshnessAvailable ? `Freshness scoring is live: ${freshnessSummary || 'recent evidence is now available.'}` : (freshnessMessage || 'Evidence freshness is not available yet.')}</p>
+                  <p className="mt-2 text-sm text-[#CBD5E1]">{freshnessAvailable ? `Freshness scoring active: ${freshnessSummary || 'recent evidence is now available.'}` : (freshnessMessage || 'Evidence freshness is not available yet.')}</p>
                   <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--biqc-border)' }} data-testid="market-lineage-badge-evidence">
                     <LineageBadge lineage={marketIntelLineage} data_freshness={marketIntelFreshness} confidence_score={marketIntelConfidence} compact />
                   </div>
@@ -915,7 +915,7 @@ const GapsSection = ({ channelsData, hasCRM, pipeline, gapsOpen, setGapsOpen, na
             <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-xs" style={{ background: ch.color }}>{ch.name[0]}</div>
             <span className="text-sm text-[#EDF1F7] flex-1">{ch.name}</span>
             {ch.status === 'connected' ? (
-              <span className="text-[11px] px-2 py-1 rounded flex items-center gap-1" style={{ color: '#10B981', background: '#10B98115', fontFamily: "'JetBrains Mono', monospace" }}><CheckCircle2 className="w-3 h-3" /> Live</span>
+              <span className="text-[11px] px-2 py-1 rounded flex items-center gap-1" style={{ color: '#10B981', background: '#10B98115', fontFamily: "'JetBrains Mono', monospace" }}><CheckCircle2 className="w-3 h-3" /> Connected</span>
             ) : ch.available ? (
               <button onClick={() => navigate('/integrations')} className="text-[11px] px-2 py-1 rounded" style={{ color: '#10B981', background: '#10B98115', fontFamily: "'JetBrains Mono', monospace" }}>Connect</button>
             ) : (

@@ -208,7 +208,7 @@ const KnowledgeBaseContent = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
         {GUIDES.map(g => (
           <a key={g.id} href={`#${g.id}`} className="p-3 rounded-lg text-center transition-all hover:bg-white/[0.03]"
-            style={{ background: hash === g.id ? `${g.color}10` : '#0E1628', border: `1px solid ${hash === g.id ? g.color + '40' : 'rgba(140,170,210,0.15)'}` }}>
+            style={{ background: hash === g.id ? `${g.color}10` : 'var(--surface, #0E1628)', border: `1px solid ${hash === g.id ? g.color + '40' : 'rgba(140,170,210,0.15)'}` }}>
             <g.icon className="w-5 h-5 mx-auto mb-1" style={{ color: g.color }} />
             <span className="text-[9px] text-[#8FA0B8] block" style={{ fontFamily: fontFamily.mono }}>{g.time}</span>
           </a>

@@ -22,17 +22,17 @@ const UpgradeModal = ({ isOpen, onClose, featureName = 'this feature', requiredT
       <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 20, boxShadow: '0 24px 64px rgba(0,0,0,0.5)', width: '90%', maxWidth: 520, overflow: 'hidden', animation: 'modalUp 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both', animationDelay: '100ms', position: 'relative' }}>
 
         {/* Close button */}
-        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, width: 32, height: 32, borderRadius: 8, display: 'grid', placeItems: 'center', color: '#708499', background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, width: 32, height: 32, borderRadius: 8, display: 'grid', placeItems: 'center', color: 'var(--ink-muted, #708499)', background: 'transparent', border: 'none', cursor: 'pointer' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-sunken, #060A12)'; e.currentTarget.style.color = 'var(--ink, #C8D4E4)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-muted, #708499)'; }}>
           <X className="w-4 h-4" />
         </button>
 
         {/* Header */}
         <div style={{ padding: '24px 24px 16px', textAlign: 'center' }}>
           <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(232,93,0,0.08)', border: '1px solid rgba(232,93,0,0.15)', display: 'grid', placeItems: 'center', margin: '0 auto 16px', fontSize: 28 }}>
-            <Lock className="w-7 h-7" style={{ color: '#E85D00' }} />
+            <Lock className="w-7 h-7" style={{ color: 'var(--lava, #E85D00)' }} />
           </div>
-          <h2 style={{ fontFamily: fontFamily?.display, fontSize: 22, color: '#EDF1F7', letterSpacing: '-0.01em', marginBottom: 8 }}>Unlock {featureName}</h2>
-          <p style={{ fontSize: 14, color: '#8FA0B8', lineHeight: 1.5, maxWidth: 400, margin: '0 auto' }}>
+          <h2 style={{ fontFamily: fontFamily?.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.01em', marginBottom: 8 }}>Unlock {featureName}</h2>
+          <p style={{ fontFamily: fontFamily.body, fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5, maxWidth: 400, margin: '0 auto' }}>
             This feature requires a {required.name} plan or higher. Upgrade to access {featureName} and more.
           </p>
         </div>
@@ -42,13 +42,13 @@ const UpgradeModal = ({ isOpen, onClose, featureName = 'this feature', requiredT
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
             {/* Current plan */}
             <div style={{ border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 16, textAlign: 'center' }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#EDF1F7', marginBottom: 4 }}>{current.name}</div>
-              <div style={{ fontFamily: fontFamily?.display, fontSize: 28, color: '#EDF1F7', letterSpacing: '-0.02em', marginBottom: 4 }}>{current.price}</div>
-              <div style={{ fontSize: 12, color: '#708499', marginBottom: 12 }}>{current.period}</div>
+              <div style={{ fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', marginBottom: 4 }}>{current.name}</div>
+              <div style={{ fontFamily: fontFamily?.display, fontSize: 28, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em', marginBottom: 4 }}>{current.price}</div>
+              <div style={{ fontFamily: fontFamily.body, fontSize: 12, color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{current.period}</div>
               <ul style={{ textAlign: 'left', listStyle: 'none', padding: 0, margin: 0 }}>
                 {current.features.map((f, i) => (
-                  <li key={i} style={{ fontSize: 12, color: '#8FA0B8', padding: '3px 0', display: 'flex', alignItems: 'center', gap: 8, lineHeight: 1.4 }}>
-                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#10B981', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                  <li key={i} style={{ fontFamily: fontFamily.body, fontSize: 12, color: 'var(--ink-secondary, #8FA0B8)', padding: '3px 0', display: 'flex', alignItems: 'center', gap: 8, lineHeight: 1.4 }}>
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'var(--positive, #10B981)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                       <Check className="w-2 h-2 text-white" />
                     </div>
                     {f}
@@ -58,15 +58,15 @@ const UpgradeModal = ({ isOpen, onClose, featureName = 'this feature', requiredT
             </div>
 
             {/* Required plan (recommended) */}
-            <div style={{ border: '1px solid #E85D00', borderRadius: 12, padding: 16, textAlign: 'center', background: 'linear-gradient(180deg, rgba(232,93,0,0.08) 0%, var(--surface, #0E1628) 100%)', boxShadow: '0 4px 16px rgba(232,93,0,0.12)', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', padding: '2px 12px', background: '#E85D00', color: 'white', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', borderRadius: 999, whiteSpace: 'nowrap' }}>RECOMMENDED</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#EDF1F7', marginBottom: 4 }}>{required.name}</div>
-              <div style={{ fontFamily: fontFamily?.display, fontSize: 28, color: '#EDF1F7', letterSpacing: '-0.02em', marginBottom: 4 }}>{required.price}</div>
-              <div style={{ fontSize: 12, color: '#708499', marginBottom: 12 }}>{required.period}</div>
+            <div style={{ border: '1px solid var(--lava, #E85D00)', borderRadius: 12, padding: 16, textAlign: 'center', background: 'linear-gradient(180deg, rgba(232,93,0,0.08) 0%, var(--surface, #0E1628) 100%)', boxShadow: '0 4px 16px rgba(232,93,0,0.12)', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', padding: '2px 12px', background: 'var(--lava, #E85D00)', color: 'white', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', borderRadius: 999, whiteSpace: 'nowrap' }}>RECOMMENDED</div>
+              <div style={{ fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', marginBottom: 4 }}>{required.name}</div>
+              <div style={{ fontFamily: fontFamily?.display, fontSize: 28, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em', marginBottom: 4 }}>{required.price}</div>
+              <div style={{ fontFamily: fontFamily.body, fontSize: 12, color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{required.period}</div>
               <ul style={{ textAlign: 'left', listStyle: 'none', padding: 0, margin: 0 }}>
                 {required.features.map((f, i) => (
-                  <li key={i} style={{ fontSize: 12, color: f.toLowerCase().includes(featureName.toLowerCase()) ? '#E85D00' : '#8FA0B8', padding: '3px 0', display: 'flex', alignItems: 'center', gap: 8, lineHeight: 1.4, fontWeight: f.toLowerCase().includes(featureName.toLowerCase()) ? 500 : 400 }}>
-                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: f.toLowerCase().includes(featureName.toLowerCase()) ? '#E85D00' : '#10B981', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                  <li key={i} style={{ fontFamily: fontFamily.body, fontSize: 12, color: f.toLowerCase().includes(featureName.toLowerCase()) ? 'var(--lava, #E85D00)' : 'var(--ink-secondary, #8FA0B8)', padding: '3px 0', display: 'flex', alignItems: 'center', gap: 8, lineHeight: 1.4, fontWeight: f.toLowerCase().includes(featureName.toLowerCase()) ? 500 : 400 }}>
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: f.toLowerCase().includes(featureName.toLowerCase()) ? 'var(--lava, #E85D00)' : 'var(--positive, #10B981)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                       <Check className="w-2 h-2 text-white" />
                     </div>
                     {f}
@@ -79,13 +79,13 @@ const UpgradeModal = ({ isOpen, onClose, featureName = 'this feature', requiredT
 
         {/* Footer */}
         <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <button onClick={() => { onClose(); navigate('/subscribe'); }} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px 20px', background: '#E85D00', color: 'white', borderRadius: 8, fontWeight: 600, fontSize: 14, border: 'none', cursor: 'pointer' }}>
+          <button onClick={() => { onClose(); navigate('/subscribe'); }} style={{ fontFamily: fontFamily.body, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px 20px', background: 'var(--lava, #E85D00)', color: 'white', borderRadius: 8, fontWeight: 600, fontSize: 14, border: 'none', cursor: 'pointer' }}>
             Upgrade to {required.name}
           </button>
-          <button onClick={onClose} style={{ width: '100%', padding: '10px 20px', background: 'transparent', color: '#708499', borderRadius: 8, fontSize: 13, border: 'none', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ fontFamily: fontFamily.body, width: '100%', padding: '10px 20px', background: 'transparent', color: 'var(--ink-muted, #708499)', borderRadius: 8, fontSize: 13, border: 'none', cursor: 'pointer' }}>
             Maybe later
           </button>
-          <p style={{ textAlign: 'center', fontSize: 12, color: '#708499', lineHeight: 1.4 }}>
+          <p style={{ fontFamily: fontFamily.body, textAlign: 'center', fontSize: 12, color: 'var(--ink-muted, #708499)', lineHeight: 1.4 }}>
             Cancel anytime. No long-term commitment required.
           </p>
         </div>

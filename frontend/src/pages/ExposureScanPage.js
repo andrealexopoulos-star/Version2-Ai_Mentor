@@ -165,11 +165,11 @@ const ScoreRing = ({ score }) => {
       }}>
         <div style={{
           fontFamily: fontFamily.mono, fontSize: 40, fontWeight: 700,
-          color: '#EDF1F7', lineHeight: 1,
+          color: 'var(--ink-display, #EDF1F7)', lineHeight: 1,
         }}>
           {score}
         </div>
-        <div style={{ fontSize: 12, color: '#8FA0B8', marginTop: 4 }}>out of 100</div>
+        <div style={{ fontSize: 12, color: 'var(--ink-secondary, #8FA0B8)', marginTop: 4 }}>out of 100</div>
       </div>
     </div>
   );
@@ -185,7 +185,7 @@ const ScoreBar = ({ label, score }) => {
       display: 'grid', gridTemplateColumns: '120px 1fr 40px',
       alignItems: 'center', gap: 12,
     }}>
-      <div style={{ fontSize: 14, fontWeight: 500, color: '#EDF1F7', fontFamily: fontFamily.body }}>
+      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
         {label}
       </div>
       <div style={{
@@ -199,7 +199,7 @@ const ScoreBar = ({ label, score }) => {
       </div>
       <div style={{
         fontFamily: fontFamily.mono, fontSize: 14, fontWeight: 600,
-        color: '#EDF1F7', textAlign: 'right',
+        color: 'var(--ink-display, #EDF1F7)', textAlign: 'right',
       }}>
         {score}
       </div>
@@ -239,7 +239,7 @@ const FindingCard = ({ finding, onAction }) => {
         </span>
         <span style={{
           fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase',
-          color: '#8FA0B8',
+          color: 'var(--ink-secondary, #8FA0B8)',
         }}>
           {finding.domain}
         </span>
@@ -247,7 +247,7 @@ const FindingCard = ({ finding, onAction }) => {
 
       {/* Title */}
       <div style={{
-        fontSize: 15, fontWeight: 600, color: '#EDF1F7', marginBottom: 8,
+        fontSize: 15, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', marginBottom: 8,
         fontFamily: fontFamily.body,
       }}>
         {finding.title}
@@ -255,7 +255,7 @@ const FindingCard = ({ finding, onAction }) => {
 
       {/* Description */}
       <div style={{
-        fontSize: 14, color: '#8FA0B8', lineHeight: 1.5, marginBottom: 16,
+        fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5, marginBottom: 16,
         fontFamily: fontFamily.body,
       }}>
         {finding.description}
@@ -291,7 +291,7 @@ const FindingCard = ({ finding, onAction }) => {
                 e.currentTarget.style.color = '#C24D00';
               } else {
                 e.currentTarget.style.borderColor = 'rgba(140,170,210,0.15)';
-                e.currentTarget.style.color = '#8FA0B8';
+                e.currentTarget.style.color = 'var(--ink-secondary, #8FA0B8)';
               }
             }}
           >
@@ -299,7 +299,7 @@ const FindingCard = ({ finding, onAction }) => {
           </button>
         ))}
         <span style={{
-          marginLeft: 'auto', fontSize: 12, color: '#708499',
+          marginLeft: 'auto', fontSize: 12, color: 'var(--ink-muted, #708499)',
           fontFamily: fontFamily.body,
         }}>
           {finding.detected}
@@ -336,13 +336,13 @@ const FilterPills = ({ active, onChange }) => (
           onMouseEnter={(e) => {
             if (!isActive) {
               e.currentTarget.style.borderColor = 'rgba(140,170,210,0.3)';
-              e.currentTarget.style.color = '#EDF1F7';
+              e.currentTarget.style.color = 'var(--ink-display, #EDF1F7)';
             }
           }}
           onMouseLeave={(e) => {
             if (!isActive) {
               e.currentTarget.style.borderColor = 'rgba(140,170,210,0.15)';
-              e.currentTarget.style.color = '#8FA0B8';
+              e.currentTarget.style.color = 'var(--ink-secondary, #8FA0B8)';
             }
           }}
         >
@@ -366,7 +366,7 @@ const ScanRow = ({ row }) => {
       borderBottom: '1px solid rgba(140,170,210,0.08)',
       fontSize: 14,
     }}>
-      <div style={{ color: '#8FA0B8', fontFamily: fontFamily.mono, fontSize: 12 }}>
+      <div style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono, fontSize: 12 }}>
         {row.date}
       </div>
       <div style={{
@@ -375,7 +375,7 @@ const ScanRow = ({ row }) => {
       }}>
         {row.score}
       </div>
-      <div style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+      <div style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
         {row.findings}
       </div>
       <div style={{
@@ -425,7 +425,7 @@ const ExposureScanPage = () => {
         }}>
           <h1 style={{
             fontFamily: fontFamily.display, fontSize: 28,
-            color: '#EDF1F7', letterSpacing: '-0.01em',
+            color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.01em',
             margin: 0,
           }}>
             Exposure Scan
@@ -475,12 +475,12 @@ const ExposureScanPage = () => {
             <div>
               <div style={{
                 fontFamily: fontFamily.display, fontSize: 22,
-                color: '#EDF1F7', marginBottom: 4,
+                color: 'var(--ink-display, #EDF1F7)', marginBottom: 4,
               }}>
                 Business Exposure Score
               </div>
               <div style={{
-                fontSize: 14, color: '#8FA0B8', marginBottom: 8,
+                fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', marginBottom: 8,
                 fontFamily: fontFamily.body,
               }}>
                 Last scanned 4 hours ago across 6 domains. 3 findings require attention.
@@ -501,7 +501,7 @@ const ExposureScanPage = () => {
         }}>
           <h2 style={{
             fontFamily: fontFamily.display, fontSize: 22,
-            color: '#EDF1F7', margin: 0,
+            color: 'var(--ink-display, #EDF1F7)', margin: 0,
           }}>
             Active Findings
           </h2>
@@ -515,7 +515,7 @@ const ExposureScanPage = () => {
               background: 'var(--surface, #0E1628)',
               border: '1px solid rgba(140,170,210,0.15)',
               borderRadius: 16, padding: 32, textAlign: 'center',
-              color: '#8FA0B8', fontSize: 14, fontFamily: fontFamily.body,
+              color: 'var(--ink-secondary, #8FA0B8)', fontSize: 14, fontFamily: fontFamily.body,
             }}>
               No findings at this severity level.
             </div>
@@ -535,7 +535,7 @@ const ExposureScanPage = () => {
         }}>
           <h2 style={{
             fontFamily: fontFamily.display, fontSize: 20,
-            color: '#EDF1F7', marginTop: 0, marginBottom: 16,
+            color: 'var(--ink-display, #EDF1F7)', marginTop: 0, marginBottom: 16,
           }}>
             Scan History
           </h2>

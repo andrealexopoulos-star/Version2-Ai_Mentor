@@ -1335,7 +1335,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                       >
                         <span className="text-sm shrink-0">{mode.icon}</span>
                         <div>
-                          <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#E85D00' : '#EDF1F7', fontFamily: fontFamily.body }}>{mode.label}</p>
+                          <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#E85D00' : 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{mode.label}</p>
                           <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
                         </div>
                       </button>
@@ -1377,7 +1377,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                       >
                         <span className="text-sm shrink-0">{agent.icon}</span>
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#EDF1F7', fontFamily: fontFamily.body }}>
+                          <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
                             {agent.label}
                           </p>
                           <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>

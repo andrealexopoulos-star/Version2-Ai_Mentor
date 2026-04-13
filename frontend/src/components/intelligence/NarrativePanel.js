@@ -60,11 +60,11 @@ const NarrativePanel = () => {
   if (!narrative) {
     return (
       <div className="text-center py-12">
-        <BookOpen className="w-10 h-10 mx-auto mb-3" style={{ color: '#708499' }} />
-        <p className="text-sm mb-1" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
+        <BookOpen className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--ink-muted, #708499)' }} />
+        <p className="text-sm mb-1" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
           No strategic narrative yet
         </p>
-        <p className="text-xs mb-4" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+        <p className="text-xs mb-4" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
           Generate your first weekly intelligence narrative for a complete strategic briefing.
         </p>
         <button onClick={generateNarrative} disabled={generating}
@@ -105,7 +105,7 @@ const NarrativePanel = () => {
             <BookOpen className="w-4 h-4" style={{ color: '#E85D00' }} />
             <span className="text-sm font-medium" style={{ color: '#E85D00', fontFamily: fontFamily.body }}>Executive Summary</span>
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
             {narrative.executive_summary}
           </p>
           {narrative.data_completeness != null && (
@@ -113,7 +113,7 @@ const NarrativePanel = () => {
               <div className="h-1 flex-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
                 <div className="h-full rounded-full" style={{ width: `${narrative.data_completeness * 100}%`, background: '#E85D00' }} />
               </div>
-              <span className="text-[10px]" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+              <span className="text-[10px]" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                 {(narrative.data_completeness * 100).toFixed(0)}% data coverage
               </span>
             </div>
@@ -135,7 +135,7 @@ const NarrativePanel = () => {
                 onClick={() => setExpandedSection(isOpen ? null : key)}>
                 <div className="flex items-center gap-2">
                   <Icon className="w-4 h-4" style={{ color: meta.color }} />
-                  <span className="text-sm font-medium" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
+                  <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
                     {meta.label}
                   </span>
                   {Array.isArray(data) && (
@@ -144,14 +144,14 @@ const NarrativePanel = () => {
                     </span>
                   )}
                 </div>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} style={{ color: '#708499' }} />
+                <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} style={{ color: 'var(--ink-muted, #708499)' }} />
               </button>
               {isOpen && (
                 <div className="px-4 pb-4">
                   {Array.isArray(data) ? (
                     <ul className="space-y-2">
                       {data.map((item, i) => (
-                        <li key={i} className="text-xs flex items-start gap-2 leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+                        <li key={i} className="text-xs flex items-start gap-2 leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
                           <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: meta.color }} />
                           {typeof item === 'string' ? item : (item.title || item.description || JSON.stringify(item))}
                         </li>
@@ -161,8 +161,8 @@ const NarrativePanel = () => {
                     <div className="space-y-1">
                       {Object.entries(data).map(([k, v]) => (
                         <div key={k} className="flex items-center justify-between text-xs">
-                          <span style={{ color: '#708499', fontFamily: fontFamily.mono }}>{k.replace(/_/g, ' ')}</span>
-                          <span style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>{String(v)}</span>
+                          <span style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>{k.replace(/_/g, ' ')}</span>
+                          <span style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>{String(v)}</span>
                         </div>
                       ))}
                     </div>

@@ -42,7 +42,7 @@ const statusConfig = {
 
 const sourceConfig = {
   ai:     { label: 'AI Generated', bg: 'rgba(232,93,0,0.12)', color: '#E85D00' },
-  manual: { label: 'Manual',       bg: 'rgba(140,170,210,0.10)', color: '#8FA0B8' },
+  manual: { label: 'Manual',       bg: 'rgba(140,170,210,0.10)', color: 'var(--ink-secondary, #8FA0B8)' },
 };
 
 /* ─── SOP Card component ─── */
@@ -53,7 +53,7 @@ const SOPCard = ({ sop }) => {
   return (
     <div
       style={{
-        background: '#0E1628',
+        background: 'var(--surface, #0E1628)',
         border: '1px solid rgba(140,170,210,0.12)',
         borderRadius: 16,
         padding: 20,
@@ -95,7 +95,7 @@ const SOPCard = ({ sop }) => {
       {/* Title */}
       <h3 style={{
         fontFamily: fontFamily.display, fontSize: 20, fontWeight: 600,
-        color: '#EDF1F7', margin: 0, lineHeight: 1.25,
+        color: 'var(--ink-display, #EDF1F7)', margin: 0, lineHeight: 1.25,
         letterSpacing: '-0.01em',
       }}>
         {sop.title}
@@ -103,7 +103,7 @@ const SOPCard = ({ sop }) => {
 
       {/* Description */}
       <p style={{
-        fontFamily: fontFamily.body, fontSize: 14, color: '#8FA0B8',
+        fontFamily: fontFamily.body, fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)',
         margin: 0, lineHeight: 1.5,
       }}>
         {sop.description}
@@ -111,7 +111,7 @@ const SOPCard = ({ sop }) => {
 
       {/* Step dots */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 12, color: '#708499', fontFamily: fontFamily.mono, marginRight: 4 }}>
+        <span style={{ fontSize: 12, color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono, marginRight: 4 }}>
           {sop.totalSteps} steps
         </span>
         <div style={{ display: 'flex', gap: 3 }}>
@@ -132,7 +132,7 @@ const SOPCard = ({ sop }) => {
         borderTop: '1px solid rgba(140,170,210,0.08)',
         paddingTop: 12, marginTop: 2,
         display: 'flex', alignItems: 'center', gap: 12,
-        fontSize: 12, color: '#708499',
+        fontSize: 12, color: 'var(--ink-muted, #708499)',
       }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: fontFamily.body }}>
           <Clock size={14} /> {sop.updatedAgo ? `Updated ${sop.updatedAgo}` : 'Just created'}
@@ -179,7 +179,7 @@ const TemplateCard = ({ template, onClick }) => {
         <span style={{
           fontSize: 9, fontWeight: 700, fontFamily: fontFamily.mono,
           padding: '2px 8px', borderRadius: 999,
-          background: 'rgba(140,170,210,0.08)', color: '#708499',
+          background: 'rgba(140,170,210,0.08)', color: 'var(--ink-muted, #708499)',
           letterSpacing: '0.1em', textTransform: 'uppercase',
         }}>
           Template
@@ -187,12 +187,12 @@ const TemplateCard = ({ template, onClick }) => {
       </div>
       <h4 style={{
         fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600,
-        color: '#EDF1F7', margin: 0,
+        color: 'var(--ink-display, #EDF1F7)', margin: 0,
       }}>
         {template.title}
       </h4>
       <p style={{
-        fontFamily: fontFamily.body, fontSize: 12, color: '#708499',
+        fontFamily: fontFamily.body, fontSize: 12, color: 'var(--ink-muted, #708499)',
         margin: 0, lineHeight: 1.5,
       }}>
         {template.description}
@@ -394,7 +394,7 @@ const SOPGenerator = () => {
     padding: '10px 14px',
     fontSize: 14,
     fontFamily: fontFamily.body,
-    color: '#EDF1F7',
+    color: 'var(--ink-display, #EDF1F7)',
     background: '#060A12',
     border: '1px solid rgba(140,170,210,0.12)',
     borderRadius: 10,
@@ -416,7 +416,7 @@ const SOPGenerator = () => {
   const labelStyle = {
     fontSize: 14,
     fontWeight: 500,
-    color: '#EDF1F7',
+    color: 'var(--ink-display, #EDF1F7)',
     fontFamily: fontFamily.body,
     marginBottom: 4,
     display: 'block',
@@ -440,7 +440,7 @@ const SOPGenerator = () => {
 
   const ghostBtnStyle = {
     background: 'transparent',
-    color: '#8FA0B8',
+    color: 'var(--ink-secondary, #8FA0B8)',
     border: '1px solid rgba(140,170,210,0.12)',
     borderRadius: 10,
     padding: '10px 24px',
@@ -463,7 +463,7 @@ const SOPGenerator = () => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <h1 style={{
             fontFamily: fontFamily.display, fontSize: 28, fontWeight: 700,
-            color: '#EDF1F7', margin: 0, letterSpacing: '-0.02em',
+            color: 'var(--ink-display, #EDF1F7)', margin: 0, letterSpacing: '-0.02em',
           }}>
             SOP Generator
           </h1>
@@ -502,13 +502,13 @@ const SOPGenerator = () => {
                   fontSize: 14,
                   fontWeight: isActive ? 600 : 500,
                   fontFamily: fontFamily.body,
-                  color: isActive ? '#EDF1F7' : '#8FA0B8',
+                  color: isActive ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
                   cursor: 'pointer',
                   transition: 'color 0.2s, border-color 0.2s',
                   whiteSpace: 'nowrap',
                 }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#c0cfe0'; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = '#8FA0B8'; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = 'var(--ink-secondary, #8FA0B8)'; }}
               >
                 {tab.label}
               </button>
@@ -537,7 +537,7 @@ const SOPGenerator = () => {
               <FileText size={40} style={{ color: '#64748B', margin: '0 auto 16px', display: 'block' }} />
               <h3 style={{
                 fontFamily: fontFamily.display, fontSize: 18, fontWeight: 600,
-                color: '#EDF1F7', margin: '0 0 8px',
+                color: 'var(--ink-display, #EDF1F7)', margin: '0 0 8px',
               }}>
                 No SOPs generated yet
               </h3>
@@ -555,7 +555,7 @@ const SOPGenerator = () => {
         <div
           ref={generatorRef}
           style={{
-            background: '#0E1628',
+            background: 'var(--surface, #0E1628)',
             border: '1px solid rgba(140,170,210,0.12)',
             borderRadius: 16,
             padding: 24,
@@ -564,12 +564,12 @@ const SOPGenerator = () => {
         >
           <h2 style={{
             fontFamily: fontFamily.display, fontSize: 22, fontWeight: 600,
-            color: '#EDF1F7', margin: '0 0 4px',
+            color: 'var(--ink-display, #EDF1F7)', margin: '0 0 4px',
           }}>
             Generate New SOP
           </h2>
           <p style={{
-            fontFamily: fontFamily.body, fontSize: 14, color: '#8FA0B8',
+            fontFamily: fontFamily.body, fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)',
             margin: '0 0 20px', lineHeight: 1.5,
           }}>
             Describe the process and BIQc will generate a structured, step-by-step procedure from your business data.
@@ -685,8 +685,8 @@ const SOPGenerator = () => {
                 type="button"
                 onClick={saveDraft}
                 style={ghostBtnStyle}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; e.currentTarget.style.color = '#EDF1F7'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.12)'; e.currentTarget.style.color = '#8FA0B8'; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; e.currentTarget.style.color = 'var(--ink-display, #EDF1F7)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.12)'; e.currentTarget.style.color = 'var(--ink-secondary, #8FA0B8)'; }}
               >
                 <Save size={16} /> Save as draft
               </button>
@@ -698,7 +698,7 @@ const SOPGenerator = () => {
         <div style={{ marginBottom: 32 }}>
           <h2 style={{
             fontFamily: fontFamily.display, fontSize: 22, fontWeight: 600,
-            color: '#EDF1F7', margin: '0 0 16px',
+            color: 'var(--ink-display, #EDF1F7)', margin: '0 0 16px',
           }}>
             Start from a template
           </h2>
@@ -727,7 +727,7 @@ const SOPGenerator = () => {
           onClick={e => { if (e.target === e.currentTarget && !loading) setShowResultModal(false); }}
         >
           <div style={{
-            background: '#0E1628',
+            background: 'var(--surface, #0E1628)',
             border: '1px solid rgba(140,170,210,0.12)',
             borderRadius: 16,
             width: '100%',
@@ -756,7 +756,7 @@ const SOPGenerator = () => {
                   </span>
                 )}
                 <span style={{
-                  fontFamily: fontFamily.display, fontSize: 18, fontWeight: 600, color: '#EDF1F7',
+                  fontFamily: fontFamily.display, fontSize: 18, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)',
                 }}>
                   {loading ? 'Generating...' : result?.title || 'Result'}
                 </span>
@@ -791,7 +791,7 @@ const SOPGenerator = () => {
                   onClick={() => { if (!loading) setShowResultModal(false); }}
                   style={{
                     background: 'none', border: 'none', cursor: loading ? 'default' : 'pointer',
-                    color: '#708499', padding: 6, display: 'flex',
+                    color: 'var(--ink-muted, #708499)', padding: 6, display: 'flex',
                     opacity: loading ? 0.4 : 1,
                   }}
                 >
@@ -805,7 +805,7 @@ const SOPGenerator = () => {
               {loading && (
                 <div style={{ textAlign: 'center', padding: 40 }}>
                   <CognitiveMesh compact />
-                  <p style={{ color: '#EDF1F7', fontFamily: fontFamily.body, fontSize: 14, marginTop: 16 }}>
+                  <p style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, fontSize: 14, marginTop: 16 }}>
                     Generating your SOP...
                   </p>
                 </div>

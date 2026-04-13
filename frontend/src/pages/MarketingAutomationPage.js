@@ -102,8 +102,8 @@ const MarketingAutomationPage = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="marketing-automation-page">
         <div>
-          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Marketing Automation.</h1>
-          <p className="text-sm" style={{ color: '#8FA0B8' }}>Generate marketing content grounded in your business data and intelligence.</p>
+          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Marketing Automation.</h1>
+          <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Generate marketing content grounded in your business data and intelligence.</p>
         </div>
 
         {/* KPI Strip — matches mockup ma-kpis */}
@@ -127,15 +127,15 @@ const MarketingAutomationPage = () => {
             <span className="w-2 h-2 rounded-full" style={{ background: '#E85D00', boxShadow: '0 0 6px #E85D00' }} />
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#E85D00' }}>AI Recommendation</span>
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: '#708499' }}>Automation recommendations will appear once email campaigns are connected.</p>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-muted, #708499)' }}>Automation recommendations will appear once email campaigns are connected.</p>
         </div>
 
         {/* Campaign Cards -- empty state until campaigns exist */}
         <div>
-          <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Campaigns</h2>
+          <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Campaigns</h2>
           <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}>
             <Megaphone className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
-            <p className="text-sm" style={{ color: '#708499' }}>No active campaigns. Create email sequences using the content generator below.</p>
+            <p className="text-sm" style={{ color: 'var(--ink-muted, #708499)' }}>No active campaigns. Create email sequences using the content generator below.</p>
           </div>
         </div>
 
@@ -158,7 +158,7 @@ const MarketingAutomationPage = () => {
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <ct.icon className="w-4 h-4" style={{ color: selectedType === ct.id ? '#E85D00' : '#64748B' }} />
-                      <span className="text-sm font-medium" style={{ color: selectedType === ct.id ? '#E85D00' : '#EDF1F7' }}>{ct.label}</span>
+                      <span className="text-sm font-medium" style={{ color: selectedType === ct.id ? '#E85D00' : 'var(--ink-display, #EDF1F7)' }}>{ct.label}</span>
                     </div>
                     <p className="text-[11px] text-[#64748B]">{ct.description}</p>
                   </button>

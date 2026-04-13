@@ -19,10 +19,10 @@ export const SurfaceHeader = ({ eyebrow, title, question, summary, rightSlot, te
       <p className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }} data-testid={`${testIdPrefix}-eyebrow`}>
         — {eyebrow}
       </p>
-      <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid={`${testIdPrefix}-title`}>
+      <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid={`${testIdPrefix}-title`}>
         {title}
       </h1>
-      <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }} data-testid={`${testIdPrefix}-question`}>
+      <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }} data-testid={`${testIdPrefix}-question`}>
         {question}
       </p>
       <p className="text-sm text-[#94A3B8]" style={{ fontFamily: fontFamily.body }} data-testid={`${testIdPrefix}-summary`}>

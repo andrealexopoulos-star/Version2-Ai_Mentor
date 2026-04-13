@@ -125,7 +125,7 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
         <div className="text-center mb-8">
           <h2 style={{
             fontFamily: fontFamily.display,
-            color: '#EDF1F7',
+            color: 'var(--ink-display, #EDF1F7)',
             fontSize: 'clamp(26px, 3.8vw, 44px)',
             fontWeight: 700,
             lineHeight: 1.1,
@@ -192,7 +192,7 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
                 {cat.tools.map(t => (
                   <span key={t} style={{
                     fontFamily: fontFamily.mono,
-                    color: '#8FA0B8',
+                    color: 'var(--ink-secondary, #8FA0B8)',
                     background: 'rgba(255,255,255,0.04)',
                     border: '1px solid rgba(255,255,255,0.08)',
                     fontSize: 11,
@@ -215,7 +215,7 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
           <span style={{ fontFamily: fontFamily.mono, color: '#FF9C45', fontSize: '11px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase' }}>
             BIQc Intelligence Engine
           </span>
-          <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: '13px', marginTop: 4 }}>
+          <p style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', fontSize: '13px', marginTop: 4 }}>
             Continuous AI cognition across every signal
           </p>
         </div>
@@ -251,7 +251,7 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
               </span>
               <span style={{
                 display: 'block', marginTop: 4,
-                fontFamily: fontFamily.mono, color: '#8FA0B8',
+                fontFamily: fontFamily.mono, color: 'var(--ink-secondary, #8FA0B8)',
                 fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase',
               }}>
                 Your AI Executive Team

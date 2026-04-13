@@ -369,7 +369,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] px-3.5 py-2.5 rounded-xl text-sm leading-relaxed`}
               style={{
-                background: msg.role === 'user' ? '#E85D00' : msg.type === 'integration_prompt' ? '#F59E0B10' : '#0E1628',
+                background: msg.role === 'user' ? '#E85D00' : msg.type === 'integration_prompt' ? '#F59E0B10' : 'var(--surface, #0E1628)',
                 color: msg.role === 'user' ? 'white' : '#8FA0B8',
                 border: msg.role === 'user' ? 'none' : msg.type === 'integration_prompt' ? '1px solid #F59E0B25' : '1px solid rgba(140,170,210,0.15)',
                 fontFamily: fontFamily.body,
@@ -480,7 +480,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
           {/* Paperclip button */}
           <button onClick={() => fileRef.current?.click()}
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all hover:brightness-110"
-            style={{ background: attachedFile ? '#E85D0020' : '#0E1628', border: `1px solid ${attachedFile ? '#E85D0040' : 'rgba(140,170,210,0.15)'}` }}
+            style={{ background: attachedFile ? '#E85D0020' : 'var(--surface, #0E1628)', border: `1px solid ${attachedFile ? '#E85D0040' : 'rgba(140,170,210,0.15)'}` }}
             data-testid="soundboard-attach" title="Attach file">
             <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#E85D00' : '#64748B' }} />
           </button>

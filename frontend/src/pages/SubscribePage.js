@@ -140,12 +140,12 @@ const SubscribePage = () => {
         <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
           — Choose your plan
         </div>
-        <h1 className="font-medium mb-3" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+        <h1 className="font-medium mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
           One platform, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>three ways in</em>.
         </h1>
         {featureLabel && <p className="text-xs text-[#E85D00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
         <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#EDF1F7] capitalize">{currentTier}</strong></p>
-        <p className="mt-2 text-xs" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+        <p className="mt-2 text-xs" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
           Transparent billing: shown amount is charged exactly as displayed. No hidden fees.
         </p>
       </div>

@@ -24,7 +24,7 @@ const C = {
   textH:        '#EDF1F7',
   textB:        '#8FA0B8',
   textM:        '#5C6E82',
-  steel100:     '#C8D4E4',
+  steel100:     'var(--ink, #C8D4E4)',
   steel300:     '#6E8AAE',
   brand:        '#FF7A18',
   brandDark:    '#E85D00',

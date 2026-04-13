@@ -152,7 +152,7 @@ export default function IntelligencePage() {
                 <div className="flex flex-wrap gap-2 justify-center">
                   {step.badges.map((b) => (
                     <span key={b} className="px-3 py-1 rounded-full text-xs font-medium"
-                      style={{ background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}>
+                      style={{ background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary, #8FA0B8)' }}>
                       {b}
                     </span>
                   ))}

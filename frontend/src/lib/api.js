@@ -4,6 +4,20 @@ import { getBackendUrl } from '../config/urls';
 
 export const API_BASE = `${getBackendUrl()}/api`;
 
+// --- Cached auth token (Problem 1 fix) ---
+// Instead of calling supabase.auth.getSession() on every request,
+// cache the token and update it only when auth state changes.
+let cachedAccessToken = null;
+
+supabase.auth.onAuthStateChange((_event, session) => {
+  cachedAccessToken = session?.access_token || null;
+});
+
+// Initialize from current session
+supabase.auth.getSession().then(({ data: { session } }) => {
+  cachedAccessToken = session?.access_token || null;
+});
+
 const devBypassAuth =
   typeof process !== 'undefined' &&
   process.env.NODE_ENV === 'development' &&
@@ -27,7 +41,7 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
-apiClient.interceptors.request.use(async (config) => {
+apiClient.interceptors.request.use((config) => {
   config.headers = config.headers || {};
   if (devBypassAuth && devBypassSecret) {
     config.headers['X-Dev-Bypass'] = devBypassSecret;
@@ -36,67 +50,52 @@ apiClient.interceptors.request.use(async (config) => {
   if (qaBypassKey) {
     config.headers['X-QA-Bypass'] = qaBypassKey;
   }
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      // Check if token expires within 60 seconds — refresh proactively
-      const expiry = session.expires_at ? session.expires_at * 1000 : 0;
-      if (expiry && expiry - Date.now() < 60000) {
-        try {
-          const { data: refreshed } = await supabase.auth.refreshSession();
-          if (refreshed?.session?.access_token) {
-            config.headers = config.headers || {};
-            config.headers.Authorization = `Bearer ${refreshed.session.access_token}`;
-          } else {
-            config.headers = config.headers || {};
-            config.headers.Authorization = `Bearer ${session.access_token}`;
-          }
-        } catch {
-          config.headers = config.headers || {};
-          config.headers.Authorization = `Bearer ${session.access_token}`;
-        }
-      } else {
-        config.headers = config.headers || {};
-        config.headers.Authorization = `Bearer ${session.access_token}`;
-      }
-    }
-  } catch {}
-  
-  if (!config.headers) config.headers = {};
-  config.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate';
-  config.headers['Pragma'] = 'no-cache';
-  config.headers['Expires'] = '0';
+
+  // Use cached token instead of per-request getSession() call
+  if (cachedAccessToken) {
+    config.headers.Authorization = `Bearer ${cachedAccessToken}`;
+  }
+
   config.headers['Accept'] = 'application/json';
-  config.params = config.params || {};
-  config.params._t = Date.now();
-  
+
   return config;
 }, (error) => {
   return Promise.reject(error);
 });
 
 apiClient.interceptors.response.use(
-  async (response) => {
+  (response) => {
     const ct = response.headers?.['content-type'] || '';
-    
+
     if (response.headers?.['x-api-server']) return response;
-    
+
     if (ct.includes('text/html')) {
       const url = response.config?.url || 'unknown';
       if (process.env.NODE_ENV !== 'production') console.error('[apiClient] API returned HTML for', url);
       return Promise.reject(new Error(`API returned HTML instead of JSON for ${url}`));
     }
-    
+
     return response;
   },
-  (error) => {
+  async (error) => {
+    const config = error.config;
+    const status = error.response?.status;
+
+    // Retry once on 502/503 (transient server errors) with 2s delay
+    if ((status === 502 || status === 503) && !config._retried) {
+      config._retried = true;
+      await new Promise(r => setTimeout(r, 2000));
+      return apiClient(config);
+    }
+
     // Auto-retry once on 401 with a refreshed token
-    if (error.response?.status === 401 && !error.config._retried) {
-      error.config._retried = true;
+    if (status === 401 && !config._retried) {
+      config._retried = true;
       return supabase.auth.refreshSession().then(({ data }) => {
         if (data?.session?.access_token) {
-          error.config.headers.Authorization = `Bearer ${data.session.access_token}`;
-          return apiClient.request(error.config);
+          cachedAccessToken = data.session.access_token;
+          config.headers.Authorization = `Bearer ${data.session.access_token}`;
+          return apiClient.request(config);
         }
         return Promise.reject(error);
       }).catch(() => Promise.reject(error));

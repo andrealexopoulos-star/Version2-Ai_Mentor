@@ -5,7 +5,7 @@ import { fontFamily } from '../../../design-system/tokens';
 
 
 const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>{children}</div>
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>{children}</div>
 );
 
 const HealthCapsule = ({ label, value, status, icon: Icon }) => {
@@ -30,7 +30,7 @@ const AttentionCard = ({ severity, title, impact, action, actions }) => {
   const sevColors = { critical: '#E85D00', moderate: '#F59E0B', info: '#3B82F6' };
   const c = sevColors[severity] || sevColors.info;
   return (
-    <div className="rounded-lg overflow-hidden" style={{ background: '#0E1628', border: `1px solid ${c}30` }} data-testid="attention-card">
+    <div className="rounded-lg overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: `1px solid ${c}30` }} data-testid="attention-card">
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 px-5 py-4 text-left">
         <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c, boxShadow: `0 0 8px ${c}50` }} />
         <div className="flex-1 min-w-0">

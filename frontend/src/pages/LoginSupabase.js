@@ -307,10 +307,10 @@ const LoginSupabase = () => {
             <span className="text-lg font-semibold text-white" style={{ fontFamily: DISPLAY }}>BIQc</span>
           </div>
 
-          <h1 className="font-semibold mb-2" style={{ fontFamily: DISPLAY, color: '#EDF1F7', fontSize: '48px', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+          <h1 className="font-semibold mb-2" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)', fontSize: '48px', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
             Sign in to <em style={{ fontStyle: 'italic', color: '#E85D00' }}>BIQc</em>.
           </h1>
-          <p className="text-sm mb-7" style={{ fontFamily: fontFamily.body, color: '#708499' }}>
+          <p className="text-sm mb-7" style={{ fontFamily: fontFamily.body, color: 'var(--ink-muted, #708499)' }}>
             Use the same Google or Microsoft account that holds your inbox.
           </p>
 
@@ -334,7 +334,7 @@ const LoginSupabase = () => {
           <div className="flex flex-col gap-3 mb-6">
             <button type="button" onClick={() => handleOAuthSignIn('google')} disabled={!hasSupabaseConfig || oauthLoading || loading}
               className="w-full flex items-center gap-3 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
-              style={{ fontFamily: fontFamily.body, color: '#EDF1F7', background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', padding: '14px 18px', cursor: 'pointer' }}
+              style={{ fontFamily: fontFamily.body, color: 'var(--ink-display, #EDF1F7)', background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', padding: '14px 18px', cursor: 'pointer' }}
               data-testid="login-google-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>connecting...</span> : (
                 <>
@@ -345,7 +345,7 @@ const LoginSupabase = () => {
             </button>
             <button type="button" onClick={() => handleOAuthSignIn('azure')} disabled={!hasSupabaseConfig || oauthLoading || loading}
               className="w-full flex items-center gap-3 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
-              style={{ fontFamily: fontFamily.body, color: '#EDF1F7', background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', padding: '14px 18px', cursor: 'pointer' }}
+              style={{ fontFamily: fontFamily.body, color: 'var(--ink-display, #EDF1F7)', background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', padding: '14px 18px', cursor: 'pointer' }}
               data-testid="login-microsoft-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>connecting...</span> : (
                 <>
@@ -359,7 +359,7 @@ const LoginSupabase = () => {
           {/* Divider */}
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px" style={{ background: 'rgba(140,170,210,0.12)' }} />
-            <span className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>or use email</span>
+            <span className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>or use email</span>
             <div className="flex-1 h-px" style={{ background: 'rgba(140,170,210,0.12)' }} />
           </div>
 
@@ -367,25 +367,25 @@ const LoginSupabase = () => {
           <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="email" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Work email</label>
+                <label htmlFor="email" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Work email</label>
                 <Input id="email" type="email" inputMode="email" autoComplete="email" value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="you@yourbusiness.com.au" required
                   className="h-12 text-sm rounded-xl"
-                  style={{ fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', color: '#EDF1F7' }}
+                  style={{ fontFamily: fontFamily.body, background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-display, #EDF1F7)' }}
                   data-testid="login-email-input" />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="password" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Password</label>
+                <label htmlFor="password" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Password</label>
                 <div className="relative">
                   <Input id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" enterKeyHint="go"
                     value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="••••••••••" required
                     className="h-12 pr-12 text-sm rounded-xl"
-                    style={{ fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', color: '#EDF1F7' }}
+                    style={{ fontFamily: fontFamily.body, background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-display, #EDF1F7)' }}
                     data-testid="login-password-input" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors" style={{ color: '#708499' }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors" style={{ color: 'var(--ink-muted, #708499)' }}
                     data-testid="login-toggle-password">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -421,7 +421,7 @@ const LoginSupabase = () => {
             )}
             {fallbackRequired && fallbackChallenge && (
               <div className="rounded-xl border px-3 py-3 mt-5" style={{ borderColor: 'rgba(140,170,210,0.12)', background: 'rgba(14,22,40,0.5)' }} data-testid="login-fallback-captcha">
-                <p className="text-xs mb-2" style={{ color: '#708499', fontFamily: fontFamily.body }}>
+                <p className="text-xs mb-2" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
                   Verification required: solve {fallbackChallenge.prompt}
                 </p>
                 <Input
@@ -430,7 +430,7 @@ const LoginSupabase = () => {
                   onChange={(e) => setFallbackAnswer(e.target.value)}
                   placeholder="Your answer"
                   className="h-10 text-sm rounded-lg"
-                  style={{ fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', color: '#EDF1F7' }}
+                  style={{ fontFamily: fontFamily.body, background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-display, #EDF1F7)' }}
                   data-testid="login-fallback-captcha-input"
                 />
               </div>
@@ -445,7 +445,7 @@ const LoginSupabase = () => {
             </button>
           </form>
 
-          <p className="text-sm mt-7 text-center" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+          <p className="text-sm mt-7 text-center" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
             New to BIQc?{' '}
             <Link to="/register-supabase" className="font-medium" style={{ color: '#E85D00', textDecoration: 'none' }} data-testid="login-signup-link">
               Start your free account →

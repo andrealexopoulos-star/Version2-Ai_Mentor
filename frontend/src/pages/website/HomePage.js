@@ -27,7 +27,7 @@ const StatCard = ({ number, stat, body, biqc }) => (
   >
     <p style={{ fontFamily: fontFamily.display, fontSize: '36px', fontWeight: 700, color: '#E85D00', lineHeight: 1.1, marginBottom: 0 }}>{number}</p>
     <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: '#FFFFFF', fontFamily: fontFamily.body }}>{stat}</p>
-    <p className="text-sm leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{body}</p>
+    <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{body}</p>
     <p className="text-sm italic leading-relaxed" style={{ color: '#E85D00', fontFamily: fontFamily.body }}>{biqc}</p>
   </div>
 );
@@ -223,13 +223,13 @@ const HomePage = () => (
             fontFamily: fontFamily.display,
             fontSize: 'clamp(26px, 3.8vw, 44px)',
             lineHeight: 1.1,
-            color: '#EDF1F7',
+            color: 'var(--ink-display, #EDF1F7)',
           }}
         >
           One intelligence layer for every{' '}
           <span style={{
             fontFamily: fontFamily.display,
-            background: 'linear-gradient(135deg, #FF7A18 0%, #E85D00 40%, #C8D4E4 100%)',
+            background: 'linear-gradient(135deg, #FF7A18 0%, #E85D00 40%, var(--ink, #C8D4E4) 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
@@ -422,15 +422,15 @@ const HomePage = () => (
           </p>
           <h2
             className="text-3xl sm:text-4xl lg:text-5xl font-semibold mb-4"
-            style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}
+            style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}
           >
             What You Get
           </h2>
           <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
-            style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
-            Full visibility over where you&rsquo;re <strong style={{ color: '#EDF1F7' }}>losing money</strong>;
-            {' '}where risk is building, and where <strong style={{ color: '#EDF1F7' }}>growth</strong> is being{' '}
-            <strong style={{ color: '#EDF1F7' }}>missed</strong>&mdash;<strong style={{ color: '#EDF1F7' }}>in real time.</strong>
+            style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+            Full visibility over where you&rsquo;re <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>losing money</strong>;
+            {' '}where risk is building, and where <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>growth</strong> is being{' '}
+            <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>missed</strong>&mdash;<strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>in real time.</strong>
           </p>
         </div>
 
@@ -456,7 +456,7 @@ const HomePage = () => (
                   <card.icon className="w-5 h-5" style={{ color: card.iconColor }} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold leading-snug mb-0.5" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
+                  <h3 className="text-sm font-bold leading-snug mb-0.5" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
                     {card.title}
                   </h3>
                   <p className="text-xs leading-relaxed" style={{ color: 'rgba(159,176,195,0.7)', fontFamily: fontFamily.body }}>
@@ -470,7 +470,7 @@ const HomePage = () => (
                 {card.bullets.map((b) => (
                   <li key={b} className="flex items-start gap-2">
                     <span className="flex-shrink-0 mt-1.5" style={{ width: 6, height: 6, borderRadius: '50%', background: card.iconColor }} />
-                    <span className="text-xs leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{b}</span>
+                    <span className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{b}</span>
                   </li>
                 ))}
               </ul>
@@ -495,13 +495,13 @@ const HomePage = () => (
             boxShadow: '0 0 60px rgba(140,170,210,0.04)',
           }}
         >
-          <h3 className="text-lg sm:text-xl font-bold mb-3" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
+          <h3 className="text-lg sm:text-xl font-bold mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>
             Then&mdash;<span style={{ color: '#E85D00' }}>BIQc Brings It Together</span>
           </h3>
           <p className="text-sm mb-3" style={{ color: 'rgba(159,176,195,0.7)', fontFamily: fontFamily.body }}>
             Daily Executive Brief &nbsp;·&nbsp; Strategic Action Plans &nbsp;·&nbsp; Market &amp; Competitor Intelligence
           </p>
-          <p className="text-base font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
+          <p className="text-base font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
             The full picture &nbsp;·&nbsp; The right moves &nbsp;·&nbsp; The confidence to act
           </p>
         </div>
@@ -516,11 +516,11 @@ const HomePage = () => (
           The Opportunity
         </p>
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 text-center"
-          style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
+          style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>
           What Businesses Are Achieving In The AI Era
         </h2>
         <p className="text-base sm:text-lg mb-10 max-w-2xl mx-auto leading-relaxed text-center"
-          style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+          style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
           Business leaders make hundreds of decisions every day, and research shows up to{' '}
           <span style={{ color: '#C65F2E', fontWeight: 600 }}>40%</span> of those decisions are made without the right data.
         </p>
@@ -562,7 +562,7 @@ const HomePage = () => (
           <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
-          <p className="text-base max-w-xl mx-auto" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>Businesses embedding AI-driven decision systems experience:</p>
+          <p className="text-base max-w-xl mx-auto" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>Businesses embedding AI-driven decision systems experience:</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -579,7 +579,7 @@ const HomePage = () => (
                 <item.icon className="w-5 h-5" style={{ color: '#E85D00' }} />
               </div>
               <h3 className="text-base font-semibold mb-2" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>{item.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>{item.desc}</p>
+              <p className="text-sm leading-relaxed" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>{item.desc}</p>
             </GlassCard>
           ))}
         </div>
@@ -653,7 +653,7 @@ const HomePage = () => (
               <div className="flex-1">
                 <p className="text-sm leading-relaxed mb-5" style={{
                   fontFamily: fontFamily.body,
-                  color: '#8FA0B8',
+                  color: 'var(--ink-secondary, #8FA0B8)',
                   fontStyle: 'italic',
                   lineHeight: 1.7,
                 }}>
@@ -663,7 +663,7 @@ const HomePage = () => (
 
               {/* Author */}
               <div>
-                <p className="text-[13px] font-semibold" style={{ color: '#EDF1F7' }}>{t.author}</p>
+                <p className="text-[13px] font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{t.author}</p>
                 <p className="text-xs mt-0.5" style={{ color: '#5C6E82' }}>{t.company}</p>
               </div>
             </div>
@@ -681,10 +681,10 @@ const HomePage = () => (
         top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
       }} />
       <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
-        <h2 className="font-medium mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: '40px' }}>
+        <h2 className="font-medium mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: '40px' }}>
           Stop reacting. Start preventing.
         </h2>
-        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: '#8FA0B8', lineHeight: 1.7 }}>
+        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.7 }}>
           Join the operators who replaced reactive firefighting with autonomous intelligence.
         </p>
         <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="bottom-cta">

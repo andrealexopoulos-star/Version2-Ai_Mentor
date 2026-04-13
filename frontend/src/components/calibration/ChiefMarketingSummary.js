@@ -1221,8 +1221,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
             {customerReviews.impact.map((row, idx) => (
               <div key={idx} className="p-3 rounded-lg" style={{ background: STEEL_SURFACE, border: `1px solid ${STEEL_BORDER}` }}>
                 <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{row.fundamental}</p>
-                <p className="text-xs mb-1" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>{row.impact}</p>
-                <p className="text-[11px] leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{row.mechanism}</p>
+                <p className="text-xs mb-1" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{row.impact}</p>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{row.mechanism}</p>
               </div>
             ))}
           </div>
@@ -1373,8 +1373,8 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
                 {staffImpact.impact.map((row, idx) => (
                   <div key={idx} className="p-3 rounded-lg" style={{ background: '#111A25', border: '1px solid rgba(140,170,210,0.15)' }}>
                     <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{row.fundamental}</p>
-                    <p className="text-xs mb-1" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>{row.impact}</p>
-                    <p className="text-[11px] leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{row.mechanism}</p>
+                    <p className="text-xs mb-1" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{row.impact}</p>
+                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{row.mechanism}</p>
                   </div>
                 ))}
               </div>
@@ -1451,7 +1451,7 @@ const ChiefMarketingSummary = ({ wowSummary, onConfirm, isSubmitting, identityCo
 
             {marketTrajectory && (
               <p className="text-xs text-[#8FA0B8] mb-3" style={{ fontFamily: fontFamily.body }}>
-                Market trajectory: <strong style={{ color: '#EDF1F7' }}>{marketTrajectory}</strong>
+                Market trajectory: <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>{marketTrajectory}</strong>
               </p>
             )}
 

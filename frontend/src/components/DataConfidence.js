@@ -20,7 +20,7 @@ const DataConfidence = ({ cognitive, channelsData, loading = false }) => {
       <div className="flex flex-col items-start gap-1.5" data-testid="data-confidence">
         <div className="flex items-center gap-2">
           <Shield className="w-3.5 h-3.5" style={{ color: '#64748B' }} />
-          <span className="text-[11px]" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>
+          <span className="text-[11px]" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>
             Data Confidence: Verifying
           </span>
         </div>

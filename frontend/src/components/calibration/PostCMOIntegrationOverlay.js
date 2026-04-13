@@ -253,7 +253,7 @@ const PostCMOIntegrationOverlay = ({ onSkip, onComplete, firstName = '' }) => {
                 onMouseLeave={() => setHoveredId(null)}
                 className="relative flex items-start gap-3 p-4 rounded-xl text-left transition-all"
                 style={{
-                  background: isConnected ? `${intg.color}15` : hoveredId === intg.id ? 'rgba(140,170,210,0.15)' : '#0E1628',
+                  background: isConnected ? `${intg.color}15` : hoveredId === intg.id ? 'rgba(140,170,210,0.15)' : 'var(--surface, #0E1628)',
                   border: `1px solid ${isConnected ? intg.color + '40' : hoveredId === intg.id ? '#334155' : 'rgba(140,170,210,0.15)'}`,
                   animation: `gridFade ${0.3 + i * 0.08}s ease-out`,
                   transform: hoveredId === intg.id && !isConnecting ? 'translateY(-2px)' : 'none',

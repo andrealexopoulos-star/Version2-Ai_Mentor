@@ -731,10 +731,10 @@ export default function Integrations() {
                 <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
                   — Integrations
                 </div>
-                <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+                <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
                   Connect your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>tools</em>.
                 </h1>
-                <p className="mt-2 text-sm" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+                <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
                   BIQc reads from the tools you already use. Every connection unlocks new signals. All third-party integrations go through Merge.dev — one auth, one dashboard.
                 </p>
               </div>
@@ -758,7 +758,7 @@ export default function Integrations() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search all connectors"
                   className="w-full rounded-lg py-2.5 pl-9 pr-9 text-[13px] outline-none"
-                  style={{ background: '#0B1220', border: '1px solid #1E293B', color: '#EDF1F7' }}
+                  style={{ background: '#0B1220', border: '1px solid #1E293B', color: 'var(--ink-display, #EDF1F7)' }}
                   data-testid="integrations-search"
                 />
                 {searchTerm && (

@@ -209,10 +209,10 @@ const BusinessProfile = () => {
               <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
                 — Business DNA
               </div>
-              <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
                 How BIQc <em style={{ fontStyle: 'italic', color: '#E85D00' }}>sees you</em>.
               </h1>
-              <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+              <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
                 This is the working profile every signal, alert, and brief is calibrated against. The more BIQc learns from your inbox and tools, the sharper this gets.
               </p>
             </div>
@@ -230,10 +230,10 @@ const BusinessProfile = () => {
             <div style={{ height: 3, background: 'linear-gradient(90deg, #E85D00, #FF7A1A, #E85D00)', width: '100%' }} />
             <div className="p-6 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
+                <h2 className="text-lg font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>
                   {profile.business_name || user?.company_name || user?.business_name || 'Your Business'}
                 </h2>
-                <p className="text-sm mt-1" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+                <p className="text-sm mt-1" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
                   Business DNA Profile
                 </p>
               </div>
@@ -250,7 +250,7 @@ const BusinessProfile = () => {
                     {scores.completeness || 0}%
                   </text>
                 </svg>
-                <span className="text-[10px] mt-1" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>Complete</span>
+                <span className="text-[10px] mt-1" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>Complete</span>
               </div>
             </div>
           </div>

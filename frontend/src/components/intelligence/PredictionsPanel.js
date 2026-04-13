@@ -70,8 +70,8 @@ const PredictionsPanel = ({ compact = false }) => {
   if (predictions.length === 0) {
     return (
       <div className="text-center py-12">
-        <Activity className="w-10 h-10 mx-auto mb-3" style={{ color: '#708499' }} />
-        <p className="text-sm mb-4" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+        <Activity className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--ink-muted, #708499)' }} />
+        <p className="text-sm mb-4" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
           No predictions generated yet. Run your first analysis to see AI-powered forecasts.
         </p>
         <button onClick={runPredictions} disabled={running}
@@ -119,7 +119,7 @@ const PredictionsPanel = ({ compact = false }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
+                    <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
                       {meta.label}
                     </span>
                     <span className="text-lg font-semibold" style={{ color: scoreColor, fontFamily: fontFamily.display }}>
@@ -132,15 +132,15 @@ const PredictionsPanel = ({ compact = false }) => {
                       style={{ width: `${score * 100}%`, background: scoreColor }} />
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                    <span style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                       {pred.horizon_days}d horizon
                     </span>
-                    <span style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                    <span style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                       {(confidence * 100).toFixed(0)}% confidence
                     </span>
                   </div>
                   {pred.reasoning && (
-                    <p className="text-xs mt-2 leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+                    <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
                       {pred.reasoning}
                     </p>
                   )}
@@ -148,8 +148,8 @@ const PredictionsPanel = ({ compact = false }) => {
                     <div className="mt-3 pt-3 space-y-1" style={{ borderTop: '1px solid var(--border-default)' }}>
                       {Object.entries(pred.details).slice(0, 6).map(([k, v]) => (
                         <div key={k} className="flex items-center justify-between text-xs">
-                          <span style={{ color: '#708499', fontFamily: fontFamily.mono }}>{k.replace(/_/g, ' ')}</span>
-                          <span style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>
+                          <span style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>{k.replace(/_/g, ' ')}</span>
+                          <span style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>
                             {typeof v === 'number' ? v.toFixed(2) : String(v)}
                           </span>
                         </div>

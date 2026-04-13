@@ -50,19 +50,19 @@ const SemanticContractBanner = ({ payload, title = 'Data Contract' }) => {
       <div className="grid gap-2 md:grid-cols-3 text-xs">
         <div style={{ color: '#CBD5E1' }}>
           Confidence:{' '}
-          <strong style={{ color: '#EDF1F7' }}>
+          <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>
             {confidence === null ? 'n/a' : `${Math.round(confidence * 100)}%`}
           </strong>
         </div>
         <div style={{ color: '#CBD5E1' }}>
           Lookback:{' '}
-          <strong style={{ color: '#EDF1F7' }}>
+          <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>
             {Number.isFinite(lookbackEffective) ? lookbackEffective : 'n/a'} / {Number.isFinite(lookbackTarget) ? lookbackTarget : 'n/a'} days
           </strong>
         </div>
         <div style={{ color: '#CBD5E1' }}>
           Backfill:{' '}
-          <strong style={{ color: '#EDF1F7' }}>{payload.backfill_state || 'none'}</strong>
+          <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>{payload.backfill_state || 'none'}</strong>
         </div>
       </div>
       {payload.confidence_reason && (

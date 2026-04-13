@@ -58,7 +58,7 @@ export default function BIQcFoundationPage() {
                 <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(15,23,42,0.42)' }}>
                   <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Annual option</p>
                   <p className="mt-1 text-2xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>$3,490 / year</p>
-                  <p className="mt-1 text-[11px]" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>2 months equivalent discount. No hidden fees.</p>
+                  <p className="mt-1 text-[11px]" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>2 months equivalent discount. No hidden fees.</p>
                 </div>
                 <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(15,23,42,0.42)' }}>
                   <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Product description</p>

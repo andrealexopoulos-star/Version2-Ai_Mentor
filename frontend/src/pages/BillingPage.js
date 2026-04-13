@@ -55,9 +55,11 @@ const BillingPage = () => {
   const [charges, setCharges] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
   const load = async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const [overviewRes, chargesRes, suppliersRes] = await Promise.all([
         apiClient.get('/billing/overview'),
@@ -67,7 +69,9 @@ const BillingPage = () => {
       setOverview(overviewRes?.data || null);
       setCharges(chargesRes?.data?.charges || []);
       setSuppliers(suppliersRes?.data?.suppliers || []);
-    } catch {
+    } catch (err) {
+      console.error('[BillingPage] fetch failed:', err);
+      setFetchError(err.message || 'Failed to load data');
       setOverview(null);
       setCharges([]);
       setSuppliers([]);
@@ -119,22 +123,41 @@ const BillingPage = () => {
         {/* ── Header ── */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: '28px', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: '28px', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
               Billing & Subscription
             </h1>
-            <p className="text-sm" style={{ color: '#8FA0B8' }}>
+            <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
               Manage your plan, payment method, and view invoice history.
             </p>
           </div>
           <button
             onClick={load}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-colors hover:bg-white/5"
-            style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8', fontFamily: fontFamily.mono }}
+            style={{ border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
+
+        {fetchError && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+            background: 'rgba(232, 93, 0, 0.08)', border: '1px solid rgba(232, 93, 0, 0.2)',
+            borderRadius: 12, marginBottom: 16,
+            fontFamily: "'Inter', sans-serif", fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)',
+          }}>
+            <span style={{ color: 'var(--lava, #E85D00)' }}>{'\u26A0'}</span>
+            <span style={{ flex: 1 }}>{fetchError}</span>
+            <button
+              onClick={() => { setFetchError(null); load(); }}
+              style={{
+                background: 'var(--lava, #E85D00)', color: 'white', border: 'none',
+                padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              }}
+            >Retry</button>
+          </div>
+        )}
 
         {/* ── Connector badges ── */}
         <div className="flex flex-wrap gap-2">
@@ -173,20 +196,20 @@ const BillingPage = () => {
               </div>
 
               {/* Plan name */}
-              <h2 className="text-2xl mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
+              <h2 className="text-2xl mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>
                 {planLabel}
               </h2>
 
               {/* Price */}
               <div className="flex items-baseline gap-1 mb-3">
-                <span className="font-bold" style={{ fontFamily: fontFamily.mono, fontSize: '36px', color: '#EDF1F7', lineHeight: 1 }}>
+                <span className="font-bold" style={{ fontFamily: fontFamily.mono, fontSize: '36px', color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>
                   {priceLabel}
                 </span>
-                <span className="text-sm" style={{ color: '#708499' }}>/ month</span>
+                <span className="text-sm" style={{ color: 'var(--ink-muted, #708499)' }}>/ month</span>
               </div>
 
               {/* Renewal info */}
-              <div className="flex items-center gap-2 text-xs mb-4" style={{ color: '#708499' }}>
+              <div className="flex items-center gap-2 text-xs mb-4" style={{ color: 'var(--ink-muted, #708499)' }}>
                 <Clock className="w-3.5 h-3.5 shrink-0" />
                 <span>Renews {overview?.subscription?.next_renewal || 'next billing cycle'} · Billed monthly</span>
               </div>
@@ -194,7 +217,7 @@ const BillingPage = () => {
               {/* Feature checklist */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
                 {features.map((feat) => (
-                  <div key={feat} className="flex items-center gap-2 text-sm" style={{ color: '#8FA0B8' }}>
+                  <div key={feat} className="flex items-center gap-2 text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
                     <Check className="w-4 h-4 shrink-0" style={{ color: '#16A34A' }} />
                     {feat}
                   </div>
@@ -214,7 +237,7 @@ const BillingPage = () => {
               )}
               <button
                 className="px-5 py-2.5 rounded-lg text-sm font-medium transition-colors hover:text-[#EDF1F7] whitespace-nowrap"
-                style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}
+                style={{ border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary, #8FA0B8)' }}
               >
                 Manage subscription
               </button>
@@ -267,7 +290,7 @@ const BillingPage = () => {
 
         {/* ── Usage This Period (mockup spec section 2) ── */}
         <div>
-          <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Usage This Period</h2>
+          <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Usage This Period</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { label: 'AI Queries', used: overview?.usage?.ai_queries_used ?? 0, limit: overview?.usage?.ai_queries_limit ?? 500 },
@@ -284,8 +307,8 @@ const BillingPage = () => {
               return (
                 <Panel key={m.label}>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-semibold" style={{ color: '#EDF1F7' }}>{m.label}</span>
-                    <span className="text-xs" style={{ fontFamily: fontFamily.mono, color: '#8FA0B8' }}>{displayUsed} / {displayLimit}</span>
+                    <span className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{m.label}</span>
+                    <span className="text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-secondary, #8FA0B8)' }}>{displayUsed} / {displayLimit}</span>
                   </div>
                   <div className="rounded-full mb-2 overflow-hidden" style={{ height: '8px', background: 'rgba(140,170,210,0.08)' }}>
                     <div
@@ -293,7 +316,7 @@ const BillingPage = () => {
                       style={{ width: `${pct}%`, background: color, transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
                     />
                   </div>
-                  <span className="text-xs" style={{ color: '#708499' }}>
+                  <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>
                     {resetDate ? `Resets ${resetDate}` : 'Resets next billing cycle'} · {remaining} remaining
                   </span>
                 </Panel>
@@ -304,7 +327,7 @@ const BillingPage = () => {
 
         {/* ── Payment Method (mockup spec section 3) ── */}
         <div>
-          <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Payment Method</h2>
+          <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Payment Method</h2>
           <Panel>
             {overview?.payment_method ? (
               <div className="flex items-center gap-4 flex-wrap">
@@ -315,11 +338,11 @@ const BillingPage = () => {
                   {(overview.payment_method.brand || 'CARD').toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>
+                  <p className="text-sm font-medium" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-display, #EDF1F7)' }}>
                     {'\u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 '}{overview.payment_method.last4 || '----'}
                   </p>
                   {overview.payment_method.exp_month && overview.payment_method.exp_year && (
-                    <p className="text-xs" style={{ color: '#708499' }}>
+                    <p className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>
                       Expires {String(overview.payment_method.exp_month).padStart(2, '0')}/{overview.payment_method.exp_year}
                     </p>
                   )}
@@ -327,13 +350,13 @@ const BillingPage = () => {
                 <div className="flex gap-2">
                   <button
                     className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7] hover:border-[rgba(140,170,210,0.25)]"
-                    style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}
+                    style={{ border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary, #8FA0B8)' }}
                   >
                     Update card
                   </button>
                   <button
                     className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7] hover:border-[rgba(140,170,210,0.25)]"
-                    style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}
+                    style={{ border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary, #8FA0B8)' }}
                   >
                     Add new
                   </button>
@@ -345,13 +368,13 @@ const BillingPage = () => {
                   className="w-14 h-9 rounded-md flex items-center justify-center shrink-0"
                   style={{ background: 'rgba(140,170,210,0.08)', border: '1px dashed rgba(140,170,210,0.2)' }}
                 >
-                  <CreditCard className="w-5 h-5" style={{ color: '#708499' }} />
+                  <CreditCard className="w-5 h-5" style={{ color: 'var(--ink-muted, #708499)' }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium" style={{ color: '#8FA0B8' }}>
+                  <p className="text-sm font-medium" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
                     No payment method on file
                   </p>
-                  <p className="text-xs" style={{ color: '#708499' }}>
+                  <p className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>
                     Add a card to enable automatic billing
                   </p>
                 </div>
@@ -368,7 +391,7 @@ const BillingPage = () => {
 
         {/* ── Invoice History (mockup spec section 4) ── */}
         <div>
-          <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Invoice History</h2>
+          <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Invoice History</h2>
           <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}>
             <table className="w-full" style={{ borderCollapse: 'collapse' }}>
               <thead>
@@ -377,7 +400,7 @@ const BillingPage = () => {
                     <th
                       key={h}
                       className="text-left px-4 py-3 text-[10px] font-semibold uppercase"
-                      style={{ color: '#708499', borderBottom: '1px solid rgba(140,170,210,0.12)', fontFamily: fontFamily.mono, letterSpacing: '0.08em' }}
+                      style={{ color: 'var(--ink-muted, #708499)', borderBottom: '1px solid rgba(140,170,210,0.12)', fontFamily: fontFamily.mono, letterSpacing: '0.08em' }}
                     >
                       {h}
                     </th>
@@ -395,13 +418,13 @@ const BillingPage = () => {
                   const sStyle = statusStyles[status] || statusStyles.paid;
                   return (
                     <tr key={row.session_id || `${row.created_at}-${row.amount}-${i}`} className="hover:bg-white/[0.02]">
-                      <td className="px-4 py-3 text-sm" style={{ color: '#8FA0B8', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
                         {row.created_at || ''}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: '#EDF1F7', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--ink-display, #EDF1F7)', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
                         {row.tier || planLabel} Plan — Monthly
                       </td>
-                      <td className="px-4 py-3 text-sm font-semibold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
+                      <td className="px-4 py-3 text-sm font-semibold" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-display, #EDF1F7)', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
                         {money(row.amount, row.currency || chargesSummary.currency || 'AUD')}
                       </td>
                       <td className="px-4 py-3" style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
@@ -504,7 +527,7 @@ const BillingPage = () => {
                   </div>
                   <p
                     className="text-xs font-semibold"
-                    style={{ fontFamily: fontFamily.mono, color: row.is_overdue ? '#EF4444' : '#EDF1F7' }}
+                    style={{ fontFamily: fontFamily.mono, color: row.is_overdue ? '#EF4444' : 'var(--ink-display, #EDF1F7)' }}
                   >
                     {money(row.amount, chargesSummary.currency || 'AUD')}
                   </p>

@@ -468,7 +468,7 @@ export const SupabaseAuthProvider = ({ children }) => {
             lastBootstrapUserId.current = currentUserId;
             setAuthState(AUTH_STATE.READY);
           }
-        }, 12000);
+        }, 8000);
 
         const activeSession = session || (await supabase.auth.getSession()).data.session;
         if (!activeSession?.access_token) {
@@ -480,59 +480,68 @@ export const SupabaseAuthProvider = ({ children }) => {
         }
 
         const accessToken = activeSession.access_token;
-        let calibrationComplete = false;
-
-        // SINGLE CHECK: backend /api/calibration/status (service_role key, RLS-safe)
-        try {
-          const calUrl = `${getBackendUrl()}/api/calibration/status?_t=${Date.now()}`;
-          const calRes = await fetchWithTimeout(calUrl, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Accept': 'application/json',
-              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0',
-            }
-          }, 7000);
-          const contentType = calRes.headers.get('content-type') || '';
-          if (calRes.ok && contentType.includes('application/json')) {
-            const cal = await calRes.json();
-            calibrationComplete = cal.status === 'COMPLETE';
-          } else if (calRes.ok && !contentType.includes('application/json')) {
-            console.warn(`[CALIBRATION ROUTING] Got HTML instead of JSON (content-type: ${contentType})`);
-            // HTML response = likely nginx/proxy error, not a calibration state. Fail-closed.
-            calibrationComplete = false;
-          } else if (calRes.status === 401 || calRes.status === 403) {
-            console.warn(`[CALIBRATION ROUTING] Auth error ${calRes.status} — retrying once`);
-            await new Promise(r => setTimeout(r, 1500));
-            const retryRes = await fetchWithTimeout(calUrl, {
+        // Run calibration + onboarding checks IN PARALLEL (was sequential — ~14s worst case, now ~5s)
+        const [calibrationResult, onboardingResult] = await Promise.allSettled([
+          // Calibration check (with retry on auth errors)
+          (async () => {
+            const calUrl = `${getBackendUrl()}/api/calibration/status`;
+            const calRes = await fetchWithTimeout(calUrl, {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Accept': 'application/json',
               }
-            }, 7000);
-            if (retryRes.ok) {
-              const retryCal = await retryRes.json();
-              calibrationComplete = retryCal.status === 'COMPLETE';
+            }, 5000);
+            const contentType = calRes.headers.get('content-type') || '';
+            if (calRes.ok && contentType.includes('application/json')) {
+              const cal = await calRes.json();
+              return cal.status === 'COMPLETE';
+            } else if (calRes.ok && !contentType.includes('application/json')) {
+              console.warn(`[CALIBRATION ROUTING] Got HTML instead of JSON (content-type: ${contentType})`);
+              return false;
+            } else if (calRes.status === 401 || calRes.status === 403) {
+              console.warn(`[CALIBRATION ROUTING] Auth error ${calRes.status} — retrying once`);
+              await new Promise(r => setTimeout(r, 1500));
+              const retryRes = await fetchWithTimeout(calUrl, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Accept': 'application/json',
+                }
+              }, 5000);
+              if (retryRes.ok) {
+                const retryCal = await retryRes.json();
+                return retryCal.status === 'COMPLETE';
+              }
+              return false; // fail-closed
             } else {
-              // fail-closed: new users with auth issues must go through calibration
-              calibrationComplete = false;
+              console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status}`);
+              return false; // fail-closed
             }
-          } else {
-            console.warn(`[CALIBRATION ROUTING] Backend error ${calRes.status}`);
-            // fail-closed: if calibration status is unavailable, route to calibration
-            calibrationComplete = false;
-          }
-        } catch (e) {
-          console.warn(`[CALIBRATION ROUTING] Fetch failed: ${e.message} → fail-closed to NEEDS_CALIBRATION`);
-          calibrationComplete = false;
-        }
+          })(),
+          // Onboarding check (runs in parallel, result used only if calibration passes)
+          (async () => {
+            const obRes = await fetchWithTimeout(`${getBackendUrl()}/api/onboarding/status`, {
+              method: 'GET', headers: {
+                'Authorization': `Bearer ${accessToken}`,
+              }
+            }, 5000);
+            if (obRes.ok) {
+              const obData = await obRes.json();
+              return {
+                completed: obData.completed === true,
+                currentStep: obData.current_step || 0,
+                businessStage: obData.business_stage || null,
+              };
+            }
+            return { completed: true }; // fail-open
+          })(),
+        ]);
 
         if (cancelled) return;
 
-        // console.log(`[CALIBRATION ROUTING] Decision: ${calibrationComplete ? 'READY (calibrated)' : 'NEEDS_CALIBRATION'}`);
+        // Handle calibration result (fail-closed: default to NEEDS_CALIBRATION)
+        const calibrationComplete = calibrationResult.status === 'fulfilled' ? calibrationResult.value : false;
 
         // Mark this user as bootstrapped so token refreshes don't re-trigger
         lastBootstrapUserId.current = activeSession.user.id;
@@ -542,30 +551,11 @@ export const SupabaseAuthProvider = ({ children }) => {
           return;
         }
 
-        // Calibration complete — now fetch onboarding status ONCE
-        let obStatus = { completed: true }; // default fail-open
-        try {
-          const obRes = await fetchWithTimeout(`${getBackendUrl()}/api/onboarding/status`, {
-            method: 'GET', headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-            }
-          }, 7000);
-          if (obRes.ok) {
-            const obData = await obRes.json();
-            obStatus = {
-              completed: obData.completed === true,
-              currentStep: obData.current_step || 0,
-              businessStage: obData.business_stage || null,
-            };
-            if (!cancelled) setOnboardingStatus(obStatus);
-          } else {
-            if (!cancelled) setOnboardingStatus(obStatus);
-          }
-        } catch {
-          if (!cancelled) setOnboardingStatus(obStatus);
-        }
+        // Calibration passed — use the already-fetched onboarding result (fail-open)
+        const obStatus = onboardingResult.status === 'fulfilled'
+          ? onboardingResult.value
+          : { completed: true };
+        if (!cancelled) setOnboardingStatus(obStatus);
 
         if (!cancelled) {
           // Cache bootstrap result with actual onboarding status
@@ -573,7 +563,7 @@ export const SupabaseAuthProvider = ({ children }) => {
             try {
               sessionStorage.setItem(`biqc_auth_bootstrap_${currentUserId}`, JSON.stringify({
                 state: AUTH_STATE.READY,
-                onboarding: obStatus, // actual status, not hardcoded
+                onboarding: obStatus,
                 ts: Date.now(),
               }));
             } catch {}

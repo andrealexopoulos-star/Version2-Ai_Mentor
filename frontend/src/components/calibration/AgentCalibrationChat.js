@@ -67,13 +67,13 @@ const IntroScreen = ({ firstName, onStart }) => (
     </div>
 
     <h1 className="text-2xl sm:text-3xl font-semibold mb-4 max-w-md"
-      style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
+      style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
       Now we build your personalised<br />BIQc Intelligence Agent
       {firstName ? `, ${firstName}` : ''}.
     </h1>
 
     <p className="text-sm leading-relaxed max-w-sm mb-6"
-      style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+      style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
       We're going to ask you{' '}
       <span style={{ color: '#E85D00', fontWeight: 600 }}>6 questions</span>{' '}
       about how you think, communicate and make decisions. Your answers will be used
@@ -85,7 +85,7 @@ const IntroScreen = ({ firstName, onStart }) => (
       {['Communication style', 'Risk posture', 'Strategic depth'].map((label, i) => (
         <div key={i} className="rounded-xl p-3 text-center"
           style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.15)' }}>
-          <p className="text-[10px] leading-snug" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{label}</p>
+          <p className="text-[10px] leading-snug" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{label}</p>
         </div>
       ))}
     </div>
@@ -206,10 +206,10 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
           style={{ background: 'rgba(16,185,129,0.15)', border: '2px solid rgba(16,185,129,0.4)' }}>
           <Brain className="w-8 h-8" style={{ color: '#10B981' }} />
         </div>
-        <h2 className="text-2xl font-semibold mb-3" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
+        <h2 className="text-2xl font-semibold mb-3" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
           Agent calibrated.
         </h2>
-        <p className="text-sm max-w-xs" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+        <p className="text-sm max-w-xs" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
           Your BIQc Intelligence Agent has been personalised. Building your intelligence snapshot…
         </p>
         <div className="mt-6 flex gap-1">
@@ -237,7 +237,7 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
               <Brain className="w-4 h-4" style={{ color: '#E85D00' }} />
             </div>
             <div>
-              <p className="text-xs font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
+              <p className="text-xs font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
                 BIQc Agent Calibration
               </p>
               <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
@@ -270,7 +270,7 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
               style={{
                 background: msg.role === 'user' ? 'rgba(232,93,0,0.12)' : 'rgba(255,255,255,0.04)',
                 border: `1px solid ${msg.role === 'user' ? 'rgba(232,93,0,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                color: '#EDF1F7',
+                color: 'var(--ink-display, #EDF1F7)',
                 fontFamily: fontFamily.body,
                 borderTopRightRadius: msg.role === 'user' ? 4 : 16,
                 borderTopLeftRadius: msg.role === 'agent' ? 4 : 16,
@@ -310,7 +310,7 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
                 style={{
                   background: 'rgba(232,93,0,0.08)',
                   border: '1px solid rgba(232,93,0,0.2)',
-                  color: '#EDF1F7',
+                  color: 'var(--ink-display, #EDF1F7)',
                   fontFamily: fontFamily.body,
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,93,0,0.16)'; e.currentTarget.style.borderColor = 'rgba(232,93,0,0.4)'; }}
@@ -334,9 +334,9 @@ const AgentCalibrationChat = ({ callEdge, firstName, onComplete }) => {
             rows={1}
             className="flex-1 resize-none rounded-xl px-4 py-3 text-sm outline-none"
             style={{
-              background: '#0E1628',
+              background: 'var(--surface, #0E1628)',
               border: '1px solid rgba(140,170,210,0.15)',
-              color: '#EDF1F7',
+              color: 'var(--ink-display, #EDF1F7)',
               fontFamily: fontFamily.body,
               maxHeight: 100,
             }}

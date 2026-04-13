@@ -162,8 +162,8 @@ const RingGauge = ({ value, label, size = 100 }) => {
         <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
       </svg>
       <div style={{ marginTop: -60, position: 'relative' }}>
-        <div style={{ fontFamily: fontFamily.display, fontSize: 28, color: '#EDF1F7', lineHeight: 1 }}>{value != null ? value : '\u2014'}</div>
-        <div style={{ fontFamily: fontFamily.mono, fontSize: 10, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>{label}</div>
+        <div style={{ fontFamily: fontFamily.display, fontSize: 28, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>{value != null ? value : '\u2014'}</div>
+        <div style={{ fontFamily: fontFamily.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>{label}</div>
       </div>
     </div>
   );
@@ -439,8 +439,8 @@ const Diagnosis = ({ embedded = false }) => {
       {!embedded && (
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Diagnosis</h1>
-            <p className="text-sm mt-1" style={{ color: '#8FA0B8' }}>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Diagnosis</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
               Select areas to focus your advisory intelligence on
             </p>
           </div>
@@ -500,7 +500,7 @@ const Diagnosis = ({ embedded = false }) => {
               boxShadow: '0 0 8px rgba(232,93,0,0.6)',
               animation: 'pulse 2s infinite',
             }} />
-            <span style={{ fontFamily: fontFamily.display, fontSize: 18, color: '#EDF1F7', fontWeight: 600 }}>
+            <span style={{ fontFamily: fontFamily.display, fontSize: 18, color: 'var(--ink-display, #EDF1F7)', fontWeight: 600 }}>
               BIQc Diagnosis
             </span>
           </div>
@@ -519,10 +519,10 @@ const Diagnosis = ({ embedded = false }) => {
                     background: d.urgency === 'High' ? '#EF4444' : d.urgency === 'Medium' ? '#F59E0B' : '#10B981',
                   }} />
                   <div>
-                    <span style={{ fontFamily: fontFamily.body, fontSize: 14, color: '#EDF1F7', fontWeight: 500 }}>
+                    <span style={{ fontFamily: fontFamily.body, fontSize: 14, color: 'var(--ink-display, #EDF1F7)', fontWeight: 500 }}>
                       {d.focus_area}
                     </span>
-                    <span style={{ fontFamily: fontFamily.body, fontSize: 13, color: '#8FA0B8', marginLeft: 8 }}>
+                    <span style={{ fontFamily: fontFamily.body, fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)', marginLeft: 8 }}>
                       {d.evidence_summary}
                     </span>
                   </div>

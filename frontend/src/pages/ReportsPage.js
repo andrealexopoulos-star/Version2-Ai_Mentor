@@ -243,8 +243,8 @@ const ReportsPage = () => {
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="reports-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Reports.</h1>
-            <p className="text-sm" style={{ color: '#8FA0B8' }}>AI-generated briefs and scheduled reports from your connected data.</p>
+            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Reports.</h1>
+            <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>AI-generated briefs and scheduled reports from your connected data.</p>
           </div>
           <div className="flex items-center gap-2">
             {hasEvents && (
@@ -272,7 +272,7 @@ const ReportsPage = () => {
                 onClick={() => setActiveTab(tab)}
                 className="px-4 py-3 text-sm font-medium whitespace-nowrap transition-all"
                 style={{
-                  color: isActive ? '#EDF1F7' : '#8FA0B8',
+                  color: isActive ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
                   borderBottom: isActive ? '2px solid #E85D00' : '2px solid transparent',
                   cursor: 'pointer',
                 }}
@@ -296,7 +296,7 @@ const ReportsPage = () => {
             }}
           >
             <FileText className="w-10 h-10 mx-auto mb-4" style={{ color: '#64748B' }} />
-            <h3 style={{ fontFamily: fontFamily.display, fontSize: '18px', fontWeight: 600, color: '#EDF1F7', marginBottom: '8px' }}>
+            <h3 style={{ fontFamily: fontFamily.display, fontSize: '18px', fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', marginBottom: '8px' }}>
               No reports generated yet
             </h3>
             <p style={{ fontSize: '13px', color: '#64748B', maxWidth: '420px', margin: '0 auto', lineHeight: 1.6, fontFamily: fontFamily.body }}>
@@ -310,13 +310,13 @@ const ReportsPage = () => {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" style={{ color: '#3B82F6' }} />
-              <span className="text-sm font-semibold" style={{ color: '#EDF1F7' }}>Scheduled reports</span>
+              <span className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Scheduled reports</span>
             </div>
-            <button className="text-xs font-medium" style={{ color: '#8FA0B8' }}>+ Add schedule</button>
+            <button className="text-xs font-medium" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>+ Add schedule</button>
           </div>
           <div className="text-center py-8">
             <Clock className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
-            <p className="text-sm font-medium mb-1" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>No scheduled reports configured</p>
+            <p className="text-sm font-medium mb-1" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>No scheduled reports configured</p>
             <p className="text-xs" style={{ color: '#64748B', maxWidth: '380px', margin: '0 auto', lineHeight: 1.6, fontFamily: fontFamily.body }}>
               Set up automated delivery to receive reports on a regular schedule.
             </p>

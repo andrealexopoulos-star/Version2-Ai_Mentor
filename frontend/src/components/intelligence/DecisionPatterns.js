@@ -73,10 +73,10 @@ const DecisionPatterns = () => {
           <div className="space-y-1.5">
             {pendingReviews.slice(0, 3).map(review => (
               <div key={review.id} className="flex items-center justify-between text-xs">
-                <span className="truncate" style={{ color: '#EDF1F7', fontFamily: fontFamily.body, maxWidth: '70%' }}>
+                <span className="truncate" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, maxWidth: '70%' }}>
                   {review.title}
                 </span>
-                <span style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                <span style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                   decided {review.decided_at ? new Date(review.decided_at).toLocaleDateString() : '—'}
                 </span>
               </div>
@@ -91,7 +91,7 @@ const DecisionPatterns = () => {
           <span className="text-2xl font-semibold block mb-1" style={{ color: '#E85D00', fontFamily: fontFamily.display }}>
             {totalDecisions}
           </span>
-          <span className="text-[10px] uppercase tracking-wider" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+          <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
             Decisions
           </span>
         </div>
@@ -99,7 +99,7 @@ const DecisionPatterns = () => {
           <span className="text-2xl font-semibold block mb-1" style={{ color: avgImpact > 0.5 ? '#22C55E' : '#F59E0B', fontFamily: fontFamily.display }}>
             {(avgImpact * 100).toFixed(0)}%
           </span>
-          <span className="text-[10px] uppercase tracking-wider" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+          <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
             Avg Impact
           </span>
         </div>
@@ -107,7 +107,7 @@ const DecisionPatterns = () => {
           <span className="text-2xl font-semibold block mb-1" style={{ color: '#3B82F6', fontFamily: fontFamily.display }}>
             {Object.keys(domainBreakdown).length}
           </span>
-          <span className="text-[10px] uppercase tracking-wider" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+          <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
             Domains
           </span>
         </div>
@@ -118,21 +118,21 @@ const DecisionPatterns = () => {
         <div className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }}>
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-4 h-4" style={{ color: '#E85D00' }} />
-            <span className="text-sm font-medium" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
+            <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
               Decision Domains
             </span>
           </div>
           <div className="space-y-2">
             {Object.entries(domainBreakdown).sort((a, b) => b[1].count - a[1].count).map(([domain, stats]) => {
-              const color = DOMAIN_COLORS[domain] || '#708499';
+              const color = DOMAIN_COLORS[domain] || 'var(--ink-muted, #708499)';
               const pct = totalDecisions > 0 ? (stats.count / totalDecisions) * 100 : 0;
               return (
                 <div key={domain}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs capitalize" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
+                    <span className="text-xs capitalize" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
                       {domain}
                     </span>
-                    <span className="text-xs" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                    <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                       {stats.count}
                     </span>
                   </div>
@@ -157,7 +157,7 @@ const DecisionPatterns = () => {
               </div>
               <ul className="space-y-1">
                 {strengths.map((s, i) => (
-                  <li key={i} className="text-xs flex items-start gap-1.5" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+                  <li key={i} className="text-xs flex items-start gap-1.5" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
                     <CheckCircle2 className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: '#22C55E' }} />
                     {s}
                   </li>
@@ -173,7 +173,7 @@ const DecisionPatterns = () => {
               </div>
               <ul className="space-y-1">
                 {weaknesses.map((w, i) => (
-                  <li key={i} className="text-xs flex items-start gap-1.5" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+                  <li key={i} className="text-xs flex items-start gap-1.5" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
                     <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: '#EF4444' }} />
                     {w}
                   </li>
@@ -186,8 +186,8 @@ const DecisionPatterns = () => {
 
       {totalDecisions === 0 && (
         <div className="text-center py-8">
-          <GitBranch className="w-8 h-8 mx-auto mb-2" style={{ color: '#708499' }} />
-          <p className="text-sm" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+          <GitBranch className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--ink-muted, #708499)' }} />
+          <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
             No decisions recorded yet. Start logging decisions to build pattern intelligence.
           </p>
         </div>

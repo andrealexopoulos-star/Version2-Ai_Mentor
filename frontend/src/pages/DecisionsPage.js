@@ -45,6 +45,7 @@ export default function DecisionsPage() {
   const [prompts, setPrompts] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function DecisionsPage() {
   }, []);
 
   const fetchDecisionPrompts = async () => {
+    setFetchError(null);
     try {
       // Build decision prompts from observation_events
       const res = await apiClient.get('/integrations/merge/connected', { timeout: 8000 });
@@ -101,14 +103,20 @@ export default function DecisionsPage() {
 
         setPrompts(newPrompts);
       }
-    } catch {} finally { setLoading(false); }
+    } catch (err) {
+      console.error('[DecisionsPage] fetch failed:', err);
+      setFetchError(err.message || 'Failed to load data');
+    } finally { setLoading(false); }
   };
 
   const fetchDecisionHistory = async () => {
     try {
       const res = await apiClient.get('/cognition/decisions');
       setHistory(res.data?.decisions || []);
-    } catch {}
+    } catch (err) {
+      console.error('[DecisionsPage] history fetch failed:', err);
+      setFetchError(err.message || 'Failed to load decision history');
+    }
   };
 
   // Build a unified list of all decisions (active prompts + history) for filtering
@@ -169,10 +177,10 @@ export default function DecisionsPage() {
       <div className="max-w-4xl mx-auto" data-testid="decisions-page">
         <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
           <div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="decisions-title">
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="decisions-title">
               Decisions.
             </h1>
-            <p className="text-sm mt-1" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+            <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
               Track what you decided, why, and what happened next.
             </p>
           </div>
@@ -184,6 +192,25 @@ export default function DecisionsPage() {
             <Zap className="w-4 h-4" /> Log decision
           </Button>
         </div>
+
+        {fetchError && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+            background: 'rgba(232, 93, 0, 0.08)', border: '1px solid rgba(232, 93, 0, 0.2)',
+            borderRadius: 12, marginBottom: 16,
+            fontFamily: "'Inter', sans-serif", fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)',
+          }}>
+            <span style={{ color: 'var(--lava, #E85D00)' }}>{'\u26A0'}</span>
+            <span style={{ flex: 1 }}>{fetchError}</span>
+            <button
+              onClick={() => { setFetchError(null); setLoading(true); fetchDecisionPrompts(); fetchDecisionHistory(); }}
+              style={{
+                background: 'var(--lava, #E85D00)', color: 'white', border: 'none',
+                padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              }}
+            >Retry</button>
+          </div>
+        )}
 
         {/* Stats strip — mockup dec-stats: 4-col, surface bg, 12px radius, 20px padding */}
         {!loading && (

@@ -35,7 +35,7 @@ const WebsiteNav = () => {
               || (link.label === 'Platform' && location.pathname.startsWith('/platform'))
               || (link.label === 'Blog' && location.pathname.startsWith('/blog'));
             return (
-              <Link key={link.label} to={link.path} className="px-4 py-2 rounded-lg text-sm transition-all hover:text-white" style={{ color: isActive ? '#EDF1F7' : '#8FA0B8', fontWeight: isActive ? 600 : 400, fontFamily: fontFamily.display }} data-testid={`nav-${link.label.toLowerCase()}`}>
+              <Link key={link.label} to={link.path} className="px-4 py-2 rounded-lg text-sm transition-all hover:text-white" style={{ color: isActive ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8', fontWeight: isActive ? 600 : 400, fontFamily: fontFamily.display }} data-testid={`nav-${link.label.toLowerCase()}`}>
                 {link.label}
               </Link>
             );
@@ -130,7 +130,7 @@ const WebsiteLayout = ({ children }) => {
   }, []);
 
   return (
-    <div className="min-h-screen" style={{ background: '#0F1720', color: '#EDF1F7' }}>
+    <div className="min-h-screen" style={{ background: '#0F1720', color: 'var(--ink-display, #EDF1F7)' }}>
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <WebsiteNav />
       <main id="main-content">{children}</main>

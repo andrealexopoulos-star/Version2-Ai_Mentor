@@ -129,11 +129,11 @@ const AuditLogPage = () => {
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="audit-log-page">
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Audit Log</h1>
-            <p className="text-sm" style={{ color: '#8FA0B8' }}>Verified events from connected integrations. No AI-generated entries.</p>
+            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Audit Log</h1>
+            <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Verified events from connected integrations. No AI-generated entries.</p>
           </div>
           {events.length > 0 && (
-            <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#EDF1F7', fontFamily: fontFamily.body }} data-testid="audit-export-csv">
+            <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }} data-testid="audit-export-csv">
               <Download className="w-4 h-4" /> Export CSV
             </button>
           )}
@@ -148,8 +148,8 @@ const AuditLogPage = () => {
             { label: 'Users Active', value: loading ? '\u2014' : new Set(events.map(ev => ev.source_system).filter(Boolean)).size },
           ].map(({ label, value }) => (
             <div key={label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: '20px' }}>
-              <span style={{ fontFamily: fontFamily.display, fontSize: 28, color: '#EDF1F7', display: 'block', lineHeight: 1 }}>{value}</span>
-              <span style={{ fontFamily: fontFamily.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8FA0B8', display: 'block', marginTop: 8 }}>{label}</span>
+              <span style={{ fontFamily: fontFamily.display, fontSize: 28, color: 'var(--ink-display, #EDF1F7)', display: 'block', lineHeight: 1 }}>{value}</span>
+              <span style={{ fontFamily: fontFamily.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-secondary, #8FA0B8)', display: 'block', marginTop: 8 }}>{label}</span>
             </div>
           ))}
         </div>
@@ -180,7 +180,7 @@ const AuditLogPage = () => {
                   className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all capitalize"
                   style={{
                     background: categoryFilter === cat ? 'var(--surface-sunken, #060A12)' : 'transparent',
-                    color: categoryFilter === cat ? '#EDF1F7' : '#8FA0B8',
+                    color: categoryFilter === cat ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
                     border: categoryFilter === cat ? '1px solid rgba(140,170,210,0.2)' : '1px solid rgba(140,170,210,0.08)',
                     fontFamily: fontFamily.mono,
                   }}
@@ -197,7 +197,7 @@ const AuditLogPage = () => {
                 style={{
                   background: 'var(--surface, #0E1628)',
                   border: '1px solid rgba(140,170,210,0.12)',
-                  color: '#EDF1F7',
+                  color: 'var(--ink-display, #EDF1F7)',
                   fontFamily: fontFamily.body,
                   outline: 'none',
                 }}
@@ -205,7 +205,7 @@ const AuditLogPage = () => {
               />
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: '#708499' }} />
+                  <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--ink-muted, #708499)' }} />
                   <input
                     type="date"
                     value={dateFrom}
@@ -214,7 +214,7 @@ const AuditLogPage = () => {
                     style={{
                       background: 'var(--surface, #0E1628)',
                       border: '1px solid rgba(140,170,210,0.12)',
-                      color: '#EDF1F7',
+                      color: 'var(--ink-display, #EDF1F7)',
                       fontFamily: fontFamily.mono,
                       outline: 'none',
                       width: 130,
@@ -230,7 +230,7 @@ const AuditLogPage = () => {
                     style={{
                       background: 'var(--surface, #0E1628)',
                       border: '1px solid rgba(140,170,210,0.12)',
-                      color: '#EDF1F7',
+                      color: 'var(--ink-display, #EDF1F7)',
                       fontFamily: fontFamily.mono,
                       outline: 'none',
                       width: 130,
@@ -279,11 +279,11 @@ const AuditLogPage = () => {
                   {(page - 1) * PAGE_SIZE + 1}--{Math.min(page * PAGE_SIZE, filteredEvents.length)} of {filteredEvents.length}
                 </span>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="px-2 py-1 rounded text-xs disabled:opacity-30" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#EDF1F7' }}>
+                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="px-2 py-1 rounded text-xs disabled:opacity-30" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: 'var(--ink-display, #EDF1F7)' }}>
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
-                  <span className="px-3 py-1 text-xs" style={{ color: '#EDF1F7', fontFamily: fontFamily.mono }}>{page} / {totalPages}</span>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="px-2 py-1 rounded text-xs disabled:opacity-30" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#EDF1F7' }}>
+                  <span className="px-3 py-1 text-xs" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.mono }}>{page} / {totalPages}</span>
+                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="px-2 py-1 rounded text-xs disabled:opacity-30" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: 'var(--ink-display, #EDF1F7)' }}>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>

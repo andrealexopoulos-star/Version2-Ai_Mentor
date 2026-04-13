@@ -25,7 +25,7 @@ const CATEGORY_COLORS = {
 const RELEVANCE_STYLES = {
   High:   { bg: '#FEE2E2', text: '#991B1B' },
   Medium: { bg: '#FEF3C7', text: '#92400E' },
-  Low:    { bg: 'rgba(140,170,210,0.08)', text: '#708499' },
+  Low:    { bg: 'rgba(140,170,210,0.08)', text: 'var(--ink-muted, #708499)' },
 };
 
 const TABS = ['All', 'Competitor', 'Market', 'Regulatory', 'Industry', 'Technology'];

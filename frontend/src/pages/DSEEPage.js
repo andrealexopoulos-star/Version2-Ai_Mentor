@@ -98,7 +98,7 @@ const DSEEPage = () => {
 
         {/* Input */}
         <div className="rounded-2xl p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-          <label className="text-xs font-semibold mb-2 block" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>
+          <label className="text-xs font-semibold mb-2 block" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>
             Website URL <span style={{ color: '#EF4444' }}>*</span> <span style={{ color: '#4A5568' }}>(required)</span>
           </label>
           <div className="flex flex-col sm:flex-row gap-2">

@@ -72,7 +72,7 @@ const PlatformLayout = ({ children, title }) => {
                     className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all"
                     style={{
                       fontFamily: fontFamily.body,
-                      color: isActive ? '#EDF1F7' : '#8FA0B8',
+                      color: isActive ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
                       background: isActive ? '#E85D00' + '15' : 'transparent',
                       borderLeft: isActive ? '2px solid #E85D00' : '2px solid transparent',
                     }}
@@ -99,7 +99,7 @@ const PlatformLayout = ({ children, title }) => {
   );
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#0F1720', color: '#EDF1F7' }}>
+    <div className="min-h-screen flex" style={{ background: '#0F1720', color: 'var(--ink-display, #EDF1F7)' }}>
       <Sidebar />
       {mobileSidebar && <Sidebar mobile />}
 
@@ -113,7 +113,7 @@ const PlatformLayout = ({ children, title }) => {
             {title && <h1 className="text-base font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{title}</h1>}
           </div>
 
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>
             <div className="w-2 h-2 rounded-full bg-green-500" />
             <span className="text-[11px] text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>Production Environment</span>
           </div>
@@ -123,7 +123,7 @@ const PlatformLayout = ({ children, title }) => {
               <Bell className="w-4.5 h-4.5" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: '#E85D00' }} />
             </button>
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>
               <BarChart3 className="w-3.5 h-3.5 text-green-500" />
               <span className="text-xs font-medium text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>74%</span>
             </div>

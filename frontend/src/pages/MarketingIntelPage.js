@@ -95,8 +95,8 @@ const MarketingIntelPage = () => {
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body }} data-testid="marketing-intel-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Marketing Intelligence.</h1>
-            <p className="text-sm mt-1" style={{ color: '#8FA0B8' }}>5-pillar competitive benchmark. Evidence-based scoring.</p>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Marketing Intelligence.</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>5-pillar competitive benchmark. Evidence-based scoring.</p>
           </div>
           {benchmark && <button onClick={runBenchmark} disabled={running || !canRun} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs hover:text-[#EDF1F7] disabled:opacity-50" style={{ border: '1px solid var(--biqc-border)', color: canRun ? '#8FA0B8' : '#64748B' }}>
             {!isPaid && !canRun ? (
@@ -129,18 +129,18 @@ const MarketingIntelPage = () => {
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#E85D00' }}>AI Analysis</span>
           </div>
           {benchmark?.insight ? (
-            <p className="text-sm leading-relaxed" style={{ color: '#8FA0B8' }}>{benchmark.insight}</p>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{benchmark.insight}</p>
           ) : (
-            <p className="text-sm leading-relaxed" style={{ color: '#708499' }}>Connect marketing analytics to generate intelligence insights.</p>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-muted, #708499)' }}>Connect marketing analytics to generate intelligence insights.</p>
           )}
         </div>
 
         {/* Channel Performance -- empty state until marketing integrations are connected */}
         <div>
-          <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Channel Performance</h2>
+          <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Channel Performance</h2>
           <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}>
             <Plug className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
-            <p className="text-sm" style={{ color: '#708499' }}>Channel performance data will appear when marketing integrations are connected.</p>
+            <p className="text-sm" style={{ color: 'var(--ink-muted, #708499)' }}>Channel performance data will appear when marketing integrations are connected.</p>
           </div>
         </div>
 

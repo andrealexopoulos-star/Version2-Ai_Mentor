@@ -20,7 +20,7 @@ const M = "'JetBrains Mono', monospace";
 const Pnl = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
 );
-const Mc = ({ label, value, sub, color = '#EDF1F7', icon: Icon, alert }) => (
+const Mc = ({ label, value, sub, color = 'var(--ink-display, #EDF1F7)', icon: Icon, alert }) => (
   <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: `1px solid ${alert ? '#E85D00' + '40' : 'rgba(140,170,210,0.15)'}` }}>
     <div className="flex items-center justify-between mb-2">
       <span className="text-[10px] text-[#64748B] uppercase tracking-wider" style={{ fontFamily: M }}>{label}</span>
@@ -185,7 +185,7 @@ const AdminDashboard = () => {
             {PAGES.map(p => (
               <button key={p.id} onClick={() => setPage(p.id)}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0"
-                style={{ fontFamily: B, color: page === p.id ? '#EDF1F7' : '#64748B', background: page === p.id ? '#E85D00' + '15' : 'transparent', border: `1px solid ${page === p.id ? '#E85D00' + '30' : 'rgba(140,170,210,0.15)'}` }}
+                style={{ fontFamily: B, color: page === p.id ? 'var(--ink-display, #EDF1F7)' : '#64748B', background: page === p.id ? '#E85D00' + '15' : 'transparent', border: `1px solid ${page === p.id ? '#E85D00' + '30' : 'rgba(140,170,210,0.15)'}` }}
                 data-testid={`admin-page-${p.id}`}>
                 <p.icon className="w-3.5 h-3.5" style={{ color: page === p.id ? '#E85D00' : '#64748B' }} /> {p.label}
               </button>
@@ -273,7 +273,7 @@ const AdminDashboard = () => {
                     {loadingDetail ? <div className="flex justify-center py-4"><RadarSweep compact /></div> : userDetail && (
                       <div className="grid grid-cols-2 gap-2 mb-4" style={{ borderTop: '1px solid var(--biqc-border)', paddingTop: 12 }}>
                         {[['Calibrated', userDetail.operator_profile?.persona_calibration_status || 'No', userDetail.operator_profile?.persona_calibration_status === 'complete' ? '#10B981' : '#F59E0B'],
-                          ['Integrations', `${userDetail.integrations.length}`, '#3B82F6'], ['Snapshots', `${userDetail.snapshots.length}`, '#EDF1F7'], ['Signals', `${userDetail.signal_count}`, '#EDF1F7']].map(([l, v, c]) => (
+                          ['Integrations', `${userDetail.integrations.length}`, '#3B82F6'], ['Snapshots', `${userDetail.snapshots.length}`, 'var(--ink-display, #EDF1F7)'], ['Signals', `${userDetail.signal_count}`, 'var(--ink-display, #EDF1F7)']].map(([l, v, c]) => (
                           <div key={l} className="p-2 rounded" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: M }}>{l}</span>
                             <span className="text-xs block" style={{ fontFamily: M, color: c }}>{v}</span>

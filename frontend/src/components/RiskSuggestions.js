@@ -263,14 +263,14 @@ export const RiskSuggestions = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-sm font-semibold leading-snug" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>
+                <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
                   {risk.title}
                 </p>
               </div>
             </div>
 
             {/* Detail */}
-            <p className="text-xs leading-relaxed mb-1.5 ml-10" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+            <p className="text-xs leading-relaxed mb-1.5 ml-10" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
               {risk.detail}
             </p>
 
@@ -287,7 +287,7 @@ export const RiskSuggestions = () => {
                 <p className="text-[11px] font-semibold" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                   RECOMMENDED ACTION
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
                   {risk.action}
                 </p>
               </div>

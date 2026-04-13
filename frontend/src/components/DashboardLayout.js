@@ -208,21 +208,21 @@ const DashboardLayout = ({ children }) => {
   const toggleTheme = () => setIsDark(prev => !prev);
 
   // Notifications — Supabase Realtime (replaces polling)
+  // Depends on user?.id so channel re-subscribes if user changes (logout → login as different user)
   useEffect(() => {
+    if (!user?.id) return;
     fetchNotifications();
 
     // Subscribe to watchtower_events for real-time alert updates
     let channel;
     const setup = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.id) return;
       channel = supabase
-        .channel('notification-updates')
+        .channel(`notification-updates-${user.id}`)
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'watchtower_events',
-          filter: `user_id=eq.${session.user.id}`,
+          filter: `user_id=eq.${user.id}`,
         }, () => {
           fetchNotifications();
         })
@@ -231,7 +231,7 @@ const DashboardLayout = ({ children }) => {
     setup();
 
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, []);
+  }, [user?.id]);
 
   const fetchNotifications = async () => {
     try {
@@ -390,7 +390,7 @@ const DashboardLayout = ({ children }) => {
         {/* ═══ SEARCH BAR (center of topbar) ═══ */}
         <div className="hidden md:flex flex-1 justify-center px-4" style={{ maxWidth: 560 }}>
           <button
-            onClick={() => {/* future: open command palette / search modal */}}
+            onClick={() => navigate('/soundboard')}
             className="flex items-center gap-2 w-full px-3 rounded-lg transition-colors hover:border-[rgba(140,170,210,0.25)]"
             style={{
               maxWidth: 520,
@@ -830,7 +830,7 @@ const DashboardLayout = ({ children }) => {
       <button
         onClick={() => setFeedbackOpen(true)}
         className="fixed bottom-20 left-4 z-40 px-3 py-2 rounded-full text-xs"
-        style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#8FA0B8', fontFamily: fontFamily.mono }}
+        style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}
         data-testid="ux-feedback-fab"
       >
         Feedback

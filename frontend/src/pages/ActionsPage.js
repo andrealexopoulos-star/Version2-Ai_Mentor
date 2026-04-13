@@ -187,10 +187,10 @@ const ActionsPage = () => {
           <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
             — Actions · {rq.length} open
           </div>
-          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
             What's <em style={{ fontStyle: 'italic', color: '#E85D00' }}>actually moving</em>.
           </h1>
-          <p className="text-sm" style={{ color: '#8FA0B8' }}>Every action started life as an alert, an email thread, a deal change, or a BIQc nudge. Drag a card forward when you've done it.</p>
+          <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Every action started life as an alert, an email thread, a deal change, or a BIQc nudge. Drag a card forward when you've done it.</p>
         </div>
 
         {/* Stats cards — matches mockup */}
@@ -202,8 +202,8 @@ const ActionsPage = () => {
             { label: 'Overdue', value: loading ? '\u2014' : rq.filter(i => i.severity === 'high').length },
           ].map(({ label, value }) => (
             <div key={label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: '20px' }}>
-              <span style={{ fontFamily: fontFamily.display, fontSize: 28, color: '#EDF1F7', display: 'block', lineHeight: 1 }}>{value}</span>
-              <span style={{ fontFamily: fontFamily.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8FA0B8', display: 'block', marginTop: 8 }}>{label}</span>
+              <span style={{ fontFamily: fontFamily.display, fontSize: 28, color: 'var(--ink-display, #EDF1F7)', display: 'block', lineHeight: 1 }}>{value}</span>
+              <span style={{ fontFamily: fontFamily.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-secondary, #8FA0B8)', display: 'block', marginTop: 8 }}>{label}</span>
             </div>
           ))}
         </div>
@@ -215,7 +215,7 @@ const ActionsPage = () => {
               className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
               style={{
                 background: activeFilter === val ? 'var(--surface-sunken, #060A12)' : 'transparent',
-                color: activeFilter === val ? '#EDF1F7' : '#8FA0B8',
+                color: activeFilter === val ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
                 border: activeFilter === val ? '1px solid rgba(140,170,210,0.2)' : '1px solid rgba(140,170,210,0.08)',
                 fontFamily: fontFamily.mono,
               }}
@@ -232,7 +232,7 @@ const ActionsPage = () => {
             style={{
               background: 'var(--surface, #0E1628)',
               border: '1px solid rgba(140,170,210,0.12)',
-              color: '#EDF1F7',
+              color: 'var(--ink-display, #EDF1F7)',
               fontFamily: fontFamily.body,
               outline: 'none',
             }}

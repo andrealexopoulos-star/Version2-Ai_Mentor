@@ -44,7 +44,7 @@ const MeetingPrepCard = () => {
             Meeting Prep
           </span>
         </div>
-        <p className="text-sm" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+        <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
           No meetings today. Your calendar is clear.
         </p>
       </div>
@@ -83,26 +83,26 @@ const MeetingPrepCard = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-sm font-medium truncate" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>
+                    <span className="text-sm font-medium truncate" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
                       {meeting.subject || meeting.title || 'Meeting'}
                     </span>
                     {startTime && (
-                      <span className="text-[10px] flex-shrink-0" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                      <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                         {startTime}
                       </span>
                     )}
                   </div>
                   {attendees.length > 0 && (
                     <div className="flex items-center gap-1.5 mt-1">
-                      <Users className="w-3 h-3" style={{ color: '#708499' }} />
-                      <span className="text-xs truncate" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+                      <Users className="w-3 h-3" style={{ color: 'var(--ink-muted, #708499)' }} />
+                      <span className="text-xs truncate" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
                         {attendees.slice(0, 3).map(a => a.name || a.email || a).join(', ')}
                         {attendees.length > 3 && ` +${attendees.length - 3}`}
                       </span>
                     </div>
                   )}
                 </div>
-                <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} style={{ color: '#708499' }} />
+                <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} style={{ color: 'var(--ink-muted, #708499)' }} />
               </div>
 
               {isExpanded && (
@@ -116,13 +116,13 @@ const MeetingPrepCard = () => {
                           {att.name || att.email}
                         </span>
                         {att.recent_email_count != null && (
-                          <span className="text-[10px]" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                          <span className="text-[10px]" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                             {att.recent_email_count} recent emails
                           </span>
                         )}
                       </div>
                       {att.email_context?.last_topic && (
-                        <p className="text-xs" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+                        <p className="text-xs" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
                           Last discussed: {att.email_context.last_topic}
                         </p>
                       )}

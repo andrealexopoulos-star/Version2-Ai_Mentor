@@ -68,7 +68,7 @@ const ConstructionView = () => (
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>{cl.days} days outstanding</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs font-semibold" style={{ fontFamily: MONO, color: cl.status === 'overdue' ? '#E85D00' : '#EDF1F7' }}>{cl.amount}</span>
+                    <span className="text-xs font-semibold" style={{ fontFamily: MONO, color: cl.status === 'overdue' ? '#E85D00' : 'var(--ink-display, #EDF1F7)' }}>{cl.amount}</span>
                     <span className="text-[10px] block" style={{ fontFamily: MONO, color: cl.status === 'overdue' ? '#E85D00' : '#10B981' }}>{cl.status.toUpperCase()}</span>
                   </div>
                 </div>

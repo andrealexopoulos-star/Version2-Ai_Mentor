@@ -55,8 +55,8 @@ ${user?.user_metadata?.full_name || '[Your Name]'}`;
         {/* Page header */}
         <div className="mb-8">
           <div style={{ fontFamily: fontFamily?.mono, fontSize: 11, color: '#E85D00', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>— Email Setup · Admin Consent</div>
-          <h1 style={{ fontFamily: fontFamily?.display, fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', color: '#EDF1F7', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Your admin needs to <em style={{ fontStyle: 'italic', color: '#E85D00' }}>approve access</em>.</h1>
-          <p style={{ color: '#8FA0B8', marginTop: 8, fontSize: 14 }}>Microsoft 365 enterprise policies require administrator consent before BIQc can read your email.</p>
+          <h1 style={{ fontFamily: fontFamily?.display, fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Your admin needs to <em style={{ fontStyle: 'italic', color: '#E85D00' }}>approve access</em>.</h1>
+          <p style={{ color: 'var(--ink-secondary, #8FA0B8)', marginTop: 8, fontSize: 14 }}>Microsoft 365 enterprise policies require administrator consent before BIQc can read your email.</p>
         </div>
 
         {/* Warning Banner */}
@@ -65,20 +65,20 @@ ${user?.user_metadata?.full_name || '[Your Name]'}`;
             <AlertTriangle className="w-6 h-6" />
           </div>
           <div>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#EDF1F7', marginBottom: 4 }}>Admin Approval Required</h3>
-            <p style={{ fontSize: 14, color: '#8FA0B8', lineHeight: 1.5 }}>Your organisation's Microsoft 365 policy requires an administrator to grant BIQc access to read your email. This is a common security setting for enterprise environments.</p>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', marginBottom: 4 }}>Admin Approval Required</h3>
+            <p style={{ fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5 }}>Your organisation's Microsoft 365 policy requires an administrator to grant BIQc access to read your email. This is a common security setting for enterprise environments.</p>
           </div>
         </div>
 
         {/* Steps */}
         <div style={{ marginBottom: 32 }}>
-          <h2 style={{ fontFamily: fontFamily?.display, fontSize: 22, color: '#EDF1F7', letterSpacing: '-0.01em', marginBottom: 24 }}>How to Get Connected</h2>
+          <h2 style={{ fontFamily: fontFamily?.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.01em', marginBottom: 24 }}>How to Get Connected</h2>
           {steps.map(step => (
             <div key={step.num} style={{ display: 'flex', gap: 20, padding: '20px 24px', background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 16, marginBottom: 12 }}>
               <div style={{ width: 36, height: 36, borderRadius: 999, background: '#E85D00', color: 'white', display: 'grid', placeItems: 'center', fontSize: 14, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>{step.num}</div>
               <div>
-                <h4 style={{ fontSize: 15, fontWeight: 600, color: '#EDF1F7', marginBottom: 4 }}>{step.title}</h4>
-                <p style={{ fontSize: 14, color: '#8FA0B8', lineHeight: 1.6 }}>{step.desc}</p>
+                <h4 style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', marginBottom: 4 }}>{step.title}</h4>
+                <p style={{ fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>{step.desc}</p>
               </div>
             </div>
           ))}
@@ -87,7 +87,7 @@ ${user?.user_metadata?.full_name || '[Your Name]'}`;
         {/* Email Template */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <h2 style={{ fontFamily: fontFamily?.display, fontSize: 22, color: '#EDF1F7', letterSpacing: '-0.01em' }}>Email Template for Your Admin</h2>
+            <h2 style={{ fontFamily: fontFamily?.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.01em' }}>Email Template for Your Admin</h2>
             <button onClick={copyEmail} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--surface-sunken, #060A12)', border: '1px solid rgba(140,170,210,0.2)', borderRadius: 8, fontSize: 12, fontWeight: 500, color: copied ? '#16A34A' : 'var(--ink, #CBD5E1)', cursor: 'pointer', borderColor: copied ? '#16A34A' : undefined }}>
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? 'Copied!' : 'Copy to Clipboard'}
@@ -95,7 +95,7 @@ ${user?.user_metadata?.full_name || '[Your Name]'}`;
           </div>
           <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}>
             {/* Email bar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', background: 'var(--surface-sunken, #060A12)', borderBottom: '1px solid rgba(140,170,210,0.12)', fontSize: 12, color: '#708499' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', background: 'var(--surface-sunken, #060A12)', borderBottom: '1px solid rgba(140,170,210,0.12)', fontSize: 12, color: 'var(--ink-muted, #708499)' }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#374151' }} />
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#374151' }} />
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#374151' }} />
@@ -104,12 +104,12 @@ ${user?.user_metadata?.full_name || '[Your Name]'}`;
             {/* Fields */}
             <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(140,170,210,0.12)' }}>
               <div style={{ display: 'flex', gap: 12, padding: '4px 0', fontSize: 14 }}>
-                <span style={{ color: '#708499', fontWeight: 500, minWidth: 56 }}>To:</span>
-                <span style={{ color: '#708499', fontStyle: 'italic' }}>[Your IT Administrator's email]</span>
+                <span style={{ color: 'var(--ink-muted, #708499)', fontWeight: 500, minWidth: 56 }}>To:</span>
+                <span style={{ color: 'var(--ink-muted, #708499)', fontStyle: 'italic' }}>[Your IT Administrator's email]</span>
               </div>
               <div style={{ display: 'flex', gap: 12, padding: '4px 0', fontSize: 14 }}>
-                <span style={{ color: '#708499', fontWeight: 500, minWidth: 56 }}>Subject:</span>
-                <span style={{ color: '#EDF1F7', fontWeight: 600 }}>Admin Consent Request: BIQc Business Intelligence Platform</span>
+                <span style={{ color: 'var(--ink-muted, #708499)', fontWeight: 500, minWidth: 56 }}>Subject:</span>
+                <span style={{ color: 'var(--ink-display, #EDF1F7)', fontWeight: 600 }}>Admin Consent Request: BIQc Business Intelligence Platform</span>
               </div>
             </div>
             {/* Body */}
@@ -125,10 +125,10 @@ ${user?.user_metadata?.full_name || '[Your Name]'}`;
             <Info className="w-5 h-5" />
           </div>
           <div>
-            <p style={{ fontSize: 14, color: '#8FA0B8', lineHeight: 1.6 }}>
-              <strong style={{ color: '#EDF1F7' }}>Not sure who your admin is?</strong> In most organisations, your IT team or the person who set up Microsoft 365 can grant this approval. You can also check by going to <strong>portal.office.com → Settings → Org settings</strong> in your Microsoft 365 account.
+            <p style={{ fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>
+              <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>Not sure who your admin is?</strong> In most organisations, your IT team or the person who set up Microsoft 365 can grant this approval. You can also check by going to <strong>portal.office.com → Settings → Org settings</strong> in your Microsoft 365 account.
             </p>
-            <p style={{ fontSize: 14, color: '#8FA0B8', lineHeight: 1.6, marginTop: 12 }}>
+            <p style={{ fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6, marginTop: 12 }}>
               Need help? <span onClick={() => navigate('/contact')} style={{ color: '#2563EB', fontWeight: 500, textDecoration: 'underline', textUnderlineOffset: 2, cursor: 'pointer' }}>Contact our support team</span> and we'll guide you through the process.
             </p>
           </div>

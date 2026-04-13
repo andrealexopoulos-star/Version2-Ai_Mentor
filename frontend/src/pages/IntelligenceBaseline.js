@@ -35,7 +35,7 @@ const STATUS_STYLES = {
   at:       { bg: 'rgba(37,99,235,0.15)', color: '#60A5FA', border: 'rgba(37,99,235,0.3)' },
   below:    { bg: 'rgba(245,158,11,0.15)', color: '#FBBF24', border: 'rgba(245,158,11,0.3)' },
   declining:{ bg: 'rgba(220,38,38,0.15)', color: '#F87171', border: 'rgba(220,38,38,0.3)' },
-  unknown:  { bg: 'rgba(140,170,210,0.08)', color: '#708499', border: 'rgba(140,170,210,0.12)' },
+  unknown:  { bg: 'rgba(140,170,210,0.08)', color: 'var(--ink-muted, #708499)', border: 'rgba(140,170,210,0.12)' },
 };
 
 /* --- Delta icon --- */
@@ -196,7 +196,7 @@ function buildDomainsFromSnapshot(cognitive) {
 
   // Build domain cards
   for (const [key, { score, data }] of Object.entries(scoreMap)) {
-    const config = DOMAIN_CONFIG[key] || { label: key.charAt(0).toUpperCase() + key.slice(1), color: '#708499' };
+    const config = DOMAIN_CONFIG[key] || { label: key.charAt(0).toUpperCase() + key.slice(1), color: 'var(--ink-muted, #708499)' };
     const status = scoreToStatus(score);
 
     // Build metrics from available data

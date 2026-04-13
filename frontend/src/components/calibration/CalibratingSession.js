@@ -121,7 +121,7 @@ const CalibratingSession = ({
                     <button key={i} onClick={() => setSelectedOption(opt)} disabled={isSubmitting}
                       className="w-full text-left rounded-xl px-6 py-5 transition-all duration-200 group"
                       style={{
-                        background: isSelected ? '#E85D0010' : '#0E1628',
+                        background: isSelected ? '#E85D0010' : 'var(--surface, #0E1628)',
                         border: `2px solid ${isSelected ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
                         boxShadow: isSelected ? '0 0 0 1px #E85D0040' : 'none',
                       }}

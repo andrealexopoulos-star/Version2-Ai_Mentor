@@ -194,8 +194,8 @@ const DataCenter = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Data Centre</h1>
-            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Data Centre</h1>
+            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
               Upload your business documents to make the AI your subject matter expert
             </p>
           </div>
@@ -207,8 +207,8 @@ const DataCenter = () => {
                 <div className="flex items-center gap-3">
                   <Database className="w-8 h-8 text-[#ccff00]" />
                   <div>
-                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Data Sources</p>
-                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>{stats?.categories?.length || 0}</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Data Sources</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.categories?.length || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -218,8 +218,8 @@ const DataCenter = () => {
                 <div className="flex items-center gap-3">
                   <FileText className="w-8 h-8 text-[#ccff00]" />
                   <div>
-                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Records</p>
-                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>{stats?.total_files || 0}</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Records</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.total_files || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -229,8 +229,8 @@ const DataCenter = () => {
                 <div className="flex items-center gap-3">
                   <HardDrive className="w-8 h-8 text-[#ccff00]" />
                   <div>
-                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Storage Used</p>
-                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>{stats?.total_size_mb || 0} MB</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Storage Used</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.total_size_mb || 0} MB</p>
                   </div>
                 </div>
               </CardContent>
@@ -240,8 +240,8 @@ const DataCenter = () => {
                 <div className="flex items-center gap-3">
                   <Building2 className="w-8 h-8 text-[#ccff00]" />
                   <div>
-                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Last Sync</p>
-                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>{stats?.last_sync ? new Date(stats.last_sync).toLocaleDateString() : 'N/A'}</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Last Sync</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.last_sync ? new Date(stats.last_sync).toLocaleDateString() : 'N/A'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -252,7 +252,7 @@ const DataCenter = () => {
           {files.length > 0 && (
             <Card className="mb-8" style={{ borderRadius: 16, border: '1px solid rgba(140,170,210,0.12)', overflow: 'hidden' }}>
               <CardHeader className="pb-3">
-                <CardTitle style={{ fontFamily: fontFamily.display, fontSize: 18, color: '#EDF1F7' }}>
+                <CardTitle style={{ fontFamily: fontFamily.display, fontSize: 18, color: 'var(--ink-display, #EDF1F7)' }}>
                   Data Sources
                 </CardTitle>
               </CardHeader>
@@ -264,7 +264,7 @@ const DataCenter = () => {
                         {['Source', 'Type', 'Records', 'Last Sync', 'Status', 'Health'].map(col => (
                           <th key={col} style={{
                             textAlign: 'left', padding: '12px 16px',
-                            fontFamily: fontFamily.mono, fontSize: 10, color: '#708499',
+                            fontFamily: fontFamily.mono, fontSize: 10, color: 'var(--ink-muted, #708499)',
                             textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500,
                           }}>{col}</th>
                         ))}
@@ -280,17 +280,17 @@ const DataCenter = () => {
                         const statusColor = status === 'active' ? '#10B981' : status === 'syncing' ? '#F59E0B' : '#EF4444';
                         return (
                           <tr key={file.id} style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
-                            <td style={{ padding: '12px 16px', color: '#EDF1F7', fontWeight: 500 }}>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-display, #EDF1F7)', fontWeight: 500 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Database className="w-4 h-4" style={{ color: '#708499', flexShrink: 0 }} />
+                                <Database className="w-4 h-4" style={{ color: 'var(--ink-muted, #708499)', flexShrink: 0 }} />
                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{file.filename}</span>
                               </div>
                             </td>
-                            <td style={{ padding: '12px 16px', color: '#8FA0B8' }}>{catLabel}</td>
-                            <td style={{ padding: '12px 16px', color: '#8FA0B8', fontFamily: fontFamily.mono, fontSize: 12 }}>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary, #8FA0B8)' }}>{catLabel}</td>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono, fontSize: 12 }}>
                               {formatFileSize(file.file_size)}
                             </td>
-                            <td style={{ padding: '12px 16px', color: '#8FA0B8', fontSize: 13 }}>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary, #8FA0B8)', fontSize: 13 }}>
                               {new Date(file.created_at).toLocaleDateString()}
                             </td>
                             <td style={{ padding: '12px 16px' }}>

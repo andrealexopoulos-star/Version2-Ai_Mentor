@@ -250,7 +250,7 @@ export default function CMOReportPage() {
             {/* Actions */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', background: V.sunken, border: `1px solid ${V.border}`, borderRadius: 999, fontSize: 10, fontWeight: 600, color: V.inkMuted, letterSpacing: '0.08em' }}>
-                {data.version || 'V2.4'} &middot; {data.status || 'Final'}
+                {data.version || '\u2014'} &middot; {data.status || 'Draft'}
               </span>
               <button onClick={handleShare} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500, border: `1px solid ${V.border}`, background: 'transparent', color: V.ink, cursor: 'pointer', fontFamily: fontFamily.body }}>
                 <Share2 size={14} /> Share Report
@@ -266,7 +266,7 @@ export default function CMOReportPage() {
             {[
               { label: 'Report Date', value: data.report_date || new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) },
               { label: 'Scan Source', value: data.scan_source || 'Connected integrations' },
-              { label: 'Engine', value: data.engine || 'BIQc Intelligence Engine v4.2' },
+              { label: 'Engine', value: data.engine || 'BIQc Intelligence Engine' },
               { label: 'Data Points', value: data.data_points || '-- analysed' },
               { label: 'Confidence', value: data.confidence ? `${data.confidence}%` : '--' },
             ].map(m => (

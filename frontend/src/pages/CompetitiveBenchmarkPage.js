@@ -122,7 +122,7 @@ const Tooltip = ({ text, children }) => {
       {children}
       {show && (
         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-xs leading-snug z-50 w-56"
-          style={{ background: '#1E2D3D', color: '#EDF1F7', border: '1px solid #334155', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
+          style={{ background: '#1E2D3D', color: 'var(--ink-display, #EDF1F7)', border: '1px solid #334155', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
           {text}
         </span>
       )}
@@ -371,10 +371,10 @@ export default function CompetitiveBenchmarkPage() {
             <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
               — Competitive benchmark
             </div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
               Where you <em style={{ fontStyle: 'italic', color: '#E85D00' }}>stand</em>.
             </h1>
-            <p className="text-sm mt-2" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+            <p className="text-sm mt-2" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
               {hasRealData
                 ? `Digital footprint analysis${data?.scanDomain ? ` for ${data.scanDomain}` : ''}. Last scanned: ${data?.lastUpdated ? new Date(data.lastUpdated).toLocaleDateString('en-AU') : 'recently'}.`
                 : 'Complete calibration with your business website to generate your Digital Footprint score.'
@@ -648,7 +648,7 @@ export default function CompetitiveBenchmarkPage() {
                             <th className="text-left pb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono, fontWeight: 500 }}>Pillar</th>
                             <th className="text-center pb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono, fontWeight: 700 }}>You</th>
                             {competitorResults.map(r => (
-                              <th key={r.domain} className="text-center pb-2 max-w-[80px] truncate" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>
+                              <th key={r.domain} className="text-center pb-2 max-w-[80px] truncate" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>
                                 {r.domain.replace('www.', '').split('.')[0]}
                               </th>
                             ))}

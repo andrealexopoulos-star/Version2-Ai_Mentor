@@ -400,10 +400,10 @@ const Settings = () => {
             <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
               — Settings
             </div>
-            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
               Your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>account</em>.
             </h1>
-            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
               Manage your account, preferences, and billing
             </p>
           </div>
@@ -479,7 +479,7 @@ const Settings = () => {
                     fontFamily: fontFamily.body,
                     fontWeight: activeTab === value ? 500 : 400,
                     background: activeTab === value ? 'var(--surface-sunken, #060A12)' : 'transparent',
-                    color: activeTab === value ? '#EDF1F7' : '#8FA0B8',
+                    color: activeTab === value ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
                     borderLeft: activeTab === value ? '2px solid #E85D00' : '2px solid transparent',
                   }}
                 >

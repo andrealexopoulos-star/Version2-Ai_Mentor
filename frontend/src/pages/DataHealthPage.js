@@ -56,10 +56,12 @@ const DataHealthPage = () => {
   const [readiness, setReadiness] = useState(null);
   const [syncLogs, setSyncLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const { status: integrationStatus, refresh: refreshIntegrations } = useIntegrationStatus();
 
   const fetchData = async () => {
+    setFetchError(null);
     try {
       const [connRes, readRes, logRes] = await Promise.allSettled([
         apiClient.get('/user/integration-status'),
@@ -75,7 +77,10 @@ const DataHealthPage = () => {
       }
       if (readRes.status === 'fulfilled') setReadiness(readRes.value.data);
       if (logRes.status === 'fulfilled') setSyncLogs(logRes.value.data?.logs || []);
-    } catch {} finally { setLoading(false); }
+    } catch (err) {
+      console.error('[DataHealthPage] fetch failed:', err);
+      setFetchError(err.message || 'Failed to load data');
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -186,7 +191,7 @@ const DataHealthPage = () => {
           <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
             — Data health
           </div>
-          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
             Is BIQc getting <em style={{ fontStyle: 'italic', color: '#E85D00' }}>clean data</em>?
           </h1>
           <p className="text-sm text-[#8FA0B8]">
@@ -196,6 +201,25 @@ const DataHealthPage = () => {
             {loading && <span className="text-[10px] ml-2 text-[#E85D00]" style={{ fontFamily: fontFamily.mono }}>loading...</span>}
           </p>
         </div>
+
+        {fetchError && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+            background: 'rgba(232, 93, 0, 0.08)', border: '1px solid rgba(232, 93, 0, 0.2)',
+            borderRadius: 12, marginBottom: 16,
+            fontFamily: "'Inter', sans-serif", fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)',
+          }}>
+            <span style={{ color: 'var(--lava, #E85D00)' }}>{'\u26A0'}</span>
+            <span style={{ flex: 1 }}>{fetchError}</span>
+            <button
+              onClick={() => { setFetchError(null); setLoading(true); fetchData(); }}
+              style={{
+                background: 'var(--lava, #E85D00)', color: 'white', border: 'none',
+                padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              }}
+            >Retry</button>
+          </div>
+        )}
 
         {/* Circular gauge hero — overall health score */}
         {(() => {
@@ -215,7 +239,7 @@ const DataHealthPage = () => {
                     style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
                 </svg>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: fontFamily.display, fontSize: 36, color: '#EDF1F7', lineHeight: 1 }}>{loading ? '\u2014' : healthScore}</span>
+                  <span style={{ fontFamily: fontFamily.display, fontSize: 36, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>{loading ? '\u2014' : healthScore}</span>
                   <span style={{ fontFamily: fontFamily.mono, fontSize: 13, color: gaugeColor, fontWeight: 700, marginTop: 2 }}>{loading ? '' : grade}</span>
                 </div>
               </div>
@@ -300,7 +324,7 @@ const DataHealthPage = () => {
                   <div className="flex items-center gap-3 shrink-0">
                     <Link to="/integrations"
                       className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110"
-                      style={{ background: '#1E2D3D', color: '#8FA0B8', border: '1px solid rgba(140,170,210,0.12)' }}>
+                      style={{ background: '#1E2D3D', color: 'var(--ink-secondary, #8FA0B8)', border: '1px solid rgba(140,170,210,0.12)' }}>
                       Reconnect
                     </Link>
                     <CheckCircle2 className="w-5 h-5 text-[#10B981]" />

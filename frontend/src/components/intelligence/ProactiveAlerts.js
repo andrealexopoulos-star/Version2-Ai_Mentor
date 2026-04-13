@@ -131,14 +131,14 @@ const ProactiveAlerts = ({ userId }) => {
                       {alert.severity}
                     </span>
                   </div>
-                  <p className="text-xs leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
                     {alert.description}
                   </p>
                   {isExpanded && alert.metadata && (
                     <div className="mt-3 pt-3 space-y-1" style={{ borderTop: `1px solid ${severity.border}15` }}>
                       {Object.entries(alert.metadata).slice(0, 4).map(([k, v]) => (
                         <div key={k} className="flex items-center justify-between text-xs">
-                          <span style={{ color: '#708499', fontFamily: fontFamily.mono }}>{k.replace(/_/g, ' ')}</span>
+                          <span style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>{k.replace(/_/g, ' ')}</span>
                           <span style={{ color: severity.text, fontFamily: fontFamily.mono }}>{String(v)}</span>
                         </div>
                       ))}
@@ -148,9 +148,9 @@ const ProactiveAlerts = ({ userId }) => {
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button onClick={(e) => { e.stopPropagation(); setDismissed(prev => new Set([...prev, alert.id])); }}
                     className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/5">
-                    <X className="w-3 h-3" style={{ color: '#708499' }} />
+                    <X className="w-3 h-3" style={{ color: 'var(--ink-muted, #708499)' }} />
                   </button>
-                  <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} style={{ color: '#708499' }} />
+                  <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} style={{ color: 'var(--ink-muted, #708499)' }} />
                 </div>
               </div>
             </div>

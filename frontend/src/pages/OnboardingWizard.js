@@ -279,7 +279,7 @@ const OnboardingWizard = () => {
     const isConfirmed = resolvedFieldsMap[field]?.confirmed;
     return (
       <div key={field}>
-        <Label className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>
+        <Label className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>
           {label}
           {existing && isConfirmed && (
             <span className="text-[10px] px-1.5 py-0.5 rounded font-normal" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981' }}>
@@ -390,10 +390,10 @@ const OnboardingWizard = () => {
                   <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ background: 'rgba(232,93,0,0.12)' }}>
                     <Zap className="w-8 h-8" style={{ color: '#E85D00' }} />
                   </div>
-                  <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+                  <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
                     Welcome to <em style={{ fontStyle: 'italic', color: '#E85D00' }}>BIQc</em>
                   </h1>
-                  <p className="max-w-md mx-auto" style={{ color: '#8FA0B8', fontFamily: fontFamily.body, fontSize: '18px', lineHeight: 1.5 }}>
+                  <p className="max-w-md mx-auto" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body, fontSize: '18px', lineHeight: 1.5 }}>
                     Your continuous business intelligence and situational awareness system.
                   </p>
                 </div>
@@ -405,19 +405,19 @@ const OnboardingWizard = () => {
                     { icon: TrendingUp, title: 'Goals & Objectives', desc: 'Your priorities drive what BIQc monitors and what it escalates.' },
                     { icon: Brain, title: 'How BIQc works', desc: 'BIQc observes signals, forms positions, and only speaks when findings cross your thresholds.' },
                   ].map(item => (
-                    <div key={item.title} className="flex items-start gap-4 p-4 rounded-xl" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
+                    <div key={item.title} className="flex items-start gap-4 p-4 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'rgba(232,93,0,0.12)' }}>
                         <item.icon className="w-5 h-5" style={{ color: '#E85D00' }} />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold" style={{ color: '#EDF1F7' }}>{item.title}</h3>
-                        <p className="text-xs mt-0.5" style={{ color: '#708499' }}>{item.desc}</p>
+                        <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{item.title}</h3>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>{item.desc}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <p className="text-xs text-center" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                <p className="text-xs text-center" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                   Takes about 5 minutes. Your progress is saved automatically.
                 </p>
               </div>
@@ -430,7 +430,7 @@ const OnboardingWizard = () => {
 
                 {/* Business type radio cards from mockup */}
                 <div style={{ marginTop: 40 }}>
-                  <h3 style={{ fontFamily: fontFamily.display, fontSize: 22, color: '#EDF1F7', marginBottom: 16 }}>Pick what fits closest</h3>
+                  <h3 style={{ fontFamily: fontFamily.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', marginBottom: 16 }}>Pick what fits closest</h3>
                   <div className="wiz-radio-grid">
                     {[
                       { value: 'services', title: 'Services / consulting', desc: 'Project-based revenue, billable hours, retainers, proposals in flight.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h20M5 3v18h14V3M9 8h6M9 12h6M9 16h6"/></svg> },
@@ -463,7 +463,7 @@ const OnboardingWizard = () => {
                               width: 36, height: 36, borderRadius: 8,
                               display: 'grid', placeItems: 'center',
                               background: isSelected ? '#E85D00' : 'var(--surface-2, #121D30)',
-                              color: isSelected ? 'white' : '#EDF1F7',
+                              color: isSelected ? 'white' : 'var(--ink-display, #EDF1F7)',
                             }}>
                               {opt.icon}
                             </div>
@@ -477,8 +477,8 @@ const OnboardingWizard = () => {
                               {isSelected && <Check style={{ width: 12, height: 12 }} />}
                             </div>
                           </div>
-                          <h4 style={{ fontSize: 16, fontWeight: 600, color: '#EDF1F7', fontFamily: fontFamily.body }}>{opt.title}</h4>
-                          <p style={{ marginTop: 8, color: '#8FA0B8', fontSize: 13, lineHeight: 1.5, fontFamily: fontFamily.body }}>{opt.desc}</p>
+                          <h4 style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{opt.title}</h4>
+                          <p style={{ marginTop: 8, color: 'var(--ink-secondary, #8FA0B8)', fontSize: 13, lineHeight: 1.5, fontFamily: fontFamily.body }}>{opt.desc}</p>
                         </button>
                       );
                     })}
@@ -541,7 +541,7 @@ const OnboardingWizard = () => {
                 <WizStepHeader step={3} total={STEPS.length} title={<>Your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>website</em></>} subtitle="We can auto-detect details from your website." />
                 
                 <div>
-                  <Label className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Website URL</Label>
+                  <Label className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Website URL</Label>
                   <div className="flex gap-2 mt-2">
                     <Input
                       value={formData.website || ''}
@@ -568,18 +568,18 @@ const OnboardingWizard = () => {
                   <div className="p-4 rounded-xl space-y-3" style={{ background: 'rgba(232,93,0,0.08)', border: '1px solid rgba(232,93,0,0.2)' }} data-testid="enrich-preview">
                     <p className="text-sm font-medium" style={{ color: '#E85D00' }}>Detected from your website:</p>
                     {enrichPreview.title && (
-                      <div className="text-sm" style={{ color: '#8FA0B8' }}>
-                        <span className="text-xs" style={{ color: '#708499' }}>Title: </span>{enrichPreview.title}
+                      <div className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>Title: </span>{enrichPreview.title}
                       </div>
                     )}
                     {enrichPreview.description && (
-                      <div className="text-sm" style={{ color: '#8FA0B8' }}>
-                        <span className="text-xs" style={{ color: '#708499' }}>Description: </span>{enrichPreview.description}
+                      <div className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>Description: </span>{enrichPreview.description}
                       </div>
                     )}
                     {enrichPreview.inferred_name && (
-                      <div className="text-sm" style={{ color: '#8FA0B8' }}>
-                        <span className="text-xs" style={{ color: '#708499' }}>Business name: </span>{enrichPreview.inferred_name}
+                      <div className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>Business name: </span>{enrichPreview.inferred_name}
                       </div>
                     )}
                     <Button
@@ -836,7 +836,7 @@ const OnboardingWizard = () => {
                 <WizStepHeader step={8} total={STEPS.length} title={<>BIQc <em style={{ fontStyle: 'italic', color: '#E85D00' }}>preferences</em></>} subtitle="How should BIQc communicate with you?" />
 
                 <div>
-                  <Label className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>Communication Style</Label>
+                  <Label className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Communication Style</Label>
                   <RadioGroup
                     value={formData.advice_style || ''}
                     onValueChange={(val) => updateField('advice_style', val)}
@@ -850,8 +850,8 @@ const OnboardingWizard = () => {
                       <div key={opt.value} className="flex items-start gap-3 p-4 rounded-lg bg-[#0E1628] border border-[rgba(140,170,210,0.15)] cursor-pointer hover:bg-[#121D30]">
                         <RadioGroupItem value={opt.value} id={`style-${opt.value}`} className="mt-0.5" />
                         <Label htmlFor={`style-${opt.value}`} className="cursor-pointer">
-                          <div className="text-sm font-medium" style={{ color: '#EDF1F7' }}>{opt.label}</div>
-                          <div className="text-xs" style={{ color: '#708499' }}>{opt.desc}</div>
+                          <div className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{opt.label}</div>
+                          <div className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>{opt.desc}</div>
                         </Label>
                       </div>
                     ))}
@@ -859,7 +859,7 @@ const OnboardingWizard = () => {
                 </div>
 
                 <div>
-                  <Label className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>What tools do you use?</Label>
+                  <Label className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>What tools do you use?</Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {['Xero / QuickBooks', 'HubSpot / CRM', 'Slack / Teams', 'Google Workspace', 'Notion / Asana', 'Stripe', 'None yet', 'Other'].map(tool => (
                       <label key={tool} className="flex items-center gap-2 p-3 rounded-lg bg-[#0E1628] border border-[rgba(140,170,210,0.15)] cursor-pointer hover:bg-[#121D30] text-[#8FA0B8] text-sm">
@@ -892,10 +892,10 @@ const OnboardingWizard = () => {
                     { key: 'competitor_mentions', title: 'Competitor mentions', hint: 'Inbound emails referencing named competitors', threshold: 'Default threshold \u00b7 3 mentions / 7 days' },
                     { key: 'press_mentions', title: 'Press / media mentions', hint: 'Your business name surfacing in news, blogs, social', threshold: 'Default threshold \u00b7 Any mention' },
                   ].map(signal => (
-                    <div key={signal.key} className="flex items-center justify-between gap-4 p-5 rounded-xl transition-all" style={{ background: '#0E1628', border: `1px solid ${signalToggles[signal.key] ? 'rgba(232,93,0,0.3)' : 'rgba(140,170,210,0.15)'}` }}>
+                    <div key={signal.key} className="flex items-center justify-between gap-4 p-5 rounded-xl transition-all" style={{ background: 'var(--surface, #0E1628)', border: `1px solid ${signalToggles[signal.key] ? 'rgba(232,93,0,0.3)' : 'rgba(140,170,210,0.15)'}` }}>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[15px] font-semibold" style={{ color: '#EDF1F7' }}>{signal.title}</div>
-                        <div className="text-[13px] mt-0.5" style={{ color: '#8FA0B8' }}>{signal.hint}</div>
+                        <div className="text-[15px] font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{signal.title}</div>
+                        <div className="text-[13px] mt-0.5" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{signal.hint}</div>
                         <div className="text-[11px] mt-2 uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>{signal.threshold}</div>
                       </div>
                       <button
@@ -921,7 +921,7 @@ const OnboardingWizard = () => {
                 </div>
 
                 <div className="flex items-center justify-between pt-4">
-                  <span className="text-xs" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+                  <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                     {Object.values(signalToggles).filter(Boolean).length} of 7 signals active
                   </span>
                   <button
@@ -936,7 +936,7 @@ const OnboardingWizard = () => {
             )}
 
             {/* Progress bar */}
-            <div className="mt-6 h-1 rounded-full overflow-hidden" style={{ background: '#121D30' }}>
+            <div className="mt-6 h-1 rounded-full overflow-hidden" style={{ background: 'var(--surface-2, #121D30)' }}>
               <div className="h-full rounded-full transition-all duration-500" style={{ background: 'linear-gradient(90deg, #E85D00, #FF8C33)', width: `${completeness}%` }} />
             </div>
 
@@ -946,7 +946,7 @@ const OnboardingWizard = () => {
                 <button
                   onClick={handleBack}
                   className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-white/5"
-                  style={{ color: '#8FA0B8', fontFamily: fontFamily.body, background: 'transparent', border: '1px solid rgba(140,170,210,0.15)', cursor: 'pointer' }}
+                  style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body, background: 'transparent', border: '1px solid rgba(140,170,210,0.15)', cursor: 'pointer' }}
                   data-testid="btn-back"
                 >
                   <ArrowLeft className="w-4 h-4" /> Back
@@ -963,7 +963,7 @@ const OnboardingWizard = () => {
                       navigate('/advisor');
                     }}
                     className="text-sm transition-colors"
-                    style={{ color: '#708499', background: 'none', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}
+                    style={{ color: 'var(--ink-muted, #708499)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}
                     data-testid="btn-save-later"
                   >
                     Skip for now
@@ -1001,11 +1001,11 @@ const WizStepHeader = ({ step, total, title, subtitle }) => (
     <div className="text-[11px] uppercase tracking-[0.08em] mb-3" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
       — Step {step} of {total}
     </div>
-    <h1 className="font-medium mb-3" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+    <h1 className="font-medium mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
       {title}
     </h1>
     {subtitle && (
-      <p className="text-lg leading-relaxed max-w-[580px]" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+      <p className="text-lg leading-relaxed max-w-[580px]" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
         {subtitle}
       </p>
     )}
