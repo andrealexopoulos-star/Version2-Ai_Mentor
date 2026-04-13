@@ -639,14 +639,14 @@ export default function PlatformPage() {
             The Platform
           </span>
           <h1 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(32px, 5vw, 56px)', lineHeight: 1.08, fontWeight: 700, margin: '12px 0 16px' }}>
-            Every flagship page.<br />
+            See Your Entire Business.{' '}
             <span style={{ background: 'linear-gradient(135deg, #E85D00, #C44F00)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Built for business owners.
+              In One Place.
             </span>
           </h1>
           <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 16, lineHeight: 1.6, maxWidth: 540, margin: '0 auto 28px' }}>
-            From your morning briefing to compliance deadlines, revenue health to competitor moves —
-            BIQc covers every dimension of your business in one platform.
+            Your command centre, reimagined. From morning briefings to compliance deadlines,
+            revenue health to competitor moves — one platform for every dimension of your business.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link to="/register-supabase" style={{ background: 'var(--lava, #E85D00)', color: '#fff', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 6px 24px rgba(232,93,0,0.3)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -738,25 +738,70 @@ export default function PlatformPage() {
         </div>
       </section>
 
+      {/* ── Capabilities Grid — "Everything you need to run smarter" ── */}
+      <section style={{ background: '#0B1120', padding: '80px 24px', borderTop: '1px solid rgba(140,170,210,0.08)' }} data-testid="capabilities-grid">
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <span style={{ fontFamily: fontFamily.mono, color: O, fontSize: 11, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase' }}>Capabilities</span>
+            <h2 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 700, margin: '8px 0 12px', letterSpacing: '-0.02em' }}>Everything you need to run smarter</h2>
+            <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 15, maxWidth: 540, margin: '0 auto' }}>Six core capabilities that give you command over every dimension of your business.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
+            {[
+              { icon: '🧠', title: 'Advisor Intelligence', tier: 'Free', desc: 'Your AI morning brief. Surfaces what changed overnight and what needs attention today.', link: '/platform/overview' },
+              { icon: '📊', title: 'Revenue Analytics', tier: 'Growth', desc: 'Track pipeline health, deal velocity, and revenue trends with real-time data.', link: '/platform/revenue' },
+              { icon: '🔔', title: 'Alert Centre', tier: 'Free', desc: 'Severity-ranked signals from every connected system. Know what matters right now.', link: '/platform/alerts' },
+              { icon: '⚔️', title: 'War Room', tier: 'Pro', desc: 'Multi-model AI conversations. GPT, Claude, and Gemini analyzing your business together.', link: '/platform/alerts' },
+              { icon: '🏛️', title: 'Board Room', tier: 'Growth', desc: 'Strategic AI conversations with a single-model advisor that knows your business context.', link: '/platform/alerts' },
+              { icon: '🎯', title: 'Competitive Benchmark', tier: 'Free', desc: 'See where you stand. Public signal analysis across your competitive landscape.', link: '/platform/alerts' },
+            ].map((cap) => (
+              <Link key={cap.title} to={cap.link} style={{ textDecoration: 'none', display: 'block', padding: 28, borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(140,170,210,0.1)', transition: 'all 0.2s' }} className="hover:border-[#E85D00]/30 hover:-translate-y-1">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 22 }}>{cap.icon}</span>
+                  <span style={{ fontFamily: fontFamily.body, color: '#EDF1F7', fontSize: 15, fontWeight: 700 }}>{cap.title}</span>
+                  <span style={{ fontFamily: fontFamily.mono, color: O, fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginLeft: 'auto', padding: '2px 8px', borderRadius: 4, background: 'rgba(232,93,0,0.08)', border: '1px solid rgba(232,93,0,0.2)' }}>{cap.tier}</span>
+                </div>
+                <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 14, lineHeight: 1.5 }}>{cap.desc}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Integrations — "Connects to tools you already use" ── */}
+      <section style={{ background: '#080C14', padding: '64px 24px', borderTop: '1px solid rgba(140,170,210,0.08)' }} data-testid="integrations-strip">
+        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(20px, 2.5vw, 28px)', fontWeight: 700, marginBottom: 8, letterSpacing: '-0.02em' }}>Connects to tools you already use</h2>
+          <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 15, marginBottom: 32 }}>One-click integrations. No engineering required.</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 16 }}>
+            {['Xero', 'MYOB', 'HubSpot', 'Salesforce', 'Outlook', 'Gmail', 'ServiceM8', 'Tradify', 'Deputy'].map(name => (
+              <div key={name} style={{ padding: '10px 20px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(140,170,210,0.1)', fontFamily: fontFamily.body, color: '#C8D4E4', fontSize: 14, fontWeight: 500 }}>
+                {name}
+              </div>
+            ))}
+          </div>
+          <p style={{ fontFamily: fontFamily.mono, color: '#4A5568', fontSize: 11, marginTop: 20 }}>
+            Powered by Merge.dev · More integrations added regularly
+          </p>
+        </div>
+      </section>
+
       {/* ── Bottom CTA ── */}
-      <section style={{ background: '#080C14', padding: '64px 24px', textAlign: 'center' }}>
-        <h2 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, fontWeight: 700, marginBottom: 12 }}>
-          Ready to run your business on intelligence?
+      <section style={{ background: '#0B1120', padding: '80px 24px', textAlign: 'center', borderTop: '1px solid rgba(140,170,210,0.08)' }}>
+        <h2 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(28px, 4vw, 36px)', fontWeight: 700, marginBottom: 16, letterSpacing: '-0.02em' }}>
+          Ready to see your business clearly?
         </h2>
-        <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 15, marginBottom: 28, maxWidth: 480, margin: '0 auto 28px' }}>
-          Connect your first platform in 2 minutes. No credit card required.
+        <p style={{ fontFamily: fontFamily.body, color: '#8FA0B8', fontSize: 16, marginBottom: 32, maxWidth: 520, margin: '0 auto 32px' }}>
+          Join thousands of Australian businesses already using BIQc to make smarter decisions.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/register-supabase" style={{ background: 'var(--lava, #E85D00)', color: '#fff', borderRadius: 12, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 8px 32px rgba(232,93,0,0.25)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            Try It Free <ArrowRight size={16} />
+          <Link to="/register-supabase" style={{ background: '#E85D00', color: '#fff', borderRadius: 8, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none', boxShadow: '0 4px 16px rgba(232,93,0,0.3)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            Start Free Trial <ArrowRight size={16} />
           </Link>
-          <Link to="/pricing" style={{ background: 'rgba(255,255,255,0.04)', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 12, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none' }}>
+          <Link to="/pricing" style={{ background: 'transparent', color: '#EDF1F7', border: '1px solid rgba(140,170,210,0.2)', borderRadius: 8, padding: '14px 32px', fontSize: 15, fontWeight: 600, fontFamily: fontFamily.body, textDecoration: 'none' }}>
             View Pricing
           </Link>
         </div>
-        <p style={{ fontFamily: fontFamily.mono, color: '#4A5568', fontSize: 11, marginTop: 16 }}>
-          14-day trial · Australian hosted · Cancel anytime
-        </p>
       </section>
     </WebsiteLayout>
   );
