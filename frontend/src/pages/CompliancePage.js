@@ -4,7 +4,7 @@ import { useSnapshot } from '../hooks/useSnapshot';
 import { apiClient } from '../lib/api';
 import { Shield, CheckCircle2, AlertTriangle, FileText, BadgeCheck, Sparkles, Check, Clock, AlertCircle, X, TrendingUp, TrendingDown } from 'lucide-react';
 import { fontFamily, colors } from '../design-system/tokens';
-import { EmptyStateCard, MetricCard, QuietActionLink, SectionLabel, SignalCard, SurfaceCard, SurfaceHeader } from '../components/intelligence/SurfacePrimitives';
+import { EmptyStateCard, MetricCard, QuietActionLink, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 import LineageBadge from '../components/LineageBadge';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 
@@ -264,18 +264,36 @@ const CompliancePage = () => {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-10" style={{ fontFamily: fontFamily.body }} data-testid="compliance-page">
-        <SurfaceHeader
-          eyebrow="Compliance"
-          title={<>Compliance <em style={{ fontStyle: 'italic', color: '#E85D00' }}>verification</em>.</>}
-          question="This page only shows real obligations, dependencies, and alignment risks that could expose the business."
-          summary={summary}
-          testIdPrefix="compliance"
-          rightSlot={(
+        <div className="flex flex-wrap items-start justify-between gap-4" data-testid="compliance-header">
+          <div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="compliance-title">
+              Compliance Centre
+            </h1>
+            <p className="text-sm mt-2" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }} data-testid="compliance-summary">
+              {summary}
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div className="rounded-full border px-3 py-1.5 text-xs" style={{ borderColor: `${verificationTone}40`, color: verificationTone, fontFamily: fontFamily.mono }} data-testid="compliance-abn-status-badge">
               <BadgeCheck className="mr-1 inline h-3.5 w-3.5" /> {verificationLabel}
             </div>
-          )}
-        />
+            <button
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '10px 20px', borderRadius: 8,
+                background: 'linear-gradient(135deg, #E85D00, #FF7A1A)',
+                color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: fontFamily.body,
+                border: 'none', cursor: 'pointer',
+                transition: 'box-shadow 0.2s, transform 0.2s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(232,93,0,0.35)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
+            >
+              <CheckCircle2 size={16} />
+              Run Compliance Audit
+            </button>
+          </div>
+        </div>
 
         {/* ═══ 1. SCORE RING GAUGES ═══ */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4" data-testid="compliance-score-rings">

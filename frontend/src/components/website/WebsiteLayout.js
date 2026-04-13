@@ -1,20 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDown, Menu, X, Shield, FileText, Lock, Server, Eye, BookOpen } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
-import brandLogoHead from '../../assets/biqc-logo-head.png';
-
-const DISPLAY = "'Cormorant Garamond', Georgia, serif";
-
-const TRUST_ITEMS = [
-  { label: 'BIQc AI Learning Guarantee', path: '/trust/ai-learning-guarantee', icon: Shield, bold: true },
-  { label: 'Security & Infrastructure', path: '/trust/security', icon: Server },
-  { label: 'Trust Centre', path: '/trust/centre', icon: Shield },
-  { label: 'Data Processing Agreement', path: '/trust/dpa', icon: Lock },
-  { label: 'Privacy Policy', path: '/trust/privacy', icon: Eye },
-  { label: 'Terms & Conditions', path: '/trust/terms', icon: FileText },
-  { label: 'Knowledge Base', path: '/knowledge-base', icon: BookOpen },
-];
 
 const NAV_LINKS = [
   { label: 'Platform', path: '/platform' },
@@ -22,72 +9,17 @@ const NAV_LINKS = [
   { label: 'Integrations', path: '/integrations-platform' },
   { label: 'Pricing', path: '/pricing' },
   { label: 'About', path: '/about' },
-  { label: 'Trust', path: '/trust/centre' },
+  { label: 'Trust', path: '/trust' },
+  { label: 'Blog', path: '/blog' },
 ];
-
-const MEET_BIQC_ITEMS = [
-  { label: 'Executive Overview', blurb: 'See the leadership control centre in action', path: '/platform/overview' },
-  { label: 'Revenue Intelligence', blurb: 'Catch growth and margin pressure early', path: '/platform/revenue' },
-  { label: 'Alerts & Watchtower', blurb: 'Track operational risk before it compounds', path: '/platform/alerts' },
-  { label: 'Automations', blurb: 'Turn decisions into repeatable execution', path: '/platform/automations' },
-  { label: 'Integrations Demo', blurb: 'Connect your stack and run on evidence', path: '/platform/integrations-demo' },
-];
-
-const TrustDropdown = ({ open, onClose }) => {
-  const ref = useRef(null);
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [onClose]);
-
-  if (!open) return null;
-  return (
-    <div ref={ref} className="absolute top-full right-0 mt-2 w-72 rounded-xl overflow-hidden" style={{ background: 'rgba(20,28,38,0.95)', border: '1px solid rgba(232,93,0,0.15)', backdropFilter: 'blur(24px)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
-      {TRUST_ITEMS.map((item) => (
-        <Link key={item.path} to={item.path} onClick={onClose} className="flex items-center gap-3 px-5 py-3.5 transition-all hover:bg-white/5 group" data-testid={`trust-dropdown-${item.label.toLowerCase().replace(/\s+/g,'-')}`}>
-          <item.icon className="w-4 h-4 text-[#8FA0B8] group-hover:text-[#E85D00] transition-colors" />
-          <span className="text-sm text-[#EDF1F7] group-hover:text-white" style={{ fontFamily: fontFamily.display, fontWeight: item.bold ? 600 : 400 }}>{item.label}</span>
-        </Link>
-      ))}
-    </div>
-  );
-};
-
-const MeetDropdown = ({ open, onClose }) => {
-  const ref = useRef(null);
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [onClose]);
-
-  if (!open) return null;
-  return (
-    <div ref={ref} className="absolute top-full left-0 mt-2 w-[340px] rounded-xl overflow-hidden" style={{ background: 'rgba(20,28,38,0.95)', border: '1px solid rgba(232,93,0,0.15)', backdropFilter: 'blur(24px)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
-      <div className="px-5 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        <p className="text-[11px] uppercase tracking-wider" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Meet BIQc</p>
-        <p className="text-xs mt-1" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>Explore each capability and the business outcomes it delivers.</p>
-      </div>
-      {MEET_BIQC_ITEMS.map((item) => (
-        <Link key={item.path} to={item.path} onClick={onClose} className="block px-5 py-3.5 transition-all hover:bg-white/5 group" data-testid={`meet-dropdown-${item.label.toLowerCase().replace(/\s+/g,'-')}`}>
-          <p className="text-sm text-[#EDF1F7] group-hover:text-white" style={{ fontFamily: fontFamily.display }}>{item.label}</p>
-          <p className="text-xs mt-0.5 text-[#8FA0B8] group-hover:text-[#CBD5E1]" style={{ fontFamily: fontFamily.body }}>{item.blurb}</p>
-        </Link>
-      ))}
-    </div>
-  );
-};
 
 const WebsiteNav = () => {
   const location = useLocation();
-  const [trustOpen, setTrustOpen] = useState(false);
-  const [meetOpen, setMeetOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50" style={{ background: 'rgba(15,23,32,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }} data-testid="website-nav">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <nav className="sticky top-0 left-0 right-0 z-50" style={{ background: 'linear-gradient(180deg, rgba(8,12,20,0.95), rgba(11,17,32,0.92))', backdropFilter: 'blur(24px) saturate(1.5)', borderBottom: '1px solid rgba(255,255,255,0.06)', height: '64px' }} data-testid="website-nav">
+      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center" data-testid="nav-logo">
           <span className="text-[28px] leading-none font-bold tracking-tight text-white" style={{ fontFamily: fontFamily.display }}>
@@ -100,9 +32,10 @@ const WebsiteNav = () => {
           {NAV_LINKS.map((link) => {
             const isActive = location.pathname === link.path
               || (link.label === 'Trust' && location.pathname.startsWith('/trust'))
-              || (link.label === 'Platform' && location.pathname.startsWith('/platform'));
+              || (link.label === 'Platform' && location.pathname.startsWith('/platform'))
+              || (link.label === 'Blog' && location.pathname.startsWith('/blog'));
             return (
-              <Link key={link.label} to={link.path} className="px-4 py-2 rounded-lg text-sm transition-all hover:text-white" style={{ color: isActive ? '#E85D00' : '#8FA0B8', fontFamily: fontFamily.display }} data-testid={`nav-${link.label.toLowerCase()}`}>
+              <Link key={link.label} to={link.path} className="px-4 py-2 rounded-lg text-sm transition-all hover:text-white" style={{ color: isActive ? '#EDF1F7' : '#8FA0B8', fontWeight: isActive ? 600 : 400, fontFamily: fontFamily.display }} data-testid={`nav-${link.label.toLowerCase()}`}>
                 {link.label}
               </Link>
             );
@@ -112,7 +45,7 @@ const WebsiteNav = () => {
         {/* CTA + Mobile Toggle */}
         <div className="flex items-center gap-3">
           <Link to="/login-supabase" className="hidden md:block px-4 py-2 rounded-lg text-sm text-[#8FA0B8] hover:text-white transition-colors" style={{ fontFamily: fontFamily.display }} data-testid="nav-login">Log in</Link>
-          <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #E85D00, #E85D00)', fontFamily: fontFamily.display, boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }} data-testid="nav-get-started">
+          <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)', fontFamily: fontFamily.display, boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }} data-testid="nav-get-started">
             Start Free
           </Link>
           {/* Mobile: Log In text + hamburger */}
@@ -130,21 +63,13 @@ const WebsiteNav = () => {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="md:hidden px-6 pb-6 space-y-1" style={{ background: 'rgba(15,23,32,0.98)' }}>
+        <div className="md:hidden px-6 pb-6 space-y-1" style={{ background: 'linear-gradient(180deg, rgba(8,12,20,0.98), rgba(11,17,32,0.95))' }}>
           {NAV_LINKS.map((link) => (
-            <div key={link.label}>
-              <Link to={link.path} onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-[#8FA0B8] hover:text-white hover:bg-white/5 transition-all" style={{ fontFamily: fontFamily.display }}>{link.label}</Link>
-              {link.dropdown === 'trust' && TRUST_ITEMS.map((item) => (
-                <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className="block px-8 py-2 text-xs text-[#8FA0B8]/70 hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
-              ))}
-              {link.dropdown === 'meet' && MEET_BIQC_ITEMS.map((item) => (
-                <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)} className="block px-8 py-2 text-xs text-[#8FA0B8]/70 hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
-              ))}
-            </div>
+            <Link key={link.label} to={link.path} onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-[#8FA0B8] hover:text-white hover:bg-white/5 transition-all" style={{ fontFamily: fontFamily.display }}>{link.label}</Link>
           ))}
           <div className="pt-4 space-y-2">
             <Link to="/login-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[#8FA0B8] border border-white/10">Log in</Link>
-            <Link to="/register-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-white font-semibold" style={{ background: '#E85D00' }}>Get started</Link>
+            <Link to="/register-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-white font-semibold" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)' }}>Start Free</Link>
           </div>
         </div>
       )}
@@ -153,22 +78,23 @@ const WebsiteNav = () => {
 };
 
 const WebsiteFooter = () => (
-  <footer className="border-t" style={{ background: '#0A1018', borderColor: 'rgba(255,255,255,0.06)' }} data-testid="website-footer">
+  <footer style={{ background: 'linear-gradient(180deg, #060B16, #040810)', borderTop: '1px solid rgba(140,170,210,0.12)' }} data-testid="website-footer">
     <div className="max-w-7xl mx-auto px-6 py-16">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
         <div>
-          <div className="flex items-center gap-2.5 mb-6">
-            <img src={brandLogoHead} alt="BIQc logo mark" className="h-8 w-auto object-contain" />
-            <span className="text-[30px] leading-none font-semibold tracking-tight text-white" style={{ fontFamily: fontFamily.display }}>
-              BIQc
-            </span>
+          <span className="text-[30px] leading-none font-semibold tracking-tight text-white block mb-6" style={{ fontFamily: fontFamily.display }}>
+            BIQc
+          </span>
+          <p className="text-xs text-[#8FA0B8]/60 leading-relaxed" style={{ fontFamily: fontFamily.display }}>Business Intelligence that works while you sleep. One intelligence layer for every decision that matters.</p>
+          <div className="mt-6 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
+            <span className="text-[10px] text-[#8FA0B8]/50" style={{ fontFamily: fontFamily.mono }}>All data hosted in Australia</span>
           </div>
-          <p className="text-xs text-[#8FA0B8]/60 leading-relaxed" style={{ fontFamily: fontFamily.display }}>Autonomous Business Intelligence for SMBs. Australian owned & operated.</p>
         </div>
         <div>
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[#8FA0B8]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Product</h2>
           <div className="space-y-2.5">
-            {[['Platform', '/platform'], ['Intelligence', '/intelligence'], ['Integrations', '/our-integrations'], ['Pricing', '/pricing']].map(([l, p]) => (
+            {[['Platform', '/platform'], ['Intelligence', '/intelligence'], ['Integrations', '/integrations-platform'], ['Pricing', '/pricing']].map(([l, p]) => (
               <Link key={p} to={p} className="block text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
             ))}
           </div>
@@ -176,27 +102,23 @@ const WebsiteFooter = () => (
         <div>
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[#8FA0B8]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Legal</h2>
           <div className="space-y-2.5">
-            {TRUST_ITEMS.map((item) => (
-              <Link key={item.path} to={item.path} className="block text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{item.label}</Link>
+            {[['Privacy Policy', '/trust/privacy'], ['Terms of Service', '/trust/terms'], ['Trust & Security', '/trust/security']].map(([l, p]) => (
+              <Link key={p} to={p} className="block text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
             ))}
           </div>
         </div>
         <div>
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[#8FA0B8]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Company</h2>
           <div className="space-y-2.5">
-            {[['Contact', '/contact'], ['Trust', '/trust'], ['Try It Free', '/register-supabase']].map(([l, p]) => (
+            {[['Blog', '/blog'], ['Contact', '/contact'], ['Log In', '/login-supabase'], ['Start Free Trial', '/register-supabase']].map(([l, p]) => (
               <Link key={l} to={p} className="block text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
             ))}
           </div>
-          <div className="mt-6 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
-            <span className="text-[10px] text-[#8FA0B8]/50" style={{ fontFamily: fontFamily.mono }}>All data hosted in Australia</span>
-          </div>
         </div>
       </div>
-      <div className="mt-12 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        <span className="text-xs text-[#8FA0B8]/40" style={{ fontFamily: fontFamily.mono }}>&copy; {new Date().getFullYear()} Business Intelligence Quotient Centre Pty Ltd. ABN available on request.</span>
-        <span className="text-xs text-[#8FA0B8]/40" style={{ fontFamily: fontFamily.mono }}>Sydney, Australia</span>
+      <div className="mt-12 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: 'rgba(140,170,210,0.12)' }}>
+        <span className="text-xs text-[#8FA0B8]/40" style={{ fontFamily: fontFamily.mono }}>&copy; 2026 BIQc Pty Ltd. All rights reserved.</span>
+        <span className="text-xs text-[#8FA0B8]/40" style={{ fontFamily: fontFamily.mono }}>Australian Owned &amp; Operated</span>
       </div>
     </div>
   </footer>
@@ -211,7 +133,7 @@ const WebsiteLayout = ({ children }) => {
     <div className="min-h-screen" style={{ background: '#0F1720', color: '#EDF1F7' }}>
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <WebsiteNav />
-      <main id="main-content" className="pt-16">{children}</main>
+      <main id="main-content">{children}</main>
       <WebsiteFooter />
     </div>
   );

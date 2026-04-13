@@ -9,8 +9,6 @@ import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { fontFamily } from '../design-system/tokens';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
-import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
-import ActionOwnershipCard from '../components/ActionOwnershipCard';
 import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 import LineageBadge from '../components/LineageBadge';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
@@ -102,23 +100,6 @@ const OperationsPage = () => {
     exec.bottleneck && { label: 'Active Bottleneck', value: '1', unit: 'detected', color: '#F59E0B', icon: Zap, desc: exec.bottleneck.slice(0, 60) },
   ].filter(Boolean);
 
-  const explainability = {
-    whyVisible: hasRealOpsData
-      ? `BIQc is reading live workflow signals from ${hasCRM ? (crmIntegration?.provider || 'CRM') : 'connected systems'}${hasAccounting ? ` and ${acctIntegration?.provider || 'accounting'}` : ''}.`
-      : 'Operations intelligence appears when CRM/accounting systems are connected.',
-    whyNow: exec.sla_breaches > 0
-      ? `${exec.sla_breaches} SLA breach${exec.sla_breaches === 1 ? '' : 'es'} detected — service slippage is now measurable.`
-      : exec.bottleneck
-        ? `Active bottleneck detected: ${exec.bottleneck}`
-        : 'This module surfaces delivery friction before it cascades into customer or cashflow issues.',
-    nextAction: exec.bottleneck
-      ? 'Assign a bottleneck owner, define one unblock action, and re-check task aging within 48 hours.'
-      : 'Prioritise overdue tasks and tighten weekly execution cadence with clear owners per queue.',
-    ifIgnored: hasRealOpsData
-      ? 'Unresolved delivery drift typically compounds into missed commitments, rework, and client trust erosion.'
-      : 'Without connected workflow data, operational risks remain undetected until outcomes deteriorate.',
-  };
-
   const toConfidencePct = (raw) => {
     if (raw == null) return undefined;
     const n = Number(raw);
@@ -128,15 +109,6 @@ const OperationsPage = () => {
   const opsIntelLineage = unifiedOps?.lineage;
   const opsIntelFreshness = unifiedOps?.data_freshness;
   const opsIntelConfidence = toConfidencePct(unifiedOps?.confidence_score);
-
-  const actionOwnership = {
-    owner: exec.bottleneck ? 'Operations manager' : 'Delivery lead',
-    deadline: exec.sla_breaches > 0 ? 'Within 24 hours' : 'By end of this week',
-    checkpoint: exec.bottleneck
-      ? `Unblock bottleneck: ${String(exec.bottleneck).slice(0, 80)}${String(exec.bottleneck).length > 80 ? '…' : ''}`
-      : 'Run overdue-task cleanup and confirm clear queue ownership.',
-    successMetric: `SLA breaches ${exec.sla_breaches ?? '—'} · task aging ${exec.task_aging != null ? `${exec.task_aging}%` : '—'}`,
-  };
 
   const opsSignals = [
     exec.bottleneck ? {
@@ -194,10 +166,9 @@ const OperationsPage = () => {
         {/* Header — operations-specific copy + connection badges */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Operations</div>
-            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Operations <em style={{ fontStyle: 'italic', color: '#E85D00' }}>overview</em>.</h1>
+            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Operations.</h1>
             <p className="text-sm text-[#8FA0B8] mb-2" style={{ fontFamily: fontFamily.body }}>
-              Track fulfilment timelines, task throughput, SOP compliance and resource utilisation — updated from your connected systems.
+              Process health, team velocity, and bottleneck detection.
             </p>
             <div className="flex flex-wrap items-center gap-2">
               {!integrationResolved ? (
@@ -242,26 +213,9 @@ const OperationsPage = () => {
           <DataConfidence cognitive={snapshot ? { execution: { sla_breaches: exec.sla_breaches } } : null} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
 
-        <InsightExplainabilityStrip
-          whyVisible={explainability.whyVisible}
-          whyNow={explainability.whyNow}
-          nextAction={explainability.nextAction}
-          ifIgnored={explainability.ifIgnored}
-          testIdPrefix="operations-explainability"
-        />
-
         <div className="flex flex-wrap items-center gap-2" data-testid="operations-lineage-badge">
           <LineageBadge lineage={opsIntelLineage} data_freshness={opsIntelFreshness} confidence_score={opsIntelConfidence} compact />
         </div>
-
-        <ActionOwnershipCard
-          title="Operations execution owner plan"
-          owner={actionOwnership.owner}
-          deadline={actionOwnership.deadline}
-          checkpoint={actionOwnership.checkpoint}
-          successMetric={actionOwnership.successMetric}
-          testIdPrefix="operations-action-ownership"
-        />
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" data-testid="operations-ux-main-grid">
           <div className="space-y-4" data-testid="operations-priority-column">

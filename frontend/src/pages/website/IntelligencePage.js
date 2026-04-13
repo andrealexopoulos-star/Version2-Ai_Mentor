@@ -8,24 +8,24 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 /* ── How the AI Works ── */
 const AI_STEPS = [
   {
-    num: '01',
+    num: 1,
     title: 'Connect',
     desc: 'Your data sources feed into BIQc continuously. No manual uploads, no CSV wrangling.',
     badges: ['Xero', 'HubSpot', 'Outlook', 'Gmail'],
   },
   {
-    num: '02',
+    num: 2,
     title: 'Analyse',
     desc: 'Three AI models process every signal in parallel, cross-checking each other for accuracy.',
     badges: ['GPT-5.2', 'Claude Opus', 'Gemini 2.5 Pro'],
   },
   {
-    num: '03',
+    num: 3,
     title: 'Act',
     desc: 'Synthesised insights delivered as actionable intelligence \u2014 briefings, alerts, and recommended actions.',
     badges: ['Briefings', 'Alerts', 'Actions'],
@@ -35,14 +35,17 @@ const AI_STEPS = [
 /* ── Watchtower ── */
 const WATCHTOWER_CARDS = [
   {
+    icon: '\uD83D\uDD0E',
     title: 'Real-time Anomaly Detection',
     desc: 'Watchtower learns your business baseline over 14 days, then alerts you the moment something deviates \u2014 revenue drops, pipeline stalls, unusual spending patterns, or customer behaviour shifts.',
   },
   {
+    icon: '\uD83D\uDD17',
     title: 'Cross-System Correlation',
     desc: "Signals from your CRM, accounting, email, and calendar are correlated automatically. A stalled deal plus a missed follow-up plus a competitor mention becomes one clear warning, not three disconnected data points.",
   },
   {
+    icon: '\uD83D\uDEA8',
     title: 'Automatic Escalation',
     desc: 'Critical signals are escalated instantly via email and in-app notifications. Watchtower triages every alert by severity so you focus on what actually needs attention right now.',
   },
@@ -84,10 +87,10 @@ const COMPARISON = [
 
 /* ── Pipeline ── */
 const PIPELINE = [
-  { num: '01', title: 'Connect', desc: 'Securely link your business tools. Xero, HubSpot, Outlook, Gmail, and more flow in automatically.' },
-  { num: '02', title: 'Analyse', desc: 'Multi-model AI processes every data point, cross-referencing across systems for context and accuracy.' },
-  { num: '03', title: 'Detect', desc: 'Anomalies, risks, and opportunities are surfaced automatically. No manual searching required.' },
-  { num: '04', title: 'Act', desc: 'Receive prioritised recommendations with clear next steps. Every insight is tied to a specific action.' },
+  { num: 1, icon: '\uD83D\uDD0C', title: 'Connect', desc: 'Securely link your business tools. Xero, HubSpot, Outlook, Gmail, and more flow in automatically.' },
+  { num: 2, icon: '\uD83D\uDD2C', title: 'Analyse', desc: 'Multi-model AI processes every data point, cross-referencing across systems for context and accuracy.' },
+  { num: 3, icon: '\uD83D\uDCA1', title: 'Detect', desc: 'Anomalies, risks, and opportunities are surfaced automatically. No manual searching required.' },
+  { num: 4, icon: '\uD83C\uDFAF', title: 'Act', desc: 'Receive prioritised recommendations with clear next steps. Every insight is tied to a specific action.' },
 ];
 
 const cardBg = 'linear-gradient(105deg, rgba(200,220,240,0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0) 55%), linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)';
@@ -129,26 +132,43 @@ export default function IntelligencePage() {
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {AI_STEPS.map((step) => (
-              <div key={step.num} className="rounded-xl p-8" style={{ background: cardBg, border: cardBorder }}>
-                <div className="text-[40px] font-bold mb-4"
-                  style={{ color: 'rgba(232,93,0,0.15)', fontFamily: "'Source Serif 4', Georgia, serif" }}>
+            {AI_STEPS.map((step, i) => (
+              <div key={step.num} className="rounded-xl p-8 text-center relative"
+                style={{ background: cardBg, border: cardBorder, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                <div className="inline-flex items-center justify-center mb-5"
+                  style={{
+                    width: 40, height: 40, borderRadius: '50%',
+                    background: 'rgba(232,93,0,0.12)', color: '#E85D00',
+                    fontSize: 16, fontWeight: 700,
+                  }}>
                   {step.num}
                 </div>
-                <h3 className="text-xl font-semibold mb-3" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+                <h3 className="text-lg font-semibold mb-2.5" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
                   {step.title}
                 </h3>
-                <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                <p className="text-[15px] leading-relaxed mb-5" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
                   {step.desc}
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 justify-center">
                   {step.badges.map((b) => (
-                    <span key={b} className="px-2.5 py-1 rounded text-[11px] font-medium"
-                      style={{ background: 'rgba(232,93,0,0.08)', color: 'var(--lava, #E85D00)' }}>
+                    <span key={b} className="px-3 py-1 rounded-full text-xs font-medium"
+                      style={{ background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}>
                       {b}
                     </span>
                   ))}
                 </div>
+                {/* Step connector arrow */}
+                {i < 2 && (
+                  <div className="hidden md:flex items-center justify-center absolute z-10"
+                    style={{
+                      top: '50%', right: -14, transform: 'translateY(-50%)',
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)',
+                      color: '#5C6E82', fontSize: 14, fontWeight: 600,
+                    }}>
+                    &rarr;
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -158,22 +178,36 @@ export default function IntelligencePage() {
       {/* Watchtower */}
       <section className="py-20 px-6" style={{ background: 'var(--bg-secondary, #0B1120)' }}>
         <div className="max-w-[1120px] mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
-              24/7 Autonomous Monitoring
-            </h2>
-            <p className="text-[15px] max-w-[600px] mx-auto" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
-              Watchtower monitors all your connected systems around the clock. It detects anomalies, flags emerging risks, and surfaces opportunities &mdash; before you even know to look.
-            </p>
+          {/* 2-column header: title left, description right */}
+          <div className="grid md:grid-cols-2 gap-10 items-center mb-8">
+            <div>
+              <h2 className="text-[32px] font-semibold tracking-tight"
+                style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: '-0.5px' }}>
+                24/7 Autonomous Monitoring
+              </h2>
+            </div>
+            <div>
+              <p className="text-base leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.7 }}>
+                Watchtower monitors all your connected systems around the clock. It detects anomalies, flags emerging risks, and surfaces opportunities &mdash; before you even know to look.
+              </p>
+            </div>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-5">
             {WATCHTOWER_CARDS.map((card) => (
-              <div key={card.title} className="rounded-xl p-7" style={{ background: cardBg, border: cardBorder }}>
-                <h3 className="text-base font-semibold mb-3" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+              <div key={card.title} className="rounded-xl p-7"
+                style={{ background: cardBg, border: cardBorder, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                {/* Icon container */}
+                <div className="flex items-center justify-center mb-4"
+                  style={{
+                    width: 44, height: 44, borderRadius: 10,
+                    background: 'rgba(232,93,0,0.12)', fontSize: 20,
+                  }}>
+                  {card.icon}
+                </div>
+                <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
                   {card.title}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.7 }}>
                   {card.desc}
                 </p>
               </div>
@@ -202,28 +236,39 @@ export default function IntelligencePage() {
                   border: mode.highlighted ? '2px solid var(--lava, #E85D00)' : cardBorder,
                   boxShadow: mode.highlighted ? '0 4px 16px rgba(232,93,0,0.08)' : 'none',
                 }}>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full"
+                <div className="mb-5">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide px-3.5 py-1 rounded-full"
                     style={{
-                      background: mode.highlighted ? 'rgba(232,93,0,0.08)' : 'rgba(140,170,210,0.1)',
-                      color: mode.highlighted ? 'var(--lava, #E85D00)' : 'var(--ink-secondary, #8FA0B8)',
+                      background: mode.highlighted ? 'rgba(232,93,0,0.12)' : 'rgba(2,132,199,0.12)',
+                      color: mode.highlighted ? '#E85D00' : '#0284C7',
+                      letterSpacing: '0.5px',
                     }}>
-                    {mode.tier}
+                    {mode.highlighted ? '\u26A1' : '\uD83C\uDFE2'} {mode.tier}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+                <h3 className="text-2xl font-semibold mb-1.5"
+                  style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', Georgia, serif" }}>
                   {mode.name}
                 </h3>
-                <div className="text-[28px] font-bold mb-3" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
-                  {mode.price}<span className="text-sm font-medium ml-1" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>/month</span>
+                <div className="text-[28px] font-bold mb-1" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+                  {mode.price}<span className="text-[15px] font-normal ml-1" style={{ color: '#5C6E82' }}>/month</span>
                 </div>
-                <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>
                   {mode.tagline}
                 </p>
-                <ul className="space-y-3">
+                <ul className="space-y-0">
                   {mode.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--ink-body, #C8D4E4)' }}>
-                      <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#16A34A' }} />
+                    <li key={f} className="relative text-sm pl-6 py-2"
+                      style={{
+                        color: 'var(--ink-body, #C8D4E4)',
+                        borderBottom: '1px solid rgba(140,170,210,0.06)',
+                        lineHeight: 1.6,
+                      }}>
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2"
+                        style={{
+                          width: 6, height: 6, borderRadius: '50%',
+                          background: '#E85D00', display: 'block',
+                        }} />
                       {f}
                     </li>
                   ))}
@@ -235,55 +280,82 @@ export default function IntelligencePage() {
       </section>
 
       {/* Intelligence Pipeline */}
-      <section className="py-20 px-6" style={{ background: 'var(--bg-secondary, #0B1120)' }}>
+      <section className="py-20 px-6" style={{ background: 'var(--bg-primary, #080C14)' }}>
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+            <h2 className="text-[32px] font-semibold tracking-tight mb-3"
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: '-0.5px' }}>
               The Intelligence Pipeline
             </h2>
-            <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <p className="text-base" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
               From raw data to decisive action in four steps.
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {PIPELINE.map((step, i) => (
-              <div key={step.num} className="text-center relative">
-                <div className="text-[48px] font-bold mb-4"
-                  style={{ color: 'rgba(232,93,0,0.15)', fontFamily: "'Source Serif 4', Georgia, serif" }}>
-                  {step.num}
+          {/* pipeline-wrap container */}
+          <div className="rounded-2xl p-10 md:p-12" style={{ background: '#0B1120' }}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {PIPELINE.map((step, i) => (
+                <div key={step.num} className="rounded-xl p-6 text-center relative"
+                  style={{ background: cardBg, border: cardBorder, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                  {/* Icon container */}
+                  <div className="flex items-center justify-center mx-auto mb-4"
+                    style={{
+                      width: 48, height: 48, borderRadius: 12,
+                      background: 'rgba(232,93,0,0.12)', fontSize: 22,
+                    }}>
+                    {step.icon}
+                  </div>
+                  {/* Step label */}
+                  <div className="text-[11px] font-semibold uppercase tracking-wide mb-2"
+                    style={{ color: '#5C6E82', letterSpacing: '0.5px' }}>
+                    Step {step.num}
+                  </div>
+                  <h4 className="text-base font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+                    {step.title}
+                  </h4>
+                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>
+                    {step.desc}
+                  </p>
+                  {/* Pipeline connector arrow */}
+                  {i < 3 && (
+                    <div className="hidden md:flex items-center justify-center absolute z-10"
+                      style={{
+                        top: '50%', right: -12, transform: 'translateY(-50%)',
+                        width: 24, height: 24, borderRadius: '50%',
+                        background: '#0B1120', color: '#5C6E82', fontSize: 13,
+                      }}>
+                      &rarr;
+                    </div>
+                  )}
                 </div>
-                <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
-                  {step.title}
-                </h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
-                  {step.desc}
-                </p>
-                {i < 3 && (
-                  <div className="hidden md:block absolute top-6 -right-3 text-lg" style={{ color: 'rgba(140,170,210,0.2)' }}>&rarr;</div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6 text-center"
-        style={{ background: 'var(--bg-primary, #080C14)', borderTop: '1px solid var(--border-card, rgba(140,170,210,0.12))' }}>
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4"
-            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
-            Ready to think faster?
-          </h2>
-          <p className="text-base mb-8" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
-            Start free and get your first intelligence briefing in under 10 minutes.
-          </p>
-          <Link to="/register-supabase"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg text-base font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: 'var(--lava, #E85D00)', boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }}>
-            Start Free <ArrowRight className="w-4 h-4" />
-          </Link>
+      <section className="pb-24 px-6 text-center" style={{ background: 'var(--bg-primary, #080C14)' }}>
+        <div className="max-w-[1120px] mx-auto">
+          <div className="rounded-2xl py-14 px-10"
+            style={{
+              background: cardBg,
+              border: cardBorder,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            }}>
+            <h2 className="text-[28px] font-semibold tracking-tight mb-3"
+              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', Georgia, serif" }}>
+              Ready to think faster?
+            </h2>
+            <p className="text-base mb-7" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+              Start free and get your first intelligence briefing in under 10 minutes.
+            </p>
+            <Link to="/register-supabase"
+              className="inline-flex items-center gap-2 px-7 py-3 rounded-lg text-[15px] font-semibold text-white transition-all hover:brightness-110"
+              style={{ background: 'var(--lava, #E85D00)', boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }}>
+              Start Free <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </section>
     </WebsiteLayout>

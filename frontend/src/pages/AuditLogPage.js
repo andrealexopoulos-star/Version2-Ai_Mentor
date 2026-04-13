@@ -105,8 +105,7 @@ const AuditLogPage = () => {
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="audit-log-page">
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Governance</div>
-            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Audit <em style={{ fontStyle: 'italic', color: '#E85D00' }}>log</em>.</h1>
+            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Audit Log</h1>
             <p className="text-sm" style={{ color: '#8FA0B8' }}>Verified events from connected integrations. No AI-generated entries.</p>
           </div>
           {events.length > 0 && (

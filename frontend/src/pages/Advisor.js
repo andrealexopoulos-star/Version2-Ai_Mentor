@@ -1,4 +1,3 @@
-import { CognitiveMesh } from '../components/LoadingSystems';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, supabase } from '../context/SupabaseAuthContext';
@@ -11,7 +10,7 @@ import {
   Mail, CheckSquare, Puzzle
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { DailyBriefCard } from '../components/DailyBriefCard';
+// DailyBriefCard component replaced by inline brief matching approved mockup
 // ProactiveAlerts and PredictionsPanel removed — not in approved mockup
 import { fontFamily } from '../design-system/tokens';
 import { extractEmailEvidence, extractCalendarEvidence, extractCRMEvidence, generateFastInsight } from '../lib/fastEvidence';
@@ -483,33 +482,6 @@ const Advisor = () => {
     window.location.reload();
   };
 
-  const sourceCards = [
-    {
-      key: 'email',
-      label: 'Email',
-      connected: integrationData.email?.connected,
-      detail: integrationData.email?.connected ? (integrationData.email?.provider || 'Connected') : 'Not connected',
-    },
-    {
-      key: 'calendar',
-      label: 'Calendar',
-      connected: integrationData.calendar?.connected,
-      detail: integrationData.calendar?.connected ? 'Connected via provider' : 'Not connected',
-    },
-    {
-      key: 'crm',
-      label: 'CRM',
-      connected: integrationData.crm?.connected,
-      detail: integrationData.crm?.connected ? 'Connected' : 'Not connected',
-    },
-    {
-      key: 'accounting',
-      label: 'Accounting',
-      connected: integrationData.accounting?.connected,
-      detail: integrationData.accounting?.connected ? 'Connected' : 'Not connected',
-    },
-  ];
-
   /* Greeting time */
   const now = new Date();
   const hour = now.getHours();
@@ -553,7 +525,7 @@ const Advisor = () => {
             <button
               onClick={handleRefresh}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', color: '#8FA0B8', fontFamily: fontFamily.body, cursor: 'pointer' }}
+              style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8', fontFamily: fontFamily.body, cursor: 'pointer' }}
             >
               <RefreshCw className="w-4 h-4" /> Refresh
             </button>
@@ -570,29 +542,28 @@ const Advisor = () => {
         {/* ── KPI Row ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Open signals', value: watchtowerEvents.length || '—', delta: '▲ 3 vs yesterday', deltaType: 'neg', color: '#E85D00', sparkColor: '#E85D00', sparkPath: '0,28 8,24 16,26 24,18 32,20 40,12 48,14 56,8 64,10 72,4' },
-            { label: 'Pipeline at risk', value: '$48,200', delta: '▲ $12.4k since Monday', deltaType: 'neg', color: '#DC2626', sparkColor: '#DC2626', sparkPath: '0,30 8,26 16,28 24,22 32,18 40,20 48,14 56,10 64,6 72,2' },
-            { label: 'Cash runway', value: '6.4 mo', delta: '— 0.1 mo 30-day avg', deltaType: 'neutral', color: '#10B981', sparkColor: '#10B981', sparkPath: '0,18 8,16 16,14 24,16 32,12 40,14 48,10 56,12 64,8 72,10' },
-            { label: 'Inbox decisions', value: '7', delta: '▼ 4 actioned this week', deltaType: 'pos', color: '#10B981', sparkColor: '#10B981', sparkPath: '0,24 8,20 16,22 24,16 32,14 40,10 48,12 56,8 64,6 72,4' },
+            { label: 'Open signals', value: watchtowerEvents.length || '—', delta: '▲ 3', deltaContext: 'vs yesterday', deltaType: 'neg', color: '#E85D00', sparkColor: '#E85D00', sparkPath: '0,22 10,18 20,20 30,15 40,17 50,10 60,12 70,8 80,11 90,5 100,8', showDot: true },
+            { label: 'Pipeline at risk', value: '$48,200', delta: '▲ $12.4k', deltaContext: 'since Monday', deltaType: 'neg', color: '#DC2626', sparkColor: '#DC2626', sparkPath: '0,25 10,22 20,24 30,18 40,20 50,15 60,12 70,10 80,8 90,6 100,4', showDot: false },
+            { label: 'Cash runway', value: '6.4', valueSuffix: 'mo', delta: '— 0.1 mo', deltaContext: '30-day average', deltaType: 'neutral', color: '#10B981', sparkColor: 'var(--positive, #16A34A)', sparkPath: '0,12 10,14 20,11 30,13 40,12 50,14 60,11 70,13 80,12 90,14 100,12', showDot: false },
+            { label: 'Inbox decisions', value: '7', delta: '▼ 4', deltaContext: 'actioned this week', deltaType: 'pos', color: '#10B981', sparkColor: 'var(--positive, #16A34A)', sparkPath: '0,8 10,10 20,12 30,9 40,14 50,11 60,16 70,13 80,18 90,15 100,20', showDot: false },
           ].map((kpi, i) => (
-            <div key={i} className="p-5 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))' }}>
+            <div key={i} className="p-5 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{kpi.label}</span>
-                  {(kpi.deltaType === 'neg') && <span className="w-2 h-2 rounded-full" style={{ background: kpi.color, boxShadow: `0 0 8px ${kpi.color}` }} />}
+                  {kpi.showDot && <span className="w-2 h-2 rounded-full" style={{ background: kpi.color, boxShadow: `0 0 8px ${kpi.color}` }} />}
                 </div>
               </div>
-              <div className="flex items-end justify-between gap-2">
-                <div className="text-3xl font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>
-                  {kpi.value}
-                </div>
-                <svg className="w-[72px] h-[32px] shrink-0" viewBox="0 0 72 32" fill="none">
-                  <polyline points={kpi.sparkPath} stroke={kpi.sparkColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.7" />
-                </svg>
+              <div className="text-3xl font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>
+                {kpi.value}{kpi.valueSuffix && <span style={{ fontSize: '0.5em', color: 'var(--ink-secondary, #8FA0B8)' }}>{kpi.valueSuffix}</span>}
               </div>
-              <div className="text-[11px] mt-2.5 flex items-center gap-1" style={{ fontFamily: fontFamily.mono, color: kpi.deltaType === 'neg' ? kpi.color : kpi.deltaType === 'pos' ? '#10B981' : 'var(--ink-muted, #708499)' }}>
-                {kpi.delta}
+              <div className="text-[11px] mt-2.5 flex items-center gap-1.5" style={{ fontFamily: fontFamily.mono }}>
+                <span style={{ color: kpi.deltaType === 'neg' ? kpi.color : kpi.deltaType === 'pos' ? '#10B981' : 'var(--ink-muted, #708499)', fontWeight: 600 }}>{kpi.delta}</span>
+                <span style={{ color: 'var(--ink-muted, #708499)' }}>{kpi.deltaContext}</span>
               </div>
+              <svg className="w-full mt-3" viewBox="0 0 100 30" preserveAspectRatio="none" style={{ height: 30 }}>
+                <polyline points={kpi.sparkPath} stroke={kpi.sparkColor} strokeWidth="1.5" fill="none" />
+              </svg>
             </div>
           ))}
         </div>
@@ -602,8 +573,8 @@ const Advisor = () => {
         <div className="advisor-grid">
 
           {/* LEFT: Signal Feed */}
-          <div className="rounded-xl overflow-hidden" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>
-            <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid rgba(140,170,210,0.15)' }}>
+          <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
+            <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
               <div>
                 <div className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>— Live signal feed</div>
                 <h3 className="text-2xl font-medium mt-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', letterSpacing: '-0.02em' }}>What changed overnight</h3>
@@ -618,7 +589,7 @@ const Advisor = () => {
                       fontFamily: fontFamily.mono,
                       background: signalFilter === f.toLowerCase() ? '#E85D00' : '#121D30',
                       color: signalFilter === f.toLowerCase() ? 'white' : '#8FA0B8',
-                      border: `1px solid ${signalFilter === f.toLowerCase() ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
+                      border: `1px solid ${signalFilter === f.toLowerCase() ? '#E85D00' : 'rgba(140,170,210,0.12)'}`,
                       cursor: 'pointer',
                     }}
                   >
@@ -631,8 +602,11 @@ const Advisor = () => {
             {/* Signal rows from watchtower events */}
             <div className="flex flex-col">
               {watchtowerEvents.length > 0 ? watchtowerEvents.slice(0, 6).map((evt, i) => (
-                <div key={evt.id || i} className="grid gap-4 p-5 cursor-pointer transition-colors hover:bg-[#121D30]" style={{ gridTemplateColumns: '44px 1fr auto', borderBottom: i < Math.min(watchtowerEvents.length, 6) - 1 ? '1px solid rgba(140,170,210,0.15)' : 'none', alignItems: 'flex-start' }}>
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: evt.severity === 'critical' ? 'rgba(239,68,68,0.12)' : evt.severity === 'high' ? 'rgba(232,93,0,0.12)' : 'rgba(245,158,11,0.12)', color: evt.severity === 'critical' ? '#EF4444' : evt.severity === 'high' ? '#E85D00' : '#F59E0B' }}>
+                <div key={evt.id || i} className="grid gap-4 p-5 cursor-pointer transition-colors hover:bg-[#121D30]" style={{ gridTemplateColumns: '44px 1fr auto', borderBottom: i < Math.min(watchtowerEvents.length, 6) - 1 ? '1px solid rgba(140,170,210,0.12)' : 'none', alignItems: 'flex-start' }}>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{
+                    background: evt.severity === 'critical' ? 'var(--danger-wash, rgba(239,68,68,0.10))' : evt.severity === 'high' ? 'var(--lava-wash, rgba(232,93,0,0.12))' : evt.severity === 'warn' || evt.severity === 'warning' ? 'var(--warning-wash, rgba(245,158,11,0.10))' : 'var(--info-wash, rgba(59,130,246,0.10))',
+                    color: evt.severity === 'critical' ? 'var(--danger, #DC2626)' : evt.severity === 'high' ? 'var(--lava, #E85D00)' : evt.severity === 'warn' || evt.severity === 'warning' ? 'var(--warning, #D97706)' : 'var(--info, #2563EB)'
+                  }}>
                     <AlertTriangle className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
@@ -640,6 +614,10 @@ const Advisor = () => {
                       {evt.severity?.toUpperCase() || 'INFO'}
                       <span className="w-[3px] h-[3px] rounded-full" style={{ background: '#708499' }} />
                       {evt.domain || 'General'}
+                      {evt.time_ago && <>
+                        <span className="w-[3px] h-[3px] rounded-full" style={{ background: '#708499' }} />
+                        {evt.time_ago}
+                      </>}
                     </div>
                     <div className="text-sm font-semibold leading-tight" style={{ color: '#EDF1F7' }}>{evt.title || evt.summary || 'Signal detected'}</div>
                     {evt.description && <div className="text-[13px] mt-1 leading-relaxed" style={{ color: '#8FA0B8' }}>{evt.description}</div>}
@@ -662,122 +640,133 @@ const Advisor = () => {
           {/* RIGHT: Daily Brief + Quick Actions + Activity Timeline */}
           <div className="flex flex-col gap-5">
 
-            {/* ── Daily Brief Card ── */}
-            <DailyBriefCard />
-
-            {/* ── Quick Action Cards (2x2) ── */}
-            <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card, #0E1628)', border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}>
-              <div className="text-[10px] uppercase tracking-[0.08em] mb-4" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>— Quick actions</div>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { title: 'Ask BIQc anything', desc: 'Get instant business answers', icon: MessageSquare, path: '/soundboard' },
-                  { title: 'Inbox triage', desc: 'Review prioritised emails', icon: Mail, path: '/email-inbox' },
-                  { title: 'Action queue', desc: 'Tasks that need attention', icon: CheckSquare, path: '/actions' },
-                  { title: 'Add an integration', desc: 'Connect a new data source', icon: Puzzle, path: '/integrations' },
-                ].map((action) => {
-                  const Icon = action.icon;
-                  return (
-                    <button
-                      key={action.path}
-                      onClick={() => navigate(action.path)}
-                      className="flex flex-col gap-2 p-4 rounded-lg text-left transition-all group"
-                      style={{
-                        background: 'var(--biqc-bg-input, #121D30)',
-                        border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))',
-                        cursor: 'pointer',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--lava, #E85D00)';
-                        e.currentTarget.style.background = 'rgba(232,93,0,0.06)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--biqc-border, rgba(140,170,210,0.15))';
-                        e.currentTarget.style.background = 'var(--biqc-bg-input, #121D30)';
-                      }}
-                    >
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(232,93,0,0.12)', color: 'var(--lava, #E85D00)' }}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="text-xs font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{action.title}</div>
-                      <div className="text-[11px] leading-tight" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>{action.desc}</div>
-                    </button>
-                  );
-                })}
+            {/* ── Morning Brief Card (matches approved mockup) ── */}
+            <div className="rounded-xl relative overflow-hidden" style={{ padding: 'var(--sp-7, 28px)', background: 'linear-gradient(160deg, #111827, #1A1A2E)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              {/* Animated orb */}
+              <style>{`
+                @keyframes orbDrift { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(40px, 30px); } }
+                @keyframes briefPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232,93,0,0.8); } 50% { box-shadow: 0 0 0 8px rgba(232,93,0,0); } }
+              `}</style>
+              <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: 'radial-gradient(circle, #E85D00 0%, transparent 60%)', opacity: 0.25, filter: 'blur(60px)', animation: 'orbDrift 20s ease-in-out infinite' }} />
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#FF7A1A' }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#E85D00', animation: 'briefPulse 1.4s ease-in-out infinite' }} />
+                  <span>Your morning brief &middot; {timeStr}</span>
+                </div>
+                <h2 className="mt-3" style={{ fontFamily: fontFamily.display, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.025em', color: 'white' }}>
+                  Two things to <em style={{ color: '#FF7A1A', fontStyle: 'italic' }}>do today</em>.
+                </h2>
+                <p className="mt-4 text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                  Reply to Bramwell ($24k at risk) before your 11am window closes. Eleanor at Olive Lane has gone quiet — a 2-line message will keep that $1.8k MRR. Everything else can wait until after lunch.
+                </p>
+                <div className="grid grid-cols-3 gap-4 mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div>
+                    <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: '#E85D00', lineHeight: 1 }}>2</div>
+                    <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>Need decisions</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: 'white', lineHeight: 1 }}>$48k</div>
+                    <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>At risk</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: 'white', lineHeight: 1 }}>90<span style={{ fontSize: '0.5em' }}>s</span></div>
+                    <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>To read</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/soundboard')}
+                  className="mt-6 inline-flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-all"
+                  style={{ background: '#E85D00', color: 'white', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#FF7A1A'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(232,93,0,0.3)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#E85D00'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  Open the brief <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
-            {/* ── Activity Timeline ── */}
-            <div className="rounded-xl p-5" style={{ background: 'var(--biqc-bg-card, #0E1628)', border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}>
-              <div className="text-[10px] uppercase tracking-[0.08em] mb-4" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>— Last 24h activity</div>
+            {/* ── Quick Action Cards (2x2 grid per mockup) ── */}
+            <div className="grid grid-cols-2 gap-3" style={{ marginTop: 'var(--sp-5, 20px)' }}>
+              {[
+                { title: 'Ask BIQc anything', desc: '"What changed in the pipeline this week?"', icon: MessageSquare, path: '/soundboard' },
+                { title: 'Inbox triage', desc: '23 new emails. 7 need a decision.', icon: Mail, path: '/email-inbox' },
+                { title: 'Action queue', desc: '12 items waiting. 3 are overdue.', icon: CheckSquare, path: '/actions' },
+                { title: 'Add an integration', desc: 'Xero, HubSpot, Slack — via Merge.dev', icon: Puzzle, path: '/integrations' },
+              ].map((action) => {
+                const Icon = action.icon;
+                return (
+                  <button
+                    key={action.path}
+                    onClick={() => navigate(action.path)}
+                    className="flex flex-col gap-2 p-5 rounded-xl text-left transition-all"
+                    style={{
+                      background: 'var(--surface, #0E1628)',
+                      border: '1px solid var(--border, rgba(140,170,210,0.12))',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--lava, #E85D00)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = 'var(--elev-2, 0 1px 3px rgba(0,0,0,0.6))';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border, rgba(140,170,210,0.12))';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2" style={{ background: 'var(--lava-wash, rgba(232,93,0,0.12))', color: 'var(--lava, #E85D00)' }}>
+                      <Icon className="w-[18px] h-[18px]" />
+                    </div>
+                    <h4 className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{action.title}</h4>
+                    <p className="text-xs leading-snug" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{action.desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── Activity Timeline (panel style per mockup) ── */}
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
+              <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>— Last 24 hours</div>
+                  <h3 className="text-2xl font-medium mt-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>Activity</h3>
+                </div>
+              </div>
 
               {activityLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <RefreshCw className="w-4 h-4 animate-spin" style={{ color: 'var(--ink-muted, #708499)' }} />
                 </div>
               ) : activityItems.length > 0 ? (
-                <div className="relative flex flex-col gap-0">
+                <div className="flex flex-col">
                   {activityItems.map((item, idx) => {
                     const isLast = idx === activityItems.length - 1;
-                    const severityColor =
-                      item.severity === 'high' || item.severity === 'critical'
-                        ? 'var(--lava, #E85D00)'
-                        : item.severity === 'medium'
-                        ? '#F59E0B'
-                        : 'var(--ink-muted, #708499)';
-
                     let timeLabel = '';
                     if (item.timestamp) {
                       try {
                         const d = new Date(item.timestamp);
-                        const diffMs = Date.now() - d.getTime();
-                        const diffH = Math.floor(diffMs / 3600000);
-                        const diffM = Math.floor(diffMs / 60000);
-                        if (diffH > 0) timeLabel = `${diffH}h ago`;
-                        else if (diffM > 0) timeLabel = `${diffM}m ago`;
-                        else timeLabel = 'Just now';
+                        timeLabel = d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
                       } catch {
                         timeLabel = '';
                       }
                     }
 
                     return (
-                      <div key={item.id || idx} className="flex gap-3 relative" style={{ paddingBottom: isLast ? 0 : 16 }}>
-                        {/* Vertical line + dot */}
-                        <div className="flex flex-col items-center" style={{ width: 16 }}>
-                          <div className="w-2.5 h-2.5 rounded-full shrink-0 mt-1" style={{ background: severityColor, boxShadow: `0 0 6px ${severityColor}40` }} />
-                          {!isLast && (
-                            <div className="flex-1 w-px mt-1" style={{ background: 'var(--biqc-border, rgba(140,170,210,0.15))' }} />
-                          )}
+                      <div key={item.id || idx} className="grid gap-4 items-start" style={{ gridTemplateColumns: '80px 1fr', padding: '16px 24px', borderBottom: isLast ? 'none' : '1px solid var(--border, rgba(140,170,210,0.12))' }}>
+                        <div className="text-[10px] uppercase tracking-[0.08em] pt-0.5" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>
+                          {timeLabel}
                         </div>
-                        {/* Content */}
-                        <div className="flex-1 min-w-0 pb-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-semibold truncate" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
-                              {item.title || 'Activity'}
-                            </span>
-                            {timeLabel && (
-                              <span className="text-[10px] shrink-0" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>
-                                {timeLabel}
-                              </span>
-                            )}
-                          </div>
-                          {item.message && (
-                            <p className="text-[11px] leading-relaxed mt-0.5 truncate" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
-                              {item.message}
-                            </p>
-                          )}
-                          {item.source && (
-                            <span className="inline-block text-[9px] uppercase tracking-[0.06em] mt-1 px-1.5 py-0.5 rounded" style={{ background: 'rgba(232,93,0,0.08)', color: 'var(--lava, #E85D00)', fontFamily: fontFamily.mono }}>
-                              {item.source}
-                            </span>
-                          )}
+                        <div className="text-[13px] leading-relaxed" style={{ color: 'var(--ink, #C8D4E4)' }}>
+                          <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>{item.title || 'Activity'}</strong>
+                          {item.message && <> &middot; {item.message}</>}
                         </div>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <div className="text-center py-6">
+                <div className="text-center py-6 px-5">
                   <Clock className="w-6 h-6 mx-auto mb-2" style={{ color: 'var(--ink-muted, #708499)' }} />
                   <p className="text-xs" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
                     No recent activity. Connect your inbox and CRM to start tracking signals.

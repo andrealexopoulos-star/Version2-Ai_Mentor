@@ -4,12 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Switch } from '../components/ui/switch';
-import { User, Settings as SettingsIcon, Bell, Activity, Loader2, Save, CreditCard, RefreshCw, AlertTriangle, Lock, ArrowRight, Trash2, Download, Unplug, Globe, KeyRound, Plus } from 'lucide-react';
+import { User, Bell, Activity, Loader2, Save, CreditCard, RefreshCw, AlertTriangle, Trash2, Download, Unplug, Plus } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { fontFamily } from '../design-system/tokens';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
@@ -465,8 +464,8 @@ const Settings = () => {
                 { value: 'account', icon: User, label: 'Account' },
                 { value: 'notifications', icon: Bell, label: 'Notifications' },
                 { value: 'signals', icon: Activity, label: 'Signals' },
-                { value: 'billing', icon: CreditCard, label: 'Plan & Billing' },
-                { value: 'danger-zone', icon: AlertTriangle, label: 'Danger Zone' },
+                { value: 'billing', icon: CreditCard, label: 'Plan & billing' },
+                { value: 'danger-zone', icon: AlertTriangle, label: 'Danger zone' },
               ].map(({ value, icon: Icon, label }) => (
                 <button
                   key={value}
@@ -498,108 +497,114 @@ const Settings = () => {
             <TabsContent value="account">
               <Card style={sectionResizeStyle}>
                 <CardHeader>
-                  <CardTitle>Account Information</CardTitle>
-                  <CardDescription>Your personal and business details</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex items-center justify-between w-full">
                     <div>
-                      <Label>Full Name</Label>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--lava, #E85D00)', fontFamily: 'var(--font-mono, monospace)' }}>— Account</p>
+                      <CardTitle>Profile</CardTitle>
+                    </div>
+                    <Button onClick={handleSaveProfile} size="sm" disabled={saving} className="flex items-center gap-2" style={{ background: 'var(--lava, #E85D00)', color: '#fff' }}>
+                      {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save changes
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="divide-y" style={{ borderColor: 'var(--border, rgba(140,170,210,0.12))' }}>
+                    {/* Full name */}
+                    <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                      <div>
+                        <p className="text-sm font-medium pt-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Full name</p>
+                      </div>
                       <Input
                         value={accountData.name}
                         onChange={(e) => setAccountData({ ...accountData, name: e.target.value })}
-                        className="mt-2"
                       />
                     </div>
-                    <div>
-                      <Label>Email Address</Label>
+
+                    {/* Email */}
+                    <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                      <div>
+                        <p className="text-sm font-medium pt-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Email</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>Used for login + alerts</p>
+                      </div>
                       <Input
                         value={accountData.email}
                         disabled
-                        className="mt-2"
                         style={{ background: 'var(--biqc-bg-card)' }}
                       />
-                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Email cannot be changed</p>
                     </div>
-                  </div>
 
-                  {/* Company */}
-                  <div>
-                    <Label>Company</Label>
-                    <Input
-                      value={accountData.company}
-                      onChange={(e) => setAccountData({ ...accountData, company: e.target.value })}
-                      placeholder="Your company name"
-                      className="mt-2"
-                    />
-                  </div>
-
-                  {/* Timezone */}
-                  <div>
-                    <Label className="flex items-center gap-2">
-                      <Globe className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-                      Timezone
-                    </Label>
-                    <Select value={timezone} onValueChange={setTimezone}>
-                      <SelectTrigger className="mt-2" data-testid="settings-select-timezone">
-                        <SelectValue placeholder="Select timezone" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Australia/Sydney">Australia/Sydney</SelectItem>
-                        <SelectItem value="Australia/Melbourne">Australia/Melbourne</SelectItem>
-                        <SelectItem value="Australia/Brisbane">Australia/Brisbane</SelectItem>
-                        <SelectItem value="Australia/Perth">Australia/Perth</SelectItem>
-                        <SelectItem value="Australia/Adelaide">Australia/Adelaide</SelectItem>
-                        <SelectItem value="Australia/Hobart">Australia/Hobart</SelectItem>
-                        <SelectItem value="Australia/Darwin">Australia/Darwin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Password */}
-                  <div>
-                    <Label className="flex items-center gap-2">
-                      <KeyRound className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-                      Password
-                    </Label>
-                    <div className="flex items-center gap-3 mt-2">
+                    {/* Company */}
+                    <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                      <div>
+                        <p className="text-sm font-medium pt-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Company</p>
+                      </div>
                       <Input
-                        type="password"
-                        value="••••••••"
-                        disabled
-                        className="flex-1"
-                        style={{ background: 'var(--biqc-bg-card)' }}
+                        value={accountData.company}
+                        onChange={(e) => setAccountData({ ...accountData, company: e.target.value })}
+                        placeholder="Your company name"
                       />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setShowPasswordChange(true);
-                          supabase.auth.resetPasswordForEmail(user?.email, {
-                            redirectTo: `${window.location.origin}/settings`,
-                          }).then(() => {
-                            toast.success('Password reset email sent. Check your inbox.');
-                          }).catch(() => {
-                            toast.error('Failed to send password reset email');
-                          });
-                        }}
-                        style={{ borderColor: '#E85D00', color: '#E85D00', whiteSpace: 'nowrap' }}
-                      >
-                        Change
-                      </Button>
                     </div>
-                    {showPasswordChange && (
-                      <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                        A password reset link has been sent to your email address.
-                      </p>
-                    )}
-                  </div>
 
-                  {/* Save button for account fields */}
-                  <div className="flex justify-end pt-4">
-                    <Button onClick={handleSaveProfile} variant="outline" size="sm" disabled={saving} className="flex items-center gap-2" style={{ borderColor: '#E85D00', color: '#E85D00' }}>
-                      {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save Changes
-                    </Button>
+                    {/* Timezone */}
+                    <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                      <div>
+                        <p className="text-sm font-medium pt-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Timezone</p>
+                      </div>
+                      <Select value={timezone} onValueChange={setTimezone}>
+                        <SelectTrigger data-testid="settings-select-timezone">
+                          <SelectValue placeholder="Select timezone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Australia/Sydney">Australia/Sydney (AEST UTC+10)</SelectItem>
+                          <SelectItem value="Australia/Melbourne">Australia/Melbourne</SelectItem>
+                          <SelectItem value="Australia/Brisbane">Australia/Brisbane</SelectItem>
+                          <SelectItem value="Australia/Perth">Australia/Perth</SelectItem>
+                          <SelectItem value="Australia/Adelaide">Australia/Adelaide</SelectItem>
+                          <SelectItem value="Australia/Hobart">Australia/Hobart</SelectItem>
+                          <SelectItem value="Australia/Darwin">Australia/Darwin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Password */}
+                    <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start" style={{ borderBottom: 0 }}>
+                      <div>
+                        <p className="text-sm font-medium pt-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Password</p>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="password"
+                            value="••••••••••"
+                            disabled
+                            className="flex-1"
+                            style={{ background: 'var(--biqc-bg-card)' }}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setShowPasswordChange(true);
+                              supabase.auth.resetPasswordForEmail(user?.email, {
+                                redirectTo: `${window.location.origin}/settings`,
+                              }).then(() => {
+                                toast.success('Password reset email sent. Check your inbox.');
+                              }).catch(() => {
+                                toast.error('Failed to send password reset email');
+                              });
+                            }}
+                            style={{ borderColor: '#E85D00', color: '#E85D00', whiteSpace: 'nowrap' }}
+                          >
+                            Change
+                          </Button>
+                        </div>
+                        {showPasswordChange && (
+                          <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                            A password reset link has been sent to your email address.
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -756,7 +761,22 @@ const Settings = () => {
               </Card>
             </TabsContent>
 
-            {/* DANGER ZONE TAB — 3 irreversible actions matching mockup */}
+            {/* BILLING TAB — Plan & billing (mockup position: 4th) */}
+            <TabsContent value="billing">
+              <Card style={sectionResizeStyle}>
+                <CardHeader>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--lava, #E85D00)', fontFamily: 'var(--font-mono, monospace)' }}>— Plan & billing</p>
+                    <CardTitle>Your subscription</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <SettingsBillingContent navigate={navigate} user={user} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* DANGER ZONE TAB — 3 irreversible actions (mockup position: 5th) */}
             <TabsContent value="danger-zone">
               <Card style={{ ...sectionResizeStyle, borderColor: 'rgba(220,38,38,0.3)' }}>
                 <CardHeader>
@@ -836,22 +856,6 @@ const Settings = () => {
                       )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* BILLING TAB */}
-            <TabsContent value="billing">
-              <Card style={sectionResizeStyle}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5" style={{ color: '#E85D00' }} />
-                    Billing & Subscription
-                  </CardTitle>
-                  <CardDescription>Your plan and usage</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <SettingsBillingContent navigate={navigate} user={user} />
                 </CardContent>
               </Card>
             </TabsContent>

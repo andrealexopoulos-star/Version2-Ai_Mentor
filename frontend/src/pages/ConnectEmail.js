@@ -268,13 +268,13 @@ const ConnectEmail = () => {
           {/* Header */}
           <div>
             <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
-              — Email Setup
+              — Connect email
             </div>
             <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-              Connect your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>inbox</em>.
+              Link your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>inbox</em>.
             </h1>
             <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
-              Connect Outlook or Gmail to activate email and calendar intelligence
+              BIQc reads your email to detect deal stalls, customer churn signals, and reply-time patterns. Nothing is sent on your behalf — ever. Read-only access only.
             </p>
           </div>
 

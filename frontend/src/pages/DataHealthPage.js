@@ -184,15 +184,15 @@ const DataHealthPage = () => {
         {/* Header */}
         <div>
           <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
-            — System Health
+            — Data health
           </div>
           <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-            Data <em style={{ fontStyle: 'italic', color: '#E85D00' }}>health</em>.
+            Is BIQc getting <em style={{ fontStyle: 'italic', color: '#E85D00' }}>clean data</em>?
           </h1>
           <p className="text-sm text-[#8FA0B8]">
             {hasAnyData
-              ? `${connectedCount} integration${connectedCount !== 1 ? 's' : ''} active — monitoring data quality in real time.`
-              : 'Connect integrations to start monitoring data quality and sync status.'}
+              ? `Every alert, action, and brief is only as good as the data feeding it. ${connectedCount} connector${connectedCount !== 1 ? 's' : ''} active.`
+              : 'Every alert, action, and brief is only as good as the data feeding it. Connect integrations to start monitoring.'}
             {loading && <span className="text-[10px] ml-2 text-[#E85D00]" style={{ fontFamily: fontFamily.mono }}>loading...</span>}
           </p>
         </div>
@@ -220,7 +220,7 @@ const DataHealthPage = () => {
               </button>
             ) : (
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium cursor-not-allowed"
-                style={{ background: '#1E2D3D', color: '#4A5568', border: '1px solid rgba(140,170,210,0.15)' }}
+                style={{ background: '#1E2D3D', color: '#4A5568', border: '1px solid rgba(140,170,210,0.12)' }}
                 title="Connect at least one integration to enable Force Sync"
                 data-testid="force-sync-disabled">
                 <RefreshCw className="w-3.5 h-3.5" />Force Sync
@@ -274,7 +274,7 @@ const DataHealthPage = () => {
                   <div className="flex items-center gap-3 shrink-0">
                     <Link to="/integrations"
                       className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110"
-                      style={{ background: '#1E2D3D', color: '#8FA0B8', border: '1px solid rgba(140,170,210,0.15)' }}>
+                      style={{ background: '#1E2D3D', color: '#8FA0B8', border: '1px solid rgba(140,170,210,0.12)' }}>
                       Reconnect
                     </Link>
                     <CheckCircle2 className="w-5 h-5 text-[#10B981]" />

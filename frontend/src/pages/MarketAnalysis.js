@@ -9,6 +9,7 @@ import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { Loader2, Target, TrendingUp, Save } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 
 
@@ -67,8 +68,7 @@ const MarketAnalysis = () => {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <p className="overline text-[#8FA0B8] mb-2">Market Intelligence</p>
-            <h1 className="text-3xl md:text-4xl font-serif text-[#EDF1F7]">Market Analysis</h1>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Market Analysis</h1>
             <p className="text-[#8FA0B8] mt-2">
               Understand your market, competitors, and growth opportunities
             </p>
@@ -156,13 +156,13 @@ const MarketAnalysis = () => {
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <span className="badge badge-forest text-xs">Market Analysis</span>
-                          <h3 className="text-xl font-serif text-[#EDF1F7] mt-2">{result.title}</h3>
+                          <h3 className="text-xl mt-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>{result.title}</h3>
                         </div>
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={saveAsDocument}
-                          className="border-[rgba(140,170,210,0.15)] text-[#EDF1F7]"
+                          className="border-[rgba(140,170,210,0.12)] text-[#EDF1F7]"
                           data-testid="save-market-analysis-btn"
                         >
                           <Save className="w-4 h-4 mr-2" />

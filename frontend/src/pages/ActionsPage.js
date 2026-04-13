@@ -11,8 +11,8 @@ import { toast } from 'sonner';
 import { DelegateActionModal } from '../components/advisor/DelegateActionModal';
 
 
-const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)' }}>{children}</div>
+const Panel = ({ children, className = '', ...props }) => (
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }} {...props}>{children}</div>
 );
 
 const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: { bg: '#F59E0B10', b: '#F59E0B25', d: '#F59E0B' }, low: { bg: '#10B98110', b: '#10B98125', d: '#10B981' } };
@@ -167,12 +167,34 @@ const ActionsPage = () => {
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="actions-page">
         <div>
           <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
-            — Resolution Centre
+            — Actions · {rq.length} open
           </div>
           <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-            Resolution <em style={{ fontStyle: 'italic', color: '#E85D00' }}>centre</em>.
+            What's <em style={{ fontStyle: 'italic', color: '#E85D00' }}>actually moving</em>.
           </h1>
-          <p className="text-sm" style={{ color: '#8FA0B8' }}>AI-detected issues requiring action. Each item maps to a one-click resolution.</p>
+          <p className="text-sm" style={{ color: '#8FA0B8' }}>Every action started life as an alert, an email thread, a deal change, or a BIQc nudge. Drag a card forward when you've done it.</p>
+        </div>
+
+        {/* Stats cards — matches mockup */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Open', value: loading ? '\u2014' : rq.length, color: '#E85D00', bgIcon: 'rgba(232,93,0,0.1)' },
+            { label: 'In flight', value: loading ? '\u2014' : 0, color: '#2563EB', bgIcon: 'rgba(37,99,235,0.1)' },
+            { label: 'Done this week', value: loading ? '\u2014' : 0, color: '#16A34A', bgIcon: 'rgba(22,163,74,0.1)' },
+            { label: 'Overdue', value: loading ? '\u2014' : rq.filter(i => i.severity === 'high').length, color: '#DC2626', bgIcon: 'rgba(220,38,38,0.1)' },
+          ].map(({ label, value, color, bgIcon }) => (
+            <div key={label} className="rounded-lg p-5 transition-all hover:-translate-y-0.5" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0" style={{ background: bgIcon }}>
+                  <Zap className="w-5 h-5" style={{ color }} />
+                </div>
+                <div>
+                  <span className="text-[28px] font-medium block leading-none" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{value}</span>
+                  <span className="text-[10px] uppercase tracking-wider mt-1 block" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{label}</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         {loading && <CognitiveMesh message="Scanning resolution queue..." />}

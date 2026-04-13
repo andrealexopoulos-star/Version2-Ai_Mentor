@@ -243,6 +243,13 @@ const MarketPage = () => {
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body, overflowY: 'visible' }} data-testid="market-page">
         <style>{`@keyframes snapFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
 
+        {/* ═══ HEADER ═══ */}
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>{'— Market & position \u00b7 '}{loading ? 'Loading...' : 'Live'}</div>
+          <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>You're <em style={{ fontStyle: 'italic', color: '#E85D00' }}>{hasLiveMarketContext ? st.label.toLowerCase() : 'calibrating'}</em>.</h1>
+          <p className="text-sm mt-2" style={{ color: '#8FA0B8' }}>BIQc reads market signals every 6 hours: competitor pricing, hiring, press, customer sentiment, and search intent in your category.</p>
+        </div>
+
         {loading && <PageLoadingState message="Pulling your latest market signals…" />}
 
         {!loading && <>

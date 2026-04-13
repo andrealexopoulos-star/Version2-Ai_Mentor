@@ -12,7 +12,7 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ═══════════════════════════════════════════════════════════
    BACKWARD-COMPAT BRIDGE — maps --biqc-* to Liquid Steel tokens.
@@ -124,11 +124,11 @@
 
 
 
-/* ── Unified font stack ── */
+/* ── Font stack (per approved mockups — Apr 2026) ── */
 :root {
-    --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-heading: 'Source Serif 4', Georgia, serif;
     --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-mono:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
 }
 
 * {
@@ -163,8 +163,8 @@ body {
 }
 
 /* ═══════════════════════════════════════
-   UNIFIED FONT SYSTEM — BIQc Design
-   Single family across platform + website (Inter)
+   FONT SYSTEM — BIQc Design (Apr 2026)
+   Headings → Source Serif 4 | Body → Inter | Mono → JetBrains Mono
 ═══════════════════════════════════════ */
 
 h1, h2, h3, h4, h5, h6 {

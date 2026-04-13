@@ -3,19 +3,20 @@
  * ALL UI surfaces (Marketing, Platform, Mobile, App) must use these tokens.
  * No inline font sizes. No arbitrary padding. No hardcoded radius.
  *
- * TYPOGRAPHY DECISION (Unified — Mar 2026):
- *  Headings/UI/Data → Inter
- *  Single-family typography lowers visual switching cost and improves readability.
+ * TYPOGRAPHY DECISION (Updated — Apr 2026, per approved mockups):
+ *  Headings/Display → Source Serif 4  (serif, elegant headings)
+ *  Body/UI          → Inter           (sans-serif, readable body text)
+ *  Mono/Code/Data   → JetBrains Mono  (monospace, precision numerics)
  *
  *  displayING = alias for display (used by marketing site pages)
  */
 
 // ═══ TYPOGRAPHY ═══
 export const fontFamily = {
-  display:    "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  displayING: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",  // alias for marketing site
+  display:    "'Source Serif 4', Georgia, serif",
+  displayING: "'Source Serif 4', Georgia, serif",  // alias for marketing site
   body:       "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  mono:       "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  mono:       "'JetBrains Mono', 'Fira Code', monospace",
 };
 
 export const fontSize = {
@@ -82,7 +83,7 @@ export const colors = {
   bgInput: '#060A12',      // --surface-sunken (dark)
   bgElevated: '#121D30',   // --surface-raised / --surface-2 (dark)
   bgSidebar: '#060A12',    // --surface-sunken (dark)
-  border: 'rgba(140,170,210,0.15)', // --steel-border (dark)
+  border: 'rgba(140,170,210,0.12)', // --steel-border (dark)
   borderFocus: '#E85D00',  // --lava
   text: '#EDF1F7',         // --ink-display (dark)
   textSecondary: '#8FA0B8',// --ink-secondary (dark)

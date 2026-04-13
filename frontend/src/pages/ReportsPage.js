@@ -235,9 +235,8 @@ const ReportsPage = () => {
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="reports-page">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Intelligence</div>
-            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Reports <em style={{ fontStyle: 'italic', color: '#E85D00' }}>centre</em>.</h1>
-            <p className="text-sm" style={{ color: '#8FA0B8' }}>Verified intelligence from connected data sources only.</p>
+            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Reports.</h1>
+            <p className="text-sm" style={{ color: '#8FA0B8' }}>AI-generated briefs and scheduled reports from your connected data.</p>
           </div>
           <div className="flex items-center gap-2">
             {hasEvents && (

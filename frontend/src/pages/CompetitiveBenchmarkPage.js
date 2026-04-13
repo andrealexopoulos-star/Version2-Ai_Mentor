@@ -138,7 +138,7 @@ const ScoreGauge = ({ score, label, color, isReal }) => {
   return (
     <div className="flex flex-col items-center">
       <svg width="130" height="130" viewBox="0 0 130 130">
-        <circle cx="65" cy="65" r={radius} fill="none" stroke="rgba(140,170,210,0.15)" strokeWidth="8" />
+        <circle cx="65" cy="65" r={radius} fill="none" stroke="rgba(140,170,210,0.12)" strokeWidth="8" />
         {isReal && score != null && (
           <circle cx="65" cy="65" r={radius} fill="none" stroke={color} strokeWidth="8"
             strokeDasharray={circumference} strokeDashoffset={offset}
@@ -194,13 +194,13 @@ const PillarBar = ({ pillar, score, isReal, isWeakest }) => {
               </button>
             </div>
           </div>
-          <div className="h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.15)' }}>
+          <div className="h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.12)' }}>
             <div className="h-full rounded-full transition-all duration-700" style={{ background: color, width: `${pct}%` }} />
           </div>
         </div>
       </div>
       {expanded && (
-        <div className="mt-2 ml-11 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid rgba(140,170,210,0.15)' }}>
+        <div className="mt-2 ml-11 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid rgba(140,170,210,0.12)' }}>
           <p className="text-xs text-[#8FA0B8] mb-2">{pillar.desc}</p>
           {isReal && score != null && (
             <div className="flex items-start gap-1.5">
@@ -369,10 +369,10 @@ export default function CompetitiveBenchmarkPage() {
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
             <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
-              — Market Position
+              — Competitive benchmark
             </div>
             <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-              Competitive <em style={{ fontStyle: 'italic', color: '#E85D00' }}>benchmark</em>.
+              Where you <em style={{ fontStyle: 'italic', color: '#E85D00' }}>stand</em>.
             </h1>
             <p className="text-sm mt-2" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
               {hasRealData
@@ -469,7 +469,7 @@ export default function CompetitiveBenchmarkPage() {
                               {data.overallScore >= data.industryAvg ? `+${data.overallScore - data.industryAvg} above avg` : `${data.overallScore - data.industryAvg} below avg`}
                             </span>
                           </div>
-                          <div className="h-2 rounded-full relative" style={{ background: 'rgba(140,170,210,0.15)' }}>
+                          <div className="h-2 rounded-full relative" style={{ background: 'rgba(140,170,210,0.12)' }}>
                             <div className="absolute h-full rounded-full" style={{ background: '#64748B', width: `${data.industryAvg}%` }} />
                             <div className="absolute h-full rounded-full" style={{ background: '#E85D00', width: `${data.overallScore}%`, opacity: 0.8 }} />
                           </div>
@@ -628,7 +628,7 @@ export default function CompetitiveBenchmarkPage() {
                               })}
                             </tr>
                           ))}
-                          <tr style={{ borderTop: '2px solid rgba(140,170,210,0.15)' }}>
+                          <tr style={{ borderTop: '2px solid rgba(140,170,210,0.12)' }}>
                             <td className="py-2 font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}>Overall</td>
                             <td className="text-center py-2 font-bold text-base" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                               {hasRealData && data?.overallScore != null ? data.overallScore : '—'}

@@ -194,8 +194,7 @@ const DataCenter = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Knowledge Base</div>
-            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Data <em style={{ fontStyle: 'italic', color: '#E85D00' }}>centre</em>.</h1>
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Data Centre</h1>
             <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
               Upload your business documents to make the AI your subject matter expert
             </p>
@@ -295,7 +294,7 @@ const DataCenter = () => {
                             <span>{new Date(file.created_at).toLocaleDateString()}</span>
                           </div>
                           {file.extracted_text && (
-                            <div className="mt-3 pt-3 border-t border-[rgba(140,170,210,0.15)]">
+                            <div className="mt-3 pt-3 border-t border-[rgba(140,170,210,0.12)]">
                               <div className="flex items-center gap-1 text-xs text-green-600">
                                 <Check className="w-3 h-3" />
                                 Text extracted for AI
@@ -491,7 +490,7 @@ const DataCenter = () => {
                   {/* Drop Zone */}
                   <div
                     className={`border-2 border-dashed rounded-sm p-8 text-center transition-colors ${
-                      dragActive ? 'border-[#ccff00] bg-[#ccff00]/10' : 'border-[rgba(140,170,210,0.15)] hover:border-[rgba(140,170,210,0.15)]'
+                      dragActive ? 'border-[#ccff00] bg-[#ccff00]/10' : 'border-[rgba(140,170,210,0.12)] hover:border-[rgba(140,170,210,0.12)]'
                     }`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}

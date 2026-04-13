@@ -37,7 +37,7 @@ import { resolveTier, getRouteAccess } from './lib/tierResolver';
 import { isPrivilegedUser } from './lib/privilegedUser';
 
 // ── Core app pages ────────────────────────────────────────────────────────────
-import AdvisorWatchtower from './pages/AdvisorWatchtower';
+import Advisor from './pages/Advisor';
 import Settings from './pages/Settings';
 import BusinessProfile from './pages/BusinessProfile';
 import Integrations from './pages/Integrations';
@@ -61,6 +61,7 @@ import ReportsPage from './pages/ReportsPage';
 import AuditLogPage from './pages/AuditLogPage';
 import ForensicAuditPage from './pages/ForensicAuditPage';
 import DSEEPage from './pages/DSEEPage';
+import ExposureScanPage from './pages/ExposureScanPage';
 import MarketingIntelPage from './pages/MarketingIntelPage';
 import MarketingAutomationPage from './pages/MarketingAutomationPage';
 import ABTestingPage from './pages/ABTestingPage';
@@ -308,7 +309,7 @@ function AppRoutes() {
         <Route path="/biqc-legal" element={<ProtectedRoute><BIQcLegalPage /></ProtectedRoute>} />
 
         {/* Core app — free */}
-        <Route path="/advisor" element={<ProtectedRoute><AdvisorWatchtower /></ProtectedRoute>} />
+        <Route path="/advisor" element={<ProtectedRoute><Advisor /></ProtectedRoute>} />
         <Route path="/dashboard" element={<Navigate to="/advisor" replace />} />
         <Route path="/market" element={<ProtectedRoute><MarketPage /></ProtectedRoute>} />
         <Route path="/market/calibration" element={<ProtectedRoute><ForensicCalibration /></ProtectedRoute>} />
@@ -321,7 +322,7 @@ function AppRoutes() {
         <Route path="/connect-email" element={<ProtectedRoute><ConnectEmail /></ProtectedRoute>} />
         <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
         <Route path="/forensic-audit" element={<ProtectedRoute><LaunchRoute access="foundation"><ForensicAuditPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/exposure-scan" element={<ProtectedRoute><LaunchRoute access="foundation"><DSEEPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/exposure-scan" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="exposure-scan"><ExposureScanPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/marketing-intelligence" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="marketing-intelligence"><MarketingIntelPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />

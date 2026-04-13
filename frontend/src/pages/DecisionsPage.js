@@ -111,12 +111,11 @@ export default function DecisionsPage() {
       <div className="max-w-4xl mx-auto" data-testid="decisions-page">
         <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Governance</div>
             <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="decisions-title">
-              Decisions <em style={{ fontStyle: 'italic', color: '#E85D00' }}>log</em>.
+              Decisions.
             </h1>
             <p className="text-sm mt-1" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>
-              Track what you decided, why, and what happened next. Outcomes tracked at 30, 60, and 90 days.
+              Track what you decided, why, and what happened next.
             </p>
           </div>
           <Button

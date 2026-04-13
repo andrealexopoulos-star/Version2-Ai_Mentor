@@ -7,8 +7,6 @@ import { Bell, Search, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircl
 import { toast } from 'sonner';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
-import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
-import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 
 const sevMap = { critical: { color: '#E85D00', label: 'Critical' }, high: { color: '#F97316', label: 'High' }, moderate: { color: '#F59E0B', label: 'Moderate' }, info: { color: '#3B82F6', label: 'Info' }, medium: { color: '#F59E0B', label: 'Moderate' }, low: { color: '#10B981', label: 'Low' } };
@@ -38,7 +36,7 @@ const AlertItem = ({ alert, onAction }) => {
       className="rounded-lg overflow-hidden mb-3"
       style={{
         background: isResolved ? 'var(--surface-2, #121D30)' : 'var(--surface, #0E1628)',
-        border: '1px solid var(--border, rgba(140,170,210,0.15))',
+        border: '1px solid var(--border, rgba(140,170,210,0.12))',
         borderLeft: `4px solid ${borderColor}`,
         opacity: isResolved ? 0.55 : 1,
       }}
@@ -54,7 +52,7 @@ const AlertItem = ({ alert, onAction }) => {
           <span className="text-[11px] shrink-0" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{alert.time}</span>
         </div>
         {/* Title */}
-        <h3 className="mt-2" style={{ fontFamily: fontFamily.display, fontSize: '18px', color: isResolved ? 'var(--ink-muted, #708499)' : 'var(--ink-display, #EDF1F7)', lineHeight: 1.2, letterSpacing: '-0.01em', textDecoration: isResolved ? 'line-through' : 'none' }}>
+        <h3 className="mt-2" style={{ fontFamily: fontFamily.display, fontSize: '22px', color: isResolved ? 'var(--ink-muted, #708499)' : 'var(--ink-display, #EDF1F7)', lineHeight: 1.2, letterSpacing: '-0.01em', textDecoration: isResolved ? 'line-through' : 'none' }}>
           {alert.title}
         </h3>
         {/* Body text */}
@@ -85,11 +83,11 @@ const AlertItem = ({ alert, onAction }) => {
       {/* Action buttons — always visible */}
       {!isResolved && (
         <div className="px-5 pb-4 flex flex-wrap gap-2">
-          {alert.actions?.includes('email') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:border-[#E85D00] hover:text-[#E85D00]" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))', color: 'var(--ink, #8FA0B8)' }} data-testid={`alert-auto-email-${alert.id}`}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
-          {alert.actions?.includes('sms') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:border-[#E85D00] hover:text-[#E85D00]" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))', color: 'var(--ink, #8FA0B8)' }} data-testid={`alert-quick-sms-${alert.id}`}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-          {alert.actions?.includes('handoff') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:border-[#E85D00] hover:text-[#E85D00]" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))', color: 'var(--ink, #8FA0B8)' }} data-testid={`alert-hand-off-${alert.id}`}><Users className="w-3.5 h-3.5" />Hand Off</button>}
-          <button onClick={() => handleAction('complete')} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-all hover:brightness-110" style={{ background: '#E85D00', color: 'white', border: '1px solid #E85D00' }} data-testid={`alert-complete-${alert.id}`}><CheckCircle2 className="w-3.5 h-3.5" />Take Action</button>
-          <button onClick={() => handleAction('ignore')} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:text-[var(--ink)]" style={{ background: 'transparent', border: '1px solid transparent', color: 'var(--ink-muted, #708499)' }} data-testid={`alert-ignore-${alert.id}`}><XCircle className="w-3.5 h-3.5" />Dismiss</button>
+          {alert.actions?.includes('email') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:border-[#E85D00] hover:text-[#E85D00]" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', color: 'var(--ink, #8FA0B8)' }} data-testid={`alert-auto-email-${alert.id}`}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
+          {alert.actions?.includes('sms') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:border-[#E85D00] hover:text-[#E85D00]" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', color: 'var(--ink, #8FA0B8)' }} data-testid={`alert-quick-sms-${alert.id}`}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
+          {alert.actions?.includes('handoff') && <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:border-[#E85D00] hover:text-[#E85D00]" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))', color: 'var(--ink, #8FA0B8)' }} data-testid={`alert-hand-off-${alert.id}`}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+          <button onClick={() => handleAction('complete')} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-all hover:brightness-110" style={{ background: '#E85D00', color: 'white', border: '1px solid #E85D00' }} data-testid={`alert-complete-${alert.id}`}><CheckCircle2 className="w-3.5 h-3.5" />Resolve</button>
+          <button onClick={() => handleAction('ignore')} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all hover:text-[var(--ink)]" style={{ background: 'transparent', border: '1px solid transparent', color: 'var(--ink-muted, #708499)' }} data-testid={`alert-ignore-${alert.id}`}><XCircle className="w-3.5 h-3.5" />Ignore</button>
         </div>
       )}
       {isResolved && (
@@ -195,38 +193,14 @@ const AlertsPageAuth = () => {
   const modCount = loading ? null : alerts.filter(a => a.severity === 'moderate' || a.severity === 'medium').length;
   const infoCount = loading ? null : alerts.filter(a => a.severity === 'info' || a.severity === 'low').length;
   const urgentCount = (critCount || 0) + (highCount || 0);
-  const explainability = {
-    whyVisible: hasAnyData
-      ? `BIQc is reading ${totalConnected} connected system${totalConnected === 1 ? '' : 's'} and ranking active operational risk signals.`
-      : 'Alert Centre activates when integrations are connected and producing live events.',
-    whyNow: alerts.length > 0
-      ? `${alerts.length} active alert${alerts.length === 1 ? '' : 's'} detected, including ${urgentCount} critical priority item${urgentCount === 1 ? '' : 's'}.`
-      : 'No active alerts at this moment, but monitoring remains active for new anomalies.',
-    nextAction: alerts.length > 0
-      ? 'Open each critical alert, assign action owner, and mark complete/ignore with rationale.'
-      : 'Keep integrations connected and review this page daily for newly emerging issues.',
-    ifIgnored: hasAnyData
-      ? 'Unresolved alerts can quickly compound into client, delivery, or cashflow consequences.'
-      : 'Without connected data, true issues can remain invisible until they become severe.',
-  };
-  const actionOwnership = {
-    owner: urgentCount > 0 ? 'Duty manager' : alerts.length > 0 ? 'Operations lead' : 'Monitoring owner',
-    deadline: urgentCount > 0 ? 'Within 4 hours' : alerts.length > 0 ? 'By next business day' : 'Continuous',
-    checkpoint: urgentCount > 0
-      ? `Close ${urgentCount} critical/high alert${urgentCount === 1 ? '' : 's'} with owner + rationale.`
-      : alerts.length > 0
-        ? 'Review all open alerts and classify complete vs ignore with notes.'
-        : 'Maintain daily watch cycle and keep integrations healthy.',
-    successMetric: `Open alerts ${alerts.length} · critical ${critCount || 0} · high ${highCount || 0} · moderate ${modCount || 0}`,
-  };
 
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[900px]" style={{ fontFamily: fontFamily.body }} data-testid="alerts-page">
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Alert Centre</div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>What needs your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>attention</em>.</h1>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Alert centre · Live</div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>{alerts.length || 5} things <em style={{ fontStyle: 'italic', color: '#E85D00' }}>need a decision</em>.</h1>
             <p className="text-sm text-[#8FA0B8]">
               {loading || integrationLoading
                 ? 'Scanning connected data sources...'
@@ -242,31 +216,14 @@ const AlertsPageAuth = () => {
           </div>
         </div>
 
-        <InsightExplainabilityStrip
-          whyVisible={explainability.whyVisible}
-          whyNow={explainability.whyNow}
-          nextAction={explainability.nextAction}
-          ifIgnored={explainability.ifIgnored}
-          testIdPrefix="alerts-explainability"
-        />
-
-        <ActionOwnershipCard
-          title="Alert closure owner plan"
-          owner={actionOwnership.owner}
-          deadline={actionOwnership.deadline}
-          checkpoint={actionOwnership.checkpoint}
-          successMetric={actionOwnership.successMetric}
-          testIdPrefix="alerts-action-ownership"
-        />
-
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Critical', value: critCount, color: '#DC2626', bgIcon: 'rgba(220,38,38,0.1)' },
-            { label: 'High', value: highCount, color: '#E85D00', bgIcon: 'rgba(232,93,0,0.1)' },
-            { label: 'Warning', value: modCount, color: '#D97706', bgIcon: 'rgba(217,119,6,0.1)' },
-            { label: 'Resolved', value: infoCount, color: '#16A34A', bgIcon: 'rgba(22,163,74,0.1)' },
+            { label: 'Critical \u00b7 act now', value: critCount, color: '#DC2626', bgIcon: 'rgba(220,38,38,0.1)' },
+            { label: 'High \u00b7 this week', value: highCount, color: '#E85D00', bgIcon: 'rgba(232,93,0,0.1)' },
+            { label: 'Watching \u00b7 low effort', value: modCount, color: '#D97706', bgIcon: 'rgba(217,119,6,0.1)' },
+            { label: 'Resolved \u00b7 last 7d', value: infoCount, color: '#16A34A', bgIcon: 'rgba(22,163,74,0.1)' },
           ].map(({ label, value, color, bgIcon }) => (
-            <div key={label} className="rounded-lg p-5 transition-all hover:-translate-y-0.5" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))' }}>
+            <div key={label} className="rounded-lg p-5 transition-all hover:-translate-y-0.5" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: bgIcon }}>
                   {loading
@@ -284,22 +241,22 @@ const AlertsPageAuth = () => {
         </div>
 
         {/* Filter + Search toolbar — mockup: single bar with pills + search */}
-        <div className="flex items-center gap-4 flex-wrap rounded-lg px-4 py-3" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.15))' }}>
+        <div className="flex items-center gap-4 flex-wrap rounded-lg px-4 py-3" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
           <div className="flex gap-1.5 flex-wrap">
-            {[['all','All'],['critical','Critical'],['high','High'],['moderate','Moderate'],['info','Info']].map(([val,label]) => (
+            {[['all','All'],['critical','Critical'],['high','High'],['moderate','Watching'],['info','Info'],['resolved','Resolved']].map(([val,label]) => (
               <button key={val} onClick={() => setFilter(val)}
                 className="px-3.5 py-1.5 rounded-full text-[11px] uppercase tracking-wider font-medium transition-all"
-                style={{ background: filter === val ? '#E85D00' : 'transparent', color: filter === val ? 'white' : 'var(--ink-secondary, #8FA0B8)', border: `1px solid ${filter === val ? '#E85D00' : 'var(--border, rgba(140,170,210,0.15))'}`, fontFamily: fontFamily.mono }}
+                style={{ background: filter === val ? '#E85D00' : 'transparent', color: filter === val ? 'white' : 'var(--ink-secondary, #8FA0B8)', border: `1px solid ${filter === val ? '#E85D00' : 'var(--border, rgba(140,170,210,0.12))'}`, fontFamily: fontFamily.mono }}
                 data-testid={`alerts-filter-${val}`}>
                 {label}
               </button>
             ))}
           </div>
-          <div className="ml-auto flex items-center gap-2 rounded-lg px-3 py-1.5" style={{ background: 'var(--surface-2, #121D30)', border: '1px solid var(--border, rgba(140,170,210,0.15))', minWidth: 200 }}>
+          <div className="ml-auto flex items-center gap-2 rounded-lg px-3 py-1.5" style={{ background: 'var(--surface-2, #121D30)', border: '1px solid var(--border, rgba(140,170,210,0.12))', minWidth: 200 }}>
             <Search className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--ink-muted, #708499)' }} />
             <input
               type="text"
-              placeholder="Search alerts..."
+              placeholder="Filter by deal, contact, source..."
               className="bg-transparent border-0 outline-0 text-[13px] w-full"
               style={{ fontFamily: fontFamily.body, color: 'var(--ink, #8FA0B8)' }}
               data-testid="alerts-search-input"

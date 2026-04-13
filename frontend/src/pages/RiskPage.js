@@ -15,8 +15,6 @@ import {
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
-import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
-import ActionOwnershipCard from '../components/ActionOwnershipCard';
 import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 import LineageBadge from '../components/LineageBadge';
 
@@ -498,32 +496,6 @@ const RiskPage = () => {
   ];
 
   const monitoredCount = RISK_CATEGORIES.filter((category) => category.has).length;
-  const explainability = {
-    whyVisible: hasAnyIntegration
-      ? `BIQc is monitoring ${monitoredCount} of ${RISK_CATEGORIES.length} risk categories using your connected systems.`
-      : 'Risk monitoring needs connected CRM, accounting, or email systems to score exposure reliably.',
-    whyNow: compositeScore != null
-      ? `Composite risk is ${Math.round(compositeScore * 100)}%, indicating current cross-domain pressure.`
-      : 'Composite risk is unavailable because current evidence is incomplete.',
-    nextAction: contradictions.length > 0
-      ? 'Resolve the top alignment contradiction first, then review the linked operational and financial chain.'
-      : 'Review the highest-risk category, assign owner + deadline, and document mitigation this week.',
-    ifIgnored: hasRiskData
-      ? 'Financial, operational, and workforce risks can cascade across domains and shorten your decision window.'
-      : 'Low visibility can delay detection, turning manageable issues into urgent incidents.',
-  };
-
-  const actionOwnership = {
-    owner: contradictions.length > 0 ? 'Founder + risk owner' : hasRiskData ? 'Risk owner' : 'Founder',
-    deadline: compositeScore != null && compositeScore > 0.6 ? 'Next 24 hours' : 'By end of this week',
-    checkpoint: contradictions[0]
-      ? `Resolve contradiction in ${contradictions[0].domain || 'priority domain'} and confirm mitigation ownership.`
-      : monitoredCount > 0
-        ? `Close highest-risk category first (${RISK_CATEGORIES.find((c) => c.has)?.title || 'Risk category'}).`
-        : 'Connect integrations to activate governance monitoring.',
-    successMetric: `Composite risk ${compositeDisplay} · monitored categories ${monitoredCount}/${RISK_CATEGORIES.length}`,
-  };
-
   const toConfidencePct = (raw) => {
     if (raw == null) return undefined;
     const n = Number(raw);
@@ -575,31 +547,13 @@ const RiskPage = () => {
         {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Risk</div>
-            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Risk <em style={{ fontStyle: 'italic', color: '#E85D00' }}>matrix</em>.</h1>
+            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Risk Intelligence</h1>
             <p className="text-sm text-[#8FA0B8]">
               {integrationLoading && !integrationResolved ? 'Verifying connected systems and live risk signals…' : hasAnyIntegration ? `Monitoring ${RISK_CATEGORIES.filter(c => c.has).length} of ${RISK_CATEGORIES.length} risk categories with live data.` : 'Connect integrations to activate risk monitoring.'}
             </p>
           </div>
           <DataConfidence cognitive={cognitive} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
-
-        <InsightExplainabilityStrip
-          whyVisible={explainability.whyVisible}
-          whyNow={explainability.whyNow}
-          nextAction={explainability.nextAction}
-          ifIgnored={explainability.ifIgnored}
-          testIdPrefix="risk-explainability"
-        />
-
-        <ActionOwnershipCard
-          title="Risk response owner plan"
-          owner={actionOwnership.owner}
-          deadline={actionOwnership.deadline}
-          checkpoint={actionOwnership.checkpoint}
-          successMetric={actionOwnership.successMetric}
-          testIdPrefix="risk-action-ownership"
-        />
 
         <div className="flex flex-wrap items-center gap-2" data-testid="risk-lineage-badge">
           <LineageBadge lineage={riskIntelLineage} data_freshness={riskIntelFreshness} confidence_score={riskIntelConfidence} compact />

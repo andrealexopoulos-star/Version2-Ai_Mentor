@@ -138,10 +138,10 @@ const SubscribePage = () => {
 
       <div className="text-center mb-10 max-w-xl">
         <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
-          — Pricing
+          — Choose your plan
         </div>
         <h1 className="font-medium mb-3" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-          Choose your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>plan</em>.
+          One platform, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>three ways in</em>.
         </h1>
         {featureLabel && <p className="text-xs text-[#E85D00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
         <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#EDF1F7] capitalize">{currentTier}</strong></p>
@@ -167,7 +167,7 @@ const SubscribePage = () => {
           return (
             <div key={plan.id} className="rounded-xl p-6 relative" style={{
               background: 'var(--biqc-bg-card)',
-              border: `2px solid ${plan.recommended ? plan.color : 'rgba(140,170,210,0.15)'}`,
+              border: `2px solid ${plan.recommended ? plan.color : 'rgba(140,170,210,0.12)'}`,
               boxShadow: plan.recommended ? `0 8px 32px ${plan.color}20` : 'none',
             }} data-testid={`plan-${plan.id}`}>
               {plan.recommended && (
@@ -228,7 +228,7 @@ const SubscribePage = () => {
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
           {FOUNDATION_FEATURES.map((feature) => (
-            <div key={feature.key} className="rounded-lg border p-3" style={{ borderColor: 'rgba(140,170,210,0.15)' }}>
+            <div key={feature.key} className="rounded-lg border p-3" style={{ borderColor: 'rgba(140,170,210,0.12)' }}>
               <p className="text-sm font-semibold text-[#EDF1F7]">{feature.title}</p>
               <p className="text-xs mt-1 text-[#8FA0B8]">{feature.summary}</p>
               <div className="mt-2 flex items-center justify-between">
@@ -273,7 +273,7 @@ const SubscribePage = () => {
         </p>
         <div className="mt-3 space-y-3">
           {groupedWaitlist.map(([category, features]) => (
-            <div key={category} className="rounded-lg border p-3" style={{ borderColor: 'rgba(140,170,210,0.15)' }}>
+            <div key={category} className="rounded-lg border p-3" style={{ borderColor: 'rgba(140,170,210,0.12)' }}>
               <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]">{category}</p>
               <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
                 {features.map((feature) => (

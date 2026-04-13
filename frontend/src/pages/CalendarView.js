@@ -12,6 +12,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState } from '../components/PageStateComponents';
 import SemanticContractBanner from '../components/SemanticContractBanner';
 import MeetingPrepCard from '../components/intelligence/MeetingPrepCard';
+import { fontFamily } from '../design-system/tokens';
 
 const CalendarView = () => {
   const location = useLocation();
@@ -230,7 +231,7 @@ const CalendarView = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl animate-fade-in">
         {advisorDraft && (
-          <div className="p-5 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid rgba(232,93,0,0.25)' }} data-testid="calendar-advisor-draft-card">
+          <div className="p-5 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(232,93,0,0.25)' }} data-testid="calendar-advisor-draft-card">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="max-w-3xl">
                 <p className="text-xs uppercase tracking-[0.14em] mb-2" style={{ color: '#E85D00' }}>Advisor follow-up draft</p>
@@ -260,7 +261,7 @@ const CalendarView = () => {
                         setAdvisorDraft((prev) => ({ ...prev, startAt: next }));
                       }}
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
+                      style={{ background: 'var(--bg-tertiary)', borderColor: 'rgba(140,170,210,0.12)', color: 'var(--text-primary)' }}
                       data-testid="calendar-advisor-draft-start"
                     />
                   </label>
@@ -275,7 +276,7 @@ const CalendarView = () => {
                         setAdvisorDraft((prev) => ({ ...prev, endAt: next }));
                       }}
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
+                      style={{ background: 'var(--bg-tertiary)', borderColor: 'rgba(140,170,210,0.12)', color: 'var(--text-primary)' }}
                       data-testid="calendar-advisor-draft-end"
                     />
                   </label>
@@ -296,16 +297,10 @@ const CalendarView = () => {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <CalendarIcon className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
-              <span className="badge badge-primary" style={{ background: syncBadge.bg, color: syncBadge.color }}>
-                <TrendingUp className="w-3 h-3" />
-                {syncBadge.label}
-              </span>
-            </div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily?.display || 'Inter', color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Your week, read by <em style={{ fontStyle: 'italic', color: '#E85D00' }}>BIQc</em>.</h1>
-            <p className="mt-2" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
-              {loadError ? 'Calendar data has partial issues. Review status and retry sync if needed.' : `Your ${calendarProvider === 'gmail' ? 'Gmail' : 'Outlook'} schedule synced for AI-powered insights`}
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily?.mono || 'monospace', color: '#E85D00' }}>— Calendar · Week of {new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}</div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily?.display || 'Inter', color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Your week, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>read by BIQc</em>.</h1>
+            <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+              {loadError ? 'Calendar data has partial issues. Review status and retry sync if needed.' : 'Every meeting linked to a deal, customer or alert. BIQc surfaces what to prep, what to decline, and what to hand off.'}
             </p>
           </div>
           
@@ -336,67 +331,67 @@ const CalendarView = () => {
           />
         )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div 
+          <div
             className="p-5 rounded-xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: 'rgba(59, 130, 246, 0.1)' }}
               >
                 <CalendarIcon className="w-5 h-5 text-blue-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                <p className="text-2xl font-bold" style={{ fontFamily: fontFamily?.display, color: 'var(--ink-display, #EDF1F7)' }}>
                   {upcomingEvents.length}
                 </p>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Upcoming Events (30 days)
+                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: fontFamily?.mono, color: 'var(--ink-muted, #708499)' }}>
+                  Upcoming events
                 </p>
               </div>
             </div>
           </div>
-          
-          <div 
+
+          <div
             className="p-5 rounded-xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: 'rgba(34, 197, 94, 0.1)' }}
               >
                 <Users className="w-5 h-5 text-green-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                <p className="text-2xl font-bold" style={{ fontFamily: fontFamily?.display, color: 'var(--ink-display, #EDF1F7)' }}>
                   {upcomingEvents.filter(e => e.attendees?.length > 0).length}
                 </p>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  With Attendees
+                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: fontFamily?.mono, color: 'var(--ink-muted, #708499)' }}>
+                  With attendees
                 </p>
               </div>
             </div>
           </div>
-          
-          <div 
+
+          <div
             className="p-5 rounded-xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: 'rgba(245, 158, 11, 0.1)' }}
               >
                 <Clock className="w-5 h-5 text-yellow-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                <p className="text-2xl font-bold" style={{ fontFamily: fontFamily?.display, color: 'var(--ink-display, #EDF1F7)' }}>
                   {groupedEvents[today]?.length || 0}
                 </p>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Today's Meetings
+                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: fontFamily?.mono, color: 'var(--ink-muted, #708499)' }}>
+                  Today's meetings
                 </p>
               </div>
             </div>
@@ -409,7 +404,7 @@ const CalendarView = () => {
         ) : loadError && upcomingEvents.length === 0 ? (
           <div
             className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
             <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
               Calendar unavailable right now
@@ -425,7 +420,7 @@ const CalendarView = () => {
         ) : upcomingEvents.length === 0 ? (
           <div 
             className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
             <div 
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
@@ -474,8 +469,8 @@ const CalendarView = () => {
                         key={event.id || `${date}-${idx}`}
                         className="p-4 rounded-xl border transition-all hover:shadow-md"
                         style={{ 
-                          background: 'var(--bg-card)', 
-                          borderColor: 'var(--border-light)',
+                          background: 'var(--surface, #0E1628)', 
+                          borderColor: 'rgba(140,170,210,0.12)',
                           borderLeft: `4px solid ${event.importance === 'high' ? '#EF4444' : 'var(--accent-primary)'}`
                         }}
                         data-testid={`calendar-event-card-${idx}`}
@@ -541,12 +536,12 @@ const CalendarView = () => {
               {/* AI Meeting Prep Intelligence */}
               <MeetingPrepCard />
 
-              <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
+              <div className="rounded-xl border p-5" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}>
                 <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Execution cadence</p>
                 <p className="mt-2 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Keep tomorrow’s schedule decision-ready.</p>
                 <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Stage follow-ups, identify overloaded days, and make each meeting block more intentional.</p>
               </div>
-              <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
+              <div className="rounded-xl border p-5" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}>
                 <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Today at a glance</p>
                 <div className="mt-3 space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <div className="flex items-center justify-between"><span>Meetings today</span><strong style={{ color: 'var(--text-primary)' }}>{groupedEvents[today]?.length || 0}</strong></div>
@@ -555,7 +550,7 @@ const CalendarView = () => {
                 </div>
               </div>
               {calendarMeta && (
-                <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
+                <div className="rounded-xl border p-5" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}>
                   <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Data freshness</p>
                   <div className="mt-3 space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                     <div className="flex items-center justify-between"><span>Events fetched</span><strong style={{ color: 'var(--text-primary)' }}>{calendarMeta.total ?? 0}</strong></div>
@@ -572,7 +567,7 @@ const CalendarView = () => {
                 </div>
               )}
               {intelligenceSummary && (
-                <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }} data-testid="calendar-intelligence-summary">
+                <div className="rounded-xl border p-5" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }} data-testid="calendar-intelligence-summary">
                   <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Calendar intelligence</p>
                   <p className="mt-3 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
                     {intelligenceSummaryText || 'No summary available.'}

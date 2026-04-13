@@ -207,13 +207,13 @@ const BusinessProfile = () => {
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
             <div>
               <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
-                — Business Profile
+                — Business DNA
               </div>
               <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-                Business <em style={{ fontStyle: 'italic', color: '#E85D00' }}>DNA</em>.
+                How BIQc <em style={{ fontStyle: 'italic', color: '#E85D00' }}>sees you</em>.
               </h1>
               <p className="text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
-                Your live baselines — the strategic foundation BIQc monitors for drift
+                This is the working profile every signal, alert, and brief is calibrated against. The more BIQc learns from your inbox and tools, the sharper this gets.
               </p>
             </div>
             <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>

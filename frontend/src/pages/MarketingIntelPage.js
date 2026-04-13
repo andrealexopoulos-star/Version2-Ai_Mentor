@@ -95,8 +95,7 @@ const MarketingIntelPage = () => {
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body }} data-testid="marketing-intel-page">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Marketing</div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Marketing <em style={{ fontStyle: 'italic', color: '#E85D00' }}>intelligence</em>.</h1>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Marketing Intelligence.</h1>
             <p className="text-sm mt-1" style={{ color: '#8FA0B8' }}>5-pillar competitive benchmark. Evidence-based scoring.</p>
           </div>
           {benchmark && <button onClick={runBenchmark} disabled={running || !canRun} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs hover:text-[#EDF1F7] disabled:opacity-50" style={{ border: '1px solid var(--biqc-border)', color: canRun ? '#8FA0B8' : '#64748B' }}>

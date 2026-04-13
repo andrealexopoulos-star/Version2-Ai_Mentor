@@ -555,7 +555,7 @@ const EmailInbox = () => {
           className="w-full flex items-center justify-between p-4 rounded-xl transition-all"
           style={{ 
             background: isExpanded ? 'var(--bg-tertiary)' : 'var(--bg-card)',
-            border: '1px solid var(--border-light)'
+            border: '1px solid rgba(140,170,210,0.12)'
           }}
         >
           <div className="flex items-center gap-3">
@@ -612,7 +612,7 @@ const EmailInbox = () => {
           className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
           style={{ background: 'var(--bg-primary)' }}
         >
-          <div className="sticky top-0 p-6 border-b" style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}>
+          <div className="sticky top-0 p-6 border-b" style={{ background: 'var(--bg-primary)', borderColor: 'rgba(140,170,210,0.12)' }}>
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
@@ -684,7 +684,7 @@ const EmailInbox = () => {
                 {/* Suggested Reply */}
                 <div 
                   className="p-5 rounded-xl border"
-                  style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}
+                  style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -755,7 +755,7 @@ const EmailInbox = () => {
                   <div 
                     key={idx}
                     className="p-5 rounded-xl border"
-                    style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}
+                    style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -836,14 +836,14 @@ const EmailInbox = () => {
         <div className="flex items-start justify-between">
           <div>
             <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
-              — Email Intelligence
+              — Inbox · {activeProvider ? providerLabel : 'Not connected'} · Live
             </div>
             <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-              Your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>inbox</em>, prioritised.
+              {allPriorityEmails.length || 0} emails <em style={{ fontStyle: 'italic', color: '#E85D00' }}>need a decision</em>.
             </h1>
             <p className="mt-2 text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
               {activeProvider
-                ? `AI-prioritized emails from ${providerLabel}`
+                ? `BIQc has triaged your ${providerLabel} inbox. Only the ones that need you are here. Everything else is filed and summarised.`
                 : 'Connect an email provider to get started'}
             </p>
             {connectedEmail && (
@@ -880,7 +880,7 @@ const EmailInbox = () => {
         ) : !activeProvider ? (
           <div 
             className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
             <div 
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
@@ -937,7 +937,7 @@ const EmailInbox = () => {
               ['Low priority', (priorityAnalysis.low_priority || []).length, '#10B981'],
               ['Analyzed', priorityAnalysis.total_analyzed || allPriorityEmails.length, '#3B82F6'],
             ].map(([label, value, color]) => (
-              <div key={label} className="p-4 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}>
+              <div key={label} className="p-4 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}>
                 <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>{label}</p>
                 <p className="mt-2 text-2xl font-bold" style={{ color }}>{value}</p>
               </div>
@@ -947,7 +947,7 @@ const EmailInbox = () => {
         {freshnessText && (
           <div
             className="rounded-xl border px-4 py-3 flex flex-wrap items-center justify-between gap-2"
-            style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}
             data-testid="priority-inbox-freshness"
           >
             <p className="text-xs" style={{ color: '#94A3B8' }}>{freshnessText}</p>
@@ -966,7 +966,7 @@ const EmailInbox = () => {
         )}
         {activeProvider && (
           <div className="grid gap-3 lg:grid-cols-[minmax(220px,0.38fr)_minmax(0,1fr)]" data-testid="priority-inbox-folder-grid">
-            <div className="rounded-xl border p-4" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
+            <div className="rounded-xl border p-4" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}>
               <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Folders</p>
               <div className="mt-3 space-y-2 max-h-56 overflow-auto pr-1">
                 {(folders || []).slice(0, 12).map((folder) => {
@@ -994,7 +994,7 @@ const EmailInbox = () => {
                 )}
               </div>
             </div>
-            <div className="rounded-xl border p-4" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
+            <div className="rounded-xl border p-4" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}>
               <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>
                 Folder preview · {selectedFolder}
               </p>
@@ -1026,7 +1026,7 @@ const EmailInbox = () => {
           /* Empty State */
           <div 
             className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
             <div 
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
@@ -1058,7 +1058,7 @@ const EmailInbox = () => {
           /* Priority Sections */
           <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.75fr)]" data-testid="priority-inbox-command-grid">
             <div className="space-y-4">
-              <div className="rounded-xl border px-4 py-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }} data-testid="priority-inbox-guidance-card">
+              <div className="rounded-xl border px-4 py-3" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }} data-testid="priority-inbox-guidance-card">
                 <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Command centre flow</p>
                 <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Open the highest-risk thread first, validate BIQc’s rationale, then trigger a reply or reclassify before the customer signal degrades.</p>
               </div>
@@ -1085,7 +1085,7 @@ const EmailInbox = () => {
               />
             </div>
             <div className="space-y-4" data-testid="priority-inbox-detail-column">
-              <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }} data-testid="priority-inbox-detail-panel">
+              <div className="rounded-xl border p-5" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }} data-testid="priority-inbox-detail-panel">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Selected thread</p>
@@ -1095,7 +1095,7 @@ const EmailInbox = () => {
                 </div>
                 {selectedEmailData ? (
                   <div className="mt-4 space-y-4">
-                    <div className="rounded-lg border p-4" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)' }}>
+                    <div className="rounded-lg border p-4" style={{ background: 'var(--bg-tertiary)', borderColor: 'rgba(140,170,210,0.12)' }}>
                       <p className="text-xs text-[#94A3B8]">From</p>
                       <p className="mt-1 text-sm text-[#EDF1F7]">{selectedEmailData.from}</p>
                       <p className="mt-2 text-xs text-[#64748B]">{selectedEmailData.received ? new Date(selectedEmailData.received).toLocaleString() : 'No timestamp available'}</p>

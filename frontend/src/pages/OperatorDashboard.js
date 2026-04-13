@@ -114,8 +114,7 @@ const OperatorDashboard = () => {
       <div data-testid="operator-dashboard" className="min-h-[calc(100vh-80px)] text-white/80 -mx-4 -my-4 md:-mx-6 md:-my-6 px-6 py-10" style={{ background: '#050505' }}>
         <div className="max-w-4xl mx-auto px-6 py-10 space-y-6">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— System</div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>The <em style={{ fontStyle: 'italic', color: '#E85D00' }}>Operator</em>.</h1>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Operator Dashboard</h1>
             <p className="text-xs mt-1" style={{ color: '#708499' }}>Read-only intelligence state</p>
           </div>
 

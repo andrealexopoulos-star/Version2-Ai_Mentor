@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { colors, fontFamily, radius } from '../../design-system/tokens';
-import InsightExplainabilityStrip from '../InsightExplainabilityStrip';
 import LineageBadge from '../LineageBadge';
 
 /* Three bouncing dots for typing indicator */
@@ -111,18 +110,6 @@ export default function BoardroomMessageBubble({ message, index = 0, streaming =
         {isAdvisor && (message.lineage || message.confidence_score != null) && (
           <div className="mt-2">
             <LineageBadge lineage={message.lineage} confidence_score={message.confidence_score} compact />
-          </div>
-        )}
-
-        {isAdvisor && message.explainability && Object.keys(message.explainability || {}).length > 0 && (
-          <div className="mt-3">
-            <InsightExplainabilityStrip
-              whyVisible={message.explainability.why_visible}
-              whyNow={message.explainability.why_now}
-              nextAction={message.explainability.next_action}
-              ifIgnored={message.explainability.if_ignored}
-              testIdPrefix={`${testIdPrefix}-explain-${index}`}
-            />
           </div>
         )}
 

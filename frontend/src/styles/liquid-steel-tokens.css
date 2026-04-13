@@ -54,7 +54,7 @@
   --info-wash:     #EFF6FF;
 
   /* ─── TYPOGRAPHY ─── */
-  --font-display:  "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Palatino, "URW Palladio L", Garamond, serif;
+  --font-display:  "Source Serif 4", Georgia, serif;
   --font-ui:       "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono:     "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
 

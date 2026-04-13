@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
-import { ArrowRight, Check, ChevronDown, Plus, Minus } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
 /* ─── PLAN DATA (from approved mockup) ─── */
@@ -9,7 +9,7 @@ const PLANS = [
   {
     name: 'Free',
     badge: 'Get Started',
-    badgeColor: '#16A34A',
+    badgeBg: 'rgba(140,170,210,0.1)', badgeColor: '#8FA0B8',
     price: '$0',
     period: '/mo',
     desc: 'Everything you need to start understanding your business better.',
@@ -32,7 +32,7 @@ const PLANS = [
   {
     name: 'Growth',
     badge: 'Most Popular',
-    badgeColor: '#E85D00',
+    badgeBg: 'rgba(232,93,0,0.08)', badgeColor: '#E85D00',
     price: '$69',
     period: '/mo',
     desc: 'Everything in Free, plus powerful tools to grow your revenue.',
@@ -59,7 +59,7 @@ const PLANS = [
   {
     name: 'Pro',
     badge: 'Full Platform',
-    badgeColor: '#3B82F6',
+    badgeBg: '#EDF1F7', badgeColor: '#080C14',
     price: '$199',
     period: '/mo',
     desc: 'Everything in Growth, plus enterprise-grade intelligence tools.',
@@ -87,7 +87,7 @@ const PLANS = [
   {
     name: 'Enterprise',
     badge: 'For Teams',
-    badgeColor: '#8B5CF6',
+    badgeBg: 'rgba(37,99,235,0.12)', badgeColor: '#60A5FA',
     price: 'Custom',
     period: '',
     desc: 'Everything in Pro, plus dedicated support and custom solutions.',
@@ -226,14 +226,16 @@ const PlanCard = ({ plan }) => {
     <div
       className={`relative rounded-2xl p-6 flex flex-col ${plan.highlight ? 'ring-2 ring-[#E85D00]' : ''}`}
       style={{
-        background: plan.highlight ? 'rgba(232,93,0,0.025)' : '#0E1628',
+        background: plan.highlight
+          ? 'linear-gradient(105deg, rgba(200,220,240,0.0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0.0) 55%), rgba(232,93,0,0.025)'
+          : 'linear-gradient(105deg, rgba(200,220,240,0.0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0.0) 55%), linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
         border: `1px solid ${plan.highlight ? 'rgba(232,93,0,0.2)' : 'rgba(140,170,210,0.12)'}`,
       }}
       data-testid={`plan-${plan.name.toLowerCase()}`}
     >
       <span
         className="text-[10px] font-semibold tracking-[0.08em] uppercase px-3 py-1 rounded-full inline-block mb-4 self-start"
-        style={{ background: `${plan.badgeColor}15`, color: plan.badgeColor, fontFamily: fontFamily.mono }}
+        style={{ background: plan.badgeBg, color: plan.badgeColor, fontFamily: fontFamily.mono }}
       >
         {plan.badge}
       </span>
@@ -264,17 +266,22 @@ const PlanCard = ({ plan }) => {
   );
 };
 
-const FaqItem = ({ q, a }) => {
-  const [open, setOpen] = useState(false);
+const FaqItem = ({ q, a, open, onToggle }) => {
   return (
     <div style={{ borderBottom: '1px solid rgba(140,170,210,0.12)' }}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={onToggle}
         className="w-full flex items-center justify-between py-5 text-left"
         style={{ fontFamily: fontFamily.body }}
       >
         <span className="text-base font-semibold pr-4" style={{ color: '#EDF1F7', lineHeight: 1.4 }}>{q}</span>
-        {open ? <Minus className="w-4.5 h-4.5 shrink-0 text-[#8FA0B8]" /> : <Plus className="w-4.5 h-4.5 shrink-0 text-[#8FA0B8]" />}
+        <svg
+          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8FA0B8" strokeWidth="2"
+          className="shrink-0 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(45deg)' : 'rotate(0deg)' }}
+        >
+          <path strokeLinecap="round" d="M12 5v14M5 12h14" />
+        </svg>
       </button>
       <div
         className="overflow-hidden transition-all"
@@ -286,16 +293,24 @@ const FaqItem = ({ q, a }) => {
   );
 };
 
+/* ─── INJECTED CSS FOR HOVER EFFECTS ─── */
+const tableHoverCSS = `
+.biqc-compare-row:hover td { background: rgba(140,170,210,0.03) !important; }
+`;
+
 /* ─── PAGE ─── */
 const PricingPage = () => {
   const [showCompare, setShowCompare] = useState(false);
+  const [openFaq, setOpenFaq] = useState(null);
 
   return (
     <WebsiteLayout>
+      <style>{tableHoverCSS}</style>
       {/* HERO */}
       <section className="pt-16 sm:pt-28 pb-12 px-6 text-center" data-testid="pricing-hero">
         <div className="max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 text-[12px] font-medium" style={{ background: 'rgba(140,170,210,0.06)', border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8', fontFamily: fontFamily.mono }}>
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full mb-6 text-[13px] font-semibold" style={{ background: 'rgba(232,93,0,0.06)', color: '#E85D00' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>
             Pricing
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-bold tracking-tight mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', lineHeight: 1.12, letterSpacing: '-0.02em' }}>
@@ -336,25 +351,25 @@ const PricingPage = () => {
           {showCompare && (
             <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid rgba(140,170,210,0.12)' }}>
               <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#0E1628' }}>
-                    <th className="text-left py-3 px-4 font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body, minWidth: 200 }}>Feature</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>Free</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: '#E85D00', fontFamily: fontFamily.body }}>Growth</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>Pro</th>
-                    <th className="text-center py-3 px-4 font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body }}>Enterprise</th>
+                <thead style={{ position: 'sticky', top: 64, zIndex: 10 }}>
+                  <tr style={{ background: '#080C14' }}>
+                    <th className="text-left py-3 px-4 font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body, minWidth: 200, background: '#080C14' }}>Feature</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body, background: '#080C14' }}>Free</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body, background: '#080C14' }}>Growth</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body, background: '#080C14' }}>Pro</th>
+                    <th className="text-center py-3 px-4 font-semibold" style={{ color: '#EDF1F7', fontFamily: fontFamily.body, background: '#080C14' }}>Enterprise</th>
                   </tr>
                 </thead>
                 <tbody>
                   {COMPARE_GROUPS.map(group => (
                     <React.Fragment key={group.label}>
                       <tr>
-                        <td colSpan={5} className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider" style={{ color: '#E85D00', fontFamily: fontFamily.mono, background: 'rgba(232,93,0,0.03)', borderTop: '1px solid rgba(140,170,210,0.12)' }}>
+                        <td colSpan={5} className="py-3 px-4 text-[11px] font-bold uppercase tracking-wider" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono, background: '#080C14', borderTop: '1px solid rgba(140,170,210,0.12)' }}>
                           {group.label}
                         </td>
                       </tr>
                       {group.rows.map(([feature, ...tiers], ri) => (
-                        <tr key={ri} style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
+                        <tr key={ri} className="biqc-compare-row" style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
                           <td className="py-2.5 px-4" style={{ color: '#C8D4E4', fontFamily: fontFamily.body }}>{feature}</td>
                           {tiers.map((v, ti) => (
                             <td key={ti} className="py-2.5 px-4 text-center">
@@ -380,7 +395,7 @@ const PricingPage = () => {
             <p className="text-base" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>Everything you need to know about BIQc pricing and plans.</p>
           </div>
           <div>
-            {FAQS.map((faq, i) => <FaqItem key={i} q={faq.q} a={faq.a} />)}
+            {FAQS.map((faq, i) => <FaqItem key={i} q={faq.q} a={faq.a} open={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} />)}
           </div>
         </div>
       </section>

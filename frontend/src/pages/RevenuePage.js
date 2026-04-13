@@ -12,8 +12,6 @@ import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { fontFamily } from '../design-system/tokens';
 import { Link, useNavigate } from 'react-router-dom';
-import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
-import ActionOwnershipCard from '../components/ActionOwnershipCard';
 import LineageBadge from '../components/LineageBadge';
 import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 
@@ -135,37 +133,6 @@ const RevenuePage = () => {
   const healthColor = healthScore === 'good' ? '#10B981' : healthScore === 'moderate' ? '#F59E0B' : '#E85D00';
   const healthPct = winRate != null ? Math.min(Math.round(winRate * 2), 100) : 0;
 
-  const explainability = {
-    whyVisible: hasDeals
-      ? `BIQc is reading ${deals.length} CRM deal${deals.length === 1 ? '' : 's'}${crmIntegration?.provider ? ` from ${crmIntegration.provider}` : ''}${accountingConnected ? ' and your accounting feed' : ''}.`
-      : 'Revenue Engine is waiting for connected CRM/accounting data to compute pipeline health.',
-    whyNow: stalledCount > 0
-      ? `${stalledCount} deal${stalledCount === 1 ? '' : 's'} have stalled for more than 7 days, increasing close-delay risk.`
-      : topClientPct > 40
-        ? `${topClientPct}% of your pipeline is concentrated in one client, increasing downside risk if timing slips.`
-        : 'Pipeline is active; this view helps catch early slippage before revenue misses hit cash.',
-    nextAction: stalledCount > 0
-      ? 'Prioritise stalled deals: assign owner, set a 48-hour follow-up deadline, and unblock approval bottlenecks.'
-      : hasDeals
-        ? 'Review scenario tab, then lock one best-case lever and one downside hedge this week.'
-        : 'Connect CRM first, then accounting, so BIQc can compute velocity, concentration, and cash-linked revenue risk.',
-    ifIgnored: hasDeals
-      ? 'Stalled pipeline and concentration risk can compound into forecast misses, margin pressure, and late cash inflows.'
-      : 'Without connected data, hidden revenue risks stay invisible until they become urgent.',
-  };
-
-  const actionOwnership = {
-    owner: stalledCount > 0 ? 'Sales lead' : topClientPct > 40 ? 'Founder + sales lead' : 'Revenue operations owner',
-    deadline: stalledCount > 0 ? 'Next 48 hours' : 'By end of this week',
-    checkpoint: stalledCount > 0
-      ? `Reduce stalled deals from ${stalledCount} before next pipeline review.`
-      : topClientPct > 40
-        ? `Lower concentration from ${topClientPct}% by expanding top-of-funnel coverage.`
-        : 'Lock one best-case lever and one downside hedge in this cycle.',
-    successMetric: hasDeals
-      ? `Win rate ${winRate ?? '—'}% · active deals ${activeDeals ?? 0}`
-      : 'Connect CRM + Accounting to activate measurable revenue KPIs',
-  };
 
   const accountingError = financials?.error || '';
   const overdueInvoices = financials?.summary?.overdue_count || financials?.summary?.overdue_invoices || 0;
@@ -249,8 +216,8 @@ const RevenuePage = () => {
         {/* Header with connection status badges */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Revenue</div>
-            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Revenue <em style={{ fontStyle: 'italic', color: '#E85D00' }}>intelligence</em>.</h1>
+            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Revenue.</h1>
+            <p className="text-sm text-[#8FA0B8] mb-2" style={{ fontFamily: fontFamily.body }}>Pipeline, bookings, and deal health — all in one view.</p>
             {(crmConnected || accountingConnected) && (
               <LineageBadge
                 lineage={{ connected_sources: [crmConnected && (crmIntegration?.provider || 'CRM'), accountingConnected && (accountingIntegration?.provider || 'Accounting')].filter(Boolean) }}
@@ -304,23 +271,6 @@ const RevenuePage = () => {
           </div>
           <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
-
-        <InsightExplainabilityStrip
-          whyVisible={explainability.whyVisible}
-          whyNow={explainability.whyNow}
-          nextAction={explainability.nextAction}
-          ifIgnored={explainability.ifIgnored}
-          testIdPrefix="revenue-explainability"
-        />
-
-        <ActionOwnershipCard
-          title="Revenue execution owner plan"
-          owner={actionOwnership.owner}
-          deadline={actionOwnership.deadline}
-          checkpoint={actionOwnership.checkpoint}
-          successMetric={actionOwnership.successMetric}
-          testIdPrefix="revenue-action-ownership"
-        />
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" data-testid="revenue-ux-main-grid">
           <div className="space-y-4" data-testid="revenue-top-signals-column">

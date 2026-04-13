@@ -6,7 +6,6 @@ import { apiClient } from '../lib/api';
 import { useTutorial, HelpButton, PageTutorial } from './TutorialOverlay';
 import FirstLoginNotification from './FirstLoginNotification';
 import MobileNav from './MobileNav';
-import SoundboardPanel from './SoundboardPanel';
 import { DailyBriefBanner } from './DailyBriefCard';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -27,7 +26,6 @@ import { fontFamily, colors, shadow } from '../design-system/tokens';
 
 const DISPLAY = fontFamily.display;
 const SIDEBAR_WIDTH_STORAGE_KEY = 'biqc_sidebar_width';
-const SOUNDBOARD_WIDTH_STORAGE_KEY = 'biqc_soundboard_width';
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 // Business Verification Score Badge — shows identity confidence + data coverage
@@ -79,14 +77,13 @@ const VerificationBadge = ({ navigate }) => {
   );
 };
 
-const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
+const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, authState } = useSupabaseAuth();
   const { isNavOpen, openNav, closeAll } = useMobileDrawer();
   const isCalibrated = authState === AUTH_STATE.READY;
   const { openTutorial, tutorial } = useTutorial(location.pathname);
-  const [sbOpen, setSbOpen] = useState(false);
 
   // Selective clear — preserve tutorials and preferences on logout
   const clearAuthStorage = () => {
@@ -114,10 +111,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     const stored = Number(localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY));
     return Number.isFinite(stored) ? clamp(stored, 220, 420) : 248;
   });
-  const [soundboardWidthPx, setSoundboardWidthPx] = useState(() => {
-    const stored = Number(localStorage.getItem(SOUNDBOARD_WIDTH_STORAGE_KEY));
-    return Number.isFinite(stored) ? clamp(stored, 320, 560) : 380;
-  });
   const trialDaysLeft = useMemo(() => {
     if (!user?.trial_expires_at) return null;
     const expiry = new Date(user.trial_expires_at);
@@ -133,11 +126,9 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackForm, setFeedbackForm] = useState({ rating: 8, sentiment: 'positive', message: '' });
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
-  const hideEmbeddedSoundboard = location.pathname === '/soundboard' || location.pathname.startsWith('/soundboard/');
 
   useEffect(() => { localStorage.setItem('sidebar-collapsed', sidebarCollapsed); }, [sidebarCollapsed]);
   useEffect(() => { localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(sidebarWidthPx)); }, [sidebarWidthPx]);
-  useEffect(() => { localStorage.setItem(SOUNDBOARD_WIDTH_STORAGE_KEY, String(soundboardWidthPx)); }, [soundboardWidthPx]);
 
   useEffect(() => {
     const handleResize = () => setIsDesktopViewport(window.innerWidth >= 1024);
@@ -185,10 +176,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       if (activeResizeTarget === 'sidebar' && !sidebarCollapsed) {
         setSidebarWidthPx(clamp(e.clientX, 220, 420));
         return;
-      }
-      if (activeResizeTarget === 'soundboard') {
-        const nextWidth = window.innerWidth - e.clientX;
-        setSoundboardWidthPx(clamp(nextWidth, 320, 560));
       }
     };
 
@@ -273,15 +260,17 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       // — Today
       { id: 'overview', label: 'Advisor', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [], group: 'today' },
       { id: 'alerts', label: 'Alert Centre', path: '/alerts', icon: Bell, showBadge: true, items: [], group: 'today' },
+      { id: 'soundboard', label: 'Ask BIQc', path: '/soundboard', icon: MessageSquare, items: [], group: 'today' },
       { id: 'actions', label: 'Actions', path: '/actions', icon: Zap, items: [], group: 'today' },
       // — Inbox
       { id: 'priority-inbox', label: 'Email', path: '/email-inbox', icon: Inbox, items: [], group: 'inbox' },
       { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [], group: 'inbox' },
       // — Intelligence
-      { id: 'soundboard', label: 'Ask BIQc', path: '/soundboard', icon: MessageSquare, items: [], group: 'intelligence' },
-      { id: 'market', label: 'Market', path: '/market', icon: Radar, items: [], group: 'intelligence' },
+      { id: 'market', label: 'Market & position', path: '/market', icon: Radar, items: [], group: 'intelligence' },
       { id: 'business-dna', label: 'Business DNA', path: '/business-profile', icon: BarChart3, items: [], group: 'intelligence' },
-      { id: 'benchmark', label: 'Competitive Benchmark', path: '/competitive-benchmark', icon: Target, items: [], group: 'intelligence' },
+      { id: 'benchmark', label: 'Benchmark', path: '/competitive-benchmark', icon: Target, items: [], group: 'intelligence' },
+      { id: 'boardroom', label: 'BoardRoom', path: '/board-room', icon: Target, items: [], group: 'intelligence' },
+      { id: 'warroom', label: 'WarRoom', path: '/war-room', icon: Shield, items: [], group: 'intelligence' },
       // — System
       { id: 'data-health', label: 'Data health', path: '/data-health', icon: Activity, items: [], group: 'system' },
       { id: 'integrations', label: 'Integrations', path: '/integrations', icon: Link2, items: [], group: 'system' },
@@ -362,10 +351,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     event.preventDefault();
     setActiveResizeTarget('sidebar');
   };
-  const startSoundboardResize = (event) => {
-    event.preventDefault();
-    setActiveResizeTarget('soundboard');
-  };
 
   const submitFeedback = async () => {
     if (feedbackSubmitting) return;
@@ -391,7 +376,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: `var(--biqc-bg, ${colors.bg})`, color: `var(--biqc-text, ${colors.text})` }}>
       {/* ═══ TOP BAR ═══ */}
-      <header className="fixed top-0 left-0 right-0 h-[60px] px-4 lg:px-6 flex items-center justify-between" style={{ background: `var(--biqc-bg-input, ${colors.bgInput})`, borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
+      <header className="fixed top-0 left-0 right-0 h-[60px] px-4 lg:px-6 flex items-center justify-between" style={{ background: 'var(--biqc-topbar-bg, rgba(11, 17, 32, 0.88))', backdropFilter: 'saturate(180%) blur(16px)', WebkitBackdropFilter: 'saturate(180%) blur(16px)', borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
         <div className="flex items-center gap-3">
           <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: 'var(--biqc-text-2)' }} aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'} data-testid="mobile-menu-toggle">
             {isNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -573,7 +558,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
 
       {/* ═══ SIDEBAR ═══ */}
       <aside className={`fixed left-0 transition-all duration-300 ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-[60px] h-[calc(100vh-60px)]`}
-        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, #0A1018)', borderRight: '1px solid var(--biqc-border, rgba(140,170,210,0.15))', width: `${activeSidebarWidth}px` }}
+        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, linear-gradient(180deg, #0B1120 0%, #080C14 100%))', borderRight: '1px solid rgba(140,170,210,0.08)', width: `${activeSidebarWidth}px` }}
         role="navigation" aria-label="Main navigation">
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -612,7 +597,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             // Render group header when group changes (mockup: "— Today", "— Inbox", etc.)
             const prevGroup = idx > 0 ? visibleSections[idx - 1].group : null;
             const showGroupHeader = section.group && section.group !== prevGroup && !sidebarCollapsed;
-            const groupLabels = { today: '— Today', inbox: '— Inbox', intelligence: '— Intelligence', system: '— System', admin: '— Admin' };
+            const groupLabels = { today: 'Today', inbox: 'Inbox', intelligence: 'Intelligence', system: 'System', admin: 'Admin' };
 
             return (
               <div key={section.id}>
@@ -634,7 +619,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                       style={{
                         fontFamily: fontFamily.body,
                         color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
-                        background: sectionActive ? 'var(--lava-wash, rgba(232,93,0,0.12))' : 'transparent',
+                        background: sectionActive ? 'var(--surface-sunken, #060A12)' : 'transparent',
                         borderLeft: sectionActive ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                       }}
                       data-testid={`nav-section-${section.id}`}
@@ -719,7 +704,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
               className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all hover:bg-white/5"
               style={{
                 color: isActive('/biqc-legal') ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
-                background: isActive('/biqc-legal') ? 'var(--lava-wash, rgba(232,93,0,0.12))' : 'transparent',
+                background: isActive('/biqc-legal') ? 'var(--surface-sunken, #060A12)' : 'transparent',
                 borderLeft: isActive('/biqc-legal') ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                 fontFamily: fontFamily.body,
               }}
@@ -836,45 +821,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           </div>
         </main>
 
-        {/* Desktop Soundboard Panel — hidden on dedicated /soundboard route */}
-        {!hideEmbeddedSoundboard && (
-          <aside className="hidden lg:flex shrink-0 flex-col relative" style={{ width: `${soundboardWidthPx}px`, background: 'var(--biqc-bg-input, #0A1018)', borderLeft: '1px solid var(--biqc-border, rgba(140,170,210,0.15))', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
-            <div
-              className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-white/10"
-              onMouseDown={startSoundboardResize}
-              role="separator"
-              aria-label="Resize Ask BIQc panel"
-              data-testid="soundboard-resize-handle"
-            />
-            <SoundboardPanel actionMessage={actionMessage} onActionConsumed={onActionConsumed} />
-          </aside>
-        )}
       </div>
-
-      {/* Mobile Soundboard FAB + Overlay */}
-      {!hideEmbeddedSoundboard && <div className="lg:hidden">
-        {!sbOpen ? (
-          <button onClick={() => setSbOpen(true)}
-            className="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
-            style={{ background: `linear-gradient(135deg, ${colors.brand}, ${colors.brand})`, boxShadow: shadow.brandGlow }}
-            data-testid="soundboard-fab">
-            <MessageSquare className="w-5 h-5 text-white" />
-          </button>
-        ) : (
-          <>
-            <div className="fixed inset-0 bg-black/60 z-[1200]" onClick={() => setSbOpen(false)} />
-            <div className="fixed inset-0 z-[1201] flex flex-col" style={{ background: 'var(--biqc-bg-input, #0A1018)' }}>
-              <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-                <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Ask BIQc</span>
-                <button onClick={() => setSbOpen(false)} className="p-2 rounded-lg hover:bg-white/5"><X className="w-5 h-5 text-[#64748B]" /></button>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <SoundboardPanel actionMessage={actionMessage} onActionConsumed={onActionConsumed} />
-              </div>
-            </div>
-          </>
-        )}
-      </div>}
 
       {/* Mobile Bottom Navigation */}
       <MobileNav />

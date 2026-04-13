@@ -410,8 +410,7 @@ const Diagnosis = ({ embedded = false }) => {
       {!embedded && (
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Diagnostics</div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Business <em style={{ fontStyle: 'italic', color: '#E85D00' }}>diagnosis</em>.</h1>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Diagnosis</h1>
             <p className="text-sm mt-1" style={{ color: '#8FA0B8' }}>
               Select areas to focus your advisory intelligence on
             </p>

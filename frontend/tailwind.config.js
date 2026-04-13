@@ -10,8 +10,8 @@ module.exports = {
                 fontFamily: {
                         // ── Unified BIQc Typography (aligned with design-system/tokens.js) ──
                         sans:    ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-                        heading: ['Cormorant Garamond', 'Georgia', 'serif'],
-                        display: ['Cormorant Garamond', 'Georgia', 'serif'],
+                        heading: ['Source Serif 4', 'Georgia', 'serif'],
+                        display: ['Source Serif 4', 'Georgia', 'serif'],
                         body:    ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
                         mono:    ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
                 },

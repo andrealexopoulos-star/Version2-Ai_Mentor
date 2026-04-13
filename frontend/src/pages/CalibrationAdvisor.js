@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 
 const CHARCOAL = '#EDF1F7';
 const MUTED = '#8FA0B8';
-const CARD_BORDER = 'rgba(140,170,210,0.15)';
+const CARD_BORDER = 'rgba(140,170,210,0.12)';
 
 const CalibrationAdvisor = () => {
   const cal = useCalibrationState();

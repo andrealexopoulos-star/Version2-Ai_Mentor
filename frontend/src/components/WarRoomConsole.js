@@ -5,7 +5,6 @@ import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { colors, fontFamily, radius, shadow } from '../design-system/tokens';
-import InsightExplainabilityStrip from './InsightExplainabilityStrip';
 import LineageBadge from './LineageBadge';
 import BoardroomConversationList from './boardroom/BoardroomConversationList';
 import BoardroomMessageBubble from './boardroom/BoardroomMessageBubble';
@@ -244,15 +243,6 @@ export function WarRoomConsoleBody({
   }).filter(([, state]) => state && state !== 'live');
   const freshness = integrationStatus?.canonical_truth?.freshness || {};
 
-  const explainability = {
-    whyVisible: connectedSystems.length
-      ? `War Room is grounded in ${connectedSystems.join(', ')} live systems and your latest strategic snapshot.`
-      : 'War Room is ready, but stronger answers require connected CRM, accounting, and email evidence.',
-    whyNow: topAlerts[0]?.detail || 'Strategic state can shift quickly. Interrogate the highest pressure now.',
-    nextAction: topAlerts[0]?.action || 'Ask one high-stakes question and assign a single owner.',
-    ifIgnored: 'Unchallenged strategic drift can compress decision windows and increase execution cost.',
-  };
-
   const filteredAlerts = useMemo(() => {
     if (!selectedDay) return alerts;
     const sameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear()
@@ -390,14 +380,6 @@ export function WarRoomConsoleBody({
                 </p>
               </motion.div>
             )}
-
-            <InsightExplainabilityStrip
-              whyVisible={explainability.whyVisible}
-              whyNow={explainability.whyNow}
-              nextAction={explainability.nextAction}
-              ifIgnored={explainability.ifIgnored}
-              testIdPrefix="war-room-explainability"
-            />
 
             <motion.section
               initial={{ opacity: 0, y: 8 }}

@@ -1,9 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
-import ModernIntegrationBanner from '../../components/website/ModernIntegrationBanner';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
-import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle, DollarSign, TrendingDown, AlertCircle, FileWarning, Check } from 'lucide-react';
+import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle, DollarSign, TrendingDown, AlertCircle, FileWarning } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
 // ─── Reusable card wrappers ───────────────────────────────────────────────────
@@ -15,7 +14,7 @@ const GlassCard = ({ children, className = '' }) => (
   </div>
 );
 
-const StatCard = ({ stat, body, biqc }) => (
+const StatCard = ({ number, stat, body, biqc }) => (
   <div
     className="rounded-2xl p-7 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1"
     style={{
@@ -26,6 +25,7 @@ const StatCard = ({ stat, body, biqc }) => (
       backdropFilter: 'blur(12px)',
     }}
   >
+    <p style={{ fontFamily: fontFamily.display, fontSize: '36px', fontWeight: 700, color: '#E85D00', lineHeight: 1.1, marginBottom: 0 }}>{number}</p>
     <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: '#FFFFFF', fontFamily: fontFamily.body }}>{stat}</p>
     <p className="text-sm leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{body}</p>
     <p className="text-sm italic leading-relaxed" style={{ color: '#E85D00', fontFamily: fontFamily.body }}>{biqc}</p>
@@ -34,32 +34,38 @@ const StatCard = ({ stat, body, biqc }) => (
 
 const STATS = [
   {
-    stat: '90% of data is created every two years',
+    number: '90%',
+    stat: 'of data is created every two years',
     body: <>Yet most businesses use less than <strong style={{ color: '#FFFFFF' }}>10% of it.</strong></>,
     biqc: 'BIQc transforms scattered data into practical business intelligence.',
   },
   {
-    stat: '40% of business decisions lack the right data',
+    number: '40%',
+    stat: 'of business decisions lack the right data',
     body: 'Leaders often rely on instinct instead of insight.',
     biqc: 'BIQc highlights the signals that matter before decisions are made.',
   },
   {
-    stat: '75% of businesses are experimenting with AI',
+    number: '75%',
+    stat: 'of businesses are experimenting with AI',
     body: <>But fewer than <strong style={{ color: '#FFFFFF' }}>5% see real operational value.</strong></>,
     biqc: 'BIQc delivers practical AI insights for everyday decisions.',
   },
   {
+    number: '3%',
     stat: 'Poor decisions can cost up to 3% of revenue',
     body: 'Small mistakes add up quickly.',
     biqc: 'BIQc helps identify risks and opportunities early.',
   },
   {
+    number: '5x',
     stat: 'Data-driven companies grow significantly faster',
     body: 'Intelligence creates competitive advantage.',
     biqc: 'BIQc provides the clarity leaders need to scale.',
   },
   {
-    stat: 'Business leaders spend up to 40% of their time gathering information',
+    number: '40%',
+    stat: 'of their time gathering information',
     body: 'Making decisions consumes far more time than it should.',
     biqc: 'BIQc brings the most important signals from across your business into one place, helping you understand what matters faster.',
   },
@@ -153,8 +159,8 @@ const HomePage = () => (
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes badgePulse {
-          0%,100% { box-shadow: 0 0 0 0 rgba(232,93,0,0); }
-          50%     { box-shadow: 0 0 0 6px rgba(232,93,0,0.08); }
+          0%,100% { box-shadow: 0 0 0 0 rgba(140,170,210,0); }
+          50%     { box-shadow: 0 0 0 6px rgba(140,170,210,0.08); }
         }
         @keyframes orbFloat {
           0%,100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.55; }
@@ -195,17 +201,17 @@ const HomePage = () => (
 
         {/* Badge */}
         <div className="hero-fade-1 inline-flex items-center gap-2.5 px-4 py-2 rounded-full mb-8 cursor-default" style={{
-          background: 'rgba(232,93,0,0.06)',
-          border: '1px solid rgba(232,93,0,0.22)',
+          background: 'linear-gradient(135deg, rgba(140,170,210,0.08), rgba(140,170,210,0.03))',
+          border: '1px solid rgba(140,170,210,0.15)',
           animation: 'heroFadeUp 0.7s ease both 0.05s, badgePulse 4s ease-in-out infinite 1s',
         }}>
           {/* Live indicator dot */}
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: '#E85D00' }} />
-            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#E85D00' }} />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: '#10B981' }} />
+            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#10B981' }} />
           </span>
-          <Shield className="w-3 h-3 flex-shrink-0" style={{ color: '#E85D00' }} />
-          <span style={{ fontFamily: fontFamily.mono, color: '#E85D00', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+          <Shield className="w-3 h-3 flex-shrink-0" style={{ color: '#9BB0CC' }} />
+          <span style={{ fontFamily: fontFamily.mono, color: '#9BB0CC', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
             Australian Owned &amp; Operated
           </span>
         </div>
@@ -223,7 +229,7 @@ const HomePage = () => (
           One intelligence layer for every{' '}
           <span style={{
             fontFamily: fontFamily.display,
-            background: 'linear-gradient(135deg, #FF8C3A 0%, #C65F2E 60%, #A64F26 100%)',
+            background: 'linear-gradient(135deg, #FF7A18 0%, #E85D00 40%, #C8D4E4 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
@@ -246,11 +252,14 @@ const HomePage = () => (
         <div className="hero-fade-4 flex justify-center mb-6">
           <Link
             to="/register-supabase"
-            className="group relative inline-flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5"
+            className="group relative inline-flex items-center justify-center gap-2 font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5"
             style={{
-              background: 'linear-gradient(135deg, #D06832, #A64F26)',
+              background: 'linear-gradient(135deg, #FF7A18, #E85D00)',
               fontFamily: fontFamily.body,
               fontWeight: 600,
+              fontSize: '16px',
+              padding: '14px 32px',
+              borderRadius: '10px',
               boxShadow: '0 8px 28px rgba(198,95,46,0.38), 0 2px 4px rgba(0,0,0,0.3)',
               minWidth: 220,
             }}
@@ -269,16 +278,16 @@ const HomePage = () => (
             { icon: '✅', label: '14-Day Guarantee' },
           ].map((t, i) => (
             <span key={t.label} className="flex items-center gap-1.5">
-              {i > 0 && <span style={{ color: 'rgba(100,116,139,0.5)', marginRight: 4 }}>·</span>}
+              {i > 0 && <span style={{ display: 'inline-block', width: 1, height: 14, background: 'rgba(255,255,255,0.25)', marginRight: 4 }} />}
               <span style={{ fontSize: '13px' }}>{t.icon}</span>
               <span style={{ fontFamily: fontFamily.mono, color: '#64748B', fontSize: '11px', fontWeight: 500 }}>{t.label}</span>
             </span>
           ))}
-          <span style={{ color: 'rgba(100,116,139,0.5)' }}>·</span>
+          <span style={{ display: 'inline-block', width: 1, height: 14, background: 'rgba(255,255,255,0.25)' }} />
           <Link
             to="/login-supabase"
             className="hover:text-white transition-colors"
-            style={{ fontFamily: fontFamily.mono, color: '#64748B', fontSize: '11px' }}
+            style={{ fontFamily: fontFamily.mono, color: '#E85D00', fontSize: '11px' }}
             data-testid="hero-login"
           >
             Already have an account?
@@ -408,6 +417,9 @@ const HomePage = () => (
 
         {/* Section header */}
         <div className="text-center mb-4">
+          <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+            Intelligence Output
+          </p>
           <h2
             className="text-3xl sm:text-4xl lg:text-5xl font-semibold mb-4"
             style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}
@@ -457,7 +469,7 @@ const HomePage = () => (
               <ul className="flex flex-col gap-2 pl-1">
                 {card.bullets.map((b) => (
                   <li key={b} className="flex items-start gap-2">
-                    <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: card.iconColor }} />
+                    <span className="flex-shrink-0 mt-1.5" style={{ width: 6, height: 6, borderRadius: '50%', background: card.iconColor }} />
                     <span className="text-xs leading-relaxed" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{b}</span>
                   </li>
                 ))}
@@ -478,9 +490,9 @@ const HomePage = () => (
         <div
           className="mt-6 rounded-2xl p-8 text-center"
           style={{
-            background: 'linear-gradient(135deg, rgba(198,95,46,0.07) 0%, rgba(15,23,32,0.6) 50%, rgba(16,185,129,0.05) 100%)',
-            border: '1px solid rgba(232,93,0,0.2)',
-            boxShadow: '0 0 60px rgba(232,93,0,0.06)',
+            background: 'linear-gradient(135deg, rgba(140,170,210,0.04), rgba(255,122,24,0.02))',
+            border: '1px solid rgba(140,170,210,0.15)',
+            boxShadow: '0 0 60px rgba(140,170,210,0.04)',
           }}
         >
           <h3 className="text-lg sm:text-xl font-bold mb-3" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
@@ -497,11 +509,12 @@ const HomePage = () => (
       </div>
     </section>
 
-    <ModernIntegrationBanner />
-
     {/* AI era evidence cards */}
     <section className="py-14 sm:py-16" style={{ background: '#0B1120' }} data-testid="ai-era-section">
       <div className="max-w-5xl mx-auto px-6">
+        <p className="text-xs font-semibold tracking-widest uppercase mb-3 text-center" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+          The Opportunity
+        </p>
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 text-center"
           style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
           What Businesses Are Achieving In The AI Era
@@ -520,19 +533,16 @@ const HomePage = () => (
     </section>
 
     {/* TRUST & COMPLIANCE BADGES */}
-    <section className="py-10" style={{ background: '#0B1120', borderTop: '1px solid rgba(232,93,0,0.1)', borderBottom: '1px solid rgba(232,93,0,0.1)' }} data-testid="trust-badges">
+    <section className="py-10" style={{ background: '#0B1120', borderTop: '1px solid rgba(140,170,210,0.1)', borderBottom: '1px solid rgba(140,170,210,0.1)' }} data-testid="trust-badges">
       <div className="max-w-5xl mx-auto px-6">
-        <p className="text-center text-xs font-semibold tracking-widest uppercase mb-6" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
-          Security &amp; Compliance
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-4">
           {[
             { icon: '🇦🇺', label: 'Australian Hosted', sub: 'Sydney & Melbourne data centres' },
             { icon: '🔒', label: 'AES-256 Encrypted', sub: 'Defence-grade at rest & in transit' },
             { icon: '🛡️', label: 'Privacy Act Compliant', sub: 'Australian Privacy Principles' },
             { icon: '✅', label: '14-Day Guarantee', sub: 'No questions asked refund' },
           ].map(b => (
-            <div key={b.label} className="flex items-start gap-3 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,93,0,0.12)' }}>
+            <div key={b.label} className="flex items-center gap-3 p-4 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(140,170,210,0.15)' }}>
               <span className="text-2xl">{b.icon}</span>
               <div>
                 <p className="text-xs font-semibold" style={{ color: '#E6EEF7', fontFamily: fontFamily.mono }}>{b.label}</p>
@@ -547,15 +557,12 @@ const HomePage = () => (
     {/* WHAT COGNITION DELIVERS */}
     <section className="py-14 sm:py-20" style={{ background: '#0B1120' }} data-testid="cognition-section">
       <div className="max-w-5xl mx-auto px-6">
-        <div className="mb-10 sm:mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-[2px]" style={{ background: '#E85D00' }} />
-            <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>What Cognition-as-a-Service Delivers</span>
-          </div>
+        <div className="mb-10 sm:mb-12 text-center">
+          <p className="text-xs font-medium tracking-widest uppercase mb-4" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>What Cognition-as-a-Service Delivers</p>
           <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
-          <p className="text-base max-w-xl" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>Businesses embedding AI-driven decision systems experience:</p>
+          <p className="text-base max-w-xl mx-auto" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>Businesses embedding AI-driven decision systems experience:</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -674,8 +681,8 @@ const HomePage = () => (
         top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
       }} />
       <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-2xl sm:text-3xl font-medium mb-4" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>
-          Stop reacting. Start <span style={{ color: '#E85D00' }}>preventing.</span>
+        <h2 className="font-medium mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: '40px' }}>
+          Stop reacting. Start preventing.
         </h2>
         <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: '#8FA0B8', lineHeight: 1.7 }}>
           Join the operators who replaced reactive firefighting with autonomous intelligence.

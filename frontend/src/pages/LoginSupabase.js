@@ -334,7 +334,7 @@ const LoginSupabase = () => {
           <div className="flex flex-col gap-3 mb-6">
             <button type="button" onClick={() => handleOAuthSignIn('google')} disabled={!hasSupabaseConfig || oauthLoading || loading}
               className="w-full flex items-center gap-3 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
-              style={{ fontFamily: fontFamily.body, color: '#EDF1F7', background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', padding: '14px 18px', cursor: 'pointer' }}
+              style={{ fontFamily: fontFamily.body, color: '#EDF1F7', background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', padding: '14px 18px', cursor: 'pointer' }}
               data-testid="login-google-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>connecting...</span> : (
                 <>
@@ -345,7 +345,7 @@ const LoginSupabase = () => {
             </button>
             <button type="button" onClick={() => handleOAuthSignIn('azure')} disabled={!hasSupabaseConfig || oauthLoading || loading}
               className="w-full flex items-center gap-3 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
-              style={{ fontFamily: fontFamily.body, color: '#EDF1F7', background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', padding: '14px 18px', cursor: 'pointer' }}
+              style={{ fontFamily: fontFamily.body, color: '#EDF1F7', background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', padding: '14px 18px', cursor: 'pointer' }}
               data-testid="login-microsoft-btn">
               {oauthLoading ? <span className="text-xs" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>connecting...</span> : (
                 <>
@@ -358,9 +358,9 @@ const LoginSupabase = () => {
 
           {/* Divider */}
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 h-px" style={{ background: 'rgba(140,170,210,0.15)' }} />
+            <div className="flex-1 h-px" style={{ background: 'rgba(140,170,210,0.12)' }} />
             <span className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#708499' }}>or use email</span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(140,170,210,0.15)' }} />
+            <div className="flex-1 h-px" style={{ background: 'rgba(140,170,210,0.12)' }} />
           </div>
 
           {/* Form */}
@@ -372,7 +372,7 @@ const LoginSupabase = () => {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="you@yourbusiness.com.au" required
                   className="h-12 text-sm rounded-xl"
-                  style={{ fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', color: '#EDF1F7' }}
+                  style={{ fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', color: '#EDF1F7' }}
                   data-testid="login-email-input" />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -382,7 +382,7 @@ const LoginSupabase = () => {
                     value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="••••••••••" required
                     className="h-12 pr-12 text-sm rounded-xl"
-                    style={{ fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', color: '#EDF1F7' }}
+                    style={{ fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', color: '#EDF1F7' }}
                     data-testid="login-password-input" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors" style={{ color: '#708499' }}
@@ -420,7 +420,7 @@ const LoginSupabase = () => {
               </div>
             )}
             {fallbackRequired && fallbackChallenge && (
-              <div className="rounded-xl border px-3 py-3 mt-5" style={{ borderColor: 'rgba(140,170,210,0.15)', background: 'rgba(14,22,40,0.5)' }} data-testid="login-fallback-captcha">
+              <div className="rounded-xl border px-3 py-3 mt-5" style={{ borderColor: 'rgba(140,170,210,0.12)', background: 'rgba(14,22,40,0.5)' }} data-testid="login-fallback-captcha">
                 <p className="text-xs mb-2" style={{ color: '#708499', fontFamily: fontFamily.body }}>
                   Verification required: solve {fallbackChallenge.prompt}
                 </p>
@@ -430,7 +430,7 @@ const LoginSupabase = () => {
                   onChange={(e) => setFallbackAnswer(e.target.value)}
                   placeholder="Your answer"
                   className="h-10 text-sm rounded-lg"
-                  style={{ fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', color: '#EDF1F7' }}
+                  style={{ fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', color: '#EDF1F7' }}
                   data-testid="login-fallback-captcha-input"
                 />
               </div>

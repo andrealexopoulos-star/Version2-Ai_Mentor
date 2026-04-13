@@ -53,7 +53,7 @@ const ResetPassword = () => {
       {/* Card */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 relative z-10">
         <div className="w-full max-w-[480px]">
-          <div className="rounded-2xl p-10" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }} data-testid="reset-card">
+          <div className="rounded-2xl p-10" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }} data-testid="reset-card">
             {sent ? (
               <div className="text-center" data-testid="reset-sent">
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-6" style={{ background: 'rgba(16,185,129,0.12)' }}>
@@ -86,7 +86,7 @@ const ResetPassword = () => {
                     <Input id="reset-email" type="email" inputMode="email" autoComplete="email" value={email}
                       onChange={(e) => setEmail(e.target.value)} placeholder="you@yourbusiness.com.au" required
                       className="h-12 text-sm rounded-xl"
-                      style={{ fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.15)', color: '#EDF1F7' }}
+                      style={{ fontFamily: fontFamily.body, background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)', color: '#EDF1F7' }}
                       data-testid="reset-email-input" />
                   </div>
                   <button type="submit" disabled={loading}
@@ -108,7 +108,7 @@ const ResetPassword = () => {
           </div>
 
           {/* SSO info aside */}
-          <div className="flex items-start gap-4 mt-6 p-5 rounded-xl" style={{ background: '#121D30', border: '1px solid rgba(140,170,210,0.15)' }}>
+          <div className="flex items-start gap-4 mt-6 p-5 rounded-xl" style={{ background: '#121D30', border: '1px solid rgba(140,170,210,0.12)' }}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'rgba(232,93,0,0.12)' }}>
               <Info className="w-4 h-4" style={{ color: '#E85D00' }} />
             </div>

@@ -158,8 +158,7 @@ const Documents = () => {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-              <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: colors.brand }}>— Library</div>
-              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: colors.text, fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Document <em style={{ fontStyle: 'italic', color: colors.brand }}>vault</em>.</h1>
+              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: colors.text, fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Documents</h1>
             </div>
             <div className="flex items-center gap-3">
               <Button

@@ -5,7 +5,6 @@ import { useSnapshot } from '../hooks/useSnapshot';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { colors, fontFamily, spacing, radius, shadow } from '../design-system/tokens';
-import InsightExplainabilityStrip from './InsightExplainabilityStrip';
 import LineageBadge from './LineageBadge';
 import BoardroomConversationList from './boardroom/BoardroomConversationList';
 import BoardroomMessageBubble from './boardroom/BoardroomMessageBubble';
@@ -406,15 +405,6 @@ export function BoardRoomBody({
     el.style.height = Math.min(el.scrollHeight, 160) + 'px';
   }, []);
 
-  const explainability = {
-    whyVisible: integrationLabels.length
-      ? `Boardroom is escalating this based on ${integrationLabels.length} connected systems (${integrationLabels.join(', ')}).`
-      : 'Boardroom is active, but richer diagnosis needs connected systems and live signals.',
-    whyNow: topAlerts[0]?.detail || truthGateMessage || narrative?.force_summary || 'Signal pressure is rising across monitored domains.',
-    nextAction: topAlerts[0]?.action || narrative?.strategic_direction || 'Run a diagnosis area and commit one owner this session.',
-    ifIgnored: diagnosisResult?.if_ignored || 'Decision delay narrows options and increases second-order impact.',
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -520,13 +510,6 @@ export function BoardRoomBody({
                 />
               </div>
             </div>
-            <InsightExplainabilityStrip
-              whyVisible={explainability.whyVisible}
-              whyNow={explainability.whyNow}
-              nextAction={explainability.nextAction}
-              ifIgnored={explainability.ifIgnored}
-              testIdPrefix="boardroom-explainability"
-            />
           </motion.section>
 
           <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.04 }} data-testid="diagnosis-zone" aria-label="Diagnosis selection zone">
@@ -612,13 +595,6 @@ export function BoardRoomBody({
                       {diagnosisResult.what_to_watch && <p className="text-sm" style={{ color: colors.warning }}>What to watch: {diagnosisResult.what_to_watch}</p>}
                       {diagnosisResult.if_ignored && <p className="text-sm" style={{ color: colors.danger }}>If ignored: {diagnosisResult.if_ignored}</p>}
                       <LineageBadge lineage={diagnosisResult.lineage} confidence_score={toConfidencePct(diagnosisResult.confidence_score)} compact />
-                      <InsightExplainabilityStrip
-                        whyVisible={diagnosisResult.why_visible || explainability.whyVisible}
-                        whyNow={diagnosisResult.why_now || explainability.whyNow}
-                        nextAction={diagnosisResult.next_action || explainability.nextAction}
-                        ifIgnored={diagnosisResult.if_ignored || explainability.ifIgnored}
-                        testIdPrefix="boardroom-diagnosis-explainability"
-                      />
                     </motion.article>
                   )}
                 </motion.div>

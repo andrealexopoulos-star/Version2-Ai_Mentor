@@ -5,8 +5,6 @@ import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
 import { Lock, RefreshCw, Layers } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
-import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
-import ActionOwnershipCard from '../components/ActionOwnershipCard';
 
 /* ── Shared surface ───────────────────────────────────────────────── */
 const Panel = ({ children, className = '', style = {}, ...rest }) => (
@@ -182,20 +180,6 @@ const OpsAdvisoryCentre = () => {
     { label: 'Process Score',     value: kpis.process_score ?? '—',    delta: kpis.process_score_delta || null,     deltaDir: 'up',   valueClass: 'good', testId: 'ops-kpi-process' },
   ];
 
-  const explainability = {
-    whyVisible: 'Ops Advisory is generated from your profile, connected operational telemetry, and recent execution signals.',
-    whyNow: firstItem?.reason || 'Advisories are refreshed continuously as new operational data enters BIQc.',
-    nextAction: firstItem?.actions?.[0] || 'Assign one owner to the top recommendation and execute within this operating cycle.',
-    ifIgnored: 'Execution drift can compound into service slippage, rework, and customer trust decline.',
-  };
-
-  const actionOwnership = {
-    owner: 'Operations lead',
-    deadline: 'Within 48 hours',
-    checkpoint: firstItem?.title || 'Complete first advisory recommendation and review status in next stand-up.',
-    successMetric: `Recommendations used ${usage.used || 0}/${usage.limit || 0}`,
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px] animate-fade-in" data-testid="ops-advisory-page" style={{ fontFamily: fontFamily.body }}>
@@ -203,16 +187,9 @@ const OpsAdvisoryCentre = () => {
         {/* ── HEADER ──────────────────────────────────────────────── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div
-              className="text-[11px] uppercase tracking-[0.08em] mb-2"
-              style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}
-              data-testid="ops-advisory-badge"
-            >
-              — Ops Advisory
-            </div>
             <h1
               className="font-medium"
-              style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}
+              style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}
               data-testid="ops-advisory-title"
             >
               Ops Advisory Centre
@@ -279,24 +256,6 @@ const OpsAdvisoryCentre = () => {
             )}
           </div>
         </Panel>
-
-        {/* ── EXPLAINABILITY + OWNERSHIP ──────────────────────────── */}
-        <InsightExplainabilityStrip
-          whyVisible={explainability.whyVisible}
-          whyNow={explainability.whyNow}
-          nextAction={explainability.nextAction}
-          ifIgnored={explainability.ifIgnored}
-          testIdPrefix="ops-advisory-explainability"
-        />
-
-        <ActionOwnershipCard
-          title="Ops advisory owner plan"
-          owner={actionOwnership.owner}
-          deadline={actionOwnership.deadline}
-          checkpoint={actionOwnership.checkpoint}
-          successMetric={actionOwnership.successMetric}
-          testIdPrefix="ops-advisory-action-ownership"
-        />
 
         {/* ── LOADING STATE ───────────────────────────────────────── */}
         {loading ? (
