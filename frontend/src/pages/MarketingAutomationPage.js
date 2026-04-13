@@ -107,17 +107,16 @@ const MarketingAutomationPage = () => {
         </div>
 
         {/* KPI Strip — matches mockup ma-kpis */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 32 }}>
           {[
-            { label: 'Active Campaigns', value: '4', delta: '+1 this week', up: true },
-            { label: 'Emails Sent (30d)', value: '1,247', delta: '+18% vs prev', up: true },
-            { label: 'Avg Open Rate', value: '34.2%', delta: '+2.1pts', up: true },
-            { label: 'Conversions', value: '23', delta: '-3 vs prev', up: false },
+            { label: 'Active Automations', value: '4' },
+            { label: 'Emails Sent', value: '1,247' },
+            { label: 'Open Rate', value: '34.2%' },
+            { label: 'Click Rate', value: '12.4%' },
           ].map(kpi => (
-            <div key={kpi.label} className="rounded-2xl p-4" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)' }}>
-              <span className="text-xs font-semibold uppercase tracking-wider block mb-1" style={{ color: '#708499' }}>{kpi.label}</span>
-              <span className="text-[28px] font-bold block" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7', lineHeight: 1 }}>{kpi.value}</span>
-              <span className="text-xs font-medium mt-1 block" style={{ color: kpi.up ? '#16A34A' : '#DC2626' }}>{kpi.delta}</span>
+            <div key={kpi.label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20 }}>
+              <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
+              <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>{kpi.value}</div>
             </div>
           ))}
         </div>
@@ -138,7 +137,7 @@ const MarketingAutomationPage = () => {
 
         {/* Campaign Tabs — matches mockup ma-tabs */}
         <div className="flex gap-1 border-b overflow-x-auto" style={{ borderColor: 'rgba(140,170,210,0.12)' }}>
-          {['All Campaigns', 'Active', 'Scheduled', 'Drafts', 'Completed'].map((tab, i) => (
+          {['All Campaigns', 'Active', 'Paused', 'Draft'].map((tab, i) => (
             <button key={tab} className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ color: i === 0 ? '#EDF1F7' : '#8FA0B8', borderBottom: i === 0 ? '2px solid #E85D00' : '2px solid transparent' }}>{tab}</button>
           ))}
         </div>

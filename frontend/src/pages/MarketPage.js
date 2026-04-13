@@ -241,7 +241,7 @@ const MarketPage = () => {
   return (
     <DashboardLayout actionMessage={actionMessage} onActionConsumed={() => setActionMessage('')}>
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body, overflowY: 'visible' }} data-testid="market-page">
-        <style>{`@keyframes snapFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}`}</style>
+        <style>{`@keyframes snapFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}@media(max-width:1100px){[data-testid="position-hero"]{grid-template-columns:1fr!important}[data-testid="position-hero"]>div:last-child{order:-1}}`}</style>
 
         {/* ═══ HEADER ═══ */}
         <div>
@@ -249,6 +249,61 @@ const MarketPage = () => {
           <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>You're <em style={{ fontStyle: 'italic', color: '#E85D00' }}>{hasLiveMarketContext ? st.label.toLowerCase() : 'calibrating'}</em>.</h1>
           <p className="text-sm mt-2" style={{ color: '#8FA0B8' }}>BIQc reads market signals every 6 hours: competitor pricing, hiring, press, customer sentiment, and search intent in your category.</p>
         </div>
+
+        {/* ═══ POSITION HERO ═══ */}
+        {!loading && hasLiveMarketContext && (
+          <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 20, padding: 32, marginBottom: 24, display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32, alignItems: 'center', overflow: 'hidden', position: 'relative' }} data-testid="position-hero">
+            {/* Left: Verdict */}
+            <div>
+              <div style={{ fontFamily: fontFamily.mono, fontSize: 11, color: '#E85D00', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Market Position</div>
+              <div style={{ fontFamily: fontFamily.display, fontSize: 'clamp(2.5rem, 5vw, 4rem)', color: '#EDF1F7', lineHeight: 1.05, letterSpacing: '-0.02em', margin: '12px 0 16px' }}>
+                {stateStatus === 'STABLE' ? <>Holding <em style={{ color: '#E85D00', fontStyle: 'italic' }}>steady</em>.</> :
+                 stateStatus === 'DRIFT' ? <>Starting to <em style={{ color: '#E85D00', fontStyle: 'italic' }}>drift</em>.</> :
+                 stateStatus === 'COMPRESSION' ? <>Under <em style={{ color: '#E85D00', fontStyle: 'italic' }}>pressure</em>.</> :
+                 stateStatus === 'CRITICAL' ? <>Position <em style={{ color: '#E85D00', fontStyle: 'italic' }}>at risk</em>.</> :
+                 <>Position <em style={{ color: '#E85D00', fontStyle: 'italic' }}>calibrating</em>.</>}
+              </div>
+              <div style={{ color: '#8FA0B8', fontSize: 15, lineHeight: 1.6, maxWidth: '50ch' }}>
+                {interpretation || 'BIQc evaluates your market position using signal data from connected integrations, competitive intel, and business calibration.'}
+              </div>
+              <div style={{ display: 'flex', gap: 24, marginTop: 24, flexWrap: 'wrap' }}>
+                {[
+                  { label: 'Confidence', value: confidence ? `${confidence}%` : '—' },
+                  { label: 'Data Sources', value: integrationStatus?.canonical_truth?.total_connected || '0' },
+                  { label: 'Last Signal', value: 'Live' },
+                ].map(item => (
+                  <div key={item.label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontFamily: fontFamily.mono, fontSize: 10, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{item.label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#EDF1F7' }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: SVG Gauge */}
+            <div style={{ position: 'relative', width: 240, height: 240, margin: '0 auto' }}>
+              <svg width="100%" height="100%" viewBox="0 0 240 240" style={{ transform: 'rotate(-90deg)' }}>
+                <defs>
+                  <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#FF7A18" />
+                    <stop offset="100%" stopColor="#E85D00" />
+                  </linearGradient>
+                </defs>
+                <circle cx="120" cy="120" r="100" fill="none" stroke="var(--surface-sunken, #060A12)" strokeWidth="14" />
+                <circle cx="120" cy="120" r="100" fill="none" stroke="url(#gaugeGrad)" strokeWidth="14" strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 100}
+                  strokeDashoffset={2 * Math.PI * 100 * (1 - (confidence || 0) / 100)} />
+              </svg>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                <span style={{ fontFamily: fontFamily.display, fontSize: 64, lineHeight: 1, color: '#EDF1F7', letterSpacing: '-0.04em' }}>{confidence || '—'}</span>
+                <span style={{ fontFamily: fontFamily.mono, fontSize: 11, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>Position Score</span>
+                <span style={{ fontSize: 13, color: '#E85D00', fontWeight: 600, marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  {stateStatus === 'STABLE' ? '↑ Holding' : stateStatus === 'DRIFT' ? '↗ Drifting' : '↓ Declining'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {loading && <PageLoadingState message="Pulling your latest market signals…" />}
 

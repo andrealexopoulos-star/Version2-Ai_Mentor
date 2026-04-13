@@ -117,7 +117,7 @@ const SubscribePage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12" style={{ background: 'var(--biqc-bg)' }} data-testid="subscribe-page">
+    <div className="min-h-screen flex flex-col items-center px-6 py-12 max-w-4xl mx-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="subscribe-page">
       {/* Payment Result Banner */}
       {paymentResult && (
         <div className="w-full max-w-xl mb-6 p-4 rounded-xl flex items-center gap-3" style={{

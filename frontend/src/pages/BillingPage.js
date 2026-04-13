@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { fontFamily } from '../design-system/tokens';
-import { CreditCard, Building2, RefreshCw, CircleCheck, CircleAlert } from 'lucide-react';
+import { CreditCard, Building2, RefreshCw, CircleCheck, CircleAlert, Download, Clock, Zap, Check } from 'lucide-react';
 
 const TIER_DISPLAY = {
   free: 'Free',
@@ -16,6 +16,22 @@ const TIER_DISPLAY = {
   custom_build: 'Custom',
   beta: 'Beta',
   super_admin: 'Admin',
+};
+
+const TIER_PRICE = {
+  free: '$0', trial: '$0', starter: '$69', foundation: '$69', growth: '$69',
+  pro: '$199', professional: '$199', enterprise: 'Custom',
+  custom_build: 'Custom', beta: '$0', super_admin: '$0',
+};
+
+const PLAN_FEATURES = {
+  free: ['Ask BIQc advisor', 'Alert Centre', 'Basic actions'],
+  growth: ['BoardRoom strategic chat', 'Revenue analytics', 'Operations metrics', 'SOP generator', 'Exposure scan', 'Marketing automation', 'Reports library', 'Decision tracker'],
+  starter: ['BoardRoom strategic chat', 'Revenue analytics', 'Operations metrics', 'SOP generator', 'Exposure scan', 'Marketing automation', 'Reports library', 'Decision tracker'],
+  foundation: ['BoardRoom strategic chat', 'Revenue analytics', 'Operations metrics', 'SOP generator', 'Exposure scan', 'Marketing automation', 'Reports library', 'Decision tracker'],
+  pro: ['Everything in Growth', 'WarRoom crisis console', 'Risk intelligence', 'Compliance centre', 'Advanced analysis', 'Unlimited AI queries'],
+  professional: ['Everything in Growth', 'WarRoom crisis console', 'Risk intelligence', 'Compliance centre', 'Advanced analysis', 'Unlimited AI queries'],
+  enterprise: ['Everything in Pro', 'Dedicated account manager', 'Custom integrations', 'SLA guarantees', 'On-premise option'],
 };
 
 const Panel = ({ children, className = '' }) => (
@@ -84,31 +100,43 @@ const BillingPage = () => {
     [connectors]
   );
 
+  const priceLabel = TIER_PRICE[rawTier] || '$0';
+  const features = PLAN_FEATURES[rawTier] || PLAN_FEATURES.free;
+  const isHighestPlan = ['enterprise', 'custom_build', 'super_admin'].includes(rawTier);
+
+  // Determine usage meter color: green < 60%, amber 60-85%, red > 85%
+  const meterColor = (used, limit) => {
+    const pct = limit > 0 ? (used / limit) * 100 : 0;
+    if (pct >= 85) return '#DC2626';
+    if (pct >= 60) return '#D97706';
+    return '#16A34A';
+  };
+
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }}>
+      <div className="space-y-8 max-w-[1200px]" style={{ fontFamily: fontFamily.body }}>
+
+        {/* ── Header ── */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-              Billing & Subscription.
+            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: '28px', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              Billing & Subscription
             </h1>
             <p className="text-sm" style={{ color: '#8FA0B8' }}>
-              Manage your plan, usage, and payment details.
-            </p>
-            <p className="mt-1 text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>
-              Current plan: {planLabel}
+              Manage your plan, payment method, and view invoice history.
             </p>
           </div>
           <button
             onClick={load}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-colors hover:bg-white/5"
-            style={{ border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}
+            style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8', fontFamily: fontFamily.mono }}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh billing
+            Refresh
           </button>
         </div>
 
+        {/* ── Connector badges ── */}
         <div className="flex flex-wrap gap-2">
           {connectorBadges.map((badge) => (
             <span
@@ -127,6 +155,74 @@ const BillingPage = () => {
           ))}
         </div>
 
+        {/* ── Plan Card (mockup spec section 1) ── */}
+        <div
+          className="rounded-2xl p-6"
+          style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
+        >
+          <div className="grid gap-5" style={{ gridTemplateColumns: '1fr auto' }}>
+            {/* Left: plan info */}
+            <div>
+              {/* Badge */}
+              <div
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider mb-3"
+                style={{ background: 'rgba(232,93,0,0.12)', color: '#E85D00', letterSpacing: '0.08em' }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#E85D00' }} />
+                Current Plan
+              </div>
+
+              {/* Plan name */}
+              <h2 className="text-2xl mb-1" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
+                {planLabel}
+              </h2>
+
+              {/* Price */}
+              <div className="flex items-baseline gap-1 mb-3">
+                <span className="font-bold" style={{ fontFamily: fontFamily.mono, fontSize: '36px', color: '#EDF1F7', lineHeight: 1 }}>
+                  {priceLabel}
+                </span>
+                <span className="text-sm" style={{ color: '#708499' }}>/ month</span>
+              </div>
+
+              {/* Renewal info */}
+              <div className="flex items-center gap-2 text-xs mb-4" style={{ color: '#708499' }}>
+                <Clock className="w-3.5 h-3.5 shrink-0" />
+                <span>Renews {overview?.subscription?.next_renewal || 'next billing cycle'} · Billed monthly</span>
+              </div>
+
+              {/* Feature checklist */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                {features.map((feat) => (
+                  <div key={feat} className="flex items-center gap-2 text-sm" style={{ color: '#8FA0B8' }}>
+                    <Check className="w-4 h-4 shrink-0" style={{ color: '#16A34A' }} />
+                    {feat}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: actions */}
+            <div className="flex flex-col gap-3 items-end">
+              {!isHighestPlan && (
+                <button
+                  className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:shadow-lg whitespace-nowrap"
+                  style={{ background: 'linear-gradient(135deg, #E85D00, #FF7A1A)' }}
+                >
+                  Upgrade to Pro — $199/mo
+                </button>
+              )}
+              <button
+                className="px-5 py-2.5 rounded-lg text-sm font-medium transition-colors hover:text-[#EDF1F7] whitespace-nowrap"
+                style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}
+              >
+                Manage subscription
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Summary cards ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <Panel>
             <div className="flex items-center gap-2 mb-2">
@@ -169,94 +265,161 @@ const BillingPage = () => {
           </Panel>
         </div>
 
-        {/* Usage This Period — matches mockup usage meters */}
+        {/* ── Usage This Period (mockup spec section 2) ── */}
         <div>
-          <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Usage This Period</h2>
+          <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Usage This Period</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { label: 'AI Queries', used: 247, limit: 500, color: '#16A34A', note: 'Resets 10 May 2026' },
-              { label: 'BoardRoom Sessions', used: 18, limit: 30, color: '#D97706', note: 'Resets 10 May 2026' },
-              { label: 'Report Exports', used: 5, limit: 20, color: '#16A34A', note: 'Resets 10 May 2026' },
-            ].map(m => (
-              <Panel key={m.label}>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold" style={{ color: '#EDF1F7' }}>{m.label}</span>
-                  <span className="text-xs" style={{ fontFamily: fontFamily.mono, color: '#8FA0B8' }}>{m.used} / {m.limit}</span>
-                </div>
-                <div className="h-2 rounded-full mb-2" style={{ background: 'rgba(140,170,210,0.12)' }}>
-                  <div className="h-2 rounded-full transition-all" style={{ width: `${(m.used / m.limit) * 100}%`, background: m.color }} />
-                </div>
-                <span className="text-xs" style={{ color: '#708499' }}>{m.note} · {m.limit - m.used} remaining</span>
-              </Panel>
-            ))}
+              { label: 'AI Queries', used: overview?.usage?.ai_queries_used ?? 247, limit: overview?.usage?.ai_queries_limit ?? 500, note: 'Resets 10 May 2026' },
+              { label: 'BoardRoom Sessions', used: overview?.usage?.boardroom_used ?? 18, limit: overview?.usage?.boardroom_limit ?? 30, note: 'Resets 10 May 2026' },
+              { label: 'Report Exports', used: overview?.usage?.exports_used ?? 5, limit: overview?.usage?.exports_limit ?? 20, note: 'Resets 10 May 2026' },
+            ].map(m => {
+              const pct = m.limit > 0 ? Math.min((m.used / m.limit) * 100, 100) : 0;
+              const color = meterColor(m.used, m.limit);
+              return (
+                <Panel key={m.label}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold" style={{ color: '#EDF1F7' }}>{m.label}</span>
+                    <span className="text-xs" style={{ fontFamily: fontFamily.mono, color: '#8FA0B8' }}>{m.used} / {m.limit}</span>
+                  </div>
+                  <div className="rounded-full mb-2 overflow-hidden" style={{ height: '8px', background: 'rgba(140,170,210,0.08)' }}>
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${pct}%`, background: color, transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                    />
+                  </div>
+                  <span className="text-xs" style={{ color: '#708499' }}>{m.note} · {m.limit - m.used} remaining</span>
+                </Panel>
+              );
+            })}
           </div>
         </div>
 
-        {/* Payment Method — matches mockup */}
+        {/* ── Payment Method (mockup spec section 3) ── */}
         <div>
-          <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Payment Method</h2>
+          <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Payment Method</h2>
           <Panel>
             <div className="flex items-center gap-4 flex-wrap">
-              <div className="w-14 h-9 rounded-md flex items-center justify-center text-white text-[11px] font-bold shrink-0" style={{ background: 'linear-gradient(135deg, #1a1f71, #2b4acb)', letterSpacing: '0.05em' }}>VISA</div>
-              <div className="flex-1">
-                <p className="text-sm font-medium" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>.... .... .... 4291</p>
+              <div
+                className="w-14 h-9 rounded-md flex items-center justify-center text-white text-[11px] font-bold shrink-0"
+                style={{ background: 'linear-gradient(135deg, #1a1f71, #2b4acb)', letterSpacing: '0.05em' }}
+              >
+                VISA
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7' }}>
+                  {'\u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 4291'}
+                </p>
                 <p className="text-xs" style={{ color: '#708499' }}>Expires 08/2028</p>
               </div>
               <div className="flex gap-2">
-                <button className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7]" style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}>Update card</button>
-                <button className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7]" style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}>Add new</button>
+                <button
+                  className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7] hover:border-[rgba(140,170,210,0.25)]"
+                  style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}
+                >
+                  Update card
+                </button>
+                <button
+                  className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7] hover:border-[rgba(140,170,210,0.25)]"
+                  style={{ border: '1px solid rgba(140,170,210,0.12)', color: '#8FA0B8' }}
+                >
+                  Add new
+                </button>
               </div>
             </div>
           </Panel>
         </div>
 
-        {/* Invoice History — matches mockup table */}
+        {/* ── Invoice History (mockup spec section 4) ── */}
         <div>
-          <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Invoice History</h2>
-          <div className="rounded-2xl overflow-hidden" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)' }}>
+          <h2 className="text-[22px] font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>Invoice History</h2>
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}>
             <table className="w-full" style={{ borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'rgba(140,170,210,0.06)' }}>
                   {['Date', 'Description', 'Amount', 'Status', 'Invoice'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#708499', borderBottom: '1px solid rgba(140,170,210,0.12)' }}>{h}</th>
+                    <th
+                      key={h}
+                      className="text-left px-4 py-3 text-[10px] font-semibold uppercase"
+                      style={{ color: '#708499', borderBottom: '1px solid rgba(140,170,210,0.12)', fontFamily: fontFamily.mono, letterSpacing: '0.08em' }}
+                    >
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {(charges || []).slice(0, 8).map((row, i) => (
-                  <tr key={row.session_id || `${row.created_at}-${row.amount}-${i}`} className="hover:bg-white/[0.02]">
-                    <td className="px-4 py-3 text-sm" style={{ color: '#8FA0B8', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>{row.created_at || ''}</td>
-                    <td className="px-4 py-3 text-sm" style={{ color: '#EDF1F7', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>{row.tier || 'Growth Plan'} — Monthly</td>
-                    <td className="px-4 py-3 text-sm font-semibold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>{money(row.amount, row.currency || chargesSummary.currency || 'AUD')}</td>
-                    <td className="px-4 py-3" style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background: row.payment_status === 'paid' ? '#D1FAE5' : '#FEF3C7', color: row.payment_status === 'paid' ? '#065F46' : '#92400E' }}>{row.payment_status || 'Paid'}</span>
-                    </td>
-                    <td className="px-4 py-3" style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
-                      <span className="text-xs font-medium cursor-pointer hover:underline" style={{ color: '#E85D00' }}>PDF</span>
+                {(charges || []).slice(0, 8).map((row, i) => {
+                  const status = (row.payment_status || 'paid').toLowerCase();
+                  const statusStyles = {
+                    paid:    { background: '#D1FAE5', color: '#065F46' },
+                    pending: { background: '#FEF3C7', color: '#92400E' },
+                    failed:  { background: '#FEE2E2', color: '#991B1B' },
+                  };
+                  const sStyle = statusStyles[status] || statusStyles.paid;
+                  return (
+                    <tr key={row.session_id || `${row.created_at}-${row.amount}-${i}`} className="hover:bg-white/[0.02]">
+                      <td className="px-4 py-3 text-sm" style={{ color: '#8FA0B8', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
+                        {row.created_at || ''}
+                      </td>
+                      <td className="px-4 py-3 text-sm" style={{ color: '#EDF1F7', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
+                        {row.tier || planLabel} Plan — Monthly
+                      </td>
+                      <td className="px-4 py-3 text-sm font-semibold" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7', borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
+                        {money(row.amount, row.currency || chargesSummary.currency || 'AUD')}
+                      </td>
+                      <td className="px-4 py-3" style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
+                        <span
+                          className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+                          style={{ ...sStyle, letterSpacing: '0.08em' }}
+                        >
+                          {status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3" style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
+                        <span className="inline-flex items-center gap-1 text-xs font-medium cursor-pointer hover:underline" style={{ color: '#E85D00' }}>
+                          <Download className="w-3.5 h-3.5" />
+                          PDF
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!loading && (!charges || charges.length === 0) && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-center text-xs" style={{ color: '#64748B' }}>
+                      No invoices found yet.
                     </td>
                   </tr>
-                ))}
-                {!loading && (!charges || charges.length === 0) && (
-                  <tr><td colSpan={5} className="px-4 py-6 text-center text-xs" style={{ color: '#64748B' }}>No invoices found yet.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Upgrade CTA — matches mockup gradient banner */}
-        <div className="rounded-2xl p-8 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #111827, #1A1A2E)' }}>
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 120%, rgba(232,93,0,0.25), transparent 60%)' }} />
-          <div className="relative z-10">
-            <h2 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: fontFamily.display }}>Unlock the full power of BIQc</h2>
-            <p className="text-sm mb-5 mx-auto max-w-md" style={{ color: 'rgba(255,255,255,0.6)' }}>Upgrade to Pro for WarRoom crisis console, risk intelligence, compliance centre, advanced analysis, and unlimited AI queries.</p>
-            <button className="inline-flex items-center gap-2 px-8 py-3 rounded-md text-base font-semibold text-white transition-all hover:shadow-lg" style={{ background: 'linear-gradient(135deg, #E85D00, #FF7A1A)' }}>
-              Upgrade to Pro — $199/mo
-            </button>
+        {/* ── Upgrade CTA (mockup spec section 5) ── */}
+        {!isHighestPlan && (
+          <div className="rounded-2xl p-8 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #111827, #1A1A2E)' }}>
+            <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 120%, rgba(232,93,0,0.25), transparent 60%)' }} />
+            <div className="relative z-10">
+              <h2 className="text-[28px] font-semibold text-white mb-2" style={{ fontFamily: fontFamily.display }}>
+                Unlock the full power of BIQc
+              </h2>
+              <p className="text-sm mb-5 mx-auto max-w-[480px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                Upgrade to Pro for WarRoom crisis console, risk intelligence, compliance centre, advanced analysis, and unlimited AI queries.
+              </p>
+              <button
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-md text-base font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5"
+                style={{ background: 'linear-gradient(135deg, #E85D00, #FF7A1A)' }}
+              >
+                <Zap className="w-[18px] h-[18px]" />
+                Upgrade to Pro — $199/mo
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Stripe & Supplier Data */}
+        {/* ── Stripe & Supplier Data ── */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <Panel>
             <h2 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>
@@ -265,14 +428,14 @@ const BillingPage = () => {
             <div className="space-y-2">
               {(charges || []).slice(0, 8).map((row) => (
                 <div
-                  key={row.session_id || `${row.created_at}-${row.amount}`}
+                  key={row.session_id || `stripe-${row.created_at}-${row.amount}`}
                   className="rounded-lg px-3 py-2 flex items-center justify-between"
                   style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
                 >
                   <div>
                     <p className="text-xs text-[#EDF1F7]">{row.tier || 'subscription'}</p>
                     <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
-                      {row.payment_status || 'unknown'} • {row.created_at || ''}
+                      {row.payment_status || 'unknown'} · {row.created_at || ''}
                     </p>
                   </div>
                   <p className="text-xs font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
@@ -293,14 +456,14 @@ const BillingPage = () => {
             <div className="space-y-2">
               {(suppliers || []).slice(0, 8).map((row) => (
                 <div
-                  key={row.invoice_id || `${row.supplier}-${row.amount}-${row.due_date}`}
+                  key={row.invoice_id || `supp-${row.supplier}-${row.amount}-${row.due_date}`}
                   className="rounded-lg px-3 py-2 flex items-center justify-between"
                   style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
                 >
                   <div>
                     <p className="text-xs text-[#EDF1F7]">{row.supplier}</p>
                     <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
-                      {row.status} • due {row.due_date || 'n/a'}
+                      {row.status} · due {row.due_date || 'n/a'}
                     </p>
                   </div>
                   <p

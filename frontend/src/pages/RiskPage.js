@@ -244,16 +244,16 @@ const HeatMapDot = ({ dot }) => {
 // ── KPI Strip ────────────────────────────────────────────────────────────────
 const RiskKPIStrip = ({ riskData }) => {
   // Try to compute from risk snapshot data if available, fallback to static
-  const totalRisks = riskData?.total_risks ?? 12;
-  const critHigh = riskData?.critical_high ?? 4;
-  const mitigated = riskData?.mitigated_this_month ?? 3;
-  const exposure = riskData?.exposure_score ?? 67;
+  const totalRisks = riskData?.total_risks ?? 14;
+  const critHigh = riskData?.critical_high ?? 5;
+  const mitigated = riskData?.mitigated_this_month ?? 6;
+  const exposure = riskData?.exposure_score ?? 77;
 
   const kpis = [
-    { label: 'Total Risks', value: totalRisks, icon: Shield, delta: '+2 this quarter', deltaDir: 'up' },
-    { label: 'Critical + High', value: critHigh, icon: AlertTriangle, colorClass: '#DC2626', delta: '+1 this month', deltaDir: 'up' },
-    { label: 'Mitigated This Month', value: mitigated, icon: CheckCircle2, colorClass: '#16A34A', delta: '+1 resolved', deltaDir: 'down' },
-    { label: 'Exposure Score', value: `${exposure}/100`, icon: Activity, colorClass: '#D97706', delta: '-4pts from last month', deltaDir: 'down' },
+    { label: 'Total Risks', value: totalRisks, icon: Shield, delta: '+3 this month', deltaDir: 'up' },
+    { label: 'Critical / High', value: critHigh, icon: AlertTriangle, colorClass: '#DC2626', delta: '+2 this month', deltaDir: 'up' },
+    { label: 'Mitigated', value: mitigated, icon: CheckCircle2, colorClass: '#16A34A', delta: '+1 resolved', deltaDir: 'down' },
+    { label: 'Exposure Score', value: exposure, icon: Activity, colorClass: '#D97706', delta: '-4pts this month', deltaDir: 'up' },
   ];
 
   return (
@@ -299,7 +299,7 @@ const AIRiskInsightCard = () => (
   </div>
 );
 
-// ── Risk Heat Map ────────────────────────────────────────────────────────────
+// ── Risk Heat Map (SVG Matrix) ───────────────────────────────────────────────
 const RiskHeatMap = () => {
   // Build a lookup: "row-col" => [dots]
   const dotMap = {};
@@ -314,41 +314,74 @@ const RiskHeatMap = () => {
       style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
       <h2 className="text-base font-semibold mb-4" style={{ color: '#EDF1F7', fontFamily: fontFamily.display }}>Risk Heat Map</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '48px repeat(4, 1fr)', gridTemplateRows: 'repeat(4, 72px) 28px', gap: 2 }}>
-        {/* Y-axis labels */}
-        {Y_LABELS.map((label, ri) => (
-          <div key={`yl-${ri}`} className="flex items-center justify-end pr-2"
-            style={{ gridColumn: 1, gridRow: ri + 1, fontSize: 10, fontWeight: 600, color: '#64748B', fontFamily: fontFamily.mono, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {label}
-          </div>
-        ))}
+      <div className="flex flex-col md:flex-row gap-6 items-start">
+        {/* SVG Matrix */}
+        <div className="flex-shrink-0 mx-auto md:mx-0">
+          <svg viewBox="-50 0 500 460" style={{ width: '100%', maxWidth: 420, height: 'auto' }}>
+            {/* Grid cells — row 0 = top (Critical impact), col 0 = left (Rare likelihood) */}
+            {[0,1,2,3].map(row => [0,1,2,3].map(col => {
+              const severity = row + col;
+              const color = severity >= 5 ? 'rgba(239,68,68,0.2)' : severity >= 3 ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.1)';
+              return <rect key={`${row}-${col}`} x={col * 100} y={(3 - row) * 100} width={100} height={100} fill={color} stroke="rgba(140,170,210,0.12)" />;
+            }))}
 
-        {/* 16 cells */}
-        {HEAT_COLORS.map((row, ri) =>
-          row.map((cellColor, ci) => {
-            const dots = dotMap[`${ri}-${ci}`] || [];
-            return (
-              <div key={`c-${ri}-${ci}`} className="rounded-md flex items-center justify-center gap-1 flex-wrap"
-                style={{ gridColumn: ci + 2, gridRow: ri + 1, background: CELL_BG_ALPHA[cellColor] || cellColor, minHeight: 0 }}>
-                {dots.map(d => <HeatMapDot key={d.id} dot={d} />)}
-              </div>
-            );
-          })
-        )}
+            {/* Risk dots plotted on the SVG grid */}
+            {HEAT_DOTS.map(dot => {
+              // dot.row: 0=Critical(top), 1=High, 2=Medium, 3=Low (impact rows)
+              // dot.col: 0=Rare(left), 1=Unlikely, 2=Possible, 3=Likely
+              // SVG y: row 0 (Critical) should be at top => y = dot.row * 100 + 50
+              const cx = dot.col * 100 + 50;
+              const cy = dot.row * 100 + 50;
+              const fill = DOT_COLOR[dot.severity] || '#64748B';
+              return (
+                <g key={dot.id}>
+                  <circle cx={cx} cy={cy} r={14} fill={fill} style={{ cursor: 'pointer' }}>
+                    <title>{dot.name}</title>
+                  </circle>
+                  <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontSize: 11, fill: '#fff', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', pointerEvents: 'none' }}>
+                    {dot.id}
+                  </text>
+                </g>
+              );
+            })}
 
-        {/* X-axis labels */}
-        <div style={{ gridColumn: 1, gridRow: 5 }} />
-        {X_LABELS.map((label, ci) => (
-          <div key={`xl-${ci}`} className="flex items-center justify-center"
-            style={{ gridColumn: ci + 2, gridRow: 5, fontSize: 10, fontWeight: 600, color: '#64748B', fontFamily: fontFamily.mono, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {label}
-          </div>
-        ))}
-      </div>
+            {/* Y-axis row labels */}
+            {Y_LABELS.map((label, i) => (
+              <text key={`yl-${i}`} x={-8} y={i * 100 + 55} textAnchor="end" style={{ fontSize: 9, fill: '#708499', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {label}
+              </text>
+            ))}
 
-      <div className="flex items-center justify-between mt-3 px-12">
-        <span className="text-[10px] font-semibold" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>IMPACT ^</span>
-        <span className="text-[10px] font-semibold" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>LIKELIHOOD &rarr;</span>
+            {/* X-axis col labels */}
+            {X_LABELS.map((label, i) => (
+              <text key={`xl-${i}`} x={i * 100 + 50} y={420} textAnchor="middle" style={{ fontSize: 9, fill: '#708499', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {label}
+              </text>
+            ))}
+
+            {/* Axis labels */}
+            <text x="200" y="445" textAnchor="middle" style={{ fontSize: 11, fill: '#708499', fontFamily: 'JetBrains Mono, monospace' }}>{'IMPACT \u2192'}</text>
+            <text x="-30" y="200" textAnchor="middle" style={{ fontSize: 11, fill: '#708499', fontFamily: 'JetBrains Mono, monospace', transform: 'rotate(-90, -30, 200)' }}>{'LIKELIHOOD \u2192'}</text>
+          </svg>
+        </div>
+
+        {/* Legend */}
+        <div className="flex-1 space-y-3 min-w-0">
+          <p className="text-[10px] uppercase tracking-widest font-semibold mb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Plotted Risks</p>
+          {HEAT_DOTS.map(dot => (
+            <div key={dot.id} className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+                style={{ background: DOT_COLOR[dot.severity] || '#64748B', fontFamily: fontFamily.mono }}>
+                {dot.id}
+              </span>
+              <span className="text-xs" style={{ color: '#8FA0B8', fontFamily: fontFamily.body }}>{dot.name}</span>
+              <span className="text-[9px] ml-auto px-1.5 py-0.5 rounded-full font-semibold"
+                style={{ background: (DOT_COLOR[dot.severity] || '#64748B') + '18', color: DOT_COLOR[dot.severity] || '#64748B', fontFamily: fontFamily.mono }}>
+                {dot.severity}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

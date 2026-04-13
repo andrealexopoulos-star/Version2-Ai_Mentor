@@ -217,6 +217,26 @@ const OperationsPage = () => {
           <LineageBadge lineage={opsIntelLineage} data_freshness={opsIntelFreshness} confidence_score={opsIntelConfidence} compact />
         </div>
 
+        {/* KPI Strip */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 32 }}>
+          {[
+            { label: 'Process Health', value: exec.sop_compliance != null ? `${exec.sop_compliance}%` : (unifiedOps?.health_score ? `${unifiedOps.health_score}%` : '—'), delta: unifiedOps?.health_change || null, color: (exec.sop_compliance || unifiedOps?.health_score || 0) >= 80 ? '#10B981' : '#F59E0B' },
+            { label: 'Meeting Load', value: vitals.calendar ? (vitals.calendar.match(/(\d+)\s+meeting/)?.[1] || '—') : (unifiedOps?.meeting_count || '—'), suffix: '/week', delta: unifiedOps?.meeting_change || null },
+            { label: 'Team Velocity', value: exec.active_tasks != null ? String(exec.active_tasks) : (unifiedOps?.velocity_score || '—'), delta: unifiedOps?.velocity_change || null },
+            { label: 'Bottlenecks', value: exec.bottleneck ? '1' : (unifiedOps?.bottleneck_count || '0'), delta: null, color: (exec.bottleneck || (unifiedOps?.bottleneck_count || 0) > 3) ? '#EF4444' : '#10B981' },
+          ].map(kpi => (
+            <div key={kpi.label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20 }}>
+              <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
+              <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: kpi.color || 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>{kpi.value}</div>
+              {kpi.delta != null && (
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, color: kpi.delta > 0 ? '#10B981' : kpi.delta < 0 ? '#EF4444' : '#708499' }}>
+                  {kpi.delta > 0 ? '\u2191' : kpi.delta < 0 ? '\u2193' : '\u2192'} {Math.abs(kpi.delta)}%
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" data-testid="operations-ux-main-grid">
           <div className="space-y-4" data-testid="operations-priority-column">
             <SectionLabel title="What needs unblocking now" detail="This view stays focused on concrete delivery friction, not abstract operations theory." testId="operations-priority-label" />

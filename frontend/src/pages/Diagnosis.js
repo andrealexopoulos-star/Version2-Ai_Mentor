@@ -149,6 +149,35 @@ const isDiagnosisValid = (diagnosis) => {
   return true;
 };
 
+// ── Ring Gauge Component (mockup spec) ──
+const RingGauge = ({ value, label, size = 100 }) => {
+  const r = 40;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference * (1 - (value || 0) / 100);
+  const color = value >= 80 ? '#10B981' : value >= 60 ? '#F59E0B' : '#EF4444';
+  return (
+    <div style={{ textAlign: 'center', minWidth: 100 }}>
+      <svg width={size} height={size} viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx="50" cy="50" r={r} fill="none" stroke="var(--surface-sunken, #060A12)" strokeWidth="8" />
+        <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
+      </svg>
+      <div style={{ marginTop: -60, position: 'relative' }}>
+        <div style={{ fontFamily: fontFamily.display, fontSize: 28, color: '#EDF1F7', lineHeight: 1 }}>{value != null ? value : '\u2014'}</div>
+        <div style={{ fontFamily: fontFamily.mono, fontSize: 10, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>{label}</div>
+      </div>
+    </div>
+  );
+};
+
+// Diagnosis dimension definitions for the ring gauge strip
+const diagnosisDimensions = [
+  { key: 'revenue',   label: 'Revenue Health',      categoryId: 'revenue' },
+  { key: 'ops',       label: 'Ops Efficiency',       categoryId: 'operations' },
+  { key: 'market',    label: 'Market Position',      categoryId: 'strategy' },
+  { key: 'team',      label: 'Team Velocity',        categoryId: 'retention' },
+  { key: 'customer',  label: 'Customer Retention',   categoryId: 'customer' },
+];
+
 const Diagnosis = ({ embedded = false }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -424,6 +453,104 @@ const Diagnosis = ({ embedded = false }) => {
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh
           </Button>
+        </div>
+      )}
+
+      {/* ── Ring Gauge Strip (5 dimensions) ── */}
+      {assessment && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: 16,
+          padding: '24px 16px',
+          background: 'rgba(14,22,40,0.6)',
+          borderRadius: 16,
+          border: '1px solid rgba(140,170,210,0.12)',
+          overflowX: 'auto',
+        }}>
+          {diagnosisDimensions.map(dim => {
+            const diag = assessment.diagnoses?.find(d => d.id === dim.categoryId);
+            // Derive a 0-100 score from signal data — scale signal_count relative to total
+            let score = null;
+            if (diag && assessment.totalSignals > 0 && diag.signal_count > 0) {
+              // Score: inverse-urgency weighted — High urgency = lower health score
+              const urgencyWeight = diag.urgency === 'High' ? 35 : diag.urgency === 'Medium' ? 60 : 85;
+              const signalRatio = Math.min(diag.signal_count / Math.max(assessment.totalSignals, 1), 1);
+              score = Math.round(urgencyWeight + (1 - signalRatio) * 15);
+              score = Math.max(0, Math.min(100, score));
+            } else if (diag && diag.signal_count === 0) {
+              score = null; // No data — show dash
+            }
+            return <RingGauge key={dim.key} value={score} label={dim.label} />;
+          })}
+        </div>
+      )}
+
+      {/* ── AI Findings Panel ── */}
+      {assessment && assessment.diagnoses?.some(d => d.signal_count > 0) && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(232,93,0,0.12) 0%, rgba(14,22,40,0.9) 60%)',
+          borderRadius: 16,
+          border: '1px solid rgba(232,93,0,0.25)',
+          padding: '24px 28px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: '50%', background: '#E85D00',
+              boxShadow: '0 0 8px rgba(232,93,0,0.6)',
+              animation: 'pulse 2s infinite',
+            }} />
+            <span style={{ fontFamily: fontFamily.display, fontSize: 18, color: '#EDF1F7', fontWeight: 600 }}>
+              BIQc Diagnosis
+            </span>
+          </div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0' }}>
+            {assessment.diagnoses
+              .filter(d => d.signal_count > 0)
+              .slice(0, 4)
+              .map((d, i) => (
+                <li key={d.id} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 10,
+                  padding: '8px 0',
+                  borderBottom: i < 3 ? '1px solid rgba(140,170,210,0.08)' : 'none',
+                }}>
+                  <span style={{
+                    width: 6, height: 6, borderRadius: '50%', marginTop: 6, flexShrink: 0,
+                    background: d.urgency === 'High' ? '#EF4444' : d.urgency === 'Medium' ? '#F59E0B' : '#10B981',
+                  }} />
+                  <div>
+                    <span style={{ fontFamily: fontFamily.body, fontSize: 14, color: '#EDF1F7', fontWeight: 500 }}>
+                      {d.focus_area}
+                    </span>
+                    <span style={{ fontFamily: fontFamily.body, fontSize: 13, color: '#8FA0B8', marginLeft: 8 }}>
+                      {d.evidence_summary}
+                    </span>
+                  </div>
+                </li>
+              ))}
+          </ul>
+          <button
+            onClick={() => {
+              const topArea = assessment.diagnoses.find(d => d.signal_count > 0);
+              if (topArea) goToAdvisorWithTrigger(topArea.id);
+            }}
+            style={{
+              fontFamily: fontFamily.body,
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#fff',
+              background: '#E85D00',
+              border: 'none',
+              borderRadius: 12,
+              padding: '10px 24px',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#C24D00'}
+            onMouseLeave={e => e.currentTarget.style.background = '#E85D00'}
+          >
+            Discuss with BIQc
+          </button>
         </div>
       )}
 

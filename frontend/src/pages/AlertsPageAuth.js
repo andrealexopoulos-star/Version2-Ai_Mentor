@@ -3,7 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
-import { Bell, Search, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircle, Plug, ArrowRight, Shield, Download, CheckCheck } from 'lucide-react';
+import { Bell, Mail, MessageSquare, Users, Loader2, CheckCircle2, XCircle, Plug, ArrowRight, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
@@ -104,6 +104,7 @@ const AlertsPageAuth = () => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('severity'); // severity | date
   const [dateRange, setDateRange] = useState('all'); // all | today | week | month
   const { session, authState } = useSupabaseAuth();
@@ -180,8 +181,16 @@ const AlertsPageAuth = () => {
   const sevWeight = { critical: 4, high: 3, moderate: 2, medium: 2, info: 1, low: 1 };
 
   const filtered = alerts
-    .filter(a => filter === 'all' || a.severity === filter || (filter === 'critical' && a.severity === 'high'))
+    .filter(a => filter === 'all' || a.severity === filter || (filter === 'resolved' && (a.severity === 'info' || a.severity === 'low')))
     .filter(a => isInRange(a.created_at))
+    .filter(a => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (a.title || '').toLowerCase().includes(q) ||
+             (a.impact || '').toLowerCase().includes(q) ||
+             (a.action || '').toLowerCase().includes(q) ||
+             (a.source || '').toLowerCase().includes(q);
+    })
     .sort((a, b) => {
       if (sortBy === 'severity') return (sevWeight[b.severity] || 0) - (sevWeight[a.severity] || 0);
       if (sortBy === 'date') return new Date(b.created_at) - new Date(a.created_at);
@@ -218,50 +227,54 @@ const AlertsPageAuth = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Critical \u00b7 act now', value: critCount, color: '#DC2626', bgIcon: 'rgba(220,38,38,0.1)' },
-            { label: 'High \u00b7 this week', value: highCount, color: '#E85D00', bgIcon: 'rgba(232,93,0,0.1)' },
-            { label: 'Watching \u00b7 low effort', value: modCount, color: '#D97706', bgIcon: 'rgba(217,119,6,0.1)' },
-            { label: 'Resolved \u00b7 last 7d', value: infoCount, color: '#16A34A', bgIcon: 'rgba(22,163,74,0.1)' },
-          ].map(({ label, value, color, bgIcon }) => (
-            <div key={label} className="rounded-lg p-5 transition-all hover:-translate-y-0.5" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: bgIcon }}>
-                  {loading
-                    ? <Loader2 className="w-4 h-4 animate-spin" style={{ color }} />
-                    : <Bell className="w-4 h-4" style={{ color }} />
-                  }
-                </div>
-                <div>
-                  <span className="text-[32px] font-medium block leading-none" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{loading ? '—' : value}</span>
-                  <span className="text-[11px] uppercase tracking-wider mt-1 block" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{label}</span>
-                </div>
+            { label: 'Critical', value: critCount, dot: '#DC2626' },
+            { label: 'High', value: highCount, dot: '#E85D00' },
+            { label: 'Warning', value: modCount, dot: '#D97706' },
+            { label: 'Resolved', value: infoCount, dot: '#16A34A' },
+          ].map(({ label, value, dot }) => (
+            <div key={label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: '20px' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, display: 'inline-block' }} />
+                <span style={{ fontFamily: fontFamily.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8FA0B8' }}>{label}</span>
               </div>
+              <span style={{ fontFamily: fontFamily.display, fontSize: 28, color: '#EDF1F7', display: 'block', lineHeight: 1 }}>{loading ? '\u2014' : value}</span>
             </div>
           ))}
         </div>
 
-        {/* Filter + Search toolbar — mockup: single bar with pills + search */}
-        <div className="flex items-center gap-4 flex-wrap rounded-lg px-4 py-3" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
-          <div className="flex gap-1.5 flex-wrap">
-            {[['all','All'],['critical','Critical'],['high','High'],['moderate','Watching'],['info','Info'],['resolved','Resolved']].map(([val,label]) => (
-              <button key={val} onClick={() => setFilter(val)}
-                className="px-3.5 py-1.5 rounded-full text-[11px] uppercase tracking-wider font-medium transition-all"
-                style={{ background: filter === val ? '#E85D00' : 'transparent', color: filter === val ? 'white' : 'var(--ink-secondary, #8FA0B8)', border: `1px solid ${filter === val ? '#E85D00' : 'var(--border, rgba(140,170,210,0.12))'}`, fontFamily: fontFamily.mono }}
-                data-testid={`alerts-filter-${val}`}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="ml-auto flex items-center gap-2 rounded-lg px-3 py-1.5" style={{ background: 'var(--surface-2, #121D30)', border: '1px solid var(--border, rgba(140,170,210,0.12))', minWidth: 200 }}>
-            <Search className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--ink-muted, #708499)' }} />
-            <input
-              type="text"
-              placeholder="Filter by deal, contact, source..."
-              className="bg-transparent border-0 outline-0 text-[13px] w-full"
-              style={{ fontFamily: fontFamily.body, color: 'var(--ink, #8FA0B8)' }}
-              data-testid="alerts-search-input"
-            />
-          </div>
+        {/* Filter + Search toolbar */}
+        <div className="flex items-center gap-3 flex-wrap" data-testid="alerts-toolbar">
+          {[['all','All'],['critical','Critical'],['high','High'],['moderate','Watching'],['resolved','Resolved']].map(([val,label]) => (
+            <button key={val} onClick={() => setFilter(val)}
+              className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
+              style={{
+                background: filter === val ? 'var(--surface-sunken, #060A12)' : 'transparent',
+                color: filter === val ? '#EDF1F7' : '#8FA0B8',
+                border: filter === val ? '1px solid rgba(140,170,210,0.2)' : '1px solid rgba(140,170,210,0.08)',
+                fontFamily: fontFamily.mono,
+              }}
+              data-testid={`alerts-filter-${val}`}>
+              {label}
+            </button>
+          ))}
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Filter by deal, contact, source..."
+            className="flex-1 min-w-[200px] px-3 py-2 rounded-lg text-sm alerts-toolbar-search"
+            style={{
+              background: 'var(--surface, #0E1628)',
+              border: '1px solid rgba(140,170,210,0.12)',
+              color: '#EDF1F7',
+              fontFamily: fontFamily.body,
+              outline: 'none',
+            }}
+            data-testid="alerts-search-input"
+          />
+          <style>{`
+            .alerts-toolbar-search::placeholder { color: #5C6E82 !important; }
+          `}</style>
         </div>
 
         <div className="space-y-3">

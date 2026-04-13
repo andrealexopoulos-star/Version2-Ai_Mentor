@@ -85,6 +85,7 @@ import Diagnosis from './pages/Diagnosis';
 import DataCenter from './pages/DataCenter';
 import OpsAdvisoryCentre from './pages/OpsAdvisoryCentre';
 import ConnectEmail from './pages/ConnectEmail';
+import OutlookAdminConsentPage from './pages/OutlookAdminConsentPage';
 import IntelCentre from './pages/IntelCentre';
 import SoundboardPanel from './components/SoundboardPanel';
 import BoardRoomPage from './pages/BoardRoomPage';
@@ -320,6 +321,7 @@ function AppRoutes() {
           element={<ProtectedRoute><LegacyIntegrationsQueryRedirect /></ProtectedRoute>}
         />
         <Route path="/connect-email" element={<ProtectedRoute><ConnectEmail /></ProtectedRoute>} />
+        <Route path="/outlook-admin-consent" element={<ProtectedRoute><OutlookAdminConsentPage /></ProtectedRoute>} />
         <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
         <Route path="/forensic-audit" element={<ProtectedRoute><LaunchRoute access="foundation"><ForensicAuditPage /></LaunchRoute></ProtectedRoute>} />
         <Route path="/exposure-scan" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="exposure-scan"><ExposureScanPage /></LaunchRoute></ProtectedRoute>} />

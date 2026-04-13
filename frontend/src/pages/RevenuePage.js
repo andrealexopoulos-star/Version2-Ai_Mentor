@@ -272,6 +272,27 @@ const RevenuePage = () => {
           <DataConfidence cognitive={{ revenue: hasDeals ? { pipeline: totalPipeline } : null }} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
 
+        {/* KPI Strip */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 32 }}>
+          {[
+            { label: 'Monthly Revenue', value: unified?.mrr ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(unified.mrr) : (totalPipeline != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(Math.round(totalPipeline / 5)) : '—'), delta: unified?.mrr_change || null },
+            { label: 'Pipeline', value: totalPipeline != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(totalPipeline) : '—', delta: null },
+            { label: 'Win Rate', value: winRate != null ? `${winRate}%` : '—', delta: unified?.win_rate_change || null },
+            { label: 'Avg Deal Size', value: avgDealSize != null ? `$${Math.round(avgDealSize / 1000)}K` : '—', delta: null },
+            { label: 'Churn Rate', value: unified?.churn_rate ? `${unified.churn_rate}%` : '—', delta: unified?.churn_change || null, invert: true },
+          ].map(kpi => (
+            <div key={kpi.label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20 }}>
+              <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
+              <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>{kpi.value}</div>
+              {kpi.delta != null && (
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, color: (kpi.invert ? kpi.delta < 0 : kpi.delta > 0) ? '#10B981' : kpi.delta < 0 ? '#EF4444' : '#708499' }}>
+                  {kpi.delta > 0 ? '\u2191' : kpi.delta < 0 ? '\u2193' : '\u2192'} {Math.abs(kpi.delta)}%
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" data-testid="revenue-ux-main-grid">
           <div className="space-y-4" data-testid="revenue-top-signals-column">
             <SectionLabel title="What needs intervention now" detail="Every top signal below shows its source clearly so revenue issues are never detached from the system creating them." testId="revenue-top-signals-label" />

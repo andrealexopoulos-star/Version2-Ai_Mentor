@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { supabase, useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { apiClient } from '../lib/api';
 import { FileText, DollarSign, Plug, Download, Shield, AlertTriangle, Clock } from 'lucide-react';
-import { fontFamily } from '../design-system/tokens';
+import { fontFamily, colors } from '../design-system/tokens';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
 import { EVENTS, trackActivationStep, trackOnceForUser } from '../lib/analytics';
 const Panel = ({ children, className = '' }) => (
@@ -111,6 +111,19 @@ const ForensicReportCard = () => {
   );
 };
 
+// Tab definitions matching mockup report-tabs
+const REPORT_TABS = ['All reports', 'Revenue', 'Operations', 'Pipeline', 'Team', 'Scheduled'];
+
+// Report cards with category tags for tab filtering
+const REPORT_CARDS = [
+  { title: 'Morning Brief \u2014 Apr 10', desc: 'Pipeline down 43% this fortnight. Bramwell silent 9 days. Cash runway stable at 4.2 months.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Today, 7:00 AM', metaSub: 'Auto-generated', previewBg: 'linear-gradient(135deg, rgba(232,93,0,0.08), rgba(140,170,210,0.06))', category: 'Revenue' },
+  { title: 'Weekly Revenue Summary', desc: '$26.7K MRR, 8 active deals, 23% close rate. Bookings on track for $29K this month.', type: 'Weekly', typeBg: 'rgba(59,130,246,0.12)', typeColor: '#3B82F6', meta: 'Apr 7', metaSub: 'Every Monday', previewBg: 'rgba(140,170,210,0.06)', category: 'Revenue' },
+  { title: 'Pipeline Health Diagnosis', desc: '2 deals at risk (Bramwell, Meridian), 3 healthy, 3 new. Negotiation bottleneck identified.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Apr 9', metaSub: 'On demand', previewBg: 'rgba(140,170,210,0.06)', category: 'Pipeline' },
+  { title: 'Operations Scorecard', desc: 'Ops score 74 (-3). Lead response healthy. Invoice approval and deal follow-up below target.', type: 'Weekly', typeBg: 'rgba(59,130,246,0.12)', typeColor: '#3B82F6', meta: 'Apr 7', metaSub: 'Every Monday', previewBg: 'rgba(140,170,210,0.06)', category: 'Operations' },
+  { title: 'Team Performance \u2014 Q1 2026', desc: '38 tasks completed this week across 3 team members. Andreas leads but is meeting-overloaded.', type: 'Manual', typeBg: 'rgba(140,170,210,0.08)', typeColor: '#8FA0B8', meta: 'Apr 1', metaSub: 'Quarterly', previewBg: 'rgba(140,170,210,0.06)', category: 'Team' },
+  { title: 'Cash Flow Projection', desc: '4.2 months runway at current $38K/mo burn. Extends to 6.1 months if Bramwell closes.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Apr 8', metaSub: 'Auto-generated', previewBg: 'linear-gradient(135deg, rgba(217,119,6,0.08), rgba(140,170,210,0.06))', category: 'Revenue' },
+];
+
 const ReportsPage = () => {
   const { user } = useSupabaseAuth();
   const [loading, setLoading] = useState(true);
@@ -120,6 +133,7 @@ const ReportsPage = () => {
   const [generating, setGenerating] = useState(false);
   const [advisoryMemos, setAdvisoryMemos] = useState([]);
   const [marketInsightsReport, setMarketInsightsReport] = useState(null);
+  const [activeTab, setActiveTab] = useState('All reports');
 
   const loadReportsData = useCallback(async () => {
     setLoadError(null);
@@ -215,6 +229,13 @@ const ReportsPage = () => {
     }
   }, [integrations, events, avgConfidence]);
 
+  // Filter report cards by active tab
+  const filteredReportCards = useMemo(() => {
+    if (activeTab === 'All reports') return REPORT_CARDS;
+    if (activeTab === 'Scheduled') return REPORT_CARDS.filter(r => r.type === 'Weekly');
+    return REPORT_CARDS.filter(r => r.category === activeTab);
+  }, [activeTab]);
+
   const renderFinancialNullState = () => (
     <Panel>
       <div className="flex items-start gap-3">
@@ -254,36 +275,65 @@ const ReportsPage = () => {
           </div>
         </div>
 
-        {/* Report category tabs — matches mockup */}
+        {/* Report category tabs — mockup report-tabs: functional tab switching */}
         <div className="flex gap-1 border-b overflow-x-auto mb-6" style={{ borderColor: 'var(--biqc-border)' }} data-testid="reports-tabs">
-          {['All reports', 'Revenue', 'Operations', 'Pipeline', 'Team', 'Scheduled'].map((tab, i) => (
-            <button key={tab} className="px-4 py-3 text-sm font-medium whitespace-nowrap transition-all" style={{ color: i === 0 ? '#EDF1F7' : '#8FA0B8', borderBottom: i === 0 ? '2px solid #E85D00' : '2px solid transparent' }}>
-              {tab}
-            </button>
-          ))}
+          {REPORT_TABS.map(tab => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className="px-4 py-3 text-sm font-medium whitespace-nowrap transition-all"
+                style={{
+                  color: isActive ? '#EDF1F7' : '#8FA0B8',
+                  borderBottom: isActive ? '2px solid #E85D00' : '2px solid transparent',
+                  cursor: 'pointer',
+                }}
+              >
+                {tab}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Report Card Grid — matches mockup reports-grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-          {[
-            { title: 'Morning Brief — Apr 10', desc: 'Pipeline down 43% this fortnight. Bramwell silent 9 days. Cash runway stable at 4.2 months.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Today, 7:00 AM', metaSub: 'Auto-generated', previewBg: 'linear-gradient(135deg, rgba(232,93,0,0.08), rgba(140,170,210,0.06))' },
-            { title: 'Weekly Revenue Summary', desc: '$26.7K MRR, 8 active deals, 23% close rate. Bookings on track for $29K this month.', type: 'Weekly', typeBg: 'rgba(59,130,246,0.12)', typeColor: '#3B82F6', meta: 'Apr 7', metaSub: 'Every Monday', previewBg: 'rgba(140,170,210,0.06)' },
-            { title: 'Pipeline Health Diagnosis', desc: '2 deals at risk (Bramwell, Meridian), 3 healthy, 3 new. Negotiation bottleneck identified.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Apr 9', metaSub: 'On demand', previewBg: 'rgba(140,170,210,0.06)' },
-            { title: 'Operations Scorecard', desc: 'Ops score 74 (-3). Lead response healthy. Invoice approval and deal follow-up below target.', type: 'Weekly', typeBg: 'rgba(59,130,246,0.12)', typeColor: '#3B82F6', meta: 'Apr 7', metaSub: 'Every Monday', previewBg: 'rgba(140,170,210,0.06)' },
-            { title: 'Team Performance — Q1 2026', desc: '38 tasks completed this week across 3 team members. Andreas leads but is meeting-overloaded.', type: 'Manual', typeBg: 'rgba(140,170,210,0.08)', typeColor: '#8FA0B8', meta: 'Apr 1', metaSub: 'Quarterly', previewBg: 'rgba(140,170,210,0.06)' },
-            { title: 'Cash Flow Projection', desc: '4.2 months runway at current $38K/mo burn. Extends to 6.1 months if Bramwell closes.', type: 'AI Generated', typeBg: 'rgba(232,93,0,0.12)', typeColor: '#E85D00', meta: 'Apr 8', metaSub: 'Auto-generated', previewBg: 'linear-gradient(135deg, rgba(217,119,6,0.08), rgba(140,170,210,0.06))' },
-          ].map(r => (
-            <div key={r.title} className="rounded-2xl overflow-hidden cursor-pointer transition-all hover:border-[rgba(140,170,210,0.25)] hover:-translate-y-0.5" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)' }}>
-              <div className="h-[120px] flex items-center justify-center relative" style={{ background: r.previewBg }}>
-                <span className="absolute top-3 left-3 text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full" style={{ background: r.typeBg, color: r.typeColor, fontFamily: fontFamily.mono }}>{r.type}</span>
+        {/* Report Card Grid — mockup reports-grid: auto-fill minmax(300px,1fr), rounded-xl, 24px padding */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', marginBottom: '32px' }} data-testid="reports-grid">
+          {filteredReportCards.map(r => (
+            <div
+              key={r.title}
+              className="cursor-pointer"
+              style={{
+                background: colors.bgCard,
+                border: `1px solid ${colors.border}`,
+                borderRadius: '16px',
+                overflow: 'hidden',
+                transition: 'border-color 0.15s ease, box-shadow 0.15s ease, transform 0.2s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              {/* Preview area with category badge */}
+              <div className="flex items-center justify-center relative" style={{ height: '140px', background: r.previewBg || colors.bgInput }}>
+                <span style={{
+                  position: 'absolute', top: '12px', left: '12px',
+                  padding: '3px 10px', borderRadius: '999px',
+                  fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em',
+                  fontFamily: fontFamily.mono,
+                  background: r.typeBg, color: r.typeColor,
+                }}>{r.type}</span>
                 <FileText className="w-8 h-8" style={{ color: 'rgba(140,170,210,0.3)' }} />
               </div>
-              <div className="p-5">
-                <h3 className="text-sm font-semibold mb-1" style={{ color: '#EDF1F7' }}>{r.title}</h3>
-                <p className="text-xs leading-relaxed mb-3" style={{ color: '#8FA0B8', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{r.desc}</p>
-                <div className="flex items-center gap-3 text-[11px]" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
+              {/* Card body */}
+              <div style={{ padding: '24px' }}>
+                <h3 style={{ fontFamily: fontFamily.display, fontSize: '18px', fontWeight: 600, color: colors.text, marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {r.title}
+                </h3>
+                <p style={{ fontSize: '12px', color: colors.textSecondary, marginBottom: '12px', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {r.desc}
+                </p>
+                <div className="flex items-center gap-3" style={{ fontSize: '11px', color: colors.textMuted, fontFamily: fontFamily.mono }}>
                   <span>{r.meta}</span>
-                  <span className="w-1 h-1 rounded-full" style={{ background: '#708499' }} />
+                  <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: colors.textMuted }} />
                   <span>{r.metaSub}</span>
                 </div>
               </div>
@@ -291,8 +341,8 @@ const ReportsPage = () => {
           ))}
         </div>
 
-        {/* Scheduled Reports — matches mockup sched-card */}
-        <div className="rounded-2xl p-6 mb-8" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)' }}>
+        {/* Scheduled Reports — mockup sched-card: shown on All/Scheduled tabs */}
+        {(activeTab === 'All reports' || activeTab === 'Scheduled') && <div className="rounded-2xl p-6 mb-8" style={{ background: colors.bgCard, border: `1px solid ${colors.border}` }}>
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" style={{ color: '#3B82F6' }} />
@@ -320,7 +370,7 @@ const ReportsPage = () => {
               </div>
             </div>
           ))}
-        </div>
+        </div>}
 
         {/* ── FORENSIC REPORTS SECTION ── */}
         <ForensicReportCard />

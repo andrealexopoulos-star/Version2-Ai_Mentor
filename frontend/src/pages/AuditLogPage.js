@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { supabase } from '../context/SupabaseAuthContext';
-import { ClipboardList, Plug, Loader2, Shield, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plug, Loader2, Shield, Download, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 
 
@@ -18,6 +18,9 @@ const AuditLogPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -68,9 +71,30 @@ const AuditLogPage = () => {
   }, []);
 
   const filteredEvents = useMemo(() => {
-    if (categoryFilter === 'all') return events;
-    return events.filter(ev => (ev.event_category || ev.source_system || '').toLowerCase().includes(categoryFilter));
-  }, [events, categoryFilter]);
+    let result = events;
+    if (categoryFilter !== 'all') {
+      result = result.filter(ev => (ev.event_category || ev.source_system || '').toLowerCase().includes(categoryFilter));
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(ev =>
+        (ev.event_type || '').toLowerCase().includes(q) ||
+        (ev.source_system || '').toLowerCase().includes(q) ||
+        (ev.signal_reference || '').toLowerCase().includes(q) ||
+        (ev.event_category || '').toLowerCase().includes(q)
+      );
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      result = result.filter(ev => new Date(ev.signal_timestamp) >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      result = result.filter(ev => new Date(ev.signal_timestamp) <= to);
+    }
+    return result;
+  }, [events, categoryFilter, searchQuery, dateFrom, dateTo]);
 
   const totalPages = Math.max(1, Math.ceil(filteredEvents.length / PAGE_SIZE));
   const pagedEvents = filteredEvents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -115,6 +139,21 @@ const AuditLogPage = () => {
           )}
         </div>
 
+        {/* KPI stat header row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Total Events', value: loading ? '\u2014' : events.length },
+            { label: 'Critical', value: loading ? '\u2014' : events.filter(ev => ev.confidence_score != null && ev.confidence_score < 0.5).length },
+            { label: 'This Week', value: loading ? '\u2014' : events.filter(ev => { const d = new Date(ev.signal_timestamp); return (Date.now() - d.getTime()) < 7 * 86400000; }).length },
+            { label: 'Users Active', value: loading ? '\u2014' : new Set(events.map(ev => ev.source_system).filter(Boolean)).size },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: '20px' }}>
+              <span style={{ fontFamily: fontFamily.display, fontSize: 28, color: '#EDF1F7', display: 'block', lineHeight: 1 }}>{value}</span>
+              <span style={{ fontFamily: fontFamily.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8FA0B8', display: 'block', marginTop: 8 }}>{label}</span>
+            </div>
+          ))}
+        </div>
+
         {loading && (
           <Panel className="text-center py-8">
             <Loader2 className="w-6 h-6 text-[#E85D00] mx-auto mb-3 animate-spin" />
@@ -134,16 +173,76 @@ const AuditLogPage = () => {
 
         {!loading && events.length > 0 && (
           <>
-            {/* Category filter bar */}
-            <div className="flex flex-wrap items-center gap-1" data-testid="audit-category-filters">
+            {/* Filter + Search + Date toolbar */}
+            <div className="flex items-center gap-3 flex-wrap" data-testid="audit-category-filters">
               {CATEGORIES.map(cat => (
                 <button key={cat} onClick={() => { setCategoryFilter(cat); setPage(1); }}
-                  className="px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all capitalize"
-                  style={{ background: categoryFilter === cat ? '#1E293B' : 'var(--biqc-bg-card)', color: categoryFilter === cat ? '#fff' : '#708499', border: `1px solid ${categoryFilter === cat ? '#1E293B' : 'var(--biqc-border)'}`, fontFamily: fontFamily.mono }}
+                  className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all capitalize"
+                  style={{
+                    background: categoryFilter === cat ? 'var(--surface-sunken, #060A12)' : 'transparent',
+                    color: categoryFilter === cat ? '#EDF1F7' : '#8FA0B8',
+                    border: categoryFilter === cat ? '1px solid rgba(140,170,210,0.2)' : '1px solid rgba(140,170,210,0.08)',
+                    fontFamily: fontFamily.mono,
+                  }}
                   data-testid={`audit-filter-${cat}`}>
                   {cat}
                 </button>
               ))}
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => { setSearchQuery(e.target.value); setPage(1); }}
+                placeholder="Filter by actor, action, resource..."
+                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg text-sm audit-toolbar-search"
+                style={{
+                  background: 'var(--surface, #0E1628)',
+                  border: '1px solid rgba(140,170,210,0.12)',
+                  color: '#EDF1F7',
+                  fontFamily: fontFamily.body,
+                  outline: 'none',
+                }}
+                data-testid="audit-search-input"
+              />
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: '#708499' }} />
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+                    className="px-2 py-1.5 rounded-lg text-xs audit-date-input"
+                    style={{
+                      background: 'var(--surface, #0E1628)',
+                      border: '1px solid rgba(140,170,210,0.12)',
+                      color: '#EDF1F7',
+                      fontFamily: fontFamily.mono,
+                      outline: 'none',
+                      width: 130,
+                    }}
+                    data-testid="audit-date-from"
+                  />
+                  <span className="text-xs" style={{ color: '#5C6E82' }}>to</span>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={e => { setDateTo(e.target.value); setPage(1); }}
+                    className="px-2 py-1.5 rounded-lg text-xs audit-date-input"
+                    style={{
+                      background: 'var(--surface, #0E1628)',
+                      border: '1px solid rgba(140,170,210,0.12)',
+                      color: '#EDF1F7',
+                      fontFamily: fontFamily.mono,
+                      outline: 'none',
+                      width: 130,
+                    }}
+                    data-testid="audit-date-to"
+                  />
+                </div>
+              </div>
+              <style>{`
+                .audit-toolbar-search::placeholder { color: #5C6E82 !important; }
+                .audit-date-input::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
+              `}</style>
             </div>
 
             <div className="flex items-center gap-3 mb-2">

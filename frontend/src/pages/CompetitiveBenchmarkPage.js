@@ -410,8 +410,60 @@ export default function CompetitiveBenchmarkPage() {
           </CardContent>
         </Card>
 
+        {/* Radar / Spider Chart */}
+        {!loading && hasRealData && data?.pillars && (() => {
+          const labels = ['Website', 'Social', 'Reviews', 'Content', 'SEO'];
+          const keys = ['website', 'social', 'reviews', 'content', 'seo'];
+          const cx = 200, cy = 200, maxR = 150;
+          const angleStep = (2 * Math.PI) / 5;
+          const startAngle = -Math.PI / 2;
+          const getPoint = (i, r) => ({
+            x: cx + r * Math.cos(startAngle + i * angleStep),
+            y: cy + r * Math.sin(startAngle + i * angleStep),
+          });
+          const polygon = (r) => keys.map((_, i) => getPoint(i, r)).map(p => `${p.x},${p.y}`).join(' ');
+          const dataPoints = keys.map((k, i) => {
+            const score = data.pillars[k] != null ? Math.min(data.pillars[k], 100) : 0;
+            return getPoint(i, (score / 100) * maxR);
+          });
+          const dataPolygon = dataPoints.map(p => `${p.x},${p.y}`).join(' ');
+          return (
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 400, width: '100%' }}>
+                <svg viewBox="0 0 400 420" width="100%" style={{ display: 'block' }}>
+                  {/* Background pentagons at 20%, 40%, 60%, 80%, 100% */}
+                  {[0.2, 0.4, 0.6, 0.8, 1.0].map(pct => (
+                    <polygon key={pct} points={polygon(maxR * pct)} fill="none" stroke="rgba(140,170,210,0.12)" strokeWidth="1" />
+                  ))}
+                  {/* Axis lines */}
+                  {keys.map((_, i) => {
+                    const p = getPoint(i, maxR);
+                    return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(140,170,210,0.08)" strokeWidth="1" />;
+                  })}
+                  {/* Data shape */}
+                  <polygon points={dataPolygon} fill="rgba(232,93,0,0.15)" stroke="#E85D00" strokeWidth="2" />
+                  {/* Data points */}
+                  {dataPoints.map((p, i) => (
+                    <circle key={i} cx={p.x} cy={p.y} r="4" fill="#E85D00" />
+                  ))}
+                  {/* Labels */}
+                  {labels.map((label, i) => {
+                    const p = getPoint(i, maxR + 24);
+                    return (
+                      <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central"
+                        style={{ fill: '#8FA0B8', fontSize: '11px', fontFamily: fontFamily.mono }}>
+                        {label}
+                      </text>
+                    );
+                  })}
+                </svg>
+              </div>
+            </div>
+          );
+        })()}
+
         {loading ? (
-          <div className="py-8"><PageLoadingState message="Loading benchmark data…" /></div>
+          <div className="py-8"><PageLoadingState message="Loading benchmark data..." /></div>
         ) : (
           <>
             {/* Req 3: Score + Percentile (real data only) */}

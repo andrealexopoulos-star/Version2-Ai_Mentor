@@ -224,6 +224,37 @@ const BusinessProfile = () => {
             </div>
           </div>
 
+          {/* DNA Hero Card */}
+          <div className="mb-6 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(160deg, #111827, #1A1A2E)', position: 'relative' }}>
+            {/* Lava accent line */}
+            <div style={{ height: 3, background: 'linear-gradient(90deg, #E85D00, #FF7A1A, #E85D00)', width: '100%' }} />
+            <div className="p-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>
+                  {profile.business_name || user?.company_name || user?.business_name || 'Your Business'}
+                </h2>
+                <p className="text-sm mt-1" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
+                  Business DNA Profile
+                </p>
+              </div>
+              {/* Completion ring gauge */}
+              <div className="flex flex-col items-center">
+                <svg width="48" height="48" viewBox="0 0 48 48">
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(140,170,210,0.12)" strokeWidth="4" />
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="#E85D00" strokeWidth="4"
+                    strokeDasharray={`${2 * Math.PI * 20}`}
+                    strokeDashoffset={`${2 * Math.PI * 20 * (1 - (scores.completeness || 0) / 100)}`}
+                    strokeLinecap="round" transform="rotate(-90 24 24)"
+                    style={{ transition: 'stroke-dashoffset 0.8s ease-out' }} />
+                  <text x="24" y="26" textAnchor="middle" style={{ fill: '#EDF1F7', fontSize: '11px', fontFamily: fontFamily.mono, fontWeight: 700 }}>
+                    {scores.completeness || 0}%
+                  </text>
+                </svg>
+                <span className="text-[10px] mt-1" style={{ color: '#8FA0B8', fontFamily: fontFamily.mono }}>Complete</span>
+              </div>
+            </div>
+          </div>
+
           {/* Tabs — Live Baselines only (admin fields moved to Settings) */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full mb-8">

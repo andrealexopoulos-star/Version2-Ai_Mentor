@@ -454,31 +454,35 @@ const Settings = () => {
             </CardContent>
           </Card>
 
-          {/* Settings Navigation — mockup: 200px left sidebar + 1fr content */}
-          <style>{`.settings-layout { display: grid; grid-template-columns: 200px 1fr; gap: 24px; } @media (max-width: 900px) { .settings-layout { grid-template-columns: 1fr; } .settings-layout .settings-nav { flex-direction: row; flex-wrap: wrap; position: static; } }`}</style>
+          {/* Settings Navigation — 200px left sidebar + 1fr content */}
+          <style>{`.settings-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; } @media (max-width: 900px) { .settings-layout { grid-template-columns: 1fr; } .settings-layout .settings-nav { flex-direction: row; flex-wrap: wrap; position: static; } }`}</style>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="settings-layout">
             {/* Settings Sidebar Nav */}
             <nav className="settings-nav flex flex-col gap-1 sticky" style={{ top: 'calc(60px + 16px)', alignSelf: 'start' }}>
               {[
-                { value: 'account', icon: User, label: 'Account' },
-                { value: 'notifications', icon: Bell, label: 'Notifications' },
-                { value: 'signals', icon: Activity, label: 'Signals' },
-                { value: 'billing', icon: CreditCard, label: 'Plan & billing' },
-                { value: 'danger-zone', icon: AlertTriangle, label: 'Danger zone' },
-              ].map(({ value, icon: Icon, label }) => (
+                { value: 'account', label: 'Account' },
+                { value: 'notifications', label: 'Notifications' },
+                { value: 'signals', label: 'Signals' },
+                { value: 'billing', label: 'Plan & billing' },
+                { value: 'danger-zone', label: 'Danger zone' },
+              ].map(({ value, label }) => (
                 <button
                   key={value}
                   onClick={() => setActiveTab(value)}
-                  className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-[13px] transition-all text-left"
+                  className="text-left transition-all"
                   style={{
+                    padding: '10px 16px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontSize: 14,
                     fontFamily: fontFamily.body,
                     fontWeight: activeTab === value ? 500 : 400,
-                    background: activeTab === value ? 'rgba(232,93,0,0.08)' : 'transparent',
-                    color: activeTab === value ? '#E85D00' : 'var(--ink-secondary, #8FA0B8)',
+                    background: activeTab === value ? 'var(--surface-sunken, #060A12)' : 'transparent',
+                    color: activeTab === value ? '#EDF1F7' : '#8FA0B8',
+                    borderLeft: activeTab === value ? '2px solid #E85D00' : '2px solid transparent',
                   }}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
                   {label}
                 </button>
               ))}

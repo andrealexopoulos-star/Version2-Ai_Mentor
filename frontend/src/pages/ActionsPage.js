@@ -26,6 +26,8 @@ const ActionsPage = () => {
   const reallocation = c.reallocation || [];
   const priority = c.priority || {};
   const advisorAssignment = location.state?.advisorAssignment || null;
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [delegateModalOpen, setDelegateModalOpen] = useState(false);
   const [delegateSubmitting, setDelegateSubmitting] = useState(false);
   const [delegateProviders, setDelegateProviders] = useState([]);
@@ -162,6 +164,22 @@ const ActionsPage = () => {
     (priorityPrimary.includes('integrate email, crm') && hasEmail && hasCRM);
   const cleanPriority = isStaleIntegrationPriority ? {} : priority;
 
+  // Filter resolution queue based on toolbar filter and search query
+  const filteredRq = rq.filter(item => {
+    // Filter by status/severity pill
+    if (activeFilter === 'urgent') return item.severity === 'high';
+    if (activeFilter === 'inprogress') return item.status === 'in_progress';
+    if (activeFilter === 'done') return item.status === 'done' || item.status === 'complete';
+    if (activeFilter === 'overdue') return item.severity === 'high' || item.overdue;
+    return true; // 'all'
+  }).filter(item => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (item.title || '').toLowerCase().includes(q) ||
+           (item.issue || '').toLowerCase().includes(q) ||
+           (item.detail || '').toLowerCase().includes(q);
+  });
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="actions-page">
@@ -178,23 +196,51 @@ const ActionsPage = () => {
         {/* Stats cards — matches mockup */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Open', value: loading ? '\u2014' : rq.length, color: '#E85D00', bgIcon: 'rgba(232,93,0,0.1)' },
-            { label: 'In flight', value: loading ? '\u2014' : 0, color: '#2563EB', bgIcon: 'rgba(37,99,235,0.1)' },
-            { label: 'Done this week', value: loading ? '\u2014' : 0, color: '#16A34A', bgIcon: 'rgba(22,163,74,0.1)' },
-            { label: 'Overdue', value: loading ? '\u2014' : rq.filter(i => i.severity === 'high').length, color: '#DC2626', bgIcon: 'rgba(220,38,38,0.1)' },
-          ].map(({ label, value, color, bgIcon }) => (
-            <div key={label} className="rounded-lg p-5 transition-all hover:-translate-y-0.5" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0" style={{ background: bgIcon }}>
-                  <Zap className="w-5 h-5" style={{ color }} />
-                </div>
-                <div>
-                  <span className="text-[28px] font-medium block leading-none" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{value}</span>
-                  <span className="text-[10px] uppercase tracking-wider mt-1 block" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{label}</span>
-                </div>
-              </div>
+            { label: 'To-Do', value: loading ? '\u2014' : rq.length },
+            { label: 'In Flight', value: loading ? '\u2014' : 0 },
+            { label: 'Done This Week', value: loading ? '\u2014' : 0 },
+            { label: 'Overdue', value: loading ? '\u2014' : rq.filter(i => i.severity === 'high').length },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: '20px' }}>
+              <span style={{ fontFamily: fontFamily.display, fontSize: 28, color: '#EDF1F7', display: 'block', lineHeight: 1 }}>{value}</span>
+              <span style={{ fontFamily: fontFamily.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8FA0B8', display: 'block', marginTop: 8 }}>{label}</span>
             </div>
           ))}
+        </div>
+
+        {/* Filter + Search toolbar */}
+        <div className="flex items-center gap-3 flex-wrap" data-testid="actions-toolbar">
+          {[['all','All'],['urgent','Urgent'],['inprogress','In Progress'],['done','Done'],['overdue','Overdue']].map(([val,label]) => (
+            <button key={val} onClick={() => setActiveFilter(val)}
+              className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
+              style={{
+                background: activeFilter === val ? 'var(--surface-sunken, #060A12)' : 'transparent',
+                color: activeFilter === val ? '#EDF1F7' : '#8FA0B8',
+                border: activeFilter === val ? '1px solid rgba(140,170,210,0.2)' : '1px solid rgba(140,170,210,0.08)',
+                fontFamily: fontFamily.mono,
+              }}
+              data-testid={`actions-filter-${val}`}>
+              {label}
+            </button>
+          ))}
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search actions..."
+            className="flex-1 min-w-[200px] px-3 py-2 rounded-lg text-sm actions-toolbar-search"
+            style={{
+              background: 'var(--surface, #0E1628)',
+              border: '1px solid rgba(140,170,210,0.12)',
+              color: '#EDF1F7',
+              fontFamily: fontFamily.body,
+              outline: 'none',
+            }}
+            data-testid="actions-search-input"
+          />
+          <style>{`
+            .actions-toolbar-search::placeholder { color: #5C6E82 !important; }
+          `}</style>
         </div>
 
         {loading && <CognitiveMesh message="Scanning resolution queue..." />}
@@ -244,11 +290,11 @@ const ActionsPage = () => {
             )}
 
             {/* Resolution Queue */}
-            {rq.length > 0 ? (
+            {filteredRq.length > 0 ? (
               <div>
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Resolution Queue ({rq.length})</h3>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Resolution Queue ({filteredRq.length})</h3>
                 <div className="space-y-3">
-                  {rq.map((item, i) => {
+                  {filteredRq.map((item, i) => {
                     const sv = SEV[item.severity] || SEV.medium;
                     return (
                       <div key={i} className="rounded-xl p-5" style={{ background: sv.bg, border: `1px solid ${sv.b}` }}>

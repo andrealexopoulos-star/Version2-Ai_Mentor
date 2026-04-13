@@ -4,15 +4,14 @@ import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { supabase } from '../context/SupabaseAuthContext';
 import { toast } from 'sonner';
-import { 
-  Mail, Inbox, AlertCircle, Clock, CheckCircle2, 
-  RefreshCw, Send, Sparkles, ChevronDown, ChevronUp,
-  User, Calendar, ArrowRight, Copy, Loader2, Star,
-  TrendingUp, Target, Zap, MessageSquare, X
+import {
+  Mail, AlertCircle, Clock, CheckCircle2,
+  RefreshCw, Send, Sparkles,
+  User, ArrowRight, Copy,
+  TrendingUp, Target, Zap, X
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
-import SemanticContractBanner from '../components/SemanticContractBanner';
 import { fontFamily } from '../design-system/tokens';
 
 const EmailInbox = () => {
@@ -29,7 +28,6 @@ const EmailInbox = () => {
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [replySuggestions, setReplySuggestions] = useState(null);
   const [loadingReplies, setLoadingReplies] = useState(false);
-  const [expandedSection, setExpandedSection] = useState('high');
   const [reclassifying, setReclassifying] = useState(null); // email_id being reclassified
   const [taskingEmail, setTaskingEmail] = useState(null);
   const [dismissingEmail, setDismissingEmail] = useState(null);
@@ -411,194 +409,7 @@ const EmailInbox = () => {
     );
   };
 
-  const EmailCard = ({ email, priority }) => {
-    const effectivePriority = email.user_override || priority;
-    const isSelected = selectedEmail === email.email_id;
-    const LEVELS = ['high', 'medium', 'low'];
-
-    return (
-      <div
-        onClick={() => setSelectedEmail(email.email_id)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            setSelectedEmail(email.email_id);
-          }
-        }}
-        role="button"
-        tabIndex={0}
-        className={`p-4 rounded-xl border transition-all ${isSelected ? 'ring-1 ring-[#E85D00]' : ''}`}
-        style={{
-          background: 'var(--biqc-bg-card, #0E1628)',
-          borderColor: isSelected ? '#E85D00' : 'var(--biqc-border, #1E2D3D)',
-        }}
-        data-testid={`priority-email-card-${email.email_id}`}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                style={{ background: '#E85D00' }}>
-                {(email.from || 'U')[0].toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate" style={{ color: 'var(--biqc-text, #EDF1F7)' }}>
-                  {email.from || 'Unknown Sender'}
-                </p>
-                <p className="text-xs" style={{ color: '#64748B' }}>
-                  {email.received ? new Date(email.received).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
-                </p>
-              </div>
-            </div>
-            <h4 className="text-sm font-semibold mb-1 line-clamp-1" style={{ color: 'var(--biqc-text, #EDF1F7)' }}>
-              {email.subject || 'No Subject'}
-            </h4>
-            {email.snippet && (
-              <p className="text-xs mb-1.5 line-clamp-1" style={{ color: '#64748B' }}>{email.snippet}</p>
-            )}
-            {email.reason && (
-              <p className="text-xs mb-1" style={{ color: 'var(--biqc-text-2, #8FA0B8)' }}>
-                <span className="font-medium">Why:</span> {email.reason}
-              </p>
-            )}
-            {email.suggested_action && (
-              <p className="text-xs" style={{ color: '#E85D00' }}>
-                <span className="font-medium">Action:</span> {email.suggested_action}
-              </p>
-            )}
-          </div>
-          <div className="flex flex-col items-end gap-2 flex-shrink-0">
-            <PriorityBadge level={effectivePriority} />
-            {/* Reclassify buttons */}
-            <div className="flex gap-1">
-              {LEVELS.filter(l => l !== effectivePriority).map(l => (
-                <button
-                  key={l}
-                  type="button"
-                  disabled={reclassifying === email.email_id}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    reclassifyEmail(email.email_id, l);
-                  }}
-                  className="text-[10px] px-2 py-0.5 rounded-md transition-all"
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#64748B',
-                    cursor: 'pointer',
-                  }}
-                  title={`Move to ${l} priority`}>
-                  {reclassifying === email.email_id ? '...' : l[0].toUpperCase()}
-                </button>
-              ))}
-            </div>
-            {email.web_link && (
-              <Button
-                size="sm"
-                type="button"
-                variant="outline"
-                style={{ padding: '4px 10px' }}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  window.open(email.web_link, '_blank', 'noopener,noreferrer');
-                }}
-              >
-                Open
-              </Button>
-            )}
-            <Button
-              size="sm"
-              type="button"
-              variant="outline"
-              disabled={taskingEmail === email.email_id}
-              style={{ padding: '4px 10px' }}
-              onClick={(event) => {
-                event.stopPropagation();
-                createEmailTask(email);
-              }}
-            >
-              {taskingEmail === email.email_id ? 'Task…' : 'Task'}
-            </Button>
-            <Button
-              size="sm"
-              type="button"
-              variant="outline"
-              disabled={dismissingEmail === email.email_id}
-              style={{ padding: '4px 10px' }}
-              onClick={(event) => {
-                event.stopPropagation();
-                dismissEmail(email);
-              }}
-            >
-              {dismissingEmail === email.email_id ? '…' : 'Dismiss'}
-            </Button>
-            <Button size="sm" type="button" className="text-xs"
-              style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)', padding: '4px 10px' }}
-              onClick={(e) => { e.stopPropagation(); fetchReplySuggestions(email.email_id); }}>
-              <Sparkles className="w-3 h-3 mr-1" />
-              Reply
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const PrioritySection = ({ title, emails, priority, icon: Icon, color }) => {
-    const isExpanded = expandedSection === priority;
-    const count = emails?.length || 0;
-    
-    return (
-      <div className="mb-4">
-        <button
-          onClick={() => setExpandedSection(isExpanded ? null : priority)}
-          className="w-full flex items-center justify-between p-4 rounded-xl transition-all"
-          style={{ 
-            background: isExpanded ? 'var(--bg-tertiary)' : 'var(--bg-card)',
-            border: '1px solid rgba(140,170,210,0.12)'
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: `${color}20` }}
-            >
-              <Icon className="w-5 h-5" style={{ color }} />
-            </div>
-            <div className="text-left">
-              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {title}
-              </h3>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {count === 0 ? 'No emails in this bucket' : `${count} ${count === 1 ? 'email' : 'emails'} need attention`}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span 
-              className="text-2xl font-bold"
-              style={{ color }}
-            >
-              {count}
-            </span>
-            {isExpanded ? (
-              <ChevronUp className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
-            ) : (
-              <ChevronDown className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
-            )}
-          </div>
-        </button>
-        
-        {isExpanded && count > 0 && (
-          <div className="mt-3 space-y-3 pl-2">
-            {emails.map((email, idx) => (
-              <EmailCard key={email?.email_id || `${priority}-${idx}`} email={email} priority={priority} />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
+  // -- removed EmailCard and PrioritySection (replaced by 3-panel inline layout) --
 
   const ReplySuggestionsModal = () => {
     if (!replySuggestions) return null;
@@ -813,336 +624,310 @@ const EmailInbox = () => {
     );
   };
 
-  const analysis = priorityAnalysis || {};
   const allPriorityEmails = useMemo(() => ([
     ...(priorityAnalysis?.high_priority || []),
     ...(priorityAnalysis?.medium_priority || []),
     ...(priorityAnalysis?.low_priority || []),
   ]), [priorityAnalysis]);
-  const selectedEmailData = useMemo(() => {
-    if (!allPriorityEmails.length) return null;
-    return allPriorityEmails.find((email) => email.email_id === selectedEmail) || allPriorityEmails[0];
-  }, [allPriorityEmails, selectedEmail]);
-  const providerLabel = activeProvider === 'gmail' ? 'Gmail' : activeProvider === 'outlook' ? 'Outlook' : 'Email';
-  const analysisTimestamp = priorityAnalysis?.analyzed_at ? new Date(priorityAnalysis.analyzed_at) : null;
-  const freshnessText = analysisTimestamp
-    ? `${priorityAnalysis?.from_cache ? 'Cached snapshot' : 'Live analysis'} · ${analysisTimestamp.toLocaleString('en-AU')}`
-    : null;
 
+  // Compute messages for the active folder/filter
+  const currentMessages = useMemo(() => {
+    if (selectedFolder?.startsWith('priority-')) {
+      const level = selectedFolder.replace('priority-', '');
+      return priorityAnalysis?.[`${level}_priority`] || [];
+    }
+    if (selectedFolder === 'inbox' && priorityAnalysis) {
+      return [
+        ...(priorityAnalysis.high_priority || []),
+        ...(priorityAnalysis.medium_priority || []),
+        ...(priorityAnalysis.low_priority || []),
+      ];
+    }
+    return folderMessages;
+  }, [selectedFolder, priorityAnalysis, folderMessages]);
+
+  // Compute the currently-selected email's full data
+  const selectedEmailData = useMemo(() => {
+    if (!selectedEmail) return null;
+    const all = [
+      ...(priorityAnalysis?.high_priority || []),
+      ...(priorityAnalysis?.medium_priority || []),
+      ...(priorityAnalysis?.low_priority || []),
+    ];
+    return all.find(e => e.email_id === selectedEmail) || folderMessages.find(e => (e.id || e.email_id) === selectedEmail) || null;
+  }, [selectedEmail, priorityAnalysis, folderMessages]);
+
+  const providerLabel = activeProvider === 'gmail' ? 'Gmail' : activeProvider === 'outlook' ? 'Outlook' : 'Email';
+
+  // ──────────────────────────────────────────────
+  //  RENDER
+  // ──────────────────────────────────────────────
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-5xl animate-fade-in">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
-              — Inbox · {activeProvider ? providerLabel : 'Not connected'} · Live
-            </div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-              {allPriorityEmails.length || 0} emails <em style={{ fontStyle: 'italic', color: '#E85D00' }}>need a decision</em>.
-            </h1>
-            <p className="mt-2 text-sm" style={{ fontFamily: fontFamily.body, color: '#8FA0B8' }}>
-              {activeProvider
-                ? `BIQc has triaged your ${providerLabel} inbox. Only the ones that need you are here. Everything else is filed and summarised.`
-                : 'Connect an email provider to get started'}
-            </p>
-            {connectedEmail && (
-              <p className="mt-1 text-xs" style={{ color: '#708499', fontFamily: fontFamily.mono }}>
-                Connected: {connectedEmail}
-              </p>
-            )}
+      {/* Connection / loading gates */}
+      {checkingConnection ? (
+        <PageLoadingState message="Checking email connection..." />
+      ) : !activeProvider ? (
+        <div
+          className="text-center py-16 rounded-2xl"
+          style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
+        >
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: 'var(--bg-tertiary)' }}
+          >
+            <Mail className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
           </div>
-          
-          {activeProvider && (
-            <Button
-              onClick={runPriorityAnalysis}
-              disabled={analyzing}
-              className="btn-primary"
-            >
-              {analyzing ? (
+          <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+            No Email Provider Connected
+          </h3>
+          <p className="mb-6 max-w-md mx-auto" style={{ color: 'var(--text-muted)' }}>
+            Connect Gmail or Outlook to enable AI-powered email prioritization
+          </p>
+          <Button onClick={handleConnect} className="btn-primary">
+            <ArrowRight className="w-4 h-4 mr-2" />
+            Connect Email Provider
+          </Button>
+        </div>
+      ) : loading ? (
+        <PageLoadingState message="Loading priority inbox..." />
+      ) : inboxLoadError && !priorityAnalysis ? (
+        <PageErrorState
+          error={inboxLoadError}
+          onRetry={() => fetchPriorityInbox(activeProvider)}
+          moduleName="Priority Inbox"
+        />
+      ) : (
+        /* ═══════════════════════════════════════════
+           3-PANEL INBOX LAYOUT
+           ═══════════════════════════════════════════ */
+        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)', overflow: 'hidden' }}>
+          {/* Compact header row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', flexShrink: 0 }}>
+            <div>
+              <div style={{ fontFamily: fontFamily.mono, fontSize: 10, color: '#E85D00', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Inbox &middot; {providerLabel} &middot; Live
+              </div>
+              <h1 style={{ fontFamily: fontFamily.display, color: '#EDF1F7', fontSize: 22, letterSpacing: '-0.02em', marginTop: 2 }}>
+                {allPriorityEmails.length || 0} emails <em style={{ fontStyle: 'italic', color: '#E85D00' }}>need a decision</em>
+              </h1>
+            </div>
+            <Button onClick={runPriorityAnalysis} disabled={analyzing} className="btn-primary" style={{ flexShrink: 0 }}>
+              {analyzing ? 'Analyzing...' : <><RefreshCw className="w-4 h-4 mr-2" />Analyze Inbox</>}
+            </Button>
+          </div>
+
+          {/* 3-panel grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '200px 360px 1fr', gap: 12, flex: 1, minHeight: 0 }}>
+
+            {/* ── PANEL 1: FOLDERS ── */}
+            <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 16, overflowY: 'auto' }}>
+              {/* Mailbox */}
+              <div style={{ fontFamily: fontFamily?.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mailbox</div>
+              {['inbox', 'sent', 'drafts', 'archive'].map(f => (
+                <div
+                  key={f}
+                  onClick={() => setSelectedFolder(f)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 4, color: selectedFolder === f ? '#E85D00' : 'var(--ink-secondary, #8FA0B8)', background: selectedFolder === f ? 'rgba(232,93,0,0.08)' : 'transparent', fontWeight: selectedFolder === f ? 500 : 400, fontSize: 13, cursor: 'pointer', marginBottom: 2 }}
+                >
+                  <Mail className="w-4 h-4" />
+                  <span style={{ flex: 1 }}>{f.charAt(0).toUpperCase() + f.slice(1)}</span>
+                  {f === 'inbox' && priorityAnalysis && (
+                    <span style={{ padding: '1px 7px', borderRadius: 100, fontFamily: fontFamily?.mono, fontSize: 10, fontWeight: 600, background: selectedFolder === f ? '#E85D00' : 'var(--surface-2, #121D30)', color: selectedFolder === f ? 'white' : 'var(--ink-secondary, #8FA0B8)' }}>
+                      {allPriorityEmails.length}
+                    </span>
+                  )}
+                </div>
+              ))}
+
+              {/* Smart Folders */}
+              <div style={{ fontFamily: fontFamily?.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 16, marginBottom: 8 }}>Smart Folders</div>
+              {['high', 'medium', 'low'].map(level => {
+                const count = priorityAnalysis?.[`${level}_priority`]?.length || 0;
+                const colors = { high: '#EF4444', medium: '#F59E0B', low: '#10B981' };
+                return (
+                  <div
+                    key={level}
+                    onClick={() => setSelectedFolder(`priority-${level}`)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 4, color: selectedFolder === `priority-${level}` ? colors[level] : 'var(--ink-secondary, #8FA0B8)', background: selectedFolder === `priority-${level}` ? `${colors[level]}10` : 'transparent', fontSize: 13, cursor: 'pointer', marginBottom: 2 }}
+                  >
+                    {level === 'high' ? <AlertCircle className="w-4 h-4" /> : level === 'medium' ? <Clock className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                    <span style={{ flex: 1 }}>{level.charAt(0).toUpperCase() + level.slice(1)} Priority</span>
+                    {count > 0 && (
+                      <span style={{ padding: '1px 7px', borderRadius: 100, fontFamily: fontFamily?.mono, fontSize: 10, fontWeight: 600, background: `${colors[level]}15`, color: colors[level] }}>{count}</span>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Server labels */}
+              {folders.length > 0 && (
                 <>
-                  
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Analyze Inbox
+                  <div style={{ fontFamily: fontFamily?.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 16, marginBottom: 8 }}>Labels</div>
+                  {folders.filter(f => !['inbox','sent','drafts','archive'].includes(f.name?.toLowerCase())).slice(0, 8).map(f => (
+                    <div
+                      key={f.id || f.name}
+                      onClick={() => setSelectedFolder(f.name || f.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 4, color: selectedFolder === (f.name || f.id) ? '#E85D00' : 'var(--ink-secondary, #8FA0B8)', background: selectedFolder === (f.name || f.id) ? 'rgba(232,93,0,0.08)' : 'transparent', fontSize: 13, cursor: 'pointer', marginBottom: 2 }}
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.display_name || f.name || f.id}</span>
+                    </div>
+                  ))}
                 </>
               )}
-            </Button>
-          )}
-        </div>
-
-        {/* Connection Status - Show if no provider connected */}
-        {checkingConnection ? (
-          <PageLoadingState message="Checking email connection..." />
-        ) : !activeProvider ? (
-          <div 
-            className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
-          >
-            <div 
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ background: 'var(--bg-tertiary)' }}
-            >
-              <Mail className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
             </div>
-            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              No Email Provider Connected
-            </h3>
-            <p className="mb-6 max-w-md mx-auto" style={{ color: 'var(--text-muted)' }}>
-              Connect Gmail or Outlook to enable AI-powered email prioritization
-            </p>
-            <Button onClick={handleConnect} className="btn-primary">
-              <ArrowRight className="w-4 h-4 mr-2" />
-              Connect Email Provider
-            </Button>
-          </div>
-        ) : null}
 
-        {/* Strategic Insights Banner */}
-        {analysis.strategic_insights && (
-          <div 
-            className="p-5 rounded-xl"
-            style={{ 
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
-              border: '1px solid rgba(59, 130, 246, 0.2)'
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <div 
-                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: 'var(--accent-primary)' }}
-              >
-                <TrendingUp className="w-5 h-5 text-white" />
+            {/* ── PANEL 2: MESSAGE LIST ── */}
+            <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              {/* List header */}
+              <div style={{ padding: 16, borderBottom: '1px solid rgba(140,170,210,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontFamily: fontFamily?.display, fontSize: 18, color: 'var(--ink-display, #EDF1F7)' }}>
+                  {selectedFolder?.startsWith('priority-')
+                    ? `${selectedFolder.replace('priority-', '').charAt(0).toUpperCase()}${selectedFolder.replace('priority-', '').slice(1)} Priority`
+                    : (selectedFolder || 'Inbox').charAt(0).toUpperCase() + (selectedFolder || 'Inbox').slice(1)}
+                </span>
+                <span style={{ fontFamily: fontFamily?.mono, fontSize: 11, color: 'var(--ink-muted, #708499)' }}>{currentMessages.length} messages</span>
               </div>
-              <div>
-                <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                  Strategic Insight
-                </h3>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  {analysis.strategic_insights}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {priorityAnalysis && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3" data-testid="priority-inbox-summary-grid">
-            {[
-              ['High priority', (priorityAnalysis.high_priority || []).length, '#EF4444'],
-              ['Medium priority', (priorityAnalysis.medium_priority || []).length, '#F59E0B'],
-              ['Low priority', (priorityAnalysis.low_priority || []).length, '#10B981'],
-              ['Analyzed', priorityAnalysis.total_analyzed || allPriorityEmails.length, '#3B82F6'],
-            ].map(([label, value, color]) => (
-              <div key={label} className="p-4 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}>
-                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>{label}</p>
-                <p className="mt-2 text-2xl font-bold" style={{ color }}>{value}</p>
-              </div>
-            ))}
-          </div>
-        )}
-        {freshnessText && (
-          <div
-            className="rounded-xl border px-4 py-3 flex flex-wrap items-center justify-between gap-2"
-            style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}
-            data-testid="priority-inbox-freshness"
-          >
-            <p className="text-xs" style={{ color: '#94A3B8' }}>{freshnessText}</p>
-            {priorityAnalysis?.from_cache && (
-              <button className="text-xs underline" style={{ color: '#E85D00' }} onClick={runPriorityAnalysis}>
-                Refresh now
-              </button>
-            )}
-          </div>
-        )}
-        {priorityContract && (
-          <SemanticContractBanner
-            payload={priorityContract}
-            title="Priority Inbox semantic state"
-          />
-        )}
-        {activeProvider && (
-          <div className="grid gap-3 lg:grid-cols-[minmax(220px,0.38fr)_minmax(0,1fr)]" data-testid="priority-inbox-folder-grid">
-            <div className="rounded-xl border p-4" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}>
-              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Folders</p>
-              <div className="mt-3 space-y-2 max-h-56 overflow-auto pr-1">
-                {(folders || []).slice(0, 12).map((folder) => {
-                  const folderName = folder?.name || 'inbox';
-                  const active = selectedFolder === folderName;
+              {/* Scrollable list */}
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                {currentMessages.length === 0 && (
+                  <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-muted, #708499)', fontSize: 13 }}>
+                    {!priorityAnalysis ? 'Click "Analyze Inbox" to prioritize your emails.' : 'No messages in this folder.'}
+                  </div>
+                )}
+                {currentMessages.map((msg, idx) => {
+                  const msgId = msg.email_id || msg.id;
+                  const isActive = selectedEmail === msgId;
+                  const isUnread = msg.priority_level === 'high' || !msg.read;
                   return (
-                    <button
-                      key={folderName}
-                      type="button"
-                      onClick={() => setSelectedFolder(folderName)}
-                      className="w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-all"
-                      style={{
-                        background: active ? 'rgba(232,93,0,0.12)' : 'transparent',
-                        border: `1px solid ${active ? 'rgba(232,93,0,0.35)' : 'rgba(148,163,184,0.15)'}`,
-                        color: active ? '#FFB17A' : '#CBD5E1',
-                      }}
+                    <div
+                      key={msgId || idx}
+                      onClick={() => setSelectedEmail(msgId)}
+                      style={{ padding: 16, borderBottom: '1px solid rgba(140,170,210,0.12)', cursor: 'pointer', position: 'relative', background: isActive ? 'rgba(232,93,0,0.08)' : 'transparent', borderLeft: isActive ? '3px solid #E85D00' : '3px solid transparent', paddingLeft: isActive ? 13 : 16 }}
                     >
-                      <span className="truncate">{folderName}</span>
-                      <span className="text-xs" style={{ color: '#94A3B8' }}>{folder?.count || 0}</span>
-                    </button>
+                      {isUnread && <div style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', width: 6, height: 6, background: '#E85D00', borderRadius: '50%' }} />}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <span style={{ fontSize: 13, color: isUnread ? 'var(--ink-display, #EDF1F7)' : 'var(--ink, #CBD5E1)', fontWeight: isUnread ? 600 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.from || 'Unknown'}</span>
+                        <span style={{ fontFamily: fontFamily?.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', flexShrink: 0 }}>{msg.received ? new Date(msg.received).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--ink-display, #EDF1F7)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: isUnread ? 600 : 400 }}>{msg.subject || '(no subject)'}</div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-secondary, #8FA0B8)', marginTop: 3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.4 }}>{msg.snippet || msg.reason || ''}</div>
+                      {msg.priority_level && (
+                        <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
+                          <span style={{ padding: '2px 8px', borderRadius: 100, fontFamily: fontFamily?.mono, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, background: msg.priority_level === 'high' ? 'rgba(220,38,38,0.1)' : msg.priority_level === 'medium' ? 'rgba(245,158,11,0.1)' : 'rgba(22,163,74,0.1)', color: msg.priority_level === 'high' ? '#DC2626' : msg.priority_level === 'medium' ? '#D97706' : '#16A34A' }}>{msg.priority_level}</span>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
-                {loadingFolders && (
-                  <p className="text-xs" style={{ color: '#94A3B8' }}>Loading folders…</p>
-                )}
               </div>
             </div>
-            <div className="rounded-xl border p-4" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}>
-              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>
-                Folder preview · {selectedFolder}
-              </p>
-              <div className="mt-3 space-y-2 max-h-56 overflow-auto pr-1">
-                {folderMessages.length === 0 ? (
-                  <p className="text-sm" style={{ color: '#64748B' }}>No messages loaded for this folder yet.</p>
-                ) : folderMessages.map((msg) => (
-                  <div key={msg.id} className="rounded-lg border px-3 py-2" style={{ borderColor: 'rgba(148,163,184,0.18)' }}>
-                    <p className="text-xs truncate" style={{ color: '#EDF1F7' }}>{msg.subject}</p>
-                    <p className="text-[11px] truncate mt-0.5" style={{ color: '#94A3B8' }}>{msg.from}</p>
-                    <p className="text-[11px] mt-1 line-clamp-1" style={{ color: '#64748B' }}>{msg.snippet}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Loading State */}
-        {loading ? (
-          <PageLoadingState message="Loading priority inbox..." />
-        ) : inboxLoadError && !priorityAnalysis ? (
-          <PageErrorState
-            error={inboxLoadError}
-            onRetry={() => fetchPriorityInbox(activeProvider)}
-            moduleName="Priority Inbox"
-          />
-        ) : !priorityAnalysis ? (
-          /* Empty State */
-          <div 
-            className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
-          >
-            <div 
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ background: 'var(--bg-tertiary)' }}
-            >
-              <Mail className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
-            </div>
-            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              No Priority Analysis Yet
-            </h3>
-            <p className="mb-6 max-w-md mx-auto" style={{ color: 'var(--text-muted)' }}>
-              Click "Analyze Inbox" to let AI prioritize your emails based on your business goals and relationships.
-            </p>
-            <Button onClick={runPriorityAnalysis} disabled={analyzing} className="btn-primary">
-              {analyzing ? (
-                <>
-                  
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Analyze My Inbox
-                </>
-              )}
-            </Button>
-          </div>
-        ) : (
-          /* Priority Sections */
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.75fr)]" data-testid="priority-inbox-command-grid">
-            <div className="space-y-4">
-              <div className="rounded-xl border px-4 py-3" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }} data-testid="priority-inbox-guidance-card">
-                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Command centre flow</p>
-                <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Open the highest-risk thread first, validate BIQc’s rationale, then trigger a reply or reclassify before the customer signal degrades.</p>
-              </div>
-              <PrioritySection
-                title="High Priority"
-                emails={priorityAnalysis.high_priority || []}
-                priority="high"
-                icon={AlertCircle}
-                color="#EF4444"
-              />
-              <PrioritySection
-                title="Medium Priority"
-                emails={priorityAnalysis.medium_priority || []}
-                priority="medium"
-                icon={Clock}
-                color="#F59E0B"
-              />
-              <PrioritySection
-                title="Low Priority"
-                emails={priorityAnalysis.low_priority || []}
-                priority="low"
-                icon={CheckCircle2}
-                color="#10B981"
-              />
-            </div>
-            <div className="space-y-4" data-testid="priority-inbox-detail-column">
-              <div className="rounded-xl border p-5" style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }} data-testid="priority-inbox-detail-panel">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Selected thread</p>
-                    <p className="mt-2 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{selectedEmailData?.subject || 'Select a thread'}</p>
+            {/* ── PANEL 3: READING PANE ── */}
+            <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              {selectedEmailData ? (
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  {/* Subject */}
+                  <div style={{ padding: '20px 24px 0', flexShrink: 0 }}>
+                    <h2 style={{ fontFamily: fontFamily?.display, fontSize: 26, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1.15, marginBottom: 16 }}>
+                      {selectedEmailData.subject || '(no subject)'}
+                    </h2>
+                    {/* From row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #E85D00, #FF8A3D)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+                        {(selectedEmailData.from || 'U')[0].toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)' }}>{selectedEmailData.from || 'Unknown'}</div>
+                        <div style={{ fontSize: 12, color: 'var(--ink-muted, #708499)' }}>
+                          {selectedEmailData.received ? new Date(selectedEmailData.received).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                        </div>
+                      </div>
+                      {selectedEmailData.priority_level && <PriorityBadge level={selectedEmailData.user_override || selectedEmailData.priority_level} />}
+                    </div>
+                    {/* Toolbar */}
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingBottom: 16, borderBottom: '1px solid rgba(140,170,210,0.12)' }}>
+                      <Button size="sm" onClick={() => fetchReplySuggestions(selectedEmailData.email_id)} style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)' }}>
+                        <Sparkles className="w-3 h-3 mr-1.5" />Reply
+                      </Button>
+                      {selectedEmailData.web_link && (
+                        <Button size="sm" variant="outline" onClick={() => window.open(selectedEmailData.web_link, '_blank', 'noopener,noreferrer')}>
+                          <Send className="w-3 h-3 mr-1.5" />Open
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" disabled={taskingEmail === selectedEmailData.email_id} onClick={() => createEmailTask(selectedEmailData)}>
+                        <Target className="w-3 h-3 mr-1.5" />{taskingEmail === selectedEmailData.email_id ? 'Creating...' : 'Task'}
+                      </Button>
+                      <Button size="sm" variant="outline" disabled={dismissingEmail === selectedEmailData.email_id} onClick={() => dismissEmail(selectedEmailData)}>
+                        <X className="w-3 h-3 mr-1.5" />{dismissingEmail === selectedEmailData.email_id ? '...' : 'Dismiss'}
+                      </Button>
+                      {/* Reclassify dropdown-style buttons */}
+                      {['high', 'medium', 'low'].filter(l => l !== (selectedEmailData.user_override || selectedEmailData.priority_level)).map(l => {
+                        const clr = l === 'high' ? '#EF4444' : l === 'medium' ? '#F59E0B' : '#10B981';
+                        return (
+                          <Button key={l} size="sm" variant="outline" disabled={reclassifying === selectedEmailData.email_id} onClick={() => reclassifyEmail(selectedEmailData.email_id, l)} style={{ fontSize: 11 }}>
+                            {reclassifying === selectedEmailData.email_id ? '...' : <><span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: clr, marginRight: 4 }} />{l.charAt(0).toUpperCase() + l.slice(1)}</>}
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  {selectedEmailData && <PriorityBadge level={selectedEmailData.user_override || selectedEmailData.priority_level || 'medium'} />}
-                </div>
-                {selectedEmailData ? (
-                  <div className="mt-4 space-y-4">
-                    <div className="rounded-lg border p-4" style={{ background: 'var(--bg-tertiary)', borderColor: 'rgba(140,170,210,0.12)' }}>
-                      <p className="text-xs text-[#94A3B8]">From</p>
-                      <p className="mt-1 text-sm text-[#EDF1F7]">{selectedEmailData.from}</p>
-                      <p className="mt-2 text-xs text-[#64748B]">{selectedEmailData.received ? new Date(selectedEmailData.received).toLocaleString() : 'No timestamp available'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Why BIQc ranked this</p>
-                      <p className="mt-2 text-sm text-[#CBD5E1]">{selectedEmailData.reason || 'This thread intersects with customer, commercial, or timing pressure.'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Recommended action</p>
-                      <p className="mt-2 text-sm text-[#CBD5E1]">{selectedEmailData.suggested_action || 'Review thread context and send a decisive response.'}</p>
-                    </div>
+
+                  {/* Scrollable body area */}
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+                    {/* Email body / snippet */}
                     {selectedEmailData.snippet && (
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Preview</p>
-                        <p className="mt-2 text-sm text-[#8FA0B8]">{selectedEmailData.snippet}</p>
+                      <div style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink, #CBD5E1)', whiteSpace: 'pre-wrap', marginBottom: 24 }}>
+                        {selectedEmailData.snippet}
                       </div>
                     )}
-                    <div className="flex flex-wrap gap-2">
-                      <Button onClick={() => fetchReplySuggestions(selectedEmailData.email_id)} className="btn-primary" data-testid="priority-inbox-generate-reply-button">
-                        <Sparkles className="w-4 h-4 mr-2" />Generate reply
-                      </Button>
-                      <Button variant="outline" onClick={() => reclassifyEmail(selectedEmailData.email_id, 'high')} data-testid="priority-inbox-mark-high-button">
-                        Mark high
-                      </Button>
-                      <Button variant="outline" onClick={() => reclassifyEmail(selectedEmailData.email_id, 'medium')}>
-                        Mark medium
-                      </Button>
-                      <Button variant="outline" onClick={() => reclassifyEmail(selectedEmailData.email_id, 'low')}>
-                        Mark low
-                      </Button>
+
+                    {/* AI Brief card */}
+                    {(selectedEmailData.reason || selectedEmailData.suggested_action) && (
+                      <div style={{ background: 'linear-gradient(135deg, rgba(232,93,0,0.06), rgba(232,93,0,0.02))', border: '1px solid rgba(232,93,0,0.15)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                          <Sparkles className="w-4 h-4" style={{ color: '#E85D00' }} />
+                          <span style={{ fontFamily: fontFamily?.mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#E85D00', fontWeight: 600 }}>BIQc AI Brief</span>
+                        </div>
+                        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: 'var(--ink-secondary, #8FA0B8)' }}>
+                          {selectedEmailData.reason && <li style={{ marginBottom: 6 }}><strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>Why ranked:</strong> {selectedEmailData.reason}</li>}
+                          {selectedEmailData.suggested_action && <li><strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>Suggested action:</strong> {selectedEmailData.suggested_action}</li>}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Quick-reply pill triggers */}
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {['Acknowledge & schedule', 'Request more info', 'Delegate to team'].map(label => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => fetchReplySuggestions(selectedEmailData.email_id)}
+                          style={{ padding: '6px 14px', borderRadius: 100, fontSize: 12, background: 'rgba(140,170,210,0.08)', border: '1px solid rgba(140,170,210,0.15)', color: 'var(--ink-secondary, #8FA0B8)', cursor: 'pointer' }}
+                        >
+                          {label}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                ) : (
-                  <p className="mt-4 text-sm text-[#64748B]">Select a priority email from the left column to view full context and act faster.</p>
-                )}
-              </div>
+                </div>
+              ) : (
+                /* Empty reading pane */
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--ink-muted, #708499)' }}>
+                  <Mail className="w-10 h-10" style={{ opacity: 0.3, marginBottom: 12 }} />
+                  <p style={{ fontSize: 14 }}>Select a message to read</p>
+                </div>
+              )}
             </div>
           </div>
-        )}
-
-      </div>
+        </div>
+      )}
 
       {/* Reply Suggestions Modal */}
       {loadingReplies && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div 
+          <div
             className="p-8 rounded-2xl text-center"
             style={{ background: 'var(--bg-primary)' }}
           >
@@ -1153,7 +938,7 @@ const EmailInbox = () => {
           </div>
         </div>
       )}
-      
+
       <ReplySuggestionsModal />
     </DashboardLayout>
   );

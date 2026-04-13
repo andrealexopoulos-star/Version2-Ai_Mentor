@@ -200,15 +200,26 @@ const DataCenter = () => {
             </p>
           </div>
 
-          {/* Stats Cards */}
+          {/* Stats Strip — 4 cards: Data Sources, Records, Storage Used, Last Sync */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <Card className="stat-card">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <Database className="w-8 h-8 text-[#ccff00]" />
                   <div>
-                    <p className="stat-label text-xs">Total Files</p>
-                    <p className="text-2xl font-serif font-semibold">{stats?.total_files || 0}</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Data Sources</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>{stats?.categories?.length || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="stat-card">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-8 h-8 text-[#ccff00]" />
+                  <div>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Records</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>{stats?.total_files || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -218,19 +229,8 @@ const DataCenter = () => {
                 <div className="flex items-center gap-3">
                   <HardDrive className="w-8 h-8 text-[#ccff00]" />
                   <div>
-                    <p className="stat-label text-xs">Storage Used</p>
-                    <p className="text-2xl font-serif font-semibold">{stats?.total_size_mb || 0} MB</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="stat-card">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <FolderOpen className="w-8 h-8 text-[#ccff00]" />
-                  <div>
-                    <p className="stat-label text-xs">Categories</p>
-                    <p className="text-2xl font-serif font-semibold">{stats?.categories?.length || 0}</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Storage Used</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>{stats?.total_size_mb || 0} MB</p>
                   </div>
                 </div>
               </CardContent>
@@ -240,13 +240,89 @@ const DataCenter = () => {
                 <div className="flex items-center gap-3">
                   <Building2 className="w-8 h-8 text-[#ccff00]" />
                   <div>
-                    <p className="stat-label text-xs">Profile Complete</p>
-                    <p className="text-2xl font-serif font-semibold">{stats?.profile_completeness || 0}%</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: '#708499', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Last Sync</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: '#EDF1F7' }}>{stats?.last_sync ? new Date(stats.last_sync).toLocaleDateString() : 'N/A'}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* ── Data Sources Table ── */}
+          {files.length > 0 && (
+            <Card className="mb-8" style={{ borderRadius: 16, border: '1px solid rgba(140,170,210,0.12)', overflow: 'hidden' }}>
+              <CardHeader className="pb-3">
+                <CardTitle style={{ fontFamily: fontFamily.display, fontSize: 18, color: '#EDF1F7' }}>
+                  Data Sources
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: fontFamily.body, fontSize: 14 }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(140,170,210,0.12)' }}>
+                        {['Source', 'Type', 'Records', 'Last Sync', 'Status', 'Health'].map(col => (
+                          <th key={col} style={{
+                            textAlign: 'left', padding: '12px 16px',
+                            fontFamily: fontFamily.mono, fontSize: 10, color: '#708499',
+                            textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500,
+                          }}>{col}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {files.map(file => {
+                        const catLabel = fileCategories.find(c => c.value === file.category)?.label || file.category;
+                        const hasText = !!file.extracted_text;
+                        // Derive status from file state
+                        const status = hasText ? 'active' : 'syncing';
+                        const healthPct = hasText ? 100 : 40;
+                        const statusColor = status === 'active' ? '#10B981' : status === 'syncing' ? '#F59E0B' : '#EF4444';
+                        return (
+                          <tr key={file.id} style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
+                            <td style={{ padding: '12px 16px', color: '#EDF1F7', fontWeight: 500 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Database className="w-4 h-4" style={{ color: '#708499', flexShrink: 0 }} />
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{file.filename}</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 16px', color: '#8FA0B8' }}>{catLabel}</td>
+                            <td style={{ padding: '12px 16px', color: '#8FA0B8', fontFamily: fontFamily.mono, fontSize: 12 }}>
+                              {formatFileSize(file.file_size)}
+                            </td>
+                            <td style={{ padding: '12px 16px', color: '#8FA0B8', fontSize: 13 }}>
+                              {new Date(file.created_at).toLocaleDateString()}
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{
+                                display: 'inline-block', padding: '3px 10px', borderRadius: 9999,
+                                fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em',
+                                color: statusColor, background: `${statusColor}18`,
+                              }}>
+                                {status}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{
+                                width: 60, height: 6, borderRadius: 3,
+                                background: 'rgba(140,170,210,0.12)', overflow: 'hidden',
+                              }}>
+                                <div style={{
+                                  width: `${healthPct}%`, height: '100%', borderRadius: 3,
+                                  background: healthPct >= 80 ? '#10B981' : healthPct >= 50 ? '#F59E0B' : '#EF4444',
+                                  transition: 'width 0.4s ease',
+                                }} />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-[#0F1720] p-1 mb-6">

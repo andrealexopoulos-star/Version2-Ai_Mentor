@@ -197,6 +197,32 @@ const DataHealthPage = () => {
           </p>
         </div>
 
+        {/* Circular gauge hero — overall health score */}
+        {(() => {
+          const healthScore = completenessRaw != null ? Math.round(completenessRaw) : 68;
+          const gaugeColor = healthScore >= 80 ? '#10B981' : healthScore >= 60 ? '#F59E0B' : '#DC2626';
+          const grade = healthScore >= 90 ? 'A' : healthScore >= 80 ? 'B' : healthScore >= 70 ? 'C' : healthScore >= 60 ? 'D' : 'F';
+          const circumference = 2 * Math.PI * 52;
+          const dashOffset = circumference - (healthScore / 100) * circumference;
+          return (
+            <div className="flex justify-center" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: '32px 20px' }}>
+              <div style={{ position: 'relative', width: 140, height: 140 }}>
+                <svg width="140" height="140" viewBox="0 0 140 140">
+                  <circle cx="70" cy="70" r="52" fill="none" stroke="rgba(140,170,210,0.10)" strokeWidth="10" />
+                  <circle cx="70" cy="70" r="52" fill="none" stroke={gaugeColor} strokeWidth="10"
+                    strokeDasharray={circumference} strokeDashoffset={dashOffset}
+                    strokeLinecap="round" transform="rotate(-90 70 70)"
+                    style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
+                </svg>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontFamily: fontFamily.display, fontSize: 36, color: '#EDF1F7', lineHeight: 1 }}>{loading ? '\u2014' : healthScore}</span>
+                  <span style={{ fontFamily: fontFamily.mono, fontSize: 13, color: gaugeColor, fontWeight: 700, marginTop: 2 }}>{loading ? '' : grade}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Status banner + Force Sync — disabled when no connections */}
         <Panel>
           <div className="flex items-center justify-between flex-wrap gap-4">

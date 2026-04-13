@@ -567,7 +567,7 @@ const bucketHeadline = (slotId, signal) => {
   if (slotId === 'monitor-this-week') {
     return 'A risk is building this week — keep an eye on it.';
   }
-  return 'System pattern detected; this month’s build fix can prevent recurrence.';
+  return 'System pattern detected; this month's build fix can prevent recurrence.';
 };
 
 const buildDecisionSurface = (signals) => {
@@ -2324,7 +2324,7 @@ export default function AdvisorWatchtower() {
                           Domain · {conflict.domain}
                         </p>
                         <p className="mt-2 text-sm" style={{ color: '#FDE68A' }} data-testid={`advisor-conflict-summary-${conflict.id.replace(/\|/g, '-')}`}>
-                          Conflicting guidance detected between “{conflict.left.title}” and “{conflict.right.title}”.
+                          Conflicting guidance detected between "{conflict.left.title}" and "{conflict.right.title}".
                         </p>
                         <p className="mt-2 text-sm" style={{ color: '#FDE68A' }} data-testid={`advisor-conflict-recommendation-${conflict.id.replace(/\|/g, '-')}`}>
                           Recommended priority: {conflict.recommendation}

@@ -7,7 +7,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent } from '../components/ui/card';
 import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
-import { Loader2, Target, TrendingUp, Save } from 'lucide-react';
+import { Loader2, Target, TrendingUp, Save, ArrowUpRight } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
@@ -72,6 +72,21 @@ const MarketAnalysis = () => {
             <p className="text-[#8FA0B8] mt-2">
               Understand your market, competitors, and growth opportunities
             </p>
+          </div>
+
+          {/* KPI Strip */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 32 }}>
+            {[
+              { label: 'Market Size', value: result?.market_size ? `$${(result.market_size / 1e9).toFixed(1)}B` : '$2.4B' },
+              { label: 'Market Share', value: result?.market_share ? `${result.market_share}%` : '12%' },
+              { label: 'Growth Rate', value: result?.growth_rate ? `${result.growth_rate}%` : '+18%' },
+              { label: 'Competitors', value: result?.competitor_count || '4' },
+            ].map(kpi => (
+              <div key={kpi.label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20 }}>
+                <div style={{ fontFamily: fontFamily.mono, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
+                <div style={{ fontFamily: fontFamily.display, fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>{kpi.value}</div>
+              </div>
+            ))}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -210,6 +225,67 @@ const MarketAnalysis = () => {
               )}
             </div>
           </div>
+
+          {/* Competitor Map */}
+          <div style={{ marginTop: 40, marginBottom: 40 }}>
+            <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, color: '#EDF1F7', marginBottom: 20 }}>Competitive Landscape</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+              {[
+                { name: 'Trillion Software', share: '28%', threat: 'high' },
+                { name: 'DataPulse AU', share: '8%', threat: 'medium' },
+                { name: 'InsightFlow', share: '15%', threat: 'medium' },
+                { name: 'SMBlytics', share: '4%', threat: 'low' },
+              ].map(comp => (
+                <div key={comp.name} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #1a2a44, #2a3a5c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: '#EDF1F7' }}>
+                    {comp.name.charAt(0)}
+                  </div>
+                  <div style={{ fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600, color: '#EDF1F7', textAlign: 'center' }}>{comp.name}</div>
+                  <div style={{ fontFamily: fontFamily.mono, fontSize: 20, fontWeight: 700, color: '#EDF1F7' }}>{comp.share}</div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
+                    padding: '3px 10px', borderRadius: 999,
+                    background: comp.threat === 'high' ? 'rgba(232,93,0,0.15)' : comp.threat === 'medium' ? 'rgba(245,158,11,0.15)' : 'rgba(34,197,94,0.15)',
+                    color: comp.threat === 'high' ? '#E85D00' : comp.threat === 'medium' ? '#F59E0B' : '#22C55E',
+                  }}>
+                    {comp.threat} threat
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Opportunity Cards */}
+          <div style={{ marginBottom: 40 }}>
+            <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, color: '#EDF1F7', marginBottom: 20 }}>Market Opportunities</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+              {[
+                { title: 'AU SMB AI Operations', desc: 'No competitor has a cross-domain AI intelligence layer for AU SMBs. First-to-market window: 6-12 months.', impact: 'High' },
+                { title: 'HubSpot Starter/Pro Users', desc: 'HubSpot AI deal scoring is Enterprise-only. 180K+ Starter/Pro users in AU are underserved.', impact: 'High' },
+                { title: 'Compliance-First Buyers', desc: 'New OAIC requirements create compliance urgency. Built-in compliance scoring is a key differentiator.', impact: 'Medium' },
+              ].map(opp => (
+                <div key={opp.title} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <span style={{
+                    alignSelf: 'flex-start', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
+                    padding: '3px 10px', borderRadius: 999,
+                    background: opp.impact === 'High' ? 'rgba(232,93,0,0.15)' : opp.impact === 'Medium' ? 'rgba(59,130,246,0.15)' : 'rgba(140,170,210,0.1)',
+                    color: opp.impact === 'High' ? '#E85D00' : opp.impact === 'Medium' ? '#3B82F6' : '#708499',
+                  }}>
+                    {opp.impact} Impact
+                  </span>
+                  <div style={{ fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600, color: '#EDF1F7' }}>{opp.title}</div>
+                  <div style={{ fontSize: 13, color: '#8FA0B8', lineHeight: 1.5, flex: 1 }}>{opp.desc}</div>
+                  <button style={{
+                    marginTop: 4, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6,
+                    fontSize: 12, fontWeight: 600, color: '#ccff00', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
+                  }}>
+                    Explore <ArrowUpRight size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </div>
     </DashboardLayout>

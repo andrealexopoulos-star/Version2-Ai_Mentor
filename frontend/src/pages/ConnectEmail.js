@@ -263,7 +263,7 @@ const ConnectEmail = () => {
           onClose={() => setShowAdminConsent(false)}
         />
       )}
-      <div className="px-3 sm:px-6 lg:px-8 py-6 sm:py-8 w-full lg:max-w-5xl lg:mx-auto">
+      <div className="px-3 sm:px-6 lg:px-8 py-6 sm:py-8 w-full max-w-[680px] mx-auto">
         <div className="space-y-6">
           {/* Header */}
           <div>

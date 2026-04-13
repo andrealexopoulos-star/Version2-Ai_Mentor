@@ -108,18 +108,16 @@ const MarketingIntelPage = () => {
         </div>
 
         {/* KPI Strip — matches mockup mi-kpis */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 32 }}>
           {[
-            { label: 'Website Traffic', value: '4,821', delta: '+22% vs prev', up: true },
-            { label: 'Lead Conversions', value: '47', delta: '+8 vs prev', up: true },
-            { label: 'Cost per Lead', value: '$34', delta: '+$6 vs prev', up: false },
-            { label: 'Brand Mentions', value: '89', delta: '+31% vs prev', up: true },
-            { label: 'Share of Voice', value: '12%', delta: 'unchanged', up: null },
+            { label: 'Campaigns Active', value: '12' },
+            { label: 'Total Reach', value: '48.2K' },
+            { label: 'Conversion Rate', value: '3.8%' },
+            { label: 'Cost per Lead', value: '$34' },
           ].map(kpi => (
-            <div key={kpi.label} className="rounded-2xl p-4" style={{ background: '#0E1628', border: '1px solid rgba(140,170,210,0.12)' }}>
-              <span className="text-[10px] font-semibold uppercase tracking-wider block mb-1" style={{ color: '#708499' }}>{kpi.label}</span>
-              <span className="text-2xl font-bold block" style={{ fontFamily: fontFamily.mono, color: '#EDF1F7', lineHeight: 1 }}>{kpi.value}</span>
-              <span className="text-xs font-medium mt-1 block" style={{ color: kpi.up === true ? '#16A34A' : kpi.up === false ? '#DC2626' : '#708499' }}>{kpi.delta}</span>
+            <div key={kpi.label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20 }}>
+              <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
+              <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>{kpi.value}</div>
             </div>
           ))}
         </div>
