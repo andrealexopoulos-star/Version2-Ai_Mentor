@@ -135,10 +135,8 @@ export const IntelligenceDiagram = ({ embedded = false }) => {
           </h2>
         </div>
 
-        {/* 3-column × 2-row input grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+        {/* 3-column × 2-row input grid — stacks to 1-col on mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-3" style={{
           gap: 16,
         }}>
           {SIX_INPUT_CATEGORIES.map(cat => (

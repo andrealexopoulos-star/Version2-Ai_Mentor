@@ -16,7 +16,7 @@ const LogoCard = ({ name }) => (
   <div
     className="logo-card flex flex-col items-center justify-center gap-2 shrink-0"
     style={{
-      width: 100,
+      width: 'min(100px, calc(25vw - 20px))',
       height: 90,
       background: 'rgba(255,255,255,0.02)',
       border: '1px solid rgba(255,255,255,0.05)',

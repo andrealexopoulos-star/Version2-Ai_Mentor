@@ -35,7 +35,7 @@ const LogoChip = ({ name }) => (
   <div
     className="integration-chip flex items-center gap-2.5 shrink-0"
     style={{
-      minWidth: 132,
+      minWidth: 'min(132px, calc(50vw - 40px))',
       height: 52,
       padding: '0 14px',
       borderRadius: 14,

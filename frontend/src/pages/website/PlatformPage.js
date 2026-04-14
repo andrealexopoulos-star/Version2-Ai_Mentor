@@ -63,7 +63,7 @@ const DashboardMock = () => (
         </div>
       ))}
     </div>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: 10, padding: '10px 16px' }}>
+    <div className="grid grid-cols-1 sm:grid-cols-[1fr_220px]" style={{ gap: 10, padding: '10px 16px' }}>
       <div>
         <div style={{ color: 'var(--ink-display)', fontWeight: 600, fontSize: 11, marginBottom: 8 }}>What Needs Attention <span style={{ background: `${O}20`, color: O, borderRadius: 10, padding: '1px 7px', fontSize: 9 }}>5 items</span></div>
         {[

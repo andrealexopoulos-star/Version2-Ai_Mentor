@@ -353,7 +353,7 @@ const PricingPage = () => {
               <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
                 <thead style={{ position: 'sticky', top: 64, zIndex: 10 }}>
                   <tr style={{ background: '#080C14' }}>
-                    <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, minWidth: 200, background: '#080C14' }}>Feature</th>
+                    <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, minWidth: 140, background: '#080C14' }}>Feature</th>
                     <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#080C14' }}>Free</th>
                     <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#080C14' }}>Growth</th>
                     <th className="text-center py-3 px-4 font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, background: '#080C14' }}>Pro</th>
