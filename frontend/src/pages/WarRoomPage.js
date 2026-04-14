@@ -6,7 +6,7 @@ import { WarRoomConsoleBody } from '../components/WarRoomConsole';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { useWatchtowerRealtime } from '../hooks/useWatchtowerRealtime';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
-import { colors, fontFamily } from '../design-system/tokens';
+// Design tokens now referenced via CSS custom properties
 
 /* ── Map watchtower event domain to icon ──────────────────────────── */
 const DOMAIN_ICON_MAP = {
@@ -123,7 +123,7 @@ function WarRoomPageNotes({ hasBlockingState, conversationId }) {
 /* ── Alert card for the left panel ─────────────────────────────────── */
 
 function AlertCard({ alert, isSelected, onClick }) {
-  const sevColor = SEVERITY_COLORS[alert.severity] || colors.textMuted;
+  const sevColor = SEVERITY_COLORS[alert.severity] || 'var(--ink-muted)';
 
   return (
     <button
@@ -165,10 +165,10 @@ function AlertCard({ alert, isSelected, onClick }) {
           style={{
             fontSize: '9px',
             fontWeight: 700,
-            letterSpacing: '0.08em',
+            letterSpacing: 'var(--ls-caps)',
             textTransform: 'uppercase',
             color: sevColor,
-            fontFamily: fontFamily.mono,
+            fontFamily: 'var(--font-mono)',
           }}
         >
           {alert.severity}
@@ -180,7 +180,7 @@ function AlertCard({ alert, isSelected, onClick }) {
         style={{
           fontSize: '13px',
           fontWeight: 600,
-          color: 'var(--ink-display, #EDF1F7)',
+          color: 'var(--ink-display)',
           lineHeight: 1.35,
           marginBottom: '4px',
           margin: 0,
@@ -191,7 +191,7 @@ function AlertCard({ alert, isSelected, onClick }) {
       </h4>
 
       {/* Source + timestamp */}
-      <div style={{ fontSize: '11px', color: 'var(--ink-muted, #708499)', marginBottom: '4px' }}>
+      <div style={{ fontSize: '11px', color: 'var(--ink-muted)', marginBottom: '4px' }}>
         {alert.source} &middot; {alert.timestamp}
       </div>
 
@@ -199,7 +199,7 @@ function AlertCard({ alert, isSelected, onClick }) {
       <p
         style={{
           fontSize: '11px',
-          color: 'var(--ink-secondary, #8FA0B8)',
+          color: 'var(--ink-secondary)',
           lineHeight: 1.4,
           margin: 0,
           display: '-webkit-box',
@@ -229,8 +229,8 @@ function ConsoleEmptyState() {
         padding: '40px',
       }}
     >
-      <AlertTriangle size={40} style={{ color: 'var(--ink-muted, #708499)', opacity: 0.4 }} />
-      <p style={{ fontSize: '15px', color: 'var(--ink-muted, #708499)', textAlign: 'center', maxWidth: '320px', lineHeight: 1.5 }}>
+      <AlertTriangle size={40} style={{ color: 'var(--ink-muted)', opacity: 0.4 }} />
+      <p style={{ fontSize: '15px', color: 'var(--ink-muted)', textAlign: 'center', maxWidth: '320px', lineHeight: 1.5 }}>
         Select an alert to begin crisis analysis
       </p>
     </div>
@@ -287,26 +287,26 @@ export default function WarRoomPage() {
             style={{
               width: '350px',
               flexShrink: 0,
-              borderRight: '1px solid rgba(140,170,210,0.12)',
+              borderRight: '1px solid var(--border)',
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              background: 'var(--surface, #0E1628)',
+              background: 'var(--surface)',
             }}
           >
             {/* Header */}
             <div
               style={{
                 padding: '20px 16px 14px',
-                borderBottom: '1px solid rgba(140,170,210,0.12)',
+                borderBottom: '1px solid var(--border)',
               }}
             >
               <h2
                 style={{
                   fontSize: '18px',
-                  fontFamily: fontFamily.display,
+                  fontFamily: 'var(--font-display)',
                   fontWeight: 600,
-                  color: 'var(--ink-display, #EDF1F7)',
+                  color: 'var(--ink-display)',
                   margin: 0,
                   marginBottom: '12px',
                 }}
@@ -321,7 +321,7 @@ export default function WarRoomPage() {
                   const isCritical = tab === 'Critical';
                   let bg = 'transparent';
                   let borderColor = 'rgba(140,170,210,0.15)';
-                  let textColor = 'var(--ink-muted, #708499)';
+                  let textColor = 'var(--ink-muted)';
                   if (isActive && isCritical) {
                     bg = '#DC2626';
                     borderColor = '#DC2626';
@@ -338,17 +338,17 @@ export default function WarRoomPage() {
                       onClick={() => setActiveFilter(tab)}
                       style={{
                         padding: '4px 10px',
-                        borderRadius: '9999px',
+                        borderRadius: 'var(--r-pill)',
                         fontSize: '10px',
                         fontWeight: 600,
-                        letterSpacing: '0.06em',
+                        letterSpacing: 'var(--ls-caps)',
                         textTransform: 'uppercase',
                         border: `1px solid ${borderColor}`,
                         background: bg,
                         color: textColor,
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',
-                        fontFamily: fontFamily.mono,
+                        fontFamily: 'var(--font-mono)',
                       }}
                     >
                       {tab}
@@ -362,15 +362,15 @@ export default function WarRoomPage() {
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
               {alertsLoading && filteredAlerts.length === 0 && (
                 <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '13px', color: 'var(--ink-muted, #708499)', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: '13px', color: 'var(--ink-muted)', lineHeight: 1.5 }}>
                     Loading alerts...
                   </p>
                 </div>
               )}
               {!alertsLoading && filteredAlerts.length === 0 && (
                 <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-                  <AlertTriangle size={28} style={{ color: 'var(--ink-muted, #708499)', opacity: 0.35, marginBottom: '12px' }} />
-                  <p style={{ fontSize: '13px', color: 'var(--ink-muted, #708499)', lineHeight: 1.5, maxWidth: '260px', margin: '0 auto' }}>
+                  <AlertTriangle size={28} style={{ color: 'var(--ink-muted)', opacity: 0.35, marginBottom: '12px' }} />
+                  <p style={{ fontSize: '13px', color: 'var(--ink-muted)', lineHeight: 1.5, maxWidth: '260px', margin: '0 auto' }}>
                     No active alerts. Crisis signals will appear here when detected by BIQc monitoring.
                   </p>
                 </div>
@@ -389,12 +389,12 @@ export default function WarRoomPage() {
             <div
               style={{
                 padding: '12px 16px',
-                borderTop: '1px solid rgba(140,170,210,0.12)',
+                borderTop: '1px solid var(--border)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
                 fontSize: '11px',
-                color: 'var(--ink-muted, #708499)',
+                color: 'var(--ink-muted)',
               }}
             >
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', animation: 'warRoomPulse 2s ease-in-out infinite', flexShrink: 0 }} />
@@ -409,14 +409,14 @@ export default function WarRoomPage() {
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              background: 'var(--surface, #0E1628)',
+              background: 'var(--surface)',
             }}
           >
             {/* Console header — selected alert info */}
             <div
               style={{
                 padding: '16px 24px',
-                borderBottom: '1px solid rgba(140,170,210,0.12)',
+                borderBottom: '1px solid var(--border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -427,9 +427,9 @@ export default function WarRoomPage() {
                 <h2
                   style={{
                     fontSize: '20px',
-                    fontFamily: fontFamily.display,
+                    fontFamily: 'var(--font-display)',
                     fontWeight: 600,
-                    color: 'var(--ink-display, #EDF1F7)',
+                    color: 'var(--ink-display)',
                     margin: 0,
                   }}
                 >
@@ -440,14 +440,14 @@ export default function WarRoomPage() {
                     style={{
                       fontSize: '10px',
                       fontWeight: 700,
-                      letterSpacing: '0.06em',
+                      letterSpacing: 'var(--ls-caps)',
                       textTransform: 'uppercase',
                       padding: '3px 10px',
-                      borderRadius: '9999px',
-                      background: SEVERITY_COLORS[selectedAlert.severity] || 'var(--ink-muted, #708499)',
+                      borderRadius: 'var(--r-pill)',
+                      background: SEVERITY_COLORS[selectedAlert.severity] || 'var(--ink-muted)',
                       color: '#FFFFFF',
                       whiteSpace: 'nowrap',
-                      fontFamily: fontFamily.mono,
+                      fontFamily: 'var(--font-mono)',
                     }}
                   >
                     {selectedAlert.severity}
@@ -462,13 +462,13 @@ export default function WarRoomPage() {
                     gap: '8px',
                     fontSize: '11px',
                     fontWeight: 600,
-                    letterSpacing: '0.06em',
+                    letterSpacing: 'var(--ls-caps)',
                     textTransform: 'uppercase',
                     padding: '4px 12px',
-                    borderRadius: '9999px',
+                    borderRadius: 'var(--r-pill)',
                     background: '#FEE2E2',
                     color: '#991B1B',
-                    fontFamily: fontFamily.mono,
+                    fontFamily: 'var(--font-mono)',
                   }}
                 >
                   <span
@@ -489,14 +489,14 @@ export default function WarRoomPage() {
                       borderRadius: '8px',
                       fontSize: '12px',
                       fontWeight: 600,
-                      background: colors.danger,
+                      background: 'var(--danger)',
                       color: '#FFFFFF',
                       border: 'none',
                       cursor: 'pointer',
                       transition: 'background 0.15s ease',
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = '#991B1B'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = colors.danger; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--danger)'; }}
                   >
                     Escalate
                   </button>

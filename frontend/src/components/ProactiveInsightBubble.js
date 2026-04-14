@@ -3,7 +3,7 @@
  *
  * Polls /api/soundboard/proactive-check every 3 minutes while user is online.
  * When a new signal is detected, shows a floating insight card that the user
- * can act on, dismiss, or take to the Soundboard for deeper analysis.
+ * can act on, dismiss, or take to Ask BIQc for deeper analysis.
  *
  * This is what makes BIQc feel alive — it surfaces insights WITHOUT being asked.
  */
@@ -97,7 +97,7 @@ export const ProactiveInsightBubble = () => {
   const handleAsk = () => {
     if (!insight) return;
     handleDismiss();
-    // Pre-fill Soundboard with the insight context
+    // Pre-fill Ask BIQc with the insight context
     const query = `Tell me more about this: ${insight.title}. ${insight.message}`;
     sessionStorage.setItem('biqc_soundboard_prefill', query);
     navigate('/soundboard');

@@ -9,7 +9,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { Shield, Lock, Eye, FileText, ArrowRight, MapPin, Brain, Scale } from 'lucide-react';
-import { fontFamily } from '../../design-system/tokens';
+/* design tokens consumed via CSS custom properties — see liquid-steel-tokens.css */
 
 /* ── Trust Pillars ── */
 const PILLARS = [
@@ -79,8 +79,8 @@ const DATA_FAQ = [
   },
 ];
 
-const cardBg = 'linear-gradient(105deg, rgba(200,220,240,0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0) 55%), linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)';
-const cardBorder = '1px solid rgba(140,170,210,0.15)';
+const cardBg = 'var(--surface)';
+const cardBorder = '1px solid var(--border)';
 
 export default function TrustLandingPage() {
   return (
@@ -90,25 +90,25 @@ export default function TrustLandingPage() {
         style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }}>
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-[48px] font-bold leading-[1.15] tracking-tight mb-4"
-            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+            style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)', letterSpacing: 'var(--ls-display)' }}>
             Trust & Security
           </h1>
           <p className="text-lg max-w-[520px] mx-auto leading-relaxed"
-            style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            style={{ color: 'var(--ink-secondary)' }}>
             Your data is protected by Australian-grade security, privacy, and compliance standards.
           </p>
         </div>
       </section>
 
       {/* Trust Pillars */}
-      <section className="py-20 px-6" style={{ background: 'var(--bg-primary, #080C14)' }}>
+      <section className="py-20 px-6" style={{ background: 'var(--canvas)' }}>
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)', letterSpacing: 'var(--ls-display)' }}>
               Our commitments to you
             </h2>
-            <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <p className="text-[15px]" style={{ color: 'var(--ink-secondary)' }}>
               Four pillars that underpin everything we build.
             </p>
           </div>
@@ -116,11 +116,11 @@ export default function TrustLandingPage() {
             {PILLARS.map((pillar) => (
               <div key={pillar.title} className="rounded-xl p-7" style={{ background: cardBg, border: cardBorder }}>
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
-                  style={{ background: 'rgba(232,93,0,0.12)', color: 'var(--lava, #E85D00)' }}>
+                  style={{ background: 'rgba(232,93,0,0.12)', color: 'var(--lava)' }}>
                   {pillar.icon}
                 </div>
-                <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{pillar.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{pillar.description}</p>
+                <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--ink-display)' }}>{pillar.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>{pillar.description}</p>
               </div>
             ))}
           </div>
@@ -128,14 +128,14 @@ export default function TrustLandingPage() {
       </section>
 
       {/* Legal Documents */}
-      <section className="py-20 px-6" style={{ background: 'var(--bg-secondary, #0B1120)' }}>
+      <section className="py-20 px-6" style={{ background: 'var(--canvas-app)' }}>
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)', letterSpacing: 'var(--ls-display)' }}>
               Legal documents
             </h2>
-            <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <p className="text-[15px]" style={{ color: 'var(--ink-secondary)' }}>
               Transparent policies you can read, understand, and rely on.
             </p>
           </div>
@@ -147,17 +147,17 @@ export default function TrustLandingPage() {
                 data-testid={`trust-link-${doc.title.toLowerCase().replace(/\s+/g, '-')}`}>
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: 'rgba(232,93,0,0.12)' }}>
-                  <doc.icon className="w-5 h-5" style={{ color: 'var(--lava, #E85D00)' }} />
+                  <doc.icon className="w-5 h-5" style={{ color: 'var(--lava)' }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-[15px] font-semibold mb-1 group-hover:text-[#E85D00] transition-colors"
-                    style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+                    style={{ color: 'var(--ink-display)' }}>
                     {doc.title}
                   </h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{doc.summary}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>{doc.summary}</p>
                 </div>
                 <ArrowRight className="w-4 h-4 mt-1 shrink-0 opacity-30 group-hover:opacity-100 group-hover:text-[#E85D00] transition-all"
-                  style={{ color: 'var(--ink-secondary, #8FA0B8)' }} />
+                  style={{ color: 'var(--ink-secondary)' }} />
               </Link>
             ))}
           </div>
@@ -165,14 +165,14 @@ export default function TrustLandingPage() {
       </section>
 
       {/* Compliance Badges */}
-      <section className="py-16 px-6" style={{ background: 'var(--bg-primary, #080C14)', borderTop: '1px solid var(--border-card, rgba(140,170,210,0.12))' }}>
+      <section className="py-16 px-6" style={{ background: 'var(--canvas)', borderTop: '1px solid var(--border)' }}>
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)', letterSpacing: 'var(--ls-display)' }}>
               Compliance & standards
             </h2>
-            <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <p className="text-[15px]" style={{ color: 'var(--ink-secondary)' }}>
               The frameworks and protocols we adhere to.
             </p>
           </div>
@@ -181,8 +181,8 @@ export default function TrustLandingPage() {
               <div key={badge}
                 className="flex items-center gap-2.5 px-5 py-3 rounded-lg"
                 style={{ background: cardBg, border: cardBorder }}>
-                <Shield className="w-4 h-4" style={{ color: 'var(--lava, #E85D00)' }} />
-                <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{badge}</span>
+                <Shield className="w-4 h-4" style={{ color: 'var(--lava)' }} />
+                <span className="text-sm font-medium" style={{ color: 'var(--ink-display)' }}>{badge}</span>
               </div>
             ))}
           </div>
@@ -190,27 +190,27 @@ export default function TrustLandingPage() {
       </section>
 
       {/* Data Handling */}
-      <section className="py-20 px-6" style={{ background: 'var(--bg-secondary, #0B1120)' }}>
+      <section className="py-20 px-6" style={{ background: 'var(--canvas-app)' }}>
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)', letterSpacing: 'var(--ls-display)' }}>
               How we handle your data
             </h2>
-            <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <p className="text-[15px]" style={{ color: 'var(--ink-secondary)' }}>
               Clear answers to common questions about data practices.
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-5">
             {DATA_FAQ.map((item) => (
               <div key={item.q} className="rounded-xl p-7" style={{ background: cardBg, border: cardBorder }}>
-                <h3 className="text-[15px] font-semibold mb-3" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{item.q}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{item.a}</p>
+                <h3 className="text-[15px] font-semibold mb-3" style={{ color: 'var(--ink-display)' }}>{item.q}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>{item.a}</p>
                 {item.bullets && (
                   <ul className="mt-2 space-y-1.5">
                     {item.bullets.map((b) => (
                       <li key={b} className="text-sm leading-relaxed pl-4 relative"
-                        style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        style={{ color: 'var(--ink-secondary)' }}>
                         <span className="absolute left-0 top-[9px] w-1.5 h-1.5 rounded-full" style={{ background: '#E85D00' }} />
                         {b}
                       </li>
@@ -225,13 +225,13 @@ export default function TrustLandingPage() {
 
       {/* CTA */}
       <section className="py-20 px-6 text-center"
-        style={{ background: 'var(--bg-primary, #080C14)', borderTop: '1px solid var(--border-card, rgba(140,170,210,0.12))' }}>
+        style={{ background: 'var(--canvas)', borderTop: '1px solid var(--border)' }}>
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4"
-            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+            style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)', letterSpacing: 'var(--ls-display)' }}>
             Questions about security?
           </h2>
-          <p className="text-base mb-8" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+          <p className="text-base mb-8" style={{ color: 'var(--ink-secondary)' }}>
             Our team is here to discuss your specific compliance and security requirements.
           </p>
           <Link to="/contact"

@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Progress } from '../components/ui/progress';
-import { fontFamily } from '../design-system/tokens';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -194,8 +193,8 @@ const DataCenter = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Data Centre</h1>
-            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <h1 className="font-medium mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 28, letterSpacing: 'var(--ls-display)', lineHeight: 1.15 }}>Data Centre</h1>
+            <p className="text-sm" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>
               Upload your business documents to make the AI your subject matter expert
             </p>
           </div>
@@ -205,10 +204,10 @@ const DataCenter = () => {
             <Card className="stat-card">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <Database className="w-8 h-8 text-[#ccff00]" />
+                  <Database className="w-8 h-8 text-[var(--lava)]" />
                   <div>
-                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Data Sources</p>
-                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.categories?.length || 0}</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)' }}>Data Sources</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>{stats?.categories?.length || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -216,10 +215,10 @@ const DataCenter = () => {
             <Card className="stat-card">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <FileText className="w-8 h-8 text-[#ccff00]" />
+                  <FileText className="w-8 h-8 text-[var(--lava)]" />
                   <div>
-                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Records</p>
-                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.total_files || 0}</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)' }}>Records</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>{stats?.total_files || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -227,10 +226,10 @@ const DataCenter = () => {
             <Card className="stat-card">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <HardDrive className="w-8 h-8 text-[#ccff00]" />
+                  <HardDrive className="w-8 h-8 text-[var(--lava)]" />
                   <div>
-                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Storage Used</p>
-                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.total_size_mb || 0} MB</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)' }}>Storage Used</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>{stats?.total_size_mb || 0} MB</p>
                   </div>
                 </div>
               </CardContent>
@@ -238,10 +237,10 @@ const DataCenter = () => {
             <Card className="stat-card">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <Building2 className="w-8 h-8 text-[#ccff00]" />
+                  <Building2 className="w-8 h-8 text-[var(--lava)]" />
                   <div>
-                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Last Sync</p>
-                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.last_sync ? new Date(stats.last_sync).toLocaleDateString() : 'N/A'}</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)' }}>Last Sync</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>{stats?.last_sync ? new Date(stats.last_sync).toLocaleDateString() : 'N/A'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -250,22 +249,22 @@ const DataCenter = () => {
 
           {/* ── Data Sources Table ── */}
           {files.length > 0 && (
-            <Card className="mb-8" style={{ borderRadius: 16, border: '1px solid rgba(140,170,210,0.12)', overflow: 'hidden' }}>
+            <Card className="mb-8" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
               <CardHeader className="pb-3">
-                <CardTitle style={{ fontFamily: fontFamily.display, fontSize: 18, color: 'var(--ink-display, #EDF1F7)' }}>
+                <CardTitle style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--ink-display)' }}>
                   Data Sources
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: fontFamily.body, fontSize: 14 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-ui)', fontSize: 14 }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid rgba(140,170,210,0.12)' }}>
+                      <tr style={{ borderBottom: '1px solid var(--border)' }}>
                         {['Source', 'Type', 'Records', 'Last Sync', 'Status', 'Health'].map(col => (
                           <th key={col} style={{
                             textAlign: 'left', padding: '12px 16px',
-                            fontFamily: fontFamily.mono, fontSize: 10, color: 'var(--ink-muted, #708499)',
-                            textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500,
+                            fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-muted)',
+                            textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', fontWeight: 500,
                           }}>{col}</th>
                         ))}
                       </tr>
@@ -277,25 +276,25 @@ const DataCenter = () => {
                         // Derive status from file state
                         const status = hasText ? 'active' : 'syncing';
                         const healthPct = hasText ? 100 : 40;
-                        const statusColor = status === 'active' ? '#10B981' : status === 'syncing' ? '#F59E0B' : '#EF4444';
+                        const statusColor = status === 'active' ? 'var(--positive)' : status === 'syncing' ? 'var(--warning)' : 'var(--danger)';
                         return (
-                          <tr key={file.id} style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
-                            <td style={{ padding: '12px 16px', color: 'var(--ink-display, #EDF1F7)', fontWeight: 500 }}>
+                          <tr key={file.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-display)', fontWeight: 500 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Database className="w-4 h-4" style={{ color: 'var(--ink-muted, #708499)', flexShrink: 0 }} />
+                                <Database className="w-4 h-4" style={{ color: 'var(--ink-muted)', flexShrink: 0 }} />
                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{file.filename}</span>
                               </div>
                             </td>
-                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary, #8FA0B8)' }}>{catLabel}</td>
-                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono, fontSize: 12 }}>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary)' }}>{catLabel}</td>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
                               {formatFileSize(file.file_size)}
                             </td>
-                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary, #8FA0B8)', fontSize: 13 }}>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary)', fontSize: 13 }}>
                               {new Date(file.created_at).toLocaleDateString()}
                             </td>
                             <td style={{ padding: '12px 16px' }}>
                               <span style={{
-                                display: 'inline-block', padding: '3px 10px', borderRadius: 9999,
+                                display: 'inline-block', padding: '3px 10px', borderRadius: 'var(--r-pill)',
                                 fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em',
                                 color: statusColor, background: `${statusColor}18`,
                               }}>
@@ -305,11 +304,11 @@ const DataCenter = () => {
                             <td style={{ padding: '12px 16px' }}>
                               <div style={{
                                 width: 60, height: 6, borderRadius: 3,
-                                background: 'rgba(140,170,210,0.12)', overflow: 'hidden',
+                                background: 'var(--border)', overflow: 'hidden',
                               }}>
                                 <div style={{
                                   width: `${healthPct}%`, height: '100%', borderRadius: 3,
-                                  background: healthPct >= 80 ? '#10B981' : healthPct >= 50 ? '#F59E0B' : '#EF4444',
+                                  background: healthPct >= 80 ? 'var(--positive)' : healthPct >= 50 ? 'var(--warning)' : 'var(--danger)',
                                   transition: 'width 0.4s ease',
                                 }} />
                               </div>
@@ -325,7 +324,7 @@ const DataCenter = () => {
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-[#0F1720] p-1 mb-6">
+            <TabsList className="bg-[var(--surface-sunken)] p-1 mb-6">
               <TabsTrigger value="files" className="data-[state=active]:bg-[var(--surface)]" data-testid="tab-files">
                 <Database className="w-4 h-4 mr-2" /> Files & Documents
               </TabsTrigger>
@@ -347,7 +346,7 @@ const DataCenter = () => {
                       <Card key={file.id} className="rounded-lg hover-lift group">
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
-                            <div className="w-10 h-10 bg-[#ccff00]/20 rounded-sm flex items-center justify-center">
+                            <div className="w-10 h-10 bg-[var(--lava-wash)] rounded-sm flex items-center justify-center">
                               <Icon className="w-5 h-5 text-[var(--ink-display)]" />
                             </div>
                             <button
@@ -370,7 +369,7 @@ const DataCenter = () => {
                             <span>{new Date(file.created_at).toLocaleDateString()}</span>
                           </div>
                           {file.extracted_text && (
-                            <div className="mt-3 pt-3 border-t border-[rgba(140,170,210,0.12)]">
+                            <div className="mt-3 pt-3 border-t border-[var(--border)]">
                               <div className="flex items-center gap-1 text-xs text-green-600">
                                 <Check className="w-3 h-3" />
                                 Text extracted for AI
@@ -566,7 +565,7 @@ const DataCenter = () => {
                   {/* Drop Zone */}
                   <div
                     className={`border-2 border-dashed rounded-sm p-8 text-center transition-colors ${
-                      dragActive ? 'border-[#ccff00] bg-[#ccff00]/10' : 'border-[rgba(140,170,210,0.12)] hover:border-[rgba(140,170,210,0.12)]'
+                      dragActive ? 'border-[var(--lava)] bg-[var(--lava-wash)]' : 'border-[var(--border)] hover:border-[var(--border)]'
                     }`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
@@ -639,7 +638,7 @@ const DataCenter = () => {
                     Upload File
                   </Button>
 
-                  <div className="p-4 bg-[#0F1720] rounded-sm">
+                  <div className="p-4 bg-[var(--surface-sunken)] rounded-sm">
                     <div className="flex items-start gap-3">
                       <AlertCircle className="w-5 h-5 text-[var(--ink-secondary)] flex-shrink-0 mt-0.5" />
                       <div className="text-sm text-[var(--ink-secondary)]">

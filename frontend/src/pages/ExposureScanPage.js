@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { fontFamily } from '../design-system/tokens';
+/* fontFamily import removed — using CSS custom properties */
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Shield, ChevronDown } from 'lucide-react';
@@ -9,17 +9,17 @@ import { Shield, ChevronDown } from 'lucide-react';
    SEVERITY CONFIG
    ═══════════════════════════════════════════════════════════════════════════ */
 const SEVERITY_COLORS = {
-  critical: '#DC2626',
-  high:     '#D97706',
-  medium:   '#2563EB',
-  low:      '#16A34A',
+  critical: 'var(--danger)',
+  high:     'var(--warning)',
+  medium:   'var(--info)',
+  low:      'var(--positive)',
 };
 
 const SEVERITY_BADGE_STYLES = {
-  critical: { background: '#FEE2E2', color: '#991B1B' },
-  high:     { background: '#FEF3C7', color: '#92400E' },
-  medium:   { background: '#DBEAFE', color: '#1E40AF' },
-  low:      { background: '#D1FAE5', color: '#065F46' },
+  critical: { background: 'var(--danger-wash)', color: 'var(--danger)' },
+  high:     { background: 'var(--warning-wash)', color: 'var(--warning)' },
+  medium:   { background: 'var(--info-wash)', color: 'var(--info)' },
+  low:      { background: 'var(--positive-wash)', color: 'var(--positive)' },
 };
 
 const scoreClass = (val) => {
@@ -28,7 +28,7 @@ const scoreClass = (val) => {
   return 'bad';
 };
 
-const SCORE_STROKE = { good: '#16A34A', warn: '#D97706', bad: '#DC2626' };
+const SCORE_STROKE = { good: 'var(--positive)', warn: 'var(--warning)', bad: 'var(--danger)' };
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DEMO DATA
@@ -145,7 +145,7 @@ const ScoreRing = ({ score }) => {
         <circle
           cx="60" cy="60" r="52"
           fill="none"
-          stroke="rgba(140,170,210,0.15)"
+          stroke="var(--border)"
           strokeWidth="8"
         />
         <circle
@@ -164,12 +164,12 @@ const ScoreRing = ({ score }) => {
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       }}>
         <div style={{
-          fontFamily: fontFamily.mono, fontSize: 40, fontWeight: 700,
-          color: 'var(--ink-display, #EDF1F7)', lineHeight: 1,
+          fontFamily: 'var(--font-mono)', fontSize: 40, fontWeight: 700,
+          color: 'var(--ink-display)', lineHeight: 1,
         }}>
           {score}
         </div>
-        <div style={{ fontSize: 12, color: 'var(--ink-secondary, #8FA0B8)', marginTop: 4 }}>out of 100</div>
+        <div style={{ fontSize: 12, color: 'var(--ink-secondary)', marginTop: 4 }}>out of 100</div>
       </div>
     </div>
   );
@@ -185,11 +185,11 @@ const ScoreBar = ({ label, score }) => {
       display: 'grid', gridTemplateColumns: '120px 1fr 40px',
       alignItems: 'center', gap: 12,
     }}>
-      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
+      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>
         {label}
       </div>
       <div style={{
-        height: 8, background: 'rgba(140,170,210,0.08)', borderRadius: 4, overflow: 'hidden',
+        height: 8, background: 'var(--border-subtle)', borderRadius: 4, overflow: 'hidden',
       }}>
         <div style={{
           height: '100%', borderRadius: 4, width: `${score}%`,
@@ -198,8 +198,8 @@ const ScoreBar = ({ label, score }) => {
         }} />
       </div>
       <div style={{
-        fontFamily: fontFamily.mono, fontSize: 14, fontWeight: 600,
-        color: 'var(--ink-display, #EDF1F7)', textAlign: 'right',
+        fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600,
+        color: 'var(--ink-display)', textAlign: 'right',
       }}>
         {score}
       </div>
@@ -211,19 +211,20 @@ const ScoreBar = ({ label, score }) => {
    FINDING CARD
    ═══════════════════════════════════════════════════════════════════════════ */
 const FindingCard = ({ finding, onAction }) => {
-  const borderColor = SEVERITY_COLORS[finding.severity] || 'rgba(140,170,210,0.15)';
+  const borderColor = SEVERITY_COLORS[finding.severity] || 'var(--border)';
   const badgeStyle = SEVERITY_BADGE_STYLES[finding.severity] || {};
 
   return (
     <div style={{
-      background: 'var(--surface, #0E1628)',
-      border: '1px solid rgba(140,170,210,0.15)',
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
       borderLeft: `3px solid ${borderColor}`,
-      borderRadius: 16, padding: 20,
+      borderRadius: 'var(--r-xl)', padding: 20,
       transition: 'box-shadow 0.15s ease',
+      boxShadow: 'var(--elev-1)',
     }}
-    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)'; }}
-    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--elev-2)'; }}
+    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'var(--elev-1)'; }}
     >
       {/* Head */}
       <div style={{
@@ -239,7 +240,7 @@ const FindingCard = ({ finding, onAction }) => {
         </span>
         <span style={{
           fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase',
-          color: 'var(--ink-secondary, #8FA0B8)',
+          color: 'var(--ink-secondary)',
         }}>
           {finding.domain}
         </span>
@@ -247,16 +248,16 @@ const FindingCard = ({ finding, onAction }) => {
 
       {/* Title */}
       <div style={{
-        fontSize: 15, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', marginBottom: 8,
-        fontFamily: fontFamily.body,
+        fontSize: 15, fontWeight: 600, color: 'var(--ink-display)', marginBottom: 8,
+        fontFamily: 'var(--font-ui)',
       }}>
         {finding.title}
       </div>
 
       {/* Description */}
       <div style={{
-        fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5, marginBottom: 16,
-        fontFamily: fontFamily.body,
+        fontSize: 14, color: 'var(--ink-secondary)', lineHeight: 1.5, marginBottom: 16,
+        fontFamily: 'var(--font-ui)',
       }}>
         {finding.description}
       </div>
@@ -268,30 +269,30 @@ const FindingCard = ({ finding, onAction }) => {
             key={i}
             onClick={() => onAction(finding, action.label)}
             style={{
-              padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 500,
-              border: action.primary ? 'none' : '1px solid rgba(140,170,210,0.15)',
-              background: action.primary ? 'rgba(232,93,0,0.12)' : 'transparent',
-              color: action.primary ? '#C24D00' : 'var(--ink-secondary, #8FA0B8)',
+              padding: '6px 14px', borderRadius: 'var(--r-md)', fontSize: 12, fontWeight: 500,
+              border: action.primary ? 'none' : '1px solid var(--border)',
+              background: action.primary ? 'var(--lava-wash)' : 'transparent',
+              color: action.primary ? 'var(--lava-deep)' : 'var(--ink-secondary)',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
-              fontFamily: fontFamily.body,
+              fontFamily: 'var(--font-ui)',
             }}
             onMouseEnter={(e) => {
               if (action.primary) {
-                e.currentTarget.style.background = '#E85D00';
+                e.currentTarget.style.background = 'var(--lava)';
                 e.currentTarget.style.color = 'white';
               } else {
-                e.currentTarget.style.borderColor = '#E85D00';
-                e.currentTarget.style.color = '#E85D00';
+                e.currentTarget.style.borderColor = 'var(--lava)';
+                e.currentTarget.style.color = 'var(--lava)';
               }
             }}
             onMouseLeave={(e) => {
               if (action.primary) {
-                e.currentTarget.style.background = 'rgba(232,93,0,0.12)';
-                e.currentTarget.style.color = '#C24D00';
+                e.currentTarget.style.background = 'var(--lava-wash)';
+                e.currentTarget.style.color = 'var(--lava-deep)';
               } else {
-                e.currentTarget.style.borderColor = 'rgba(140,170,210,0.15)';
-                e.currentTarget.style.color = 'var(--ink-secondary, #8FA0B8)';
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.color = 'var(--ink-secondary)';
               }
             }}
           >
@@ -299,8 +300,8 @@ const FindingCard = ({ finding, onAction }) => {
           </button>
         ))}
         <span style={{
-          marginLeft: 'auto', fontSize: 12, color: 'var(--ink-muted, #708499)',
-          fontFamily: fontFamily.body,
+          marginLeft: 'auto', fontSize: 12, color: 'var(--ink-muted)',
+          fontFamily: 'var(--font-ui)',
         }}>
           {finding.detected}
         </span>
@@ -323,26 +324,26 @@ const FilterPills = ({ active, onChange }) => (
           key={sev}
           onClick={() => onChange(sev)}
           style={{
-            padding: '6px 14px', borderRadius: 9999,
+            padding: '6px 14px', borderRadius: 'var(--r-pill)',
             fontSize: 12, fontWeight: 500,
-            border: isActive ? '1px solid #1E293B' : '1px solid rgba(140,170,210,0.15)',
-            background: isActive ? '#1E293B' : 'transparent',
-            color: isActive ? 'white' : 'var(--ink-secondary, #8FA0B8)',
+            border: isActive ? '1px solid var(--lava)' : '1px solid var(--border)',
+            background: isActive ? 'var(--lava)' : 'transparent',
+            color: isActive ? 'white' : 'var(--ink-secondary)',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
             textTransform: 'capitalize',
-            fontFamily: fontFamily.body,
+            fontFamily: 'var(--font-ui)',
           }}
           onMouseEnter={(e) => {
             if (!isActive) {
-              e.currentTarget.style.borderColor = 'rgba(140,170,210,0.3)';
-              e.currentTarget.style.color = 'var(--ink-display, #EDF1F7)';
+              e.currentTarget.style.borderColor = 'var(--border-strong)';
+              e.currentTarget.style.color = 'var(--ink-display)';
             }
           }}
           onMouseLeave={(e) => {
             if (!isActive) {
-              e.currentTarget.style.borderColor = 'rgba(140,170,210,0.15)';
-              e.currentTarget.style.color = 'var(--ink-secondary, #8FA0B8)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--ink-secondary)';
             }
           }}
         >
@@ -363,25 +364,25 @@ const ScanRow = ({ row }) => {
       display: 'grid', gridTemplateColumns: '140px 80px 1fr 100px',
       alignItems: 'center', gap: 12,
       padding: '12px 0',
-      borderBottom: '1px solid rgba(140,170,210,0.08)',
+      borderBottom: '1px solid var(--border-subtle)',
       fontSize: 14,
     }}>
-      <div style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono, fontSize: 12 }}>
+      <div style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
         {row.date}
       </div>
       <div style={{
-        fontFamily: fontFamily.mono, fontWeight: 700,
+        fontFamily: 'var(--font-mono)', fontWeight: 700,
         color: SCORE_STROKE[cls],
       }}>
         {row.score}
       </div>
-      <div style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+      <div style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
         {row.findings}
       </div>
       <div style={{
-        color: '#E85D00', fontWeight: 500, textAlign: 'right',
+        color: 'var(--lava)', fontWeight: 500, textAlign: 'right',
         cursor: row.link !== 'Current' ? 'pointer' : 'default',
-        fontFamily: fontFamily.body,
+        fontFamily: 'var(--font-ui)',
       }}>
         {row.link}
       </div>
@@ -424,8 +425,8 @@ const ExposureScanPage = () => {
           marginBottom: 24, flexWrap: 'wrap', gap: 12,
         }}>
           <h1 style={{
-            fontFamily: fontFamily.display, fontSize: 28,
-            color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.01em',
+            fontFamily: 'var(--font-display)', fontSize: 28,
+            color: 'var(--ink-display)', letterSpacing: '-0.01em',
             margin: 0,
           }}>
             Exposure Scan
@@ -437,16 +438,16 @@ const ExposureScanPage = () => {
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '10px 20px', borderRadius: 8,
               background: scanning
-                ? 'rgba(232,93,0,0.5)'
-                : 'linear-gradient(135deg, #E85D00, #FF7A22)',
+                ? 'var(--lava-wash)'
+                : 'linear-gradient(135deg, var(--lava), var(--lava-warm))',
               color: 'white', fontSize: 14, fontWeight: 600,
               border: 'none', cursor: scanning ? 'not-allowed' : 'pointer',
               transition: 'all 0.15s ease',
-              fontFamily: fontFamily.body,
+              fontFamily: 'var(--font-ui)',
               boxShadow: scanning ? 'none' : undefined,
             }}
             onMouseEnter={(e) => {
-              if (!scanning) e.currentTarget.style.boxShadow = '0 4px 16px rgba(232,93,0,0.35)';
+              if (!scanning) e.currentTarget.style.boxShadow = '0 4px 16px var(--lava-ring)';
               if (!scanning) e.currentTarget.style.transform = 'translateY(-1px)';
             }}
             onMouseLeave={(e) => {
@@ -463,10 +464,11 @@ const ExposureScanPage = () => {
         <div style={{
           display: 'grid', gridTemplateColumns: '200px 1fr',
           gap: 24, alignItems: 'center',
-          background: 'var(--surface, #0E1628)',
-          border: '1px solid rgba(140,170,210,0.15)',
-          borderRadius: 16, padding: 24,
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-xl)', padding: 24,
           marginBottom: 24,
+          boxShadow: 'var(--elev-1)',
         }}>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <ScoreRing score={DEMO_OVERALL_SCORE} />
@@ -474,14 +476,14 @@ const ExposureScanPage = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <div style={{
-                fontFamily: fontFamily.display, fontSize: 22,
-                color: 'var(--ink-display, #EDF1F7)', marginBottom: 4,
+                fontFamily: 'var(--font-display)', fontSize: 22,
+                color: 'var(--ink-display)', marginBottom: 4,
               }}>
                 Business Exposure Score
               </div>
               <div style={{
-                fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', marginBottom: 8,
-                fontFamily: fontFamily.body,
+                fontSize: 14, color: 'var(--ink-secondary)', marginBottom: 8,
+                fontFamily: 'var(--font-ui)',
               }}>
                 Last scanned 4 hours ago across 6 domains. 3 findings require attention.
               </div>
@@ -500,8 +502,8 @@ const ExposureScanPage = () => {
           marginBottom: 16,
         }}>
           <h2 style={{
-            fontFamily: fontFamily.display, fontSize: 22,
-            color: 'var(--ink-display, #EDF1F7)', margin: 0,
+            fontFamily: 'var(--font-display)', fontSize: 22,
+            color: 'var(--ink-display)', margin: 0,
           }}>
             Active Findings
           </h2>
@@ -512,10 +514,10 @@ const ExposureScanPage = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
           {filteredFindings.length === 0 ? (
             <div style={{
-              background: 'var(--surface, #0E1628)',
-              border: '1px solid rgba(140,170,210,0.15)',
-              borderRadius: 16, padding: 32, textAlign: 'center',
-              color: 'var(--ink-secondary, #8FA0B8)', fontSize: 14, fontFamily: fontFamily.body,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--r-xl)', padding: 32, textAlign: 'center',
+              color: 'var(--ink-secondary)', fontSize: 14, fontFamily: 'var(--font-ui)',
             }}>
               No findings at this severity level.
             </div>
@@ -528,14 +530,14 @@ const ExposureScanPage = () => {
 
         {/* ── SCAN HISTORY ─────────────────────────────────────────── */}
         <div style={{
-          background: 'var(--surface, #0E1628)',
-          border: '1px solid rgba(140,170,210,0.15)',
-          borderRadius: 16, padding: 20,
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-xl)', padding: 20,
           marginBottom: 24,
         }}>
           <h2 style={{
-            fontFamily: fontFamily.display, fontSize: 20,
-            color: 'var(--ink-display, #EDF1F7)', marginTop: 0, marginBottom: 16,
+            fontFamily: 'var(--font-display)', fontSize: 20,
+            color: 'var(--ink-display)', marginTop: 0, marginBottom: 16,
           }}>
             Scan History
           </h2>

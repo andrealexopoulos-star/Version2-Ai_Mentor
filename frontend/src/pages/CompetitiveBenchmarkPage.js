@@ -10,7 +10,6 @@ import {
   RefreshCw, Award, Users, Info, Plus, X, Search, ChevronDown, CheckCircle2,
   AlertTriangle, Zap,
 } from 'lucide-react';
-import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
 
 // ── Pillar definitions — with descriptions ────────────────────────────────────
@@ -122,7 +121,7 @@ const Tooltip = ({ text, children }) => {
       {children}
       {show && (
         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-xs leading-snug z-50 w-56"
-          style={{ background: '#1E2D3D', color: 'var(--ink-display, #EDF1F7)', border: '1px solid #334155', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
+          style={{ background: 'var(--surface-2, #1E2D3D)', color: 'var(--ink-display)', border: '1px solid var(--border)', fontFamily: 'var(--font-ui)', boxShadow: 'var(--elev-2)' }}>
           {text}
         </span>
       )}
@@ -138,7 +137,7 @@ const ScoreGauge = ({ score, label, color, isReal }) => {
   return (
     <div className="flex flex-col items-center">
       <svg width="130" height="130" viewBox="0 0 130 130">
-        <circle cx="65" cy="65" r={radius} fill="none" stroke="rgba(140,170,210,0.12)" strokeWidth="8" />
+        <circle cx="65" cy="65" r={radius} fill="none" stroke="var(--border)" strokeWidth="8" />
         {isReal && score != null && (
           <circle cx="65" cy="65" r={radius} fill="none" stroke={color} strokeWidth="8"
             strokeDasharray={circumference} strokeDashoffset={offset}
@@ -147,13 +146,13 @@ const ScoreGauge = ({ score, label, color, isReal }) => {
         )}
         {isReal && score != null
           ? <>
-              <text x="65" y="58" textAnchor="middle" style={{ fill: 'var(--ink-display, #EDF1F7)', fontSize: '28px', fontFamily: fontFamily.mono, fontWeight: 700 }}>{score}</text>
-              <text x="65" y="78" textAnchor="middle" style={{ fill: '#64748B', fontSize: '10px', fontFamily: fontFamily.mono }}>/100</text>
+              <text x="65" y="58" textAnchor="middle" style={{ fill: 'var(--ink-display)', fontSize: '28px', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{score}</text>
+              <text x="65" y="78" textAnchor="middle" style={{ fill: 'var(--ink-muted)', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>/100</text>
             </>
-          : <text x="65" y="68" textAnchor="middle" style={{ fill: '#4A5568', fontSize: '11px', fontFamily: fontFamily.mono }}>No data</text>
+          : <text x="65" y="68" textAnchor="middle" style={{ fill: 'var(--ink-muted)', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>No data</text>
         }
       </svg>
-      {label && <p className="text-xs mt-2 font-medium" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>{label}</p>}
+      {label && <p className="text-xs mt-2 font-medium" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>{label}</p>}
     </div>
   );
 };
@@ -161,51 +160,51 @@ const ScoreGauge = ({ score, label, color, isReal }) => {
 // ── Enhanced pillar bar ───────────────────────────────────────────────────────
 const PillarBar = ({ pillar, score, isReal, isWeakest }) => {
   const [expanded, setExpanded] = useState(false);
-  const color = !isReal || score == null ? '#64748B' : score >= 70 ? '#10B981' : score >= 40 ? '#F59E0B' : '#EF4444';
+  const color = !isReal || score == null ? 'var(--ink-muted)' : score >= 70 ? 'var(--positive)' : score >= 40 ? 'var(--warning)' : 'var(--danger)';
   const pct = isReal && score != null ? Math.min(score, 100) : 0;
   const Icon = pillar.icon;
 
   return (
     <div className={`py-3 ${isWeakest ? 'rounded-lg px-2 -mx-2' : ''}`}
       style={{
-        borderBottom: '1px solid var(--biqc-border)',
-        background: isWeakest ? 'rgba(239,68,68,0.04)' : 'transparent',
+        borderBottom: '1px solid var(--border)',
+        background: isWeakest ? 'var(--danger-wash)' : 'transparent',
       }}>
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: color + '15' }}>
+        <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ borderRadius: 'var(--r-md, 8px)', background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
           <Icon className="w-4 h-4" style={{ color }} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-medium" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body }}>{pillar.label}</span>
-              {isWeakest && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>Needs most work</span>}
+              <span className="text-sm font-medium" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{pillar.label}</span>
+              {isWeakest && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'var(--danger-wash)', color: 'var(--danger)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Needs most work</span>}
               <Tooltip text={pillar.desc}>
-                <Info className="w-3 h-3 cursor-help" style={{ color: '#4A5568' }} />
+                <Info className="w-3 h-3 cursor-help" style={{ color: 'var(--ink-muted)' }} />
               </Tooltip>
             </div>
             <div className="flex items-center gap-2">
               {isReal && score != null
-                ? <span className="text-sm font-bold" style={{ color, fontFamily: fontFamily.mono }}>{score}<span className="text-xs text-[var(--ink-muted)]">/100</span></span>
-                : <span className="text-xs italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>Insufficient data</span>
+                ? <span className="text-sm font-bold" style={{ color, fontFamily: 'var(--font-mono)' }}>{score}<span className="text-xs" style={{ color: 'var(--ink-muted)' }}>/100</span></span>
+                : <span className="text-xs italic" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Insufficient data</span>
               }
               <button onClick={() => setExpanded(e => !e)} className="p-0.5 hover:opacity-70">
                 <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--ink-muted)', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
               </button>
             </div>
           </div>
-          <div className="h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.12)' }}>
+          <div className="h-1.5 rounded-full" style={{ background: 'var(--surface-2, rgba(140,170,210,0.12))' }}>
             <div className="h-full rounded-full transition-all duration-700" style={{ background: color, width: `${pct}%` }} />
           </div>
         </div>
       </div>
       {expanded && (
-        <div className="mt-2 ml-11 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid rgba(140,170,210,0.12)' }}>
-          <p className="text-xs text-[var(--ink-secondary)] mb-2">{pillar.desc}</p>
+        <div className="mt-2 ml-11 p-3" style={{ borderRadius: 'var(--r-md, 8px)', background: 'var(--surface-sunken, var(--surface))', border: '1px solid var(--border)' }}>
+          <p className="text-xs mb-2" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{pillar.desc}</p>
           {isReal && score != null && (
             <div className="flex items-start gap-1.5">
-              <Zap className="w-3 h-3 shrink-0 mt-0.5" style={{ color: '#E85D00' }} />
-              <p className="text-[11px]" style={{ color: '#E85D00', fontFamily: fontFamily.body }}>{pillar.action}</p>
+              <Zap className="w-3 h-3 shrink-0 mt-0.5" style={{ color: 'var(--lava)' }} />
+              <p className="text-[11px]" style={{ color: 'var(--lava)', fontFamily: 'var(--font-ui)' }}>{pillar.action}</p>
             </div>
           )}
         </div>
@@ -368,13 +367,13 @@ export default function CompetitiveBenchmarkPage() {
         {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)', letterSpacing: 'var(--ls-caps, 0.08em)', fontWeight: 600 }}>
               — Competitive benchmark
             </div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-              Where you <em style={{ fontStyle: 'italic', color: '#E85D00' }}>stand</em>.
+            <h1 className="font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: 'var(--ls-display, -0.02em)', lineHeight: 1.05 }}>
+              Where you <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>stand</em>.
             </h1>
-            <p className="text-sm mt-2" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+            <p className="text-sm mt-2" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
               {hasRealData
                 ? `Digital footprint analysis${data?.scanDomain ? ` for ${data.scanDomain}` : ''}. Last scanned: ${data?.lastUpdated ? new Date(data.lastUpdated).toLocaleDateString('en-AU') : 'recently'}.`
                 : 'Complete calibration with your business website to generate your Digital Footprint score.'
@@ -382,11 +381,11 @@ export default function CompetitiveBenchmarkPage() {
             </p>
           </div>
           <Button onClick={handleRefresh} disabled={refreshing} variant="outline" className="gap-2"
-            style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text-2)' }}>
+            style={{ borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}>
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
           </Button>
         </div>
-        <Card style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="benchmark-provenance-card">
+        <Card style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--elev-1)' }} data-testid="benchmark-provenance-card">
           <CardContent className="p-4">
             <button
               type="button"
@@ -394,15 +393,15 @@ export default function CompetitiveBenchmarkPage() {
               className="w-full flex items-center justify-between text-left"
               data-testid="benchmark-provenance-toggle"
             >
-              <span className="text-xs uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>Evidence chain</span>
-              {showProvenance ? <ChevronDown className="w-4 h-4 rotate-180" style={{ color: 'var(--ink-secondary)' }} /> : <ChevronDown className="w-4 h-4" style={{ color: 'var(--ink-secondary)' }} />}
+              <span className="text-xs uppercase" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Evidence chain</span>
+              {showProvenance ? <ChevronDown className="w-4 h-4 rotate-180" style={{ color: 'var(--ink-muted)' }} /> : <ChevronDown className="w-4 h-4" style={{ color: 'var(--ink-muted)' }} />}
             </button>
             {showProvenance && (
               <div className="mt-3 grid gap-2 sm:grid-cols-2" data-testid="benchmark-provenance-drawer">
                 {benchmarkProvenance.map((item) => (
-                  <div key={item.label} className="rounded-lg px-3 py-2" style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)' }}>
-                    <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>{item.label}</p>
-                    <p className="mt-1 text-xs" style={{ color: '#CBD5E1' }}>{item.value}</p>
+                  <div key={item.label} className="px-3 py-2" style={{ borderRadius: 'var(--r-md, 8px)', background: 'var(--surface-2, rgba(148,163,184,0.08))', border: '1px solid var(--border)' }}>
+                    <p className="text-[10px] uppercase" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>{item.label}</p>
+                    <p className="mt-1 text-xs" style={{ color: 'var(--ink)', fontFamily: 'var(--font-ui)' }}>{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -433,25 +432,25 @@ export default function CompetitiveBenchmarkPage() {
                 <svg viewBox="0 0 400 420" width="100%" style={{ display: 'block' }}>
                   {/* Background pentagons at 20%, 40%, 60%, 80%, 100% */}
                   {[0.2, 0.4, 0.6, 0.8, 1.0].map(pct => (
-                    <polygon key={pct} points={polygon(maxR * pct)} fill="none" stroke="rgba(140,170,210,0.12)" strokeWidth="1" />
+                    <polygon key={pct} points={polygon(maxR * pct)} fill="none" stroke="var(--border)" strokeWidth="0.5" />
                   ))}
                   {/* Axis lines */}
                   {keys.map((_, i) => {
                     const p = getPoint(i, maxR);
-                    return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(140,170,210,0.08)" strokeWidth="1" />;
+                    return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="var(--border)" strokeWidth="0.5" />;
                   })}
                   {/* Data shape */}
-                  <polygon points={dataPolygon} fill="rgba(232,93,0,0.15)" stroke="#E85D00" strokeWidth="2" />
+                  <polygon points={dataPolygon} fill="rgba(232,93,0,0.08)" stroke="var(--lava)" strokeWidth="2" />
                   {/* Data points */}
                   {dataPoints.map((p, i) => (
-                    <circle key={i} cx={p.x} cy={p.y} r="4" fill="#E85D00" />
+                    <circle key={i} cx={p.x} cy={p.y} r="4" fill="var(--lava)" />
                   ))}
                   {/* Labels */}
                   {labels.map((label, i) => {
                     const p = getPoint(i, maxR + 24);
                     return (
                       <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central"
-                        style={{ fill: 'var(--ink-secondary, #8FA0B8)', fontSize: '11px', fontFamily: fontFamily.mono }}>
+                        style={{ fill: 'var(--ink-muted)', fontSize: '9px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
                         {label}
                       </text>
                     );
@@ -468,30 +467,30 @@ export default function CompetitiveBenchmarkPage() {
           <>
             {/* Req 3: Score + Percentile (real data only) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+              <Card style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--elev-1)' }}>
                 <CardContent className="pt-6 flex flex-col items-center">
-                  <ScoreGauge score={data?.overallScore} label="Digital Footprint" color="#E85D00" isReal={hasRealData} />
+                  <ScoreGauge score={data?.overallScore} label="Digital Footprint" color="var(--lava)" isReal={hasRealData} />
                   {hasRealData ? (
                     <div className="flex items-center gap-2 mt-4">
-                      {data?.trend === 'improving' ? <TrendingUp className="w-4 h-4 text-[#10B981]" /> : data?.trend === 'declining' ? <TrendingDown className="w-4 h-4 text-[#EF4444]" /> : null}
-                      <span className="text-xs" style={{ color: data?.trend === 'improving' ? '#10B981' : data?.trend === 'declining' ? '#EF4444' : '#64748B', fontFamily: fontFamily.mono }}>
+                      {data?.trend === 'improving' ? <TrendingUp className="w-4 h-4" style={{ color: 'var(--positive)' }} /> : data?.trend === 'declining' ? <TrendingDown className="w-4 h-4" style={{ color: 'var(--danger)' }} /> : null}
+                      <span className="text-xs" style={{ color: data?.trend === 'improving' ? 'var(--positive)' : data?.trend === 'declining' ? 'var(--danger)' : 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
                         {data?.trend === 'improving' ? 'Trending up' : data?.trend === 'declining' ? 'Trending down' : 'Stable'}
                       </span>
                     </div>
                   ) : (
                     <div className="text-center mt-4">
-                      <p className="text-xs text-[var(--ink-muted)] max-w-xs">
+                      <p className="text-xs max-w-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
                         Score is calculated from your public website, social media, Google reviews and content. Complete calibration with your website URL to generate it.
                       </p>
                       {benchmarkQueued && (
-                        <p className="text-[11px] mt-3" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                        <p className="text-[11px] mt-3" style={{ color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
                           BIQc has started a benchmark scan for your website. Refresh shortly to see your first score.
                         </p>
                       )}
-                      <Link to="/calibration" className="text-xs flex items-center justify-center gap-1 mt-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
+                      <Link to="/calibration" className="text-xs flex items-center justify-center gap-1 mt-2" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)' }}>
                         Start calibration <ArrowRight className="w-3 h-3" />
                       </Link>
-                      <p className="text-[11px] mt-3" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.body }}>
+                      <p className="text-[11px] mt-3" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
                         Once calibration is complete, BIQc will score your digital footprint and let you compare against competitors across all five pillars.
                       </p>
                     </div>
@@ -499,43 +498,43 @@ export default function CompetitiveBenchmarkPage() {
                 </CardContent>
               </Card>
 
-              <Card style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+              <Card style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--elev-1)' }}>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <Award className="w-5 h-5" style={{ color: '#E85D00' }} />
-                    <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Industry Ranking</span>
+                    <Award className="w-5 h-5" style={{ color: 'var(--lava)' }} />
+                    <span className="text-xs font-semibold uppercase" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Industry Ranking</span>
                   </div>
                   {hasRealData && data?.percentile != null ? (
                     <>
                       <div className="text-center py-4">
-                        <p className="text-5xl font-bold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}>
-                          {data.percentile}<span className="text-lg text-[var(--ink-muted)]">th</span>
+                        <p className="text-5xl font-bold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-mono)' }}>
+                          {data.percentile}<span className="text-lg" style={{ color: 'var(--ink-muted)' }}>th</span>
                         </p>
-                        <p className="text-sm mt-1" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>percentile in your industry</p>
+                        <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>percentile in your industry</p>
                       </div>
                       {data.industryAvg != null && (
-                        <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                        <div className="p-3" style={{ borderRadius: 'var(--r-md, 8px)', background: 'var(--surface-sunken, var(--surface))', border: '1px solid var(--border)' }}>
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-xs" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Your score vs industry avg</span>
-                            <span className="text-xs" style={{ color: data.overallScore >= data.industryAvg ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>
+                            <span className="text-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Your score vs industry avg</span>
+                            <span className="text-xs" style={{ color: data.overallScore >= data.industryAvg ? 'var(--positive)' : 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
                               {data.overallScore >= data.industryAvg ? `+${data.overallScore - data.industryAvg} above avg` : `${data.overallScore - data.industryAvg} below avg`}
                             </span>
                           </div>
-                          <div className="h-2 rounded-full relative" style={{ background: 'rgba(140,170,210,0.12)' }}>
-                            <div className="absolute h-full rounded-full" style={{ background: '#64748B', width: `${data.industryAvg}%` }} />
-                            <div className="absolute h-full rounded-full" style={{ background: '#E85D00', width: `${data.overallScore}%`, opacity: 0.8 }} />
+                          <div className="h-2 rounded-full relative" style={{ background: 'var(--surface-2, rgba(140,170,210,0.12))' }}>
+                            <div className="absolute h-full rounded-full" style={{ background: 'var(--silver-4, #64748B)', width: `${data.industryAvg}%` }} />
+                            <div className="absolute h-full rounded-full" style={{ background: 'var(--lava)', width: `${data.overallScore}%`, opacity: 0.8 }} />
                           </div>
                           <div className="flex justify-between mt-1">
-                            <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Avg: {data.industryAvg}</span>
-                            <span className="text-[10px]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>You: {data.overallScore}</span>
+                            <span className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Avg: {data.industryAvg}</span>
+                            <span className="text-[10px]" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)' }}>You: {data.overallScore}</span>
                           </div>
                         </div>
                       )}
                     </>
                   ) : (
                     <div className="text-center py-8">
-                      <p className="text-sm italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>Insufficient data</p>
-                      <p className="text-xs mt-2 text-[var(--ink-muted)]">Industry ranking will appear once your digital footprint score is generated from calibration and live market inputs.</p>
+                      <p className="text-sm italic" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Insufficient data</p>
+                      <p className="text-xs mt-2" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Industry ranking will appear once your digital footprint score is generated from calibration and live market inputs.</p>
                     </div>
                   )}
                 </CardContent>
@@ -543,19 +542,19 @@ export default function CompetitiveBenchmarkPage() {
             </div>
 
             {/* Req 3: 5-Pillar breakdown with descriptions + tooltips */}
-            <Card style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+            <Card style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--elev-1)' }}>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
+                <CardTitle className="flex items-center justify-between" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
                   <div className="flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5" style={{ color: '#E85D00' }} />
+                    <BarChart3 className="w-5 h-5" style={{ color: 'var(--lava)' }} />
                     5-Pillar Digital Footprint
                   </div>
                   <Tooltip text="Each pillar measures a different aspect of your digital presence. Click any row to see what it means and how to improve it.">
-                    <Info className="w-4 h-4 cursor-help" style={{ color: '#4A5568' }} />
+                    <Info className="w-4 h-4 cursor-help" style={{ color: 'var(--ink-muted)' }} />
                   </Tooltip>
                 </CardTitle>
                 {weakestPillar && (
-                  <p className="text-xs mt-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>
+                  <p className="text-xs mt-1" style={{ color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
                     Focus area: {PILLARS.find(p => p.key === weakestPillar)?.label} — your lowest-scoring pillar
                   </p>
                 )}
@@ -571,7 +570,7 @@ export default function CompetitiveBenchmarkPage() {
                   />
                 ))}
                 {!hasRealData && (
-                  <p className="text-xs text-center mt-3 italic" style={{ color: '#4A5568' }}>
+                  <p className="text-xs text-center mt-3 italic" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
                     Pillar scores will populate once your website has been scanned during calibration.
                   </p>
                 )}
@@ -579,16 +578,17 @@ export default function CompetitiveBenchmarkPage() {
             </Card>
 
             {/* Req 4: Competitor comparison tool */}
-            <Card style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
+            <Card style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--elev-1)' }}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
-                  <Users className="w-5 h-5" style={{ color: '#E85D00' }} />
+                <div className="text-[10px] uppercase mb-1" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>— Competitor analysis</div>
+                <CardTitle className="flex items-center gap-2" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
+                  <Users className="w-5 h-5" style={{ color: 'var(--lava)' }} />
                   Competitor Benchmarking
                   <Tooltip text="Enter up to 5 competitor domains. BIQc will scan their digital presence and compare them against your 5 pillars.">
-                    <Info className="w-4 h-4 cursor-help" style={{ color: '#4A5568' }} />
+                    <Info className="w-4 h-4 cursor-help" style={{ color: 'var(--ink-muted)' }} />
                   </Tooltip>
                 </CardTitle>
-                <p className="text-xs mt-1" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
+                <p className="text-xs mt-1" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
                   Enter competitor domains (e.g. competitor.com.au) to see how your digital footprint compares across all 5 pillars.
                 </p>
               </CardHeader>
@@ -597,7 +597,7 @@ export default function CompetitiveBenchmarkPage() {
                 {competitorInputs.map((input, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <div className="flex-1 relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#4A5568' }} />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--ink-muted)' }} />
                       <input
                         value={input}
                         onChange={e => {
@@ -607,13 +607,13 @@ export default function CompetitiveBenchmarkPage() {
                         }}
                         onKeyDown={e => { if (e.key === 'Enter') analyzeCompetitor(input, idx); }}
                         placeholder={`Competitor ${idx + 1} domain (e.g. rivalcompany.com.au)`}
-                        className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none"
-                        style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.body }}
+                        className="w-full pl-9 pr-3 py-2 text-sm outline-none"
+                        style={{ borderRadius: 'var(--r-md, 8px)', background: 'var(--surface-sunken, var(--surface))', border: '1px solid var(--border)', color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}
                         data-testid={`competitor-input-${idx}`}
                       />
                     </div>
                     <Button onClick={() => analyzeCompetitor(input, idx)} disabled={!input.trim() || analyzingCompetitor === idx}
-                      className="gap-1.5 text-xs px-3" style={{ background: '#E85D00', color: 'white', border: 'none' }}
+                      className="gap-1.5 text-xs px-3" style={{ background: 'var(--lava)', color: 'white', border: 'none', borderRadius: 'var(--r-md, 8px)' }}
                       data-testid={`analyze-competitor-${idx}`}>
                       {analyzingCompetitor === idx ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
                       {analyzingCompetitor === idx ? 'Scanning…' : 'Analyse'}
@@ -627,28 +627,28 @@ export default function CompetitiveBenchmarkPage() {
                 ))}
 
                 {competitorError && (
-                  <p className="text-xs" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}>{competitorError}</p>
+                  <p className="text-xs" style={{ color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>{competitorError}</p>
                 )}
 
                 {competitorInputs.length < 5 && (
-                  <button onClick={addCompetitorInput} className="flex items-center gap-1.5 text-xs transition-colors hover:text-[#E85D00]"
-                    style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>
+                  <button onClick={addCompetitorInput} className="flex items-center gap-1.5 text-xs transition-colors"
+                    style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
                     <Plus className="w-3.5 h-3.5" /> Add another competitor (max 5)
                   </button>
                 )}
 
                 {/* Comparison chart */}
                 {competitorResults.length > 0 && (
-                  <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--biqc-border)' }}>
-                    <p className="text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Comparison</p>
+                  <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+                    <p className="text-xs font-semibold mb-3 uppercase" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Comparison</p>
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
                         <thead>
                           <tr>
-                            <th className="text-left pb-2" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono, fontWeight: 500 }}>Pillar</th>
-                            <th className="text-center pb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono, fontWeight: 700 }}>You</th>
+                            <th className="text-left pb-2" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', fontWeight: 500, letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase', fontSize: '10px' }}>Pillar</th>
+                            <th className="text-center pb-2" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>You</th>
                             {competitorResults.map(r => (
-                              <th key={r.domain} className="text-center pb-2 max-w-[80px] truncate" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>
+                              <th key={r.domain} className="text-center pb-2 max-w-[80px] truncate" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>
                                 {r.domain.replace('www.', '').split('.')[0]}
                               </th>
                             ))}
@@ -656,12 +656,12 @@ export default function CompetitiveBenchmarkPage() {
                         </thead>
                         <tbody>
                           {PILLARS.map(p => (
-                            <tr key={p.key} style={{ borderTop: '1px solid #1E2D3D' }}>
-                              <td className="py-2 flex items-center gap-1.5" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body }}>
+                            <tr key={p.key} style={{ borderTop: '1px solid var(--border)' }}>
+                              <td className="py-2 flex items-center gap-1.5" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>
                                 <p.icon className="w-3 h-3" style={{ color: 'var(--ink-muted)' }} />
                                 {p.label.split(' ')[0]}
                               </td>
-                              <td className="text-center py-2 font-bold" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
+                              <td className="text-center py-2 font-bold" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', background: 'var(--lava-wash)' }}>
                                 {hasRealData && data?.pillars?.[p.key] != null ? data.pillars[p.key] : '—'}
                               </td>
                               {competitorResults.map(r => {
@@ -671,8 +671,8 @@ export default function CompetitiveBenchmarkPage() {
                                 const worse = cScore != null && youScore != null && youScore < cScore;
                                 return (
                                   <td key={r.domain} className="text-center py-2 font-semibold" style={{
-                                    color: worse ? '#EF4444' : better ? '#10B981' : 'var(--ink-secondary, #8FA0B8)',
-                                    fontFamily: fontFamily.mono,
+                                    color: worse ? 'var(--danger)' : better ? 'var(--positive)' : 'var(--ink-secondary)',
+                                    fontFamily: 'var(--font-mono)',
                                   }}>
                                     {cScore ?? '—'}
                                   </td>
@@ -680,15 +680,15 @@ export default function CompetitiveBenchmarkPage() {
                               })}
                             </tr>
                           ))}
-                          <tr style={{ borderTop: '2px solid rgba(140,170,210,0.12)' }}>
-                            <td className="py-2 font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}>Overall</td>
-                            <td className="text-center py-2 font-bold text-base" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
+                          <tr style={{ borderTop: '2px solid var(--border)' }}>
+                            <td className="py-2 font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-mono)' }}>Overall</td>
+                            <td className="text-center py-2 font-bold text-base" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', background: 'var(--lava-wash)' }}>
                               {hasRealData && data?.overallScore != null ? data.overallScore : '—'}
                             </td>
                             {competitorResults.map(r => (
                               <td key={r.domain} className="text-center py-2 font-bold text-base" style={{
-                                color: r.overallScore != null && data?.overallScore != null && data.overallScore > r.overallScore ? '#10B981' : '#EF4444',
-                                fontFamily: fontFamily.mono,
+                                color: r.overallScore != null && data?.overallScore != null && data.overallScore > r.overallScore ? 'var(--positive)' : 'var(--danger)',
+                                fontFamily: 'var(--font-mono)',
                               }}>
                                 {r.overallScore ?? '—'}
                               </td>
@@ -698,26 +698,28 @@ export default function CompetitiveBenchmarkPage() {
                       </table>
                     </div>
                     <div className="flex gap-4 mt-3">
-                      <span className="text-[10px] flex items-center gap-1" style={{ color: '#10B981', fontFamily: fontFamily.mono }}><CheckCircle2 className="w-3 h-3" /> You're ahead</span>
-                      <span className="text-[10px] flex items-center gap-1" style={{ color: '#EF4444', fontFamily: fontFamily.mono }}><AlertTriangle className="w-3 h-3" /> Competitor is ahead</span>
+                      <span className="text-[10px] flex items-center gap-1" style={{ color: 'var(--positive)', fontFamily: 'var(--font-mono)' }}><CheckCircle2 className="w-3 h-3" /> You're ahead</span>
+                      <span className="text-[10px] flex items-center gap-1" style={{ color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}><AlertTriangle className="w-3 h-3" /> Competitor is ahead</span>
                     </div>
                   </div>
                 )}
 
                 {/* Existing competitors from calibration */}
                 {data?.competitors?.length > 0 && competitorResults.length === 0 && (
-                  <div className="pt-3" style={{ borderTop: '1px solid var(--biqc-border)' }}>
-                    <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>From your calibration</p>
+                  <div className="pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+                    <p className="text-[10px] uppercase mb-2" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>From your calibration</p>
                     <div className="space-y-1">
                       {data.competitors.slice(0, 5).map((comp, i) => (
                         <div key={i} className="flex items-center justify-between py-1.5">
-                          <span className="text-xs" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body }}>{comp.name || comp}</span>
+                          <span className="text-xs" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{comp.name || comp}</span>
                           <div className="flex items-center gap-2">
                             {comp.threat_level && (
                               <span className="text-[9px] px-1.5 py-0.5 rounded" style={{
-                                background: comp.threat_level === 'high' ? '#EF444415' : '#F59E0B15',
-                                color: comp.threat_level === 'high' ? '#EF4444' : '#F59E0B',
-                                fontFamily: fontFamily.mono,
+                                background: comp.threat_level === 'high' ? 'var(--danger-wash)' : 'var(--warning-wash)',
+                                color: comp.threat_level === 'high' ? 'var(--danger)' : 'var(--warning)',
+                                fontFamily: 'var(--font-mono)',
+                                letterSpacing: 'var(--ls-caps, 0.08em)',
+                                textTransform: 'uppercase',
                               }}>{comp.threat_level}</span>
                             )}
                             <button onClick={() => {
@@ -726,7 +728,7 @@ export default function CompetitiveBenchmarkPage() {
                               if (emptyIdx >= 0) {
                                 const updated = [...competitorInputs]; updated[emptyIdx] = domain; setCompetitorInputs(updated);
                               }
-                            }} className="text-[9px]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
+                            }} className="text-[9px]" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)' }}>
                               Analyse →
                             </button>
                           </div>

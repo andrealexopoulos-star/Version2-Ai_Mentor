@@ -3,7 +3,7 @@ import { Lock, X, Check } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 
 const PLANS = {
-  free: { name: 'Free', price: '$0', period: '/mo', features: ['Advisor & Morning Brief', 'Alert Centre (5 alerts)', 'Calendar & Email Triage', 'Soundboard AI Chat', 'Market Snapshot'] },
+  free: { name: 'Free', price: '$0', period: '/mo', features: ['Advisor & Morning Brief', 'Alert Centre (5 alerts)', 'Calendar & Email Triage', 'Ask BIQc AI Chat', 'Market Snapshot'] },
   starter: { name: 'Starter', price: '$49', period: '/mo', features: ['Everything in Free', 'Revenue Intelligence', 'Operations Dashboard', 'Marketing Intelligence', 'BoardRoom AI', 'Reports & SOP Generator', 'Billing Management'] },
   pro: { name: 'Pro', price: '$149', period: '/mo', features: ['Everything in Starter', 'Watchtower Real-Time', 'WarRoom Crisis Centre', 'Intel Centre & Risk', 'Compliance & Audit', 'Market Analysis Deep', 'Operator Dashboard', 'CMO Report'] },
 };

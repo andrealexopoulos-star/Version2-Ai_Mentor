@@ -238,7 +238,7 @@ const HeroExperienceTabs = () => {
               background: activeTab === 'soundboard' ? 'rgba(198,95,46,0.18)' : 'transparent',
             }}
           >
-            Soundboard
+            Ask BIQc
           </button>
         </div>
       </div>
@@ -281,7 +281,7 @@ const HeroExperienceTabs = () => {
       ) : (
         <div className="space-y-3">
           <p className="text-[12px] sm:text-[13px] leading-relaxed" style={{ color: '#C9D5E4', fontFamily: fontFamily.body }}>
-            BIQc Soundboard unifies your finance, sales, marketing, operations, and communication platforms into one live decision layer. It reasons across current evidence, surfaces what matters now, and gives owners and leaders confident answers, smarter prioritization, and practical next steps in real time.
+            Ask BIQc unifies your finance, sales, marketing, operations, and communication platforms into one live decision layer. It reasons across current evidence, surfaces what matters now, and gives owners and leaders confident answers, smarter prioritization, and practical next steps in real time.
           </p>
           <div className="space-y-2">
             {LEADERS.map((item, idx) => (

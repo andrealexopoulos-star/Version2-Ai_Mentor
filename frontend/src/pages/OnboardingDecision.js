@@ -1,11 +1,19 @@
+import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Check } from 'lucide-react';
-import { fontFamily } from '../design-system/tokens';
-
-const DISPLAY = fontFamily.display;
 
 const OnboardingDecision = () => {
   const navigate = useNavigate();
+
+  /* Activate dark token palette while this page is mounted */
+  useEffect(() => {
+    const prev = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', 'dark');
+    return () => {
+      if (prev) document.documentElement.setAttribute('data-theme', prev);
+      else document.documentElement.removeAttribute('data-theme');
+    };
+  }, []);
 
   const handleConnectInbox = () => {
     sessionStorage.removeItem('onboarding_deferred');
@@ -83,96 +91,262 @@ const OnboardingDecision = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-x-hidden" style={{ background: '#080C14' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflowX: 'hidden', background: 'var(--canvas-app)' }}>
       <style>{`
-        .path-card-btn { transition: all 300ms cubic-bezier(0.4,0,0.2,1); }
-        .path-card-btn:hover { transform: translateY(-6px); border-color: #E85D00 !important; box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(232,93,0,0.2) !important; }
+        .path-card-btn {
+          transition: all 300ms var(--ease-standard, cubic-bezier(0.4,0,0.2,1));
+          text-align: left;
+        }
+        .path-card-btn:hover {
+          transform: translateY(-6px);
+          border-color: var(--lava) !important;
+          box-shadow: var(--elev-3) !important;
+        }
+        .path-card-btn:focus-visible {
+          outline: 0;
+          box-shadow: var(--ring-focus);
+        }
+        .path-card-btn:active {
+          transform: translateY(1px);
+        }
         .path-card-btn .path-cta { transition: all 200ms ease; }
-        .path-card-btn:hover .path-cta-primary { filter: brightness(1.1); }
-        .path-card-btn:hover .path-cta-secondary { border-color: rgba(232,93,0,0.4) !important; color: #E85D00 !important; }
+        .path-card-btn:hover .path-cta-primary {
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(232,93,0,0.32), 0 16px 32px -8px rgba(232,93,0,0.40);
+        }
+        .path-card-btn:hover .path-cta-secondary {
+          border-color: var(--border-hover) !important;
+          background: var(--surface-tint) !important;
+        }
+        .decision-grid {
+          max-width: 1180px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: var(--sp-5, 20px);
+        }
+        @media (min-width: 900px) {
+          .decision-grid { grid-template-columns: 1fr 1fr 1fr; }
+        }
       `}</style>
+
       {/* Lava gradient glow */}
-      <div className="fixed top-[-200px] left-1/2 -translate-x-1/2 w-[1100px] h-[600px] pointer-events-none" style={{ background: 'radial-gradient(ellipse, rgba(232,93,0,0.15) 0%, transparent 60%)', opacity: 0.5, filter: 'blur(100px)' }} />
+      <div style={{
+        position: 'fixed', top: -200, left: '50%', transform: 'translateX(-50%)',
+        width: 1100, height: 600,
+        background: 'radial-gradient(ellipse, var(--lava-soft) 0%, transparent 60%)',
+        opacity: 0.5, filter: 'blur(100px)',
+        pointerEvents: 'none', zIndex: 0,
+      }} />
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-6">
-        <Link to="/" className="flex items-center gap-3" style={{ color: 'var(--ink-display, #EDF1F7)', textDecoration: 'none' }}>
-          <span className="inline-block rounded-full" style={{ width: 10, height: 10, background: '#E85D00', boxShadow: '0 0 16px #E85D00' }} />
-          <span className="text-[22px] font-semibold" style={{ fontFamily: DISPLAY }}>BIQc</span>
+      <nav style={{
+        position: 'relative', zIndex: 1,
+        padding: 'var(--sp-6) var(--sp-10)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <Link to="/" style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+          color: 'var(--ink-display)', textDecoration: 'none',
+          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600,
+        }}>
+          <span style={{
+            width: 10, height: 10, borderRadius: '50%',
+            background: 'var(--lava)', boxShadow: '0 0 16px var(--lava)',
+          }} />
+          <span>BIQc</span>
         </Link>
-        <div className="flex items-center gap-3" style={{ fontFamily: fontFamily.mono, fontSize: 11, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          <span className="w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: '#E85D00' }}>1</span>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+          fontFamily: 'var(--font-mono)', fontSize: 11,
+          color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)',
+        }}>
+          <span style={{
+            width: 18, height: 18, borderRadius: '50%',
+            background: 'var(--lava)', color: 'white',
+            display: 'grid', placeItems: 'center',
+            fontSize: 10, fontWeight: 700,
+          }}>1</span>
           <span>Step 1 of 4 · Pick your path</span>
         </div>
       </nav>
 
       {/* Content */}
-      <main className="flex-1 relative z-10 px-6 py-10 sm:py-12">
+      <main style={{
+        flex: 1, position: 'relative', zIndex: 1,
+        padding: 'var(--sp-10) var(--sp-6) var(--sp-12)',
+      }}>
         {/* Header */}
-        <div className="text-center max-w-[700px] mx-auto mb-12">
-          <div className="text-[11px] uppercase tracking-[0.08em] mb-3" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Welcome to BIQc</div>
-          <h1 className="font-medium mb-4" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(2.5rem, 5vw, 4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-            How would you like to <em style={{ fontStyle: 'italic', color: '#E85D00' }}>get started</em>?
+        <div style={{ textAlign: 'center', maxWidth: 700, margin: '0 auto var(--sp-12)' }}>
+          <div style={{
+            color: 'var(--lava)',
+            fontFamily: 'var(--font-mono)', fontSize: 11,
+            textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)',
+          }}>
+            — Welcome to BIQc
+          </div>
+          <h1 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+            color: 'var(--ink-display)',
+            letterSpacing: 'var(--ls-tight)',
+            lineHeight: 1.05,
+            marginTop: 'var(--sp-3)',
+          }}>
+            How would you like to <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>get started</em>?
           </h1>
-          <p className="text-lg leading-relaxed max-w-[580px] mx-auto" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
+          <p style={{
+            color: 'var(--ink-secondary)',
+            marginTop: 'var(--sp-4)',
+            fontSize: 'var(--size-lg)',
+            lineHeight: 1.5,
+            maxWidth: 580, marginLeft: 'auto', marginRight: 'auto',
+            fontFamily: 'var(--font-ui)',
+          }}>
             You're three minutes away from your first quiet feed. Pick the path that fits you — you can switch later.
           </p>
         </div>
 
         {/* Path cards grid */}
-        <div className="max-w-[1180px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="decision-grid">
           {paths.map((path, i) => (
             <button
               key={i}
               onClick={path.onClick}
-              className="path-card-btn relative rounded-2xl p-7 flex flex-col text-left cursor-pointer group"
+              className="path-card-btn"
               style={{
-                background: path.recommended ? 'linear-gradient(180deg, var(--surface, #0E1628) 0%, rgba(232,93,0,0.06) 200%)' : 'var(--surface, #0E1628)',
-                border: `1px solid ${path.recommended ? '#E85D00' : 'rgba(140,170,210,0.12)'}`,
-                boxShadow: path.recommended ? '0 8px 32px rgba(0,0,0,0.3)' : '0 4px 16px rgba(0,0,0,0.2)',
+                background: path.recommended
+                  ? 'linear-gradient(180deg, var(--surface) 0%, var(--lava-wash) 200%)'
+                  : 'var(--surface)',
+                border: `1px solid ${path.recommended ? 'var(--lava)' : 'var(--border)'}`,
+                borderRadius: 'var(--r-2xl)',
+                padding: 'var(--sp-7)',
+                display: 'flex', flexDirection: 'column',
+                cursor: 'pointer',
+                position: 'relative',
+                boxShadow: 'var(--elev-1)',
+                color: 'inherit',
               }}
             >
               {path.recommended && (
-                <div className="absolute -top-2.5 right-6 px-3 py-1 rounded-full text-white text-[10px] font-semibold uppercase tracking-[0.08em]" style={{ background: '#E85D00', fontFamily: fontFamily.mono, boxShadow: '0 4px 12px rgba(232,93,0,0.4)' }}>
+                <div style={{
+                  position: 'absolute', top: -10, right: 'var(--sp-6)',
+                  background: 'var(--lava)', color: 'white',
+                  padding: '4px 12px',
+                  borderRadius: 'var(--r-pill)',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 600, fontSize: 10,
+                  textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)',
+                  boxShadow: '0 4px 12px rgba(232,93,0,0.4)',
+                }}>
                   ★ Most chosen
                 </div>
               )}
 
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5" style={{ background: path.recommended ? '#E85D00' : 'rgba(232,93,0,0.12)', color: path.recommended ? 'white' : '#E85D00', boxShadow: path.recommended ? '0 8px 24px rgba(232,93,0,0.3)' : 'none' }}>
+              <div style={{
+                width: 56, height: 56,
+                background: path.recommended ? 'var(--lava)' : 'var(--lava-wash)',
+                color: path.recommended ? 'white' : 'var(--lava)',
+                borderRadius: 'var(--r-lg)',
+                display: 'grid', placeItems: 'center',
+                marginBottom: 'var(--sp-5)',
+                boxShadow: path.recommended ? '0 8px 24px rgba(232,93,0,0.3)' : 'none',
+              }}>
                 {path.icon}
               </div>
 
-              <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{path.time}</div>
-              <h3 className="text-[28px] font-medium mb-3" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{path.title}</h3>
-              <p className="text-sm leading-relaxed mb-6" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>{path.desc}</p>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 11,
+                color: 'var(--ink-muted)',
+                textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)',
+                marginBottom: 'var(--sp-2)',
+              }}>{path.time}</div>
+              <h3 style={{
+                fontFamily: 'var(--font-display)', fontSize: 28,
+                color: 'var(--ink-display)',
+                letterSpacing: 'var(--ls-tight)', lineHeight: 1.1,
+              }}>{path.title}</h3>
+              <p style={{
+                color: 'var(--ink-secondary)',
+                marginTop: 'var(--sp-3)',
+                fontSize: 'var(--size-sm)',
+                lineHeight: 1.6,
+                fontFamily: 'var(--font-ui)',
+              }}>{path.desc}</p>
 
-              <div className="flex flex-col gap-3 flex-1">
+              <div style={{
+                marginTop: 'var(--sp-6)',
+                display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)',
+                flex: 1,
+              }}>
                 {path.features.map((feat, j) => (
-                  <div key={j} className="flex items-start gap-3 text-sm" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
-                    <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'rgba(232,93,0,0.12)', color: '#E85D00' }}>
-                      <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                  <div key={j} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-3)',
+                    color: 'var(--ink)',
+                    fontSize: 'var(--size-sm)', lineHeight: 1.5,
+                  }}>
+                    <div style={{
+                      flexShrink: 0, width: 18, height: 18,
+                      background: 'var(--lava-wash)', color: 'var(--lava)',
+                      borderRadius: '50%',
+                      display: 'grid', placeItems: 'center',
+                      marginTop: 2,
+                    }}>
+                      <Check style={{ width: 10, height: 10 }} strokeWidth={3} />
                     </div>
-                    <span style={{ fontFamily: fontFamily.body }}>{feat}</span>
+                    <span style={{ fontFamily: 'var(--font-ui)' }}>{feat}</span>
                   </div>
                 ))}
               </div>
 
-              <div className={`path-cta mt-6 w-full text-center py-3 rounded-xl text-sm font-semibold ${path.primary ? 'path-cta-primary' : 'path-cta-secondary'}`} style={{
-                background: path.primary ? '#E85D00' : 'transparent',
-                color: path.primary ? 'white' : 'var(--ink-display, #EDF1F7)',
-                border: path.primary ? 'none' : '1px solid rgba(140,170,210,0.12)',
-                fontFamily: fontFamily.body,
-              }}>
-                {path.cta} <span className="ml-1">→</span>
+              <div
+                className={`path-cta ${path.primary ? 'path-cta-primary' : 'path-cta-secondary'}`}
+                style={{
+                  marginTop: 'var(--sp-6)',
+                  width: '100%',
+                  textAlign: 'center',
+                  height: 44,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 'var(--r-md)',
+                  fontSize: 'var(--size-sm)',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-ui)',
+                  ...(path.primary
+                    ? {
+                        background: 'linear-gradient(135deg, var(--lava-warm) 0%, var(--lava) 50%, var(--lava-deep) 100%)',
+                        backgroundSize: '200% 200%',
+                        color: 'var(--ink-inverse, white)',
+                        border: 'none',
+                        boxShadow: '0 1px 2px rgba(232,93,0,0.28), 0 8px 24px -8px rgba(232,93,0,0.32)',
+                      }
+                    : {
+                        background: 'var(--surface)',
+                        color: 'var(--ink)',
+                        border: '1px solid var(--border-strong)',
+                      }),
+                }}
+              >
+                {path.cta} <span style={{ marginLeft: 'var(--sp-2)' }}>→</span>
               </div>
             </button>
           ))}
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-12 text-sm" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
+        <div style={{
+          marginTop: 'var(--sp-12)',
+          textAlign: 'center',
+          color: 'var(--ink-muted)',
+          fontSize: 'var(--size-sm)',
+          fontFamily: 'var(--font-ui)',
+        }}>
           Not ready?{' '}
-          <button onClick={handleDefer} className="font-medium" style={{ color: '#E85D00', background: 'none', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}>
+          <button onClick={handleDefer} style={{
+            color: 'var(--lava)',
+            fontWeight: 500,
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontFamily: 'var(--font-ui)',
+          }}>
             Skip and explore the demo →
           </button>
         </div>

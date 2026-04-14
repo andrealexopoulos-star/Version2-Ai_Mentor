@@ -423,7 +423,7 @@ const EmailInbox = () => {
           className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl"
           style={{ background: 'var(--bg-primary)' }}
         >
-          <div className="sticky top-0 p-6 border-b" style={{ background: 'var(--bg-primary)', borderColor: 'rgba(140,170,210,0.12)' }}>
+          <div className="sticky top-0 p-6 border-b" style={{ background: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
@@ -495,7 +495,7 @@ const EmailInbox = () => {
                 {/* Suggested Reply */}
                 <div 
                   className="p-5 rounded-xl border"
-                  style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}
+                  style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -566,7 +566,7 @@ const EmailInbox = () => {
                   <div 
                     key={idx}
                     className="p-5 rounded-xl border"
-                    style={{ background: 'var(--surface, #0E1628)', borderColor: 'rgba(140,170,210,0.12)' }}
+                    style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -670,18 +670,18 @@ const EmailInbox = () => {
       ) : !activeProvider ? (
         <div
           className="text-center py-16 rounded-2xl"
-          style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--elev-1)' }}
         >
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'var(--bg-tertiary)' }}
+            style={{ background: 'var(--surface-sunken)' }}
           >
-            <Mail className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
+            <Mail className="w-8 h-8" style={{ color: 'var(--ink-muted)' }} />
           </div>
-          <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+          <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
             No Email Provider Connected
           </h3>
-          <p className="mb-6 max-w-md mx-auto" style={{ color: 'var(--text-muted)' }}>
+          <p className="mb-6 max-w-md mx-auto" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
             Connect Gmail or Outlook to enable AI-powered email prioritization
           </p>
           <Button onClick={handleConnect} className="btn-primary">
@@ -705,11 +705,11 @@ const EmailInbox = () => {
           {/* Compact header row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', flexShrink: 0 }}>
             <div>
-              <div style={{ fontFamily: fontFamily.mono, fontSize: 10, color: '#E85D00', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--lava)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)' }}>
                 Inbox &middot; {providerLabel} &middot; Live
               </div>
-              <h1 style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 22, letterSpacing: '-0.02em', marginTop: 2 }}>
-                {allPriorityEmails.length || 0} emails <em style={{ fontStyle: 'italic', color: '#E85D00' }}>need a decision</em>
+              <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 22, letterSpacing: '-0.02em', marginTop: 2 }}>
+                {allPriorityEmails.length || 0} emails <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>need a decision</em>
               </h1>
             </div>
             <Button onClick={runPriorityAnalysis} disabled={analyzing} className="btn-primary" style={{ flexShrink: 0 }}>
@@ -727,25 +727,31 @@ const EmailInbox = () => {
               .inbox-shell { grid-template-columns: 1fr !important; }
               .inbox-list { display: none !important; }
             }
+            .inbox-msg-row {
+              transition: background 150ms ease, border-color 150ms ease;
+            }
+            .inbox-msg-row:hover {
+              background: var(--surface-2, #121D30) !important;
+            }
           `}</style>
 
           {/* 3-panel grid */}
-          <div className="inbox-shell" style={{ display: 'grid', gridTemplateColumns: '200px 360px 1fr', gap: 12, flex: 1, minHeight: 0 }}>
+          <div className="inbox-shell" style={{ display: 'grid', gridTemplateColumns: '200px 360px 1fr', gap: 'var(--sp-4, 12px)', flex: 1, minHeight: 0 }}>
 
             {/* ── PANEL 1: FOLDERS ── */}
-            <div className="inbox-folders" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 16, overflowY: 'auto' }}>
+            <div className="inbox-folders" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 16, overflowY: 'auto' }}>
               {/* Mailbox */}
-              <div style={{ fontFamily: fontFamily?.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mailbox</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', marginBottom: 8 }}>Mailbox</div>
               {['inbox', 'sent', 'drafts', 'archive'].map(f => (
                 <div
                   key={f}
                   onClick={() => setSelectedFolder(f)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 4, color: selectedFolder === f ? '#E85D00' : 'var(--ink-secondary, #8FA0B8)', background: selectedFolder === f ? 'rgba(232,93,0,0.08)' : 'transparent', fontWeight: selectedFolder === f ? 500 : 400, fontSize: 13, cursor: 'pointer', marginBottom: 2 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 'var(--r-sm, 4px)', color: selectedFolder === f ? 'var(--lava)' : 'var(--ink-secondary)', background: selectedFolder === f ? 'var(--lava-wash, rgba(232,93,0,0.08))' : 'transparent', fontWeight: selectedFolder === f ? 500 : 400, fontSize: 13, cursor: 'pointer', marginBottom: 2, fontFamily: 'var(--font-ui)', transition: 'all 150ms ease' }}
                 >
                   <Mail className="w-4 h-4" />
                   <span style={{ flex: 1 }}>{f.charAt(0).toUpperCase() + f.slice(1)}</span>
                   {f === 'inbox' && priorityAnalysis && (
-                    <span style={{ padding: '1px 7px', borderRadius: 100, fontFamily: fontFamily?.mono, fontSize: 10, fontWeight: 600, background: selectedFolder === f ? '#E85D00' : 'var(--surface-2, #121D30)', color: selectedFolder === f ? 'white' : 'var(--ink-secondary, #8FA0B8)' }}>
+                    <span style={{ padding: '1px 7px', borderRadius: 100, fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, background: selectedFolder === f ? 'var(--lava)' : 'var(--surface-2)', color: selectedFolder === f ? 'white' : 'var(--ink-secondary)' }}>
                       {allPriorityEmails.length}
                     </span>
                   )}
@@ -753,7 +759,7 @@ const EmailInbox = () => {
               ))}
 
               {/* Smart Folders */}
-              <div style={{ fontFamily: fontFamily?.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 16, marginBottom: 8 }}>Smart Folders</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', marginTop: 16, marginBottom: 8 }}>Smart Folders</div>
               {['high', 'medium', 'low'].map(level => {
                 const count = priorityAnalysis?.[`${level}_priority`]?.length || 0;
                 const colors = { high: '#EF4444', medium: '#F59E0B', low: '#10B981' };
@@ -761,12 +767,12 @@ const EmailInbox = () => {
                   <div
                     key={level}
                     onClick={() => setSelectedFolder(`priority-${level}`)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 4, color: selectedFolder === `priority-${level}` ? colors[level] : 'var(--ink-secondary, #8FA0B8)', background: selectedFolder === `priority-${level}` ? `${colors[level]}10` : 'transparent', fontSize: 13, cursor: 'pointer', marginBottom: 2 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 'var(--r-sm, 4px)', color: selectedFolder === `priority-${level}` ? colors[level] : 'var(--ink-secondary)', background: selectedFolder === `priority-${level}` ? `${colors[level]}10` : 'transparent', fontSize: 13, cursor: 'pointer', marginBottom: 2, fontFamily: 'var(--font-ui)', transition: 'all 150ms ease' }}
                   >
                     {level === 'high' ? <AlertCircle className="w-4 h-4" /> : level === 'medium' ? <Clock className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                     <span style={{ flex: 1 }}>{level.charAt(0).toUpperCase() + level.slice(1)} Priority</span>
                     {count > 0 && (
-                      <span style={{ padding: '1px 7px', borderRadius: 100, fontFamily: fontFamily?.mono, fontSize: 10, fontWeight: 600, background: `${colors[level]}15`, color: colors[level] }}>{count}</span>
+                      <span style={{ padding: '1px 7px', borderRadius: 100, fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, background: `${colors[level]}15`, color: colors[level] }}>{count}</span>
                     )}
                   </div>
                 );
@@ -775,12 +781,12 @@ const EmailInbox = () => {
               {/* Server labels */}
               {folders.length > 0 && (
                 <>
-                  <div style={{ fontFamily: fontFamily?.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 16, marginBottom: 8 }}>Labels</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', marginTop: 16, marginBottom: 8 }}>Labels</div>
                   {folders.filter(f => !['inbox','sent','drafts','archive'].includes(f.name?.toLowerCase())).slice(0, 8).map(f => (
                     <div
                       key={f.id || f.name}
                       onClick={() => setSelectedFolder(f.name || f.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 4, color: selectedFolder === (f.name || f.id) ? '#E85D00' : 'var(--ink-secondary, #8FA0B8)', background: selectedFolder === (f.name || f.id) ? 'rgba(232,93,0,0.08)' : 'transparent', fontSize: 13, cursor: 'pointer', marginBottom: 2 }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 'var(--r-sm, 4px)', color: selectedFolder === (f.name || f.id) ? 'var(--lava)' : 'var(--ink-secondary)', background: selectedFolder === (f.name || f.id) ? 'var(--lava-wash, rgba(232,93,0,0.08))' : 'transparent', fontSize: 13, cursor: 'pointer', marginBottom: 2, fontFamily: 'var(--font-ui)', transition: 'all 150ms ease' }}
                     >
                       <Mail className="w-3.5 h-3.5" />
                       <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.display_name || f.name || f.id}</span>
@@ -791,20 +797,20 @@ const EmailInbox = () => {
             </div>
 
             {/* ── PANEL 2: MESSAGE LIST ── */}
-            <div className="inbox-list" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div className="inbox-list" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               {/* List header */}
-              <div style={{ padding: 16, borderBottom: '1px solid rgba(140,170,210,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: fontFamily?.display, fontSize: 18, color: 'var(--ink-display, #EDF1F7)' }}>
+              <div style={{ padding: 16, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--ink-display)' }}>
                   {selectedFolder?.startsWith('priority-')
                     ? `${selectedFolder.replace('priority-', '').charAt(0).toUpperCase()}${selectedFolder.replace('priority-', '').slice(1)} Priority`
                     : (selectedFolder || 'Inbox').charAt(0).toUpperCase() + (selectedFolder || 'Inbox').slice(1)}
                 </span>
-                <span style={{ fontFamily: fontFamily?.mono, fontSize: 11, color: 'var(--ink-muted, #708499)' }}>{currentMessages.length} messages</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-muted)' }}>{currentMessages.length} messages</span>
               </div>
               {/* Scrollable list */}
               <div style={{ overflowY: 'auto', flex: 1 }}>
                 {currentMessages.length === 0 && (
-                  <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-muted, #708499)', fontSize: 13 }}>
+                  <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-muted)', fontSize: 13, fontFamily: 'var(--font-ui)' }}>
                     {!priorityAnalysis ? 'Click "Analyze Inbox" to prioritize your emails.' : 'No messages in this folder.'}
                   </div>
                 )}
@@ -815,19 +821,20 @@ const EmailInbox = () => {
                   return (
                     <div
                       key={msgId || idx}
+                      className="inbox-msg-row"
                       onClick={() => setSelectedEmail(msgId)}
-                      style={{ padding: 16, borderBottom: '1px solid rgba(140,170,210,0.12)', cursor: 'pointer', position: 'relative', background: isActive ? 'rgba(232,93,0,0.08)' : 'transparent', borderLeft: isActive ? '3px solid #E85D00' : '3px solid transparent', paddingLeft: isActive ? 13 : 16 }}
+                      style={{ padding: 16, borderBottom: '1px solid var(--border)', cursor: 'pointer', position: 'relative', background: isActive ? 'var(--lava-wash, rgba(232,93,0,0.08))' : 'transparent', borderLeft: isActive ? '3px solid var(--lava)' : '3px solid transparent', paddingLeft: isActive ? 13 : 16 }}
                     >
-                      {isUnread && <div style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', width: 6, height: 6, background: '#E85D00', borderRadius: '50%' }} />}
+                      {isUnread && <div style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', width: 6, height: 6, background: 'var(--lava)', borderRadius: '50%' }} />}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <span style={{ fontSize: 13, color: isUnread ? 'var(--ink-display, #EDF1F7)' : 'var(--ink, #CBD5E1)', fontWeight: isUnread ? 600 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.from || 'Unknown'}</span>
-                        <span style={{ fontFamily: fontFamily?.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', flexShrink: 0 }}>{msg.received ? new Date(msg.received).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                        <span style={{ fontSize: 13, fontFamily: 'var(--font-ui)', color: isUnread ? 'var(--ink-display)' : 'var(--ink)', fontWeight: isUnread ? 600 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.from || 'Unknown'}</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-muted)', flexShrink: 0 }}>{msg.received ? new Date(msg.received).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
                       </div>
-                      <div style={{ fontSize: 13, color: 'var(--ink-display, #EDF1F7)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: isUnread ? 600 : 400 }}>{msg.subject || '(no subject)'}</div>
-                      <div style={{ fontSize: 12, color: 'var(--ink-secondary, #8FA0B8)', marginTop: 3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.4 }}>{msg.snippet || msg.reason || ''}</div>
+                      <div style={{ fontSize: 13, fontFamily: 'var(--font-ui)', color: 'var(--ink-display)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: isUnread ? 600 : 400 }}>{msg.subject || '(no subject)'}</div>
+                      <div style={{ fontSize: 12, fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)', marginTop: 3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.4 }}>{msg.snippet || msg.reason || ''}</div>
                       {msg.priority_level && (
                         <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-                          <span style={{ padding: '2px 8px', borderRadius: 100, fontFamily: fontFamily?.mono, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, background: msg.priority_level === 'high' ? 'rgba(220,38,38,0.1)' : msg.priority_level === 'medium' ? 'rgba(245,158,11,0.1)' : 'rgba(22,163,74,0.1)', color: msg.priority_level === 'high' ? '#DC2626' : msg.priority_level === 'medium' ? '#D97706' : '#16A34A' }}>{msg.priority_level}</span>
+                          <span style={{ padding: '2px 8px', borderRadius: 100, fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', fontWeight: 600, background: msg.priority_level === 'high' ? 'rgba(220,38,38,0.1)' : msg.priority_level === 'medium' ? 'rgba(245,158,11,0.1)' : 'rgba(22,163,74,0.1)', color: msg.priority_level === 'high' ? '#DC2626' : msg.priority_level === 'medium' ? '#D97706' : '#16A34A' }}>{msg.priority_level}</span>
                         </div>
                       )}
                     </div>
@@ -837,30 +844,30 @@ const EmailInbox = () => {
             </div>
 
             {/* ── PANEL 3: READING PANE ── */}
-            <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: 'var(--elev-1)' }}>
               {selectedEmailData ? (
                 <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                   {/* Subject */}
                   <div style={{ padding: '20px 24px 0', flexShrink: 0 }}>
-                    <h2 style={{ fontFamily: fontFamily?.display, fontSize: 26, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1.15, marginBottom: 16 }}>
+                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: 'var(--ink-display)', lineHeight: 1.15, marginBottom: 16 }}>
                       {selectedEmailData.subject || '(no subject)'}
                     </h2>
                     {/* From row */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #E85D00, #FF8A3D)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF8A3D))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
                         {(selectedEmailData.from || 'U')[0].toUpperCase()}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)' }}>{selectedEmailData.from || 'Unknown'}</div>
-                        <div style={{ fontSize: 12, color: 'var(--ink-muted, #708499)' }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{selectedEmailData.from || 'Unknown'}</div>
+                        <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)' }}>
                           {selectedEmailData.received ? new Date(selectedEmailData.received).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
                         </div>
                       </div>
                       {selectedEmailData.priority_level && <PriorityBadge level={selectedEmailData.user_override || selectedEmailData.priority_level} />}
                     </div>
                     {/* Toolbar */}
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingBottom: 16, borderBottom: '1px solid rgba(140,170,210,0.12)' }}>
-                      <Button size="sm" onClick={() => fetchReplySuggestions(selectedEmailData.email_id)} style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)' }}>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+                      <Button size="sm" onClick={() => fetchReplySuggestions(selectedEmailData.email_id)} style={{ background: 'var(--lava-wash, rgba(232,93,0,0.1))', color: 'var(--lava)', border: '1px solid var(--lava-ring, rgba(232,93,0,0.2))' }}>
                         <Sparkles className="w-3 h-3 mr-1.5" />Reply
                       </Button>
                       {selectedEmailData.web_link && (
@@ -890,21 +897,21 @@ const EmailInbox = () => {
                   <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
                     {/* Email body / snippet */}
                     {selectedEmailData.snippet && (
-                      <div style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink, #CBD5E1)', whiteSpace: 'pre-wrap', marginBottom: 24 }}>
+                      <div style={{ fontSize: 14, lineHeight: 1.7, fontFamily: 'var(--font-ui)', color: 'var(--ink)', whiteSpace: 'pre-wrap', marginBottom: 24 }}>
                         {selectedEmailData.snippet}
                       </div>
                     )}
 
                     {/* AI Brief card */}
                     {(selectedEmailData.reason || selectedEmailData.suggested_action) && (
-                      <div style={{ background: 'linear-gradient(135deg, rgba(232,93,0,0.06), rgba(232,93,0,0.02))', border: '1px solid rgba(232,93,0,0.15)', borderRadius: 12, padding: 20, marginBottom: 24 }}>
+                      <div style={{ background: 'linear-gradient(135deg, var(--lava-wash, rgba(232,93,0,0.06)), var(--surface))', border: '1px solid var(--lava-ring, rgba(232,93,0,0.15))', borderRadius: 'var(--r-lg)', padding: 20, marginBottom: 24 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                          <Sparkles className="w-4 h-4" style={{ color: '#E85D00' }} />
-                          <span style={{ fontFamily: fontFamily?.mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#E85D00', fontWeight: 600 }}>BIQc AI Brief</span>
+                          <Sparkles className="w-4 h-4" style={{ color: 'var(--lava)' }} />
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--lava)', fontWeight: 600 }}>BIQc AI Brief</span>
                         </div>
-                        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: 'var(--ink-secondary, #8FA0B8)' }}>
-                          {selectedEmailData.reason && <li style={{ marginBottom: 6 }}><strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>Why ranked:</strong> {selectedEmailData.reason}</li>}
-                          {selectedEmailData.suggested_action && <li><strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>Suggested action:</strong> {selectedEmailData.suggested_action}</li>}
+                        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7, fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>
+                          {selectedEmailData.reason && <li style={{ marginBottom: 6 }}><strong style={{ color: 'var(--ink-display)' }}>Why ranked:</strong> {selectedEmailData.reason}</li>}
+                          {selectedEmailData.suggested_action && <li><strong style={{ color: 'var(--ink-display)' }}>Suggested action:</strong> {selectedEmailData.suggested_action}</li>}
                         </ul>
                       </div>
                     )}
@@ -916,7 +923,7 @@ const EmailInbox = () => {
                           key={label}
                           type="button"
                           onClick={() => fetchReplySuggestions(selectedEmailData.email_id)}
-                          style={{ padding: '6px 14px', borderRadius: 100, fontSize: 12, background: 'rgba(140,170,210,0.08)', border: '1px solid rgba(140,170,210,0.15)', color: 'var(--ink-secondary, #8FA0B8)', cursor: 'pointer' }}
+                          style={{ padding: '6px 14px', borderRadius: 100, fontSize: 12, fontFamily: 'var(--font-ui)', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--ink-secondary)', cursor: 'pointer', transition: 'all 150ms ease' }}
                         >
                           {label}
                         </button>
@@ -926,9 +933,9 @@ const EmailInbox = () => {
                 </div>
               ) : (
                 /* Empty reading pane */
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--ink-muted, #708499)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--ink-muted)' }}>
                   <Mail className="w-10 h-10" style={{ opacity: 0.3, marginBottom: 12 }} />
-                  <p style={{ fontSize: 14 }}>Select a message to read</p>
+                  <p style={{ fontSize: 14, fontFamily: 'var(--font-ui)' }}>Select a message to read</p>
                 </div>
               )}
             </div>

@@ -5,17 +5,16 @@ import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { CognitiveMesh } from '../components/LoadingSystems';
 import { useLocation } from 'react-router-dom';
 import { Zap, Mail, MessageSquare, Users, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
-import { fontFamily } from '../design-system/tokens';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
 import { DelegateActionModal } from '../components/advisor/DelegateActionModal';
 
 
 const Panel = ({ children, className = '', ...props }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }} {...props}>{children}</div>
+  <div className={`p-5 ${className}`} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--elev-1)' }} {...props}>{children}</div>
 );
 
-const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: { bg: '#F59E0B10', b: '#F59E0B25', d: '#F59E0B' }, low: { bg: '#10B98110', b: '#10B98125', d: '#10B981' } };
+const SEV = { high: { bg: 'var(--danger-wash)', b: 'var(--border)', d: 'var(--danger)' }, medium: { bg: 'var(--warning-wash)', b: 'var(--border)', d: 'var(--warning)' }, low: { bg: 'var(--positive-wash)', b: 'var(--border)', d: 'var(--positive)' } };
 
 const ActionsPage = () => {
   const location = useLocation();
@@ -182,15 +181,15 @@ const ActionsPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="actions-page">
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: 'var(--font-ui)' }} data-testid="actions-page">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+          <div className="text-[11px] uppercase mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)', letterSpacing: 'var(--ls-caps)' }}>
             — Actions · {rq.length} open
           </div>
-          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-            What's <em style={{ fontStyle: 'italic', color: '#E85D00' }}>actually moving</em>.
+          <h1 className="font-medium mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: 'var(--ls-display)', lineHeight: 1.05 }}>
+            What's <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>actually moving</em>.
           </h1>
-          <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Every action started life as an alert, an email thread, a deal change, or a BIQc nudge. Drag a card forward when you've done it.</p>
+          <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>Every action started life as an alert, an email thread, a deal change, or a BIQc nudge. Drag a card forward when you've done it.</p>
         </div>
 
         {/* Stats cards — matches mockup */}
@@ -201,9 +200,9 @@ const ActionsPage = () => {
             { label: 'Done This Week', value: loading ? '\u2014' : 0 },
             { label: 'Overdue', value: loading ? '\u2014' : rq.filter(i => i.severity === 'high').length },
           ].map(({ label, value }) => (
-            <div key={label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: '20px' }}>
-              <span style={{ fontFamily: fontFamily.display, fontSize: 28, color: 'var(--ink-display, #EDF1F7)', display: 'block', lineHeight: 1 }}>{value}</span>
-              <span style={{ fontFamily: fontFamily.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-secondary, #8FA0B8)', display: 'block', marginTop: 8 }}>{label}</span>
+            <div key={label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', boxShadow: 'var(--elev-1)' }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--ink-display)', display: 'block', lineHeight: 1 }}>{value}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', color: 'var(--ink-muted)', display: 'block', marginTop: 8 }}>{label}</span>
             </div>
           ))}
         </div>
@@ -212,12 +211,15 @@ const ActionsPage = () => {
         <div className="flex items-center gap-3 flex-wrap" data-testid="actions-toolbar">
           {[['all','All'],['urgent','Urgent'],['inprogress','In Progress'],['done','Done'],['overdue','Overdue']].map(([val,label]) => (
             <button key={val} onClick={() => setActiveFilter(val)}
-              className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
+              className="px-3 py-1.5 text-xs cursor-pointer transition-all"
               style={{
-                background: activeFilter === val ? 'var(--surface-sunken, #060A12)' : 'transparent',
-                color: activeFilter === val ? 'var(--ink-display, #EDF1F7)' : 'var(--ink-secondary)',
-                border: activeFilter === val ? '1px solid rgba(140,170,210,0.2)' : '1px solid rgba(140,170,210,0.08)',
-                fontFamily: fontFamily.mono,
+                background: activeFilter === val ? 'var(--lava)' : 'transparent',
+                color: activeFilter === val ? 'var(--ink-inverse)' : 'var(--ink-secondary)',
+                border: activeFilter === val ? '1px solid var(--lava)' : '1px solid var(--border)',
+                borderRadius: 'var(--r-pill)',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: 'var(--ls-caps)',
               }}
               data-testid={`actions-filter-${val}`}>
               {label}
@@ -228,18 +230,19 @@ const ActionsPage = () => {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search actions..."
-            className="flex-1 min-w-[200px] px-3 py-2 rounded-lg text-sm actions-toolbar-search"
+            className="flex-1 min-w-[200px] px-3 py-2 text-sm actions-toolbar-search"
             style={{
-              background: 'var(--surface, #0E1628)',
-              border: '1px solid rgba(140,170,210,0.12)',
-              color: 'var(--ink-display, #EDF1F7)',
-              fontFamily: fontFamily.body,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--r-lg)',
+              color: 'var(--ink-display)',
+              fontFamily: 'var(--font-ui)',
               outline: 'none',
             }}
             data-testid="actions-search-input"
           />
           <style>{`
-            .actions-toolbar-search::placeholder { color: #5C6E82 !important; }
+            .actions-toolbar-search::placeholder { color: var(--ink-muted) !important; }
           `}</style>
         </div>
 
@@ -251,16 +254,16 @@ const ActionsPage = () => {
               <Panel className="mb-2" data-testid="actions-advisor-assignment-card">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="max-w-3xl">
-                    <p className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Advisor handoff</p>
-                    <p className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>{advisorAssignment.title}</p>
-                    <p className="mt-2 text-xs text-[var(--ink-secondary)] leading-relaxed">{advisorAssignment.summary}</p>
-                    <p className="mt-2 text-xs text-[var(--ink-muted)]">Why now: {advisorAssignment.whyNow}</p>
-                    <p className="mt-2 text-xs text-[var(--ink-muted)]">If ignored: {advisorAssignment.ifIgnored}</p>
+                    <p className="text-[10px] font-semibold uppercase mb-2" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps)' }}>Advisor handoff</p>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>{advisorAssignment.title}</p>
+                    <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{advisorAssignment.summary}</p>
+                    <p className="mt-2 text-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Why now: {advisorAssignment.whyNow}</p>
+                    <p className="mt-2 text-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>If ignored: {advisorAssignment.ifIgnored}</p>
                   </div>
                   <button
                     onClick={() => setDelegateModalOpen(true)}
                     className="inline-flex min-h-[44px] items-center gap-1.5 px-4 py-2.5 rounded-lg text-[11px] font-semibold"
-                    style={{ background: '#3B82F615', color: '#93C5FD', border: '1px solid #3B82F640', fontFamily: fontFamily.mono }}
+                    style={{ background: 'rgba(37,99,235,0.08)', color: 'var(--info)', border: '1px solid rgba(37,99,235,0.25)', fontFamily: 'var(--font-mono)', borderRadius: 'var(--r-lg)' }}
                     data-testid="actions-open-assignment-workflow"
                   >
                     <Users className="w-3.5 h-3.5" /> Prepare assignment
@@ -271,43 +274,43 @@ const ActionsPage = () => {
 
             {/* Priority Focus — filtered to remove stale integration prompts */}
             {(cleanPriority.primary || cleanPriority.secondary) && (
-              <div className="rounded-xl p-5" style={{ background: '#E85D0008', border: '1px solid #E85D0025' }}>
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Priority Focus</h3>
+              <div className="p-5" style={{ background: 'var(--lava-wash)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', boxShadow: 'var(--elev-1)' }}>
+                <h3 className="text-[10px] font-semibold uppercase mb-3" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps)' }}>Priority Focus</h3>
                 {cleanPriority.primary && (
                   <div className="mb-3">
-                    <span className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>{cleanPriority.primary}</span>
-                    {cleanPriority.primary_hrs && <span className="text-xs text-[var(--ink-muted)] ml-2" style={{ fontFamily: fontFamily.mono }}>{cleanPriority.primary_hrs}</span>}
+                    <span className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>{cleanPriority.primary}</span>
+                    {cleanPriority.primary_hrs && <span className="text-xs ml-2" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{cleanPriority.primary_hrs}</span>}
                   </div>
                 )}
                 {cleanPriority.secondary && (
                   <div className="mb-2">
-                    <span className="text-sm text-[var(--ink-secondary)]">{cleanPriority.secondary}</span>
-                    {cleanPriority.delegate && <span className="text-xs text-[var(--ink-muted)] ml-2" style={{ fontFamily: fontFamily.mono }}>Delegate: {cleanPriority.delegate}</span>}
+                    <span className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{cleanPriority.secondary}</span>
+                    {cleanPriority.delegate && <span className="text-xs ml-2" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Delegate: {cleanPriority.delegate}</span>}
                   </div>
                 )}
-                {cleanPriority.noise && <p className="text-xs text-[var(--ink-muted)] mt-2" style={{ fontFamily: fontFamily.mono }}>Ignore: {cleanPriority.noise}</p>}
+                {cleanPriority.noise && <p className="text-xs mt-2" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Ignore: {cleanPriority.noise}</p>}
               </div>
             )}
 
             {/* Resolution Queue */}
             {filteredRq.length > 0 ? (
               <div>
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Resolution Queue ({filteredRq.length})</h3>
+                <h3 className="text-[10px] font-semibold uppercase mb-3" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps)' }}>Resolution Queue ({filteredRq.length})</h3>
                 <div className="space-y-3">
                   {filteredRq.map((item, i) => {
                     const sv = SEV[item.severity] || SEV.medium;
                     return (
-                      <div key={i} className="rounded-xl p-5" style={{ background: sv.bg, border: `1px solid ${sv.b}` }}>
+                      <div key={i} className="p-5" style={{ background: sv.bg, border: `1px solid ${sv.b}`, borderRadius: 'var(--r-xl)', boxShadow: 'var(--elev-1)' }}>
                         <div className="flex items-start gap-3">
                           <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
-                            {item.detail && <p className="text-xs mt-1 text-[var(--ink-secondary)] leading-relaxed">{item.detail}</p>}
+                            <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>{item.title}</p>
+                            {item.detail && <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{item.detail}</p>}
                             <div className="flex flex-wrap gap-2 mt-3">
-                              {(item.actions || []).includes('auto-email') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630', fontFamily: fontFamily.mono }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
-                              {(item.actions || []).includes('quick-sms') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: fontFamily.mono }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-                              {(item.actions || []).includes('hand-off') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#E85D0015', color: '#E85D00', border: '1px solid #E85D0030', fontFamily: fontFamily.mono }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
-                              <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: fontFamily.mono }}><CheckCircle2 className="w-3.5 h-3.5" />Complete</button>
+                              {(item.actions || []).includes('auto-email') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'rgba(37,99,235,0.08)', color: 'var(--info)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
+                              {(item.actions || []).includes('quick-sms') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'rgba(22,163,74,0.08)', color: 'var(--positive)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
+                              {(item.actions || []).includes('hand-off') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'var(--lava-wash)', color: 'var(--lava)', border: '1px solid rgba(232,93,0,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+                              <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] text-[11px] font-semibold" style={{ background: 'rgba(22,163,74,0.08)', color: 'var(--positive)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-mono)' }}><CheckCircle2 className="w-3.5 h-3.5" />Complete</button>
                             </div>
                           </div>
                         </div>
@@ -318,23 +321,23 @@ const ActionsPage = () => {
               </div>
             ) : (
               <Panel className="text-center py-8">
-                <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-3" />
-                <p className="text-sm text-[var(--ink-muted)]">No items in the resolution queue. Connect integrations to activate AI monitoring.</p>
+                <CheckCircle2 className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--positive)' }} />
+                <p className="text-sm" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>No items in the resolution queue. Connect integrations to activate AI monitoring.</p>
               </Panel>
             )}
 
             {/* Reallocation Recommendations */}
             {reallocation.length > 0 && (
               <div>
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Resource Reallocation</h3>
+                <h3 className="text-[10px] font-semibold uppercase mb-3" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps)' }}>Resource Reallocation</h3>
                 <div className="space-y-2">
                   {reallocation.map((r, i) => (
                     <Panel key={i}>
                       <div className="flex items-start gap-3">
-                        <ArrowRight className="w-4 h-4 text-[#3B82F6] shrink-0 mt-0.5" />
+                        <ArrowRight className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--info)' }} />
                         <div>
-                          <p className="text-sm text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>{r.action}</p>
-                          <p className="text-xs text-[var(--ink-secondary)] mt-1">{r.impact}</p>
+                          <p className="text-sm" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>{r.action}</p>
+                          <p className="text-xs mt-1" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{r.impact}</p>
                         </div>
                       </div>
                     </Panel>

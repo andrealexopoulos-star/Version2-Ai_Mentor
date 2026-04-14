@@ -250,26 +250,26 @@ const CalendarView = () => {
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in" style={{ maxWidth: 1280 }}>
         {advisorDraft && (
-          <div className="p-5 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(232,93,0,0.25)' }} data-testid="calendar-advisor-draft-card">
+          <div className="p-5 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--lava-ring, rgba(232,93,0,0.25))', borderRadius: 'var(--r-lg)' }} data-testid="calendar-advisor-draft-card">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="max-w-3xl">
-                <p className="text-xs uppercase tracking-[0.14em] mb-2" style={{ color: '#E85D00' }}>Advisor follow-up draft</p>
+                <p className="text-xs uppercase tracking-[0.14em] mb-2" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Advisor follow-up draft</p>
                 <input
                   value={advisorDraft.title}
                   onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, title: event.target.value }))}
                   className="w-full bg-transparent text-lg font-semibold outline-none"
-                  style={{ color: 'var(--text-primary)' }}
+                  style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}
                   data-testid="calendar-advisor-draft-title"
                 />
                 <textarea
                   value={advisorDraft.summary}
                   onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, summary: event.target.value }))}
                   className="mt-3 w-full rounded-lg bg-transparent p-0 text-sm outline-none"
-                  style={{ color: 'var(--text-secondary)', minHeight: '110px' }}
+                  style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', minHeight: '110px' }}
                   data-testid="calendar-advisor-draft-summary"
                 />
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  <label className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <label className="text-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
                     Start
                     <input
                       type="datetime-local"
@@ -280,11 +280,11 @@ const CalendarView = () => {
                         setAdvisorDraft((prev) => ({ ...prev, startAt: next }));
                       }}
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{ background: 'var(--bg-tertiary)', borderColor: 'rgba(140,170,210,0.12)', color: 'var(--text-primary)' }}
+                      style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)', color: 'var(--ink-display)', fontFamily: 'var(--font-mono)' }}
                       data-testid="calendar-advisor-draft-start"
                     />
                   </label>
-                  <label className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <label className="text-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
                     End
                     <input
                       type="datetime-local"
@@ -295,7 +295,7 @@ const CalendarView = () => {
                         setAdvisorDraft((prev) => ({ ...prev, endAt: next }));
                       }}
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{ background: 'var(--bg-tertiary)', borderColor: 'rgba(140,170,210,0.12)', color: 'var(--text-primary)' }}
+                      style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)', color: 'var(--ink-display)', fontFamily: 'var(--font-mono)' }}
                       data-testid="calendar-advisor-draft-end"
                     />
                   </label>
@@ -316,9 +316,9 @@ const CalendarView = () => {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily?.mono || 'monospace', color: '#E85D00' }}>— Calendar · Week of {new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}</div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily?.display || 'Inter', color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Your week, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>read by BIQc</em>.</h1>
-            <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>— Calendar · Week of {new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}</div>
+            <h1 className="font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Your week, <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>read by BIQc</em>.</h1>
+            <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
               {loadError ? 'Calendar data has partial issues. Review status and retry sync if needed.' : 'Every meeting linked to a deal, customer or alert. BIQc surfaces what to prep, what to decline, and what to hand off.'}
             </p>
           </div>
@@ -352,7 +352,7 @@ const CalendarView = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div
             className="p-5 rounded-xl"
-            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--elev-1)' }}
           >
             <div className="flex items-center gap-3">
               <div
@@ -362,10 +362,10 @@ const CalendarView = () => {
                 <CalendarIcon className="w-5 h-5 text-blue-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ fontFamily: fontFamily?.display, color: 'var(--ink-display, #EDF1F7)' }}>
+                <p className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>
                   {upcomingEvents.length}
                 </p>
-                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: fontFamily?.mono, color: 'var(--ink-muted, #708499)' }}>
+                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>
                   Upcoming events
                 </p>
               </div>
@@ -374,7 +374,7 @@ const CalendarView = () => {
 
           <div
             className="p-5 rounded-xl"
-            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--elev-1)' }}
           >
             <div className="flex items-center gap-3">
               <div
@@ -384,10 +384,10 @@ const CalendarView = () => {
                 <Users className="w-5 h-5 text-green-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ fontFamily: fontFamily?.display, color: 'var(--ink-display, #EDF1F7)' }}>
+                <p className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>
                   {upcomingEvents.filter(e => e.attendees?.length > 0).length}
                 </p>
-                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: fontFamily?.mono, color: 'var(--ink-muted, #708499)' }}>
+                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>
                   With attendees
                 </p>
               </div>
@@ -396,7 +396,7 @@ const CalendarView = () => {
 
           <div
             className="p-5 rounded-xl"
-            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--elev-1)' }}
           >
             <div className="flex items-center gap-3">
               <div
@@ -406,10 +406,10 @@ const CalendarView = () => {
                 <Clock className="w-5 h-5 text-yellow-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ fontFamily: fontFamily?.display, color: 'var(--ink-display, #EDF1F7)' }}>
+                <p className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>
                   {groupedEvents[today]?.length || 0}
                 </p>
-                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: fontFamily?.mono, color: 'var(--ink-muted, #708499)' }}>
+                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>
                   Today's meetings
                 </p>
               </div>
@@ -423,12 +423,12 @@ const CalendarView = () => {
         ) : loadError && upcomingEvents.length === 0 ? (
           <div
             className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)' }}
           >
-            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
               Calendar unavailable right now
             </h3>
-            <p className="mb-6 max-w-md mx-auto text-sm" style={{ color: 'var(--text-muted)' }}>
+            <p className="mb-6 max-w-md mx-auto text-sm" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
               {loadError}
             </p>
             <Button onClick={() => fetchCalendarData()} disabled={syncing} className="btn-primary">
@@ -439,18 +439,18 @@ const CalendarView = () => {
         ) : upcomingEvents.length === 0 ? (
           <div
             className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)' }}
           >
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ background: 'var(--bg-tertiary)' }}
+              style={{ background: 'var(--surface-sunken)' }}
             >
-              <CalendarIcon className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
+              <CalendarIcon className="w-8 h-8" style={{ color: 'var(--ink-muted)' }} />
             </div>
-            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
               No Calendar Events
             </h3>
-            <p className="mb-6 max-w-md mx-auto" style={{ color: 'var(--text-muted)' }}>
+            <p className="mb-6 max-w-md mx-auto" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
               Sync your {calendarProvider === 'gmail' ? 'Gmail' : 'Outlook'} calendar to see upcoming meetings and let BIQc reason over your schedule.
             </p>
             <Button onClick={syncCalendar} disabled={syncing} className="btn-primary">
@@ -461,7 +461,7 @@ const CalendarView = () => {
         ) : (
           <>
           {loadError && (
-            <div className="rounded-xl border px-4 py-3" style={{ background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.3)' }} data-testid="calendar-partial-error">
+            <div className="rounded-xl border px-4 py-3" style={{ background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.3)', borderRadius: 'var(--r-lg)' }} data-testid="calendar-partial-error">
               <p className="text-sm" style={{ color: '#FCA5A5' }}>
                 Calendar intelligence is partially degraded: {loadError}
               </p>
@@ -469,39 +469,39 @@ const CalendarView = () => {
           )}
 
           {/* Week Grid Calendar + Side Rail */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', alignItems: 'flex-start' }} className="calendar-week-layout" data-testid="calendar-command-grid">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 'var(--sp-5, 20px)', alignItems: 'flex-start' }} className="calendar-week-layout" data-testid="calendar-command-grid">
             {/* Main Calendar Card */}
-            <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl, 16px)', overflow: 'hidden' }}>
               {/* Calendar Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid rgba(140,170,210,0.12)', flexWrap: 'wrap', gap: 12 }}>
-                <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 22, color: 'var(--ink-display, #EDF1F7)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--ink-display)' }}>
                   Week of {weekDays[0]?.toLocaleDateString('en-AU', { day: 'numeric' })}
-                  <span style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 14, color: 'var(--ink-muted, #708499)', fontStyle: 'italic', marginLeft: 8 }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--ink-muted)', fontStyle: 'italic', marginLeft: 8 }}>
                     {weekDays[0]?.toLocaleDateString('en-AU', { month: 'long' })}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button onClick={() => setWeekOffset(prev => prev - 1)} style={{ width: 32, height: 32, border: '1px solid rgba(140,170,210,0.12)', background: 'var(--surface, #0E1628)', borderRadius: 8, display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--ink-secondary, #8FA0B8)' }}>{'\u2039'}</button>
-                  <button onClick={() => setWeekOffset(0)} style={{ padding: '6px 14px', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 8, fontFamily: fontFamily?.mono || 'monospace', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-secondary, #8FA0B8)', background: 'var(--surface, #0E1628)', cursor: 'pointer' }}>Today</button>
-                  <button onClick={() => setWeekOffset(prev => prev + 1)} style={{ width: 32, height: 32, border: '1px solid rgba(140,170,210,0.12)', background: 'var(--surface, #0E1628)', borderRadius: 8, display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--ink-secondary, #8FA0B8)' }}>{'\u203A'}</button>
+                  <button onClick={() => setWeekOffset(prev => prev - 1)} style={{ width: 32, height: 32, border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 'var(--r-md, 8px)', display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--ink-secondary)', transition: 'all 150ms ease' }}>{'\u2039'}</button>
+                  <button onClick={() => setWeekOffset(0)} style={{ padding: '6px 14px', border: '1px solid var(--border)', borderRadius: 'var(--r-md, 8px)', fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-secondary)', background: 'var(--surface)', cursor: 'pointer', transition: 'all 150ms ease' }}>Today</button>
+                  <button onClick={() => setWeekOffset(prev => prev + 1)} style={{ width: 32, height: 32, border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 'var(--r-md, 8px)', display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--ink-secondary)', transition: 'all 150ms ease' }}>{'\u203A'}</button>
                 </div>
               </div>
 
               {/* Week Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: '60px repeat(5, 1fr)', minHeight: 660, position: 'relative' }}>
                 {/* Day Headers Row */}
-                <div style={{ borderBottom: '1px solid rgba(140,170,210,0.12)', borderRight: '1px solid rgba(140,170,210,0.12)' }} /> {/* empty top-left corner */}
+                <div style={{ borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }} /> {/* empty top-left corner */}
                 {weekDays.map((day, i) => {
                   const isToday = toLocalDateKey(day) === today;
                   return (
-                    <div key={i} style={{ borderBottom: '1px solid rgba(140,170,210,0.12)', borderRight: i < 4 ? '1px solid rgba(140,170,210,0.12)' : 'none', padding: '12px 8px', textAlign: 'center', background: 'var(--surface, #0E1628)', position: 'sticky', top: 0, zIndex: 5 }}>
-                      <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    <div key={i} style={{ borderBottom: '1px solid var(--border)', borderRight: i < 4 ? '1px solid var(--border)' : 'none', padding: '12px 8px', textAlign: 'center', background: 'var(--surface)', position: 'sticky', top: 0, zIndex: 5 }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)' }}>
                         {day.toLocaleDateString('en-AU', { weekday: 'short' })}
                       </div>
-                      <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 22, color: isToday ? '#E85D00' : 'var(--ink-display, #EDF1F7)', lineHeight: 1, marginTop: 4 }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: isToday ? 'var(--lava)' : 'var(--ink-display)', lineHeight: 1, marginTop: 4 }}>
                         {day.getDate()}
                       </div>
-                      {isToday && <div style={{ width: 6, height: 6, background: '#E85D00', borderRadius: '50%', margin: '4px auto 0', boxShadow: '0 0 8px #E85D00' }} />}
+                      {isToday && <div style={{ width: 6, height: 6, background: 'var(--lava)', borderRadius: '50%', margin: '4px auto 0', boxShadow: '0 0 8px var(--lava)' }} />}
                     </div>
                   );
                 })}
@@ -510,8 +510,8 @@ const CalendarView = () => {
                 {Array.from({ length: 11 }, (_, h) => h + 8).map(hour => (
                   <React.Fragment key={hour}>
                     {/* Hour label */}
-                    <div style={{ borderBottom: '1px solid rgba(140,170,210,0.12)', borderRight: '1px solid rgba(140,170,210,0.12)', height: 60, position: 'relative' }}>
-                      <span style={{ position: 'absolute', top: -8, right: 8, fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, color: 'var(--ink-muted, #708499)' }}>
+                    <div style={{ borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)', height: 60, position: 'relative' }}>
+                      <span style={{ position: 'absolute', top: -8, right: 8, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-muted)' }}>
                         {hour > 12 ? `${hour - 12}pm` : hour === 12 ? '12pm' : `${hour}am`}
                       </span>
                     </div>
@@ -522,7 +522,7 @@ const CalendarView = () => {
                         return startH === hour;
                       });
                       return (
-                        <div key={di} style={{ borderBottom: '1px solid rgba(140,170,210,0.12)', borderRight: di < 4 ? '1px solid rgba(140,170,210,0.12)' : 'none', height: 60, position: 'relative' }}>
+                        <div key={di} style={{ borderBottom: '1px solid var(--border)', borderRight: di < 4 ? '1px solid var(--border)' : 'none', height: 60, position: 'relative' }}>
                           {dayEvents.map((ev, ei) => {
                             const startMin = new Date(ev.start).getMinutes();
                             const endTime = new Date(ev.end || ev.start);
@@ -530,12 +530,12 @@ const CalendarView = () => {
                             const heightPx = Math.min(durationMin, 120);
                             const subjectLower = (ev.subject || '').toLowerCase();
                             const type = subjectLower.includes('deal') || ev.importance === 'high' ? 'deal' : subjectLower.includes('internal') || subjectLower.includes('standup') || subjectLower.includes('sync') ? 'internal' : 'customer';
-                            const typeColors = { deal: { bg: 'rgba(232,93,0,0.12)', border: '#E85D00', color: '#E85D00' }, customer: { bg: 'rgba(22,163,74,0.1)', border: '#16A34A', color: '#16A34A' }, internal: { bg: 'rgba(37,99,235,0.08)', border: '#2563EB', color: '#93B4F8' } };
+                            const typeColors = { deal: { bg: 'var(--lava-wash, rgba(232,93,0,0.12))', border: 'var(--lava)', color: 'var(--lava)' }, customer: { bg: 'rgba(22,163,74,0.1)', border: '#16A34A', color: '#16A34A' }, internal: { bg: 'rgba(37,99,235,0.08)', border: '#2563EB', color: '#93B4F8' } };
                             const tc = typeColors[type] || typeColors.customer;
                             return (
-                              <div key={ei} style={{ position: 'absolute', left: 4, right: 4, top: startMin, borderRadius: 4, padding: '4px 6px', fontSize: 11, overflow: 'hidden', cursor: 'pointer', borderLeft: `3px solid ${tc.border}`, background: tc.bg, color: tc.color, height: heightPx, zIndex: 2 }}>
-                                <div style={{ fontWeight: 600, lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.subject || 'Event'}</div>
-                                <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 9, opacity: 0.75 }}>{formatTime(ev.start)}</div>
+                              <div key={ei} style={{ position: 'absolute', left: 4, right: 4, top: startMin, borderRadius: 'var(--r-sm, 4px)', padding: '4px 6px', fontSize: 11, overflow: 'hidden', cursor: 'pointer', borderLeft: `3px solid ${tc.border}`, background: tc.bg, color: tc.color, height: heightPx, zIndex: 2, transition: 'all 150ms ease' }}>
+                                <div style={{ fontWeight: 600, lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-ui)' }}>{ev.subject || 'Event'}</div>
+                                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, opacity: 0.75 }}>{formatTime(ev.start)}</div>
                               </div>
                             );
                           })}
@@ -547,9 +547,9 @@ const CalendarView = () => {
               </div>
 
               {/* Legend */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 24px', borderTop: '1px solid rgba(140,170,210,0.12)', background: 'var(--surface-tint, rgba(14,22,40,0.5))', flexWrap: 'wrap' }}>
-                {[{ label: 'Deal', color: '#E85D00' }, { label: 'Customer', color: '#16A34A' }, { label: 'Internal', color: '#2563EB' }, { label: 'Personal', color: '#94A3B8' }, { label: 'Critical', color: '#DC2626' }].map(item => (
-                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, color: 'var(--ink-secondary, #8FA0B8)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface-tint, var(--surface-sunken))', flexWrap: 'wrap' }}>
+                {[{ label: 'Deal', color: 'var(--lava)' }, { label: 'Customer', color: '#16A34A' }, { label: 'Internal', color: '#2563EB' }, { label: 'Personal', color: '#94A3B8' }, { label: 'Critical', color: '#DC2626' }].map(item => (
+                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-secondary)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)' }}>
                     <div style={{ width: 8, height: 8, borderRadius: 2, background: item.color }} />
                     {item.label}
                   </div>
@@ -560,23 +560,23 @@ const CalendarView = () => {
             {/* Side Rail */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* Today count */}
-              <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 16, padding: 20 }}>
-                <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 11, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>Today</div>
-                <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 32, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>{groupedEvents[today]?.length || 0}</div>
-                <div style={{ fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)', marginTop: 4 }}>meetings scheduled</div>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl, 16px)', padding: 20 }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', marginBottom: 16 }}>Today</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: 'var(--ink-display)', lineHeight: 1 }}>{groupedEvents[today]?.length || 0}</div>
+                <div style={{ fontSize: 13, fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)', marginTop: 4 }}>meetings scheduled</div>
 
                 {/* Agenda list */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
                   {(groupedEvents[today] || []).slice(0, 5).map((ev, i) => (
-                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '50px 1fr', gap: 12, padding: 12, borderRadius: 8, border: '1px solid transparent', cursor: 'pointer' }}>
-                      <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 11, color: 'var(--ink-muted, #708499)', textAlign: 'right', lineHeight: 1.4 }}>
-                        <strong style={{ display: 'block', color: 'var(--ink-display, #EDF1F7)', fontWeight: 600 }}>{formatTime(ev.start)}</strong>
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '50px 1fr', gap: 12, padding: 12, borderRadius: 'var(--r-md, 8px)', border: '1px solid transparent', cursor: 'pointer', transition: 'all 150ms ease' }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-muted)', textAlign: 'right', lineHeight: 1.4 }}>
+                        <strong style={{ display: 'block', color: 'var(--ink-display)', fontWeight: 600 }}>{formatTime(ev.start)}</strong>
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1.3, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.subject || 'Event'}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-ui)', color: 'var(--ink-display)', lineHeight: 1.3, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.subject || 'Event'}</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          {ev.importance === 'high' && <span style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '1px 6px', borderRadius: 999, fontWeight: 600, background: 'rgba(232,93,0,0.12)', color: '#E85D00' }}>Deal</span>}
-                          {ev.attendees?.length > 0 && <span style={{ fontSize: 11, color: 'var(--ink-muted, #708499)' }}>{ev.attendees.length} attendees</span>}
+                          {ev.importance === 'high' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', padding: '1px 6px', borderRadius: 999, fontWeight: 600, background: 'var(--lava-wash, rgba(232,93,0,0.12))', color: 'var(--lava)' }}>Deal</span>}
+                          {ev.attendees?.length > 0 && <span style={{ fontSize: 11, fontFamily: 'var(--font-ui)', color: 'var(--ink-muted)' }}>{ev.attendees.length} attendees</span>}
                         </div>
                       </div>
                     </div>
@@ -586,13 +586,13 @@ const CalendarView = () => {
 
               {/* Intel card */}
               {calendarIntel && intelligenceSummaryText && (
-                <div style={{ background: 'linear-gradient(135deg, rgba(232,93,0,0.08) 0%, var(--surface, #0E1628) 80%)', border: '1px solid rgba(232,93,0,0.15)', borderRadius: 16, padding: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, color: '#E85D00', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 12 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#E85D00', boxShadow: '0 0 8px #E85D00' }} />
+                <div style={{ background: 'linear-gradient(135deg, var(--lava-wash, rgba(232,93,0,0.08)) 0%, var(--surface) 80%)', border: '1px solid var(--lava-ring, rgba(232,93,0,0.15))', borderRadius: 'var(--r-xl, 16px)', padding: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--lava)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps, 0.08em)', fontWeight: 600, marginBottom: 12 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--lava)', boxShadow: '0 0 8px var(--lava)' }} />
                     BIQc Calendar Intel
                   </div>
-                  <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 20, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1.2, marginBottom: 8 }}>Schedule Intelligence</div>
-                  <div style={{ fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.55 }}>{intelligenceSummaryText}</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--ink-display)', lineHeight: 1.2, marginBottom: 8 }}>Schedule Intelligence</div>
+                  <div style={{ fontSize: 13, fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)', lineHeight: 1.55 }}>{intelligenceSummaryText}</div>
                 </div>
               )}
 
@@ -611,6 +611,12 @@ const CalendarView = () => {
             @media (max-width: 768px) {
               .calendar-week-layout {
                 grid-template-columns: 1fr !important;
+              }
+            }
+            @media (max-width: 640px) {
+              .calendar-week-layout {
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
               }
             }
           `}</style>

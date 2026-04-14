@@ -9,7 +9,6 @@ import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { Loader2, Target, TrendingUp, Save, ArrowUpRight } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 
 
@@ -68,7 +67,7 @@ const MarketAnalysis = () => {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Market Analysis</h1>
+            <h1 className="font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 28, letterSpacing: 'var(--ls-display)', lineHeight: 1.15 }}>Market Analysis</h1>
             <p className="text-[var(--ink-secondary)] mt-2">
               Understand your market, competitors, and growth opportunities
             </p>
@@ -82,9 +81,9 @@ const MarketAnalysis = () => {
               { label: 'Growth Rate', value: result?.growth_rate ? `${result.growth_rate}%` : '\u2014' },
               { label: 'Competitors', value: result?.competitor_count || '\u2014' },
             ].map(kpi => (
-              <div key={kpi.label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20 }}>
-                <div style={{ fontFamily: fontFamily.mono, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
-                <div style={{ fontFamily: fontFamily.display, fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>{kpi.value}</div>
+              <div key={kpi.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', color: 'var(--ink-muted)', marginBottom: 12 }}>{kpi.label}</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: 'var(--ink-display)', letterSpacing: 'var(--ls-display)' }}>{kpi.value}</div>
               </div>
             ))}
           </div>
@@ -140,7 +139,7 @@ const MarketAnalysis = () => {
                 </form>
 
                 {/* Quick Tips */}
-                <div className="mt-6 p-4 bg-[#0F1720] rounded-sm">
+                <div className="mt-6 p-4 bg-[var(--surface-sunken)] rounded-sm">
                   <h4 className="font-medium text-[var(--ink-display)] mb-2 text-sm">Tips for Better Analysis</h4>
                   <ul className="text-xs text-[var(--ink-secondary)] space-y-1">
                     <li>• Be specific about your target market segment</li>
@@ -171,13 +170,13 @@ const MarketAnalysis = () => {
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <span className="badge badge-forest text-xs">Market Analysis</span>
-                          <h3 className="text-xl mt-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{result.title}</h3>
+                          <h3 className="text-xl mt-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>{result.title}</h3>
                         </div>
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={saveAsDocument}
-                          className="border-[rgba(140,170,210,0.12)] text-[var(--ink-display)]"
+                          className="border-[var(--border)] text-[var(--ink-display)]"
                           data-testid="save-market-analysis-btn"
                         >
                           <Save className="w-4 h-4 mr-2" />
@@ -193,14 +192,14 @@ const MarketAnalysis = () => {
                   {result.recommendations?.length > 0 && (
                     <Card className="rounded-lg bg-[var(--surface)] text-white">
                       <CardContent className="p-6">
-                        <h4 className="text-lg font-serif text-[#ccff00] mb-4 flex items-center gap-2">
+                        <h4 className="text-lg font-serif text-[var(--lava)] mb-4 flex items-center gap-2">
                           <TrendingUp className="w-5 h-5" />
                           Strategic Opportunities
                         </h4>
                         <ul className="space-y-3">
                           {result.recommendations.slice(0, 5).map((rec, i) => (
                             <li key={i} className="flex items-start gap-3">
-                              <span className="w-6 h-6 bg-[#ccff00] text-[var(--ink-display)] rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
+                              <span className="w-6 h-6 bg-[var(--lava)] text-[var(--ink-display)] rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
                                 {i + 1}
                               </span>
                               <span className="text-white/90">{rec}</span>
@@ -228,28 +227,28 @@ const MarketAnalysis = () => {
 
           {/* Competitor Map */}
           <div style={{ marginTop: 40, marginBottom: 40 }}>
-            <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', marginBottom: 20 }}>Competitive Landscape</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--ink-display)', marginBottom: 20 }}>Competitive Landscape</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
               {result?.competitors?.length > 0 ? result.competitors.map(comp => (
-                <div key={comp.name} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #1a2a44, #2a3a5c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)' }}>
+                <div key={comp.name} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, var(--surface-sunken), var(--surface))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: 'var(--ink-display)' }}>
                     {comp.name.charAt(0)}
                   </div>
-                  <div style={{ fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', textAlign: 'center' }}>{comp.name}</div>
-                  <div style={{ fontFamily: fontFamily.mono, fontSize: 20, fontWeight: 700, color: 'var(--ink-display, #EDF1F7)' }}>{comp.share}</div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 600, color: 'var(--ink-display)', textAlign: 'center' }}>{comp.name}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: 'var(--ink-display)' }}>{comp.share}</div>
                   <span style={{
-                    fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
-                    padding: '3px 10px', borderRadius: 999,
-                    background: comp.threat === 'high' ? 'rgba(232,93,0,0.15)' : comp.threat === 'medium' ? 'rgba(245,158,11,0.15)' : 'rgba(34,197,94,0.15)',
-                    color: comp.threat === 'high' ? '#E85D00' : comp.threat === 'medium' ? '#F59E0B' : '#22C55E',
+                    fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)',
+                    padding: '3px 10px', borderRadius: 'var(--r-pill)',
+                    background: comp.threat === 'high' ? 'var(--lava-wash)' : comp.threat === 'medium' ? 'var(--warning-wash)' : 'var(--positive-wash)',
+                    color: comp.threat === 'high' ? 'var(--lava)' : comp.threat === 'medium' ? 'var(--warning)' : 'var(--positive)',
                   }}>
                     {comp.threat} threat
                   </span>
                 </div>
               )) : (
-                <div style={{ gridColumn: '1 / -1', background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 32, textAlign: 'center' }}>
-                  <Target style={{ width: 32, height: 32, color: 'rgba(237,241,247,0.15)', margin: '0 auto 12px' }} />
-                  <p style={{ fontFamily: fontFamily.body, fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>
+                <div style={{ gridColumn: '1 / -1', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 32, textAlign: 'center' }}>
+                  <Target style={{ width: 32, height: 32, color: 'var(--ink-subtle)', margin: '0 auto 12px' }} />
+                  <p style={{ fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
                     Run a market analysis to discover competitor intelligence. Competitor insights will populate here automatically.
                   </p>
                 </div>
@@ -259,31 +258,31 @@ const MarketAnalysis = () => {
 
           {/* Opportunity Cards */}
           <div style={{ marginBottom: 40 }}>
-            <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', marginBottom: 20 }}>Market Opportunities</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--ink-display)', marginBottom: 20 }}>Market Opportunities</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
               {result?.opportunities?.length > 0 ? result.opportunities.map(opp => (
-                <div key={opp.title} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div key={opp.title} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <span style={{
-                    alignSelf: 'flex-start', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
-                    padding: '3px 10px', borderRadius: 999,
-                    background: opp.impact === 'High' ? 'rgba(232,93,0,0.15)' : opp.impact === 'Medium' ? 'rgba(59,130,246,0.15)' : 'rgba(140,170,210,0.1)',
-                    color: opp.impact === 'High' ? '#E85D00' : opp.impact === 'Medium' ? '#3B82F6' : 'var(--ink-muted, #708499)',
+                    alignSelf: 'flex-start', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)',
+                    padding: '3px 10px', borderRadius: 'var(--r-pill)',
+                    background: opp.impact === 'High' ? 'var(--lava-wash)' : opp.impact === 'Medium' ? 'var(--info-wash)' : 'var(--surface-sunken)',
+                    color: opp.impact === 'High' ? 'var(--lava)' : opp.impact === 'Medium' ? 'var(--info)' : 'var(--ink-muted)',
                   }}>
                     {opp.impact} Impact
                   </span>
-                  <div style={{ fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)' }}>{opp.title}</div>
-                  <div style={{ fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5, flex: 1 }}>{opp.desc}</div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 600, color: 'var(--ink-display)' }}>{opp.title}</div>
+                  <div style={{ fontSize: 13, color: 'var(--ink-secondary)', lineHeight: 1.5, flex: 1 }}>{opp.desc}</div>
                   <button style={{
                     marginTop: 4, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6,
-                    fontSize: 12, fontWeight: 600, color: '#ccff00', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
+                    fontSize: 12, fontWeight: 600, color: 'var(--lava)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
                   }}>
                     Explore <ArrowUpRight size={14} />
                   </button>
                 </div>
               )) : (
-                <div style={{ gridColumn: '1 / -1', background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 32, textAlign: 'center' }}>
-                  <TrendingUp style={{ width: 32, height: 32, color: 'rgba(237,241,247,0.15)', margin: '0 auto 12px' }} />
-                  <p style={{ fontFamily: fontFamily.body, fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>
+                <div style={{ gridColumn: '1 / -1', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 32, textAlign: 'center' }}>
+                  <TrendingUp style={{ width: 32, height: 32, color: 'var(--ink-subtle)', margin: '0 auto 12px' }} />
+                  <p style={{ fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
                     Market opportunities will appear after analysis.
                   </p>
                 </div>

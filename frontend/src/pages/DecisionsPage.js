@@ -6,18 +6,17 @@ import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import { trackEvent, EVENTS } from '../lib/analytics';
 import { PageLoadingState } from '../components/PageStateComponents';
-import { fontFamily, colors } from '../design-system/tokens';
 import { AlertTriangle, TrendingDown, Clock, CheckCircle2, XCircle, ArrowRight, Loader2, Zap, DollarSign, Users, BarChart3, Calendar, User } from 'lucide-react';
 import DecisionPatterns from '../components/intelligence/DecisionPatterns';
 
 const SIGNAL_TO_DECISION = {
-  deal_stall: { title: 'Pipeline Stagnation Detected', icon: Clock, domain: 'Revenue', action: 'Kill or reactivate stalled deals', color: colors.warning },
-  invoices_overdue_cluster: { title: 'Cash Collection Risk', icon: DollarSign, domain: 'Cash', action: 'Collect overdue invoices or escalate', color: colors.danger },
-  cash_burn_acceleration: { title: 'Burn Rate Increasing', icon: TrendingDown, domain: 'Cash', action: 'Review and reduce discretionary spending', color: colors.danger },
-  margin_compression: { title: 'Margin Under Pressure', icon: BarChart3, domain: 'Revenue', action: 'Review pricing or reduce cost of delivery', color: colors.warning },
-  pipeline_decay: { title: 'Pipeline Value Declining', icon: TrendingDown, domain: 'Revenue', action: 'Accelerate prospecting or re-engage cold leads', color: colors.warning },
-  response_delay: { title: 'Client Response Time Slowing', icon: Clock, domain: 'Operations', action: 'Triage response backlog and reassign', color: colors.info },
-  meeting_overload: { title: 'Team Meeting Overload', icon: Users, domain: 'People', action: 'Audit meeting necessity, cancel non-essential', color: colors.info },
+  deal_stall: { title: 'Pipeline Stagnation Detected', icon: Clock, domain: 'Revenue', action: 'Kill or reactivate stalled deals', color: 'var(--warning)' },
+  invoices_overdue_cluster: { title: 'Cash Collection Risk', icon: DollarSign, domain: 'Cash', action: 'Collect overdue invoices or escalate', color: 'var(--danger)' },
+  cash_burn_acceleration: { title: 'Burn Rate Increasing', icon: TrendingDown, domain: 'Cash', action: 'Review and reduce discretionary spending', color: 'var(--danger)' },
+  margin_compression: { title: 'Margin Under Pressure', icon: BarChart3, domain: 'Revenue', action: 'Review pricing or reduce cost of delivery', color: 'var(--warning)' },
+  pipeline_decay: { title: 'Pipeline Value Declining', icon: TrendingDown, domain: 'Revenue', action: 'Accelerate prospecting or re-engage cold leads', color: 'var(--warning)' },
+  response_delay: { title: 'Client Response Time Slowing', icon: Clock, domain: 'Operations', action: 'Triage response backlog and reassign', color: 'var(--info)' },
+  meeting_overload: { title: 'Team Meeting Overload', icon: Users, domain: 'People', action: 'Audit meeting necessity, cancel non-essential', color: 'var(--info)' },
 };
 
 // Derive a display status for a decision prompt
@@ -35,10 +34,10 @@ const getHistoryStatus = (entry) => {
 
 // Status badge colour map matching mockup spec
 const STATUS_STYLES = {
-  urgent:   { bg: colors.dangerDim,  color: colors.danger  },
-  pending:  { bg: colors.warningDim, color: colors.warning },
-  decided:  { bg: colors.successDim, color: colors.success },
-  deferred: { bg: colors.bgInput,    color: colors.textMuted },
+  urgent:   { bg: 'var(--danger-wash)',   color: 'var(--danger)'  },
+  pending:  { bg: 'var(--warning-wash)',  color: 'var(--warning)' },
+  decided:  { bg: 'var(--positive-wash)', color: 'var(--positive)' },
+  deferred: { bg: 'var(--surface-sunken)', color: 'var(--ink-muted)' },
 };
 
 export default function DecisionsPage() {
@@ -177,17 +176,17 @@ export default function DecisionsPage() {
       <div className="max-w-4xl mx-auto" data-testid="decisions-page">
         <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
           <div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="decisions-title">
+            <h1 className="font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: 'var(--ls-display)', lineHeight: 1.05 }} data-testid="decisions-title">
               Decisions.
             </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+            <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
               Track what you decided, why, and what happened next.
             </p>
           </div>
           <Button
             onClick={() => toast.info('Decision logging coming soon')}
             className="gap-1.5 text-sm font-semibold shrink-0"
-            style={{ background: 'linear-gradient(135deg, #E85D00, #FF7A1A)', color: 'white' }}
+            style={{ background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))', color: 'white' }}
           >
             <Zap className="w-4 h-4" /> Log decision
           </Button>
@@ -196,17 +195,17 @@ export default function DecisionsPage() {
         {fetchError && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-            background: 'rgba(232, 93, 0, 0.08)', border: '1px solid rgba(232, 93, 0, 0.2)',
-            borderRadius: 12, marginBottom: 16,
-            fontFamily: "'Inter', sans-serif", fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)',
+            background: 'var(--lava-wash)', border: '1px solid var(--lava-ring)',
+            borderRadius: 'var(--r-lg)', marginBottom: 16,
+            fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-secondary)',
           }}>
-            <span style={{ color: 'var(--lava, #E85D00)' }}>{'\u26A0'}</span>
+            <span style={{ color: 'var(--lava)' }}>{'\u26A0'}</span>
             <span style={{ flex: 1 }}>{fetchError}</span>
             <button
               onClick={() => { setFetchError(null); setLoading(true); fetchDecisionPrompts(); fetchDecisionHistory(); }}
               style={{
-                background: 'var(--lava, #E85D00)', color: 'white', border: 'none',
-                padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                background: 'var(--lava)', color: 'white', border: 'none',
+                padding: '6px 14px', borderRadius: 'var(--r-md)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
               }}
             >Retry</button>
           </div>
@@ -216,9 +215,9 @@ export default function DecisionsPage() {
         {!loading && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6" data-testid="decisions-stats">
             {stats.map(stat => (
-              <div key={stat.label} style={{ background: colors.bgCard, border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '20px' }}>
-                <span className="block" style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: colors.textMuted, fontFamily: fontFamily.mono, marginBottom: '8px' }}>{stat.label}</span>
-                <span style={{ fontFamily: fontFamily.display, fontSize: '28px', lineHeight: 1, color: colors.text }}>{stat.value}</span>
+              <div key={stat.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '20px', boxShadow: 'var(--elev-1)' }}>
+                <span className="block" style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', marginBottom: '8px' }}>{stat.label}</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '28px', lineHeight: 1, color: 'var(--ink-display)' }}>{stat.value}</span>
               </div>
             ))}
           </div>
@@ -235,17 +234,17 @@ export default function DecisionsPage() {
                   onClick={() => setFilter(pill)}
                   style={{
                     padding: '6px 14px',
-                    borderRadius: '999px',
+                    borderRadius: 'var(--r-pill)',
                     fontSize: '11px',
-                    fontFamily: fontFamily.mono,
+                    fontFamily: 'var(--font-mono)',
                     fontWeight: 600,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
+                    letterSpacing: 'var(--ls-caps)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
-                    background: isActive ? colors.brand : 'transparent',
-                    color: isActive ? 'white' : colors.textSecondary,
-                    border: isActive ? `1px solid ${colors.brand}` : `1px solid ${colors.border}`,
+                    background: isActive ? 'var(--lava)' : 'transparent',
+                    color: isActive ? 'white' : 'var(--ink-secondary)',
+                    border: isActive ? '1px solid var(--lava)' : '1px solid var(--border)',
                   }}
                 >
                   {pill}
@@ -260,34 +259,35 @@ export default function DecisionsPage() {
           <PageLoadingState message="Scanning for decision triggers…" />
         ) : filteredPrompts.length > 0 ? (
           <div className="flex flex-col gap-3 mb-8" data-testid="decisions-list">
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: colors.brand, fontFamily: fontFamily.mono }}>
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps)' }}>
               {filteredPrompts.length} Decision{filteredPrompts.length !== 1 ? 's' : ''} Requiring Attention
             </p>
             {filteredPrompts.map(prompt => {
-              const config = SIGNAL_TO_DECISION[prompt.type] || { icon: AlertTriangle, color: colors.warning };
+              const config = SIGNAL_TO_DECISION[prompt.type] || { icon: AlertTriangle, color: 'var(--warning)' };
               const status = getPromptStatus(prompt);
               const statusStyle = STATUS_STYLES[status];
               return (
                 <div
                   key={prompt.id}
                   style={{
-                    background: colors.bgCard,
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: '16px',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--r-xl)',
                     padding: '24px',
                     cursor: 'pointer',
                     transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                    boxShadow: 'var(--elev-1)',
                   }}
                   data-testid={`decision-prompt-${prompt.id}`}
                 >
                   {/* Head: title + status badge */}
                   <div className="flex items-start justify-between gap-4 mb-3">
-                    <span style={{ fontFamily: fontFamily.display, fontSize: '22px', lineHeight: 1.2, color: colors.text, letterSpacing: '-0.01em' }}>
+                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '22px', lineHeight: 1.2, color: 'var(--ink-display)', letterSpacing: '-0.01em' }}>
                       {prompt.signal}
                     </span>
                     <span style={{
-                      padding: '4px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 600,
-                      fontFamily: fontFamily.mono, textTransform: 'uppercase', letterSpacing: '0.1em',
+                      padding: '4px 12px', borderRadius: 'var(--r-pill)', fontSize: '11px', fontWeight: 600,
+                      fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)',
                       whiteSpace: 'nowrap', flexShrink: 0,
                       background: statusStyle.bg, color: statusStyle.color,
                     }}>
@@ -297,7 +297,7 @@ export default function DecisionsPage() {
 
                   {/* Context paragraph */}
                   {prompt.recommendation && (
-                    <p style={{ fontSize: '14px', color: colors.textSecondary, lineHeight: 1.5, marginBottom: '16px', maxWidth: '72ch' }}>
+                    <p style={{ fontSize: '14px', color: 'var(--ink-secondary)', lineHeight: 1.5, marginBottom: '16px', maxWidth: '72ch' }}>
                       {prompt.recommendation}
                     </p>
                   )}
@@ -305,20 +305,20 @@ export default function DecisionsPage() {
                   {/* Option buttons — mockup dec-option pattern */}
                   <div className="flex gap-2 flex-wrap mb-4">
                     <Button onClick={() => handleRespond(prompt, 'act')} size="sm" className="gap-1.5" style={{
-                      padding: '8px 16px', border: `1px solid ${colors.border}`, borderRadius: '8px',
-                      fontSize: '14px', color: colors.textSecondary, background: colors.bgInput,
+                      padding: '8px 16px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
+                      fontSize: '14px', color: 'var(--ink-secondary)', background: 'var(--surface-sunken)',
                       display: 'flex', alignItems: 'center', gap: '8px',
                     }} data-testid="decision-act">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Act on this
                     </Button>
                     <Button onClick={() => handleRespond(prompt, 'defer')} size="sm" variant="outline" className="gap-1.5" style={{
-                      padding: '8px 16px', border: `1px solid ${colors.border}`, borderRadius: '8px',
-                      fontSize: '14px', color: colors.textSecondary, background: colors.bgInput,
+                      padding: '8px 16px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
+                      fontSize: '14px', color: 'var(--ink-secondary)', background: 'var(--surface-sunken)',
                       display: 'flex', alignItems: 'center', gap: '8px',
                     }} data-testid="decision-defer">
                       <Clock className="w-3.5 h-3.5" /> Defer
                     </Button>
-                    <a href="/soundboard" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm" style={{ color: colors.brand, fontFamily: fontFamily.mono }}>
+                    <a href="/soundboard" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)' }}>
                       Ask advisor <ArrowRight className="w-3 h-3" />
                     </a>
                   </div>
@@ -327,18 +327,18 @@ export default function DecisionsPage() {
                   {prompt.recommendation && (
                     <div style={{
                       marginTop: '12px', padding: '12px 16px',
-                      background: `linear-gradient(135deg, ${colors.brandDim}, ${colors.bgCard})`,
-                      border: `1px solid rgba(232,93,0,0.18)`, borderRadius: '8px',
-                      fontSize: '12px', color: colors.textSecondary, lineHeight: 1.5,
+                      background: 'linear-gradient(135deg, var(--lava-wash), var(--surface))',
+                      border: '1px solid var(--lava-ring)', borderRadius: 'var(--r-md)',
+                      fontSize: '12px', color: 'var(--ink-secondary)', lineHeight: 1.5,
                       display: 'flex', alignItems: 'flex-start', gap: '8px',
                     }}>
                       <span style={{
                         width: '5px', height: '5px', borderRadius: '50%', flexShrink: 0, marginTop: '5px',
-                        background: colors.brand, boxShadow: `0 0 6px ${colors.brand}`,
+                        background: 'var(--lava)', boxShadow: '0 0 6px var(--lava)',
                         animation: 'pulse 2s infinite',
                       }} />
                       <span>
-                        <strong style={{ color: colors.text }}>BIQc recommendation:</strong>{' '}
+                        <strong style={{ color: 'var(--ink-display)' }}>BIQc recommendation:</strong>{' '}
                         {prompt.recommendation}
                       </span>
                     </div>
@@ -348,8 +348,8 @@ export default function DecisionsPage() {
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap',
                     paddingTop: '12px', marginTop: '12px',
-                    borderTop: `1px solid ${colors.border}`,
-                    fontSize: '11px', color: colors.textMuted, fontFamily: fontFamily.mono,
+                    borderTop: '1px solid var(--border)',
+                    fontSize: '11px', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)',
                   }}>
                     <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {prompt.domain || 'Business'}</span>
                     <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> {prompt.severity}</span>
@@ -362,11 +362,11 @@ export default function DecisionsPage() {
             })}
           </div>
         ) : filter === 'all' && prompts.length === 0 ? (
-          <div className="mb-8" style={{ background: colors.bgCard, border: `1px solid ${colors.border}`, borderRadius: '16px', padding: '24px' }} data-testid="no-decisions">
+          <div className="mb-8" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: '24px', boxShadow: 'var(--elev-1)' }} data-testid="no-decisions">
             <div className="text-center py-6">
-              <CheckCircle2 className="w-10 h-10 mx-auto mb-3" style={{ color: colors.success }} />
-              <p style={{ fontSize: '18px', fontWeight: 600, color: colors.text, fontFamily: fontFamily.display }}>No decisions pending right now</p>
-              <p className="mt-1 max-w-sm mx-auto" style={{ fontSize: '14px', color: colors.textMuted, fontFamily: fontFamily.body }}>
+              <CheckCircle2 className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--positive)' }} />
+              <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>No decisions pending right now</p>
+              <p className="mt-1 max-w-sm mx-auto" style={{ fontSize: '14px', color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
                 BIQc monitors your connected systems continuously. Decisions surface automatically when deal stalls, cash burn, or operational signals require leadership action.
               </p>
             </div>
@@ -375,7 +375,7 @@ export default function DecisionsPage() {
 
         {/* Decision Intelligence Patterns */}
         <div className="mt-8 mb-8">
-          <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: colors.textMuted, fontFamily: fontFamily.mono }}>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps)' }}>
             Decision Intelligence
           </p>
           <DecisionPatterns />
@@ -384,7 +384,7 @@ export default function DecisionsPage() {
         {/* Decision History — mockup dec-card pattern (decided/deferred) */}
         {filteredHistory.length > 0 && (
           <div>
-            <p className="mb-4" style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: colors.textMuted, fontFamily: fontFamily.mono }}>
+            <p className="mb-4" style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
               Decision History ({filteredHistory.length})
             </p>
             <div className="flex flex-col gap-3">
@@ -393,20 +393,21 @@ export default function DecisionsPage() {
                 const statusStyle = STATUS_STYLES[status];
                 return (
                   <div key={d.id} style={{
-                    background: colors.bgCard, border: `1px solid ${colors.border}`,
-                    borderRadius: '16px', padding: '24px',
+                    background: 'var(--surface)', border: '1px solid var(--border)',
+                    borderRadius: 'var(--r-xl)', padding: '24px',
                     opacity: status === 'deferred' ? 0.7 : 0.85,
                     transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
                     cursor: 'pointer',
+                    boxShadow: 'var(--elev-1)',
                   }}>
                     {/* Head: title + status badge */}
                     <div className="flex items-start justify-between gap-4 mb-3">
-                      <span style={{ fontFamily: fontFamily.display, fontSize: '22px', lineHeight: 1.2, color: colors.text, letterSpacing: '-0.01em' }}>
+                      <span style={{ fontFamily: 'var(--font-display)', fontSize: '22px', lineHeight: 1.2, color: 'var(--ink-display)', letterSpacing: '-0.01em' }}>
                         {d.decision_category || 'Decision'}
                       </span>
                       <span style={{
-                        padding: '4px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 600,
-                        fontFamily: fontFamily.mono, textTransform: 'uppercase', letterSpacing: '0.1em',
+                        padding: '4px 12px', borderRadius: 'var(--r-pill)', fontSize: '11px', fontWeight: 600,
+                        fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)',
                         whiteSpace: 'nowrap', flexShrink: 0,
                         background: statusStyle.bg, color: statusStyle.color,
                       }}>
@@ -415,7 +416,7 @@ export default function DecisionsPage() {
                     </div>
 
                     {/* Context / decision statement */}
-                    <p style={{ fontSize: '14px', color: colors.textSecondary, lineHeight: 1.5, marginBottom: '16px', maxWidth: '72ch' }}>
+                    <p style={{ fontSize: '14px', color: 'var(--ink-secondary)', lineHeight: 1.5, marginBottom: '16px', maxWidth: '72ch' }}>
                       {d.decision_statement}
                     </p>
 
@@ -424,9 +425,9 @@ export default function DecisionsPage() {
                       <div className="flex gap-2 flex-wrap mb-4">
                         {d.affected_domains.map(dom => (
                           <span key={dom} style={{
-                            padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 600,
-                            background: colors.brandDim, border: `1px solid ${colors.brand}`,
-                            color: colors.brandDark, display: 'flex', alignItems: 'center', gap: '8px',
+                            padding: '8px 16px', borderRadius: 'var(--r-md)', fontSize: '14px', fontWeight: 600,
+                            background: 'var(--lava-wash)', border: '1px solid var(--lava)',
+                            color: 'var(--lava-deep)', display: 'flex', alignItems: 'center', gap: '8px',
                           }}>
                             <span>&#10003;</span> {dom}
                           </span>
@@ -437,8 +438,8 @@ export default function DecisionsPage() {
                     {/* Meta row */}
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap',
-                      paddingTop: '12px', borderTop: `1px solid ${colors.border}`,
-                      fontSize: '11px', color: colors.textMuted, fontFamily: fontFamily.mono,
+                      paddingTop: '12px', borderTop: '1px solid var(--border)',
+                      fontSize: '11px', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)',
                     }}>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />

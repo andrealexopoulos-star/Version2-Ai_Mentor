@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 // lucide-react icons available for future use but not rendered currently
 import DashboardLayout from './DashboardLayout';
 import { useWatchtowerRealtime } from '../hooks/useWatchtowerRealtime';
-import { fontFamily, colors } from '../design-system/tokens';
 
 const PERIODS = ['24h', '7d', '30d', '90d'];
 
@@ -143,8 +142,8 @@ const Watchtower = () => {
       <div
         className="min-h-[calc(100vh-56px)]"
         style={{
-          background: `radial-gradient(circle at 15% -10%, ${colors.brandDim}, transparent 35%), var(--biqc-bg)`,
-          fontFamily: fontFamily.body,
+          background: 'radial-gradient(circle at 15% -10%, var(--lava-wash), transparent 35%), var(--canvas-app)',
+          fontFamily: 'var(--font-ui)',
         }}
         data-testid="watchtower-screen"
       >
@@ -158,17 +157,17 @@ const Watchtower = () => {
             <h1
               className="font-semibold"
               style={{
-                fontFamily: fontFamily.display,
+                fontFamily: 'var(--font-display)',
                 fontSize: '28px',
-                color: colors.text,
-                letterSpacing: '-0.02em',
+                color: 'var(--ink-display)',
+                letterSpacing: 'var(--ls-display)',
               }}
             >
               Watchtower
             </h1>
             <div
               className="inline-flex items-center gap-2 text-sm font-semibold"
-              style={{ color: colors.textSecondary }}
+              style={{ color: 'var(--ink-secondary)' }}
               data-testid="wt-live-status"
             >
               <span
@@ -194,7 +193,7 @@ const Watchtower = () => {
                 className="rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors"
                 style={{
                   background: period === p ? '#1E293B' : 'transparent',
-                  color: period === p ? '#FFFFFF' : colors.textMuted,
+                  color: period === p ? '#FFFFFF' : 'var(--ink-muted)',
                 }}
                 data-testid={`wt-period-${p}`}
               >
@@ -211,18 +210,18 @@ const Watchtower = () => {
             {/* Total Events */}
             <div
               className="rounded-xl border p-4"
-              style={{ background: colors.bgCard, borderColor: colors.border }}
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
               data-testid="wt-kpi-total"
             >
               <div
                 className="mb-1 text-[10px] font-semibold uppercase"
-                style={{ color: colors.textMuted, letterSpacing: '0.08em' }}
+                style={{ color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}
               >
                 Total Events
               </div>
               <div
                 className="text-[28px] font-bold leading-none"
-                style={{ fontFamily: fontFamily.mono, color: colors.text }}
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-display)' }}
               >
                 {kpis.total}
               </div>
@@ -231,18 +230,18 @@ const Watchtower = () => {
             {/* Critical */}
             <div
               className="rounded-xl border p-4"
-              style={{ background: colors.bgCard, borderColor: colors.border }}
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
               data-testid="wt-kpi-critical"
             >
               <div
                 className="mb-1 text-[10px] font-semibold uppercase"
-                style={{ color: colors.textMuted, letterSpacing: '0.08em' }}
+                style={{ color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}
               >
                 Critical
               </div>
               <div
                 className="text-[28px] font-bold leading-none"
-                style={{ fontFamily: fontFamily.mono, color: '#DC2626' }}
+                style={{ fontFamily: 'var(--font-mono)', color: '#DC2626' }}
               >
                 {kpis.critical}
               </div>
@@ -251,18 +250,18 @@ const Watchtower = () => {
             {/* High */}
             <div
               className="rounded-xl border p-4"
-              style={{ background: colors.bgCard, borderColor: colors.border }}
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
               data-testid="wt-kpi-high"
             >
               <div
                 className="mb-1 text-[10px] font-semibold uppercase"
-                style={{ color: colors.textMuted, letterSpacing: '0.08em' }}
+                style={{ color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}
               >
                 High
               </div>
               <div
                 className="text-[28px] font-bold leading-none"
-                style={{ fontFamily: fontFamily.mono, color: '#D97706' }}
+                style={{ fontFamily: 'var(--font-mono)', color: '#D97706' }}
               >
                 {kpis.high}
               </div>
@@ -271,18 +270,18 @@ const Watchtower = () => {
             {/* Resolved */}
             <div
               className="rounded-xl border p-4"
-              style={{ background: colors.bgCard, borderColor: colors.border }}
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
               data-testid="wt-kpi-resolved"
             >
               <div
                 className="mb-1 text-[10px] font-semibold uppercase"
-                style={{ color: colors.textMuted, letterSpacing: '0.08em' }}
+                style={{ color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}
               >
                 Resolved
               </div>
               <div
                 className="text-[28px] font-bold leading-none"
-                style={{ fontFamily: fontFamily.mono, color: '#16A34A' }}
+                style={{ fontFamily: 'var(--font-mono)', color: '#16A34A' }}
               >
                 {kpis.resolved}
               </div>
@@ -291,18 +290,18 @@ const Watchtower = () => {
             {/* Avg Response */}
             <div
               className="rounded-xl border p-4"
-              style={{ background: colors.bgCard, borderColor: colors.border }}
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
               data-testid="wt-kpi-avg-response"
             >
               <div
                 className="mb-1 text-[10px] font-semibold uppercase"
-                style={{ color: colors.textMuted, letterSpacing: '0.08em' }}
+                style={{ color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}
               >
                 Avg Response
               </div>
               <div
                 className="text-[28px] font-bold leading-none"
-                style={{ fontFamily: fontFamily.mono, color: colors.text }}
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-display)' }}
               >
                 {kpis.avgResponse !== null ? `${kpis.avgResponse}h` : '--'}
               </div>
@@ -314,9 +313,9 @@ const Watchtower = () => {
             <h2
               className="mb-4 font-semibold"
               style={{
-                fontFamily: fontFamily.display,
+                fontFamily: 'var(--font-display)',
                 fontSize: '22px',
-                color: colors.text,
+                color: 'var(--ink-display)',
               }}
             >
               Signal Timeline
@@ -334,8 +333,9 @@ const Watchtower = () => {
                     className="rounded-full px-3 py-1 text-xs font-semibold transition-colors"
                     style={{
                       background: isActive ? activeBg : 'transparent',
-                      color: isActive ? '#FFFFFF' : colors.textMuted,
-                      border: isActive ? `1px solid ${activeBg}` : `1px solid ${colors.border}`,
+                      color: isActive ? '#FFFFFF' : 'var(--ink-muted)',
+                      border: isActive ? `1px solid ${activeBg}` : '1px solid var(--border)',
+                      borderRadius: 'var(--r-pill)',
                     }}
                     data-testid={`wt-filter-${sev}`}
                   >
@@ -352,7 +352,7 @@ const Watchtower = () => {
             {loading && (
               <div
                 className="rounded-xl border p-6 text-center text-sm"
-                style={{ background: colors.bgCard, borderColor: colors.border, color: colors.textSecondary }}
+                style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}
                 data-testid="wt-loading"
               >
                 Loading watchtower events...
@@ -363,7 +363,7 @@ const Watchtower = () => {
             {!loading && error && (
               <div
                 className="rounded-xl border p-6 text-center text-sm"
-                style={{ background: colors.dangerDim, borderColor: colors.danger, color: '#FCA5A5' }}
+                style={{ background: 'var(--danger-wash)', borderColor: 'var(--danger)', color: '#FCA5A5' }}
                 data-testid="wt-error"
               >
                 {error}
@@ -374,7 +374,7 @@ const Watchtower = () => {
             {!loading && !error && filteredEvents.length === 0 && (
               <div
                 className="rounded-xl border p-6 text-center text-sm"
-                style={{ background: colors.bgCard, borderColor: colors.border, color: colors.textSecondary }}
+                style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}
                 data-testid="wt-empty"
               >
                 No events found for this period and filter.
@@ -400,8 +400,8 @@ const Watchtower = () => {
                       key={event.id}
                       className="rounded-xl border p-4 sm:p-5 transition-colors cursor-pointer hover:border-white/20"
                       style={{
-                        background: colors.bgCard,
-                        borderColor: colors.border,
+                        background: 'var(--surface)',
+                        borderColor: 'var(--border)',
                         display: 'grid',
                         gridTemplateColumns: '48px 1fr auto',
                         gap: '16px',
@@ -413,9 +413,9 @@ const Watchtower = () => {
                       {/* Time column */}
                       <div
                         className="text-center pt-0.5"
-                        style={{ fontFamily: fontFamily.mono, fontSize: '11px', color: colors.textMuted }}
+                        style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--ink-muted)' }}
                       >
-                        <span className="block font-semibold" style={{ color: colors.textSecondary }}>
+                        <span className="block font-semibold" style={{ color: 'var(--ink-secondary)' }}>
                           {date}
                         </span>
                         {time}
@@ -430,14 +430,14 @@ const Watchtower = () => {
                             style={{
                               background: badge.bg,
                               color: badge.text,
-                              letterSpacing: '0.06em',
+                              letterSpacing: 'var(--ls-caps)',
                             }}
                           >
                             {badge.label}
                           </span>
                           <span
                             className="text-[10px] font-semibold uppercase"
-                            style={{ color: colors.textMuted, letterSpacing: '0.06em' }}
+                            style={{ color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}
                           >
                             {domain}
                           </span>
@@ -446,7 +446,7 @@ const Watchtower = () => {
                         {/* Title */}
                         <div
                           className="mb-1 text-sm font-semibold"
-                          style={{ color: colors.text }}
+                          style={{ color: 'var(--ink-display)' }}
                         >
                           {title}
                         </div>
@@ -455,7 +455,7 @@ const Watchtower = () => {
                         {desc && (
                           <div
                             className="text-[13px] leading-relaxed"
-                            style={{ color: colors.textSecondary }}
+                            style={{ color: 'var(--ink-secondary)' }}
                           >
                             {desc}
                           </div>
@@ -465,7 +465,7 @@ const Watchtower = () => {
                         {hasEnrichment && (
                           <div
                             className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold"
-                            style={{ color: colors.brand }}
+                            style={{ color: 'var(--lava)' }}
                           >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
@@ -482,7 +482,7 @@ const Watchtower = () => {
                           style={{
                             background: statusStyle.bg,
                             color: statusStyle.text,
-                            letterSpacing: '0.06em',
+                            letterSpacing: 'var(--ls-caps)',
                           }}
                         >
                           {statusStyle.label}
@@ -495,7 +495,7 @@ const Watchtower = () => {
                               navigate(`/war-room?prefill=${encodeURIComponent(query)}`);
                             }}
                             className="text-xs font-medium whitespace-nowrap hover:underline"
-                            style={{ color: colors.brand }}
+                            style={{ color: 'var(--lava)' }}
                             data-testid={`wt-event-warroom-${event.id}`}
                           >
                             Ask WarRoom &rarr;

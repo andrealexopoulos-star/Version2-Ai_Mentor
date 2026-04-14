@@ -4,7 +4,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { BoardRoomBody } from '../components/BoardRoom';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
-import { fontFamily } from '../design-system/tokens';
+/* fontFamily import removed — using CSS custom properties */
 
 function useBoardroomUrlState() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -101,12 +101,14 @@ export default function BoardRoomPage() {
               style={{
                 margin: '0 24px 16px',
                 padding: '16px 20px',
-                background: 'linear-gradient(135deg, #111827, #1A1A2E)',
-                borderRadius: 12,
+                background: 'linear-gradient(135deg, var(--surface-sunken), var(--surface))',
+                borderRadius: 'var(--r-lg)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 16,
-                color: '#fff',
+                color: 'var(--ink-display)',
+                border: '1px solid var(--border)',
+                boxShadow: 'var(--elev-1)',
               }}
               data-testid="boardroom-pro-upsell"
             >
@@ -114,7 +116,7 @@ export default function BoardRoomPage() {
                 <strong
                   style={{
                     fontSize: 14,
-                    fontFamily: fontFamily.body,
+                    fontFamily: 'var(--font-ui)',
                     display: 'block',
                     marginBottom: 2,
                   }}
@@ -124,8 +126,8 @@ export default function BoardRoomPage() {
                 <span
                   style={{
                     fontSize: 12,
-                    fontFamily: fontFamily.body,
-                    color: 'rgba(255,255,255,0.6)',
+                    fontFamily: 'var(--font-ui)',
+                    color: 'var(--ink-muted)',
                   }}
                 >
                   Pro tier adds real-time threat detection, cross-domain signal groups, and compliance tools.
@@ -135,17 +137,17 @@ export default function BoardRoomPage() {
                 to="/subscribe"
                 style={{
                   padding: '8px 16px',
-                  borderRadius: 10,
-                  background: 'linear-gradient(135deg, #E85D00, #FF7A18)',
-                  color: '#fff',
+                  borderRadius: 'var(--r-md)',
+                  background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))',
+                  color: 'white',
                   fontSize: 12,
                   fontWeight: 600,
-                  fontFamily: fontFamily.body,
+                  fontFamily: 'var(--font-ui)',
                   whiteSpace: 'nowrap',
                   textDecoration: 'none',
                   transition: 'box-shadow 0.2s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(232,93,0,0.4)'; }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 2px 12px var(--lava-ring)'; }}
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; }}
               >
                 Upgrade to Pro &rarr;

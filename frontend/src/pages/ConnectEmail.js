@@ -11,7 +11,6 @@ import {
   AlertCircle, Inbox, X
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { fontFamily } from '../design-system/tokens';
 import AdminConsentModal from '../components/AdminConsentModal';
 
 const ConnectEmail = () => {
@@ -267,13 +266,13 @@ const ConnectEmail = () => {
         <div className="space-y-6">
           {/* Header */}
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)', letterSpacing: 'var(--ls-caps, 0.08em)', fontWeight: 600 }}>
               — Connect email
             </div>
-            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-              Link your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>inbox</em>.
+            <h1 className="font-medium mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: 'var(--ls-display, -0.02em)', lineHeight: 1.05 }}>
+              Link your <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>inbox</em>.
             </h1>
-            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <p className="text-sm" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>
               BIQc reads your email to detect deal stalls, customer churn signals, and reply-time patterns. Nothing is sent on your behalf — ever. Read-only access only.
             </p>
           </div>
@@ -286,14 +285,14 @@ const ConnectEmail = () => {
             <>
               {/* Connected Status Banner */}
               {(outlookStatus.connected || gmailStatus.connected) && (
-                <div className="p-4 rounded-xl border-2 border-green-500 bg-green-50">
+                <div className="p-5" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--positive)', background: 'linear-gradient(180deg, var(--surface) 0%, rgba(22,163,74,0.04) 100%)', boxShadow: 'var(--elev-1)' }}>
                   <div className="flex items-center gap-3">
-                    <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
+                    <CheckCircle2 className="w-6 h-6 flex-shrink-0" style={{ color: 'var(--positive)' }} />
                     <div className="flex-1">
-                      <p className="font-medium text-green-900">
+                      <p className="font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>
                         Email Account Connected
                       </p>
-                      <p className="text-sm text-green-700">
+                      <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
                         {outlookStatus.connected && `Connected to Outlook (${outlookStatus.email || 'connected'})`}
                         {gmailStatus.connected && `Connected to Gmail (${gmailStatus.email})`}
                       </p>
@@ -312,179 +311,176 @@ const ConnectEmail = () => {
               {/* Provider Selection */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Option 1: Microsoft Outlook */}
-                <div 
-                  className="p-6 rounded-xl border-2 cursor-pointer transition-all duration-150"
+                <div
+                  className="text-center cursor-pointer"
                   style={{
-                    borderColor: outlookStatus.connected ? '#22c55e' : 'var(--border-light)',
-                    background: outlookStatus.connected ? 'rgba(34, 197, 94, 0.05)' : 'var(--bg-card)'
+                    borderRadius: 'var(--r-2xl)',
+                    border: outlookStatus.connected ? '1px solid var(--positive)' : '1px solid var(--border)',
+                    background: outlookStatus.connected ? 'linear-gradient(180deg, var(--surface) 0%, rgba(22,163,74,0.04) 100%)' : 'var(--surface)',
+                    padding: 'var(--sp-7, 28px)',
+                    boxShadow: 'var(--elev-1)',
+                    transition: 'all 300ms ease',
+                    position: 'relative',
                   }}
                   onClick={!outlookStatus.connected ? handleOutlookConnect : undefined}
                 >
-                  <div className="flex items-start gap-4">
-                    <div 
-                      className="w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0"
-                      style={{ background: '#0078D4' }}
-                    >
-                      OL
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-                          Microsoft Outlook
-                        </h3>
-                        {outlookStatus.connected && (
-                          <CheckCircle2 className="w-5 h-5 text-green-600" />
-                        )}
-                      </div>
-                      <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-                        Connect your Outlook email for AI-powered inbox prioritization and email intelligence
-                      </p>
-                      {outlookStatus.connected ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                          <span className="text-sm font-medium text-green-700">Connected</span>
-                          <Button
-                            onClick={() => handleDisconnect('outlook')}
-                            variant="outline"
-                            size="sm"
-                            className="ml-2"
-                          >
-                            Disconnect
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          onClick={handleOutlookConnect}
-                          disabled={connecting === 'outlook'}
-                          className="btn-primary w-full sm:w-auto"
-                        >
-                          {connecting === 'outlook' ? (
-                            <>
-                              
-                              Connecting...
-                            </>
-                          ) : (
-                            <>
-                              <ArrowRight className="w-4 h-4 mr-2" />
-                              Connect Outlook
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    </div>
+                  {outlookStatus.connected && (
+                    <span className="absolute -top-2.5 right-5 px-3 py-1 rounded-full text-[10px] uppercase font-semibold text-white" style={{ background: 'var(--positive)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', boxShadow: '0 4px 12px rgba(22,163,74,0.3)' }}>Connected</span>
+                  )}
+                  <div
+                    className="w-[72px] h-[72px] rounded-xl flex items-center justify-center text-white font-bold text-[28px] mx-auto mb-4 flex-shrink-0"
+                    style={{ background: '#0078D4', boxShadow: '0 8px 24px rgba(0,120,212,0.25)' }}
+                  >
+                    OL
                   </div>
+                  <h3 className="text-[22px] mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', letterSpacing: 'var(--ls-tight, -0.01em)' }}>
+                    Microsoft Outlook
+                  </h3>
+                  <p className="text-[13px] mb-5" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', lineHeight: 1.5 }}>
+                    Connect your Outlook email for AI-powered inbox prioritization and email intelligence
+                  </p>
+                  {outlookStatus.connected ? (
+                    <div className="flex items-center justify-center gap-2 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+                      <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--positive)', boxShadow: '0 0 8px var(--positive)' }}></div>
+                      <span className="text-[10px] uppercase font-semibold" style={{ color: 'var(--positive)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Connected</span>
+                      <Button
+                        onClick={(e) => { e.stopPropagation(); handleDisconnect('outlook'); }}
+                        variant="outline"
+                        size="sm"
+                        className="ml-2"
+                      >
+                        Disconnect
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handleOutlookConnect}
+                      disabled={connecting === 'outlook'}
+                      className="btn-primary w-full"
+                      style={{ marginTop: 'var(--sp-3, 12px)' }}
+                    >
+                      {connecting === 'outlook' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowRight className="w-4 h-4 mr-2" />
+                          Connect Outlook
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
 
                 {/* Option 2: Gmail */}
-                <div 
-                  className="p-6 rounded-xl border-2 cursor-pointer transition-all duration-150"
+                <div
+                  className="text-center cursor-pointer"
                   style={{
-                    borderColor: gmailStatus.connected ? '#22c55e' : 'var(--border-light)',
-                    background: gmailStatus.connected ? 'rgba(34, 197, 94, 0.05)' : 'var(--bg-card)'
+                    borderRadius: 'var(--r-2xl)',
+                    border: gmailStatus.connected ? '1px solid var(--positive)' : '1px solid var(--border)',
+                    background: gmailStatus.connected ? 'linear-gradient(180deg, var(--surface) 0%, rgba(22,163,74,0.04) 100%)' : 'var(--surface)',
+                    padding: 'var(--sp-7, 28px)',
+                    boxShadow: 'var(--elev-1)',
+                    transition: 'all 300ms ease',
+                    position: 'relative',
                   }}
                   onClick={!gmailStatus.connected ? handleGmailConnect : undefined}
                 >
-                  <div className="flex items-start gap-4">
-                    <div 
-                      className="w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0"
-                      style={{ background: '#EF4444' }}
-                    >
-                      GM
+                  {gmailStatus.connected && (
+                    <span className="absolute -top-2.5 right-5 px-3 py-1 rounded-full text-[10px] uppercase font-semibold text-white" style={{ background: 'var(--positive)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', boxShadow: '0 4px 12px rgba(22,163,74,0.3)' }}>Connected</span>
+                  )}
+                  <div
+                    className="w-[72px] h-[72px] rounded-xl flex items-center justify-center text-white font-bold text-[28px] mx-auto mb-4 flex-shrink-0"
+                    style={{ background: '#EA4335', boxShadow: '0 8px 24px rgba(234,67,53,0.25)' }}
+                  >
+                    GM
+                  </div>
+                  <h3 className="text-[22px] mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', letterSpacing: 'var(--ls-tight, -0.01em)' }}>
+                    Gmail
+                  </h3>
+                  <p className="text-[13px] mb-5" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', lineHeight: 1.5 }}>
+                    Connect your Google Workspace or personal Gmail. Same signals, different provider.
+                  </p>
+                  {gmailStatus.connected ? (
+                    <div className="flex items-center justify-center gap-2 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+                      <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--positive)', boxShadow: '0 0 8px var(--positive)' }}></div>
+                      <span className="text-[10px] uppercase font-semibold" style={{ color: 'var(--positive)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Connected</span>
+                      <Button
+                        onClick={(e) => { e.stopPropagation(); handleDisconnect('gmail'); }}
+                        variant="outline"
+                        size="sm"
+                        className="ml-2"
+                      >
+                        Disconnect
+                      </Button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-                          Gmail
-                        </h3>
-                        {gmailStatus.connected && (
-                          <CheckCircle2 className="w-5 h-5 text-green-600" />
-                        )}
-                      </div>
-                      <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-                        Connect your Gmail account for AI-powered inbox prioritization and email intelligence
-                      </p>
-                      {gmailStatus.connected ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                          <span className="text-sm font-medium text-green-700">Connected</span>
-                          <Button
-                            onClick={() => handleDisconnect('gmail')}
-                            variant="outline"
-                            size="sm"
-                            className="ml-2"
-                          >
-                            Disconnect
-                          </Button>
-                        </div>
+                  ) : (
+                    <Button
+                      onClick={handleGmailConnect}
+                      disabled={connecting === 'gmail'}
+                      className="btn-primary w-full"
+                      style={{ marginTop: 'var(--sp-3, 12px)' }}
+                    >
+                      {connecting === 'gmail' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Connecting...
+                        </>
                       ) : (
-                        <Button
-                          onClick={handleGmailConnect}
-                          disabled={connecting === 'gmail'}
-                          className="btn-primary w-full sm:w-auto"
-                        >
-                          {connecting === 'gmail' ? (
-                            <>
-                              
-                              Connecting...
-                            </>
-                          ) : (
-                            <>
-                              <ArrowRight className="w-4 h-4 mr-2" />
-                              Connect Gmail
-                            </>
-                          )}
-                        </Button>
+                        <>
+                          <ArrowRight className="w-4 h-4 mr-2" />
+                          Connect Gmail
+                        </>
                       )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Option 3: Other (Coming Soon) */}
-                <div 
-                  className="p-6 rounded-xl border-2 opacity-60"
-                  style={{
-                    borderColor: 'var(--border-light)',
-                    background: 'var(--bg-card)'
-                  }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div 
-                      className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
-                    >
-                      <Mail className="w-8 h-8" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                        Other Email Providers
-                      </h3>
-                      <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-                        Additional email providers coming soon
-                      </p>
-                      <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
-                        Coming Soon
-                      </span>
-                    </div>
-                  </div>
+                    </Button>
+                  )}
                 </div>
               </div>
 
-              {/* Info Panel */}
-              <div className="p-6 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--accent-primary)' }} />
-                  <div>
-                    <h4 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                      Connector Information
-                    </h4>
-                    <ul className="text-sm space-y-1" style={{ color: 'var(--text-secondary)' }}>
-                      <li>• Your email data is processed securely via Supabase Edge Functions</li>
-                      <li>• BIQC analyzes email patterns to provide intelligent business insights</li>
-                      <li>• You can disconnect your email at any time from Settings</li>
-                      <li>• Priority Inbox uses AI to identify your most important emails</li>
-                    </ul>
-                  </div>
+              {/* Info Panel — Permissions card */}
+              <div className="p-6" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', background: 'var(--surface)', boxShadow: 'var(--elev-1)' }}>
+                <h4 className="text-[20px] mb-4" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>
+                  What BIQc reads — and what it doesn't
+                </h4>
+                <div className="space-y-0">
+                  {[
+                    { allowed: true, title: 'Email metadata (sender, subject, timestamp)', desc: 'Used to detect reply-time patterns, thread activity, and deal-related correspondence.' },
+                    { allowed: true, title: 'Email body text (first 500 chars)', desc: 'Used for sentiment analysis and competitor mention detection. Full body is never stored.' },
+                    { allowed: true, title: 'Thread structure (who replied when)', desc: 'Used to calculate customer engagement velocity and churn risk.' },
+                    { allowed: false, title: 'Attachments — never accessed', desc: 'BIQc does not open, download, or scan attachments.' },
+                    { allowed: false, title: 'Send / compose — never accessed', desc: 'BIQc has read-only OAuth scope. It cannot send, draft, delete, or modify any email.' },
+                  ].map((perm, i) => (
+                    <div key={i} className="flex items-start gap-3 py-3" style={{ borderBottom: i < 4 ? '1px solid var(--border)' : 'none' }}>
+                      <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: perm.allowed ? 'var(--lava-wash)' : 'var(--danger-wash)', borderRadius: 'var(--r-sm, 4px)' }}>
+                        {perm.allowed
+                          ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--lava)' }} />
+                          : <X className="w-3.5 h-3.5" style={{ color: 'var(--danger)' }} />
+                        }
+                      </div>
+                      <div>
+                        <p className="text-[14px] font-medium" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)', lineHeight: 1.4 }}>{perm.title}</p>
+                        <p className="text-[12px] mt-0.5" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', lineHeight: 1.5 }}>{perm.desc}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              </div>
+
+              {/* Trust bar */}
+              <div className="flex items-center gap-4 flex-wrap p-5" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', background: 'var(--surface-2, var(--surface))' }}>
+                {[
+                  'Read-only access',
+                  'Never sends on your behalf',
+                  'Encrypted at rest + in transit',
+                  'Delete data anytime',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
+                    <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--positive)' }} />
+                    {item}
+                  </div>
+                ))}
               </div>
 
               {/* Bottom quick action removed to avoid duplicated connected CTA cards */}

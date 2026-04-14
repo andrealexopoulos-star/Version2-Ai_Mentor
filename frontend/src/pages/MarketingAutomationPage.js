@@ -7,7 +7,7 @@ import {
   Loader2, Copy, Check, ChevronDown, Sparkles
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { fontFamily } from '../design-system/tokens';
+/* fontFamily import removed — using CSS custom properties */
 
 
 const Panel = ({ children, className = '' }) => (
@@ -74,13 +74,13 @@ const MarketingAutomationPage = () => {
       <div className="space-y-4">
         {Object.entries(content).map(([key, value]) => (
           <div key={key} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-            <span className="text-[10px] text-[var(--ink-muted)] uppercase tracking-wider block mb-1.5" style={{ fontFamily: fontFamily.mono }}>{key.replace(/_/g, ' ')}</span>
+            <span className="text-[10px] text-[var(--ink-muted)] uppercase tracking-wider block mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>{key.replace(/_/g, ' ')}</span>
             {Array.isArray(value) ? (
               <div className="space-y-2">
                 {value.map((item, i) => (
                   <div key={i} className="text-sm text-[var(--ink-secondary)]">
                     {typeof item === 'object' ? (
-                      <div className="pl-3 border-l-2 border-[rgba(140,170,210,0.15)]">
+                      <div className="pl-3 border-l-2 border-[var(--border)]">
                         {Object.entries(item).map(([k, v]) => (
                           <p key={k}><span className="text-[var(--ink-muted)]">{k}:</span> {String(v)}</p>
                         ))}
@@ -100,10 +100,10 @@ const MarketingAutomationPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="marketing-automation-page">
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: 'var(--font-ui)' }} data-testid="marketing-automation-page">
         <div>
-          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Marketing Automation.</h1>
-          <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Generate marketing content grounded in your business data and intelligence.</p>
+          <h1 className="font-medium mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: 'var(--ls-display)', lineHeight: 1.05 }}>Marketing Automation.</h1>
+          <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>Generate marketing content grounded in your business data and intelligence.</p>
         </div>
 
         {/* KPI Strip — matches mockup ma-kpis */}
@@ -114,28 +114,28 @@ const MarketingAutomationPage = () => {
             { label: 'Open Rate', value: '\u2014' },
             { label: 'Click Rate', value: '\u2014' },
           ].map(kpi => (
-            <div key={kpi.label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20 }}>
-              <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
-              <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>{kpi.value}</div>
+            <div key={kpi.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20, boxShadow: 'var(--elev-1)' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', color: 'var(--ink-muted)', marginBottom: 12 }}>{kpi.label}</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: 'var(--ink-display)', letterSpacing: 'var(--ls-display)' }}>{kpi.value}</div>
             </div>
           ))}
         </div>
 
         {/* AI Recommendation -- empty state until email campaigns are connected */}
-        <div className="rounded-2xl p-5" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderLeft: '3px solid #E85D00' }}>
+        <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--lava)' }}>
           <div className="flex items-center gap-2 mb-3">
-            <span className="w-2 h-2 rounded-full" style={{ background: '#E85D00', boxShadow: '0 0 6px #E85D00' }} />
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#E85D00' }}>AI Recommendation</span>
+            <span className="w-2 h-2 rounded-full" style={{ background: 'var(--lava)', boxShadow: '0 0 6px var(--lava)' }} />
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--lava)', letterSpacing: 'var(--ls-caps)' }}>AI Recommendation</span>
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-muted, #708499)' }}>Automation recommendations will appear once email campaigns are connected.</p>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-muted)' }}>Automation recommendations will appear once email campaigns are connected.</p>
         </div>
 
         {/* Campaign Cards -- empty state until campaigns exist */}
         <div>
-          <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Campaigns</h2>
-          <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}>
-            <Megaphone className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
-            <p className="text-sm" style={{ color: 'var(--ink-muted, #708499)' }}>No active campaigns. Create email sequences using the content generator below.</p>
+          <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Campaigns</h2>
+          <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <Megaphone className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted)' }} />
+            <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>No active campaigns. Create email sequences using the content generator below.</p>
           </div>
         </div>
 
@@ -143,7 +143,7 @@ const MarketingAutomationPage = () => {
           {/* Left: Config */}
           <div className="space-y-5">
             <Panel>
-              <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-4" style={{ fontFamily: fontFamily.display }}>Content Type</h3>
+              <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-4" style={{ fontFamily: 'var(--font-display)' }}>Content Type</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {CONTENT_TYPES.map(ct => (
                   <button
@@ -152,13 +152,13 @@ const MarketingAutomationPage = () => {
                     data-testid={`content-type-${ct.id}`}
                     className="p-3 rounded-lg text-left transition-all"
                     style={{
-                      background: selectedType === ct.id ? 'rgba(232, 93, 0, 0.1)' : '#0F1720',
-                      border: selectedType === ct.id ? '1px solid rgba(232, 93, 0, 0.3)' : '1px solid rgba(140,170,210,0.15)',
+                      background: selectedType === ct.id ? 'var(--lava-wash)' : 'var(--surface-sunken)',
+                      border: selectedType === ct.id ? '1px solid var(--lava-ring)' : '1px solid var(--border)',
                     }}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <ct.icon className="w-4 h-4" style={{ color: selectedType === ct.id ? '#E85D00' : '#64748B' }} />
-                      <span className="text-sm font-medium" style={{ color: selectedType === ct.id ? '#E85D00' : 'var(--ink-display, #EDF1F7)' }}>{ct.label}</span>
+                      <ct.icon className="w-4 h-4" style={{ color: selectedType === ct.id ? 'var(--lava)' : 'var(--ink-muted)' }} />
+                      <span className="text-sm font-medium" style={{ color: selectedType === ct.id ? 'var(--lava)' : 'var(--ink-display)' }}>{ct.label}</span>
                     </div>
                     <p className="text-[11px] text-[var(--ink-muted)]">{ct.description}</p>
                   </button>
@@ -167,10 +167,10 @@ const MarketingAutomationPage = () => {
             </Panel>
 
             <Panel>
-              <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-4" style={{ fontFamily: fontFamily.display }}>Parameters</h3>
+              <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-4" style={{ fontFamily: 'var(--font-display)' }}>Parameters</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Topic *</label>
+                  <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Topic *</label>
                   <input
                     value={topic}
                     onChange={e => setTopic(e.target.value)}
@@ -182,7 +182,7 @@ const MarketingAutomationPage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Tone</label>
+                    <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Tone</label>
                     <div className="relative">
                       <select
                         value={tone}
@@ -200,7 +200,7 @@ const MarketingAutomationPage = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Audience</label>
+                    <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Audience</label>
                     <input
                       value={audience}
                       onChange={e => setAudience(e.target.value)}
@@ -212,7 +212,7 @@ const MarketingAutomationPage = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Additional Context</label>
+                  <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Additional Context</label>
                   <textarea
                     value={context}
                     onChange={e => setContext(e.target.value)}
@@ -230,7 +230,7 @@ const MarketingAutomationPage = () => {
                 disabled={generating || !selectedType || !topic.trim()}
                 data-testid="marketing-generate-btn"
                 className="w-full mt-4"
-                style={{ background: '#E85D00', color: 'white' }}
+                style={{ background: 'var(--lava)', color: 'white' }}
               >
                 {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</> : <><Sparkles className="w-4 h-4 mr-2" />Generate Content</>}
               </Button>
@@ -241,12 +241,12 @@ const MarketingAutomationPage = () => {
           <div>
             <Panel className="min-h-[400px]">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Generated Content</h3>
+                <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Generated Content</h3>
                 {result?.content && (
                   <button onClick={handleCopy} data-testid="marketing-copy-btn"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors"
                     style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text-2)' }}>
-                    {copied ? <Check className="w-3.5 h-3.5 text-[#10B981]" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? <Check className="w-3.5 h-3.5 text-[var(--positive)]" /> : <Copy className="w-3.5 h-3.5" />}
                     {copied ? 'Copied' : 'Copy'}
                   </button>
                 )}
@@ -264,7 +264,7 @@ const MarketingAutomationPage = () => {
               {generating && (
                 <div className="flex items-center justify-center h-[300px]">
                   <div className="text-center">
-                    <Loader2 className="w-8 h-8 text-[#E85D00] mx-auto mb-3 animate-spin" />
+                    <Loader2 className="w-8 h-8 text-[var(--lava)] mx-auto mb-3 animate-spin" />
                     <p className="text-sm text-[var(--ink-secondary)]">Generating content from your business intelligence...</p>
                   </div>
                 </div>

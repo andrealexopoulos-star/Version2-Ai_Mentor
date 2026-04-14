@@ -3,7 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { useSnapshot } from '../hooks/useSnapshot';
 import { apiClient } from '../lib/api';
 import { Shield, CheckCircle2, AlertTriangle, FileText, BadgeCheck, Sparkles, Check, Clock, AlertCircle, X, TrendingUp, TrendingDown } from 'lucide-react';
-import { fontFamily, colors } from '../design-system/tokens';
+// Design tokens now referenced via CSS custom properties
 import { EmptyStateCard, MetricCard, QuietActionLink, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 import LineageBadge from '../components/LineageBadge';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
@@ -104,11 +104,11 @@ const ScoreRing = ({ score, color, label, sub, trend }) => {
           transform="rotate(-90 60 60)"
           style={{ transition: 'stroke-dasharray 0.8s ease' }}
         />
-        <text x="60" y="56" textAnchor="middle" fill="var(--ink-display, #EDF1F7)" fontSize="28" fontWeight="700">{score}</text>
-        <text x="60" y="74" textAnchor="middle" fill="var(--ink-muted, #708499)" fontSize="11">%</text>
+        <text x="60" y="56" textAnchor="middle" fill="var(--ink-display)" fontSize="28" fontWeight="700">{score}</text>
+        <text x="60" y="74" textAnchor="middle" fill="var(--ink-muted)" fontSize="11">%</text>
       </svg>
-      <p className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>{label}</p>
-      <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>{sub}</p>
+      <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>{label}</p>
+      <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted)' }}>{sub}</p>
       <div className="mt-2 flex items-center justify-center gap-1 text-xs" style={{ color: trend >= 0 ? '#16A34A' : '#EF4444' }}>
         {trend >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
         <span>{trend >= 0 ? '+' : ''}{trend}% from last month</span>
@@ -128,7 +128,7 @@ const FrameworkCard = ({ fw }) => {
       data-testid={`compliance-fw-${fw.name.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <div className="flex items-start justify-between mb-3">
-        <p className="text-lg font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>{fw.name}</p>
+        <p className="text-lg font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>{fw.name}</p>
         <span
           className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
           style={{ background: badgeBg, color: badgeColor }}
@@ -136,14 +136,14 @@ const FrameworkCard = ({ fw }) => {
           {fw.status}
         </span>
       </div>
-      <p className="text-sm mb-4" style={{ color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5 }}>{fw.desc}</p>
+      <p className="text-sm mb-4" style={{ color: 'var(--ink-secondary)', lineHeight: 1.5 }}>{fw.desc}</p>
       <div className="flex items-center gap-3 mb-2">
         <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.12)' }}>
           <div className="h-full rounded-full" style={{ width: `${fw.pct}%`, background: fw.barColor, transition: 'width 0.8s ease' }} />
         </div>
-        <span className="text-xs font-bold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.mono }}>{fw.pct}%</span>
+        <span className="text-xs font-bold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-mono)' }}>{fw.pct}%</span>
       </div>
-      <div className="flex gap-4 text-xs mb-4" style={{ color: 'var(--ink-muted, #708499)' }}>
+      <div className="flex gap-4 text-xs mb-4" style={{ color: 'var(--ink-muted)' }}>
         <span>{fw.meta.controls}</span>
         <span>{fw.meta.audit}</span>
       </div>
@@ -184,8 +184,8 @@ const ActionItem = ({ item }) => {
         <Icon className="h-3 w-3" style={{ color: iconColor }} />
       </div>
       <div>
-        <p className="text-sm" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{item.text}</p>
-        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>{item.sub}</p>
+        <p className="text-sm" style={{ color: 'var(--ink-display)' }}>{item.text}</p>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted)' }}>{item.sub}</p>
       </div>
       <span
         className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
@@ -244,7 +244,7 @@ const CompliancePage = () => {
   if (loading && !cognitive) {
     return (
       <DashboardLayout>
-        <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-10" style={{ fontFamily: fontFamily.body }} data-testid="compliance-page">
+        <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-10" style={{ fontFamily: 'var(--font-ui)' }} data-testid="compliance-page">
           <PageLoadingState message="Loading compliance..." />
         </div>
       </DashboardLayout>
@@ -254,7 +254,7 @@ const CompliancePage = () => {
   if (error && !cognitive) {
     return (
       <DashboardLayout>
-        <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-10" style={{ fontFamily: fontFamily.body }} data-testid="compliance-page">
+        <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-10" style={{ fontFamily: 'var(--font-ui)' }} data-testid="compliance-page">
           <PageErrorState error={error} onRetry={refresh} moduleName="Compliance" />
         </div>
       </DashboardLayout>
@@ -263,18 +263,18 @@ const CompliancePage = () => {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-10" style={{ fontFamily: fontFamily.body }} data-testid="compliance-page">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-10" style={{ fontFamily: 'var(--font-ui)' }} data-testid="compliance-page">
         <div className="flex flex-wrap items-start justify-between gap-4" data-testid="compliance-header">
           <div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid="compliance-title">
+            <h1 className="font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 28, letterSpacing: 'var(--ls-display)', lineHeight: 1.05 }} data-testid="compliance-title">
               Compliance Centre
             </h1>
-            <p className="text-sm mt-2" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }} data-testid="compliance-summary">
+            <p className="text-sm mt-2" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }} data-testid="compliance-summary">
               {summary}
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div className="rounded-full border px-3 py-1.5 text-xs" style={{ borderColor: `${verificationTone}40`, color: verificationTone, fontFamily: fontFamily.mono }} data-testid="compliance-abn-status-badge">
+            <div className="rounded-full border px-3 py-1.5 text-xs" style={{ borderColor: `${verificationTone}40`, color: verificationTone, fontFamily: 'var(--font-mono)' }} data-testid="compliance-abn-status-badge">
               <BadgeCheck className="mr-1 inline h-3.5 w-3.5" /> {verificationLabel}
             </div>
             <button
@@ -282,7 +282,7 @@ const CompliancePage = () => {
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 padding: '10px 20px', borderRadius: 8,
                 background: 'linear-gradient(135deg, #E85D00, #FF7A1A)',
-                color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: fontFamily.body,
+                color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-ui)',
                 border: 'none', cursor: 'pointer',
                 transition: 'box-shadow 0.2s, transform 0.2s',
               }}
@@ -315,12 +315,12 @@ const CompliancePage = () => {
           <div className="flex items-center gap-2 mb-3">
             <div className="rounded-full" style={{ width: 8, height: 8, background: '#E85D00', animation: 'pulse 2s ease-in-out infinite' }} />
             <Sparkles className="h-4 w-4" style={{ color: '#E85D00' }} />
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#E85D00', fontFamily: 'var(--font-mono)' }}>
               BIQc Compliance AI
             </span>
           </div>
-          <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>
-            <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>Two compliance gaps need attention before July 2026.</strong>{' '}
+          <p className="text-sm" style={{ color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--ink-display)' }}>Two compliance gaps need attention before July 2026.</strong>{' '}
             The Australian Privacy Act amendments require updated data breach notification timelines (now 72 hours, down from 30 days)
             and explicit consent mechanisms for data processing. Your current privacy policy was last updated 8 months ago.
             Additionally, your BAS lodgement process lacks a documented reconciliation step, which could trigger an ATO review
@@ -331,7 +331,7 @@ const CompliancePage = () => {
 
         {/* ═══ 3. FRAMEWORK CARDS (2x2 grid) ═══ */}
         <div>
-          <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+          <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
             Compliance Frameworks
           </h2>
           <div className="grid gap-4 md:grid-cols-2" data-testid="compliance-frameworks-grid">
@@ -343,7 +343,7 @@ const CompliancePage = () => {
 
         {/* ═══ 4. PRIORITY ACTIONS CHECKLIST ═══ */}
         <div>
-          <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+          <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
             Priority Actions
           </h2>
           <div
@@ -396,8 +396,8 @@ const CompliancePage = () => {
             <SurfaceCard testId="compliance-abn-card">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>ABN status</p>
-                  <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="compliance-abn-title">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>ABN status</p>
+                  <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: 'var(--font-display)' }} data-testid="compliance-abn-title">
                     {abnValue ? 'ABN captured for this business' : 'ABN still needs confirmation'}
                   </p>
                   <p className="mt-2 text-sm text-[var(--ink-secondary)]" data-testid="compliance-abn-detail">
@@ -409,7 +409,7 @@ const CompliancePage = () => {
             </SurfaceCard>
 
             <SurfaceCard testId="compliance-spof-card">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>Dependencies</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>Dependencies</p>
               {spofs.length > 0 ? (
                 <div className="mt-3 space-y-2" data-testid="compliance-spof-list">
                   {spofs.slice(0, 4).map((item, index) => (
@@ -424,7 +424,7 @@ const CompliancePage = () => {
             </SurfaceCard>
 
             <SurfaceCard testId="compliance-alignment-card">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>Strategic alignment</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>Strategic alignment</p>
               <p className="mt-3 text-sm text-[#CBD5E1]" data-testid="compliance-alignment-narrative">
                 {alignment.narrative || 'No live alignment narrative is available in this cycle.'}
               </p>

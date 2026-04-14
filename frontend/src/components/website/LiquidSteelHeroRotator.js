@@ -20,10 +20,10 @@ const RichText = ({ text, style }) => {
 const VARIANTS = [
   {
     h1: 'A Single **Intelligence Layer** Across Your Entire Business',
-    h2: 'Soundboard unifies fragmented tools, teams, and data into one executive decision system.',
+    h2: 'Ask BIQc unifies fragmented tools, teams, and data into one executive decision system.',
   },
   {
-    h1: 'Meet //BIQc Soundboard// - Your **Flagship Decision Council**',
+    h1: 'Meet //Ask BIQc// - Your **Flagship Decision Council**',
     h2: 'Run CEO, Finance Manager, and Marketing Manager perspectives in one live boardroom before risk compounds.',
   },
   {

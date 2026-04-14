@@ -347,7 +347,7 @@ export default function SoundboardPage() {
       {/* â"€â"€ Bottom CTA â"€â"€ */}
       <section style={{ background: '#080C14', padding: '64px 24px', textAlign: 'center' }}>
         <h2 style={{ fontFamily: fontFamily.display, color: '#E6EEF7', fontSize: 28, fontWeight: 700, marginBottom: 12 }}>
-          Your Soundboard is calibrated to your business.
+          Ask BIQc is calibrated to your business.
         </h2>
         <p style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', fontSize: 15, marginBottom: 28, maxWidth: 480, margin: '0 auto 28px' }}>
           These examples use generic data. Your account uses live signals from Xero, HubSpot, Outlook, and every other connected tool.

@@ -4,13 +4,12 @@ import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
 import { Lock, RefreshCw, Layers } from 'lucide-react';
-import { fontFamily } from '../design-system/tokens';
 
 /* ── Shared surface ───────────────────────────────────────────────── */
 const Panel = ({ children, className = '', style = {}, ...rest }) => (
   <div
     className={`rounded-xl p-5 ${className}`}
-    style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', ...style }}
+    style={{ background: 'var(--surface)', border: '1px solid var(--border)', ...style }}
     {...rest}
   >
     {children}
@@ -20,16 +19,16 @@ const Panel = ({ children, className = '', style = {}, ...rest }) => (
 /* ── KPI card ─────────────────────────────────────────────────────── */
 const KpiCard = ({ label, value, delta, deltaDir, valueClass = '', testId }) => {
   const valueColor =
-    valueClass === 'warn' ? '#D97706' :
-    valueClass === 'good' ? '#16A34A' :
-    'var(--ink-display, #EDF1F7)';
-  const deltaColor = deltaDir === 'up' ? '#16A34A' : '#DC2626';
+    valueClass === 'warn' ? 'var(--warning)' :
+    valueClass === 'good' ? 'var(--positive)' :
+    'var(--ink-display)';
+  const deltaColor = deltaDir === 'up' ? 'var(--positive)' : 'var(--danger)';
   return (
     <Panel data-testid={testId}>
-      <div style={{ fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 4, fontFamily: fontFamily.mono }}>
+      <div style={{ fontSize: 10, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', fontWeight: 600, marginBottom: 4, fontFamily: 'var(--font-mono)' }}>
         {label}
       </div>
-      <div style={{ fontFamily: fontFamily.mono, fontSize: 28, fontWeight: 700, color: valueColor, lineHeight: 1 }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 700, color: valueColor, lineHeight: 1 }}>
         {value}
       </div>
       {delta && (
@@ -44,14 +43,14 @@ const KpiCard = ({ label, value, delta, deltaDir, valueClass = '', testId }) => 
 /* ── Priority badge ───────────────────────────────────────────────── */
 const PriorityBadge = ({ level }) => {
   const styles = {
-    critical: { background: 'rgba(239,68,68,0.15)', color: '#F87171' },
-    high:     { background: 'rgba(245,158,11,0.15)', color: '#FBBF24' },
-    medium:   { background: 'rgba(59,130,246,0.15)', color: '#60A5FA' },
-    low:      { background: 'rgba(34,197,94,0.15)', color: '#4ADE80' },
+    critical: { background: 'var(--danger-wash)', color: 'var(--danger)' },
+    high:     { background: 'var(--warning-wash)', color: 'var(--warning)' },
+    medium:   { background: 'var(--info-wash)', color: 'var(--info)' },
+    low:      { background: 'var(--positive-wash)', color: 'var(--positive)' },
   };
   const s = styles[level] || styles.medium;
   return (
-    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 9999, whiteSpace: 'nowrap', ...s }}>
+    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 'var(--r-pill)', whiteSpace: 'nowrap', ...s }}>
       {level}
     </span>
   );
@@ -60,13 +59,13 @@ const PriorityBadge = ({ level }) => {
 /* ── SOP status badge ─────────────────────────────────────────────── */
 const SopStatusBadge = ({ status }) => {
   const styles = {
-    active: { background: 'rgba(34,197,94,0.15)', color: '#4ADE80' },
-    draft:  { background: 'rgba(245,158,11,0.15)', color: '#FBBF24' },
-    review: { background: 'rgba(59,130,246,0.15)', color: '#60A5FA' },
+    active: { background: 'var(--positive-wash)', color: 'var(--positive)' },
+    draft:  { background: 'var(--warning-wash)', color: 'var(--warning)' },
+    review: { background: 'var(--info-wash)', color: 'var(--info)' },
   };
   const s = styles[status] || styles.active;
   return (
-    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 9999, whiteSpace: 'nowrap', ...s }}>
+    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 'var(--r-pill)', whiteSpace: 'nowrap', ...s }}>
       {status}
     </span>
   );
@@ -78,20 +77,20 @@ const AdvisoryCard = ({ title, domain, priority, body, metrics = [], actions = [
     {/* Head */}
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
       <div>
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display, lineHeight: 1.2 }}>{title}</div>
-        <div style={{ fontSize: 10, color: 'var(--ink-muted, #708499)', marginTop: 2 }}>{domain}</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-display)', fontFamily: 'var(--font-display)', lineHeight: 1.2 }}>{title}</div>
+        <div style={{ fontSize: 10, color: 'var(--ink-muted)', marginTop: 2 }}>{domain}</div>
       </div>
       <PriorityBadge level={priority} />
     </div>
     {/* Body */}
-    <div style={{ fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5, marginBottom: 12 }}>{body}</div>
+    <div style={{ fontSize: 14, color: 'var(--ink-secondary)', lineHeight: 1.5, marginBottom: 12 }}>{body}</div>
     {/* Metrics */}
     {metrics.length > 0 && (
-      <div style={{ display: 'flex', gap: 16, marginBottom: 12, paddingTop: 12, borderTop: '1px solid rgba(140,170,210,0.08)' }}>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 12, paddingTop: 12, borderTop: '1px solid var(--border-subtle)' }}>
         {metrics.map((m, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{m.label}</span>
-            <span style={{ fontFamily: fontFamily.mono, fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)' }}>{m.value}</span>
+            <span style={{ fontSize: 10, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)' }}>{m.label}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600, color: 'var(--ink-display)' }}>{m.value}</span>
           </div>
         ))}
       </div>
@@ -103,11 +102,11 @@ const AdvisoryCard = ({ title, domain, priority, body, metrics = [], actions = [
           <span
             key={i}
             style={{
-              fontSize: 12, fontWeight: 600, color: '#E85D00',
-              padding: '4px 10px', border: '1px solid rgba(232,93,0,0.25)', borderRadius: 9999,
+              fontSize: 12, fontWeight: 600, color: 'var(--lava)',
+              padding: '4px 10px', border: '1px solid var(--border)', borderRadius: 'var(--r-pill)',
               cursor: 'pointer', transition: 'background 0.15s ease',
             }}
-            className="hover:bg-[rgba(232,93,0,0.08)]"
+            className="hover:bg-[var(--lava-wash)]"
           >
             {a}
           </span>
@@ -119,20 +118,20 @@ const AdvisoryCard = ({ title, domain, priority, body, metrics = [], actions = [
 
 /* ── Recommendation row ───────────────────────────────────────────── */
 const RecItem = ({ num, title, desc, impact, testId }) => (
-  <div style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(140,170,210,0.08)' }} data-testid={testId}>
+  <div style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--border-subtle)' }} data-testid={testId}>
     <div style={{
       flexShrink: 0, width: 28, height: 28, borderRadius: '50%',
-      background: 'rgba(232,93,0,0.12)', color: '#E85D00',
-      fontFamily: fontFamily.mono, fontSize: 12, fontWeight: 700,
+      background: 'var(--lava-wash)', color: 'var(--lava)',
+      fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {num}
     </div>
     <div style={{ flex: 1 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', marginBottom: 2, fontFamily: fontFamily.display }}>{title}</div>
-      <div style={{ fontSize: 12, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5 }}>{desc}</div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-display)', marginBottom: 2, fontFamily: 'var(--font-display)' }}>{title}</div>
+      <div style={{ fontSize: 12, color: 'var(--ink-secondary)', lineHeight: 1.5 }}>{desc}</div>
       {impact && (
-        <div style={{ fontSize: 10, color: '#16A34A', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>
+        <div style={{ fontSize: 10, color: 'var(--positive)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', marginTop: 4 }}>
           {impact}
         </div>
       )}
@@ -182,25 +181,25 @@ const OpsAdvisoryCentre = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1200px] animate-fade-in" data-testid="ops-advisory-page" style={{ fontFamily: fontFamily.body }}>
+      <div className="space-y-6 max-w-[1200px] animate-fade-in" data-testid="ops-advisory-page" style={{ fontFamily: 'var(--font-ui)' }}>
 
         {/* ── HEADER ──────────────────────────────────────────────── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1
               className="font-medium"
-              style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 28, letterSpacing: 'var(--ls-display)', lineHeight: 1.15 }}
               data-testid="ops-advisory-title"
             >
               Ops Advisory Centre
             </h1>
-            <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }} data-testid="ops-advisory-subtitle">
+            <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }} data-testid="ops-advisory-subtitle">
               Evidence-backed operational intelligence based on your profile and recent activity
             </p>
           </div>
           <button
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold"
-            style={{ background: 'linear-gradient(135deg, #E85D00, #FF7A1A)', color: '#fff', transition: 'all 0.15s ease' }}
+            style={{ background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))', color: '#fff', transition: 'all 0.15s ease' }}
             onClick={fetchRecommendations}
             data-testid="ops-advisory-generate-btn"
           >
@@ -223,34 +222,34 @@ const OpsAdvisoryCentre = () => {
         {/* ── AI OPS INSIGHT ──────────────────────────────────────── */}
         <Panel
           style={{
-            background: 'var(--surface, #0E1628)',
-            border: '1px solid rgba(140,170,210,0.12)',
-            borderLeft: '3px solid #E85D00',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderLeft: '3px solid var(--lava)',
           }}
           data-testid="ops-advisory-ai-insight"
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <div
               style={{
-                width: 8, height: 8, borderRadius: '50%', background: '#E85D00',
+                width: 8, height: 8, borderRadius: '50%', background: 'var(--lava)',
                 animation: 'pulse 2s ease-in-out infinite',
               }}
             />
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#C24D00', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--lava-deep)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)' }}>
               Ops Advisory AI
             </span>
           </div>
-          <div style={{ fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.5 }}>
+          <div style={{ fontSize: 14, color: 'var(--ink-secondary)', lineHeight: 1.5 }}>
             {aiInsight ? (
               <>{aiInsight}</>
             ) : firstItem ? (
               <>
-                <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>{firstItem.title} is your highest-impact operational signal.</strong>{' '}
+                <strong style={{ color: 'var(--ink-display)' }}>{firstItem.title} is your highest-impact operational signal.</strong>{' '}
                 {firstItem.reason || 'Review the recommendation details and assign an owner to begin resolution.'}
               </>
             ) : (
               <>
-                <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>No critical operational signals detected.</strong>{' '}
+                <strong style={{ color: 'var(--ink-display)' }}>No critical operational signals detected.</strong>{' '}
                 Your operations are running within normal parameters. BIQc will surface advisories as new data arrives.
               </>
             )}
@@ -261,27 +260,27 @@ const OpsAdvisoryCentre = () => {
         {loading ? (
           <Panel data-testid="ops-advisory-loading-panel">
             <div className="space-y-3 animate-pulse">
-              <div className="h-5 w-52 rounded" style={{ background: '#1E2D3D' }} />
-              <div className="h-4 w-80 rounded" style={{ background: '#1E2D3D' }} />
-              <div className="h-4 w-full rounded" style={{ background: '#1E2D3D' }} />
-              <div className="h-4 w-[88%] rounded" style={{ background: '#1E2D3D' }} />
+              <div className="h-5 w-52 rounded" style={{ background: 'var(--surface-sunken)' }} />
+              <div className="h-4 w-80 rounded" style={{ background: 'var(--surface-sunken)' }} />
+              <div className="h-4 w-full rounded" style={{ background: 'var(--surface-sunken)' }} />
+              <div className="h-4 w-[88%] rounded" style={{ background: 'var(--surface-sunken)' }} />
             </div>
           </Panel>
         ) : data?.locked ? (
           /* ── LOCKED / UPGRADE GATE ─────────────────────────────── */
           <Panel data-testid="ops-advisory-locked-panel">
             <div className="flex items-start gap-3 mb-3">
-              <Lock className="w-4 h-4 mt-0.5" style={{ color: '#E85D00' }} />
+              <Lock className="w-4 h-4 mt-0.5" style={{ color: 'var(--lava)' }} />
               <div>
-                <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>Upgrade to unlock more recommendations</h3>
-                <p className="text-xs mt-1" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>You&apos;ve reached your monthly limit for your current plan.</p>
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>Upgrade to unlock more recommendations</h3>
+                <p className="text-xs mt-1" style={{ color: 'var(--ink-secondary)' }}>You&apos;ve reached your monthly limit for your current plan.</p>
               </div>
             </div>
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+              <div className="text-sm" style={{ color: 'var(--ink-secondary)' }}>
                 Used {data?.usage?.used || 0} of {data?.usage?.limit || 0} this month.
               </div>
-              <Link to="/upgrade" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold" style={{ background: '#E85D00', color: '#fff' }} data-testid="ops-advisory-view-plans-button">
+              <Link to="/upgrade" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold" style={{ background: 'var(--lava)', color: '#fff' }} data-testid="ops-advisory-view-plans-button">
                 View Plans
               </Link>
             </div>
@@ -290,7 +289,7 @@ const OpsAdvisoryCentre = () => {
           <>
             {/* ── ACTIVE ADVISORIES GRID ─────────────────────────── */}
             <div data-testid="ops-advisory-section-advisories">
-              <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', marginBottom: 16 }}>Active Advisories</h2>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--ink-display)', marginBottom: 16 }}>Active Advisories</h2>
               <div
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}
                 className="max-[800px]:!grid-cols-1"
@@ -315,8 +314,8 @@ const OpsAdvisoryCentre = () => {
             {/* ── GENERATED SOPs TABLE ───────────────────────────── */}
             {sops.length > 0 && (
               <div data-testid="ops-advisory-section-sops">
-                <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', marginBottom: 16 }}>Generated SOPs</h2>
-                <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, overflow: 'hidden' }}>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--ink-display)', marginBottom: 16 }}>Generated SOPs</h2>
+                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }} data-testid="ops-advisory-sop-table">
                     <thead>
                       <tr>
@@ -325,8 +324,8 @@ const OpsAdvisoryCentre = () => {
                             key={h}
                             style={{
                               textAlign: 'left', padding: '12px 16px',
-                              fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
-                              color: 'var(--ink-muted, #708499)', background: '#060A12', borderBottom: '1px solid rgba(140,170,210,0.12)',
+                              fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)',
+                              color: 'var(--ink-muted)', background: 'var(--surface-sunken)', borderBottom: '1px solid var(--border)',
                             }}
                           >
                             {h}
@@ -336,20 +335,20 @@ const OpsAdvisoryCentre = () => {
                     </thead>
                     <tbody>
                       {sops.map((sop, idx) => (
-                        <tr key={idx} style={{ transition: 'background 0.1s ease' }} className="hover:bg-[#060A12]">
-                          <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--ink-display, #EDF1F7)', fontWeight: 600, borderBottom: '1px solid rgba(140,170,210,0.06)', verticalAlign: 'top' }}>
+                        <tr key={idx} style={{ transition: 'background 0.1s ease' }} className="hover:bg-[var(--surface-sunken)]">
+                          <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--ink-display)', fontWeight: 600, borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'top' }}>
                             {sop.name}
                           </td>
-                          <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', borderBottom: '1px solid rgba(140,170,210,0.06)', verticalAlign: 'top' }}>
+                          <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--ink-secondary)', borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'top' }}>
                             {sop.domain}
                           </td>
-                          <td style={{ padding: '12px 16px', borderBottom: '1px solid rgba(140,170,210,0.06)', verticalAlign: 'top' }}>
+                          <td style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'top' }}>
                             <SopStatusBadge status={sop.status || 'active'} />
                           </td>
-                          <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)', borderBottom: '1px solid rgba(140,170,210,0.06)', verticalAlign: 'top' }}>
+                          <td style={{ padding: '12px 16px', fontSize: 14, color: 'var(--ink-secondary)', borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'top' }}>
                             {sop.updated || '—'}
                           </td>
-                          <td style={{ padding: '12px 16px', fontSize: 14, fontFamily: fontFamily.mono, color: 'var(--ink-secondary, #8FA0B8)', borderBottom: '1px solid rgba(140,170,210,0.06)', verticalAlign: 'top' }}>
+                          <td style={{ padding: '12px 16px', fontSize: 14, fontFamily: 'var(--font-mono)', color: 'var(--ink-secondary)', borderBottom: '1px solid var(--border-subtle)', verticalAlign: 'top' }}>
                             {sop.steps ?? '—'}
                           </td>
                         </tr>
@@ -362,10 +361,10 @@ const OpsAdvisoryCentre = () => {
 
             {/* ── AI RECOMMENDATIONS ─────────────────────────────── */}
             <Panel data-testid="ops-advisory-recommendations-panel">
-              <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', marginBottom: 16 }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--ink-display)', marginBottom: 16 }}>
                 {aiRecommendations.length > 0 ? 'AI Recommendations' : 'Recommendations'}
               </h2>
-              <p className="text-xs mb-4" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
+              <p className="text-xs mb-4" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
                 {data?.meta?.date ? `Generated for ${data.meta.date}` : 'Generated today'}
               </p>
 
@@ -390,19 +389,19 @@ const OpsAdvisoryCentre = () => {
                     <div
                       key={idx}
                       className="p-4 rounded-xl"
-                      style={{ background: 'var(--canvas-app)', border: '1px solid rgba(140,170,210,0.12)' }}
+                      style={{ background: 'var(--canvas-app)', border: '1px solid var(--border)' }}
                       data-testid={`ops-advisory-item-${idx}`}
                     >
-                      <div className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+                      <div className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
                         {item.title}
                       </div>
                       {item.reason && (
-                        <div className="text-sm mt-1 break-words" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        <div className="text-sm mt-1 break-words" style={{ color: 'var(--ink-secondary)' }}>
                           {item.reason}
                         </div>
                       )}
                       {item.actions?.length ? (
-                        <ul className="mt-3 list-disc pl-5 space-y-1 text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        <ul className="mt-3 list-disc pl-5 space-y-1 text-sm" style={{ color: 'var(--ink-secondary)' }}>
                           {item.actions.map((a, i) => (
                             <li key={i}>{a}</li>
                           ))}
@@ -411,28 +410,28 @@ const OpsAdvisoryCentre = () => {
 
                       {(item.why || item.citations?.length) ? (
                         <details className="mt-4" data-testid={`ops-advisory-item-details-${idx}`}>
-                          <summary className="text-sm cursor-pointer" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>Why this recommendation?</summary>
+                          <summary className="text-sm cursor-pointer" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>Why this recommendation?</summary>
                           <div className="pt-2">
                             {item.why ? (
-                              <div className="text-sm break-words" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                              <div className="text-sm break-words" style={{ color: 'var(--ink-secondary)' }}>
                                 {item.why}
                               </div>
                             ) : null}
 
                             {item.confidence ? (
-                              <div className="text-xs mt-2" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
+                              <div className="text-xs mt-2" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
                                 Confidence: {item.confidence}
                               </div>
                             ) : null}
 
                             {item.citations?.length ? (
                               <div className="mt-3">
-                                <div className="text-xs font-medium" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>Sources</div>
+                                <div className="text-xs font-medium" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Sources</div>
                                 <ul className="mt-2 space-y-2">
                                   {item.citations.map((c, i) => (
                                     <li key={i} className="text-sm">
-                                      <div style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
-                                        <span className="mr-2 text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>[{c.source_type}]</span>
+                                      <div style={{ color: 'var(--ink-secondary)' }}>
+                                        <span className="mr-2 text-xs" style={{ color: 'var(--ink-muted)' }}>[{c.source_type}]</span>
                                         {c.url ? (
                                           <a href={c.url} target="_blank" rel="noreferrer" className="underline">
                                             {c.title || c.url}
@@ -442,7 +441,7 @@ const OpsAdvisoryCentre = () => {
                                         )}
                                       </div>
                                       {c.snippet ? (
-                                        <div className="text-xs mt-1 break-words" style={{ color: 'var(--ink-muted, #708499)' }}>
+                                        <div className="text-xs mt-1 break-words" style={{ color: 'var(--ink-muted)' }}>
                                           {c.snippet}
                                         </div>
                                       ) : null}
@@ -462,12 +461,12 @@ const OpsAdvisoryCentre = () => {
 
             {/* ── USAGE + REFRESH ─────────────────────────────────── */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="text-sm" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }} data-testid="ops-advisory-usage-info">
+              <div className="text-sm" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }} data-testid="ops-advisory-usage-info">
                 Used {data?.usage?.used || 0} of {data?.usage?.limit || 0} recommendations this month.
               </div>
               <button
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold"
-                style={{ background: 'rgba(140,170,210,0.15)', color: 'var(--ink-display, #EDF1F7)', border: '1px solid rgba(140,170,210,0.12)' }}
+                style={{ background: 'var(--surface-sunken)', color: 'var(--ink-display)', border: '1px solid var(--border)' }}
                 onClick={fetchRecommendations}
                 data-testid="ops-advisory-refresh-button"
               >

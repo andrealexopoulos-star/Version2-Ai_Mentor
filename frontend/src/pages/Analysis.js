@@ -12,7 +12,7 @@ import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { Loader2, BarChart3, ArrowRight, Save, FileText } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { fontFamily } from '../design-system/tokens';
+// Design tokens now referenced via CSS custom properties
 import { toast } from 'sonner';
 
 
@@ -79,8 +79,8 @@ const Analysis = () => {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Analysis Suite</h1>
-            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <h1 className="font-medium mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 28, letterSpacing: 'var(--ls-display)', lineHeight: 1.05 }}>Analysis Suite</h1>
+            <p className="text-sm" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>
               Get AI-powered insights and recommendations for your business
             </p>
           </div>

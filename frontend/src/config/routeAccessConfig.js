@@ -25,6 +25,7 @@ const ROUTE_ACCESS_MAP = {
   '/subscribe':             { minTier: 'free', launchType: 'free' },
   '/upgrade':               { minTier: 'free', launchType: 'free' },
   '/more-features':         { minTier: 'free', launchType: 'free' },
+  '/cmo-report':            { minTier: 'free', launchType: 'free' },
 
   // ── Growth tier ($69 AUD/mo) — foundation access ─────────────
   '/revenue':               { minTier: 'starter', featureKey: 'revenue',                launchType: 'foundation' },

@@ -93,8 +93,8 @@ const PIPELINE = [
   { num: 4, icon: '\uD83C\uDFAF', title: 'Act', desc: 'Receive prioritised recommendations with clear next steps. Every insight is tied to a specific action.' },
 ];
 
-const cardBg = 'linear-gradient(105deg, rgba(200,220,240,0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0) 55%), linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)';
-const cardBorder = '1px solid rgba(140,170,210,0.15)';
+const cardBg = 'var(--surface)';
+const cardBorder = '1px solid var(--border)';
 
 export default function IntelligencePage() {
   return (
@@ -104,30 +104,30 @@ export default function IntelligencePage() {
         style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }}>
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-[48px] font-bold leading-[1.15] tracking-tight mb-4"
-            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+            style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
             A brain that thinks like an operator, not a dashboard.
           </h1>
           <p className="text-lg max-w-[560px] mx-auto leading-relaxed mb-8"
-            style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            style={{ color: 'var(--ink-secondary)' }}>
             BIQc uses multi-model AI &mdash; GPT, Claude, and Gemini &mdash; to understand your business context, detect what matters, and tell you what to do next.
           </p>
           <Link to="/platform"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg text-base font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: 'var(--lava, #E85D00)', boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }}>
+            className="inline-flex items-center gap-2 px-8 py-3.5 text-base font-semibold text-white transition-all hover:brightness-110"
+            style={{ background: 'var(--lava)', borderRadius: 'var(--r-md)', boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }}>
             See It In Action <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
 
       {/* How the AI Works */}
-      <section className="py-20 px-6" style={{ background: 'var(--bg-primary, #080C14)' }}>
+      <section className="py-20 px-6" style={{ background: 'var(--canvas)' }}>
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
               How the AI works
             </h2>
-            <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <p className="text-[15px]" style={{ color: 'var(--ink-secondary)' }}>
               Three steps from raw data to actionable intelligence.
             </p>
           </div>
@@ -143,16 +143,16 @@ export default function IntelligencePage() {
                   }}>
                   {step.num}
                 </div>
-                <h3 className="text-lg font-semibold mb-2.5" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+                <h3 className="text-lg font-semibold mb-2.5" style={{ color: 'var(--ink-display)' }}>
                   {step.title}
                 </h3>
-                <p className="text-[15px] leading-relaxed mb-5" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                <p className="text-[15px] leading-relaxed mb-5" style={{ color: 'var(--ink-secondary)' }}>
                   {step.desc}
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {step.badges.map((b) => (
                     <span key={b} className="px-3 py-1 rounded-full text-xs font-medium"
-                      style={{ background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary, #8FA0B8)' }}>
+                      style={{ background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary)' }}>
                       {b}
                     </span>
                   ))}
@@ -176,18 +176,18 @@ export default function IntelligencePage() {
       </section>
 
       {/* Watchtower */}
-      <section className="py-20 px-6" style={{ background: 'var(--bg-secondary, #0B1120)' }}>
+      <section className="py-20 px-6" style={{ background: 'var(--canvas-app)' }}>
         <div className="max-w-[1120px] mx-auto">
           {/* 2-column header: title left, description right */}
           <div className="grid md:grid-cols-2 gap-10 items-center mb-8">
             <div>
               <h2 className="text-[32px] font-semibold tracking-tight"
-                style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: '-0.5px' }}>
+                style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)', letterSpacing: 'var(--ls-display)' }}>
                 24/7 Autonomous Monitoring
               </h2>
             </div>
             <div>
-              <p className="text-base leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.7 }}>
+              <p className="text-base leading-relaxed" style={{ color: 'var(--ink-secondary)', lineHeight: 1.7 }}>
                 Watchtower monitors all your connected systems around the clock. It detects anomalies, flags emerging risks, and surfaces opportunities &mdash; before you even know to look.
               </p>
             </div>
@@ -204,10 +204,10 @@ export default function IntelligencePage() {
                   }}>
                   {card.icon}
                 </div>
-                <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+                <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--ink-display)' }}>
                   {card.title}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.7 }}>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', lineHeight: 1.7 }}>
                   {card.desc}
                 </p>
               </div>
@@ -217,14 +217,14 @@ export default function IntelligencePage() {
       </section>
 
       {/* Board Room vs War Room */}
-      <section className="py-20 px-6" style={{ background: 'var(--bg-primary, #080C14)' }}>
+      <section className="py-20 px-6" style={{ background: 'var(--canvas)' }}>
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-[28px] font-bold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', 'Cormorant Garamond', Georgia, serif" }}>
+              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
               Board Room vs War Room
             </h2>
-            <p className="text-[15px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <p className="text-[15px]" style={{ color: 'var(--ink-secondary)' }}>
               Two intelligence modes for different moments. One for strategy, one for crisis.
             </p>
           </div>
@@ -233,7 +233,7 @@ export default function IntelligencePage() {
               <div key={mode.name} className="rounded-xl p-8"
                 style={{
                   background: cardBg,
-                  border: mode.highlighted ? '2px solid var(--lava, #E85D00)' : cardBorder,
+                  border: mode.highlighted ? '2px solid var(--lava)' : cardBorder,
                   boxShadow: mode.highlighted ? '0 4px 16px rgba(232,93,0,0.08)' : 'none',
                 }}>
                 <div className="mb-5">
@@ -247,20 +247,20 @@ export default function IntelligencePage() {
                   </span>
                 </div>
                 <h3 className="text-2xl font-semibold mb-1.5"
-                  style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                  style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
                   {mode.name}
                 </h3>
-                <div className="text-[28px] font-bold mb-1" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+                <div className="text-[28px] font-bold mb-1" style={{ color: 'var(--ink-display)' }}>
                   {mode.price}<span className="text-[15px] font-normal ml-1" style={{ color: '#5C6E82' }}>/month</span>
                 </div>
-                <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>
+                <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
                   {mode.tagline}
                 </p>
                 <ul className="space-y-0">
                   {mode.features.map((f) => (
                     <li key={f} className="relative text-sm pl-6 py-2"
                       style={{
-                        color: 'var(--ink-body, #C8D4E4)',
+                        color: 'var(--ink)',
                         borderBottom: '1px solid rgba(140,170,210,0.06)',
                         lineHeight: 1.6,
                       }}>
@@ -280,14 +280,14 @@ export default function IntelligencePage() {
       </section>
 
       {/* Intelligence Pipeline */}
-      <section className="py-20 px-6" style={{ background: 'var(--bg-primary, #080C14)' }}>
+      <section className="py-20 px-6" style={{ background: 'var(--canvas)' }}>
         <div className="max-w-[1120px] mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-[32px] font-semibold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: '-0.5px' }}>
+              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)', letterSpacing: 'var(--ls-display)' }}>
               The Intelligence Pipeline
             </h2>
-            <p className="text-base" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <p className="text-base" style={{ color: 'var(--ink-secondary)' }}>
               From raw data to decisive action in four steps.
             </p>
           </div>
@@ -310,10 +310,10 @@ export default function IntelligencePage() {
                     style={{ color: '#5C6E82', letterSpacing: '0.5px' }}>
                     Step {step.num}
                   </div>
-                  <h4 className="text-base font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+                  <h4 className="text-base font-semibold mb-2" style={{ color: 'var(--ink-display)' }}>
                     {step.title}
                   </h4>
-                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.6 }}>
+                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--ink-secondary)', lineHeight: 1.6 }}>
                     {step.desc}
                   </p>
                   {/* Pipeline connector arrow */}
@@ -335,7 +335,7 @@ export default function IntelligencePage() {
       </section>
 
       {/* CTA */}
-      <section className="pb-24 px-6 text-center" style={{ background: 'var(--bg-primary, #080C14)' }}>
+      <section className="pb-24 px-6 text-center" style={{ background: 'var(--canvas)' }}>
         <div className="max-w-[1120px] mx-auto">
           <div className="rounded-2xl py-14 px-10"
             style={{
@@ -344,15 +344,15 @@ export default function IntelligencePage() {
               boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
             }}>
             <h2 className="text-[28px] font-semibold tracking-tight mb-3"
-              style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: "'Source Serif 4', Georgia, serif" }}>
+              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
               Ready to think faster?
             </h2>
-            <p className="text-base mb-7" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <p className="text-base mb-7" style={{ color: 'var(--ink-secondary)' }}>
               Start free and get your first intelligence briefing in under 10 minutes.
             </p>
             <Link to="/register-supabase"
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-lg text-[15px] font-semibold text-white transition-all hover:brightness-110"
-              style={{ background: 'var(--lava, #E85D00)', boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }}>
+              className="inline-flex items-center gap-2 px-7 py-3 text-[15px] font-semibold text-white transition-all hover:brightness-110"
+              style={{ background: 'var(--lava)', borderRadius: 'var(--r-md)', boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }}>
               Start Free <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

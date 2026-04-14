@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { apiClient } from '../lib/api';
 import { AlertCircle, Plug, Activity, Radio } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { fontFamily } from '../design-system/tokens';
 
 const POSITION_COLORS = {
   STABLE: 'text-emerald-400', ELEVATED: 'text-amber-400',
@@ -33,24 +32,24 @@ const Panel = ({ title, children, empty }) => (
 
 // ── Status Card ──────────────────────────────────────────────────────────────
 const StatusCard = ({ label, value, valueColor, sub }) => (
-  <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card, rgba(255,255,255,0.02))', border: '1px solid var(--biqc-border, rgba(255,255,255,0.06))' }}>
-    <div className="text-[10px] uppercase tracking-[0.1em] font-semibold mb-1" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>{label}</div>
-    <div className="text-[28px] font-bold leading-none" style={{ color: valueColor || 'var(--ink-display)', fontFamily: fontFamily.mono }}>{value}</div>
-    {sub && <div className="text-xs mt-1" style={{ color: 'var(--ink-muted, #708499)' }}>{sub}</div>}
+  <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+    <div className="text-[10px] uppercase tracking-[0.1em] font-semibold mb-1" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{label}</div>
+    <div className="text-[28px] font-bold leading-none" style={{ color: valueColor || 'var(--ink-display)', fontFamily: 'var(--font-mono)' }}>{value}</div>
+    {sub && <div className="text-xs mt-1" style={{ color: 'var(--ink-muted)' }}>{sub}</div>}
   </div>
 );
 
 // ── Health Bar ───────────────────────────────────────────────────────────────
 const HealthItem = ({ name, indicatorOk, barPct, barColor, metaLeft, metaRight }) => (
-  <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card, rgba(255,255,255,0.02))', border: '1px solid var(--biqc-border, rgba(255,255,255,0.06))' }}>
+  <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
     <div className="flex items-center justify-between mb-2">
-      <span className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{name}</span>
-      <span className="w-2.5 h-2.5 rounded-full" style={{ background: indicatorOk ? '#16A34A' : '#DC2626' }} />
+      <span className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{name}</span>
+      <span className="w-2.5 h-2.5 rounded-full" style={{ background: indicatorOk ? 'var(--positive)' : 'var(--danger)' }} />
     </div>
-    <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background: 'rgba(255,255,255,0.06)' }}>
-      <div className="h-full rounded-full transition-all" style={{ width: `${barPct}%`, background: barColor || '#16A34A' }} />
+    <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background: 'var(--surface-sunken)' }}>
+      <div className="h-full rounded-full transition-all" style={{ width: `${barPct}%`, background: barColor || 'var(--positive)' }} />
     </div>
-    <div className="flex justify-between text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>
+    <div className="flex justify-between text-xs" style={{ color: 'var(--ink-muted)' }}>
       <span>{metaLeft}</span>
       <span>{metaRight}</span>
     </div>
@@ -59,8 +58,8 @@ const HealthItem = ({ name, indicatorOk, barPct, barColor, metaLeft, metaRight }
 
 // ── Empty State Card ────────────────────────────────────────────────────────
 const EmptyState = ({ message }) => (
-  <div className="rounded-xl p-6 text-center" style={{ background: 'var(--biqc-bg-card, rgba(255,255,255,0.02))', border: '1px solid var(--biqc-border, rgba(255,255,255,0.06))' }}>
-    <p className="text-sm" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>{message}</p>
+  <div className="rounded-xl p-6 text-center" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+    <p className="text-sm" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>{message}</p>
   </div>
 );
 
@@ -110,7 +109,7 @@ const OperatorDashboard = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64 -mx-4 -my-4 md:-mx-6 md:-my-6" style={{ background: '#050505', minHeight: 'calc(100vh - 80px)' }}>
+        <div className="flex items-center justify-center h-64 -mx-4 -my-4 md:-mx-6 md:-my-6" style={{ background: 'var(--canvas-app)', minHeight: 'calc(100vh - 80px)' }}>
           <CognitiveMesh compact />
         </div>
       </DashboardLayout>
@@ -144,15 +143,15 @@ const OperatorDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div data-testid="operator-dashboard" className="min-h-[calc(100vh-80px)] text-white/80 -mx-4 -my-4 md:-mx-6 md:-my-6 px-6 py-10" style={{ background: '#050505' }}>
+      <div data-testid="operator-dashboard" className="min-h-[calc(100vh-80px)] text-white/80 -mx-4 -my-4 md:-mx-6 md:-my-6 px-6 py-10" style={{ background: 'var(--canvas-app)' }}>
         <div className="max-w-4xl mx-auto px-6 py-10 space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Operator Dashboard</h1>
-              <p className="text-xs mt-1" style={{ color: 'var(--ink-muted, #708499)' }}>Read-only intelligence state</p>
+              <h1 className="font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 28, letterSpacing: 'var(--ls-display)', lineHeight: 1.15 }}>Operator Dashboard</h1>
+              <p className="text-xs mt-1" style={{ color: 'var(--ink-muted)' }}>Read-only intelligence state</p>
             </div>
-            <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--ink-muted, #708499)' }}>
-              <span className="w-2 h-2 rounded-full" style={{ background: '#16A34A', animation: 'pulse 2s ease-in-out infinite' }} />
+            <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--ink-muted)' }}>
+              <span className="w-2 h-2 rounded-full" style={{ background: 'var(--positive)', animation: 'pulse 2s ease-in-out infinite' }} />
               All systems operational
             </div>
           </div>
@@ -161,26 +160,26 @@ const OperatorDashboard = () => {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatusCard label="Positions Tracked" value={posEntries.length > 0 ? String(posEntries.length) : '\u2014'} sub={posEntries.length > 0 ? 'Active domain positions' : 'No positions yet'} />
             <StatusCard label="Active Findings" value={escalations.length > 0 ? String(escalations.length) : '\u2014'} sub={escalations.length > 0 ? 'Open escalations' : 'No findings yet'} />
-            <StatusCard label="Data Sources Ready" value={dataReadiness?.integrations?.length > 0 ? String(dataReadiness.integrations.length) : '\u2014'} valueColor={dataReadiness?.integrations?.length > 0 ? '#16A34A' : undefined} sub={dataReadiness?.integrations?.length > 0 ? 'Connected integrations' : 'No integrations connected'} />
+            <StatusCard label="Data Sources Ready" value={dataReadiness?.integrations?.length > 0 ? String(dataReadiness.integrations.length) : '\u2014'} valueColor={dataReadiness?.integrations?.length > 0 ? 'var(--positive)' : undefined} sub={dataReadiness?.integrations?.length > 0 ? 'Connected integrations' : 'No integrations connected'} />
             <StatusCard label="Lifecycle State" value={lifecycle?.stage || '\u2014'} sub={lifecycle?.stage ? 'Current platform stage' : 'State unavailable'} />
           </div>
 
           {/* ═══ Automation Pipeline ═══ */}
           <div>
-            <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Automation Pipeline</h2>
+            <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Automation Pipeline</h2>
             <EmptyState message="No automation jobs configured. Automation pipelines will appear here when active." />
           </div>
 
           {/* ═══ Recent Runs Table ═══ */}
           <div>
-            <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Recent Runs</h2>
-            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--biqc-bg-card, rgba(255,255,255,0.02))', border: '1px solid var(--biqc-border, rgba(255,255,255,0.06))' }}>
+            <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>Recent Runs</h2>
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
                     {['Job', 'Started', 'Duration', 'Records', 'Result'].map(h => (
                       <th key={h} className="text-left px-4 py-2.5"
-                        style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono, background: 'rgba(30,45,61,0.3)' }}>
+                        style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', background: 'var(--surface-sunken)' }}>
                         {h}
                       </th>
                     ))}
@@ -188,7 +187,7 @@ const OperatorDashboard = () => {
                 </thead>
                 <tbody>
                   <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-sm" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
+                    <td colSpan={5} className="px-4 py-6 text-center text-sm" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
                       No recent runs to display.
                     </td>
                   </tr>
@@ -200,13 +199,13 @@ const OperatorDashboard = () => {
           {/* ═══ System Health ═══ */}
           <div>
             <div className="mb-4">
-              <h2 className="text-lg font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>System Health</h2>
-              <p className="text-xs mt-1" style={{ color: 'var(--ink-muted, #708499)' }}>Connect monitoring to see live health data.</p>
+              <h2 className="text-lg font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>System Health</h2>
+              <p className="text-xs mt-1" style={{ color: 'var(--ink-muted)' }}>Connect monitoring to see live health data.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <HealthItem name="API Backend" indicatorOk={false} barPct={0} barColor="#475569" metaLeft="CPU: \u2014" metaRight="Memory: \u2014" />
-              <HealthItem name="Supabase Database" indicatorOk={false} barPct={0} barColor="#475569" metaLeft="Connections: \u2014" metaRight="Storage: \u2014" />
-              <HealthItem name="Edge Functions" indicatorOk={false} barPct={0} barColor="#475569" metaLeft="Health: \u2014" metaRight="Latency: \u2014" />
+              <HealthItem name="API Backend" indicatorOk={false} barPct={0} barColor="var(--ink-subtle)" metaLeft="CPU: \u2014" metaRight="Memory: \u2014" />
+              <HealthItem name="Supabase Database" indicatorOk={false} barPct={0} barColor="var(--ink-subtle)" metaLeft="Connections: \u2014" metaRight="Storage: \u2014" />
+              <HealthItem name="Edge Functions" indicatorOk={false} barPct={0} barColor="var(--ink-subtle)" metaLeft="Health: \u2014" metaRight="Latency: \u2014" />
             </div>
           </div>
 

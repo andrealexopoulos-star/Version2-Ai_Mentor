@@ -11,7 +11,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
-import { fontFamily } from '../../design-system/tokens';
+/* design tokens consumed via CSS custom properties — see liquid-steel-tokens.css */
 import { Shield, Zap, Users, Eye, ArrowRight, Lock, Heart, Layers, Smile, MinusCircle } from 'lucide-react';
 
 /* ═══ PALETTE CONSTANTS ═══ */
@@ -24,7 +24,7 @@ const C = {
   textH:        '#EDF1F7',
   textB:        '#8FA0B8',
   textM:        '#5C6E82',
-  steel100:     'var(--ink, #C8D4E4)',
+  steel100:     'var(--ink)',
   steel300:     '#6E8AAE',
   brand:        '#FF7A18',
   brandDark:    '#E85D00',
@@ -74,10 +74,10 @@ const SectionTag = ({ children }) => (
     fontSize: 12,
     fontWeight: 600,
     textTransform: 'uppercase',
-    letterSpacing: '1.5px',
+    letterSpacing: 'var(--ls-caps)',
     color: C.brand,
     marginBottom: 16,
-    fontFamily: fontFamily.mono,
+    fontFamily: 'var(--font-mono)',
   }}>
     <span style={{
       display: 'block',
@@ -99,9 +99,10 @@ const MissionCard = ({ icon, title, description, stagger = '0s' }) => (
       opacity: 0,
       transform: 'translateY(32px)',
       transition: 'opacity 0.7s ease, transform 0.7s ease',
-      background: `${C.chromeGlint}, ${C.bgCard}`,
-      border: `1px solid ${C.steelBorder}`,
-      borderRadius: 16,
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      boxShadow: 'var(--elev-1)',
       padding: '32px 28px',
     }}
     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; }}
@@ -121,8 +122,8 @@ const MissionCard = ({ icon, title, description, stagger = '0s' }) => (
     }}>
       {icon}
     </div>
-    <h3 style={{ fontFamily: fontFamily.display, fontSize: 20, fontWeight: 600, color: C.textH, marginBottom: 12 }}>{title}</h3>
-    <p style={{ fontSize: 14, lineHeight: 1.7, color: C.textB, fontFamily: fontFamily.body }}>{description}</p>
+    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: C.textH, marginBottom: 12 }}>{title}</h3>
+    <p style={{ fontSize: 14, lineHeight: 1.7, color: C.textB, fontFamily: 'var(--font-ui)' }}>{description}</p>
   </div>
 );
 
@@ -135,9 +136,10 @@ const ValueCard = ({ icon, title, description, stagger = '0s' }) => (
       opacity: 0,
       transform: 'translateY(32px)',
       transition: 'opacity 0.7s ease, transform 0.7s ease',
-      background: `${C.chromeGlint}, ${C.bgCard}`,
-      border: `1px solid ${C.steelBorder}`,
-      borderRadius: 16,
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      boxShadow: 'var(--elev-1)',
       padding: '32px 28px',
     }}
     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; }}
@@ -157,8 +159,8 @@ const ValueCard = ({ icon, title, description, stagger = '0s' }) => (
     }}>
       {icon}
     </div>
-    <h3 style={{ fontFamily: fontFamily.display, fontSize: 20, fontWeight: 600, color: C.textH, marginBottom: 10 }}>{title}</h3>
-    <p style={{ fontSize: 14, lineHeight: 1.7, color: C.textB, fontFamily: fontFamily.body }}>{description}</p>
+    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: C.textH, marginBottom: 10 }}>{title}</h3>
+    <p style={{ fontSize: 14, lineHeight: 1.7, color: C.textB, fontFamily: 'var(--font-ui)' }}>{description}</p>
   </div>
 );
 
@@ -219,12 +221,12 @@ export default function AboutPage() {
 
           <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 760, margin: '0 auto', padding: '0 24px', width: '100%' }}>
             <h1 style={{
-              fontFamily: fontFamily.display,
+              fontFamily: 'var(--font-display)',
               fontSize: 'clamp(30px, 5vw, 52px)',
               fontWeight: 700,
               lineHeight: 1.12,
               color: C.textH,
-              letterSpacing: '-1.5px',
+              letterSpacing: 'var(--ls-display)',
               marginBottom: 24,
               opacity: 0,
               transform: 'translateY(24px)',
@@ -233,7 +235,7 @@ export default function AboutPage() {
               The Story Behind BIQc
             </h1>
             <p style={{
-              fontFamily: fontFamily.body,
+              fontFamily: 'var(--font-ui)',
               fontSize: 'clamp(16px, 2vw, 18px)',
               lineHeight: 1.7,
               color: C.textB,
@@ -256,7 +258,7 @@ export default function AboutPage() {
           <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
             <div className="reveal" style={{ textAlign: 'center', marginBottom: 40, opacity: 0, transform: 'translateY(32px)', transition: 'opacity .7s ease, transform .7s ease' }}>
               <SectionTag>Our Origin</SectionTag>
-              <h2 style={{ fontFamily: fontFamily.display, fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 700, color: C.textH, letterSpacing: '-1px', lineHeight: 1.2 }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 700, color: C.textH, letterSpacing: 'var(--ls-display)', lineHeight: 1.2 }}>
                 Born from the Trenches
               </h2>
             </div>
@@ -269,7 +271,7 @@ export default function AboutPage() {
                 'That question became an obsession. The result is BIQc \u2014 a platform that connects your existing tools, understands your competitive landscape, and gives you the strategic clarity that used to require a boardroom full of consultants.',
               ].map((text, i) => (
                 <p key={i} style={{
-                  fontFamily: fontFamily.body,
+                  fontFamily: 'var(--font-ui)',
                   fontSize: 'clamp(15px, 1.5vw, 16px)',
                   lineHeight: 1.8,
                   color: C.steel100,
@@ -293,7 +295,7 @@ export default function AboutPage() {
           <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
             <div className="reveal" style={{ textAlign: 'center', marginBottom: 8, opacity: 0, transform: 'translateY(32px)', transition: 'opacity .7s ease, transform .7s ease' }}>
               <SectionTag>Why We Exist</SectionTag>
-              <h2 style={{ fontFamily: fontFamily.display, fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 700, color: C.textH, letterSpacing: '-1px', lineHeight: 1.2 }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 700, color: C.textH, letterSpacing: 'var(--ls-display)', lineHeight: 1.2 }}>
                 Our Mission
               </h2>
             </div>
@@ -301,7 +303,7 @@ export default function AboutPage() {
             <p className="reveal" style={{
               maxWidth: 720,
               margin: '0 auto 48px',
-              fontFamily: fontFamily.body,
+              fontFamily: 'var(--font-ui)',
               fontSize: 'clamp(16px, 1.8vw, 18px)',
               lineHeight: 1.8,
               color: C.steel100,
@@ -345,7 +347,7 @@ export default function AboutPage() {
           <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
             <div className="reveal" style={{ textAlign: 'center', marginBottom: 40, opacity: 0, transform: 'translateY(32px)', transition: 'opacity .7s ease, transform .7s ease' }}>
               <SectionTag>Our Principles</SectionTag>
-              <h2 style={{ fontFamily: fontFamily.display, fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 700, color: C.textH, letterSpacing: '-1px', lineHeight: 1.2 }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 700, color: C.textH, letterSpacing: 'var(--ls-display)', lineHeight: 1.2 }}>
                 What We Stand For
               </h2>
             </div>
@@ -403,17 +405,17 @@ export default function AboutPage() {
 
           <div className="reveal" style={{ position: 'relative', zIndex: 1, maxWidth: 1120, margin: '0 auto', padding: '0 24px', opacity: 0, transform: 'translateY(32px)', transition: 'opacity .7s ease, transform .7s ease' }}>
             <h2 style={{
-              fontFamily: fontFamily.display,
+              fontFamily: 'var(--font-display)',
               fontSize: 'clamp(28px, 4vw, 40px)',
               fontWeight: 700,
               color: C.textH,
               marginBottom: 16,
-              letterSpacing: '-1px',
+              letterSpacing: 'var(--ls-display)',
             }}>
               Ready to See Your Business Clearly?
             </h2>
             <p style={{
-              fontFamily: fontFamily.body,
+              fontFamily: 'var(--font-ui)',
               fontSize: 'clamp(15px, 1.6vw, 17px)',
               color: C.textB,
               maxWidth: 560,
@@ -432,11 +434,11 @@ export default function AboutPage() {
                   padding: '14px 32px',
                   fontSize: 16,
                   fontWeight: 600,
-                  fontFamily: fontFamily.body,
+                  fontFamily: 'var(--font-ui)',
                   color: '#FFFFFF',
-                  background: 'linear-gradient(135deg, #FF7A18, #E85D00)',
+                  background: 'var(--lava)',
                   border: 'none',
-                  borderRadius: 10,
+                  borderRadius: 'var(--r-md)',
                   textDecoration: 'none',
                   transition: 'transform 0.2s, box-shadow 0.3s',
                 }}
@@ -454,11 +456,11 @@ export default function AboutPage() {
                   padding: '12px 28px',
                   fontSize: 15,
                   fontWeight: 500,
-                  fontFamily: fontFamily.body,
+                  fontFamily: 'var(--font-ui)',
                   color: '#9BB0CC',
                   background: 'transparent',
-                  border: `1px solid ${C.steelBorder}`,
-                  borderRadius: 10,
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--r-md)',
                   textDecoration: 'none',
                   transition: 'color 0.2s, border-color 0.2s, background 0.2s',
                 }}

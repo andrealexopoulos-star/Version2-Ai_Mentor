@@ -556,13 +556,13 @@ const Advisor = () => {
         {/* ── Greeting Header ── */}
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)', letterSpacing: 'var(--ls-caps)' }}>
               — {dateStr} · {timeStr}
             </div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(2rem, 4vw, 2.8rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-              {greeting}, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>{firstName}</em>.
+            <h1 className="font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(2rem, 4vw, 2.8rem)', letterSpacing: 'var(--ls-display)', lineHeight: 'var(--lh-display)' }}>
+              {greeting}, <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>{firstName}</em>.
             </h1>
-            <p className="mt-2 text-base" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <p className="mt-2 text-base" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>
               {narrativeState.loading
                 ? 'Reading the signals...'
                 : narrativeState.text || "Your business intelligence is warming up."
@@ -573,14 +573,14 @@ const Advisor = () => {
             <button
               onClick={handleRefresh}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body, cursor: 'pointer' }}
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', cursor: 'pointer' }}
             >
               <RefreshCw className="w-4 h-4" /> Refresh
             </button>
             <button
               onClick={() => navigate('/alerts')}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style={{ background: '#E85D00', color: 'white', fontFamily: fontFamily.body, border: 'none', cursor: 'pointer' }}
+              style={{ background: 'var(--lava)', color: 'white', fontFamily: 'var(--font-ui)', border: 'none', cursor: 'pointer' }}
             >
               Open Alert Centre <ArrowRight className="w-4 h-4" />
             </button>
@@ -594,28 +594,28 @@ const Advisor = () => {
             const runway = snapshotData?.cognitive?.capital?.runway;
             const highPriorityThreads = executiveSurface?.snapshot?.high_priority_threads;
             const kpis = [
-              { label: 'Open signals', value: watchtowerEvents.length || '\u2014', hasData: true, color: '#E85D00', showDot: true },
-              { label: 'Pipeline at risk', value: pipeline != null ? `$${Number(pipeline).toLocaleString()}` : '\u2014', hasData: pipeline != null, color: '#DC2626', showDot: false, noDataHint: 'Connect CRM' },
-              { label: 'Cash runway', value: runway != null ? String(runway) : '\u2014', valueSuffix: runway != null ? 'mo' : '', hasData: runway != null, color: '#10B981', showDot: false, noDataHint: 'Connect accounting' },
-              { label: 'Inbox decisions', value: highPriorityThreads != null ? String(highPriorityThreads) : emailStats.highPriority > 0 ? String(emailStats.highPriority) : '\u2014', hasData: highPriorityThreads != null || emailStats.highPriority > 0, color: '#10B981', showDot: false, noDataHint: 'Connect inbox' },
+              { label: 'Open signals', value: watchtowerEvents.length || '\u2014', hasData: true, color: 'var(--lava)', showDot: true },
+              { label: 'Pipeline at risk', value: pipeline != null ? `$${Number(pipeline).toLocaleString()}` : '\u2014', hasData: pipeline != null, color: 'var(--danger)', showDot: false, noDataHint: 'Connect CRM' },
+              { label: 'Cash runway', value: runway != null ? String(runway) : '\u2014', valueSuffix: runway != null ? 'mo' : '', hasData: runway != null, color: 'var(--positive)', showDot: false, noDataHint: 'Connect accounting' },
+              { label: 'Inbox decisions', value: highPriorityThreads != null ? String(highPriorityThreads) : emailStats.highPriority > 0 ? String(emailStats.highPriority) : '\u2014', hasData: highPriorityThreads != null || emailStats.highPriority > 0, color: 'var(--positive)', showDot: false, noDataHint: 'Connect inbox' },
             ];
             return kpis.map((kpi, i) => (
-              <div key={i} className="p-5 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
+              <div key={i} className="p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', boxShadow: 'var(--elev-1)' }}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{kpi.label}</span>
+                    <span className="text-[10px] font-medium uppercase" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}>{kpi.label}</span>
                     {kpi.showDot && <span className="w-2 h-2 rounded-full" style={{ background: kpi.color, boxShadow: `0 0 8px ${kpi.color}` }} />}
                   </div>
                 </div>
-                <div className="text-3xl font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>
+                <div className="text-3xl font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', lineHeight: 1 }}>
                   {advisorLoading ? (
-                    <span className="inline-block w-16 h-8 rounded animate-pulse" style={{ background: 'var(--surface-2, #121D30)' }} />
+                    <span className="inline-block w-16 h-8 rounded animate-pulse" style={{ background: 'var(--surface-2)' }} />
                   ) : (
-                    <>{kpi.value}{kpi.valueSuffix && <span style={{ fontSize: '0.5em', color: 'var(--ink-secondary, #8FA0B8)' }}>{kpi.valueSuffix}</span>}</>
+                    <>{kpi.value}{kpi.valueSuffix && <span style={{ fontSize: '0.5em', color: 'var(--ink-secondary)' }}>{kpi.valueSuffix}</span>}</>
                   )}
                 </div>
                 {!advisorLoading && !kpi.hasData && kpi.noDataHint && (
-                  <div className="text-[11px] mt-2.5" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{kpi.noDataHint}</div>
+                  <div className="text-[11px] mt-2.5" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)' }}>{kpi.noDataHint}</div>
                 )}
               </div>
             ));
@@ -623,27 +623,30 @@ const Advisor = () => {
         </div>
 
         {/* ── 2-Column Grid ── */}
-        <style>{`.advisor-grid { display: grid; grid-template-columns: 1fr; gap: 24px; } @media (min-width: 1180px) { .advisor-grid { grid-template-columns: 2fr 1fr; } }`}</style>
+        <style>{`.advisor-grid { display: grid; grid-template-columns: 1fr; gap: var(--sp-6, 24px); margin-top: var(--sp-8, 32px); } @media (min-width: 1180px) { .advisor-grid { grid-template-columns: 2fr 1fr; } }`}</style>
         <div className="advisor-grid">
 
           {/* LEFT: Signal Feed */}
-          <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
-            <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
+          <div className="overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', boxShadow: 'var(--elev-1)' }}>
+            <div className="flex items-center justify-between" style={{ padding: 'var(--sp-5) var(--sp-6)', borderBottom: '1px solid var(--border)' }}>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>— Live signal feed</div>
-                <h3 className="text-2xl font-medium mt-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>What changed overnight</h3>
+                <div className="text-[10px] uppercase" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}>— Live signal feed</div>
+                <h3 className="text-2xl font-medium mt-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', letterSpacing: 'var(--ls-heading)' }}>What changed overnight</h3>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 {filters.map((f) => (
                   <button
                     key={f}
                     onClick={() => setSignalFilter(f.toLowerCase())}
-                    className="px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[0.08em] transition-all"
+                    className="text-[10px] uppercase transition-all"
                     style={{
-                      fontFamily: fontFamily.mono,
-                      background: signalFilter === f.toLowerCase() ? '#E85D00' : 'var(--surface-2, #121D30)',
+                      fontFamily: 'var(--font-mono)',
+                      padding: '5px 10px',
+                      borderRadius: 'var(--r-pill)',
+                      letterSpacing: 'var(--ls-caps)',
+                      background: signalFilter === f.toLowerCase() ? 'var(--lava)' : 'var(--surface-sunken)',
                       color: signalFilter === f.toLowerCase() ? 'white' : 'var(--ink-secondary)',
-                      border: `1px solid ${signalFilter === f.toLowerCase() ? '#E85D00' : 'rgba(140,170,210,0.12)'}`,
+                      border: `1px solid ${signalFilter === f.toLowerCase() ? 'var(--lava)' : 'var(--border)'}`,
                       cursor: 'pointer',
                     }}
                   >
@@ -656,34 +659,38 @@ const Advisor = () => {
             {/* Signal rows from watchtower events */}
             <div className="flex flex-col">
               {watchtowerEvents.length > 0 ? watchtowerEvents.slice(0, 6).map((evt, i) => (
-                <div key={evt.id || i} className="grid gap-4 p-5 cursor-pointer transition-colors hover:bg-[var(--surface-2)]" style={{ gridTemplateColumns: '44px 1fr auto', borderBottom: i < Math.min(watchtowerEvents.length, 6) - 1 ? '1px solid rgba(140,170,210,0.12)' : 'none', alignItems: 'flex-start' }}>
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{
-                    background: evt.severity === 'critical' ? 'var(--danger-wash, rgba(239,68,68,0.10))' : evt.severity === 'high' ? 'var(--lava-wash, rgba(232,93,0,0.12))' : evt.severity === 'warn' || evt.severity === 'warning' ? 'var(--warning-wash, rgba(245,158,11,0.10))' : 'var(--info-wash, rgba(59,130,246,0.10))',
-                    color: evt.severity === 'critical' ? 'var(--danger, #DC2626)' : evt.severity === 'high' ? 'var(--lava, #E85D00)' : evt.severity === 'warn' || evt.severity === 'warning' ? 'var(--warning, #D97706)' : 'var(--info, #2563EB)'
+                <div key={evt.id || i} className="grid cursor-pointer transition-colors" style={{ gridTemplateColumns: '44px 1fr auto', gap: 'var(--sp-4)', padding: 'var(--sp-5) var(--sp-6)', borderBottom: i < Math.min(watchtowerEvents.length, 6) - 1 ? '1px solid var(--border)' : 'none', alignItems: 'flex-start' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-tint)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div className="flex items-center justify-center shrink-0" style={{
+                    width: 40, height: 40, borderRadius: 'var(--r-md)',
+                    background: evt.severity === 'critical' ? 'var(--danger-wash)' : evt.severity === 'high' ? 'var(--lava-wash)' : evt.severity === 'warn' || evt.severity === 'warning' ? 'var(--warning-wash)' : 'var(--info-wash)',
+                    color: evt.severity === 'critical' ? 'var(--danger)' : evt.severity === 'high' ? 'var(--lava)' : evt.severity === 'warn' || evt.severity === 'warning' ? 'var(--warning)' : 'var(--info)'
                   }}>
                     <AlertTriangle className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.08em] mb-1" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>
+                    <div className="flex items-center gap-2 text-[10px] uppercase mb-1" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}>
                       {evt.severity?.toUpperCase() || 'INFO'}
-                      <span className="w-[3px] h-[3px] rounded-full" style={{ background: 'var(--ink-muted, #708499)' }} />
+                      <span className="w-[3px] h-[3px] rounded-full" style={{ background: 'var(--ink-muted)' }} />
                       {evt.domain || 'General'}
                       {evt.time_ago && <>
-                        <span className="w-[3px] h-[3px] rounded-full" style={{ background: 'var(--ink-muted, #708499)' }} />
+                        <span className="w-[3px] h-[3px] rounded-full" style={{ background: 'var(--ink-muted)' }} />
                         {evt.time_ago}
                       </>}
                     </div>
-                    <div className="text-sm font-semibold leading-tight" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{evt.title || evt.summary || 'Signal detected'}</div>
-                    {evt.description && <div className="text-[13px] mt-1 leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{evt.description}</div>}
+                    <div style={{ fontSize: 'var(--size-body)', fontWeight: 'var(--fw-semi)', color: 'var(--ink-display)', lineHeight: 1.3 }}>{evt.title || evt.summary || 'Signal detected'}</div>
+                    {evt.description && <div className="mt-1 leading-relaxed" style={{ fontSize: '13px', color: 'var(--ink-secondary)' }}>{evt.description}</div>}
                   </div>
-                  <div className="text-[11px] shrink-0" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{evt.time_ago || ''}</div>
+                  <div className="shrink-0 text-right" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--ink-muted)' }}>{evt.time_ago || ''}</div>
                 </div>
               )) : (
                 <div className="p-10 text-center">
-                  <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted, #708499)' }} />
-                  <p className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>No signals yet</p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>Connect your inbox and CRM to start surfacing business intelligence.</p>
-                  <button onClick={() => navigate('/connect-email')} className="mt-4 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: '#E85D00', color: 'white', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}>
+                  <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted)' }} />
+                  <p className="text-sm font-medium" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>No signals yet</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>Connect your inbox and CRM to start surfacing business intelligence.</p>
+                  <button onClick={() => navigate('/connect-email')} className="mt-4 px-4 py-2 text-sm font-semibold" style={{ background: 'var(--lava)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)' }}>
                     Connect inbox <ArrowRight className="w-3.5 h-3.5 inline ml-1" />
                   </button>
                 </div>
@@ -695,16 +702,16 @@ const Advisor = () => {
           <div className="flex flex-col gap-5">
 
             {/* ── Morning Brief Card (matches approved mockup) ── */}
-            <div className="rounded-xl relative overflow-hidden" style={{ padding: 'var(--sp-7, 28px)', background: 'linear-gradient(160deg, #111827, #1A1A2E)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="relative overflow-hidden" style={{ padding: 'var(--sp-7)', background: 'linear-gradient(160deg, #111827, #1A1A2E)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--r-xl)' }}>
               {/* Animated orb */}
               <style>{`
                 @keyframes orbDrift { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(40px, 30px); } }
                 @keyframes briefPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232,93,0,0.8); } 50% { box-shadow: 0 0 0 8px rgba(232,93,0,0); } }
               `}</style>
-              <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: 'radial-gradient(circle, #E85D00 0%, transparent 60%)', opacity: 0.25, filter: 'blur(60px)', animation: 'orbDrift 20s ease-in-out infinite' }} />
+              <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: 'radial-gradient(circle, var(--lava) 0%, transparent 60%)', opacity: 0.25, filter: 'blur(60px)', animation: 'orbDrift 20s ease-in-out infinite' }} />
               <div style={{ position: 'relative', zIndex: 1 }}>
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#FF7A1A' }}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#E85D00', animation: 'briefPulse 1.4s ease-in-out infinite' }} />
+                <div className="flex items-center gap-2 text-[10px] uppercase" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava-warm)', letterSpacing: 'var(--ls-caps)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--lava)', animation: 'briefPulse 1.4s ease-in-out infinite' }} />
                   <span>Your morning brief &middot; {timeStr}</span>
                 </div>
                 {advisorLoading ? (
@@ -724,10 +731,10 @@ const Advisor = () => {
                   if (!hasAnyData) {
                     return (
                       <>
-                        <h2 className="mt-3" style={{ fontFamily: fontFamily.display, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.025em', color: 'white' }}>
-                          Nothing urgent <em style={{ color: '#FF7A1A', fontStyle: 'italic' }}>right now</em>.
+                        <h2 className="mt-3" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 'var(--lh-display)', letterSpacing: '-0.025em', color: 'white' }}>
+                          Nothing urgent <em style={{ color: 'var(--lava-warm)', fontStyle: 'italic' }}>right now</em>.
                         </h2>
-                        <p className="mt-4 text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                        <p className="mt-4 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'var(--size-sm)' }}>
                           Connect your inbox and CRM to start receiving personalised intelligence briefs each morning.
                         </p>
                       </>
@@ -737,24 +744,24 @@ const Advisor = () => {
                   const headlineEmphasis = urgentCount > 0 ? 'act on' : 'for now';
                   return (
                     <>
-                      <h2 className="mt-3" style={{ fontFamily: fontFamily.display, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.025em', color: 'white' }}>
-                        {headline} <em style={{ color: '#FF7A1A', fontStyle: 'italic' }}>{headlineEmphasis}</em>.
+                      <h2 className="mt-3" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 'var(--lh-display)', letterSpacing: '-0.025em', color: 'white' }}>
+                        {headline} <em style={{ color: 'var(--lava-warm)', fontStyle: 'italic' }}>{headlineEmphasis}</em>.
                       </h2>
-                      <p className="mt-4 text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                      <p className="mt-4 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'var(--size-sm)' }}>
                         {memo || (decideNow?.signal_summary) || 'Your intelligence brief is being assembled.'}
                       </p>
-                      <div className="grid grid-cols-3 gap-4 mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div className="grid grid-cols-3 mt-6 pt-5" style={{ gap: 'var(--sp-4)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                         <div>
-                          <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: urgentCount > 0 ? '#E85D00' : 'white', lineHeight: 1 }}>{urgentCount}</div>
-                          <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>Need attention</div>
+                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: urgentCount > 0 ? 'var(--lava)' : 'white', lineHeight: 1 }}>{urgentCount}</div>
+                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.5)', letterSpacing: 'var(--ls-caps)' }}>Need attention</div>
                         </div>
                         <div>
-                          <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: 'white', lineHeight: 1 }}>{totalOverdue > 0 ? `$${Math.round(totalOverdue / 1000)}k` : '\u2014'}</div>
-                          <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>At risk</div>
+                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'white', lineHeight: 1 }}>{totalOverdue > 0 ? `$${Math.round(totalOverdue / 1000)}k` : '\u2014'}</div>
+                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.5)', letterSpacing: 'var(--ls-caps)' }}>At risk</div>
                         </div>
                         <div>
-                          <div style={{ fontFamily: fontFamily.display, fontSize: 36, color: 'white', lineHeight: 1 }}>{stalledDeals > 0 ? stalledDeals : overdueInvoices > 0 ? overdueInvoices : '\u2014'}</div>
-                          <div className="text-[10px] uppercase tracking-[0.08em] mt-2" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.5)' }}>{stalledDeals > 0 ? 'Stalled deals' : overdueInvoices > 0 ? 'Overdue' : 'Signals'}</div>
+                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: 'white', lineHeight: 1 }}>{stalledDeals > 0 ? stalledDeals : overdueInvoices > 0 ? overdueInvoices : '\u2014'}</div>
+                          <div className="text-[10px] uppercase mt-2" style={{ fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.5)', letterSpacing: 'var(--ls-caps)' }}>{stalledDeals > 0 ? 'Stalled deals' : overdueInvoices > 0 ? 'Overdue' : 'Signals'}</div>
                         </div>
                       </div>
                     </>
@@ -762,10 +769,10 @@ const Advisor = () => {
                 })()}
                 <button
                   onClick={() => navigate('/soundboard')}
-                  className="mt-6 inline-flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-all"
-                  style={{ background: '#E85D00', color: 'white', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#FF7A1A'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(232,93,0,0.3)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = '#E85D00'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  className="mt-6 inline-flex items-center gap-2 font-semibold transition-all"
+                  style={{ padding: '12px 18px', background: 'var(--lava)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)', fontSize: 'var(--size-sm)', fontWeight: 'var(--fw-semi)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--lava-warm)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(232,93,0,0.3)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--lava)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   Open the brief <ArrowRight className="w-4 h-4" />
                 </button>
@@ -773,7 +780,7 @@ const Advisor = () => {
             </div>
 
             {/* ── Quick Action Cards (2x2 grid per mockup) ── */}
-            <div className="grid grid-cols-2 gap-3" style={{ marginTop: 'var(--sp-5, 20px)' }}>
+            <div className="grid grid-cols-2" style={{ gap: 'var(--sp-3)', marginTop: 'var(--sp-5)' }}>
               {[
                 { title: 'Ask BIQc anything', desc: '"What changed in the pipeline this week?"', icon: MessageSquare, path: '/soundboard' },
                 { title: 'Inbox triage', desc: emailStats.total > 0 ? `${emailStats.total} email${emailStats.total !== 1 ? 's' : ''} analysed. ${emailStats.highPriority > 0 ? `${emailStats.highPriority} need${emailStats.highPriority !== 1 ? '' : 's'} a decision.` : 'None urgent.'}` : integrationData.email?.connected ? 'Inbox connected. Checking priorities...' : 'Connect your inbox to start triaging.', icon: Mail, path: '/email-inbox' },
@@ -785,45 +792,50 @@ const Advisor = () => {
                   <button
                     key={action.path}
                     onClick={() => navigate(action.path)}
-                    className="flex flex-col gap-2 p-5 rounded-xl text-left transition-all"
+                    className="flex flex-col text-left transition-all"
                     style={{
-                      background: 'var(--surface, #0E1628)',
-                      border: '1px solid var(--border, rgba(140,170,210,0.12))',
+                      gap: 'var(--sp-2)',
+                      padding: 'var(--sp-5)',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--r-lg)',
                       cursor: 'pointer',
+                      textDecoration: 'none',
+                      color: 'inherit',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--lava, #E85D00)';
+                      e.currentTarget.style.borderColor = 'var(--lava)';
                       e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = 'var(--elev-2, 0 1px 3px rgba(0,0,0,0.6))';
+                      e.currentTarget.style.boxShadow = 'var(--elev-2)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border, rgba(140,170,210,0.12))';
+                      e.currentTarget.style.borderColor = 'var(--border)';
                       e.currentTarget.style.transform = 'translateY(0)';
                       e.currentTarget.style.boxShadow = 'none';
                     }}
                   >
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2" style={{ background: 'var(--lava-wash, rgba(232,93,0,0.12))', color: 'var(--lava, #E85D00)' }}>
+                    <div className="flex items-center justify-center mb-2" style={{ width: 36, height: 36, background: 'var(--lava-wash)', color: 'var(--lava)', borderRadius: 'var(--r-md)' }}>
                       <Icon className="w-[18px] h-[18px]" />
                     </div>
-                    <h4 className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{action.title}</h4>
-                    <p className="text-xs leading-snug" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{action.desc}</p>
+                    <h4 style={{ fontSize: 'var(--size-sm)', fontWeight: 'var(--fw-semi)', color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{action.title}</h4>
+                    <p style={{ fontSize: '12px', color: 'var(--ink-secondary)', lineHeight: 1.4, fontFamily: 'var(--font-ui)' }}>{action.desc}</p>
                   </button>
                 );
               })}
             </div>
 
             {/* ── Activity Timeline (panel style per mockup) ── */}
-            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
-              <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--border, rgba(140,170,210,0.12))' }}>
+            <div className="overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', boxShadow: 'var(--elev-1)', marginTop: 'var(--sp-5)' }}>
+              <div className="flex items-center justify-between" style={{ padding: 'var(--sp-5) var(--sp-6)', borderBottom: '1px solid var(--border)' }}>
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>— Last 24 hours</div>
-                  <h3 className="text-2xl font-medium mt-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>Activity</h3>
+                  <div className="text-[10px] uppercase" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}>— Last 24 hours</div>
+                  <h3 className="text-2xl font-medium mt-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', letterSpacing: 'var(--ls-heading)' }}>Activity</h3>
                 </div>
               </div>
 
               {activityLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <RefreshCw className="w-4 h-4 animate-spin" style={{ color: 'var(--ink-muted, #708499)' }} />
+                  <RefreshCw className="w-4 h-4 animate-spin" style={{ color: 'var(--ink-muted)' }} />
                 </div>
               ) : activityItems.length > 0 ? (
                 <div className="flex flex-col">
@@ -840,12 +852,12 @@ const Advisor = () => {
                     }
 
                     return (
-                      <div key={item.id || idx} className="grid gap-4 items-start" style={{ gridTemplateColumns: '80px 1fr', padding: '16px 24px', borderBottom: isLast ? 'none' : '1px solid var(--border, rgba(140,170,210,0.12))' }}>
-                        <div className="text-[10px] uppercase tracking-[0.08em] pt-0.5" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>
+                      <div key={item.id || idx} className="grid items-start" style={{ gridTemplateColumns: '80px 1fr', gap: 'var(--sp-4)', padding: 'var(--sp-4) var(--sp-6)', borderBottom: isLast ? 'none' : '1px solid var(--border)' }}>
+                        <div className="text-[10px] uppercase pt-0.5" style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)' }}>
                           {timeLabel}
                         </div>
-                        <div className="text-[13px] leading-relaxed" style={{ color: 'var(--ink, #C8D4E4)' }}>
-                          <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>{item.title || 'Activity'}</strong>
+                        <div style={{ fontSize: '13px', color: 'var(--ink)', lineHeight: 1.5 }}>
+                          <strong style={{ color: 'var(--ink-display)' }}>{item.title || 'Activity'}</strong>
                           {item.message && <> &middot; {item.message}</>}
                         </div>
                       </div>
@@ -854,8 +866,8 @@ const Advisor = () => {
                 </div>
               ) : (
                 <div className="text-center py-6 px-5">
-                  <Clock className="w-6 h-6 mx-auto mb-2" style={{ color: 'var(--ink-muted, #708499)' }} />
-                  <p className="text-xs" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
+                  <Clock className="w-6 h-6 mx-auto mb-2" style={{ color: 'var(--ink-muted)' }} />
+                  <p className="text-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
                     No recent activity. Connect your inbox and CRM to start tracking signals.
                   </p>
                 </div>

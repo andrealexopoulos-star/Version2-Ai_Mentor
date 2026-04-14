@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent } from '../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { fontFamily, colors } from '../design-system/tokens';
+// Design tokens now referenced via CSS custom properties
 import {
   AlertDialog,
   AlertDialogAction,
@@ -158,14 +158,14 @@ const Documents = () => {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-              <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: colors.text, fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Documents</h1>
+              <h1 className="font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 28, letterSpacing: 'var(--ls-display)', lineHeight: 1.05 }}>Documents</h1>
             </div>
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
                 onClick={() => {/* Upload handler */}}
                 className="rounded-xl px-5 py-2.5 text-sm font-semibold"
-                style={{ background: colors.bgCard, border: `1px solid ${colors.border}`, color: colors.text }}
+                style={{ background: 'var(--surface)', border: `1px solid ${'var(--border)'}`, color: 'var(--ink-display)' }}
                 data-testid="upload-document-btn"
               >
                 <Upload className="w-4 h-4 mr-2" />
@@ -174,7 +174,7 @@ const Documents = () => {
               <Button
                 onClick={() => navigate('/sop-generator')}
                 className="rounded-xl px-5 py-2.5 text-sm font-semibold"
-                style={{ background: `linear-gradient(135deg, ${colors.brand}, ${colors.brandDark})`, color: '#FFFFFF', border: 'none' }}
+                style={{ background: `linear-gradient(135deg, ${'var(--lava)'}, ${'var(--lava-deep)'})`, color: '#FFFFFF', border: 'none' }}
                 data-testid="new-document-btn"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
@@ -216,7 +216,7 @@ const Documents = () => {
                 className="flex items-center gap-2 px-3.5 py-1.5 text-sm font-medium rounded-lg transition-all"
                 style={{
                   background: sourceTab === tab.key ? '#1E293B' : 'transparent',
-                  color: sourceTab === tab.key ? '#FFFFFF' : colors.textMuted,
+                  color: sourceTab === tab.key ? '#FFFFFF' : 'var(--ink-muted)',
                   cursor: 'pointer',
                   border: 'none',
                 }}
@@ -227,7 +227,7 @@ const Documents = () => {
                   className="text-xs px-1.5 py-0.5 rounded-md font-medium"
                   style={{
                     background: sourceTab === tab.key ? 'rgba(255,255,255,0.15)' : 'rgba(140,170,210,0.12)',
-                    color: sourceTab === tab.key ? '#FFFFFF' : colors.textMuted,
+                    color: sourceTab === tab.key ? '#FFFFFF' : 'var(--ink-muted)',
                     fontSize: '11px',
                     minWidth: '20px',
                     textAlign: 'center',
@@ -317,7 +317,7 @@ const Documents = () => {
           <div className="mt-10 mb-8" data-testid="recent-activity">
             <h2
               className="font-semibold mb-4"
-              style={{ fontFamily: fontFamily.display, fontSize: '22px', color: colors.text, letterSpacing: '-0.01em' }}
+              style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--ink-display)', letterSpacing: '-0.01em' }}
             >
               Recent Activity
             </h2>
@@ -325,17 +325,17 @@ const Documents = () => {
               {recentActivity.map((item) => {
                 const IconComp = item.icon;
                 const iconBgMap = {
-                  updated: { bg: colors.infoDim, color: colors.info },
-                  generated: { bg: colors.brandDim, color: colors.brand },
-                  created: { bg: colors.successDim, color: colors.success },
-                  approved: { bg: 'rgba(124,58,237,0.10)', color: colors.purple },
+                  updated: { bg: 'var(--info-wash)', color: 'var(--info)' },
+                  generated: { bg: 'var(--lava-wash)', color: 'var(--lava)' },
+                  created: { bg: 'var(--positive-wash)', color: 'var(--positive)' },
+                  approved: { bg: 'rgba(124,58,237,0.10)', color: '#7C3AED' },
                 };
                 const iconStyle = iconBgMap[item.iconClass] || iconBgMap.updated;
                 return (
                   <div
                     key={item.id}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl"
-                    style={{ background: colors.bgCard, border: `1px solid ${colors.border}` }}
+                    style={{ background: 'var(--surface)', border: `1px solid ${'var(--border)'}` }}
                     data-testid={`activity-item-${item.id}`}
                   >
                     <div
@@ -344,11 +344,11 @@ const Documents = () => {
                     >
                       <IconComp className="w-4 h-4" />
                     </div>
-                    <div className="flex-1 text-sm" style={{ color: colors.textSecondary }}>
-                      <strong style={{ color: colors.text }}>{item.title}</strong>{' '}
+                    <div className="flex-1 text-sm" style={{ color: 'var(--ink-secondary)' }}>
+                      <strong style={{ color: 'var(--ink-display)' }}>{item.title}</strong>{' '}
                       {item.action} {item.actor}
                     </div>
-                    <div className="text-xs whitespace-nowrap" style={{ color: colors.textMuted }}>
+                    <div className="text-xs whitespace-nowrap" style={{ color: 'var(--ink-muted)' }}>
                       {item.time}
                     </div>
                   </div>
@@ -360,34 +360,34 @@ const Documents = () => {
           {/* Storage Usage Bar */}
           <div
             className="rounded-2xl p-5"
-            style={{ background: colors.bgCard, border: `1px solid ${colors.border}` }}
+            style={{ background: 'var(--surface)', border: `1px solid ${'var(--border)'}` }}
             data-testid="storage-usage"
           >
-            <h3 className="text-sm font-semibold mb-3" style={{ color: colors.text }}>
+            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--ink-display)' }}>
               Storage Usage
             </h3>
             <div
               className="rounded-full overflow-hidden mb-2"
-              style={{ height: 8, background: colors.bgInput }}
+              style={{ height: 8, background: 'var(--surface-sunken)' }}
             >
               <div
                 className="rounded-full"
                 style={{
                   width: '24%',
                   height: '100%',
-                  background: `linear-gradient(90deg, ${colors.brand}, ${colors.brandDark})`,
+                  background: `linear-gradient(90deg, ${'var(--lava)'}, ${'var(--lava-deep)'})`,
                 }}
               />
             </div>
-            <div className="flex items-center justify-between text-xs" style={{ color: colors.textMuted }}>
+            <div className="flex items-center justify-between text-xs" style={{ color: 'var(--ink-muted)' }}>
               <span>
-                <strong style={{ color: colors.text, fontFamily: fontFamily.mono }}>2.4 GB</strong>{' '}
+                <strong style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-mono)' }}>2.4 GB</strong>{' '}
                 of 10 GB used
               </span>
               <button
                 onClick={() => navigate('/settings')}
                 className="underline hover:no-underline transition-all"
-                style={{ color: colors.brand, cursor: 'pointer', background: 'none', border: 'none', fontSize: '12px' }}
+                style={{ color: 'var(--lava)', cursor: 'pointer', background: 'none', border: 'none', fontSize: '12px' }}
               >
                 Upgrade for more storage
               </button>

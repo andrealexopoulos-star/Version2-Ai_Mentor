@@ -378,7 +378,7 @@ function AppRoutes() {
         <Route path="/intelligence-baseline" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="watchtower"><RouteErrorBoundary><IntelligenceBaseline /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/operator" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="operations-intelligence"><RouteErrorBoundary><OperatorDashboard /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/market-analysis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="market-analysis"><RouteErrorBoundary><MarketAnalysis /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
-        <Route path="/cmo-report" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="cmo-report"><RouteErrorBoundary><CMOReportPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/cmo-report" element={<ProtectedRoute><RouteErrorBoundary><CMOReportPage /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/ops-advisory" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="ops-advisory"><RouteErrorBoundary><OpsAdvisoryCentre /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/oac" element={<Navigate to="/ops-advisory" replace />} />
         <Route path="/marketing-automation" element={<ProtectedRoute><LaunchRoute access="foundation"><RouteErrorBoundary><MarketingAutomationPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />

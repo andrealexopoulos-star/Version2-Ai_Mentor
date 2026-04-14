@@ -3,7 +3,7 @@ import {
   FileText, Plus, Globe, ArrowRight, Clock, Loader2, AlertCircle
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { fontFamily, colors, radius } from '../design-system/tokens';
+// Design tokens now referenced via CSS custom properties
 import { apiClient } from '../lib/api';
 
 /* ---------------------------------------------------------------
@@ -25,7 +25,7 @@ const CATEGORY_COLORS = {
 const RELEVANCE_STYLES = {
   High:   { bg: '#FEE2E2', text: '#991B1B' },
   Medium: { bg: '#FEF3C7', text: '#92400E' },
-  Low:    { bg: 'rgba(140,170,210,0.08)', text: 'var(--ink-muted, #708499)' },
+  Low:    { bg: 'rgba(140,170,210,0.08)', text: 'var(--ink-muted)' },
 };
 
 const TABS = ['All', 'Competitor', 'Market', 'Regulatory', 'Industry', 'Technology'];
@@ -161,9 +161,9 @@ const IntelCentre = () => {
   }, [activeTab, signals]);
 
   /* shared styles */
-  const cardBg = colors.bgCard;
-  const borderColor = colors.border;
-  const lava = colors.brand;
+  const cardBg = 'var(--surface)';
+  const borderColor = 'var(--border)';
+  const lava = 'var(--lava)';
 
   return (
     <DashboardLayout>
@@ -171,15 +171,15 @@ const IntelCentre = () => {
 
         {/* HEADER */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-          <h1 style={{ fontFamily: fontFamily.display, fontSize: 28, fontWeight: 700, color: colors.text, letterSpacing: '-0.02em', margin: 0 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--ink-display)', letterSpacing: 'var(--ls-display)', margin: 0 }}>
             Intel Centre
           </h1>
           <button
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '10px 20px', borderRadius: radius.badge,
+              padding: '10px 20px', borderRadius: 'var(--r-md)',
               background: 'linear-gradient(135deg, ' + lava + ', #FF7A1A)',
-              color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: fontFamily.body,
+              color: '#fff', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-ui)',
               border: 'none', cursor: 'pointer',
               transition: 'box-shadow 0.2s, transform 0.2s',
             }}
@@ -197,21 +197,21 @@ const IntelCentre = () => {
             background: cardBg,
             border: '1px solid ' + borderColor,
             borderLeft: '3px solid ' + lava,
-            borderRadius: radius.card,
+            borderRadius: 'var(--r-xl)',
             padding: 20,
             marginBottom: 32,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: lava }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: colors.brandDark, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: fontFamily.mono }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--lava-deep)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', fontFamily: 'var(--font-mono)' }}>
               AI Daily Intelligence Brief
             </span>
-            <span style={{ fontSize: 12, color: colors.textMuted, marginLeft: 'auto', fontFamily: fontFamily.body }}>
+            <span style={{ fontSize: 12, color: 'var(--ink-muted)', marginLeft: 'auto', fontFamily: 'var(--font-ui)' }}>
               {formatToday()}
             </span>
           </div>
-          <div style={{ fontSize: 14, color: colors.textSecondary, lineHeight: 1.6, fontFamily: fontFamily.body }}>
+          <div style={{ fontSize: 14, color: 'var(--ink-secondary)', lineHeight: 1.6, fontFamily: 'var(--font-ui)' }}>
             {loading ? (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
@@ -220,7 +220,7 @@ const IntelCentre = () => {
             ) : briefText ? (
               <span>{briefText}</span>
             ) : (
-              <span style={{ color: colors.textMuted }}>
+              <span style={{ color: 'var(--ink-muted)' }}>
                 No intelligence brief available yet. Connect integrations and enable monitoring to receive daily intelligence summaries.
               </span>
             )}
@@ -230,7 +230,7 @@ const IntelCentre = () => {
               style={{
                 marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6,
                 fontSize: 13, fontWeight: 600, color: lava, background: 'none', border: 'none',
-                cursor: 'pointer', fontFamily: fontFamily.body, padding: 0,
+                cursor: 'pointer', fontFamily: 'var(--font-ui)', padding: 0,
               }}
             >
               Read full brief <ArrowRight size={14} />
@@ -242,9 +242,9 @@ const IntelCentre = () => {
         {error && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            background: colors.dangerDim, border: '1px solid rgba(220,38,38,0.3)',
-            borderRadius: radius.card, padding: 16, marginBottom: 24,
-            fontSize: 13, color: '#F87171', fontFamily: fontFamily.body,
+            background: 'var(--danger-wash)', border: '1px solid rgba(220,38,38,0.3)',
+            borderRadius: 'var(--r-xl)', padding: 16, marginBottom: 24,
+            fontSize: 13, color: '#F87171', fontFamily: 'var(--font-ui)',
           }}>
             <AlertCircle size={16} />
             {error}
@@ -256,7 +256,7 @@ const IntelCentre = () => {
 
           {/* LEFT: INTELLIGENCE FEED */}
           <div>
-            <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, fontWeight: 700, color: colors.text, marginBottom: 16, marginTop: 0 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--ink-display)', marginBottom: 16, marginTop: 0 }}>
               Intelligence Feed
             </h2>
 
@@ -272,18 +272,18 @@ const IntelCentre = () => {
                       padding: '6px 14px',
                       fontSize: 11,
                       fontWeight: 500,
-                      fontFamily: fontFamily.mono,
+                      fontFamily: 'var(--font-mono)',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      color: isActive ? '#fff' : colors.textMuted,
+                      letterSpacing: 'var(--ls-caps)',
+                      color: isActive ? '#fff' : 'var(--ink-muted)',
                       background: isActive ? '#1E293B' : 'transparent',
                       border: 'none',
                       borderRadius: 999,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
                     }}
-                    onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = 'rgba(140,170,210,0.08)'; e.currentTarget.style.color = colors.text; } }}
-                    onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = colors.textMuted; } }}
+                    onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = 'rgba(140,170,210,0.08)'; e.currentTarget.style.color = 'var(--ink-display)'; } }}
+                    onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-muted)'; } }}
                   >
                     {tab}
                   </button>
@@ -295,7 +295,7 @@ const IntelCentre = () => {
             {loading ? (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                padding: 48, color: colors.textMuted, fontSize: 14, fontFamily: fontFamily.body,
+                padding: 48, color: 'var(--ink-muted)', fontSize: 14, fontFamily: 'var(--font-ui)',
               }}>
                 <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
                 Loading intelligence signals...
@@ -303,9 +303,9 @@ const IntelCentre = () => {
             ) : filteredItems.length === 0 ? (
               <div style={{
                 background: cardBg, border: '1px solid ' + borderColor,
-                borderRadius: radius.card, padding: '32px 24px',
-                textAlign: 'center', color: colors.textMuted, fontSize: 14,
-                fontFamily: fontFamily.body, lineHeight: 1.6,
+                borderRadius: 'var(--r-xl)', padding: '32px 24px',
+                textAlign: 'center', color: 'var(--ink-muted)', fontSize: 14,
+                fontFamily: 'var(--font-ui)', lineHeight: 1.6,
               }}>
                 {signals.length === 0
                   ? 'No intelligence signals detected yet. Connect integrations and enable monitoring to receive signals.'
@@ -323,7 +323,7 @@ const IntelCentre = () => {
                       style={{
                         background: cardBg,
                         border: '1px solid ' + borderColor,
-                        borderRadius: radius.card,
+                        borderRadius: 'var(--r-xl)',
                         padding: '16px 20px',
                         display: 'grid',
                         gridTemplateColumns: '1fr auto',
@@ -340,30 +340,30 @@ const IntelCentre = () => {
                         {/* Category badge */}
                         <span
                           style={{
-                            fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
-                            padding: '3px 8px', borderRadius: radius.full,
+                            fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)',
+                            padding: '3px 8px', borderRadius: 'var(--r-pill)',
                             display: 'inline-block', marginBottom: 8,
                             background: catColor.bg, color: catColor.text,
-                            fontFamily: fontFamily.mono,
+                            fontFamily: 'var(--font-mono)',
                           }}
                         >
                           {item.category}
                         </span>
 
                         {/* Title */}
-                        <div style={{ fontSize: 14, fontWeight: 600, color: colors.text, marginBottom: 4, lineHeight: 1.4, fontFamily: fontFamily.body }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-display)', marginBottom: 4, lineHeight: 1.4, fontFamily: 'var(--font-ui)' }}>
                           {item.title}
                         </div>
 
                         {/* Summary */}
                         {item.summary !== item.title && (
-                          <div style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, fontFamily: fontFamily.body }}>
+                          <div style={{ fontSize: 13, color: 'var(--ink-secondary)', lineHeight: 1.5, fontFamily: 'var(--font-ui)' }}>
                             {item.summary}
                           </div>
                         )}
 
                         {/* Meta row: source + time + confidence + analyse button */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, fontSize: 12, color: colors.textMuted, fontFamily: fontFamily.body }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, fontSize: 12, color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <Globe size={12} />
                             {item.source}
@@ -375,7 +375,7 @@ const IntelCentre = () => {
                             </span>
                           )}
                           {item.confidence != null && (
-                            <span style={{ fontSize: 11, color: colors.textMuted }}>
+                            <span style={{ fontSize: 11, color: 'var(--ink-muted)' }}>
                               {Math.round(item.confidence * 100)}% confidence
                             </span>
                           )}
@@ -384,7 +384,7 @@ const IntelCentre = () => {
                               marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4,
                               fontSize: 12, fontWeight: 600, color: lava,
                               background: 'none', border: 'none', cursor: 'pointer',
-                              fontFamily: fontFamily.body, padding: 0,
+                              fontFamily: 'var(--font-ui)', padding: 0,
                             }}
                           >
                             Analyse <ArrowRight size={12} />
@@ -396,9 +396,9 @@ const IntelCentre = () => {
                       <span
                         style={{
                           fontSize: 10, fontWeight: 700, padding: '3px 8px',
-                          borderRadius: radius.full, whiteSpace: 'nowrap',
+                          borderRadius: 'var(--r-pill)', whiteSpace: 'nowrap',
                           background: relStyle.bg, color: relStyle.text,
-                          fontFamily: fontFamily.mono,
+                          fontFamily: 'var(--font-mono)',
                         }}
                       >
                         {item.relevance}
@@ -413,7 +413,7 @@ const IntelCentre = () => {
           {/* RIGHT: TRACKED ENTITIES */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, fontWeight: 700, color: colors.text, margin: 0 }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--ink-display)', margin: 0 }}>
                 Tracked Entities
               </h2>
               <button
@@ -421,7 +421,7 @@ const IntelCentre = () => {
                   display: 'inline-flex', alignItems: 'center', gap: 4,
                   fontSize: 12, fontWeight: 600, color: lava,
                   background: 'none', border: 'none', cursor: 'pointer',
-                  fontFamily: fontFamily.body, padding: 0,
+                  fontFamily: 'var(--font-ui)', padding: 0,
                 }}
               >
                 <Plus size={14} /> Add entity
@@ -430,9 +430,9 @@ const IntelCentre = () => {
 
             <div style={{
               background: cardBg, border: '1px solid ' + borderColor,
-              borderRadius: radius.card, padding: '24px 20px',
-              textAlign: 'center', color: colors.textMuted, fontSize: 14,
-              fontFamily: fontFamily.body, lineHeight: 1.6,
+              borderRadius: 'var(--r-xl)', padding: '24px 20px',
+              textAlign: 'center', color: 'var(--ink-muted)', fontSize: 14,
+              fontFamily: 'var(--font-ui)', lineHeight: 1.6,
             }}>
               No entities tracked yet. Add competitors or partners to monitor.
             </div>

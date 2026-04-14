@@ -12,7 +12,7 @@ import {
   ExternalLink, ChevronDown, ChevronUp, Mail, Calendar, Loader2,
   XCircle, Zap, Sparkles,
 } from 'lucide-react';
-import { fontFamily } from '../design-system/tokens';
+// Design tokens now referenced via CSS custom properties
 import { Link } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
@@ -32,7 +32,7 @@ const Tooltip = ({ text, children }) => {
       {children}
       {show && (
         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg text-[11px] leading-snug z-50 whitespace-pre-wrap max-w-[200px]"
-          style={{ background: '#1E2D3D', color: 'var(--ink-display, #EDF1F7)', border: '1px solid #334155', fontFamily: fontFamily.body, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+          style={{ background: '#1E2D3D', color: 'var(--ink-display)', border: '1px solid #334155', fontFamily: 'var(--font-ui)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
           {text}
         </span>
       )}
@@ -45,11 +45,11 @@ const RiskMeter = ({ value, label, thresholds = [30, 60], insufficientData = fal
   const color = insufficientData || value == null ? '#64748B' : value > thresholds[1] ? '#EF4444' : value > thresholds[0] ? '#F59E0B' : '#10B981';
   return (
     <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-      <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>{label}</span>
+      <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>{label}</span>
       <div className="flex items-end gap-2">
         {insufficientData || value == null
-          ? <span className="text-xs italic" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Insufficient data</span>
-          : <span className="text-xl font-bold" style={{ color, fontFamily: fontFamily.mono }}>{value}%</span>
+          ? <span className="text-xs italic" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Insufficient data</span>
+          : <span className="text-xl font-bold" style={{ color, fontFamily: 'var(--font-mono)' }}>{value}%</span>
         }
       </div>
       {!insufficientData && value != null && (
@@ -67,15 +67,15 @@ const RiskCategory = ({ icon: Icon, color, title, hasData, children, badgeLabel,
     <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-2">
         <Icon className="w-4 h-4" style={{ color }} />
-        <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>{title}</h3>
+        <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>{title}</h3>
       </div>
       <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold"
-        style={{ background: hasData ? 'rgba(16,185,129,0.1)' : 'rgba(100,116,139,0.15)', color: hasData ? '#10B981' : '#64748B', fontFamily: fontFamily.mono }}>
+        style={{ background: hasData ? 'rgba(16,185,129,0.1)' : 'rgba(100,116,139,0.15)', color: hasData ? '#10B981' : '#64748B', fontFamily: 'var(--font-mono)' }}>
         {hasData ? (badgeLabel || 'Data available') : 'Insufficient data'}
       </span>
     </div>
     {hasData ? children : (
-      <p className="text-xs italic" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.body }}>
+      <p className="text-xs italic" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
         No data available for this category. {!noCTA && 'Connect the relevant integration to activate monitoring.'}
       </p>
     )}
@@ -85,9 +85,9 @@ const RiskCategory = ({ icon: Icon, color, title, hasData, children, badgeLabel,
 // ── Workforce example metric card ─────────────────────────────────────────────
 const ExampleMetric = ({ label, example, color }) => (
   <div className="p-3 rounded-lg opacity-60" style={{ background: 'var(--biqc-bg)', border: `1px dashed ${color}40` }}>
-    <span className="text-[9px] uppercase tracking-widest" style={{ color, fontFamily: fontFamily.mono }}>sample</span>
-    <p className="text-xs font-semibold text-[var(--ink-display)] mt-0.5" style={{ fontFamily: fontFamily.display }}>{label}</p>
-    <p className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.body }}>{example}</p>
+    <span className="text-[9px] uppercase tracking-widest" style={{ color, fontFamily: 'var(--font-mono)' }}>sample</span>
+    <p className="text-xs font-semibold text-[var(--ink-display)] mt-0.5" style={{ fontFamily: 'var(--font-display)' }}>{label}</p>
+    <p className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>{example}</p>
   </div>
 );
 
@@ -117,11 +117,11 @@ const PropagationChain = ({ chain, cognitive }) => {
         className="w-full flex items-center gap-2 p-3 text-left transition-all hover:bg-white/5"
         style={{ background: ic + '06' }}>
         <div className="flex items-center gap-2 flex-1 flex-wrap">
-          <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>{src}</span>
+          <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: 'var(--font-mono)' }}>{src}</span>
           <span className="text-[10px] text-[var(--ink-muted)]">→</span>
-          <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#F59E0B15', color: '#F59E0B', fontFamily: fontFamily.mono }}>{tgt}</span>
-          {pct != null && <span className="text-[9px] ml-auto font-semibold" style={{ color: ic, fontFamily: fontFamily.mono }}>{pct}% likelihood</span>}
-          {chain.window && <span className="text-[9px]" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{chain.window}</span>}
+          <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#F59E0B15', color: '#F59E0B', fontFamily: 'var(--font-mono)' }}>{tgt}</span>
+          {pct != null && <span className="text-[9px] ml-auto font-semibold" style={{ color: ic, fontFamily: 'var(--font-mono)' }}>{pct}% likelihood</span>}
+          {chain.window && <span className="text-[9px]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{chain.window}</span>}
         </div>
         {expanded ? <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--ink-muted)' }} /> : <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--ink-muted)' }} />}
       </button>
@@ -129,26 +129,26 @@ const PropagationChain = ({ chain, cognitive }) => {
       {expanded && (
         <div className="p-3 space-y-2" style={{ borderTop: `1px solid ${ic}20` }}>
           {chain.description && (
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{chain.description}</p>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{chain.description}</p>
           )}
 
           {/* Show underlying data for each domain */}
           {srcData && (
             <div className="p-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid rgba(140,170,210,0.15)' }}>
-              <p className="text-[10px] font-semibold mb-1" style={{ color: ic, fontFamily: fontFamily.mono }}>{src.toUpperCase()} — Contributing factors</p>
-              {srcData.pipeline != null && <p className="text-[11px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Pipeline: ${srcData.pipeline?.toLocaleString()}</p>}
-              {srcData.runway != null && <p className="text-[11px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Cash runway: {srcData.runway} months</p>}
-              {srcData.calendar && <p className="text-[11px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{srcData.calendar}</p>}
-              {srcData.deals?.length > 0 && <p className="text-[11px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{srcData.deals.length} active deals — {srcData.deals.filter(d => (d.stall||0) > 30).length} stalled</p>}
+              <p className="text-[10px] font-semibold mb-1" style={{ color: ic, fontFamily: 'var(--font-mono)' }}>{src.toUpperCase()} — Contributing factors</p>
+              {srcData.pipeline != null && <p className="text-[11px]" style={{ color: 'var(--ink-secondary)' }}>Pipeline: ${srcData.pipeline?.toLocaleString()}</p>}
+              {srcData.runway != null && <p className="text-[11px]" style={{ color: 'var(--ink-secondary)' }}>Cash runway: {srcData.runway} months</p>}
+              {srcData.calendar && <p className="text-[11px]" style={{ color: 'var(--ink-secondary)' }}>{srcData.calendar}</p>}
+              {srcData.deals?.length > 0 && <p className="text-[11px]" style={{ color: 'var(--ink-secondary)' }}>{srcData.deals.length} active deals — {srcData.deals.filter(d => (d.stall||0) > 30).length} stalled</p>}
             </div>
           )}
 
           {/* Navigation link */}
           <div className="flex gap-2 pt-1">
-            {src === 'revenue' && <Link to="/revenue" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>View Revenue <ExternalLink className="w-3 h-3" /></Link>}
-            {(src === 'finance' || tgt === 'finance') && <Link to="/revenue" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>View Financials <ExternalLink className="w-3 h-3" /></Link>}
-            {(src === 'people' || tgt === 'people') && <Link to="/risk?tab=workforce" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>View Workforce <ExternalLink className="w-3 h-3" /></Link>}
-            {(src === 'operations' || tgt === 'operations') && <Link to="/operations" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>View Operations <ExternalLink className="w-3 h-3" /></Link>}
+            {src === 'revenue' && <Link to="/revenue" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: 'var(--font-mono)' }}>View Revenue <ExternalLink className="w-3 h-3" /></Link>}
+            {(src === 'finance' || tgt === 'finance') && <Link to="/revenue" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: 'var(--font-mono)' }}>View Financials <ExternalLink className="w-3 h-3" /></Link>}
+            {(src === 'people' || tgt === 'people') && <Link to="/risk?tab=workforce" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: 'var(--font-mono)' }}>View Workforce <ExternalLink className="w-3 h-3" /></Link>}
+            {(src === 'operations' || tgt === 'operations') && <Link to="/operations" className="text-[10px] flex items-center gap-1" style={{ color: '#E85D00', fontFamily: 'var(--font-mono)' }}>View Operations <ExternalLink className="w-3 h-3" /></Link>}
           </div>
         </div>
       )}
@@ -212,13 +212,13 @@ const HeatMapDot = ({ dot }) => {
       style={{
         width: 24, height: 24, borderRadius: '50%', fontSize: 10, fontWeight: 700,
         color: '#fff', background: DOT_COLOR[dot.severity] || '#64748B',
-        fontFamily: fontFamily.mono, transition: 'transform 150ms ease', transform: hover ? 'scale(1.35)' : 'scale(1)',
+        fontFamily: 'var(--font-mono)', transition: 'transform 150ms ease', transform: hover ? 'scale(1.35)' : 'scale(1)',
         zIndex: 2,
       }}>
       {dot.id}
       {hover && (
         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg text-[11px] leading-snug z-50 whitespace-nowrap"
-          style={{ background: '#1E2D3D', color: 'var(--ink-display, #EDF1F7)', border: '1px solid #334155', fontFamily: fontFamily.body, boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
+          style={{ background: '#1E2D3D', color: 'var(--ink-display)', border: '1px solid #334155', fontFamily: 'var(--font-ui)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
           {dot.name}
         </span>
       )}
@@ -247,13 +247,13 @@ const RiskKPIStrip = ({ riskData }) => {
           style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
           <div className="flex items-center gap-2 mb-1">
             <kpi.icon className="w-3.5 h-3.5" style={{ color: kpi.colorClass || '#64748B' }} />
-            <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{kpi.label}</span>
+            <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{kpi.label}</span>
           </div>
-          <div className="text-2xl font-bold" style={{ color: kpi.colorClass || 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.mono, lineHeight: 1 }}>
+          <div className="text-2xl font-bold" style={{ color: kpi.colorClass || 'var(--ink-display)', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
             {kpi.value}
           </div>
           {kpi.delta && (
-            <div className="text-xs mt-1 font-medium" style={{ color: kpi.deltaDir === 'up' ? '#DC2626' : '#16A34A', fontFamily: fontFamily.mono }}>
+            <div className="text-xs mt-1 font-medium" style={{ color: kpi.deltaDir === 'up' ? '#DC2626' : '#16A34A', fontFamily: 'var(--font-mono)' }}>
               {kpi.delta}
             </div>
           )}
@@ -275,9 +275,9 @@ const AIRiskInsightCard = ({ insight }) => {
         }}>
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-4 h-4" style={{ color: 'var(--ink-muted)' }} />
-          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>BIQc Risk AI</span>
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>BIQc Risk AI</span>
         </div>
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
           Connect data sources to generate risk intelligence.
         </p>
       </div>
@@ -293,10 +293,10 @@ const AIRiskInsightCard = ({ insight }) => {
       }}>
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="w-4 h-4" style={{ color: '#DC2626' }} />
-        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#991B1B', fontFamily: fontFamily.mono }}>BIQc Risk AI</span>
+        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#991B1B', fontFamily: 'var(--font-mono)' }}>BIQc Risk AI</span>
         <span className="w-2 h-2 rounded-full" style={{ background: '#DC2626', animation: 'pulse 2s ease-in-out infinite' }} />
       </div>
-      <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+      <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
         {insight}
       </p>
     </div>
@@ -317,7 +317,7 @@ const RiskHeatMap = ({ risks }) => {
   return (
     <div className="rounded-xl p-5" data-testid="risk-heat-map"
       style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-      <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>Risk Heat Map</h2>
+      <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>Risk Heat Map</h2>
 
       <div className="flex flex-col md:flex-row gap-6 items-start">
         {/* SVG Matrix */}
@@ -349,41 +349,41 @@ const RiskHeatMap = ({ risks }) => {
 
             {/* Y-axis row labels */}
             {Y_LABELS.map((label, i) => (
-              <text key={`yl-${i}`} x={-8} y={i * 100 + 55} textAnchor="end" style={{ fontSize: 9, fill: 'var(--ink-muted, #708499)', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <text key={`yl-${i}`} x={-8} y={i * 100 + 55} textAnchor="end" style={{ fontSize: 9, fill: 'var(--ink-muted)', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {label}
               </text>
             ))}
 
             {/* X-axis col labels */}
             {X_LABELS.map((label, i) => (
-              <text key={`xl-${i}`} x={i * 100 + 50} y={420} textAnchor="middle" style={{ fontSize: 9, fill: 'var(--ink-muted, #708499)', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <text key={`xl-${i}`} x={i * 100 + 50} y={420} textAnchor="middle" style={{ fontSize: 9, fill: 'var(--ink-muted)', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {label}
               </text>
             ))}
 
             {/* Axis labels */}
-            <text x="200" y="445" textAnchor="middle" style={{ fontSize: 11, fill: 'var(--ink-muted, #708499)', fontFamily: 'JetBrains Mono, monospace' }}>{'IMPACT \u2192'}</text>
-            <text x="-30" y="200" textAnchor="middle" style={{ fontSize: 11, fill: 'var(--ink-muted, #708499)', fontFamily: 'JetBrains Mono, monospace', transform: 'rotate(-90, -30, 200)' }}>{'LIKELIHOOD \u2192'}</text>
+            <text x="200" y="445" textAnchor="middle" style={{ fontSize: 11, fill: 'var(--ink-muted)', fontFamily: 'JetBrains Mono, monospace' }}>{'IMPACT \u2192'}</text>
+            <text x="-30" y="200" textAnchor="middle" style={{ fontSize: 11, fill: 'var(--ink-muted)', fontFamily: 'JetBrains Mono, monospace', transform: 'rotate(-90, -30, 200)' }}>{'LIKELIHOOD \u2192'}</text>
           </svg>
         </div>
 
         {/* Legend */}
         <div className="flex-1 space-y-3 min-w-0">
-          <p className="text-[10px] uppercase tracking-widest font-semibold mb-2" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Plotted Risks</p>
+          <p className="text-[10px] uppercase tracking-widest font-semibold mb-2" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Plotted Risks</p>
           {heatDots.length > 0 ? heatDots.map(dot => (
             <div key={dot.id} className="flex items-center gap-2">
               <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
-                style={{ background: DOT_COLOR[dot.severity] || '#64748B', fontFamily: fontFamily.mono }}>
+                style={{ background: DOT_COLOR[dot.severity] || '#64748B', fontFamily: 'var(--font-mono)' }}>
                 {dot.id}
               </span>
-              <span className="text-xs" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{dot.name}</span>
+              <span className="text-xs" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{dot.name}</span>
               <span className="text-[9px] ml-auto px-1.5 py-0.5 rounded-full font-semibold"
-                style={{ background: (DOT_COLOR[dot.severity] || '#64748B') + '18', color: DOT_COLOR[dot.severity] || '#64748B', fontFamily: fontFamily.mono }}>
+                style={{ background: (DOT_COLOR[dot.severity] || '#64748B') + '18', color: DOT_COLOR[dot.severity] || '#64748B', fontFamily: 'var(--font-mono)' }}>
                 {dot.severity}
               </span>
             </div>
           )) : (
-            <p className="text-xs italic" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.body }}>
+            <p className="text-xs italic" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)' }}>
               No risks plotted. Connect data sources to enable risk detection.
             </p>
           )}
@@ -401,7 +401,7 @@ const RiskRegisterTable = ({ risks }) => {
     <div className="rounded-xl overflow-hidden" data-testid="risk-register-table"
       style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
       <div className="px-5 pt-5 pb-3">
-        <h2 className="text-base font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>Risk Register</h2>
+        <h2 className="text-base font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>Risk Register</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
@@ -409,7 +409,7 @@ const RiskRegisterTable = ({ risks }) => {
             <tr style={{ borderBottom: '1px solid var(--biqc-border)' }}>
               {['ID', 'Risk', 'Severity', 'Likelihood', 'Impact', 'Owner', 'Mitigation Status'].map(h => (
                 <th key={h} className="text-left px-4 py-2.5"
-                  style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ink-muted)', fontFamily: fontFamily.mono, background: 'rgba(30,45,61,0.5)' }}>
+                  style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', background: 'rgba(30,45,61,0.5)' }}>
                   {h}
                 </th>
               ))}
@@ -422,20 +422,20 @@ const RiskRegisterTable = ({ risks }) => {
               return (
                 <tr key={r.id} className="transition-colors hover:bg-white/[0.03]"
                   style={{ borderBottom: '1px solid rgba(140,170,210,0.08)' }}>
-                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>{r.id}</td>
-                  <td className="px-4 py-3 text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{r.risk || r.name}</td>
+                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>{r.id}</td>
+                  <td className="px-4 py-3 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{r.risk || r.name}</td>
                   <td className="px-4 py-3">
                     <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                      style={{ background: sev.bg, color: sev.color, fontFamily: fontFamily.mono }}>
+                      style={{ background: sev.bg, color: sev.color, fontFamily: 'var(--font-mono)' }}>
                       {r.severity}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>{r.likelihood}</td>
-                  <td className="px-4 py-3 text-sm font-semibold" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>{r.impact}</td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{r.owner}</td>
+                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>{r.likelihood}</td>
+                  <td className="px-4 py-3 text-sm font-semibold" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>{r.impact}</td>
+                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{r.owner}</td>
                   <td className="px-4 py-3">
                     <span className="inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                      style={{ background: stat.bg, color: stat.color, fontFamily: fontFamily.mono }}>
+                      style={{ background: stat.bg, color: stat.color, fontFamily: 'var(--font-mono)' }}>
                       {r.status}
                     </span>
                   </td>
@@ -444,7 +444,7 @@ const RiskRegisterTable = ({ risks }) => {
             }) : (
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center">
-                  <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+                  <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
                     No risks identified yet. Connect data sources to enable risk detection.
                   </p>
                 </td>
@@ -593,12 +593,12 @@ const RiskPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="risk-page">
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: 'var(--font-ui)' }} data-testid="risk-page">
 
         {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Risk Intelligence</h1>
+            <h1 className="font-medium mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 28, letterSpacing: 'var(--ls-display)', lineHeight: 1.05 }}>Risk Intelligence</h1>
             <p className="text-sm text-[var(--ink-secondary)]">
               {integrationLoading && !integrationResolved ? 'Verifying connected systems and live risk signals…' : hasAnyIntegration ? `Monitoring ${RISK_CATEGORIES.filter(c => c.has).length} of ${RISK_CATEGORIES.length} risk categories with live data.` : 'Connect integrations to activate risk monitoring.'}
             </p>
@@ -655,7 +655,7 @@ const RiskPage = () => {
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-colors"
-              style={{ background: activeTab === tab.id ? '#E85D0015' : 'transparent', color: activeTab === tab.id ? 'var(--ink-display, #EDF1F7)' : '#64748B', fontFamily: fontFamily.mono }}
+              style={{ background: activeTab === tab.id ? '#E85D0015' : 'transparent', color: activeTab === tab.id ? 'var(--ink-display)' : '#64748B', fontFamily: 'var(--font-mono)' }}
               data-testid={`risk-tab-${tab.id}`}>
               <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
@@ -676,8 +676,8 @@ const RiskPage = () => {
                   style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${cat.has ? cat.color + '30' : '#1E2D3D'}` }}>
                   <cat.icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: cat.has ? cat.color : '#4A5568' }} />
                   <div>
-                    <p className="text-[10px] font-semibold" style={{ color: cat.has ? 'var(--ink-display, #EDF1F7)' : '#64748B', fontFamily: fontFamily.mono }}>{cat.title}</p>
-                    <p className="text-[9px]" style={{ color: cat.has ? cat.color : '#4A5568', fontFamily: fontFamily.mono }}>
+                    <p className="text-[10px] font-semibold" style={{ color: cat.has ? 'var(--ink-display)' : '#64748B', fontFamily: 'var(--font-mono)' }}>{cat.title}</p>
+                    <p className="text-[9px]" style={{ color: cat.has ? cat.color : '#4A5568', fontFamily: 'var(--font-mono)' }}>
                       {cat.has ? 'Monitoring' : 'Insufficient data'}
                     </p>
                   </div>
@@ -695,16 +695,16 @@ const RiskPage = () => {
                 {/* Req 3: specific concentration metric */}
                 {(concentration || topClientPct != null) && (
                   <div className="p-3 rounded-lg sm:col-span-2" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Revenue Concentration Risk</span>
+                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Revenue Concentration Risk</span>
                     {topClientPct != null ? (
                       <>
-                        <p className="text-sm font-semibold" style={{ color: topClientPct > 60 ? '#EF4444' : '#F59E0B', fontFamily: fontFamily.mono }}>
+                        <p className="text-sm font-semibold" style={{ color: topClientPct > 60 ? '#EF4444' : '#F59E0B', fontFamily: 'var(--font-mono)' }}>
                           Top 3 clients = {topClientPct}% of pipeline
                         </p>
                         <p className="text-[11px] text-[var(--ink-muted)] mt-0.5">
                           {topClientPct > 75 ? 'High concentration — losing one client would significantly impact revenue.' : topClientPct > 50 ? 'Moderate concentration — consider diversifying.' : 'Healthy spread across clients.'}
                         </p>
-                        <Link to="/revenue" className="text-[10px] flex items-center gap-1 mt-1.5" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
+                        <Link to="/revenue" className="text-[10px] flex items-center gap-1 mt-1.5" style={{ color: '#E85D00', fontFamily: 'var(--font-mono)' }}>
                           View client breakdown <ArrowRight className="w-3 h-3" />
                         </Link>
                       </>
@@ -715,7 +715,7 @@ const RiskPage = () => {
                 )}
                 {cap.margin && (
                   <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Margin</span>
+                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Margin</span>
                     <p className="text-xs text-[var(--ink-secondary)]">{cap.margin}</p>
                   </div>
                 )}
@@ -723,8 +723,8 @@ const RiskPage = () => {
               {!hasAccounting && (
                 <div className="mt-3 flex items-center justify-between p-2.5 rounded-lg"
                   style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.15)' }}>
-                  <p className="text-[11px]" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Connect Xero or MYOB for exact cash runway, margin % and cost structure.</p>
-                  <Link to="/integrations?category=financial" className="text-[10px] flex items-center gap-1 ml-3 whitespace-nowrap" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
+                  <p className="text-[11px]" style={{ color: 'var(--ink-secondary)' }}>Connect Xero or MYOB for exact cash runway, margin % and cost structure.</p>
+                  <Link to="/integrations?category=financial" className="text-[10px] flex items-center gap-1 ml-3 whitespace-nowrap" style={{ color: '#E85D00', fontFamily: 'var(--font-mono)' }}>
                     Connect <Plug className="w-3 h-3" />
                   </Link>
                 </div>
@@ -742,7 +742,7 @@ const RiskPage = () => {
               )}
               {exec.bottleneck && (
                 <div className="p-3 rounded-lg mt-2" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
-                  <p className="text-[10px] font-semibold text-[#F59E0B] mb-0.5" style={{ fontFamily: fontFamily.mono }}>Active Bottleneck</p>
+                  <p className="text-[10px] font-semibold text-[#F59E0B] mb-0.5" style={{ fontFamily: 'var(--font-mono)' }}>Active Bottleneck</p>
                   <p className="text-xs text-[var(--ink-secondary)]">{exec.bottleneck}</p>
                 </div>
               )}
@@ -774,11 +774,11 @@ const RiskPage = () => {
                         style={{ background: item.connected ? 'rgba(16,185,129,0.06)' : 'var(--biqc-bg)', border: `1px solid ${item.connected ? 'rgba(16,185,129,0.2)' : 'rgba(140,170,210,0.15)'}` }}>
                         <div className="flex items-center gap-1.5 mb-1">
                           {item.connected ? <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> : <XCircle className="w-3 h-3 text-[var(--ink-muted)]" />}
-                          <p className="text-[10px] font-semibold" style={{ color: item.connected ? '#10B981' : 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>{item.label}</p>
+                          <p className="text-[10px] font-semibold" style={{ color: item.connected ? '#10B981' : 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>{item.label}</p>
                         </div>
                         <p className="text-[10px] text-[var(--ink-muted)]">{item.desc}</p>
                         {!item.connected && (
-                          <Link to={`/integrations?category=${item.cat}`} className="text-[9px] flex items-center gap-1 mt-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
+                          <Link to={`/integrations?category=${item.cat}`} className="text-[9px] flex items-center gap-1 mt-1" style={{ color: '#E85D00', fontFamily: 'var(--font-mono)' }}>
                             Connect <ArrowRight className="w-2.5 h-2.5" />
                           </Link>
                         )}
@@ -815,7 +815,7 @@ const RiskPage = () => {
               <Panel>
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingDown className="w-4 h-4 text-[#F59E0B]" />
-                  <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Alignment Issues</h3>
+                  <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Alignment Issues</h3>
                 </div>
                 <div className="space-y-2">
                   {contradictions.map((ct, i) => (
@@ -837,7 +837,7 @@ const RiskPage = () => {
               <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-[#3B82F6]" />
-                  <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Data Sources</h3>
+                  <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Data Sources</h3>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -850,15 +850,15 @@ const RiskPage = () => {
                     <src.icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: src.connected ? '#10B981' : '#64748B' }} />
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-xs font-semibold" style={{ color: src.connected ? '#10B981' : 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>{src.label}</p>
+                        <p className="text-xs font-semibold" style={{ color: src.connected ? '#10B981' : 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>{src.label}</p>
                         {src.connected
-                          ? <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', fontFamily: fontFamily.mono }}>Connected</span>
-                          : <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: '#1E2D3D', color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Not connected</span>
+                          ? <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', fontFamily: 'var(--font-mono)' }}>Connected</span>
+                          : <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: '#1E2D3D', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Not connected</span>
                         }
                       </div>
                       <p className="text-[10px] text-[var(--ink-muted)]">{src.desc}</p>
                       {!src.connected && (
-                        <Link to="/integrations?step=1" className="text-[9px] flex items-center gap-1 mt-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
+                        <Link to="/integrations?step=1" className="text-[9px] flex items-center gap-1 mt-1" style={{ color: '#E85D00', fontFamily: 'var(--font-mono)' }}>
                           Connect <ArrowRight className="w-2.5 h-2.5" />
                         </Link>
                       )}
@@ -871,7 +871,7 @@ const RiskPage = () => {
             {/* Sample metrics when not connected */}
             {!hasEmail && (
               <Panel>
-                <p className="text-[10px] uppercase tracking-widest mb-3" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Sample Insights — Unlock by Connecting Email & Calendar</p>
+                <p className="text-[10px] uppercase tracking-widest mb-3" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>Sample Insights — Unlock by Connecting Email & Calendar</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <ExampleMetric label="Avg Email Response Time" example="e.g. 4.2 hours (target: 2h)" color="#3B82F6" />
                   <ExampleMetric label="Meeting Load This Week" example="e.g. 14 meetings — above your avg of 9" color="#8B5CF6" />
@@ -882,7 +882,7 @@ const RiskPage = () => {
                 </div>
                 <Link to="/integrations?step=1"
                   className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
-                  style={{ background: '#E85D00', color: 'white', fontFamily: fontFamily.body }}>
+                  style={{ background: '#E85D00', color: 'white', fontFamily: 'var(--font-ui)' }}>
                   <Plug className="w-4 h-4" /> Connect Email & Calendar to Unlock These Insights
                 </Link>
               </Panel>
@@ -894,26 +894,26 @@ const RiskPage = () => {
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
                     <Activity className="w-4 h-4 text-[#3B82F6]" />
-                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Live Capacity & Communication Signals</h3>
+                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Live Capacity & Communication Signals</h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <RiskMeter value={fv.capacity_index} label="Capacity Utilisation" thresholds={[80, 100]} insufficientData={fv.capacity_index == null} />
                     <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                      <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Fatigue Level</span>
+                      <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Fatigue Level</span>
                       {fv.fatigue
-                        ? <span className="text-xl font-bold" style={{ color: fv.fatigue === 'high' ? '#EF4444' : fv.fatigue === 'medium' ? '#F59E0B' : '#10B981', fontFamily: fontFamily.mono }}>{fv.fatigue}</span>
+                        ? <span className="text-xl font-bold" style={{ color: fv.fatigue === 'high' ? '#EF4444' : fv.fatigue === 'medium' ? '#F59E0B' : '#10B981', fontFamily: 'var(--font-mono)' }}>{fv.fatigue}</span>
                         : <span className="text-xs italic text-[var(--ink-muted)]">Insufficient data</span>
                       }
                     </div>
                     {fv.calendar && (
                       <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                        <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Meeting Load (Outlook)</span>
+                        <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Meeting Load (Outlook)</span>
                         <p className="text-xs text-[var(--ink-secondary)]">{fv.calendar}</p>
                       </div>
                     )}
                     {fv.email_stress && (
                       <div className="p-3 rounded-lg sm:col-span-2" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                        <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Email Stress Signal</span>
+                        <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Email Stress Signal</span>
                         <p className="text-xs text-[var(--ink-secondary)]">{fv.email_stress}</p>
                       </div>
                     )}
@@ -924,7 +924,7 @@ const RiskPage = () => {
                     <div className="flex items-start gap-3">
                       <Heart className="w-4 h-4 text-[#E85D00] shrink-0 mt-0.5" />
                       <div>
-                        <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>Workforce Advisory</h3>
+                        <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-1" style={{ fontFamily: 'var(--font-display)' }}>Workforce Advisory</h3>
                         <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">{fv.recommendation}</p>
                       </div>
                     </div>
@@ -936,7 +936,7 @@ const RiskPage = () => {
             {hasEmail && !hasPeopleData && (
               <Panel className="text-center py-6">
                 <Loader2 className="w-6 h-6 animate-spin text-[#10B981] mx-auto mb-2" />
-                <p className="text-sm text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>Processing workforce signals.</p>
+                <p className="text-sm text-[var(--ink-display)] mb-1" style={{ fontFamily: 'var(--font-display)' }}>Processing workforce signals.</p>
                 <p className="text-xs text-[var(--ink-muted)]">BIQc is analysing communication patterns and calendar density. Check back shortly.</p>
               </Panel>
             )}
@@ -950,18 +950,18 @@ const RiskPage = () => {
             <div className="flex justify-end">
               <button onClick={() => setShowAcronymLegend(v => !v)}
                 className="flex items-center gap-1.5 text-[10px] px-3 py-1.5 rounded-lg transition-colors hover:bg-white/5"
-                style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono, border: '1px solid rgba(140,170,210,0.15)' }}>
+                style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(140,170,210,0.15)' }}>
                 <Info className="w-3 h-3" /> {showAcronymLegend ? 'Hide' : 'What do RVI, EDS, CDR, ADS mean?'}
               </button>
             </div>
 
             {showAcronymLegend && (
               <Panel>
-                <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Acronym Reference</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#E85D00', fontFamily: 'var(--font-mono)' }}>Acronym Reference</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {ACRONYMS.map(a => (
                     <div key={a.label} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid rgba(140,170,210,0.15)' }}>
-                      <p className="text-xs font-bold mb-0.5" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>{a.label} — {a.title}</p>
+                      <p className="text-xs font-bold mb-0.5" style={{ color: '#E85D00', fontFamily: 'var(--font-mono)' }}>{a.label} — {a.title}</p>
                       <p className="text-[11px] text-[var(--ink-secondary)]">{a.desc}</p>
                     </div>
                   ))}
@@ -974,9 +974,9 @@ const RiskPage = () => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Activity className="w-4 h-4 text-[#EF4444]" />
-                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Instability Indices</h3>
+                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Instability Indices</h3>
                   </div>
-                  <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: fontFamily.mono }}>COGNITION CORE</span>
+                  <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: 'var(--font-mono)' }}>COGNITION CORE</span>
                 </div>
                 <div className="mb-3" data-testid="risk-lineage-badge-unified-panel">
                   <LineageBadge lineage={riskIntelLineage} data_freshness={riskIntelFreshness} confidence_score={riskIntelConfidence} compact />
@@ -998,16 +998,16 @@ const RiskPage = () => {
                               {pct != null && <circle cx="20" cy="20" r="18" fill="none" stroke={ic} strokeWidth="3.5" strokeDasharray={c2} strokeDashoffset={off} strokeLinecap="round" />}
                             </svg>
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-[10px] font-bold" style={{ color: pct != null ? ic : '#64748B', fontFamily: fontFamily.mono }}>
+                              <span className="text-[10px] font-bold" style={{ color: pct != null ? ic : '#64748B', fontFamily: 'var(--font-mono)' }}>
                                 {pct != null ? pct + '%' : '—'}
                               </span>
                             </div>
                           </div>
                           <div className="flex items-center justify-center gap-1">
-                            <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: pct != null ? ic : '#64748B', fontFamily: fontFamily.mono }}>{label}</span>
+                            <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: pct != null ? ic : '#64748B', fontFamily: 'var(--font-mono)' }}>{label}</span>
                             <Info className="w-3 h-3" style={{ color: '#4A5568' }} />
                           </div>
-                          <p className="text-[9px] mt-0.5" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{title}</p>
+                          <p className="text-[9px] mt-0.5" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{title}</p>
                           {pct == null && <p className="text-[9px] italic" style={{ color: '#4A5568' }}>Insufficient data</p>}
                         </div>
                       </Tooltip>
@@ -1018,12 +1018,12 @@ const RiskPage = () => {
                 {/* Req 6: Composite score — "Insufficient data" not "Low" */}
                 <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.display }}>Composite Risk Score</span>
+                    <span className="text-xs" style={{ color: 'var(--biqc-text-2)', fontFamily: 'var(--font-display)' }}>Composite Risk Score</span>
                     <Tooltip text="Composite Risk Score combines RVI, EDS, CDR and ADS into a single risk rating. 'Insufficient data' means there is not yet enough connected data to compute a reliable score — this is not the same as Low risk.">
                       <Info className="w-3.5 h-3.5 cursor-help" style={{ color: '#4A5568' }} />
                     </Tooltip>
                   </div>
-                  <span className="text-2xl font-bold" style={{ color: compositeColor, fontFamily: fontFamily.mono }}>
+                  <span className="text-2xl font-bold" style={{ color: compositeColor, fontFamily: 'var(--font-mono)' }}>
                     {compositeDisplay}
                   </span>
                 </div>
@@ -1036,10 +1036,10 @@ const RiskPage = () => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Risk Propagation Analysis</h3>
+                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Risk Propagation Analysis</h3>
                   </div>
                   <Tooltip text="Click any chain to see the underlying data driving that risk pathway and navigate to the relevant page.">
-                    <span className="text-[10px] flex items-center gap-1 cursor-help" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>
+                    <span className="text-[10px] flex items-center gap-1 cursor-help" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
                       <Info className="w-3 h-3" /> Click to expand
                     </span>
                   </Tooltip>
@@ -1058,12 +1058,12 @@ const RiskPage = () => {
             {!unifiedRisk?.instability_indices && !unifiedRisk?.propagation_map && (
               <Panel className="text-center py-8">
                 <Shield className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted)' }} />
-                <p className="text-sm font-semibold text-[var(--ink-secondary)] mb-1" style={{ fontFamily: fontFamily.display }}>Cross-domain risk data not yet available.</p>
+                <p className="text-sm font-semibold text-[var(--ink-secondary)] mb-1" style={{ fontFamily: 'var(--font-display)' }}>Cross-domain risk data not yet available.</p>
                 <p className="text-xs text-[var(--ink-muted)] max-w-sm mx-auto">
                   Connect CRM, accounting and email to generate your cross-domain risk matrix. BIQc will then compute propagation chains and instability indices.
                 </p>
                 <Link to="/integrations" className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
-                  style={{ background: '#E85D00', fontFamily: fontFamily.body }}>
+                  style={{ background: '#E85D00', fontFamily: 'var(--font-ui)' }}>
                   <Plug className="w-4 h-4" /> Connect Integrations
                 </Link>
               </Panel>

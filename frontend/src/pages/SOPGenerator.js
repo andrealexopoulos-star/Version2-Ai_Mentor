@@ -9,7 +9,7 @@ import {
   X
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { fontFamily } from '../design-system/tokens';
+// Design tokens now via CSS custom properties
 import { toast } from 'sonner';
 
 /* No hardcoded SOPs -- grid shows generated SOPs or empty state */
@@ -35,14 +35,14 @@ const TEMPLATES = [
 
 /* ─── Helpers ─── */
 const statusConfig = {
-  published:  { label: 'Published',  bg: 'rgba(34,197,94,0.12)',  color: '#22C55E' },
-  draft:      { label: 'Draft',      bg: 'rgba(245,158,11,0.12)', color: '#F59E0B' },
-  in_review:  { label: 'In Review',  bg: 'rgba(59,130,246,0.12)', color: '#3B82F6' },
+  published:  { label: 'Published',  bg: 'var(--positive-wash)',  color: 'var(--positive)' },
+  draft:      { label: 'Draft',      bg: 'var(--warning-wash)', color: 'var(--warning)' },
+  in_review:  { label: 'In Review',  bg: 'var(--info-wash)', color: 'var(--info)' },
 };
 
 const sourceConfig = {
-  ai:     { label: 'AI Generated', bg: 'rgba(232,93,0,0.12)', color: '#E85D00' },
-  manual: { label: 'Manual',       bg: 'rgba(140,170,210,0.10)', color: 'var(--ink-secondary, #8FA0B8)' },
+  ai:     { label: 'AI Generated', bg: 'var(--lava-wash)', color: 'var(--lava)' },
+  manual: { label: 'Manual',       bg: 'var(--surface-2)', color: 'var(--ink-secondary)' },
 };
 
 /* ─── SOP Card component ─── */
@@ -53,8 +53,8 @@ const SOPCard = ({ sop }) => {
   return (
     <div
       style={{
-        background: 'var(--surface, #0E1628)',
-        border: '1px solid rgba(140,170,210,0.12)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 16,
         padding: 20,
         display: 'flex',
@@ -64,18 +64,18 @@ const SOPCard = ({ sop }) => {
         cursor: 'pointer',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)';
+        e.currentTarget.style.borderColor = 'var(--border)';
         e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)';
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.borderColor = 'rgba(140,170,210,0.12)';
+        e.currentTarget.style.borderColor = 'var(--border)';
         e.currentTarget.style.boxShadow = 'none';
       }}
     >
       {/* Badges */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <span style={{
-          fontSize: 10, fontWeight: 700, fontFamily: fontFamily.mono,
+          fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)',
           padding: '3px 8px', borderRadius: 999,
           background: src.bg, color: src.color,
           letterSpacing: '0.06em', textTransform: 'uppercase',
@@ -83,7 +83,7 @@ const SOPCard = ({ sop }) => {
           {src.label}
         </span>
         <span style={{
-          fontSize: 10, fontWeight: 600, fontFamily: fontFamily.mono,
+          fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-mono)',
           padding: '3px 8px', borderRadius: 999,
           background: st.bg, color: st.color,
           letterSpacing: '0.06em', textTransform: 'uppercase',
@@ -94,8 +94,8 @@ const SOPCard = ({ sop }) => {
 
       {/* Title */}
       <h3 style={{
-        fontFamily: fontFamily.display, fontSize: 20, fontWeight: 600,
-        color: 'var(--ink-display, #EDF1F7)', margin: 0, lineHeight: 1.25,
+        fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600,
+        color: 'var(--ink-display)', margin: 0, lineHeight: 1.25,
         letterSpacing: '-0.01em',
       }}>
         {sop.title}
@@ -103,7 +103,7 @@ const SOPCard = ({ sop }) => {
 
       {/* Description */}
       <p style={{
-        fontFamily: fontFamily.body, fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)',
+        fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--ink-secondary)',
         margin: 0, lineHeight: 1.5,
       }}>
         {sop.description}
@@ -111,7 +111,7 @@ const SOPCard = ({ sop }) => {
 
       {/* Step dots */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 12, color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono, marginRight: 4 }}>
+        <span style={{ fontSize: 12, color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', marginRight: 4 }}>
           {sop.totalSteps} steps
         </span>
         <div style={{ display: 'flex', gap: 3 }}>
@@ -120,7 +120,7 @@ const SOPCard = ({ sop }) => {
               key={i}
               style={{
                 width: 8, height: 8, borderRadius: '50%',
-                background: i < sop.completedSteps ? '#E85D00' : 'rgba(140,170,210,0.18)',
+                background: i < sop.completedSteps ? 'var(--lava)' : 'var(--border)',
               }}
             />
           ))}
@@ -129,12 +129,12 @@ const SOPCard = ({ sop }) => {
 
       {/* Meta row */}
       <div style={{
-        borderTop: '1px solid rgba(140,170,210,0.08)',
+        borderTop: '1px solid var(--border)',
         paddingTop: 12, marginTop: 2,
         display: 'flex', alignItems: 'center', gap: 12,
-        fontSize: 12, color: 'var(--ink-muted, #708499)',
+        fontSize: 12, color: 'var(--ink-muted)',
       }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: fontFamily.body }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--font-ui)' }}>
           <Clock size={14} /> {sop.updatedAgo ? `Updated ${sop.updatedAgo}` : 'Just created'}
         </span>
       </div>
@@ -149,8 +149,8 @@ const TemplateCard = ({ template, onClick }) => {
     <div
       onClick={onClick}
       style={{
-        background: 'var(--surface, #0E1628)',
-        border: '1px solid rgba(140,170,210,0.12)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 12,
         padding: 16,
         cursor: 'pointer',
@@ -160,39 +160,39 @@ const TemplateCard = ({ template, onClick }) => {
         gap: 12,
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.borderColor = '#E85D00';
+        e.currentTarget.style.borderColor = 'var(--lava)';
         e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.borderColor = 'rgba(140,170,210,0.12)';
+        e.currentTarget.style.borderColor = 'var(--border)';
         e.currentTarget.style.boxShadow = 'none';
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{
           width: 40, height: 40, borderRadius: 10,
-          background: 'rgba(232,93,0,0.12)',
+          background: 'var(--lava-wash)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Icon size={20} style={{ color: '#E85D00' }} />
+          <Icon size={20} style={{ color: 'var(--lava)' }} />
         </div>
         <span style={{
-          fontSize: 9, fontWeight: 700, fontFamily: fontFamily.mono,
+          fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-mono)',
           padding: '2px 8px', borderRadius: 999,
-          background: 'rgba(140,170,210,0.08)', color: 'var(--ink-muted, #708499)',
+          background: 'var(--surface-2)', color: 'var(--ink-muted)',
           letterSpacing: '0.1em', textTransform: 'uppercase',
         }}>
           Template
         </span>
       </div>
       <h4 style={{
-        fontFamily: fontFamily.body, fontSize: 14, fontWeight: 600,
-        color: 'var(--ink-display, #EDF1F7)', margin: 0,
+        fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 600,
+        color: 'var(--ink-display)', margin: 0,
       }}>
         {template.title}
       </h4>
       <p style={{
-        fontFamily: fontFamily.body, fontSize: 12, color: 'var(--ink-muted, #708499)',
+        fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-muted)',
         margin: 0, lineHeight: 1.5,
       }}>
         {template.description}
@@ -393,10 +393,10 @@ const SOPGenerator = () => {
     width: '100%',
     padding: '10px 14px',
     fontSize: 14,
-    fontFamily: fontFamily.body,
-    color: 'var(--ink-display, #EDF1F7)',
-    background: '#060A12',
-    border: '1px solid rgba(140,170,210,0.12)',
+    fontFamily: 'var(--font-ui)',
+    color: 'var(--ink-display)',
+    background: 'var(--surface-2)',
+    border: '1px solid var(--border)',
     borderRadius: 10,
     outline: 'none',
     transition: 'border-color 0.2s',
@@ -416,21 +416,21 @@ const SOPGenerator = () => {
   const labelStyle = {
     fontSize: 14,
     fontWeight: 500,
-    color: 'var(--ink-display, #EDF1F7)',
-    fontFamily: fontFamily.body,
+    color: 'var(--ink-display)',
+    fontFamily: 'var(--font-ui)',
     marginBottom: 4,
     display: 'block',
   };
 
   const gradientBtnStyle = {
-    background: 'linear-gradient(135deg, #E85D00, #FF7A18)',
+    background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))',
     color: '#fff',
     border: 'none',
     borderRadius: 10,
     padding: '10px 24px',
     fontSize: 14,
     fontWeight: 600,
-    fontFamily: fontFamily.body,
+    fontFamily: 'var(--font-ui)',
     cursor: 'pointer',
     display: 'inline-flex',
     alignItems: 'center',
@@ -440,13 +440,13 @@ const SOPGenerator = () => {
 
   const ghostBtnStyle = {
     background: 'transparent',
-    color: 'var(--ink-secondary, #8FA0B8)',
-    border: '1px solid rgba(140,170,210,0.12)',
+    color: 'var(--ink-secondary)',
+    border: '1px solid var(--border)',
     borderRadius: 10,
     padding: '10px 24px',
     fontSize: 14,
     fontWeight: 500,
-    fontFamily: fontFamily.body,
+    fontFamily: 'var(--font-ui)',
     cursor: 'pointer',
     display: 'inline-flex',
     alignItems: 'center',
@@ -462,8 +462,8 @@ const SOPGenerator = () => {
         {/* ────────── 1. HEADER ────────── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <h1 style={{
-            fontFamily: fontFamily.display, fontSize: 28, fontWeight: 700,
-            color: 'var(--ink-display, #EDF1F7)', margin: 0, letterSpacing: '-0.02em',
+            fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700,
+            color: 'var(--ink-display)', margin: 0, letterSpacing: 'var(--ls-display)',
           }}>
             SOP Generator
           </h1>
@@ -473,7 +473,7 @@ const SOPGenerator = () => {
               ...gradientBtnStyle,
               padding: '10px 20px',
             }}
-            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(232,93,0,0.35)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--elev-1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
           >
             <Sparkles size={16} /> New SOP
@@ -482,7 +482,7 @@ const SOPGenerator = () => {
 
         {/* ────────── 2. CATEGORY TABS ────────── */}
         <div style={{
-          borderBottom: '1px solid rgba(140,170,210,0.12)',
+          borderBottom: '1px solid var(--border)',
           marginBottom: 24,
           display: 'flex',
           gap: 4,
@@ -497,18 +497,18 @@ const SOPGenerator = () => {
                 style={{
                   background: 'none',
                   border: 'none',
-                  borderBottom: isActive ? '2px solid #E85D00' : '2px solid transparent',
+                  borderBottom: isActive ? '2px solid var(--lava)' : '2px solid transparent',
                   padding: '12px 16px',
                   fontSize: 14,
                   fontWeight: isActive ? 600 : 500,
-                  fontFamily: fontFamily.body,
-                  color: isActive ? 'var(--ink-display, #EDF1F7)' : 'var(--ink-secondary, #8FA0B8)',
+                  fontFamily: 'var(--font-ui)',
+                  color: isActive ? 'var(--ink-display)' : 'var(--ink-secondary)',
                   cursor: 'pointer',
                   transition: 'color 0.2s, border-color 0.2s',
                   whiteSpace: 'nowrap',
                 }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#c0cfe0'; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = 'var(--ink-secondary, #8FA0B8)'; }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = 'var(--ink)'; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = 'var(--ink-secondary)'; }}
               >
                 {tab.label}
               </button>
@@ -528,21 +528,21 @@ const SOPGenerator = () => {
           )) : (
             <div style={{
               gridColumn: '1 / -1',
-              background: 'var(--surface, #0E1628)',
-              border: '1px solid rgba(140,170,210,0.12)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
               borderRadius: 16,
               padding: 48,
               textAlign: 'center',
             }}>
-              <FileText size={40} style={{ color: '#64748B', margin: '0 auto 16px', display: 'block' }} />
+              <FileText size={40} style={{ color: 'var(--ink-muted)', margin: '0 auto 16px', display: 'block' }} />
               <h3 style={{
-                fontFamily: fontFamily.display, fontSize: 18, fontWeight: 600,
-                color: 'var(--ink-display, #EDF1F7)', margin: '0 0 8px',
+                fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600,
+                color: 'var(--ink-display)', margin: '0 0 8px',
               }}>
                 No SOPs generated yet
               </h3>
               <p style={{
-                fontFamily: fontFamily.body, fontSize: 13, color: '#64748B',
+                fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-muted)',
                 maxWidth: 420, margin: '0 auto', lineHeight: 1.6,
               }}>
                 Create your first SOP using the generator below.
@@ -555,21 +555,21 @@ const SOPGenerator = () => {
         <div
           ref={generatorRef}
           style={{
-            background: 'var(--surface, #0E1628)',
-            border: '1px solid rgba(140,170,210,0.12)',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
             borderRadius: 16,
             padding: 24,
             marginBottom: 32,
           }}
         >
           <h2 style={{
-            fontFamily: fontFamily.display, fontSize: 22, fontWeight: 600,
-            color: 'var(--ink-display, #EDF1F7)', margin: '0 0 4px',
+            fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600,
+            color: 'var(--ink-display)', margin: '0 0 4px',
           }}>
             Generate New SOP
           </h2>
           <p style={{
-            fontFamily: fontFamily.body, fontSize: 14, color: 'var(--ink-secondary, #8FA0B8)',
+            fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--ink-secondary)',
             margin: '0 0 20px', lineHeight: 1.5,
           }}>
             Describe the process and BIQc will generate a structured, step-by-step procedure from your business data.
@@ -586,8 +586,8 @@ const SOPGenerator = () => {
                   onChange={e => setGenTitle(e.target.value)}
                   placeholder="e.g. Weekly Pipeline Review Process"
                   style={inputStyle}
-                  onFocus={e => { e.target.style.borderColor = '#E85D00'; e.target.style.boxShadow = '0 0 0 3px rgba(232,93,0,0.12)'; }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; e.target.style.boxShadow = 'none'; }}
+                  onFocus={e => { e.target.style.borderColor = 'var(--lava)'; e.target.style.boxShadow = '0 0 0 3px var(--lava-wash)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
                   data-testid="sop-title-input"
                 />
               </div>
@@ -597,8 +597,8 @@ const SOPGenerator = () => {
                   value={genCategory}
                   onChange={e => setGenCategory(e.target.value)}
                   style={selectStyle}
-                  onFocus={e => { e.target.style.borderColor = '#E85D00'; e.target.style.boxShadow = '0 0 0 3px rgba(232,93,0,0.12)'; }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; e.target.style.boxShadow = 'none'; }}
+                  onFocus={e => { e.target.style.borderColor = 'var(--lava)'; e.target.style.boxShadow = '0 0 0 3px var(--lava-wash)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
                 >
                   <option value="Sales">Sales</option>
                   <option value="Operations">Operations</option>
@@ -619,8 +619,8 @@ const SOPGenerator = () => {
                 placeholder="Describe the process you want to document. Include key steps, decision points, and who is responsible for each stage. BIQc will structure this into a formal SOP with clear ownership and escalation paths."
                 rows={4}
                 style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }}
-                onFocus={e => { e.target.style.borderColor = '#E85D00'; e.target.style.boxShadow = '0 0 0 3px rgba(232,93,0,0.12)'; }}
-                onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; e.target.style.boxShadow = 'none'; }}
+                onFocus={e => { e.target.style.borderColor = 'var(--lava)'; e.target.style.boxShadow = '0 0 0 3px var(--lava-wash)'; }}
+                onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
                 data-testid="sop-description-input"
               />
             </div>
@@ -635,8 +635,8 @@ const SOPGenerator = () => {
                   onChange={e => setGenOwner(e.target.value)}
                   placeholder="e.g. Andreas Alexopoulos"
                   style={inputStyle}
-                  onFocus={e => { e.target.style.borderColor = '#E85D00'; e.target.style.boxShadow = '0 0 0 3px rgba(232,93,0,0.12)'; }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; e.target.style.boxShadow = 'none'; }}
+                  onFocus={e => { e.target.style.borderColor = 'var(--lava)'; e.target.style.boxShadow = '0 0 0 3px var(--lava-wash)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
                 />
               </div>
               <div>
@@ -645,8 +645,8 @@ const SOPGenerator = () => {
                   value={genFrequency}
                   onChange={e => setGenFrequency(e.target.value)}
                   style={selectStyle}
-                  onFocus={e => { e.target.style.borderColor = '#E85D00'; e.target.style.boxShadow = '0 0 0 3px rgba(232,93,0,0.12)'; }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(140,170,210,0.12)'; e.target.style.boxShadow = 'none'; }}
+                  onFocus={e => { e.target.style.borderColor = 'var(--lava)'; e.target.style.boxShadow = '0 0 0 3px var(--lava-wash)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
                 >
                   <option value="Monthly">Monthly</option>
                   <option value="Quarterly">Quarterly</option>
@@ -685,8 +685,8 @@ const SOPGenerator = () => {
                 type="button"
                 onClick={saveDraft}
                 style={ghostBtnStyle}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; e.currentTarget.style.color = 'var(--ink-display, #EDF1F7)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.12)'; e.currentTarget.style.color = 'var(--ink-secondary, #8FA0B8)'; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--ink-display)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--ink-secondary)'; }}
               >
                 <Save size={16} /> Save as draft
               </button>
@@ -697,8 +697,8 @@ const SOPGenerator = () => {
         {/* ────────── 5. TEMPLATES SECTION ────────── */}
         <div style={{ marginBottom: 32 }}>
           <h2 style={{
-            fontFamily: fontFamily.display, fontSize: 22, fontWeight: 600,
-            color: 'var(--ink-display, #EDF1F7)', margin: '0 0 16px',
+            fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600,
+            color: 'var(--ink-display)', margin: '0 0 16px',
           }}>
             Start from a template
           </h2>
@@ -727,8 +727,8 @@ const SOPGenerator = () => {
           onClick={e => { if (e.target === e.currentTarget && !loading) setShowResultModal(false); }}
         >
           <div style={{
-            background: 'var(--surface, #0E1628)',
-            border: '1px solid rgba(140,170,210,0.12)',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
             borderRadius: 16,
             width: '100%',
             maxWidth: 720,
@@ -741,22 +741,22 @@ const SOPGenerator = () => {
             {/* Modal header */}
             <div style={{
               padding: '20px 24px',
-              borderBottom: '1px solid rgba(140,170,210,0.12)',
+              borderBottom: '1px solid var(--border)',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
               <div>
                 {result && (
                   <span style={{
-                    fontSize: 11, fontWeight: 600, fontFamily: fontFamily.body,
+                    fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-ui)',
                     padding: '3px 10px', borderRadius: 8,
-                    background: 'rgba(232,93,0,0.12)', color: '#E85D00',
+                    background: 'var(--lava-wash)', color: 'var(--lava)',
                     marginRight: 10,
                   }}>
                     {result.type}
                   </span>
                 )}
                 <span style={{
-                  fontFamily: fontFamily.display, fontSize: 18, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)',
+                  fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: 'var(--ink-display)',
                 }}>
                   {loading ? 'Generating...' : result?.title || 'Result'}
                 </span>
@@ -791,7 +791,7 @@ const SOPGenerator = () => {
                   onClick={() => { if (!loading) setShowResultModal(false); }}
                   style={{
                     background: 'none', border: 'none', cursor: loading ? 'default' : 'pointer',
-                    color: 'var(--ink-muted, #708499)', padding: 6, display: 'flex',
+                    color: 'var(--ink-muted)', padding: 6, display: 'flex',
                     opacity: loading ? 0.4 : 1,
                   }}
                 >
@@ -805,7 +805,7 @@ const SOPGenerator = () => {
               {loading && (
                 <div style={{ textAlign: 'center', padding: 40 }}>
                   <CognitiveMesh compact />
-                  <p style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body, fontSize: 14, marginTop: 16 }}>
+                  <p style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)', fontSize: 14, marginTop: 16 }}>
                     Generating your SOP...
                   </p>
                 </div>
@@ -813,7 +813,7 @@ const SOPGenerator = () => {
               {result && !loading && (
                 <div
                   className="markdown-content prose prose-sm max-w-none"
-                  style={{ color: '#c5d0de', fontFamily: fontFamily.body, fontSize: 14, lineHeight: 1.7 }}
+                  style={{ color: 'var(--ink)', fontFamily: 'var(--font-ui)', fontSize: 14, lineHeight: 1.7 }}
                 >
                   <ReactMarkdown>{result.content}</ReactMarkdown>
                 </div>

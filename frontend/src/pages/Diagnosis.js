@@ -10,7 +10,6 @@ import {
   UserMinus, LineChart, Cog, Scale, MessageSquare
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 
 // Expanded business categories with BIQC-style explanations
@@ -154,16 +153,16 @@ const RingGauge = ({ value, label, size = 100 }) => {
   const r = 40;
   const circumference = 2 * Math.PI * r;
   const offset = circumference * (1 - (value || 0) / 100);
-  const color = value >= 80 ? '#10B981' : value >= 60 ? '#F59E0B' : '#EF4444';
+  const color = value >= 80 ? 'var(--positive)' : value >= 60 ? 'var(--warning)' : 'var(--danger)';
   return (
     <div style={{ textAlign: 'center', minWidth: 100 }}>
       <svg width={size} height={size} viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx="50" cy="50" r={r} fill="none" stroke="var(--surface-sunken, #060A12)" strokeWidth="8" />
+        <circle cx="50" cy="50" r={r} fill="none" stroke="var(--surface-sunken)" strokeWidth="8" />
         <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
       </svg>
       <div style={{ marginTop: -60, position: 'relative' }}>
-        <div style={{ fontFamily: fontFamily.display, fontSize: 28, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>{value != null ? value : '\u2014'}</div>
-        <div style={{ fontFamily: fontFamily.mono, fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>{label}</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--ink-display)', lineHeight: 1 }}>{value != null ? value : '\u2014'}</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', marginTop: 4 }}>{label}</div>
       </div>
     </div>
   );
@@ -439,8 +438,8 @@ const Diagnosis = ({ embedded = false }) => {
       {!embedded && (
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Diagnosis</h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            <h1 className="font-medium" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 28, letterSpacing: 'var(--ls-display)', lineHeight: 1.15 }}>Diagnosis</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary)' }}>
               Select areas to focus your advisory intelligence on
             </p>
           </div>
@@ -463,9 +462,9 @@ const Diagnosis = ({ embedded = false }) => {
           justifyContent: 'space-between',
           gap: 16,
           padding: '24px 16px',
-          background: 'rgba(14,22,40,0.6)',
-          borderRadius: 16,
-          border: '1px solid rgba(140,170,210,0.12)',
+          background: 'var(--surface)',
+          borderRadius: 'var(--r-lg)',
+          border: '1px solid var(--border)',
           overflowX: 'auto',
         }}>
           {diagnosisDimensions.map(dim => {
@@ -489,18 +488,18 @@ const Diagnosis = ({ embedded = false }) => {
       {/* ── AI Findings Panel ── */}
       {assessment && assessment.diagnoses?.some(d => d.signal_count > 0) && (
         <div style={{
-          background: 'linear-gradient(135deg, rgba(232,93,0,0.12) 0%, rgba(14,22,40,0.9) 60%)',
-          borderRadius: 16,
-          border: '1px solid rgba(232,93,0,0.25)',
+          background: 'linear-gradient(135deg, var(--lava-wash) 0%, var(--surface) 60%)',
+          borderRadius: 'var(--r-lg)',
+          border: '1px solid var(--border)',
           padding: '24px 28px',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <span style={{
-              width: 8, height: 8, borderRadius: '50%', background: '#E85D00',
-              boxShadow: '0 0 8px rgba(232,93,0,0.6)',
+              width: 8, height: 8, borderRadius: '50%', background: 'var(--lava)',
+              boxShadow: '0 0 8px var(--lava)',
               animation: 'pulse 2s infinite',
             }} />
-            <span style={{ fontFamily: fontFamily.display, fontSize: 18, color: 'var(--ink-display, #EDF1F7)', fontWeight: 600 }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--ink-display)', fontWeight: 600 }}>
               BIQc Diagnosis
             </span>
           </div>
@@ -512,17 +511,17 @@ const Diagnosis = ({ embedded = false }) => {
                 <li key={d.id} style={{
                   display: 'flex', alignItems: 'flex-start', gap: 10,
                   padding: '8px 0',
-                  borderBottom: i < 3 ? '1px solid rgba(140,170,210,0.08)' : 'none',
+                  borderBottom: i < 3 ? '1px solid var(--border-subtle)' : 'none',
                 }}>
                   <span style={{
                     width: 6, height: 6, borderRadius: '50%', marginTop: 6, flexShrink: 0,
-                    background: d.urgency === 'High' ? '#EF4444' : d.urgency === 'Medium' ? '#F59E0B' : '#10B981',
+                    background: d.urgency === 'High' ? 'var(--danger)' : d.urgency === 'Medium' ? 'var(--warning)' : 'var(--positive)',
                   }} />
                   <div>
-                    <span style={{ fontFamily: fontFamily.body, fontSize: 14, color: 'var(--ink-display, #EDF1F7)', fontWeight: 500 }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--ink-display)', fontWeight: 500 }}>
                       {d.focus_area}
                     </span>
-                    <span style={{ fontFamily: fontFamily.body, fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)', marginLeft: 8 }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-secondary)', marginLeft: 8 }}>
                       {d.evidence_summary}
                     </span>
                   </div>
@@ -535,19 +534,19 @@ const Diagnosis = ({ embedded = false }) => {
               if (topArea) goToAdvisorWithTrigger(topArea.id);
             }}
             style={{
-              fontFamily: fontFamily.body,
+              fontFamily: 'var(--font-ui)',
               fontSize: 14,
               fontWeight: 600,
               color: '#fff',
-              background: '#E85D00',
+              background: 'var(--lava)',
               border: 'none',
-              borderRadius: 12,
+              borderRadius: 'var(--r-lg)',
               padding: '10px 24px',
               cursor: 'pointer',
               transition: 'background 0.2s',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = '#C24D00'}
-            onMouseLeave={e => e.currentTarget.style.background = '#E85D00'}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--lava-deep)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--lava)'}
           >
             Discuss with BIQc
           </button>

@@ -6,7 +6,6 @@ import { apiClient } from '../lib/api';
 import { Lock, ArrowRight, Check, Loader2, CheckCircle2, XCircle, Sparkles, ChevronDown, Minus } from 'lucide-react';
 import { PRICING_TIERS } from '../config/pricingTiers';
 import { FOUNDATION_FEATURES, WAITLIST_FEATURES } from '../config/launchConfig';
-import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 
 
@@ -117,99 +116,118 @@ const SubscribePage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-6 py-12 max-w-4xl mx-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="subscribe-page">
+    <div className="min-h-screen flex flex-col items-center px-6 py-12 max-w-4xl mx-auto" style={{ background: 'var(--canvas-app, var(--surface))' }} data-testid="subscribe-page">
       {/* Payment Result Banner */}
       {paymentResult && (
         <div className="w-full max-w-xl mb-6 p-4 rounded-xl flex items-center gap-3" style={{
-          background: paymentResult.status === 'success' ? '#10B98110' : '#EF444410',
-          border: `1px solid ${paymentResult.status === 'success' ? '#10B98130' : '#EF444430'}`,
+          background: paymentResult.status === 'success' ? 'var(--positive-wash)' : 'var(--danger-wash)',
+          border: `1px solid ${paymentResult.status === 'success' ? 'var(--positive)' : 'var(--danger)'}`,
+          borderRadius: 'var(--r-lg)',
         }}>
-          {paymentResult.status === 'success' ? <CheckCircle2 className="w-5 h-5 text-[#10B981]" /> : <XCircle className="w-5 h-5 text-[#EF4444]" />}
-          <p className="text-sm" style={{ color: paymentResult.status === 'success' ? '#10B981' : '#EF4444' }}>{paymentResult.message}</p>
+          {paymentResult.status === 'success' ? <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--positive)' }} /> : <XCircle className="w-5 h-5" style={{ color: 'var(--danger)' }} />}
+          <p className="text-sm" style={{ color: paymentResult.status === 'success' ? 'var(--positive)' : 'var(--danger)', fontFamily: 'var(--font-ui)' }}>{paymentResult.message}</p>
         </div>
       )}
 
       {checkingPayment && (
-        <div className="w-full max-w-xl mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: '#E85D0010', border: '1px solid #E85D0030' }}>
-          <Loader2 className="w-5 h-5 text-[#E85D00] animate-spin" />
-          <p className="text-sm text-[#E85D00]">Verifying payment...</p>
+        <div className="w-full max-w-xl mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: 'var(--lava-wash)', border: '1px solid var(--lava)', borderRadius: 'var(--r-lg)' }}>
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--lava)' }} />
+          <p className="text-sm" style={{ color: 'var(--lava)', fontFamily: 'var(--font-ui)' }}>Verifying payment...</p>
         </div>
       )}
 
       <div className="text-center mb-10 max-w-xl">
-        <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+        <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)', letterSpacing: 'var(--ls-caps, 0.08em)', fontWeight: 600 }}>
           — Choose your plan
         </div>
-        <h1 className="font-medium mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-          One platform, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>three ways in</em>.
+        <h1 className="font-medium mb-3" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(2rem, 4vw, 3rem)', letterSpacing: 'var(--ls-display, -0.02em)', lineHeight: 1.05 }}>
+          One platform, <em style={{ fontStyle: 'italic', color: 'var(--lava)' }}>three ways in</em>.
         </h1>
-        {featureLabel && <p className="text-xs text-[#E85D00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
-        <p className="text-sm text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[var(--ink-display)] capitalize">{currentTier}</strong></p>
-        <p className="mt-2 text-xs" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
+        {featureLabel && <p className="text-xs mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--lava)' }}>{featureLabel} requires a paid plan</p>}
+        <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>Current plan: <strong style={{ color: 'var(--ink-display)', textTransform: 'capitalize' }}>{currentTier}</strong></p>
+        <p className="mt-2 text-xs" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
           Transparent billing: shown amount is charged exactly as displayed. No hidden fees.
         </p>
       </div>
 
-      <div className="w-full max-w-3xl mb-6 rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>Checkout flow</p>
+      <div className="w-full max-w-3xl mb-6 p-4" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', background: 'var(--surface)', boxShadow: 'var(--elev-1)' }}>
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Checkout flow</p>
         <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
           {['Select plan', 'Review amount', 'Secure payment auth', 'Activation confirmation'].map((step, idx) => (
-            <div key={step} className="rounded-lg border px-3 py-2 text-xs" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1' }}>
-              <span style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>{idx + 1}.</span> {step}
+            <div key={step} className="px-3 py-2 text-xs" style={{ borderRadius: 'var(--r-md, 8px)', border: '1px solid var(--border)', color: 'var(--ink)', fontFamily: 'var(--font-ui)' }}>
+              <span style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)' }}>{idx + 1}.</span> {step}
             </div>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 max-w-4xl w-full mb-8 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 max-w-4xl w-full mb-8 md:grid-cols-3" style={{ alignItems: 'start' }}>
         {PLANS.map(plan => {
           const isCurrent = plan.id === currentTier;
+          const isPopular = plan.recommended;
           return (
-            <div key={plan.id} className="rounded-xl p-6 relative" style={{
-              background: 'var(--biqc-bg-card)',
-              border: `2px solid ${plan.recommended ? plan.color : 'rgba(140,170,210,0.12)'}`,
-              boxShadow: plan.recommended ? `0 8px 32px ${plan.color}20` : 'none',
+            <div key={plan.id} className="relative flex flex-col" style={{
+              background: 'var(--surface)',
+              border: isCurrent ? '1px solid var(--lava)' : isPopular ? '1px solid var(--ink-display)' : '1px solid var(--border)',
+              borderRadius: 'var(--r-2xl)',
+              padding: 'var(--sp-8, 32px)',
+              boxShadow: isCurrent ? '0 0 0 1px var(--lava), var(--elev-2)' : isPopular ? '0 0 0 1px var(--ink-display), var(--elev-3)' : 'var(--elev-1)',
+              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
             }} data-testid={`plan-${plan.id}`}>
-              {plan.recommended && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-3 py-1 rounded-full text-white" style={{ background: plan.color, fontFamily: fontFamily.mono }}>RECOMMENDED</span>
+              {isCurrent && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-4 py-1 rounded-full whitespace-nowrap" style={{ background: 'var(--lava-wash)', color: 'var(--lava-deep, var(--lava))', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Current plan</span>
               )}
-              <h3 className="text-lg font-semibold text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>{plan.name}</h3>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-3xl font-bold" style={{ color: plan.color, fontFamily: fontFamily.mono }}>{plan.price}</span>
-                <span className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{plan.period}</span>
+              {isPopular && !isCurrent && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-4 py-1 rounded-full text-white whitespace-nowrap" style={{ background: '#1E293B', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)', textTransform: 'uppercase' }}>Most popular</span>
+              )}
+              <h3 className="text-[28px] font-semibold mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', lineHeight: 1 }}>{plan.name}</h3>
+              <p className="text-sm mb-6" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', lineHeight: 1.5, minHeight: 44 }}>{plan.tagline || ''}</p>
+              <div className="flex items-baseline gap-2 mb-1">
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '48px', lineHeight: 1, letterSpacing: '-0.03em', color: 'var(--ink-display)' }}>{plan.price}</span>
+                <span className="text-sm" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{plan.period}</span>
               </div>
-              <div className="space-y-2 mb-6">
-                {plan.features.map(f => (
-                  <div key={f} className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 shrink-0" style={{ color: plan.color }} />
-                    <span className="text-xs text-[var(--ink-secondary)]">{f}</span>
-                  </div>
-                ))}
-              </div>
+              <div className="mb-6" style={{ minHeight: 18 }} />
               {isCurrent ? (
-                <span className="block text-center text-xs text-[var(--ink-muted)] py-2.5" style={{ fontFamily: fontFamily.mono }}>Current Plan</span>
+                <div className="w-full py-3.5 text-center text-sm font-semibold" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border-strong, var(--border))', color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)', marginBottom: 'var(--sp-6, 24px)', cursor: 'default' }}>Current Plan</div>
               ) : (
                 <button onClick={() => handleUpgrade(plan.id)} disabled={loading === plan.id}
-                  className="w-full py-2.5 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
-                  style={{ background: plan.color }} data-testid={`upgrade-${plan.id}`}>
+                  className="w-full py-3.5 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{
+                    borderRadius: 'var(--r-lg)',
+                    background: isPopular ? 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF7A1A))' : '#1E293B',
+                    border: '1px solid transparent',
+                    marginBottom: 'var(--sp-6, 24px)',
+                    fontFamily: 'var(--font-ui)',
+                    transition: 'all 0.15s ease',
+                  }} data-testid={`upgrade-${plan.id}`}>
                   {loading === plan.id ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</> : <>Upgrade <ArrowRight className="w-4 h-4" /></>}
                 </button>
               )}
+              <div style={{ height: 1, background: 'var(--border)', marginBottom: 'var(--sp-5, 20px)' }} />
+              <p className="text-[11px] font-semibold uppercase mb-4" style={{ letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>What's included</p>
+              <div className="flex flex-col gap-3 flex-1">
+                {plan.features.map(f => (
+                  <div key={f} className="flex items-start gap-2">
+                    <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--positive)' }} />
+                    <span className="text-sm" style={{ color: 'var(--ink)', fontFamily: 'var(--font-ui)', lineHeight: 1.4 }}>{f}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })}
       </div>
 
-      <div className="w-full max-w-4xl mb-8 rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>Custom Build</p>
+      <div className="w-full max-w-4xl mb-8 p-5" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', background: 'var(--surface)', boxShadow: 'var(--elev-1)' }}>
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>Custom Build</p>
         <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-[var(--ink-secondary)]">
+          <p className="text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
             Need bespoke module packaging, custom entitlements, or contracted integration delivery?
           </p>
           <button
             onClick={() => window.location.assign('/contact?source=subscribe&feature=custom-build')}
-            className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-            style={{ background: '#10B981', fontFamily: fontFamily.body }}
+            className="px-4 py-2 text-sm font-semibold text-white"
+            style={{ background: 'var(--positive)', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-lg)' }}
             data-testid="contact-custom-build"
           >
             Contact for Custom Build
@@ -219,32 +237,35 @@ const SubscribePage = () => {
 
       <div
         id="foundation"
-        className="w-full max-w-4xl mb-8 rounded-xl border p-5"
-        style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}
+        className="w-full max-w-4xl mb-8 p-5"
+        style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', background: 'var(--surface)', boxShadow: 'var(--elev-1)' }}
         data-testid="subscribe-foundation-modules"
       >
-        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>
           Foundation Modules
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
           {FOUNDATION_FEATURES.map((feature) => (
-            <div key={feature.key} className="rounded-lg border p-3" style={{ borderColor: 'rgba(140,170,210,0.12)' }}>
-              <p className="text-sm font-semibold text-[var(--ink-display)]">{feature.title}</p>
-              <p className="text-xs mt-1 text-[var(--ink-secondary)]">{feature.summary}</p>
+            <div key={feature.key} className="p-3" style={{ borderRadius: 'var(--r-md, 8px)', border: '1px solid var(--border)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{feature.title}</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{feature.summary}</p>
               <div className="mt-2 flex items-center justify-between">
                 <span
                   className="text-[10px] px-2 py-1 rounded-full"
                   style={{
-                    background: foundationUnlocked ? '#10B98120' : '#E85D0018',
-                    color: foundationUnlocked ? '#10B981' : '#E85D00',
-                    fontFamily: fontFamily.mono,
+                    background: foundationUnlocked ? 'var(--positive-wash)' : 'var(--lava-wash)',
+                    color: foundationUnlocked ? 'var(--positive)' : 'var(--lava)',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: 'var(--ls-caps, 0.08em)',
+                    textTransform: 'uppercase',
                   }}
                 >
                   {foundationUnlocked ? 'Unlocked in your tier' : 'Unlock with paid tier'}
                 </span>
                 <button
                   type="button"
-                  className="text-xs text-[#E85D00] hover:text-[#FDBA74]"
+                  className="text-xs hover:opacity-80"
+                  style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)' }}
                   onClick={() => window.location.assign(feature.route)}
                   data-testid={`subscribe-open-foundation-${feature.key}`}
                 >
@@ -258,28 +279,28 @@ const SubscribePage = () => {
 
       <div
         id="advanced"
-        className="w-full max-w-4xl mb-8 rounded-xl border p-5"
-        style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}
+        className="w-full max-w-4xl mb-8 p-5"
+        style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', background: 'var(--surface)', boxShadow: 'var(--elev-1)' }}
         data-testid="subscribe-advanced-roadmap"
       >
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#E85D00]" />
-          <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>
+          <Sparkles className="w-4 h-4" style={{ color: 'var(--lava)' }} />
+          <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', letterSpacing: 'var(--ls-caps, 0.08em)' }}>
             More Features Roadmap
           </p>
         </div>
-        <p className="text-xs mt-2 text-[var(--ink-secondary)]">
+        <p className="text-xs mt-2" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
           These are staged modules. Join waitlist for priority rollout and packaging feedback.
         </p>
         <div className="mt-3 space-y-3">
           {groupedWaitlist.map(([category, features]) => (
-            <div key={category} className="rounded-lg border p-3" style={{ borderColor: 'rgba(140,170,210,0.12)' }}>
-              <p className="text-xs uppercase tracking-[0.12em] text-[var(--ink-secondary)]">{category}</p>
+            <div key={category} className="p-3" style={{ borderRadius: 'var(--r-md, 8px)', border: '1px solid var(--border)' }}>
+              <p className="text-xs uppercase" style={{ letterSpacing: 'var(--ls-caps, 0.08em)', color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{category}</p>
               <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
                 {features.map((feature) => (
-                  <div key={feature.key} className="rounded-md border px-3 py-2" style={{ borderColor: '#1F2937' }}>
-                    <p className="text-sm text-[var(--ink-display)]">{feature.title}</p>
-                    <p className="text-[11px] mt-1 text-[var(--ink-secondary)] line-clamp-2">{feature.about}</p>
+                  <div key={feature.key} className="px-3 py-2" style={{ borderRadius: 'var(--r-sm, 6px)', border: '1px solid var(--border)' }}>
+                    <p className="text-sm" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>{feature.title}</p>
+                    <p className="text-[11px] mt-1 line-clamp-2" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{feature.about}</p>
                   </div>
                 ))}
               </div>
@@ -289,8 +310,8 @@ const SubscribePage = () => {
       </div>
 
       {(section === 'foundation' || section === 'advanced') && (
-        <div className="w-full max-w-4xl mb-6 p-3 rounded-xl" style={{ background: '#E85D0010', border: '1px solid #E85D0030' }}>
-          <p className="text-xs text-[#FDBA74]">
+        <div className="w-full max-w-4xl mb-6 p-3" style={{ borderRadius: 'var(--r-lg)', background: 'var(--lava-wash)', border: '1px solid var(--lava)' }}>
+          <p className="text-xs" style={{ color: 'var(--warning)', fontFamily: 'var(--font-ui)' }}>
             You were redirected from a legacy subscription path. This page is now the single source of truth for Foundation and More Features.
           </p>
         </div>
@@ -303,16 +324,16 @@ const SubscribePage = () => {
       <FAQAccordion />
 
       {/* Bottom CTA — gradient hero */}
-      <div className="w-full max-w-4xl mt-14 rounded-2xl text-center relative overflow-hidden" style={{ padding: '3rem 1.5rem', background: 'linear-gradient(160deg, #111827, #1A1A2E)' }}>
+      <div className="w-full max-w-4xl mt-14 text-center relative overflow-hidden" style={{ padding: 'var(--sp-12, 48px) var(--sp-6, 24px)', background: 'linear-gradient(160deg, #111827, #1A1A2E)', borderRadius: 'var(--r-2xl)' }}>
         {/* Lava radial glow */}
-        <div style={{ position: 'absolute', top: '-40%', right: '-20%', width: 400, height: 400, background: 'radial-gradient(circle, #E85D00 0%, transparent 60%)', opacity: 0.35, pointerEvents: 'none' }} />
-        <h3 className="font-medium relative mb-4" style={{ fontFamily: fontFamily.display, color: '#FFFFFF', fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+        <div style={{ position: 'absolute', top: '-40%', right: '-20%', width: 400, height: 400, background: 'radial-gradient(circle, var(--lava) 0%, transparent 60%)', opacity: 0.35, pointerEvents: 'none' }} />
+        <h3 className="font-medium relative mb-4" style={{ fontFamily: 'var(--font-display)', color: '#FFFFFF', fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', lineHeight: 1.05, letterSpacing: 'var(--ls-display, -0.02em)' }}>
           Still exploring?
         </h3>
-        <p className="relative text-sm mb-6 mx-auto" style={{ color: 'rgba(255,255,255,0.7)', maxWidth: '48ch' }}>
+        <p className="relative text-sm mb-6 mx-auto" style={{ color: 'rgba(255,255,255,0.7)', maxWidth: '48ch', fontFamily: 'var(--font-ui)' }}>
           Every feature is unlocked during your trial — use them, break them, ask BIQc anything. When you're ready, pick the plan that fits.
         </p>
-        <Link to="/advisor" className="relative inline-flex items-center gap-2 text-sm font-semibold text-white rounded-lg transition-all hover:-translate-y-0.5" style={{ padding: '14px 28px', background: 'linear-gradient(135deg, #E85D00, #FF7A1A)', boxShadow: '0 4px 20px rgba(232,93,0,0.25)' }}>
+        <Link to="/advisor" className="relative inline-flex items-center gap-2 text-sm font-semibold text-white transition-all hover:-translate-y-0.5" style={{ padding: '14px 28px', background: 'linear-gradient(135deg, var(--lava), var(--lava-warm, #FF7A1A))', borderRadius: 'var(--r-lg)', fontFamily: 'var(--font-ui)', boxShadow: '0 4px 20px rgba(232,93,0,0.4)' }}>
           Back to Advisor <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
@@ -361,41 +382,41 @@ const COMPARISON_DATA = [
 ];
 
 const CellIcon = ({ value }) => {
-  if (value === true) return <Check className="w-4 h-4 mx-auto" style={{ color: 'var(--positive, #16A34A)' }} />;
-  if (value === false) return <Minus className="w-3.5 h-3.5 mx-auto" style={{ color: 'var(--ink-muted, #708499)' }} />;
-  return <span className="text-xs font-medium" style={{ color: 'var(--ink, #C8D4E4)' }}>{value}</span>;
+  if (value === true) return <Check className="w-4 h-4 mx-auto" style={{ color: 'var(--positive)' }} />;
+  if (value === false) return <Minus className="w-3.5 h-3.5 mx-auto" style={{ color: 'var(--ink-subtle)' }} />;
+  return <span className="text-xs font-medium" style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{value}</span>;
 };
 
 const FeatureComparisonTable = () => (
   <div className="w-full max-w-4xl mt-12">
-    <h2 className="text-xl font-semibold text-center mb-6" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+    <h2 className="text-center mb-8" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', lineHeight: 1.1, letterSpacing: 'var(--ls-heading, -0.01em)', color: 'var(--ink-display)' }}>
       Compare every feature.
     </h2>
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border, rgba(140,170,210,0.12))', background: 'var(--surface, #0E1628)' }}>
+    <div className="overflow-hidden" style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--border)', background: 'var(--surface)' }}>
       <table className="w-full text-sm">
         <thead>
-          <tr style={{ background: 'var(--surface-sunken, #060A12)' }}>
-            <th className="text-left px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-muted)' }}>Feature</th>
-            <th className="text-center px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-muted)' }}>Free</th>
-            <th className="text-center px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--lava, #E85D00)' }}>Growth $69</th>
-            <th className="text-center px-4 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-muted)' }}>Pro $199</th>
+          <tr style={{ background: 'var(--surface-sunken)' }}>
+            <th className="text-left px-5 py-4 text-[11px] font-semibold uppercase" style={{ color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps, 0.08em)', fontFamily: 'var(--font-mono)' }}>Feature</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Free</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'white', background: '#1E293B', fontFamily: 'var(--font-ui)' }}>Growth $69</th>
+            <th className="text-center px-4 py-4 text-sm font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)' }}>Pro $199</th>
           </tr>
         </thead>
         <tbody>
           {COMPARISON_DATA.map(section => (
             <React.Fragment key={section.category}>
-              <tr style={{ background: 'var(--surface-sunken, #060A12)' }}>
-                <td colSpan={4} className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider"
-                  style={{ color: 'var(--ink-muted, #708499)', borderBottom: '1px solid var(--border)' }}>
+              <tr style={{ background: 'var(--surface-sunken)' }}>
+                <td colSpan={4} className="px-4 py-3 text-[11px] font-semibold uppercase"
+                  style={{ color: 'var(--ink-muted)', borderBottom: '1px solid var(--border)', letterSpacing: 'var(--ls-caps, 0.08em)', fontFamily: 'var(--font-mono)' }}>
                   {section.category}
                 </td>
               </tr>
               {section.features.map(f => (
                 <tr key={f.name} className="hover:bg-white/[0.02]">
-                  <td className="px-4 py-2.5" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--border)' }}>{f.name}</td>
-                  <td className="px-4 py-2.5 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.free} /></td>
-                  <td className="px-4 py-2.5 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.growth} /></td>
-                  <td className="px-4 py-2.5 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.pro} /></td>
+                  <td className="px-4 py-3 font-medium" style={{ color: 'var(--ink-secondary)', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-ui)' }}>{f.name}</td>
+                  <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.free} /></td>
+                  <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.growth} /></td>
+                  <td className="px-4 py-3 text-center" style={{ borderBottom: '1px solid var(--border)' }}><CellIcon value={f.pro} /></td>
                 </tr>
               ))}
             </React.Fragment>
@@ -420,24 +441,24 @@ const FAQAccordion = () => {
   const [openIdx, setOpenIdx] = useState(null);
   return (
     <div className="w-full max-w-3xl mt-12 mb-8">
-      <h2 className="text-xl font-semibold text-center mb-6" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+      <h2 className="text-center mb-8" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', lineHeight: 1.1, letterSpacing: 'var(--ls-heading, -0.01em)', color: 'var(--ink-display)' }}>
         Frequently asked questions
       </h2>
-      <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border)', background: 'var(--surface, #0E1628)' }}>
+      <div style={{ borderTop: '1px solid var(--border)' }}>
         {FAQ_ITEMS.map((item, i) => (
-          <div key={i} style={{ borderBottom: i < FAQ_ITEMS.length - 1 ? '1px solid var(--border, rgba(140,170,210,0.12))' : 'none' }}>
+          <div key={i} style={{ borderBottom: '1px solid var(--border)' }}>
             <button
               onClick={() => setOpenIdx(openIdx === i ? null : i)}
-              className="w-full flex items-center justify-between px-5 py-4 text-left text-sm font-medium transition-colors hover:bg-white/[0.02]"
-              style={{ color: 'var(--ink-display, #EDF1F7)' }}
+              className="w-full flex items-center justify-between px-0 py-5 text-left font-semibold transition-colors"
+              style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-ui)', fontSize: 'var(--size-body, 15px)' }}
             >
               <span>{item.q}</span>
               <ChevronDown className="w-4 h-4 shrink-0 ml-3 transition-transform duration-200"
                 style={{ color: 'var(--ink-muted)', transform: openIdx === i ? 'rotate(180deg)' : 'rotate(0deg)' }} />
             </button>
             {openIdx === i && (
-              <div className="px-5 pb-4">
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{item.a}</p>
+              <div className="pb-5">
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{item.a}</p>
               </div>
             )}
           </div>

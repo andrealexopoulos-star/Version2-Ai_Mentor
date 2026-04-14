@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
 import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle, DollarSign, TrendingDown, AlertCircle, FileWarning } from 'lucide-react';
-import { fontFamily } from '../../design-system/tokens';
+/* design tokens consumed via CSS custom properties — see liquid-steel-tokens.css */
 
 // ─── Reusable card wrappers ───────────────────────────────────────────────────
 
@@ -25,10 +25,10 @@ const StatCard = ({ number, stat, body, biqc }) => (
       backdropFilter: 'blur(12px)',
     }}
   >
-    <p style={{ fontFamily: fontFamily.display, fontSize: '36px', fontWeight: 700, color: '#E85D00', lineHeight: 1.1, marginBottom: 0 }}>{number}</p>
-    <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: '#FFFFFF', fontFamily: fontFamily.body }}>{stat}</p>
-    <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{body}</p>
-    <p className="text-sm italic leading-relaxed" style={{ color: '#E85D00', fontFamily: fontFamily.body }}>{biqc}</p>
+    <p style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 700, color: '#E85D00', lineHeight: 1.1, marginBottom: 0 }}>{number}</p>
+    <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: '#FFFFFF', fontFamily: 'var(--font-ui)' }}>{stat}</p>
+    <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{body}</p>
+    <p className="text-sm italic leading-relaxed" style={{ color: '#E85D00', fontFamily: 'var(--font-ui)' }}>{biqc}</p>
   </div>
 );
 
@@ -211,7 +211,7 @@ const HomePage = () => (
             <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#10B981' }} />
           </span>
           <Shield className="w-3 h-3 flex-shrink-0" style={{ color: '#9BB0CC' }} />
-          <span style={{ fontFamily: fontFamily.mono, color: '#9BB0CC', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', color: '#9BB0CC', fontSize: '11px', fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase' }}>
             Australian Owned &amp; Operated
           </span>
         </div>
@@ -220,16 +220,16 @@ const HomePage = () => (
         <h1
           className="hero-fade-2 tracking-tight mb-5"
           style={{
-            fontFamily: fontFamily.display,
+            fontFamily: 'var(--font-display)',
             fontSize: 'clamp(26px, 3.8vw, 44px)',
             lineHeight: 1.1,
-            color: 'var(--ink-display, #EDF1F7)',
+            color: 'var(--ink-display)',
           }}
         >
           One intelligence layer for every{' '}
           <span style={{
-            fontFamily: fontFamily.display,
-            background: 'linear-gradient(135deg, #FF7A18 0%, #E85D00 40%, var(--ink, #C8D4E4) 100%)',
+            fontFamily: 'var(--font-display)',
+            background: 'linear-gradient(135deg, #FF7A18 0%, #E85D00 40%, var(--ink) 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
@@ -241,7 +241,7 @@ const HomePage = () => (
         {/* Subtitle */}
         <p
           className="hero-fade-3 max-w-2xl mx-auto leading-relaxed mb-10"
-          style={{ fontFamily: fontFamily.body, color: 'rgba(159,176,195,0.9)', fontSize: 'clamp(15px, 1.8vw, 18px)' }}
+          style={{ fontFamily: 'var(--font-ui)', color: 'rgba(159,176,195,0.9)', fontSize: 'clamp(15px, 1.8vw, 18px)' }}
         >
           BIQc brings your business systems into one live Intelligence Platform — helping owners
           and leaders make faster decisions, evaluate trade‑offs clearly, and execute with
@@ -255,11 +255,11 @@ const HomePage = () => (
             className="group relative inline-flex items-center justify-center gap-2 font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5"
             style={{
               background: 'linear-gradient(135deg, #FF7A18, #E85D00)',
-              fontFamily: fontFamily.body,
+              fontFamily: 'var(--font-ui)',
               fontWeight: 600,
               fontSize: '16px',
               padding: '14px 32px',
-              borderRadius: '10px',
+              borderRadius: 'var(--r-md)',
               boxShadow: '0 8px 28px rgba(198,95,46,0.38), 0 2px 4px rgba(0,0,0,0.3)',
               minWidth: 220,
             }}
@@ -280,14 +280,14 @@ const HomePage = () => (
             <span key={t.label} className="flex items-center gap-1.5">
               {i > 0 && <span style={{ display: 'inline-block', width: 1, height: 14, background: 'rgba(255,255,255,0.25)', marginRight: 4 }} />}
               <span style={{ fontSize: '13px' }}>{t.icon}</span>
-              <span style={{ fontFamily: fontFamily.mono, color: '#64748B', fontSize: '11px', fontWeight: 500 }}>{t.label}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', color: '#64748B', fontSize: '11px', fontWeight: 500 }}>{t.label}</span>
             </span>
           ))}
           <span style={{ display: 'inline-block', width: 1, height: 14, background: 'rgba(255,255,255,0.25)' }} />
           <Link
             to="/login-supabase"
             className="hover:text-white transition-colors"
-            style={{ fontFamily: fontFamily.mono, color: '#E85D00', fontSize: '11px' }}
+            style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', fontSize: '11px' }}
             data-testid="hero-login"
           >
             Already have an account?
@@ -370,7 +370,7 @@ const HomePage = () => (
         </div>
         <span
           className="connector-label"
-          style={{ fontFamily: fontFamily.mono, color: '#FF9C45', fontSize: 11, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase' }}
+          style={{ fontFamily: 'var(--font-mono)', color: '#FF9C45', fontSize: 11, fontWeight: 700, letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase' }}
         >
           Intelligence Output
         </span>
@@ -417,20 +417,20 @@ const HomePage = () => (
 
         {/* Section header */}
         <div className="text-center mb-4">
-          <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+          <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>
             Intelligence Output
           </p>
           <h2
             className="text-3xl sm:text-4xl lg:text-5xl font-semibold mb-4"
-            style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}
           >
             What You Get
           </h2>
           <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
-            style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
-            Full visibility over where you&rsquo;re <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>losing money</strong>;
-            {' '}where risk is building, and where <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>growth</strong> is being{' '}
-            <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>missed</strong>&mdash;<strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>in real time.</strong>
+            style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
+            Full visibility over where you&rsquo;re <strong style={{ color: 'var(--ink-display)' }}>losing money</strong>;
+            {' '}where risk is building, and where <strong style={{ color: 'var(--ink-display)' }}>growth</strong> is being{' '}
+            <strong style={{ color: 'var(--ink-display)' }}>missed</strong>&mdash;<strong style={{ color: 'var(--ink-display)' }}>in real time.</strong>
           </p>
         </div>
 
@@ -456,10 +456,10 @@ const HomePage = () => (
                   <card.icon className="w-5 h-5" style={{ color: card.iconColor }} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold leading-snug mb-0.5" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+                  <h3 className="text-sm font-bold leading-snug mb-0.5" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
                     {card.title}
                   </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: 'rgba(159,176,195,0.7)', fontFamily: fontFamily.body }}>
+                  <p className="text-xs leading-relaxed" style={{ color: 'rgba(159,176,195,0.7)', fontFamily: 'var(--font-ui)' }}>
                     {card.subtitle}
                   </p>
                 </div>
@@ -470,7 +470,7 @@ const HomePage = () => (
                 {card.bullets.map((b) => (
                   <li key={b} className="flex items-start gap-2">
                     <span className="flex-shrink-0 mt-1.5" style={{ width: 6, height: 6, borderRadius: '50%', background: card.iconColor }} />
-                    <span className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{b}</span>
+                    <span className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>{b}</span>
                   </li>
                 ))}
               </ul>
@@ -478,7 +478,7 @@ const HomePage = () => (
               {/* Card CTA */}
               <div className="flex items-center gap-2 pt-2 mt-auto" style={{ borderTop: `1px solid ${card.border}` }}>
                 <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: card.ctaColor }} />
-                <span className="text-xs font-semibold leading-snug" style={{ color: card.ctaColor, fontFamily: fontFamily.body }}>
+                <span className="text-xs font-semibold leading-snug" style={{ color: card.ctaColor, fontFamily: 'var(--font-ui)' }}>
                   {card.cta}
                 </span>
               </div>
@@ -495,13 +495,13 @@ const HomePage = () => (
             boxShadow: '0 0 60px rgba(140,170,210,0.04)',
           }}
         >
-          <h3 className="text-lg sm:text-xl font-bold mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>
+          <h3 className="text-lg sm:text-xl font-bold mb-3" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>
             Then&mdash;<span style={{ color: '#E85D00' }}>BIQc Brings It Together</span>
           </h3>
-          <p className="text-sm mb-3" style={{ color: 'rgba(159,176,195,0.7)', fontFamily: fontFamily.body }}>
+          <p className="text-sm mb-3" style={{ color: 'rgba(159,176,195,0.7)', fontFamily: 'var(--font-ui)' }}>
             Daily Executive Brief &nbsp;·&nbsp; Strategic Action Plans &nbsp;·&nbsp; Market &amp; Competitor Intelligence
           </p>
-          <p className="text-base font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+          <p className="text-base font-semibold" style={{ color: 'var(--ink-display)', fontFamily: 'var(--font-display)' }}>
             The full picture &nbsp;·&nbsp; The right moves &nbsp;·&nbsp; The confidence to act
           </p>
         </div>
@@ -512,15 +512,15 @@ const HomePage = () => (
     {/* AI era evidence cards */}
     <section className="py-14 sm:py-16" style={{ background: '#0B1120' }} data-testid="ai-era-section">
       <div className="max-w-5xl mx-auto px-6">
-        <p className="text-xs font-semibold tracking-widest uppercase mb-3 text-center" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+        <p className="text-xs font-semibold tracking-widest uppercase mb-3 text-center" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>
           The Opportunity
         </p>
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 text-center"
-          style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>
+          style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>
           What Businesses Are Achieving In The AI Era
         </h2>
         <p className="text-base sm:text-lg mb-10 max-w-2xl mx-auto leading-relaxed text-center"
-          style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+          style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
           Business leaders make hundreds of decisions every day, and research shows up to{' '}
           <span style={{ color: '#C65F2E', fontWeight: 600 }}>40%</span> of those decisions are made without the right data.
         </p>
@@ -545,8 +545,8 @@ const HomePage = () => (
             <div key={b.label} className="flex items-center gap-3 p-4 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(140,170,210,0.15)' }}>
               <span className="text-2xl">{b.icon}</span>
               <div>
-                <p className="text-xs font-semibold" style={{ color: '#E6EEF7', fontFamily: fontFamily.mono }}>{b.label}</p>
-                <p className="text-[11px] mt-0.5 leading-snug" style={{ color: '#6B7B8D', fontFamily: fontFamily.body }}>{b.sub}</p>
+                <p className="text-xs font-semibold" style={{ color: '#E6EEF7', fontFamily: 'var(--font-mono)' }}>{b.label}</p>
+                <p className="text-[11px] mt-0.5 leading-snug" style={{ color: '#6B7B8D', fontFamily: 'var(--font-ui)' }}>{b.sub}</p>
               </div>
             </div>
           ))}
@@ -558,11 +558,11 @@ const HomePage = () => (
     <section className="py-14 sm:py-20" style={{ background: '#0B1120' }} data-testid="cognition-section">
       <div className="max-w-5xl mx-auto px-6">
         <div className="mb-10 sm:mb-12 text-center">
-          <p className="text-xs font-medium tracking-widest uppercase mb-4" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>What Cognition-as-a-Service Delivers</p>
-          <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>
+          <p className="text-xs font-medium tracking-widest uppercase mb-4" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>What Cognition-as-a-Service Delivers</p>
+          <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: 'var(--font-display)', color: '#E6EEF7' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
-          <p className="text-base max-w-xl mx-auto" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>Businesses embedding AI-driven decision systems experience:</p>
+          <p className="text-base max-w-xl mx-auto" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>Businesses embedding AI-driven decision systems experience:</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -578,8 +578,8 @@ const HomePage = () => (
               <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'rgba(232,93,0,0.08)' }}>
                 <item.icon className="w-5 h-5" style={{ color: '#E85D00' }} />
               </div>
-              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>{item.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>{item.desc}</p>
+              <h3 className="text-base font-semibold mb-2" style={{ fontFamily: 'var(--font-display)', color: '#E6EEF7' }}>{item.title}</h3>
+              <p className="text-sm leading-relaxed" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>{item.desc}</p>
             </GlassCard>
           ))}
         </div>
@@ -598,10 +598,10 @@ const HomePage = () => (
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-3">
             <div className="w-8 h-[2px]" style={{ background: '#E85D00' }} />
-            <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>What Australian SMBs Say</span>
+            <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: 'var(--font-mono)', color: '#E85D00', letterSpacing: 'var(--ls-caps)' }}>What Australian SMBs Say</span>
             <div className="w-8 h-[2px]" style={{ background: '#E85D00' }} />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-medium" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>
+          <h2 className="text-2xl sm:text-3xl font-medium" style={{ fontFamily: 'var(--font-display)', color: '#E6EEF7' }}>
             Built for operators, not analysts.
           </h2>
         </div>
@@ -639,7 +639,7 @@ const HomePage = () => (
             >
               {/* Prominent stat header */}
               <p style={{
-                fontFamily: fontFamily.display,
+                fontFamily: 'var(--font-display)',
                 fontSize: '28px',
                 fontWeight: 700,
                 color: '#FF7A18',
@@ -652,8 +652,8 @@ const HomePage = () => (
               {/* Quote */}
               <div className="flex-1">
                 <p className="text-sm leading-relaxed mb-5" style={{
-                  fontFamily: fontFamily.body,
-                  color: 'var(--ink-secondary, #8FA0B8)',
+                  fontFamily: 'var(--font-ui)',
+                  color: 'var(--ink-secondary)',
                   fontStyle: 'italic',
                   lineHeight: 1.7,
                 }}>
@@ -663,7 +663,7 @@ const HomePage = () => (
 
               {/* Author */}
               <div>
-                <p className="text-[13px] font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{t.author}</p>
+                <p className="text-[13px] font-semibold" style={{ color: 'var(--ink-display)' }}>{t.author}</p>
                 <p className="text-xs mt-0.5" style={{ color: '#5C6E82' }}>{t.company}</p>
               </div>
             </div>
@@ -681,16 +681,16 @@ const HomePage = () => (
         top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
       }} />
       <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
-        <h2 className="font-medium mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: '40px' }}>
+        <h2 className="font-medium mb-4" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: '40px' }}>
           Stop reacting. Start preventing.
         </h2>
-        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.7 }}>
+        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)', lineHeight: 1.7 }}>
           Join the operators who replaced reactive firefighting with autonomous intelligence.
         </p>
-        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="bottom-cta">
+        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 text-base font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5" style={{ background: 'var(--lava)', borderRadius: 'var(--r-md)', fontFamily: 'var(--font-ui)', fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="bottom-cta">
           Try It For Free <ArrowRight className="w-4 h-4" />
         </Link>
-        <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#5C6E82', fontSize: '13px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
+        <p className="mt-4" style={{ fontFamily: 'var(--font-mono)', color: '#5C6E82', fontSize: '13px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
       </div>
     </section>
 

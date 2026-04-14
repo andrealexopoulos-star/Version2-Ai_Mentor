@@ -1,24 +1,23 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Minus, Sparkles, Calendar, Activity, Loader2, AlertCircle } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import { fontFamily, colors, radius } from '../design-system/tokens';
 import { apiClient } from '../lib/api';
 
 /* --- Domain display config --- */
 const DOMAIN_CONFIG = {
-  revenue:    { label: 'Revenue',    color: '#E85D00' },
-  operations: { label: 'Operations', color: '#2563EB' },
-  customer:   { label: 'Customer',   color: '#16A34A' },
-  finance:    { label: 'Financial',  color: '#F59E0B' },
-  financial:  { label: 'Financial',  color: '#F59E0B' },
-  compliance: { label: 'Compliance', color: '#7C3AED' },
-  security:   { label: 'Security',   color: '#0891B2' },
-  strategy:   { label: 'Strategy',   color: '#E85D00' },
-  retention:  { label: 'Retention',  color: '#7C3AED' },
-  peoplerisk: { label: 'People Risk', color: '#DC2626' },
-  team:       { label: 'Team',       color: '#7C3AED' },
-  market:     { label: 'Market',     color: '#2563EB' },
-  sales:      { label: 'Sales',      color: '#16A34A' },
+  revenue:    { label: 'Revenue',    color: 'var(--lava)' },
+  operations: { label: 'Operations', color: 'var(--info)' },
+  customer:   { label: 'Customer',   color: 'var(--positive)' },
+  finance:    { label: 'Financial',  color: 'var(--warning)' },
+  financial:  { label: 'Financial',  color: 'var(--warning)' },
+  compliance: { label: 'Compliance', color: 'var(--purple)' },
+  security:   { label: 'Security',   color: 'var(--cyan)' },
+  strategy:   { label: 'Strategy',   color: 'var(--lava)' },
+  retention:  { label: 'Retention',  color: 'var(--purple)' },
+  peoplerisk: { label: 'People Risk', color: 'var(--danger)' },
+  team:       { label: 'Team',       color: 'var(--purple)' },
+  market:     { label: 'Market',     color: 'var(--info)' },
+  sales:      { label: 'Sales',      color: 'var(--positive)' },
 };
 
 function scoreToStatus(score) {
@@ -31,18 +30,18 @@ function scoreToStatus(score) {
 
 /* --- Status badge colors (dark theme) --- */
 const STATUS_STYLES = {
-  above:    { bg: 'rgba(22,163,74,0.15)', color: '#4ADE80', border: 'rgba(22,163,74,0.3)' },
-  at:       { bg: 'rgba(37,99,235,0.15)', color: '#60A5FA', border: 'rgba(37,99,235,0.3)' },
-  below:    { bg: 'rgba(245,158,11,0.15)', color: '#FBBF24', border: 'rgba(245,158,11,0.3)' },
-  declining:{ bg: 'rgba(220,38,38,0.15)', color: '#F87171', border: 'rgba(220,38,38,0.3)' },
-  unknown:  { bg: 'rgba(140,170,210,0.08)', color: 'var(--ink-muted, #708499)', border: 'rgba(140,170,210,0.12)' },
+  above:    { bg: 'var(--positive-wash)', color: 'var(--positive)', border: 'var(--positive)' },
+  at:       { bg: 'var(--info-wash)', color: 'var(--info)', border: 'var(--info)' },
+  below:    { bg: 'var(--warning-wash)', color: 'var(--warning)', border: 'var(--warning)' },
+  declining:{ bg: 'var(--danger-wash)', color: 'var(--danger)', border: 'var(--danger)' },
+  unknown:  { bg: 'var(--surface-sunken)', color: 'var(--ink-muted)', border: 'var(--border)' },
 };
 
 /* --- Delta icon --- */
 const DeltaIcon = ({ direction }) => {
-  if (direction === 'up') return <TrendingUp style={{ width: 12, height: 12, color: colors.success }} />;
-  if (direction === 'down') return <TrendingDown style={{ width: 12, height: 12, color: colors.danger }} />;
-  return <Minus style={{ width: 12, height: 12, color: colors.textMuted }} />;
+  if (direction === 'up') return <TrendingUp style={{ width: 12, height: 12, color: 'var(--positive)' }} />;
+  if (direction === 'down') return <TrendingDown style={{ width: 12, height: 12, color: 'var(--danger)' }} />;
+  return <Minus style={{ width: 12, height: 12, color: 'var(--ink-muted)' }} />;
 };
 
 /* --- Domain Card --- */
@@ -51,19 +50,19 @@ const DomainCard = ({ domain }) => {
   return (
     <div
       style={{
-        background: colors.bgCard,
-        border: '1px solid rgba(140,170,210,0.12)',
-        borderRadius: radius.card,
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--r-lg)',
         padding: 20,
         transition: 'border-color 0.2s, box-shadow 0.2s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)'; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.12)'; e.currentTarget.style.boxShadow = 'none'; }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.boxShadow = 'var(--elev-1)'; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
     >
       {/* Head: name + score */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontFamily: fontFamily.body, fontWeight: 600, fontSize: 15, color: colors.text }}>{domain.name}</span>
-        <span style={{ fontFamily: fontFamily.display, fontWeight: 700, fontSize: 28, color: domain.color, lineHeight: 1 }}>
+        <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 600, fontSize: 15, color: 'var(--ink-display)' }}>{domain.name}</span>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28, color: domain.color, lineHeight: 1 }}>
           {domain.score != null ? domain.score : '--'}
         </span>
       </div>
@@ -72,8 +71,8 @@ const DomainCard = ({ domain }) => {
       <div style={{ marginBottom: 12 }}>
         <span style={{
           display: 'inline-block',
-          fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
-          padding: '3px 10px', borderRadius: 9999,
+          fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)',
+          padding: '3px 10px', borderRadius: 'var(--r-pill)',
           background: sts.bg, color: sts.color, border: '1px solid ' + sts.border,
         }}>
           {domain.statusLabel}
@@ -81,8 +80,8 @@ const DomainCard = ({ domain }) => {
       </div>
 
       {/* Progress bar */}
-      <div style={{ height: 6, background: colors.bgInput, borderRadius: 9999, overflow: 'hidden', marginBottom: 16 }}>
-        <div style={{ height: '100%', width: (domain.score != null ? domain.score : 0) + '%', background: domain.color, borderRadius: 9999, transition: 'width 0.6s ease' }} />
+      <div style={{ height: 6, background: 'var(--surface-sunken)', borderRadius: 'var(--r-pill)', overflow: 'hidden', marginBottom: 16 }}>
+        <div style={{ height: '100%', width: (domain.score != null ? domain.score : 0) + '%', background: domain.color, borderRadius: 'var(--r-pill)', transition: 'width 0.6s ease' }} />
       </div>
 
       {/* 4 metrics (2x2 grid) */}
@@ -90,20 +89,20 @@ const DomainCard = ({ domain }) => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {domain.metrics.map((m, i) => (
             <div key={i} style={{ padding: '6px 0' }}>
-              <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: colors.textMuted, marginBottom: 2, fontFamily: fontFamily.mono }}>
+              <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', color: 'var(--ink-muted)', marginBottom: 2, fontFamily: 'var(--font-mono)' }}>
                 {m.label}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontFamily: fontFamily.mono, fontSize: 14, fontWeight: 600, color: colors.text }}>{m.value}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600, color: 'var(--ink-display)' }}>{m.value}</span>
                 {m.delta && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 11, color: m.direction === 'up' ? colors.success : m.direction === 'down' ? colors.danger : colors.textMuted }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 11, color: m.direction === 'up' ? 'var(--positive)' : m.direction === 'down' ? 'var(--danger)' : 'var(--ink-muted)' }}>
                     <DeltaIcon direction={m.direction} />
                     {m.delta}
                   </span>
                 )}
               </div>
               {m.baseline && (
-                <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 1, fontFamily: fontFamily.body }}>
+                <div style={{ fontSize: 11, color: 'var(--ink-muted)', marginTop: 1, fontFamily: 'var(--font-ui)' }}>
                   Baseline: {m.baseline}
                 </div>
               )}
@@ -111,7 +110,7 @@ const DomainCard = ({ domain }) => {
           ))}
         </div>
       ) : (
-        <div style={{ fontSize: 12, color: colors.textMuted, fontFamily: fontFamily.body, textAlign: 'center', padding: '8px 0' }}>
+        <div style={{ fontSize: 12, color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)', textAlign: 'center', padding: '8px 0' }}>
           Connect data sources to see domain metrics.
         </div>
       )}
@@ -196,7 +195,7 @@ function buildDomainsFromSnapshot(cognitive) {
 
   // Build domain cards
   for (const [key, { score, data }] of Object.entries(scoreMap)) {
-    const config = DOMAIN_CONFIG[key] || { label: key.charAt(0).toUpperCase() + key.slice(1), color: 'var(--ink-muted, #708499)' };
+    const config = DOMAIN_CONFIG[key] || { label: key.charAt(0).toUpperCase() + key.slice(1), color: 'var(--ink-muted)' };
     const status = scoreToStatus(score);
 
     // Build metrics from available data
@@ -313,30 +312,30 @@ const IntelligenceBaselinePage = () => {
 
   return (
     <DashboardLayout>
-      <div data-testid="intelligence-baseline-page" style={{ minHeight: '100vh', background: colors.bg, color: colors.textSecondary }}>
+      <div data-testid="intelligence-baseline-page" style={{ minHeight: '100vh', background: 'var(--canvas-app)', color: 'var(--ink-secondary)' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '40px 24px' }}>
 
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
-            <h1 style={{ fontFamily: fontFamily.display, fontSize: 28, fontWeight: 700, color: colors.text, letterSpacing: '-0.02em', margin: 0 }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--ink-display)', letterSpacing: 'var(--ls-display)', margin: 0 }}>
               Intelligence Baseline
             </h1>
             <button
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '10px 20px', borderRadius: radius.button, border: 'none',
-                background: 'linear-gradient(135deg, ' + colors.brand + ', ' + colors.brandDark + ')',
+                padding: '10px 20px', borderRadius: 'var(--r-md)', border: 'none',
+                background: 'linear-gradient(135deg, ' + 'var(--lava)' + ', ' + 'var(--lava-deep)' + ')',
                 color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
                 transition: 'box-shadow 0.2s, transform 0.2s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(232,93,0,0.35)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--elev-1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
             >
               <Activity style={{ width: 16, height: 16 }} />
               Recalibrate
             </button>
           </div>
-          <p style={{ fontSize: 14, color: colors.textSecondary, lineHeight: 1.5, maxWidth: 640, marginBottom: 32, marginTop: 0 }}>
+          <p style={{ fontSize: 14, color: 'var(--ink-secondary)', lineHeight: 1.5, maxWidth: 640, marginBottom: 32, marginTop: 0 }}>
             Your intelligence baseline is a personalised benchmark that BIQc uses to detect drift, anomalies, and emerging patterns. It recalibrates quarterly.
           </p>
 
@@ -344,9 +343,9 @@ const IntelligenceBaselinePage = () => {
           {error && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              background: colors.dangerDim, border: '1px solid rgba(220,38,38,0.3)',
-              borderRadius: radius.card, padding: 16, marginBottom: 24,
-              fontSize: 13, color: '#F87171', fontFamily: fontFamily.body,
+              background: 'var(--danger-wash)', border: '1px solid var(--danger)',
+              borderRadius: 'var(--r-lg)', padding: 16, marginBottom: 24,
+              fontSize: 13, color: 'var(--danger)', fontFamily: 'var(--font-ui)',
             }}>
               <AlertCircle size={16} />
               {error}
@@ -355,28 +354,28 @@ const IntelligenceBaselinePage = () => {
 
           {/* AI Insight Banner */}
           <div style={{
-            background: 'linear-gradient(135deg, rgba(232,93,0,0.08) 0%, ' + colors.bgCard + ' 40%)',
-            border: '1px solid rgba(140,170,210,0.12)',
-            borderLeft: '3px solid ' + colors.brand,
-            borderRadius: radius.card,
+            background: 'linear-gradient(135deg, var(--lava-wash) 0%, var(--surface) 40%)',
+            border: '1px solid var(--border)',
+            borderLeft: '3px solid ' + 'var(--lava)',
+            borderRadius: 'var(--r-lg)',
             padding: 20, marginBottom: 32,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <Sparkles style={{ width: 16, height: 16, color: colors.brand }} />
-              <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: colors.brand }}>
+              <Sparkles style={{ width: 16, height: 16, color: 'var(--lava)' }} />
+              <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', color: 'var(--lava)' }}>
                 Baseline Intelligence
               </span>
             </div>
-            <p style={{ fontSize: 14, color: colors.textSecondary, lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: 14, color: 'var(--ink-secondary)', lineHeight: 1.6, margin: 0 }}>
               {loading ? (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />
                   Analysing baseline data...
                 </span>
               ) : insightText ? (
-                <span><strong style={{ color: colors.text }}>{insightText}</strong></span>
+                <span><strong style={{ color: 'var(--ink-display)' }}>{insightText}</strong></span>
               ) : (
-                <span style={{ color: colors.textMuted }}>
+                <span style={{ color: 'var(--ink-muted)' }}>
                   Connect data sources and run initial calibration to establish your intelligence baseline.
                 </span>
               )}
@@ -387,7 +386,7 @@ const IntelligenceBaselinePage = () => {
           {loading ? (
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-              padding: 64, color: colors.textMuted, fontSize: 14, fontFamily: fontFamily.body,
+              padding: 64, color: 'var(--ink-muted)', fontSize: 14, fontFamily: 'var(--font-ui)',
             }}>
               <Loader2 style={{ width: 20, height: 20, animation: 'spin 1s linear infinite' }} />
               Loading baseline domains...
@@ -402,11 +401,11 @@ const IntelligenceBaselinePage = () => {
             </div>
           ) : (
             <div style={{
-              background: colors.bgCard, border: '1px solid rgba(140,170,210,0.12)',
-              borderRadius: radius.card, padding: '40px 24px',
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 'var(--r-lg)', padding: '40px 24px',
               textAlign: 'center', marginBottom: 40,
             }}>
-              <div style={{ fontSize: 14, color: colors.textMuted, fontFamily: fontFamily.body, lineHeight: 1.6 }}>
+              <div style={{ fontSize: 14, color: 'var(--ink-muted)', fontFamily: 'var(--font-ui)', lineHeight: 1.6 }}>
                 Connect data sources and run initial calibration to establish your intelligence baseline.
               </div>
             </div>
@@ -438,23 +437,23 @@ const IntelligenceBaselinePage = () => {
           {/* Calibration History Table */}
           <div style={{ marginBottom: 40 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <Calendar style={{ width: 18, height: 18, color: colors.textMuted }} />
-              <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, fontWeight: 700, color: colors.text, margin: 0 }}>
+              <Calendar style={{ width: 18, height: 18, color: 'var(--ink-muted)' }} />
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--ink-display)', margin: 0 }}>
                 Calibration History
               </h2>
             </div>
             <div className="ib-table-wrap" style={{
-              background: colors.bgCard,
-              border: '1px solid rgba(140,170,210,0.12)',
-              borderRadius: radius.card,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--r-lg)',
               overflow: 'hidden',
             }}>
               <div style={{
                 padding: '24px 20px',
                 textAlign: 'center',
-                color: colors.textMuted,
+                color: 'var(--ink-muted)',
                 fontSize: 14,
-                fontFamily: fontFamily.body,
+                fontFamily: 'var(--font-ui)',
                 lineHeight: 1.6,
               }}>
                 No calibration history. Run a baseline calibration to establish your starting metrics.

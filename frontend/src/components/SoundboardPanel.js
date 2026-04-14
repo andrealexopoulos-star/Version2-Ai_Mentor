@@ -809,7 +809,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
       .slice(-1)[0]?.content || '';
 
     return (
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.02)', borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <div
             style={{
@@ -828,10 +828,10 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           >
             B
           </div>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 500, fontFamily: fontFamily.body }}>
             BIQc
             {msg.agent_name && msg.agent_name !== 'BIQc' && (
-              <span style={{ color: 'rgba(255,255,255,0.2)' }}> · {msg.agent_name}</span>
+              <span style={{ color: 'rgba(255,255,255,0.2)' }}> {'\u00B7'} {msg.agent_name}</span>
             )}
           </span>
           {coveragePct !== null && coveragePct < 50 && (
@@ -855,11 +855,31 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           )}
         </div>
 
-        <div className="markdown-body" style={{ lineHeight: 1.75, color: 'rgba(255,255,255,0.88)', fontSize: 14 }}>
+        <div className="markdown-body" style={{ lineHeight: 1.75, color: 'rgba(255,255,255,0.88)', fontSize: 14, fontFamily: fontFamily.body }}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {content}
           </ReactMarkdown>
         </div>
+
+        {/* Message metadata: model, sources, response time */}
+        {!isLatestAssistant && (msg.model_used || msg.data_sources_count || msg.agent_name) && (
+          <div style={{
+            marginTop: 10,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontFamily: fontFamily.mono,
+            fontSize: 10,
+            color: 'rgba(255,255,255,0.25)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}>
+            {msg.model_used && <span>{msg.model_used}</span>}
+            {msg.data_sources_count != null && <span>{'\u00B7'} {msg.data_sources_count} source{msg.data_sources_count !== 1 ? 's' : ''}</span>}
+            {msg.confidence_score != null && <span>{'\u00B7'} {Math.round(msg.confidence_score * 100)}% confidence</span>}
+            {msg.data_freshness && <span>{'\u00B7'} {msg.data_freshness}</span>}
+          </div>
+        )}
 
         {!isLatestAssistant && dataRequirements.length > 0 && (
           <InlineDataRequirements
@@ -904,13 +924,14 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           style={{
             maxWidth: '70%',
             padding: '12px 16px',
-            background: 'rgba(232,93,0,0.15)',
-            border: '1px solid rgba(232,93,0,0.25)',
+            background: '#1E293B',
+            border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '18px 18px 4px 18px',
             fontSize: 14,
-            color: 'rgba(255,255,255,0.9)',
+            color: 'rgba(255,255,255,0.95)',
             lineHeight: 1.5,
             wordBreak: 'break-word',
+            fontFamily: fontFamily.body,
           }}
         >
           {content}
@@ -955,7 +976,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Ask BIQc</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontFamily: fontFamily.display }}>Ask BIQc</span>
           <button
             onClick={() => setSidebarCollapsed(true)}
             style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', padding: 4 }}
@@ -994,23 +1015,27 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             </p>
           ) : (
             <>
-              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', padding: '8px 8px 4px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Recent
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', padding: '8px 8px 4px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: fontFamily.mono }}>
+                Recent conversations
               </p>
               {conversations.map((conv) => (
                 <button
                   key={conv.id}
                   onClick={() => loadConversation(conv)}
+                  onMouseEnter={(e) => { if (activeConvId !== conv.id) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                  onMouseLeave={(e) => { if (activeConvId !== conv.id) e.currentTarget.style.background = 'transparent'; }}
                   style={{
                     width: '100%',
                     padding: '10px 10px',
                     marginBottom: 2,
                     borderRadius: 8,
-                    background: activeConvId === conv.id ? 'rgba(255,255,255,0.08)' : 'transparent',
+                    background: activeConvId === conv.id ? 'rgba(232,93,0,0.08)' : 'transparent',
                     border: 'none',
+                    borderLeft: activeConvId === conv.id ? '3px solid #E85D00' : '3px solid transparent',
                     cursor: 'pointer',
                     textAlign: 'left',
                     display: 'block',
+                    transition: 'background 150ms ease, border-color 150ms ease',
                   }}
                 >
                   <p
@@ -1021,11 +1046,12 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                       margin: 0,
+                      fontFamily: fontFamily.body,
                     }}
                   >
                     {conv.title || 'New Conversation'}
                   </p>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', margin: '2px 0 0' }}>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', margin: '2px 0 0', fontFamily: fontFamily.mono }}>
                     {conv.updated_at ? new Date(conv.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : ''}
                   </p>
                 </button>
@@ -1086,7 +1112,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               ☰
             </button>
           )}
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.7)' }}>
+          <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.7)', fontFamily: fontFamily.display }}>
             {activeConversationTitle || 'Ask BIQc'}
           </span>
         </div>
@@ -1101,7 +1127,6 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: 40,
-                opacity: 0.4,
               }}
             >
               <div
@@ -1115,14 +1140,83 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   justifyContent: 'center',
                   marginBottom: 16,
                   fontSize: 20,
+                  opacity: 0.7,
                 }}
               >
                 B
               </div>
-              <p style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Ask BIQc anything</p>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', maxWidth: 300 }}>
+              <p style={{ fontSize: 16, fontWeight: 600, color: '#fff', marginBottom: 8, fontFamily: fontFamily.display }}>Ask BIQc anything</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', maxWidth: 340, fontFamily: fontFamily.body, marginBottom: 28 }}>
                 Ask about your pipeline, cash flow, risks, or what needs attention this week.
               </p>
+              {/* Suggested prompts grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: 8,
+                width: '100%',
+                maxWidth: 480,
+              }}>
+                {[
+                  { text: "What's happening in my pipeline?", icon: '📊' },
+                  { text: "Show me this week's priorities", icon: '🎯' },
+                  { text: "How's my cash position?", icon: '💰' },
+                  { text: 'Draft a follow-up email', icon: '✉️' },
+                ].map((prompt) => (
+                  <button
+                    key={prompt.text}
+                    onClick={() => {
+                      setInput(prompt.text);
+                      setTimeout(() => {
+                        const syntheticInput = prompt.text;
+                        setInput('');
+                        const cleanMessage = appendUserMessage(syntheticInput);
+                        if (cleanMessage) executeMessage(cleanMessage);
+                      }, 0);
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(232,93,0,0.08)';
+                      e.currentTarget.style.borderColor = 'rgba(232,93,0,0.3)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                    style={{
+                      textAlign: 'left',
+                      padding: '12px 14px',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      transition: 'all 180ms ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      fontSize: 13,
+                      color: 'rgba(255,255,255,0.7)',
+                      fontFamily: fontFamily.body,
+                    }}
+                  >
+                    <span style={{
+                      width: 28,
+                      height: 28,
+                      background: 'rgba(255,255,255,0.06)',
+                      borderRadius: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      fontSize: 14,
+                    }}>
+                      {prompt.icon}
+                    </span>
+                    {prompt.text}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -1473,8 +1567,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             )}
           </button>
         </div>
-        <p className="text-[9px] text-[var(--ink-muted)] text-center mt-1.5" style={{ fontFamily: fontFamily.mono }}>
-          BIQc uses connected data only. No fabrication.
+        <p className="text-[9px] text-center mt-1.5" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.2)' }}>
+          <span style={{ padding: '1px 5px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, marginRight: 2 }}>{'\u21B5'}</span> Send {'\u00B7'} <span style={{ padding: '1px 5px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, marginRight: 2, marginLeft: 2 }}>{'\u21E7\u21B5'}</span> New line {'\u00B7'} BIQc uses connected data only
         </p>
       </div>
       </div>

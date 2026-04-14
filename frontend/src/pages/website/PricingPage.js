@@ -22,7 +22,7 @@ const PLANS = [
       'Business Profile & DNA',
       'Data Health Monitor',
       'Actions & Alerts',
-      'Soundboard AI Chat',
+      'Ask BIQc AI Chat',
       'Up to 2 integrations',
     ],
     cta: 'Start Free',
@@ -113,7 +113,7 @@ const COMPARE_GROUPS = [
     label: 'AI & Intelligence',
     rows: [
       ['AI Business Advisor', true, true, true, true],
-      ['Soundboard AI Chat', true, true, true, true],
+      ['Ask BIQc AI Chat', true, true, true, true],
       ['Board Room (single-model AI)', false, true, true, true],
       ['War Room (multi-model AI)', false, false, true, true],
       ['Custom AI model training', false, false, false, true],

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
-import { fontFamily } from '../../design-system/tokens';
+/* design tokens consumed via CSS custom properties — see liquid-steel-tokens.css */
 
 
 // ── Integration catalogue organised by category (matches mockup exactly) ─────
@@ -109,9 +109,10 @@ const IntegrationCard = ({ integration, categoryTitle }) => (
   <div
     className="rounded-xl p-5 flex flex-col gap-2.5 transition-all duration-200 group"
     style={{
-      background: 'var(--surface, #0E1628)',
-      border: '1px solid rgba(140,170,210,0.12)',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      boxShadow: 'var(--elev-1)',
     }}
     onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; }}
     onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.12)'; }}
@@ -120,7 +121,7 @@ const IntegrationCard = ({ integration, categoryTitle }) => (
     <div className="flex items-center justify-between">
       <div
         className="w-10 h-10 rounded-[10px] flex items-center justify-center text-base font-bold flex-shrink-0"
-        style={{ background: '#0B1120', color: 'var(--ink-display, #EDF1F7)' }}
+        style={{ background: '#0B1120', color: 'var(--ink-display)' }}
       >
         {integration.initial}
       </div>
@@ -150,12 +151,12 @@ const IntegrationCard = ({ integration, categoryTitle }) => (
     </div>
 
     {/* Name */}
-    <p className="text-base font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+    <p className="text-base font-semibold" style={{ color: 'var(--ink-display)' }}>
       {integration.name}
     </p>
 
     {/* Description */}
-    <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+    <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
       {integration.desc}
     </p>
 
@@ -181,19 +182,19 @@ const IntegrationsPage = () => {
         }}>
         <div className="max-w-7xl mx-auto px-6 pt-20 pb-14 relative z-10 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-4"
-            style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-1px' }}>
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', letterSpacing: 'var(--ls-display)' }}>
             Connect everything. Miss nothing.
           </h1>
           <p className="text-base sm:text-lg leading-relaxed mx-auto"
-            style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', maxWidth: 560 }}>
+            style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)', maxWidth: 560 }}>
             BIQc integrates with your existing tools via Merge.dev &mdash; no custom setup required. One connection, every signal.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-8 mt-8">
-            <span className="text-[15px] font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>40+ integrations</span>
+            <span className="text-[15px] font-semibold" style={{ color: 'var(--ink-display)' }}>40+ integrations</span>
             <span className="w-1 h-1 rounded-full" style={{ background: '#5C6E82' }} />
-            <span className="text-[15px] font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>8 categories</span>
+            <span className="text-[15px] font-semibold" style={{ color: 'var(--ink-display)' }}>8 categories</span>
             <span className="w-1 h-1 rounded-full" style={{ background: '#5C6E82' }} />
-            <span className="text-[15px] font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>5-minute setup</span>
+            <span className="text-[15px] font-semibold" style={{ color: 'var(--ink-display)' }}>5-minute setup</span>
           </div>
         </div>
       </section>
@@ -206,11 +207,11 @@ const IntegrationsPage = () => {
               {/* Category header */}
               <div className="mb-6">
                 <h2 className="text-2xl sm:text-[28px] font-semibold"
-                  style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.5px' }}>
+                  style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', letterSpacing: 'var(--ls-display)' }}>
                   {cat.title}{' '}
                   <span
                     className="inline-block text-xs font-semibold rounded-full px-3 py-0.5 ml-2 align-middle"
-                    style={{ color: 'var(--ink-secondary, #8FA0B8)', background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)' }}
+                    style={{ color: 'var(--ink-secondary)', background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)' }}
                   >
                     {cat.integrations.length} integration{cat.integrations.length !== 1 ? 's' : ''}
                   </span>
@@ -239,10 +240,10 @@ const IntegrationsPage = () => {
             style={{ background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)' }}>
             <div className="lg:col-span-3">
               <h3 className="text-2xl sm:text-[32px] font-bold leading-snug mb-3"
-                style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.5px' }}>
+                style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', letterSpacing: 'var(--ls-display)' }}>
                 Powered by Merge.dev
               </h3>
-              <p className="text-base leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+              <p className="text-base leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
                 BIQc partners with Merge.dev &mdash; the unified API for B2B integrations &mdash; so you never wait for a custom connector. Add a system, sync starts in under 60 seconds, and BIQc picks up signals on the next cycle. One OAuth handshake connects your entire stack.
               </p>
             </div>
@@ -254,10 +255,10 @@ const IntegrationsPage = () => {
               ].map((stat) => (
                 <div key={stat.label}>
                   <div className="text-[40px] font-bold leading-none"
-                    style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: '#E85D00' }}>
+                    style={{ fontFamily: 'var(--font-display)', color: '#E85D00' }}>
                     {stat.num}
                   </div>
-                  <div className="text-[13px] font-medium mt-0.5" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                  <div className="text-[13px] font-medium mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
                     {stat.label}
                   </div>
                 </div>
@@ -271,20 +272,21 @@ const IntegrationsPage = () => {
       <section className="pb-24 px-6 text-center" style={{ background: '#0B1120' }}>
         <div className="max-w-xl mx-auto rounded-2xl p-14"
           style={{
-            background: 'linear-gradient(105deg, rgba(200,220,240,0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0) 55%), linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
-            border: '1px solid rgba(140,170,210,0.15)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--r-lg)',
+            boxShadow: 'var(--elev-1)',
           }}>
           <h2 className="text-[28px] font-semibold mb-3 tracking-tight"
-            style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: 'var(--ink-display, #EDF1F7)' }}>
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>
             Ready to connect your tools?
           </h2>
-          <p className="text-base mb-7" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+          <p className="text-base mb-7" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-ui)' }}>
             Set up your first integration in under five minutes. No engineering required.
           </p>
           <Link to="/register-supabase?source=integrations-page"
-            className="inline-flex items-center gap-2 px-7 py-3 rounded-[10px] text-[15px] font-semibold text-white transition-all hover:brightness-110"
-            style={{ background: '#E85D00', fontFamily: fontFamily.body }}
+            className="inline-flex items-center gap-2 px-7 py-3 text-[15px] font-semibold text-white transition-all hover:brightness-110"
+            style={{ background: 'var(--lava)', borderRadius: 'var(--r-md)', fontFamily: 'var(--font-ui)' }}
             data-testid="integrations-final-cta">
             Start Free
           </Link>

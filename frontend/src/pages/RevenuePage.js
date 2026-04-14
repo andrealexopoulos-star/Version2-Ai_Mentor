@@ -10,14 +10,13 @@ import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
 import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
-import { fontFamily } from '../design-system/tokens';
 import { Link, useNavigate } from 'react-router-dom';
 import LineageBadge from '../components/LineageBadge';
 import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 
 
-const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
+const Panel = ({ children, className = '', ...rest }) => (
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--elev-1)' }} {...rest}>{children}</div>
 );
 
 const RevenuePage = () => {
@@ -137,7 +136,7 @@ const RevenuePage = () => {
   const avgDealSize = hasDeals && deals.length > 0 ? Math.round(totalPipeline / deals.length) : null;
 
   const healthScore = winRate != null ? (winRate > 50 ? 'good' : winRate > 30 ? 'moderate' : 'critical') : null;
-  const healthColor = healthScore === 'good' ? '#10B981' : healthScore === 'moderate' ? '#F59E0B' : '#E85D00';
+  const healthColor = healthScore === 'good' ? 'var(--positive)' : healthScore === 'moderate' ? 'var(--warning)' : 'var(--lava)';
   const healthPct = winRate != null ? Math.min(Math.round(winRate * 2), 100) : 0;
 
 
@@ -218,13 +217,13 @@ const RevenuePage = () => {
   return (
     <DashboardLayout>
       <EnterpriseContactGate featureName="Revenue Engine">
-      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="revenue-page">
+      <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: 'var(--font-ui)' }} data-testid="revenue-page">
 
         {/* Header with connection status badges */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Revenue.</h1>
-            <p className="text-sm text-[var(--ink-secondary)] mb-2" style={{ fontFamily: fontFamily.body }}>Pipeline, bookings, and deal health — all in one view.</p>
+            <h1 className="font-medium mb-1.5" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: 'var(--ls-display)', lineHeight: 1.05 }}>Revenue.</h1>
+            <p className="text-sm text-[var(--ink-secondary)] mb-2" style={{ fontFamily: 'var(--font-ui)' }}>Pipeline, bookings, and deal health — all in one view.</p>
             {(crmConnected || accountingConnected) && (
               <LineageBadge
                 lineage={{ connected_sources: [crmConnected && (crmIntegration?.provider || 'CRM'), accountingConnected && (accountingIntegration?.provider || 'Accounting')].filter(Boolean) }}
@@ -236,12 +235,12 @@ const RevenuePage = () => {
             <div className="flex flex-wrap items-center gap-2">
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: 'var(--ink-secondary, #8FA0B8)', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'var(--surface-2)', color: 'var(--ink-secondary)', border: '1px solid var(--border)', fontFamily: 'var(--font-mono)' }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying CRM
                 </span>
               ) : crmConnected ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'var(--positive-wash)', color: 'var(--positive)', border: '1px solid var(--positive)', fontFamily: 'var(--font-mono)' }}>
                   <CheckCircle2 className="w-3 h-3" />
                   {crmIntegration?.provider || 'CRM'} Connected
                   {crmConnectedAt && <span className="text-[10px] opacity-70">• Last synced {timeAgoShort(crmConnectedAt)}</span>}
@@ -249,19 +248,19 @@ const RevenuePage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=crm')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)', fontFamily: fontFamily.mono }}
+                  style={{ background: 'var(--lava-wash)', color: 'var(--lava)', border: '1px solid var(--lava)', fontFamily: 'var(--font-mono)' }}
                   data-testid="revenue-connect-crm-button">
                   <Plug className="w-3 h-3" /> Connect CRM <ArrowRight className="w-3 h-3" />
                 </button>
               )}
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: 'var(--ink-secondary, #8FA0B8)', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'var(--surface-2)', color: 'var(--ink-secondary)', border: '1px solid var(--border)', fontFamily: 'var(--font-mono)' }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying Accounting
                 </span>
               ) : accountingConnected ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'var(--positive-wash)', color: 'var(--positive)', border: '1px solid var(--positive)', fontFamily: 'var(--font-mono)' }}>
                   <CheckCircle2 className="w-3 h-3" />
                   {accountingIntegration?.provider || 'Accounting'} Connected
                   {accountingConnectedAt && <span className="text-[10px] opacity-70">• Last synced {timeAgoShort(accountingConnectedAt)}</span>}
@@ -269,7 +268,7 @@ const RevenuePage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=financial')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)', fontFamily: fontFamily.mono }}
+                  style={{ background: 'var(--lava-wash)', color: 'var(--lava)', border: '1px solid var(--lava)', fontFamily: 'var(--font-mono)' }}
                   data-testid="revenue-connect-accounting-button">
                   <Plug className="w-3 h-3" /> Connect Accounting <ArrowRight className="w-3 h-3" />
                 </button>
@@ -282,16 +281,16 @@ const RevenuePage = () => {
         {fetchError && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-            background: 'rgba(232, 93, 0, 0.08)', border: '1px solid rgba(232, 93, 0, 0.2)',
+            background: 'var(--lava-wash)', border: '1px solid var(--border)',
             borderRadius: 12, marginBottom: 16,
-            fontFamily: "'Inter', sans-serif", fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)',
+            fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-secondary)',
           }}>
-            <span style={{ color: 'var(--lava, #E85D00)' }}>{'\u26A0'}</span>
+            <span style={{ color: 'var(--lava)' }}>{'\u26A0'}</span>
             <span style={{ flex: 1 }}>{fetchError}</span>
             <button
               onClick={() => { setFetchError(null); fetchRevenueData(); }}
               style={{
-                background: 'var(--lava, #E85D00)', color: 'white', border: 'none',
+                background: 'var(--lava)', color: 'white', border: 'none',
                 padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
               }}
             >Retry</button>
@@ -307,11 +306,11 @@ const RevenuePage = () => {
             { label: 'Avg Deal Size', value: avgDealSize != null ? `$${Math.round(avgDealSize / 1000)}K` : '—', delta: null },
             { label: 'Churn Rate', value: unified?.churn_rate ? `${unified.churn_rate}%` : '—', delta: unified?.churn_change || null, invert: true },
           ].map(kpi => (
-            <div key={kpi.label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20 }}>
-              <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
-              <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>{kpi.value}</div>
+            <div key={kpi.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--ls-caps)', color: 'var(--ink-muted)', letterSpacing: 'var(--ls-caps)', marginBottom: 12 }}>{kpi.label}</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: 'var(--ink-display)', letterSpacing: 'var(--ls-display)' }}>{kpi.value}</div>
               {kpi.delta != null && (
-                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, color: (kpi.invert ? kpi.delta < 0 : kpi.delta > 0) ? '#10B981' : kpi.delta < 0 ? '#EF4444' : 'var(--ink-muted, #708499)' }}>
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, color: (kpi.invert ? kpi.delta < 0 : kpi.delta > 0) ? 'var(--positive)' : kpi.delta < 0 ? 'var(--danger)' : 'var(--ink-muted)' }}>
                   {kpi.delta > 0 ? '\u2191' : kpi.delta < 0 ? '\u2193' : '\u2192'} {Math.abs(kpi.delta)}%
                 </div>
               )}
@@ -323,10 +322,10 @@ const RevenuePage = () => {
           <div className="space-y-4" data-testid="revenue-top-signals-column">
             <SectionLabel title="What needs intervention now" detail="Every top signal below shows its source clearly so revenue issues are never detached from the system creating them." testId="revenue-top-signals-label" />
             <div className="grid gap-4 md:grid-cols-2" data-testid="revenue-kpi-hero-grid">
-              <MetricCard label="Pipeline value" value={totalPipeline != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(totalPipeline) : '—'} caption="Open opportunities in the current revenue window" tone="#E85D00" testId="revenue-pipeline-metric" />
-              <MetricCard label="Weighted pipeline" value={weightedPipeline != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(weightedPipeline) : '—'} caption="Probability-adjusted pipeline value" tone="#3B82F6" testId="revenue-weighted-metric" />
-              <MetricCard label="Win rate" value={winRate != null ? `${winRate}%` : '—'} caption="Closed-won share across visible deals" tone={winRate != null && winRate >= 50 ? '#10B981' : '#F59E0B'} testId="revenue-win-rate-metric" />
-              <MetricCard label="Client concentration" value={topClientPct ? `${topClientPct}%` : '—'} caption="Share of pipeline held by the top client" tone={topClientPct >= 40 ? '#EF4444' : '#10B981'} testId="revenue-concentration-metric" />
+              <MetricCard label="Pipeline value" value={totalPipeline != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(totalPipeline) : '—'} caption="Open opportunities in the current revenue window" tone="var(--lava)" testId="revenue-pipeline-metric" />
+              <MetricCard label="Weighted pipeline" value={weightedPipeline != null ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(weightedPipeline) : '—'} caption="Probability-adjusted pipeline value" tone="var(--info)" testId="revenue-weighted-metric" />
+              <MetricCard label="Win rate" value={winRate != null ? `${winRate}%` : '—'} caption="Closed-won share across visible deals" tone={winRate != null && winRate >= 50 ? 'var(--positive)' : 'var(--warning)'} testId="revenue-win-rate-metric" />
+              <MetricCard label="Client concentration" value={topClientPct ? `${topClientPct}%` : '—'} caption="Share of pipeline held by the top client" tone={topClientPct >= 40 ? 'var(--danger)' : 'var(--positive)'} testId="revenue-concentration-metric" />
             </div>
             {revenueSignals.length > 0 ? revenueSignals.slice(0, 3).map((signal) => (
               <SignalCard key={signal.id} {...signal} testId={signal.id} />
@@ -340,12 +339,12 @@ const RevenuePage = () => {
               <SectionLabel title="Source clarity" detail="Revenue is intentionally split by CRM, accounting, and email-derived evidence so the next action is obvious." testId="revenue-source-health-label" />
               <div className="mt-4 space-y-3" data-testid="revenue-source-health-list">
                 {sourceHealthRows.map((row) => (
-                  <div key={row.id} className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg)' }} data-testid={`revenue-source-health-${row.id}`}>
+                  <div key={row.id} className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }} data-testid={`revenue-source-health-${row.id}`}>
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>{row.label}</p>
-                      <span className="text-[10px] uppercase tracking-[0.14em] text-[#CBD5E1]" style={{ fontFamily: fontFamily.mono }}>{row.status}</span>
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>{row.label}</p>
+                      <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>{row.status}</span>
                     </div>
-                    <p className="mt-2 text-sm text-[#CBD5E1]">{row.detail}</p>
+                    <p className="mt-2 text-sm text-[var(--ink-secondary)]">{row.detail}</p>
                   </div>
                 ))}
               </div>
@@ -355,9 +354,9 @@ const RevenuePage = () => {
 
         {/* Sync progress bar */}
         {(loading || (hasAnyConnectedSystem && syncProgress < 100)) && (
-          <div className="rounded-xl p-4" style={{ background: 'rgba(232,93,0,0.04)', border: '1px solid rgba(232,93,0,0.12)' }}>
+          <div className="rounded-xl p-4" style={{ background: 'var(--lava-wash)', border: '1px solid var(--border)' }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-[#E85D00]" style={{ fontFamily: fontFamily.mono }}>
+              <span className="text-xs font-medium text-[var(--lava)]" style={{ fontFamily: 'var(--font-mono)' }}>
                 {integrationLoading && !integrationResolved
                   ? 'Verifying connected systems…'
                   : !hasAnyConnectedSystem
@@ -368,14 +367,14 @@ const RevenuePage = () => {
                         ? 'Importing pipeline and financial signals…'
                         : 'Finalising revenue intelligence…'}
               </span>
-              <span className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{syncProgress}%</span>
+              <span className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>{syncProgress}%</span>
             </div>
-            <div className="w-full h-1.5 rounded-full" style={{ background: '#1E2D3D' }}>
+            <div className="w-full h-1.5 rounded-full" style={{ background: 'var(--surface-2)' }}>
               <div className="h-1.5 rounded-full transition-all duration-500"
-                style={{ width: `${syncProgress}%`, background: 'linear-gradient(90deg, #E85D00, #E56A08)' }} />
+                style={{ width: `${syncProgress}%`, background: 'linear-gradient(90deg, var(--lava), var(--lava-warm))' }} />
             </div>
             {crmConnected && syncProgress < 100 && (
-              <p className="text-[10px] text-[var(--ink-muted)] mt-1.5" style={{ fontFamily: fontFamily.mono }}>
+              <p className="text-[10px] text-[var(--ink-muted)] mt-1.5" style={{ fontFamily: 'var(--font-mono)' }}>
                 First sync may take 1–3 minutes. The page will update automatically once your HubSpot data is ready.
               </p>
             )}
@@ -385,9 +384,9 @@ const RevenuePage = () => {
         {!loading && integrationLoading && (
           <Panel>
             <div className="flex items-start gap-3">
-              <Loader2 className="w-5 h-5 text-[#3B82F6] animate-spin flex-shrink-0 mt-0.5" />
+              <Loader2 className="w-5 h-5 text-[var(--info)] animate-spin flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-[var(--ink-display)] mb-0.5" style={{ fontFamily: fontFamily.display }}>Verifying your connected systems</p>
+                <p className="text-sm font-semibold text-[var(--ink-display)] mb-0.5" style={{ fontFamily: 'var(--font-display)' }}>Verifying your connected systems</p>
                 <p className="text-xs text-[var(--ink-muted)]">BIQc is checking CRM, accounting, and live pipeline signals before rendering revenue analysis.</p>
               </div>
             </div>
@@ -398,10 +397,10 @@ const RevenuePage = () => {
           <Panel className="py-10">
             {crmConnected || accountingConnected ? (
               <div className="text-center py-4">
-                <div className="w-10 h-10 rounded-full bg-[#E85D00]/10 flex items-center justify-center mx-auto mb-4">
-                  <Loader2 className="w-5 h-5 text-[#E85D00] animate-spin" />
+                <div className="w-10 h-10 rounded-full bg-[var(--lava-wash)] flex items-center justify-center mx-auto mb-4">
+                  <Loader2 className="w-5 h-5 text-[var(--lava)] animate-spin" />
                 </div>
-                <p className="text-sm font-semibold text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>
+                <p className="text-sm font-semibold text-[var(--ink-display)] mb-1" style={{ fontFamily: 'var(--font-display)' }}>
                   {crmConnected ? 'HubSpot Connected — Pulling Pipeline Data' : 'Accounting Connected — Loading Financial Data'}
                 </p>
                 <p className="text-xs text-[var(--ink-muted)]">First sync in progress. This takes 1-2 minutes. Refresh to check.</p>
@@ -425,13 +424,13 @@ const RevenuePage = () => {
           <Panel>
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Revenue Health Score</h2>
+                <h2 className="text-lg font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Revenue Health Score</h2>
                 <p className="text-sm text-[var(--ink-secondary)]">Based on pipeline stability, concentration risk, and deal velocity.</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <span className="text-3xl font-bold" style={{ fontFamily: fontFamily.mono, color: healthColor }}>{healthPct}%</span>
-                  <span className="block text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{healthScore.toUpperCase()}</span>
+                  <span className="text-3xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: healthColor }}>{healthPct}%</span>
+                  <span className="block text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>{healthScore.toUpperCase()}</span>
                 </div>
                 <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ border: `3px solid ${healthColor}`, background: healthColor + '10' }}>
                   {healthScore === 'good' ? <TrendingUp className="w-5 h-5" style={{ color: healthColor }} /> : <TrendingDown className="w-5 h-5" style={{ color: healthColor }} />}
@@ -441,11 +440,11 @@ const RevenuePage = () => {
           </Panel>
 
           {/* Tab Navigation */}
-          <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid="revenue-tabs">
+          <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }} data-testid="revenue-tabs">
             {TABS.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id ? 'text-[var(--ink-display)]' : 'text-[var(--ink-muted)] hover:text-[var(--ink-secondary)]'}`}
-                style={{ background: activeTab === tab.id ? '#E85D0015' : 'transparent', fontFamily: fontFamily.mono }}
+                style={{ background: activeTab === tab.id ? 'var(--lava-wash)' : 'transparent', fontFamily: 'var(--font-mono)' }}
                 data-testid={`revenue-tab-${tab.id}`}>
                 {tab.label}
               </button>
@@ -461,14 +460,14 @@ const RevenuePage = () => {
                 <Panel>
                   <div className="flex items-center justify-between mb-5">
                     <div>
-                      <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E85D00" strokeWidth="1.6"><path d="M3 3v18h18M7 12l4-4 4 4 5-5"/></svg>
                         Revenue trend
                       </div>
                       <div className="text-xs text-[var(--ink-muted)] mt-0.5">Monthly recurring revenue over 6 months</div>
                     </div>
                   </div>
-                  <div style={{ width: '100%', height: 220, background: 'var(--biqc-bg)', borderRadius: 8, overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: 220, background: 'var(--surface-2)', borderRadius: 8, overflow: 'hidden' }}>
                     {(() => {
                       // Build chart data from deal history or show representative trend
                       const months = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'];
@@ -486,11 +485,11 @@ const RevenuePage = () => {
                                 <stop offset="100%" stopColor="#E85D00" stopOpacity={0} />
                               </linearGradient>
                             </defs>
-                            <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#64748B', fontFamily: fontFamily.mono }} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fontSize: 10, fill: '#64748B', fontFamily: fontFamily.mono }} axisLine={false} tickLine={false} tickFormatter={v => `$${Math.round(v / 1000)}K`} width={45} />
+                            <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }} axisLine={false} tickLine={false} tickFormatter={v => `$${Math.round(v / 1000)}K`} width={45} />
                             <Tooltip
-                              contentStyle={{ background: '#1A2332', border: '1px solid rgba(100,116,139,0.3)', borderRadius: 8, fontSize: 12, fontFamily: fontFamily.mono }}
-                              labelStyle={{ color: 'var(--ink-secondary, #8FA0B8)' }}
+                              contentStyle={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, fontFamily: 'var(--font-mono)' }}
+                              labelStyle={{ color: 'var(--ink-secondary)' }}
                               itemStyle={{ color: '#E85D00' }}
                               formatter={(v) => [`$${v.toLocaleString()}`, 'MRR']}
                             />
@@ -506,7 +505,7 @@ const RevenuePage = () => {
                 <Panel>
                   <div className="flex items-center justify-between mb-5">
                     <div>
-                      <div className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Pipeline funnel</div>
+                      <div className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Pipeline funnel</div>
                       <div className="text-xs text-[var(--ink-muted)] mt-0.5">Active deals by stage</div>
                     </div>
                   </div>
@@ -526,13 +525,13 @@ const RevenuePage = () => {
                         const pct = Math.round((data.value / maxVal) * 100);
                         const isWon = /won/i.test(stage);
                         return (
-                          <div key={stage} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors hover:bg-[#E85D0008]"
-                            style={{ background: 'var(--biqc-bg)' }}>
+                          <div key={stage} className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors hover:bg-[var(--lava-wash)]"
+                            style={{ background: 'var(--surface-2)' }}>
                             <span className="text-sm font-medium text-[var(--ink-display)] flex-1" style={{ minWidth: 0 }}>{stage}</span>
-                            <span className="text-[13px] font-semibold text-[var(--ink-display)] min-w-[24px] text-right" style={{ fontFamily: fontFamily.mono }}>{data.count}</span>
-                            <span className="text-xs text-[var(--ink-secondary)] min-w-[60px] text-right" style={{ fontFamily: fontFamily.mono }}>${Math.round(data.value / 1000)}K</span>
-                            <div className="w-[80px] h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--biqc-border)' }}>
-                              <div className="h-full rounded-full" style={{ width: pct + '%', background: isWon ? '#10B981' : '#E85D00' }} />
+                            <span className="text-[13px] font-semibold text-[var(--ink-display)] min-w-[24px] text-right" style={{ fontFamily: 'var(--font-mono)' }}>{data.count}</span>
+                            <span className="text-xs text-[var(--ink-secondary)] min-w-[60px] text-right" style={{ fontFamily: 'var(--font-mono)' }}>${Math.round(data.value / 1000)}K</span>
+                            <div className="w-[80px] h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                              <div className="h-full rounded-full" style={{ width: pct + '%', background: isWon ? 'var(--positive)' : 'var(--lava)' }} />
                             </div>
                           </div>
                         );
@@ -557,12 +556,12 @@ const RevenuePage = () => {
                         : `Pipeline is moving. ${activeDeals || 0} active deals with $${totalPipeline ? Math.round(totalPipeline / 1000) + 'K' : '0'} in play. Monitor close rate to maintain momentum.`;
                     return (
                       <div className="mt-4 p-4 rounded-lg" style={{
-                        background: 'linear-gradient(135deg, rgba(232,93,0,0.08), var(--biqc-bg-card))',
-                        border: '1px solid rgba(232,93,0,0.25)',
+                        background: 'linear-gradient(135deg, var(--lava-wash), var(--surface))',
+                        border: '1px solid var(--border)',
                       }} data-testid="revenue-ai-insight">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#E85D00', boxShadow: '0 0 8px #E85D00' }} />
-                          <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>BIQc insight</span>
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--lava)', boxShadow: '0 0 8px var(--lava)' }} />
+                          <span className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--lava)', fontFamily: 'var(--font-mono)' }}>BIQc insight</span>
                         </div>
                         <p className="text-sm text-[var(--ink-secondary)] leading-relaxed">{insightText}</p>
                       </div>
@@ -575,7 +574,7 @@ const RevenuePage = () => {
               <Panel>
                 <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
                   <div>
-                    <div className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Active deals</div>
+                    <div className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Active deals</div>
                     <div className="text-xs text-[var(--ink-muted)] mt-0.5">
                       {deals.length} deal{deals.length === 1 ? '' : 's'} · ${totalPipeline ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(totalPipeline) : '$0'} weighted pipeline
                     </div>
@@ -588,7 +587,7 @@ const RevenuePage = () => {
                         {['Deal', 'Value', 'Stage', 'Days in stage', 'Health', 'Owner'].map(h => (
                           <th key={h} className="text-left px-3 py-2.5" style={{
                             fontSize: 10, fontWeight: 600, color: 'var(--ink-muted)', textTransform: 'uppercase',
-                            letterSpacing: '0.08em', borderBottom: '1px solid var(--biqc-border)', fontFamily: fontFamily.mono,
+                            letterSpacing: 'var(--ls-caps)', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)',
                           }}>{h}</th>
                         ))}
                       </tr>
@@ -605,40 +604,40 @@ const RevenuePage = () => {
                         const probability = d.probability || 0;
                         // Health: use probability if available, else compute from days stalled
                         const healthPctDeal = probability > 0 ? probability : (daysInStage != null ? Math.max(10, 100 - daysInStage * 4) : 50);
-                        const healthColor = healthPctDeal >= 70 ? '#10B981' : healthPctDeal >= 45 ? '#F59E0B' : '#EF4444';
+                        const healthColor = healthPctDeal >= 70 ? 'var(--positive)' : healthPctDeal >= 45 ? 'var(--warning)' : 'var(--danger)';
                         // Stage pill color
                         const stageLC = stage.toLowerCase();
-                        const stageStyle = /discovery|lead|qualif/i.test(stageLC) ? { bg: 'rgba(59,130,246,0.1)', color: '#3B82F6' }
-                          : /proposal|demo/i.test(stageLC) ? { bg: 'rgba(232,93,0,0.1)', color: '#E85D00' }
-                          : /negoti/i.test(stageLC) ? { bg: 'rgba(245,158,11,0.1)', color: '#F59E0B' }
-                          : /won/i.test(stageLC) ? { bg: 'rgba(16,185,129,0.1)', color: '#10B981' }
-                          : /lost/i.test(stageLC) ? { bg: 'rgba(239,68,68,0.1)', color: '#EF4444' }
-                          : { bg: 'var(--biqc-bg)', color: 'var(--ink-muted)' };
+                        const stageStyle = /discovery|lead|qualif/i.test(stageLC) ? { bg: 'var(--info-wash)', color: 'var(--info)' }
+                          : /proposal|demo/i.test(stageLC) ? { bg: 'var(--lava-wash)', color: 'var(--lava)' }
+                          : /negoti/i.test(stageLC) ? { bg: 'var(--warning-wash)', color: 'var(--warning)' }
+                          : /won/i.test(stageLC) ? { bg: 'var(--positive-wash)', color: 'var(--positive)' }
+                          : /lost/i.test(stageLC) ? { bg: 'var(--danger-wash)', color: 'var(--danger)' }
+                          : { bg: 'var(--surface-2)', color: 'var(--ink-muted)' };
                         const daysWarn = daysInStage != null && daysInStage > 14;
                         return (
                           <tr key={i} className="cursor-pointer" style={{ transition: 'background 0.15s' }}
                             onMouseEnter={e => e.currentTarget.style.background = 'rgba(232,93,0,0.03)'}
                             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                            <td className="px-3 py-2.5 font-semibold text-[var(--ink-display)]" style={{ borderBottom: i < deals.length - 1 ? '1px solid var(--biqc-border)' : 'none' }}>{name}</td>
-                            <td className="px-3 py-2.5" style={{ fontFamily: fontFamily.mono, fontWeight: 600, borderBottom: i < deals.length - 1 ? '1px solid var(--biqc-border)' : 'none' }}>${amount.toLocaleString()}</td>
-                            <td className="px-3 py-2.5" style={{ borderBottom: i < deals.length - 1 ? '1px solid var(--biqc-border)' : 'none' }}>
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: stageStyle.bg, color: stageStyle.color, fontFamily: fontFamily.mono }}>{stage}</span>
+                            <td className="px-3 py-2.5 font-semibold text-[var(--ink-display)]" style={{ borderBottom: i < deals.length - 1 ? '1px solid var(--border)' : 'none' }}>{name}</td>
+                            <td className="px-3 py-2.5" style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, borderBottom: i < deals.length - 1 ? '1px solid var(--border)' : 'none' }}>${amount.toLocaleString()}</td>
+                            <td className="px-3 py-2.5" style={{ borderBottom: i < deals.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: stageStyle.bg, color: stageStyle.color, fontFamily: 'var(--font-mono)' }}>{stage}</span>
                             </td>
                             <td className="px-3 py-2.5" style={{
-                              fontFamily: fontFamily.mono,
-                              color: daysWarn ? '#EF4444' : 'var(--ink-secondary, #8FA0B8)',
+                              fontFamily: 'var(--font-mono)',
+                              color: daysWarn ? 'var(--danger)' : 'var(--ink-secondary)',
                               fontWeight: daysWarn ? 600 : 400,
-                              borderBottom: i < deals.length - 1 ? '1px solid var(--biqc-border)' : 'none',
+                              borderBottom: i < deals.length - 1 ? '1px solid var(--border)' : 'none',
                             }}>{daysInStage != null ? `${daysInStage}d` : '—'}</td>
-                            <td className="px-3 py-2.5" style={{ borderBottom: i < deals.length - 1 ? '1px solid var(--biqc-border)' : 'none' }}>
+                            <td className="px-3 py-2.5" style={{ borderBottom: i < deals.length - 1 ? '1px solid var(--border)' : 'none' }}>
                               <div className="flex items-center gap-1.5">
-                                <div className="w-12 h-[5px] rounded-full overflow-hidden" style={{ background: 'var(--biqc-bg)' }}>
+                                <div className="w-12 h-[5px] rounded-full overflow-hidden" style={{ background: 'var(--surface-2)' }}>
                                   <div className="h-full rounded-full" style={{ width: healthPctDeal + '%', background: healthColor }} />
                                 </div>
-                                <span className="text-[11px] font-semibold min-w-[28px]" style={{ fontFamily: fontFamily.mono, color: healthColor }}>{healthPctDeal}%</span>
+                                <span className="text-[11px] font-semibold min-w-[28px]" style={{ fontFamily: 'var(--font-mono)', color: healthColor }}>{healthPctDeal}%</span>
                               </div>
                             </td>
-                            <td className="px-3 py-2.5 text-[var(--ink-secondary)]" style={{ borderBottom: i < deals.length - 1 ? '1px solid var(--biqc-border)' : 'none' }}>{owner}</td>
+                            <td className="px-3 py-2.5 text-[var(--ink-secondary)]" style={{ borderBottom: i < deals.length - 1 ? '1px solid var(--border)' : 'none' }}>{owner}</td>
                           </tr>
                         );
                       })}
@@ -651,26 +650,26 @@ const RevenuePage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
-                    <BarChart3 className="w-4 h-4 text-[#3B82F6]" />
-                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Pipeline Overview</h3>
+                    <BarChart3 className="w-4 h-4 text-[var(--info)]" />
+                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Pipeline Overview</h3>
                   </div>
                   <div className="space-y-3 mb-4">
                     {[['Total Pipeline', '$' + (totalPipeline || 0).toLocaleString()], ['Active Deals', String(activeDeals || 0)], ['Win Rate', (winRate || 0) + '%'], ['Avg Deal Size', avgDealSize ? '$' + avgDealSize.toLocaleString() : '—']].map(([k, v]) => (
-                      <div key={k} className="flex justify-between"><span className="text-xs text-[var(--ink-secondary)]">{k}</span><span className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{v}</span></div>
+                      <div key={k} className="flex justify-between"><span className="text-xs text-[var(--ink-secondary)]">{k}</span><span className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-mono)' }}>{v}</span></div>
                     ))}
-                    <div className="flex justify-between"><span className="text-xs text-[var(--ink-secondary)]">Stalled (&gt;7d)</span><span className="text-sm font-semibold" style={{ fontFamily: fontFamily.mono, color: stalledCount > 0 ? '#E85D00' : '#10B981' }}>{stalledCount}</span></div>
+                    <div className="flex justify-between"><span className="text-xs text-[var(--ink-secondary)]">Stalled (&gt;7d)</span><span className="text-sm font-semibold" style={{ fontFamily: 'var(--font-mono)', color: stalledCount > 0 ? 'var(--lava)' : 'var(--positive)' }}>{stalledCount}</span></div>
                   </div>
                 </Panel>
 
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
-                    <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Churn Signals</h3>
+                    <AlertTriangle className="w-4 h-4 text-[var(--warning)]" />
+                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Churn Signals</h3>
                   </div>
                   {c.revenue?.churn ? (
                     <p className="text-xs text-[var(--ink-secondary)] leading-relaxed">{c.revenue.churn}</p>
                   ) : (
-                    <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Insufficient data to assess churn risk. Connect CRM with engagement tracking.</p>
+                    <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Insufficient data to assess churn risk. Connect CRM with engagement tracking.</p>
                   )}
                 </Panel>
               </div>
@@ -684,8 +683,8 @@ const RevenuePage = () => {
                   { label: 'Stalled', value: String(stalledCount) },
                 ].map(m => (
                   <Panel key={m.label}>
-                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
-                    <span className="text-xl font-bold text-[var(--ink-display)] block" style={{ fontFamily: fontFamily.mono }}>{m.value}</span>
+                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>{m.label}</span>
+                    <span className="text-xl font-bold text-[var(--ink-display)] block" style={{ fontFamily: 'var(--font-mono)' }}>{m.value}</span>
                   </Panel>
                 ))}
               </div>
@@ -697,24 +696,24 @@ const RevenuePage = () => {
             <>
               <Panel>
                 <div className="flex items-center gap-2 mb-4">
-                  <Target className="w-4 h-4 text-[#E85D00]" />
-                  <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Growth Scenario Modeling</h3>
+                  <Target className="w-4 h-4 text-[var(--lava)]" />
+                  <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Growth Scenario Modeling</h3>
                 </div>
                 <p className="text-xs text-[var(--ink-muted)] mb-4">Projections computed from your actual CRM deal data. No assumptions.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-4 rounded-lg text-center" style={{ background: '#10B98108', border: '1px solid #10B98125' }}>
-                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Best Case</span>
-                    <span className="text-2xl font-bold text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>${bestCase ? Math.round(bestCase / 1000) + 'K' : '—'}</span>
+                  <div className="p-4 rounded-lg text-center" style={{ background: 'var(--positive-wash)', border: '1px solid var(--border)' }}>
+                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Best Case</span>
+                    <span className="text-2xl font-bold text-[var(--positive)]" style={{ fontFamily: 'var(--font-mono)' }}>${bestCase ? Math.round(bestCase / 1000) + 'K' : '—'}</span>
                     <span className="text-[10px] text-[var(--ink-muted)] block mt-1">All open deals close</span>
                   </div>
-                  <div className="p-4 rounded-lg text-center" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
-                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Base Case</span>
-                    <span className="text-2xl font-bold text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>${baseCase ? Math.round(baseCase / 1000) + 'K' : '—'}</span>
+                  <div className="p-4 rounded-lg text-center" style={{ background: 'var(--warning-wash)', border: '1px solid var(--border)' }}>
+                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Base Case</span>
+                    <span className="text-2xl font-bold text-[var(--warning)]" style={{ fontFamily: 'var(--font-mono)' }}>${baseCase ? Math.round(baseCase / 1000) + 'K' : '—'}</span>
                     <span className="text-[10px] text-[var(--ink-muted)] block mt-1">Weighted by probability</span>
                   </div>
-                  <div className="p-4 rounded-lg text-center" style={{ background: '#EF444408', border: '1px solid #EF444425' }}>
-                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Worst Case</span>
-                    <span className="text-2xl font-bold text-[#EF4444]" style={{ fontFamily: fontFamily.mono }}>${worstCase ? Math.round(worstCase / 1000) + 'K' : '—'}</span>
+                  <div className="p-4 rounded-lg text-center" style={{ background: 'var(--danger-wash)', border: '1px solid var(--border)' }}>
+                    <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Worst Case</span>
+                    <span className="text-2xl font-bold text-[var(--danger)]" style={{ fontFamily: 'var(--font-mono)' }}>${worstCase ? Math.round(worstCase / 1000) + 'K' : '—'}</span>
                     <span className="text-[10px] text-[var(--ink-muted)] block mt-1">Only high-prob at 80%</span>
                   </div>
                 </div>
@@ -722,12 +721,12 @@ const RevenuePage = () => {
 
               {/* Deal Probability Distribution */}
               <Panel>
-                <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-4" style={{ fontFamily: fontFamily.display }}>Pipeline by Probability</h3>
+                <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-4" style={{ fontFamily: 'var(--font-display)' }}>Pipeline by Probability</h3>
                 <div className="space-y-3">
                   {[
-                    { label: 'High Probability (70%+)', deals: highProbDeals, color: '#10B981' },
-                    { label: 'Medium Probability (40-69%)', deals: medProbDeals, color: '#F59E0B' },
-                    { label: 'Low Probability (<40%)', deals: lowProbDeals, color: '#EF4444' },
+                    { label: 'High Probability (70%+)', deals: highProbDeals, color: 'var(--positive)' },
+                    { label: 'Medium Probability (40-69%)', deals: medProbDeals, color: 'var(--warning)' },
+                    { label: 'Low Probability (<40%)', deals: lowProbDeals, color: 'var(--danger)' },
                   ].map(tier => {
                     const tierValue = tier.deals.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
                     const tierPct = totalPipeline > 0 ? Math.round((tierValue / totalPipeline) * 100) : 0;
@@ -736,8 +735,8 @@ const RevenuePage = () => {
                         <div className="flex justify-between mb-1">
                           <span className="text-xs text-[var(--ink-secondary)]">{tier.label}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold" style={{ fontFamily: fontFamily.mono, color: tier.color }}>{tier.deals.length} deals</span>
-                            <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>${Math.round(tierValue / 1000)}K ({tierPct}%)</span>
+                            <span className="text-xs font-semibold" style={{ fontFamily: 'var(--font-mono)', color: tier.color }}>{tier.deals.length} deals</span>
+                            <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>${Math.round(tierValue / 1000)}K ({tierPct}%)</span>
                           </div>
                         </div>
                         <div className="h-2 rounded-full" style={{ background: tier.color + '20' }}>
@@ -752,16 +751,16 @@ const RevenuePage = () => {
               {/* Win/Loss Analysis */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Panel>
-                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Deals Won</span>
-                  <span className="text-2xl font-bold text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>{wonCount}</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Deals Won</span>
+                  <span className="text-2xl font-bold text-[var(--positive)]" style={{ fontFamily: 'var(--font-mono)' }}>{wonCount}</span>
                 </Panel>
                 <Panel>
-                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Deals Lost</span>
-                  <span className="text-2xl font-bold text-[#EF4444]" style={{ fontFamily: fontFamily.mono }}>{lostCount}</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Deals Lost</span>
+                  <span className="text-2xl font-bold text-[var(--danger)]" style={{ fontFamily: 'var(--font-mono)' }}>{lostCount}</span>
                 </Panel>
                 <Panel>
-                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Open Pipeline</span>
-                  <span className="text-2xl font-bold text-[#3B82F6]" style={{ fontFamily: fontFamily.mono }}>{openDeals.length}</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Open Pipeline</span>
+                  <span className="text-2xl font-bold text-[var(--info)]" style={{ fontFamily: 'var(--font-mono)' }}>{openDeals.length}</span>
                 </Panel>
               </div>
             </>
@@ -772,8 +771,8 @@ const RevenuePage = () => {
             <>
               <Panel>
                 <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-                  <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Revenue Concentration Risk</h3>
+                  <AlertTriangle className="w-4 h-4 text-[var(--warning)]" />
+                  <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Revenue Concentration Risk</h3>
                 </div>
                 <p className="text-xs text-[var(--ink-muted)] mb-4">High concentration means revenue depends heavily on a small number of clients. Diversification reduces risk.</p>
                 
@@ -781,14 +780,14 @@ const RevenuePage = () => {
                   <div className="space-y-2">
                     {sortedCompanies.slice(0, 10).map(([name, value], i) => {
                       const pct = totalPipeline > 0 ? Math.round((value / totalPipeline) * 100) : 0;
-                      const color = pct > 40 ? '#EF4444' : pct > 20 ? '#F59E0B' : '#10B981';
+                      const color = pct > 40 ? 'var(--danger)' : pct > 20 ? 'var(--warning)' : 'var(--positive)';
                       return (
                         <div key={name}>
                           <div className="flex justify-between mb-1">
                             <span className="text-xs text-[var(--ink-display)]">{name}</span>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-semibold" style={{ fontFamily: fontFamily.mono, color }}>{pct}%</span>
-                              <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>${Math.round(value / 1000)}K</span>
+                              <span className="text-xs font-semibold" style={{ fontFamily: 'var(--font-mono)', color }}>{pct}%</span>
+                              <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>${Math.round(value / 1000)}K</span>
                             </div>
                           </div>
                           <div className="h-1.5 rounded-full" style={{ background: color + '20' }}>
@@ -806,17 +805,17 @@ const RevenuePage = () => {
               {/* Concentration Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Panel>
-                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Top Client Share</span>
-                  <span className="text-2xl font-bold" style={{ fontFamily: fontFamily.mono, color: topClientPct > 40 ? '#EF4444' : topClientPct > 20 ? '#F59E0B' : '#10B981' }}>{topClientPct}%</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Top Client Share</span>
+                  <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: topClientPct > 40 ? 'var(--danger)' : topClientPct > 20 ? 'var(--warning)' : 'var(--positive)' }}>{topClientPct}%</span>
                   <span className="text-[10px] text-[var(--ink-muted)] block mt-1">{topClientPct > 40 ? 'High concentration risk' : topClientPct > 20 ? 'Moderate concentration' : 'Well diversified'}</span>
                 </Panel>
                 <Panel>
-                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Unique Clients</span>
-                  <span className="text-2xl font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{sortedCompanies.length}</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Unique Clients</span>
+                  <span className="text-2xl font-bold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-mono)' }}>{sortedCompanies.length}</span>
                 </Panel>
                 <Panel>
-                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Avg per Client</span>
-                  <span className="text-2xl font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>
+                  <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Avg per Client</span>
+                  <span className="text-2xl font-bold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-mono)' }}>
                     {sortedCompanies.length > 0 ? '$' + Math.round((totalPipeline / sortedCompanies.length) / 1000) + 'K' : '—'}
                   </span>
                 </Panel>
@@ -831,10 +830,10 @@ const RevenuePage = () => {
                 <Panel>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-[#E85D00]" />
-                      <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Revenue Cognition Intelligence</h3>
+                      <Zap className="w-4 h-4 text-[var(--lava)]" />
+                      <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Revenue Cognition Intelligence</h3>
                     </div>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: fontFamily.mono }}>LIVE</span>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: 'var(--positive-wash)', color: 'var(--positive)', fontFamily: 'var(--font-mono)' }}>LIVE</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                     {[
@@ -845,12 +844,12 @@ const RevenuePage = () => {
                     ].map(({ label, title, val }) => {
                       if (val == null) return null;
                       const pct = Math.round(val * 100);
-                      const ic = pct > 60 ? '#EF4444' : pct > 30 ? '#F59E0B' : '#10B981';
+                      const ic = pct > 60 ? 'var(--danger)' : pct > 30 ? 'var(--warning)' : 'var(--positive)';
                       return (
-                        <div key={label} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                          <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ic, fontFamily: fontFamily.mono }}>{label}</span>
-                          <div className="text-2xl font-bold" style={{ color: ic, fontFamily: fontFamily.mono }}>{pct}%</div>
-                          <span className="text-[9px]" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{title}</span>
+                        <div key={label} className="p-3 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                          <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: ic, fontFamily: 'var(--font-mono)' }}>{label}</span>
+                          <div className="text-2xl font-bold" style={{ color: ic, fontFamily: 'var(--font-mono)' }}>{pct}%</div>
+                          <span className="text-[9px]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{title}</span>
                           <div className="h-1 rounded-full mt-2" style={{ background: ic + '20' }}>
                             <div className="h-1 rounded-full" style={{ background: ic, width: pct + '%' }} />
                           </div>
@@ -859,7 +858,7 @@ const RevenuePage = () => {
                     }).filter(Boolean)}
                   </div>
                   {unified.confidence_score != null && (
-                    <p className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>
+                    <p className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
                       Intelligence confidence: {Math.round(unified.confidence_score * 100)}% — based on {unified.evidence_count || 0} evidence points
                     </p>
                   )}
@@ -870,24 +869,24 @@ const RevenuePage = () => {
               {unified?.propagation_map?.length > 0 && (
                 <Panel>
                   <div className="flex items-center gap-2 mb-4">
-                    <ArrowUpRight className="w-4 h-4 text-[#EF4444]" />
-                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Risk Propagation Chains</h3>
+                    <ArrowUpRight className="w-4 h-4 text-[var(--danger)]" />
+                    <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Risk Propagation Chains</h3>
                   </div>
                   <div className="space-y-3">
                     {unified.propagation_map.slice(0, 4).map((chain, i) => (
-                      <div key={i} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                      <div key={i} className="p-3 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           {(chain.chain || [chain.source, chain.target]).filter(Boolean).map((node, ni, arr) => (
                             <React.Fragment key={ni}>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>{node}</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--danger-wash)', color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>{node}</span>
                               {ni < arr.length - 1 && <span className="text-[10px] text-[var(--ink-muted)]">→</span>}
                             </React.Fragment>
                           ))}
                           {chain.probability != null && (
-                            <span className="text-[9px] ml-auto" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{Math.round(chain.probability * 100)}%</span>
+                            <span className="text-[9px] ml-auto" style={{ color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>{Math.round(chain.probability * 100)}%</span>
                           )}
                         </div>
-                        {chain.description && <p className="text-[11px]" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>{chain.description}</p>}
+                        {chain.description && <p className="text-[11px]" style={{ color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}>{chain.description}</p>}
                       </div>
                     ))}
                   </div>
@@ -897,7 +896,7 @@ const RevenuePage = () => {
               {!unified?.signals && !unified?.instability_indices ? (
                 <Panel className="text-center py-8">
                   <Zap className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-3" />
-                  <p className="text-sm text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>Cross-Domain Intelligence</p>
+                  <p className="text-sm text-[var(--ink-display)] mb-1" style={{ fontFamily: 'var(--font-display)' }}>Cross-Domain Intelligence</p>
                   <p className="text-xs text-[var(--ink-muted)]">Connect multiple integrations (CRM + Accounting) to unlock cross-domain revenue insights.</p>
                 </Panel>
               ) : (
@@ -906,20 +905,20 @@ const RevenuePage = () => {
                   {unified.signals?.overdue_invoices?.length > 0 && (
                     <Panel>
                       <div className="flex items-center gap-2 mb-4">
-                        <Receipt className="w-4 h-4 text-[#EF4444]" />
-                        <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Overdue Invoices</h3>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>
+                        <Receipt className="w-4 h-4 text-[var(--danger)]" />
+                        <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>Overdue Invoices</h3>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--danger-wash)', color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
                           ACCOUNTING
                         </span>
                       </div>
                       <div className="space-y-2">
                         {unified.signals.overdue_invoices.map((inv, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                          <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                             <div>
                               <span className="text-xs text-[var(--ink-display)]">Invoice #{inv.number}</span>
-                              <span className="text-[10px] text-[#EF4444] block" style={{ fontFamily: fontFamily.mono }}>{inv.days_overdue}d overdue</span>
+                              <span className="text-[10px] text-[var(--danger)] block" style={{ fontFamily: 'var(--font-mono)' }}>{inv.days_overdue}d overdue</span>
                             </div>
-                            <span className="text-sm font-bold text-[#EF4444]" style={{ fontFamily: fontFamily.mono }}>${(inv.amount || 0).toLocaleString()}</span>
+                            <span className="text-sm font-bold text-[var(--danger)]" style={{ fontFamily: 'var(--font-mono)' }}>${(inv.amount || 0).toLocaleString()}</span>
                           </div>
                         ))}
                       </div>
@@ -930,20 +929,20 @@ const RevenuePage = () => {
                   {unified?.signals?.at_risk?.length > 0 && (
                     <Panel>
                       <div className="flex items-center gap-2 mb-4">
-                        <FileWarning className="w-4 h-4 text-[#F59E0B]" />
-                        <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>At-Risk Revenue</h3>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#F59E0B15', color: '#F59E0B', fontFamily: fontFamily.mono }}>
+                        <FileWarning className="w-4 h-4 text-[var(--warning)]" />
+                        <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-display)' }}>At-Risk Revenue</h3>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--warning-wash)', color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
                           CRM
                         </span>
                       </div>
                       <div className="space-y-2">
                         {unified.signals.at_risk.map((deal, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                          <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                             <div>
                               <span className="text-xs text-[var(--ink-display)]">{deal.name}</span>
-                              <span className="text-[10px] text-[#F59E0B] block" style={{ fontFamily: fontFamily.mono }}>{deal.risk}</span>
+                              <span className="text-[10px] text-[var(--warning)] block" style={{ fontFamily: 'var(--font-mono)' }}>{deal.risk}</span>
                             </div>
-                            <span className="text-sm font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>${(deal.amount || 0).toLocaleString()}</span>
+                            <span className="text-sm font-bold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-mono)' }}>${(deal.amount || 0).toLocaleString()}</span>
                           </div>
                         ))}
                       </div>
@@ -953,20 +952,20 @@ const RevenuePage = () => {
                   {/* Concentration & Cash Signals Summary */}
                   {unified?.signals && <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <Panel>
-                      <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Pipeline Total</span>
-                      <span className="text-2xl font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>
+                      <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Pipeline Total</span>
+                      <span className="text-2xl font-bold text-[var(--ink-display)]" style={{ fontFamily: 'var(--font-mono)' }}>
                         ${unified.signals.pipeline_total ? Math.round(unified.signals.pipeline_total / 1000) + 'K' : '—'}
                       </span>
                     </Panel>
                     <Panel>
-                      <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Concentration Risk</span>
-                      <span className="text-2xl font-bold" style={{ fontFamily: fontFamily.mono, color: unified.signals.concentration_risk === 'high' ? '#EF4444' : unified.signals.concentration_risk === 'medium' ? '#F59E0B' : '#10B981' }}>
+                      <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Concentration Risk</span>
+                      <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: unified.signals.concentration_risk === 'high' ? 'var(--danger)' : unified.signals.concentration_risk === 'medium' ? 'var(--warning)' : 'var(--positive)' }}>
                         {(unified.signals.concentration_risk || 'low').toUpperCase()}
                       </span>
                     </Panel>
                     <Panel>
-                      <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Stalled Deals</span>
-                      <span className="text-2xl font-bold" style={{ fontFamily: fontFamily.mono, color: unified.signals.stalled_deals > 0 ? '#E85D00' : '#10B981' }}>
+                      <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: 'var(--font-mono)' }}>Stalled Deals</span>
+                      <span className="text-2xl font-bold" style={{ fontFamily: 'var(--font-mono)', color: unified.signals.stalled_deals > 0 ? 'var(--lava)' : 'var(--positive)' }}>
                         {unified.signals.stalled_deals ?? 0}
                       </span>
                     </Panel>
@@ -980,7 +979,7 @@ const RevenuePage = () => {
 
         {!hasDeals && !loading && (
           <Panel>
-            <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Revenue trend data unavailable. Connect accounting integration to view monthly trends.</p>
+            <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>Revenue trend data unavailable. Connect accounting integration to view monthly trends.</p>
           </Panel>
         )}
       </div>

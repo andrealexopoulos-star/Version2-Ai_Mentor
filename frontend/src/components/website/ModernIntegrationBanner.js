@@ -96,7 +96,7 @@ export const ModernIntegrationBanner = () => (
         One connection layer across your operating stack.
       </h3>
       <p className="mt-3 text-sm sm:text-base max-w-2xl mx-auto" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
-        BIQc ingests signal from finance, sales, operations, and communication tools so Soundboard can reason on live evidence.
+        BIQc ingests signal from finance, sales, operations, and communication tools so Ask BIQc can reason on live evidence.
       </p>
     </div>
 
