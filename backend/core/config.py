@@ -63,6 +63,26 @@ RESEND_FROM_EMAIL = (
 
 # ==================== MIDDLEWARE ====================
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Adds security response headers to every response.
+
+    Covers HSTS, clickjacking prevention, MIME-sniffing prevention,
+    referrer policy, and permissions policy.  CSP is intentionally
+    omitted — it requires careful tuning with inline styles and
+    external scripts (GA4, Google Fonts, etc.).
+    """
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        return response
+
+
 class NoCacheAPIMiddleware(BaseHTTPMiddleware):
     """Forces all API responses to include explicit no-cache headers."""
     async def dispatch(self, request, call_next):
@@ -71,12 +91,6 @@ class NoCacheAPIMiddleware(BaseHTTPMiddleware):
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
         if request.url.path.startswith("/api"):
             response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
         return response
@@ -140,12 +154,19 @@ def _allowed_origins():
 
 
 def configure_middleware(app):
-    """Register all middleware on the FastAPI app instance."""
+    """Register all middleware on the FastAPI app instance.
+
+    Starlette processes middleware in reverse registration order, so the
+    LAST middleware added here runs FIRST on incoming requests.  The
+    order below ensures:
+      SessionMiddleware → CORS → SecurityHeaders → TierGuard → RateLimit → NoCache
+    """
     from middleware.tier_guard import TierGuardMiddleware
 
     app.add_middleware(NoCacheAPIMiddleware)
     app.add_middleware(RateLimitAPIMiddleware)
     app.add_middleware(TierGuardMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_credentials=True,

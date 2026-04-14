@@ -8,6 +8,7 @@ import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import React, { Suspense, useEffect } from 'react';
 import InstallPrompt from './components/InstallPrompt';
+import CookieConsent from './components/CookieConsent';
 import RouteErrorBoundary from './components/RouteErrorBoundary';
 import { apiClient } from './lib/api';
 import { resolveTier, getRouteAccess } from './lib/tierResolver';
@@ -426,6 +427,7 @@ function App() {
       <SupabaseAuthProvider>
         <MobileDrawerProvider>
           <InstallPrompt />
+          <CookieConsent />
           <AppRoutes />
           <Toaster position="top-right" richColors />
         </MobileDrawerProvider>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
+import usePageMeta from '../../hooks/usePageMeta';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
 import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle, DollarSign, TrendingDown, AlertCircle, FileWarning } from 'lucide-react';
 /* design tokens consumed via CSS custom properties — see liquid-steel-tokens.css */
@@ -142,7 +143,9 @@ const WHAT_YOU_GET_CARDS = [
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const HomePage = () => (
+const HomePage = () => {
+  usePageMeta({ title: 'AI Business Intelligence', description: 'AI-powered business intelligence that continuously learns your business. Strategic advice, diagnostics, and growth planning for Australian SMEs.' });
+  return (
   <WebsiteLayout>
 
     {/* ══════════════════════════════════════════════════════════
@@ -261,7 +264,7 @@ const HomePage = () => (
               padding: '14px 32px',
               borderRadius: 'var(--r-md)',
               boxShadow: '0 8px 28px rgba(198,95,46,0.38), 0 2px 4px rgba(0,0,0,0.3)',
-              minWidth: 220,
+              minWidth: 'min(220px, calc(100vw - 64px))',
             }}
             data-testid="hero-cta"
           >
@@ -695,6 +698,7 @@ const HomePage = () => (
     </section>
 
   </WebsiteLayout>
-);
+  );
+};
 
 export default HomePage;

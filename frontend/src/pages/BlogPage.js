@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../components/website/WebsiteLayout';
+import usePageMeta from '../hooks/usePageMeta';
 import { BLOG_ARTICLES } from '../data/blogArticles';
 import { Clock, ArrowRight, Search } from 'lucide-react';
 /* design tokens consumed via CSS custom properties — see liquid-steel-tokens.css */
@@ -33,6 +34,7 @@ const GRADIENTS = [
 ];
 
 export default function BlogPage() {
+  usePageMeta({ title: 'Blog — AI Business Insights', description: 'Insights, strategies, and guides on AI-powered business intelligence for Australian SMEs.' });
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [email, setEmail] = useState('');

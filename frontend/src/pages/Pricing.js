@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../components/website/WebsiteLayout';
+import usePageMeta from '../hooks/usePageMeta';
 import { Check, ChevronDown, Plus, ArrowRight } from 'lucide-react';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 
@@ -247,6 +248,7 @@ const ctaStyles = {
    Page component
    ──────────────────────────────────────────── */
 export default function Pricing() {
+  usePageMeta({ title: 'Pricing — Plans for Every Business Stage', description: 'Simple, transparent pricing for BIQc. Start free, upgrade when you need more intelligence. Plans from $69 AUD/month.' });
   const { user } = useSupabaseAuth();
   const [compareOpen, setCompareOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);

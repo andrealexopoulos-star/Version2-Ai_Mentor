@@ -8,11 +8,13 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import WebsiteLayout from '../components/website/WebsiteLayout';
+import usePageMeta from '../hooks/usePageMeta';
 import { Shield, Send, Mail, MapPin, Clock, Calendar, ArrowRight, Lock, Zap } from 'lucide-react';
 import { apiClient } from '../lib/api';
 /* design tokens consumed via CSS custom properties — see liquid-steel-tokens.css */
 
 export default function ContactPage() {
+  usePageMeta({ title: 'Contact BIQc', description: 'Get in touch with the BIQc team. Enterprise enquiries, support, and partnership opportunities.' });
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
   const waitlistLabel = searchParams.get('label') || '';

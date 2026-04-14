@@ -36,18 +36,23 @@ const CalibrationAdvisor = () => {
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || isPrivilegedUser(user);
 
   // Handle OAuth return from email connect — resume at integration_connect step
+  // Must fire regardless of current cal.entry to prevent loop after OAuth redirect
   useEffect(() => {
     const step = searchParams.get('step');
     const outlookConnected = searchParams.get('outlook_connected');
     const gmailConnected = searchParams.get('gmail_connected');
 
-    if (step === 'integration_connect' && cal.entry !== 'integration_connect' && cal.entry !== 'loading') {
+    if (step === 'integration_connect') {
+      // Clear params immediately to prevent re-triggering on re-renders
+      setSearchParams({}, { replace: true });
       if (outlookConnected === 'true') toast.success('Outlook connected! Continue to your intelligence.');
       if (gmailConnected === 'true') toast.success('Gmail connected! Continue to your intelligence.');
-      setSearchParams({});
-      cal.setEntry('integration_connect');
+      // Force entry to integration_connect regardless of current state
+      if (cal.entry !== 'integration_connect') {
+        cal.setEntry('integration_connect');
+      }
     }
-  }, [searchParams, cal.entry]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSkipCalibration = async () => {
     setSkipping(true);

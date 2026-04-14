@@ -11,6 +11,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
+import usePageMeta from '../../hooks/usePageMeta';
 /* design tokens consumed via CSS custom properties — see liquid-steel-tokens.css */
 import { Shield, Zap, Users, Eye, ArrowRight, Lock, Heart, Layers, Smile, MinusCircle } from 'lucide-react';
 
@@ -177,6 +178,7 @@ const revealCSS = `
    PAGE COMPONENT
    ═══════════════════════════════════════════════════════════════ */
 export default function AboutPage() {
+  usePageMeta({ title: 'About BIQc', description: 'Built by operators, for operators. BIQc is an AI-powered business intelligence platform designed for Australian SMEs.' });
   const wrapRef = useScrollReveal();
 
   return (

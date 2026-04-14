@@ -18,14 +18,18 @@ export default function UpgradePage({ success = false }) {
   useEffect(() => {
     if (success && !purchaseTracked.current) {
       purchaseTracked.current = true;
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+      const planId = params.get('plan') || 'starter';
+      const tier = PRICING_TIERS.find((t) => t.id === planId) || PRICING_TIERS.find((t) => t.id === 'starter');
       trackGoogleTagEvent('purchase', {
-        transaction_id: `biqc_${Date.now()}`,
-        value: 69,
+        transaction_id: sessionId || `biqc_${Date.now()}`,
+        value: tier?.priceNum || 0,
         currency: 'AUD',
-        items: [{ item_name: 'BIQc Foundation', item_category: 'subscription' }],
+        items: [{ item_name: tier?.name || 'BIQc Subscription', item_category: 'subscription' }],
       });
       trackGoogleTagEvent('biqc_subscription_activated', {
-        plan: 'foundation',
+        plan: planId,
         source: 'stripe_checkout',
       });
     }
@@ -53,7 +57,7 @@ export default function UpgradePage({ success = false }) {
 
       const res = await apiClient.post('/stripe/create-checkout-session', {
         tier: selectedTier,
-        success_url: `${window.location.origin}/upgrade/success`,
+        success_url: `${window.location.origin}/upgrade/success?session_id={CHECKOUT_SESSION_ID}&plan=${selectedTier}`,
         cancel_url: `${window.location.origin}/upgrade`,
       });
       if (res.data?.url) {

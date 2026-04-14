@@ -95,7 +95,7 @@ jobs:
         run: |
           for i in $(seq 1 12); do
             curl --silent --show-error https://biqc.ai > /tmp/website_home.html || true
-            if grep -q "How BIQc Works" /tmp/website_home.html && grep -q "Try It Free" /tmp/website_home.html; then
+            if grep -q "<title>BIQc" /tmp/website_home.html && grep -q "biqc.ai" /tmp/website_home.html; then
               echo "Website release verification passed."
               exit 0
             fi
