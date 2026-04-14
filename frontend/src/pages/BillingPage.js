@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
-import { CreditCard, Building2, RefreshCw, CircleCheck, CircleAlert, Download, Clock, Zap, Check } from 'lucide-react';
+import { CreditCard, Building2, RefreshCw, CircleCheck, CircleAlert, Download, Clock, Zap, Check, ExternalLink } from 'lucide-react';
 
 const TIER_DISPLAY = {
   free: 'Free',
@@ -50,11 +51,28 @@ const money = (value, currency = 'AUD') =>
   }).format(Number(value || 0));
 
 const BillingPage = () => {
+  const navigate = useNavigate();
   const [overview, setOverview] = useState(null);
   const [charges, setCharges] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const openStripePortal = useCallback(async () => {
+    setPortalLoading(true);
+    try {
+      const res = await apiClient.post('/billing/portal');
+      const url = res?.data?.url;
+      if (url) window.location.href = url;
+      else setFetchError('Unable to open billing portal. Please try again.');
+    } catch (err) {
+      console.error('[BillingPage] portal error:', err);
+      setFetchError(err?.response?.data?.detail || 'Unable to open billing portal.');
+    } finally {
+      setPortalLoading(false);
+    }
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -228,6 +246,7 @@ const BillingPage = () => {
             <div className="flex flex-col gap-3 items-end">
               {!isHighestPlan && (
                 <button
+                  onClick={() => navigate('/upgrade')}
                   className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:shadow-lg whitespace-nowrap"
                   style={{ background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))' }}
                 >
@@ -235,10 +254,13 @@ const BillingPage = () => {
                 </button>
               )}
               <button
-                className="px-5 py-2.5 rounded-lg text-sm font-medium transition-colors hover:text-[var(--ink-display)] whitespace-nowrap"
+                onClick={openStripePortal}
+                disabled={portalLoading}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors hover:text-[var(--ink-display)] whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ border: '1px solid var(--border)', color: 'var(--ink-secondary)' }}
               >
-                Manage subscription
+                {portalLoading ? 'Opening...' : 'Manage subscription'}
+                {!portalLoading && <ExternalLink className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>
@@ -348,16 +370,20 @@ const BillingPage = () => {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[var(--ink-display)] hover:border-[var(--border)]"
+                    onClick={openStripePortal}
+                    disabled={portalLoading}
+                    className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[var(--ink-display)] hover:border-[var(--border)] disabled:opacity-60"
                     style={{ border: '1px solid var(--border)', color: 'var(--ink-secondary)' }}
                   >
-                    Update card
+                    {portalLoading ? 'Opening...' : 'Update card'}
                   </button>
                   <button
-                    className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[var(--ink-display)] hover:border-[var(--border)]"
+                    onClick={openStripePortal}
+                    disabled={portalLoading}
+                    className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[var(--ink-display)] hover:border-[var(--border)] disabled:opacity-60"
                     style={{ border: '1px solid var(--border)', color: 'var(--ink-secondary)' }}
                   >
-                    Add new
+                    {portalLoading ? '...' : 'Add new'}
                   </button>
                 </div>
               </div>
@@ -378,10 +404,12 @@ const BillingPage = () => {
                   </p>
                 </div>
                 <button
-                  className="px-3.5 py-1.5 rounded-md text-xs font-semibold transition-colors hover:shadow-lg whitespace-nowrap"
+                  onClick={openStripePortal}
+                  disabled={portalLoading}
+                  className="px-3.5 py-1.5 rounded-md text-xs font-semibold transition-colors hover:shadow-lg whitespace-nowrap disabled:opacity-60"
                   style={{ background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))', color: 'white', border: 'none' }}
                 >
-                  Add payment method
+                  {portalLoading ? 'Opening...' : 'Add payment method'}
                 </button>
               </div>
             )}
@@ -467,6 +495,7 @@ const BillingPage = () => {
                 Upgrade to Pro for WarRoom crisis console, risk intelligence, compliance centre, advanced analysis, and unlimited AI queries.
               </p>
               <button
+                onClick={() => navigate('/upgrade')}
                 className="inline-flex items-center gap-2 px-8 py-3 rounded-md text-base font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5"
                 style={{ background: 'linear-gradient(135deg, var(--lava), var(--lava-warm))' }}
               >

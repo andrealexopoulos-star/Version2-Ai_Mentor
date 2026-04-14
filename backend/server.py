@@ -153,6 +153,12 @@ async def startup_core_runtime():
     app.state.supabase_admin = supabase_admin
     app.state.services = services
     app.state.cognitive_core = cognitive_core
+    # Validate all env vars on startup and log any missing critical ones
+    try:
+        from routes.health import log_env_validation_on_startup
+        log_env_validation_on_startup()
+    except Exception as exc:
+        logger.warning("Env var validation skipped: %s", exc)
 
 
 @app.on_event("startup")

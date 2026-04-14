@@ -388,6 +388,50 @@ async def get_payment_status(session_id: str, current_user: dict = Depends(get_c
         raise HTTPException(status_code=500, detail="Unable to fetch payment status")
 
 
+@router.post("/stripe/portal-session")
+@router.post("/billing/portal")  # convenience alias
+async def create_portal_session(request: Request, current_user: dict = Depends(get_current_user)):
+    """Create a Stripe Customer Portal session for subscription management.
+
+    If the user doesn't have a Stripe customer ID yet, we look up or create one
+    from their email, then return the portal URL.
+    """
+    if not STRIPE_KEY:
+        raise HTTPException(status_code=503, detail="Stripe is not configured")
+
+    user_email = current_user.get("email", "")
+    user_id = current_user["id"]
+
+    try:
+        # Try to find an existing Stripe customer by email
+        customers = stripe.Customer.list(email=user_email, limit=1)
+        if customers.data:
+            customer_id = customers.data[0].id
+        else:
+            # Create a minimal customer record so the portal has something to attach to
+            customer = stripe.Customer.create(
+                email=user_email,
+                metadata={"biqc_user_id": user_id},
+            )
+            customer_id = customer.id
+
+        configured_base = (os.environ.get("FRONTEND_URL") or "").strip() or "https://biqc.ai"
+        return_url = f"{configured_base}/billing"
+
+        portal_session = stripe.billing_portal.Session.create(
+            customer=customer_id,
+            return_url=return_url,
+        )
+        return {"url": portal_session.url}
+
+    except stripe.error.InvalidRequestError as e:
+        logger.error(f"Stripe portal error: {e}")
+        raise HTTPException(status_code=400, detail="Unable to create billing portal session")
+    except Exception as e:
+        logger.error(f"Portal session creation failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to open billing portal")
+
+
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
     """Handle Stripe webhook events."""

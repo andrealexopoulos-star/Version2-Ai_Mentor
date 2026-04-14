@@ -52,8 +52,15 @@ const SubscribePage = () => {
 
   // Poll payment status if returning from Stripe
   const pollPaymentStatus = useCallback(async (sid, attempt) => {
-    if (attempt >= 5) {
-      setPaymentResult({ status: 'timeout', message: 'Payment verification timed out. Please refresh.' });
+    // Increased from 5 to 12 attempts with exponential backoff (total ~50s)
+    // Stripe webhooks can take 10-30s under load
+    const MAX_ATTEMPTS = 12;
+    if (attempt >= MAX_ATTEMPTS) {
+      setPaymentResult({
+        status: 'timeout',
+        message: 'Payment verification is taking longer than expected. Your payment was likely processed successfully — please refresh the page in a moment. If the issue persists, contact support@biqc.ai.',
+      });
+      setCheckingPayment(false);
       return;
     }
     setCheckingPayment(true);
@@ -84,10 +91,17 @@ const SubscribePage = () => {
         setCheckingPayment(false);
         return;
       }
-      setTimeout(() => pollPaymentStatus(sid, attempt + 1), 2000);
+      // Exponential backoff: 2s, 3s, 4s, 5s, 5s, 5s...
+      const delay = Math.min(2000 + attempt * 1000, 5000);
+      setTimeout(() => pollPaymentStatus(sid, attempt + 1), delay);
     } catch {
-      setPaymentResult({ status: 'error', message: 'Error checking payment. Please refresh.' });
-      setCheckingPayment(false);
+      if (attempt < 3) {
+        // Retry on network errors for first few attempts
+        setTimeout(() => pollPaymentStatus(sid, attempt + 1), 3000);
+      } else {
+        setPaymentResult({ status: 'error', message: 'Error checking payment. Your payment may still be processing — please refresh in a moment.' });
+        setCheckingPayment(false);
+      }
     }
   }, [from, navigate]);
 

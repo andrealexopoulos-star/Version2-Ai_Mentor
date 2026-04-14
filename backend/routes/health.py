@@ -11,6 +11,80 @@ from biqc_jobs import biqc_jobs
 router = APIRouter(prefix="/health", tags=["health"])
 logger = logging.getLogger(__name__)
 
+# ─── Critical env var groups for startup validation ───────────────────────────
+_ENV_GROUPS = {
+    "auth": {
+        "required": ["JWT_SECRET_KEY", "SUPABASE_URL", "SUPABASE_ANON_KEY"],
+        "optional": ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_KEY"],
+    },
+    "ai": {
+        "required": ["OPENAI_API_KEY"],
+        "optional": ["ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "SERPER_API_KEY"],
+    },
+    "payments": {
+        "required": [],
+        "optional": ["STRIPE_API_KEY", "STRIPE_WEBHOOK_SECRET"],
+    },
+    "email": {
+        "required": [],
+        "optional": ["RESEND_API_KEY", "RESEND_FROM_EMAIL", "BIQC_ADMIN_NOTIFICATION_EMAIL"],
+    },
+    "redis": {
+        "required": [],
+        "optional": ["REDIS_URL", "REDIS_USE_MANAGED_IDENTITY", "REDIS_MANAGED_IDENTITY_CLIENT_ID"],
+    },
+    "oauth": {
+        "required": [],
+        "optional": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET", "AZURE_TENANT_ID"],
+    },
+    "integrations": {
+        "required": [],
+        "optional": ["MERGE_API_KEY", "MERGE_WEBHOOK_SECRET"],
+    },
+    "deployment": {
+        "required": [],
+        "optional": ["FRONTEND_URL", "BACKEND_URL", "CORS_ALLOW_ORIGINS", "ENVIRONMENT", "PORT"],
+    },
+}
+
+
+def validate_env_vars() -> dict:
+    """Validate all env var groups and return a summary. Called at startup and by health check."""
+    results = {}
+    total_missing_required = 0
+    total_missing_optional = 0
+    for group, vars_dict in _ENV_GROUPS.items():
+        missing_req = [v for v in vars_dict["required"] if not os.environ.get(v)]
+        missing_opt = [v for v in vars_dict["optional"] if not os.environ.get(v)]
+        total_missing_required += len(missing_req)
+        total_missing_optional += len(missing_opt)
+        status = "ok" if not missing_req else "critical"
+        results[group] = {
+            "status": status,
+            "missing_required": missing_req or None,
+            "missing_optional": missing_opt or None,
+        }
+    return {
+        "groups": results,
+        "total_missing_required": total_missing_required,
+        "total_missing_optional": total_missing_optional,
+        "overall": "ok" if total_missing_required == 0 else "critical",
+    }
+
+
+def log_env_validation_on_startup():
+    """Log env var validation results on server startup. Called once from server.py."""
+    result = validate_env_vars()
+    if result["overall"] == "critical":
+        for group, info in result["groups"].items():
+            if info.get("missing_required"):
+                logger.error("STARTUP: Missing REQUIRED env vars in [%s]: %s", group, info["missing_required"])
+    if result["total_missing_optional"] > 0:
+        missing_groups = {g: info["missing_optional"] for g, info in result["groups"].items() if info.get("missing_optional")}
+        logger.warning("STARTUP: Missing optional env vars: %s", missing_groups)
+    else:
+        logger.info("STARTUP: All env vars configured")
+
 
 def _is_production() -> bool:
     env = (os.environ.get("ENVIRONMENT") or "").strip().lower()
@@ -81,6 +155,7 @@ async def detailed_health():
             "status": "unavailable_in_production",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
+    env_validation = validate_env_vars()
     checks = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "api": {"status": "healthy"},
@@ -95,7 +170,12 @@ async def detailed_health():
             "supabase_url": {"configured": bool(os.environ.get("SUPABASE_URL"))},
             "serper": {"configured": bool(os.environ.get("SERPER_API_KEY"))},
             "redis_url": {"configured": bool(os.environ.get("REDIS_URL"))},
+            "stripe": {"configured": bool(os.environ.get("STRIPE_API_KEY"))},
+            "resend": {"configured": bool(os.environ.get("RESEND_API_KEY"))},
+            "merge": {"configured": bool(os.environ.get("MERGE_API_KEY"))},
+            "anthropic": {"configured": bool(os.environ.get("ANTHROPIC_API_KEY"))},
         },
+        "env_validation": env_validation,
     }
 
     # Core services: API + Supabase + Redis must be healthy.

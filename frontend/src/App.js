@@ -148,9 +148,26 @@ const CalibrationPreview = React.lazy(() => import('./pages/CalibrationPreview')
 const ProfileImport = React.lazy(() => import('./pages/ProfileImport').catch(() => ({ default: () => null })));
 
 // ── Error boundary ────────────────────────────────────────────────────────────
+function _appErrorRef() {
+  const ts = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `FATAL-${ts}-${rand}`;
+}
+
 class AppErrorBoundary extends React.Component {
-  state = { error: null };
-  static getDerivedStateFromError(err) { return { error: err }; }
+  state = { error: null, errorRef: null, copied: false };
+  static getDerivedStateFromError(err) { return { error: err, errorRef: _appErrorRef() }; }
+  componentDidCatch(error, errorInfo) {
+    console.error(`[AppErrorBoundary] ref=${this.state.errorRef}`, error, errorInfo);
+  }
+  _copyRef = () => {
+    if (this.state.errorRef) {
+      navigator.clipboard?.writeText(this.state.errorRef).then(() => {
+        this.setState({ copied: true });
+        setTimeout(() => this.setState({ copied: false }), 2000);
+      });
+    }
+  };
   render() {
     if (this.state.error) {
       return (
@@ -160,10 +177,26 @@ class AppErrorBoundary extends React.Component {
           <p style={{ color: '#64748B', fontFamily: 'sans-serif', fontSize: 14, textAlign: 'center', maxWidth: 400 }}>
             BIQc encountered an error. Please refresh to continue.
           </p>
+          {this.state.errorRef && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#111827', border: '1px solid #1F2937', borderRadius: 8, padding: '6px 14px' }}>
+              <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#6B7280', letterSpacing: '0.04em' }}>
+                Ref: {this.state.errorRef}
+              </span>
+              <button onClick={this._copyRef}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: this.state.copied ? '#10B981' : '#6B7280', fontSize: 11 }}>
+                {this.state.copied ? '\u2713' : '\u2398'}
+              </button>
+            </div>
+          )}
           <button onClick={() => window.location.reload()}
             style={{ background: '#E85D00', color: 'white', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontFamily: 'sans-serif', fontSize: 14 }}>
             Refresh Page
           </button>
+          <p style={{ color: '#4B5563', fontFamily: 'sans-serif', fontSize: 12, textAlign: 'center', maxWidth: 360 }}>
+            If this keeps happening, email{' '}
+            <a href={`mailto:support@biqc.ai?subject=Critical Error ${this.state.errorRef || ''}`} style={{ color: '#E85D00', textDecoration: 'none' }}>support@biqc.ai</a>
+            {' '}with the reference code above.
+          </p>
         </div>
       );
     }
