@@ -31,9 +31,13 @@ def _install_module_stubs():
             patch = _passthrough
             delete = _passthrough
 
+        class _Request:
+            pass
+
         fastapi_stub.APIRouter = _APIRouter
         fastapi_stub.Depends = lambda fn: fn
         fastapi_stub.HTTPException = _HTTPException
+        fastapi_stub.Request = _Request
         sys.modules["fastapi"] = fastapi_stub
 
     if "fastapi.responses" not in sys.modules:
@@ -60,6 +64,7 @@ def _install_module_stubs():
     if "routes.auth" not in sys.modules:
         routes_auth_stub = types.ModuleType("routes.auth")
         routes_auth_stub.get_current_user = lambda: {"id": "stub-user"}
+        routes_auth_stub.router = _APIRouter()  # stub router so later tests can import it
         sys.modules["routes.auth"] = routes_auth_stub
 
 
