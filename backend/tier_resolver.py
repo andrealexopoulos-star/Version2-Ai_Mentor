@@ -67,6 +67,7 @@ ROUTE_ACCESS = {
     '/subscribe': 'free',
     '/upgrade': 'free',
     '/more-features': 'free',
+    '/cmo-report': 'free',             # CMO Report (free tier)
 
     # PAID TIER — requires starter or above
     '/exposure-scan': 'starter',
