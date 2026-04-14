@@ -340,7 +340,7 @@ const RiskHeatMap = ({ risks }) => {
                   <circle cx={cx} cy={cy} r={14} fill={fill} style={{ cursor: 'pointer' }}>
                     <title>{dot.name}</title>
                   </circle>
-                  <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontSize: 11, fill: '#fff', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', pointerEvents: 'none' }}>
+                  <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontSize: 11, fill: '#fff', fontWeight: 700, fontFamily: 'var(--font-mono)', pointerEvents: 'none' }}>
                     {dot.id}
                   </text>
                 </g>
@@ -349,21 +349,21 @@ const RiskHeatMap = ({ risks }) => {
 
             {/* Y-axis row labels */}
             {Y_LABELS.map((label, i) => (
-              <text key={`yl-${i}`} x={-8} y={i * 100 + 55} textAnchor="end" style={{ fontSize: 9, fill: 'var(--ink-muted)', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <text key={`yl-${i}`} x={-8} y={i * 100 + 55} textAnchor="end" style={{ fontSize: 9, fill: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {label}
               </text>
             ))}
 
             {/* X-axis col labels */}
             {X_LABELS.map((label, i) => (
-              <text key={`xl-${i}`} x={i * 100 + 50} y={420} textAnchor="middle" style={{ fontSize: 9, fill: 'var(--ink-muted)', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <text key={`xl-${i}`} x={i * 100 + 50} y={420} textAnchor="middle" style={{ fontSize: 9, fill: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {label}
               </text>
             ))}
 
             {/* Axis labels */}
-            <text x="200" y="445" textAnchor="middle" style={{ fontSize: 11, fill: 'var(--ink-muted)', fontFamily: 'JetBrains Mono, monospace' }}>{'IMPACT \u2192'}</text>
-            <text x="-30" y="200" textAnchor="middle" style={{ fontSize: 11, fill: 'var(--ink-muted)', fontFamily: 'JetBrains Mono, monospace', transform: 'rotate(-90, -30, 200)' }}>{'LIKELIHOOD \u2192'}</text>
+            <text x="200" y="445" textAnchor="middle" style={{ fontSize: 11, fill: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{'IMPACT \u2192'}</text>
+            <text x="-30" y="200" textAnchor="middle" style={{ fontSize: 11, fill: 'var(--ink-muted)', fontFamily: 'var(--font-mono)', transform: 'rotate(-90, -30, 200)' }}>{'LIKELIHOOD \u2192'}</text>
           </svg>
         </div>
 

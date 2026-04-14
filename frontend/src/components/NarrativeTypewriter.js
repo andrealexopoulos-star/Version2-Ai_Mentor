@@ -63,7 +63,7 @@ const NarrativeTypewriter = ({
         className="text-base leading-relaxed font-serif"
         style={{ 
           color: 'var(--text-primary)',
-          fontFamily: 'Georgia, Cambria, "Times New Roman", serif'
+          fontFamily: 'var(--font-display)'
         }}
       >
         {displayText}

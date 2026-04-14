@@ -61,7 +61,7 @@ const AuthDebug = () => {
   return (
     <div style={{ 
       padding: '20px', 
-      fontFamily: 'monospace', 
+      fontFamily: 'var(--font-mono)',
       fontSize: '14px',
       background: '#1a1a2e',
       color: '#00ff00',

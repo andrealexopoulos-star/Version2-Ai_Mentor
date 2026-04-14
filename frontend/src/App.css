@@ -121,7 +121,7 @@
 }
 
 .stat-value {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-ui);
     font-size: 2.5rem;
     font-weight: 600;
     color: var(--forest);

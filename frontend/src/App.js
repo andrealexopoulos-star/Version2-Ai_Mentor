@@ -173,13 +173,13 @@ class AppErrorBoundary extends React.Component {
       return (
         <div style={{ minHeight: '100vh', background: '#070E18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 32 }}>
           <div style={{ color: '#E85D00', fontSize: 32, fontWeight: 'bold' }}>B</div>
-          <p style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: 'sans-serif', fontSize: 18, fontWeight: 600 }}>Something went wrong</p>
-          <p style={{ color: '#64748B', fontFamily: 'sans-serif', fontSize: 14, textAlign: 'center', maxWidth: 400 }}>
+          <p style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: 'var(--font-ui, Inter, sans-serif)', fontSize: 18, fontWeight: 600 }}>Something went wrong</p>
+          <p style={{ color: '#64748B', fontFamily: 'var(--font-ui, Inter, sans-serif)', fontSize: 14, textAlign: 'center', maxWidth: 400 }}>
             BIQc encountered an error. Please refresh to continue.
           </p>
           {this.state.errorRef && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#111827', border: '1px solid #1F2937', borderRadius: 8, padding: '6px 14px' }}>
-              <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#6B7280', letterSpacing: '0.04em' }}>
+              <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 12, color: '#6B7280', letterSpacing: '0.04em' }}>
                 Ref: {this.state.errorRef}
               </span>
               <button onClick={this._copyRef}
@@ -189,10 +189,10 @@ class AppErrorBoundary extends React.Component {
             </div>
           )}
           <button onClick={() => window.location.reload()}
-            style={{ background: '#E85D00', color: 'white', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontFamily: 'sans-serif', fontSize: 14 }}>
+            style={{ background: '#E85D00', color: 'white', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--font-ui, Inter, sans-serif)', fontSize: 14 }}>
             Refresh Page
           </button>
-          <p style={{ color: '#4B5563', fontFamily: 'sans-serif', fontSize: 12, textAlign: 'center', maxWidth: 360 }}>
+          <p style={{ color: '#4B5563', fontFamily: 'var(--font-ui, Inter, sans-serif)', fontSize: 12, textAlign: 'center', maxWidth: 360 }}>
             If this keeps happening, email{' '}
             <a href={`mailto:support@biqc.ai?subject=Critical Error ${this.state.errorRef || ''}`} style={{ color: '#E85D00', textDecoration: 'none' }}>support@biqc.ai</a>
             {' '}with the reference code above.

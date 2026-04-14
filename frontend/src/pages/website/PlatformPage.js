@@ -652,7 +652,7 @@ export default function PlatformPage() {
             <Link to="/register-supabase" style={{ background: 'var(--lava)', color: '#fff', borderRadius: 'var(--r-md)', padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-ui)', textDecoration: 'none', boxShadow: '0 6px 24px rgba(232,93,0,0.3)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               Start Free Trial <ArrowRight size={15} />
             </Link>
-            <Link to="/meet/soundboard" style={{ background: 'rgba(255,255,255,0.04)', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>
+            <Link to="/soundboard" style={{ background: 'rgba(255,255,255,0.04)', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>
               Try Ask BIQc Demo
             </Link>
           </div>
