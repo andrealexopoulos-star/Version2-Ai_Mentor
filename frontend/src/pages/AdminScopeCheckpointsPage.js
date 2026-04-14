@@ -35,8 +35,8 @@ export default function AdminScopeCheckpointsPage() {
       <div className="space-y-4 max-w-[1280px]" style={{ fontFamily: fontFamily.body, color: 'var(--biqc-text)' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Scope Checkpoints</h1>
-            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+            <h1 className="text-2xl text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Scope Checkpoints</h1>
+            <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
               Persistent checkpoint placeholder for current scope blocks and gate outcomes.
             </p>
           </div>
@@ -53,19 +53,19 @@ export default function AdminScopeCheckpointsPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="p-3" style={cardStyle}>
-            <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Source</div>
-            <div className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{payload?.source || '—'}</div>
+            <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Source</div>
+            <div className="text-xs text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{payload?.source || '—'}</div>
           </div>
           <div className="p-3" style={cardStyle}>
-            <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Total Entries</div>
-            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{payload?.entry_count ?? 0}</div>
+            <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Total Entries</div>
+            <div className="text-xl text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{payload?.entry_count ?? 0}</div>
           </div>
           <div className="p-3" style={cardStyle}>
-            <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Unique Gates</div>
-            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{payload?.unique_gate_count ?? 0}</div>
+            <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Unique Gates</div>
+            <div className="text-xl text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{payload?.unique_gate_count ?? 0}</div>
           </div>
           <div className="p-3" style={cardStyle}>
-            <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Open Failures</div>
+            <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Open Failures</div>
             <div className="text-xl" style={{ color: (payload?.open_failure_count || 0) > 0 ? '#EF4444' : '#10B981', fontFamily: fontFamily.mono }}>
               {payload?.open_failure_count ?? 0}
             </div>
@@ -80,13 +80,13 @@ export default function AdminScopeCheckpointsPage() {
                 <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>
                   FAIL
                 </span>
-                <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{entry.gate_id}</span>
-                <span className="text-[10px] text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
-                <span className="ml-auto text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{entry.artifact}</span>
+                <span className="text-xs text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{entry.gate_id}</span>
+                <span className="text-[10px] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
+                <span className="ml-auto text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{entry.artifact}</span>
               </div>
             ))}
             {(payload?.open_failures || []).length === 0 && (
-              <div className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No open failures in latest gate state.</div>
+              <div className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>No open failures in latest gate state.</div>
             )}
           </div>
         </div>
@@ -106,9 +106,9 @@ export default function AdminScopeCheckpointsPage() {
                 >
                   {entry.status}
                 </span>
-                <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{entry.gate_id}</span>
-                <span className="text-[10px] text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
-                <span className="ml-auto text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{entry.artifact}</span>
+                <span className="text-xs text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{entry.gate_id}</span>
+                <span className="text-[10px] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
+                <span className="ml-auto text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{entry.artifact}</span>
               </div>
             ))}
           </div>

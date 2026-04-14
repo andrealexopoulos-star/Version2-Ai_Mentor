@@ -246,7 +246,7 @@ const BusinessProfile = () => {
                     strokeDashoffset={`${2 * Math.PI * 20 * (1 - (scores.completeness || 0) / 100)}`}
                     strokeLinecap="round" transform="rotate(-90 24 24)"
                     style={{ transition: 'stroke-dashoffset 0.8s ease-out' }} />
-                  <text x="24" y="26" textAnchor="middle" style={{ fill: '#EDF1F7', fontSize: '11px', fontFamily: fontFamily.mono, fontWeight: 700 }}>
+                  <text x="24" y="26" textAnchor="middle" style={{ fill: 'var(--ink-display)', fontSize: '11px', fontFamily: fontFamily.mono, fontWeight: 700 }}>
                     {scores.completeness || 0}%
                   </text>
                 </svg>

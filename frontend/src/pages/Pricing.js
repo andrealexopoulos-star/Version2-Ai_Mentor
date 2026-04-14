@@ -19,7 +19,7 @@ const PLANS = [
     name: 'Free',
     badge: 'Get Started',
     badgeBg: 'rgba(140,170,210,0.1)',
-    badgeColor: '#8FA0B8',
+    badgeColor: 'var(--ink-secondary, #8FA0B8)',
     price: '$0',
     period: '/mo',
     description: 'Everything you need to start understanding your business better.',
@@ -70,7 +70,7 @@ const PLANS = [
     id: 'pro',
     name: 'Pro',
     badge: 'Full Platform',
-    badgeBg: '#EDF1F7',
+    badgeBg: 'var(--ink-display, #EDF1F7)',
     badgeColor: '#080C14',
     price: '$199',
     period: '/mo',
@@ -239,7 +239,7 @@ const CellValue = ({ value }) => {
 
 const ctaStyles = {
   primary: { background: 'var(--lava, #E85D00)', color: '#fff', border: 'none' },
-  dark: { background: '#EDF1F7', color: '#080C14', border: 'none' },
+  dark: { background: 'var(--ink-display, #EDF1F7)', color: '#080C14', border: 'none' },
   outline: { background: 'transparent', color: 'var(--ink-display, #EDF1F7)', border: '1px solid rgba(140,170,210,0.2)' },
 };
 

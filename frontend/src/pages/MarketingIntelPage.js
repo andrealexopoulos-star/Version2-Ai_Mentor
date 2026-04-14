@@ -42,7 +42,7 @@ const RadarChart = ({ data }) => {
       <polygon points={compPoints.map(p => `${p.x},${p.y}`).join(' ')} fill="rgba(100,116,139,0.15)" stroke="#64748B" strokeWidth="1.5" strokeDasharray="4" />
       <polygon points={subjectPoints.map(p => `${p.x},${p.y}`).join(' ')} fill="rgba(232,93,0,0.15)" stroke="#E85D00" strokeWidth="2" />
       {subjectPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="4" fill="#E85D00" />)}
-      {data.labels.map((label, i) => { const p = getPoint(1.2, i); return <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fill="#8FA0B8" fontSize="9" fontFamily={MONO}>{label}</text>; })}
+      {data.labels.map((label, i) => { const p = getPoint(1.2, i); return <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fill="var(--ink-secondary, #8FA0B8)" fontSize="9" fontFamily={MONO}>{label}</text>; })}
     </svg>
   );
 };
@@ -98,7 +98,7 @@ const MarketingIntelPage = () => {
             <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Marketing Intelligence.</h1>
             <p className="text-sm mt-1" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>5-pillar competitive benchmark. Evidence-based scoring.</p>
           </div>
-          {benchmark && <button onClick={runBenchmark} disabled={running || !canRun} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs hover:text-[#EDF1F7] disabled:opacity-50" style={{ border: '1px solid var(--biqc-border)', color: canRun ? '#8FA0B8' : '#64748B' }}>
+          {benchmark && <button onClick={runBenchmark} disabled={running || !canRun} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs hover:text-[var(--ink-display)] disabled:opacity-50" style={{ border: '1px solid var(--biqc-border)', color: canRun ? 'var(--ink-secondary, #8FA0B8)' : '#64748B' }}>
             {!isPaid && !canRun ? (
               <><Clock className="w-3 h-3" /> Next scan in {daysLeft}d</>
             ) : (
@@ -139,7 +139,7 @@ const MarketingIntelPage = () => {
         <div>
           <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Channel Performance</h2>
           <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}>
-            <Plug className="w-8 h-8 mx-auto mb-3" style={{ color: '#64748B' }} />
+            <Plug className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--ink-muted)' }} />
             <p className="text-sm" style={{ color: 'var(--ink-muted, #708499)' }}>Channel performance data will appear when marketing integrations are connected.</p>
           </div>
         </div>
@@ -148,9 +148,9 @@ const MarketingIntelPage = () => {
 
         {!loading && !benchmark && (
           <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-            <BarChart3 className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-            <h2 className="text-lg font-semibold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>Run Your First Benchmark</h2>
-            <p className="text-sm text-[#64748B] mb-4 max-w-md mx-auto">Compare your marketing presence against up to 5 competitors across Brand Visibility, Digital Presence, Content Maturity, Social Engagement, and AI Citation Share.</p>
+            <BarChart3 className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-3" />
+            <h2 className="text-lg font-semibold text-[var(--ink-display)] mb-2" style={{ fontFamily: fontFamily.display }}>Run Your First Benchmark</h2>
+            <p className="text-sm text-[var(--ink-muted)] mb-4 max-w-md mx-auto">Compare your marketing presence against up to 5 competitors across Brand Visibility, Digital Presence, Content Maturity, Social Engagement, and AI Citation Share.</p>
             {!isPaid && (
               <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 rounded-full" style={{ background: '#F59E0B10', border: '1px solid #F59E0B25' }}>
                 <Clock className="w-3 h-3" style={{ color: '#F59E0B' }} />
@@ -172,7 +172,7 @@ const MarketingIntelPage = () => {
                 <Clock className="w-5 h-5 shrink-0" style={{ color: '#F59E0B' }} />
                 <div>
                   <p className="text-sm font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>Next free scan available in {daysLeft} day{daysLeft !== 1 ? 's' : ''}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.body }}>Free tier includes 1 benchmark scan per 30 days. Upgrade for unlimited scans.</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.body }}>Free tier includes 1 benchmark scan per 30 days. Upgrade for unlimited scans.</p>
                 </div>
               </div>
               <button onClick={() => window.location.href = '/subscribe?plan=starter&from=/marketing-intelligence'}
@@ -189,18 +189,18 @@ const MarketingIntelPage = () => {
             {/* Overall Score */}
             <div className="rounded-2xl p-6 text-center" style={{ background: '#E85D0008', border: '1px solid #E85D0025' }}>
               <span className="text-5xl font-bold" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>{Math.round((benchmark.overall || benchmark.scores?.overall || 0) * 100)}</span>
-              <span className="text-lg text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>/100</span>
-              <p className="text-sm text-[#8FA0B8] mt-1">Overall Marketing Intelligence Score</p>
+              <span className="text-lg text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>/100</span>
+              <p className="text-sm text-[var(--ink-secondary)] mt-1">Overall Marketing Intelligence Score</p>
             </div>
 
             {/* Radar + Pillars */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="rounded-2xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-                <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Competitive Radar</h3>
+                <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-3" style={{ fontFamily: fontFamily.display }}>Competitive Radar</h3>
                 <RadarChart data={benchmark.radar || benchmark.radar_data} />
                 <div className="flex justify-center gap-4 mt-3">
-                  <div className="flex items-center gap-1"><span className="w-3 h-1 rounded" style={{ background: '#E85D00' }} /><span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>You</span></div>
-                  <div className="flex items-center gap-1"><span className="w-3 h-1 rounded" style={{ background: '#64748B', borderStyle: 'dashed' }} /><span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Competitors</span></div>
+                  <div className="flex items-center gap-1"><span className="w-3 h-1 rounded" style={{ background: '#E85D00' }} /><span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>You</span></div>
+                  <div className="flex items-center gap-1"><span className="w-3 h-1 rounded" style={{ background: '#64748B', borderStyle: 'dashed' }} /><span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Competitors</span></div>
                 </div>
               </div>
 
@@ -214,7 +214,7 @@ const MarketingIntelPage = () => {
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between mb-1">
-                          <span className="text-xs text-[#8FA0B8]">{label}</span>
+                          <span className="text-xs text-[var(--ink-secondary)]">{label}</span>
                           <span className="text-xs font-bold" style={{ fontFamily: fontFamily.mono, color }}>{Math.round(score * 100)}%</span>
                         </div>
                         <div className="h-1.5 rounded-full" style={{ background: color + '20' }}>
@@ -230,11 +230,11 @@ const MarketingIntelPage = () => {
             {/* Competitors */}
             {(benchmark.competitors || []).length > 0 && (
               <div className="rounded-2xl p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-                <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Competitors Benchmarked</h3>
+                <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-3" style={{ fontFamily: fontFamily.display }}>Competitors Benchmarked</h3>
                 {benchmark.competitors.map((c, i) => (
                   <div key={i} className="flex items-center gap-2 py-2" style={{ borderBottom: i < benchmark.competitors.length - 1 ? '1px solid rgba(140,170,210,0.15)' : 'none' }}>
-                    <span className="text-xs text-[#EDF1F7]">{c.name || c.domain}</span>
-                    <span className="text-[10px] text-[#64748B] ml-auto" style={{ fontFamily: fontFamily.mono }}>{c.domain}</span>
+                    <span className="text-xs text-[var(--ink-display)]">{c.name || c.domain}</span>
+                    <span className="text-[10px] text-[var(--ink-muted)] ml-auto" style={{ fontFamily: fontFamily.mono }}>{c.domain}</span>
                   </div>
                 ))}
               </div>

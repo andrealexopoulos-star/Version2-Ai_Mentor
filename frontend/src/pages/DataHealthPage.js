@@ -29,10 +29,10 @@ const MetricBar = ({ label, value, color, desc }) => (
   <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
     <div className="flex items-center justify-between mb-1.5">
       <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>{label}</span>
+        <span className="text-xs font-medium text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>{label}</span>
         {desc && (
           <span title={desc}>
-            <Info className="w-3 h-3 text-[#4A5568]" />
+            <Info className="w-3 h-3 text-[var(--ink-muted)]" />
           </span>
         )}
       </div>
@@ -194,7 +194,7 @@ const DataHealthPage = () => {
           <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
             Is BIQc getting <em style={{ fontStyle: 'italic', color: '#E85D00' }}>clean data</em>?
           </h1>
-          <p className="text-sm text-[#8FA0B8]">
+          <p className="text-sm text-[var(--ink-secondary)]">
             {hasAnyData
               ? `Every alert, action, and brief is only as good as the data feeding it. ${connectedCount} connector${connectedCount !== 1 ? 's' : ''} active.`
               : 'Every alert, action, and brief is only as good as the data feeding it. Connect integrations to start monitoring.'}
@@ -253,10 +253,10 @@ const DataHealthPage = () => {
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${connectedCount > 0 ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`} />
               <div>
-                <h2 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
+                <h2 className="text-lg font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>
                   {connectedCount > 0 ? `${connectedCount} System${connectedCount > 1 ? 's' : ''} Connected` : 'No Systems Connected'}
                 </h2>
-                <p className="text-sm text-[#8FA0B8]">{sourcesCount} active data source{sourcesCount !== 1 ? 's' : ''}</p>
+                <p className="text-sm text-[var(--ink-secondary)]">{sourcesCount} active data source{sourcesCount !== 1 ? 's' : ''}</p>
               </div>
             </div>
             {/* Req 8: Disable Force Sync when no connections */}
@@ -287,7 +287,7 @@ const DataHealthPage = () => {
                 <p className="text-sm font-semibold text-amber-300" style={{ fontFamily: fontFamily.display }}>
                   Verification in progress
                 </p>
-                <p className="text-xs text-[#8FA0B8] mt-1">
+                <p className="text-xs text-[var(--ink-secondary)] mt-1">
                   We detected {truthConnectedCount} connected source(s), but only {providerEvidenceCount} are provider-verified right now.
                   {` ${missingEvidenceCount} source(s) will not be shown as connected until verification finishes.`}
                 </p>
@@ -299,7 +299,7 @@ const DataHealthPage = () => {
         {/* Connected Systems with sync status */}
         {systems.length > 0 && (
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Connected Systems</h3>
+            <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Connected Systems</h3>
             {systems.map((sys, i) => (
               <div key={i} className="rounded-lg p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', borderLeft: `4px solid ${sys.color}` }}>
                 <div className="flex items-center gap-4">
@@ -308,7 +308,7 @@ const DataHealthPage = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-semibold text-[#EDF1F7]">{sys.name}</h4>
+                      <h4 className="text-sm font-semibold text-[var(--ink-display)]">{sys.name}</h4>
                       <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: '#64748B', background: '#1E2D3D', fontFamily: fontFamily.mono }}>{sys.type}</span>
                       <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', fontFamily: fontFamily.mono }}>
                         ✓ Connected
@@ -316,7 +316,7 @@ const DataHealthPage = () => {
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
                       <Wifi className="w-3 h-3 text-[#10B981]" />
-                      <span className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                      <span className="text-[11px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                         {sys.lastSync ? `Last synced ${timeAgo(sys.lastSync)}` : 'Syncing now'}
                       </span>
                     </div>
@@ -338,7 +338,7 @@ const DataHealthPage = () => {
         {/* Req 7: Data Quality — ONLY real metrics, never hardcoded */}
         <Panel>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Data Quality Score</h3>
+            <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Data Quality Score</h3>
             {!hasAnyData && (
               <span className="text-[10px] px-2.5 py-1 rounded-full" style={{ background: '#1E2D3D', color: '#64748B', fontFamily: fontFamily.mono }}>
                 Connect integrations to generate scores
@@ -349,7 +349,7 @@ const DataHealthPage = () => {
           {!hasAnyData ? (
             <div className="text-center py-6">
               <Database className="w-8 h-8 mx-auto mb-3" style={{ color: '#4A5568' }} />
-              <p className="text-sm font-medium text-[#8FA0B8] mb-1" style={{ fontFamily: fontFamily.display }}>No data yet</p>
+              <p className="text-sm font-medium text-[var(--ink-secondary)] mb-1" style={{ fontFamily: fontFamily.display }}>No data yet</p>
               <p className="text-xs max-w-xs mx-auto" style={{ color: '#64748B' }}>
                 Data quality metrics — completeness, accuracy, sources and consistency — will appear once you've connected at least one integration.
               </p>
@@ -372,14 +372,14 @@ const DataHealthPage = () => {
               ) : (
                 <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>Accuracy</span>
+                    <span className="text-xs font-medium text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>Accuracy</span>
                     <span className="text-xs italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>Insufficient data</span>
                   </div>
                 </div>
               )}
               <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>Active Sources</span>
+                  <span className="text-xs font-medium text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>Active Sources</span>
                   <span className="text-lg font-bold" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>{sourcesCount}</span>
                 </div>
               </div>
@@ -393,7 +393,7 @@ const DataHealthPage = () => {
               ) : (
                 <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>Consistency</span>
+                    <span className="text-xs font-medium text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>Consistency</span>
                     <span className="text-xs italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>Needs 2+ sources</span>
                   </div>
                 </div>
@@ -407,11 +407,11 @@ const DataHealthPage = () => {
           <Panel>
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-              <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
+              <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>
                 Improve Your Data Coverage
               </h3>
             </div>
-            <p className="text-xs text-[#64748B] mb-4">
+            <p className="text-xs text-[var(--ink-muted)] mb-4">
               The following integrations are not yet connected. Adding them will improve your data quality scores and unlock more accurate intelligence.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -420,7 +420,7 @@ const DataHealthPage = () => {
                   style={{ background: 'var(--biqc-bg)', border: `1px solid ${src.color}20` }}>
                   <div>
                     <p className="text-xs font-semibold" style={{ color: src.color, fontFamily: fontFamily.mono }}>{src.label}</p>
-                    <p className="text-[10px] text-[#64748B] mt-0.5">{src.desc}</p>
+                    <p className="text-[10px] text-[var(--ink-muted)] mt-0.5">{src.desc}</p>
                   </div>
                   <Link to={`/integrations?category=${src.cat}`}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-110 whitespace-nowrap ml-3"
@@ -437,8 +437,8 @@ const DataHealthPage = () => {
         <Panel>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-[#8FA0B8]" />
-              <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Sync Log</h3>
+              <FileText className="w-4 h-4 text-[var(--ink-secondary)]" />
+              <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Sync Log</h3>
             </div>
             {syncLogs.length > 0 && (
               <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#1E2D3D', color: '#64748B', fontFamily: fontFamily.mono }}>
@@ -450,7 +450,7 @@ const DataHealthPage = () => {
           {syncLogs.length === 0 ? (
             <div className="text-center py-6">
               <Clock className="w-6 h-6 mx-auto mb-2" style={{ color: '#4A5568' }} />
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[var(--ink-muted)]">
                 {hasAnyData ? 'No sync events recorded yet. They will appear after the next scheduled sync.' : 'Connect integrations to see sync activity.'}
               </p>
             </div>
@@ -463,7 +463,7 @@ const DataHealthPage = () => {
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ background: st.color }} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-[#EDF1F7] truncate" style={{ fontFamily: fontFamily.mono }}>
+                        <span className="text-xs font-medium text-[var(--ink-display)] truncate" style={{ fontFamily: fontFamily.mono }}>
                           {log.connector}
                         </span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: st.bg, color: st.color, fontFamily: fontFamily.mono }}>
@@ -478,10 +478,10 @@ const DataHealthPage = () => {
                       )}
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                      <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                         {log.records_processed > 0 ? `${log.records_processed} records` : '—'}
                       </div>
-                      <div className="text-[10px] text-[#4A5568]" style={{ fontFamily: fontFamily.mono }}>
+                      <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                         {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : ''}
                         {log.created_at ? ` · ${timeAgo(log.created_at)}` : ''}
                       </div>

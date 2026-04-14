@@ -92,7 +92,7 @@ const AlertItem = ({ alert, onAction }) => {
       )}
       {isResolved && (
         <div className="px-5 pb-3 flex items-center gap-2">
-          {actioned === 'complete' ? <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" /> : <XCircle className="w-3.5 h-3.5 text-[#64748B]" />}
+          {actioned === 'complete' ? <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" /> : <XCircle className="w-3.5 h-3.5 text-[var(--ink-muted)]" />}
           <span className="text-[11px] uppercase tracking-wider" style={{ fontFamily: fontFamily.mono, color: actioned === 'complete' ? '#10B981' : '#64748B' }}>{actioned === 'complete' ? 'Resolved' : 'Dismissed'}</span>
         </div>
       )}
@@ -210,7 +210,7 @@ const AlertsPageAuth = () => {
           <div>
             <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>— Alert centre · Live</div>
             <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>{alerts.length || 5} things <em style={{ fontStyle: 'italic', color: '#E85D00' }}>need a decision</em>.</h1>
-            <p className="text-sm text-[#8FA0B8]">
+            <p className="text-sm text-[var(--ink-secondary)]">
               {loading || integrationLoading
                 ? 'Scanning connected data sources...'
                 : alerts.length > 0
@@ -249,7 +249,7 @@ const AlertsPageAuth = () => {
               className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
               style={{
                 background: filter === val ? 'var(--surface-sunken, #060A12)' : 'transparent',
-                color: filter === val ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
+                color: filter === val ? 'var(--ink-display, #EDF1F7)' : 'var(--ink-secondary)',
                 border: filter === val ? '1px solid rgba(140,170,210,0.2)' : '1px solid rgba(140,170,210,0.08)',
                 fontFamily: fontFamily.mono,
               }}
@@ -287,15 +287,15 @@ const AlertsPageAuth = () => {
                 <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.1)' }}>
                   <Shield className="w-7 h-7 text-[#10B981]" />
                 </div>
-                <p className="text-base font-semibold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>
+                <p className="text-base font-semibold text-[var(--ink-display)] mb-2" style={{ fontFamily: fontFamily.display }}>
                   All clear — no issues detected.
                 </p>
-                <p className="text-sm text-[#8FA0B8] max-w-md mx-auto mb-1" style={{ fontFamily: fontFamily.body }}>
+                <p className="text-sm text-[var(--ink-secondary)] max-w-md mx-auto mb-1" style={{ fontFamily: fontFamily.body }}>
                   BIQc is actively monitoring {totalConnected} connected system{totalConnected !== 1 ? 's' : ''} in real time.
                   {hasCRM && ' Your HubSpot pipeline, deals and contacts are being watched.'}
                   {hasEmail && ' Your Outlook emails and calendar signals are being analysed.'}
                 </p>
-                <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>
+                <p className="text-xs text-[var(--ink-muted)] mt-2" style={{ fontFamily: fontFamily.mono }}>
                   Alerts will appear here instantly when BIQc detects a risk, anomaly or action required.
                 </p>
               </div>
@@ -307,10 +307,10 @@ const AlertsPageAuth = () => {
                     <Bell className="w-6 h-6 text-[#E85D00]" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>
+                    <p className="text-sm font-semibold text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>
                       No alerts — because no data is being monitored yet.
                     </p>
-                    <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>
+                    <p className="text-sm text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>
                       The Alert Centre can only surface issues from data it can see.
                       Without connected integrations, BIQc has nothing to watch — so zero alerts simply means zero visibility, not zero risk.
                     </p>
@@ -325,7 +325,7 @@ const AlertsPageAuth = () => {
                   ].map(item => (
                     <div key={item.label} className="rounded-lg p-4" style={{ background: '#0A1018', border: `1px solid ${item.color}20` }}>
                       <p className="text-xs font-semibold mb-1" style={{ color: item.color, fontFamily: fontFamily.mono }}>{item.label}</p>
-                      <p className="text-xs text-[#8FA0B8] mb-2" style={{ fontFamily: fontFamily.body }}>{item.desc}</p>
+                      <p className="text-xs text-[var(--ink-secondary)] mb-2" style={{ fontFamily: fontFamily.body }}>{item.desc}</p>
                       <p className="text-[10px] italic" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>e.g. {item.example}</p>
                     </div>
                   ))}

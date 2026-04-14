@@ -23,16 +23,16 @@ const Pnl = ({ children, className = '' }) => (
 const Mc = ({ label, value, sub, color = 'var(--ink-display, #EDF1F7)', icon: Icon, alert }) => (
   <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: `1px solid ${alert ? '#E85D00' + '40' : 'rgba(140,170,210,0.15)'}` }}>
     <div className="flex items-center justify-between mb-2">
-      <span className="text-[10px] text-[#64748B] uppercase tracking-wider" style={{ fontFamily: M }}>{label}</span>
-      {Icon && <Icon className="w-4 h-4 text-[#64748B]" />}
+      <span className="text-[10px] text-[var(--ink-muted)] uppercase tracking-wider" style={{ fontFamily: M }}>{label}</span>
+      {Icon && <Icon className="w-4 h-4 text-[var(--ink-muted)]" />}
     </div>
     <span className="text-xl font-bold block" style={{ fontFamily: M, color }}>{value}</span>
-    {sub && <span className="text-[11px] text-[#64748B] mt-0.5 block" style={{ fontFamily: B }}>{sub}</span>}
+    {sub && <span className="text-[11px] text-[var(--ink-muted)] mt-0.5 block" style={{ fontFamily: B }}>{sub}</span>}
   </div>
 );
 const Sec = ({ title, children }) => (
   <div className="mb-6">
-    <h3 className="text-lg font-normal text-[#EDF1F7] mb-4" style={{ fontFamily: D }}>{title}</h3>
+    <h3 className="text-lg font-normal text-[var(--ink-display)] mb-4" style={{ fontFamily: D }}>{title}</h3>
     {children}
   </div>
 );
@@ -45,11 +45,11 @@ const Badge = ({ text, color = '#64748B' }) => (
 );
 const Row = ({ icon: Icon, label, value, status, onClick }) => (
   <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${onClick ? 'cursor-pointer hover:bg-white/5' : ''}`} style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }} onClick={onClick}>
-    {Icon && <Icon className="w-4 h-4 text-[#64748B] shrink-0" />}
+    {Icon && <Icon className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />}
     {status && <StatusDot status={status} />}
-    <span className="text-sm text-[#EDF1F7] flex-1" style={{ fontFamily: B }}>{label}</span>
-    <span className="text-xs text-[#8FA0B8]" style={{ fontFamily: M }}>{value}</span>
-    {onClick && <ChevronRight className="w-3.5 h-3.5 text-[#64748B]" />}
+    <span className="text-sm text-[var(--ink-display)] flex-1" style={{ fontFamily: B }}>{label}</span>
+    <span className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: M }}>{value}</span>
+    {onClick && <ChevronRight className="w-3.5 h-3.5 text-[var(--ink-muted)]" />}
   </div>
 );
 
@@ -172,10 +172,10 @@ const AdminDashboard = () => {
         <div className="max-w-[1400px] mx-auto">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h1 className="text-2xl font-normal text-[#EDF1F7]" style={{ fontFamily: D }}>Super Admin</h1>
-              <p className="text-xs text-[#64748B]" style={{ fontFamily: B }}>Enterprise governance & control plane</p>
+              <h1 className="text-2xl font-normal text-[var(--ink-display)]" style={{ fontFamily: D }}>Super Admin</h1>
+              <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: B }}>Enterprise governance & control plane</p>
             </div>
-            <button onClick={loadData} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[#8FA0B8] hover:bg-white/5" style={{ border: '1px solid var(--biqc-border)', fontFamily: B }}>
+            <button onClick={loadData} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-[var(--ink-secondary)] hover:bg-white/5" style={{ border: '1px solid var(--biqc-border)', fontFamily: B }}>
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </button>
           </div>
@@ -197,7 +197,7 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Mc label="Platform Status" value="Operational" icon={Activity} color="#10B981" />
-                <Mc label="Total Users" value={users.length} icon={Users} color="#EDF1F7" />
+                <Mc label="Total Users" value={users.length} icon={Users} color="var(--ink-display)" />
                 <Mc label="Edge Functions" value="19 active" icon={Cpu} color="#3B82F6" />
                 <Mc label="API Health" value={healthData?.status === 'healthy' ? '100%' : 'Checking...'} icon={Server} color="#10B981" />
               </div>
@@ -225,12 +225,12 @@ const AdminDashboard = () => {
               <Sec title="Active Inevitabilities (Platform Level)">
                 <div className="space-y-2">
                   <div className="p-4 rounded-lg" style={{ background: '#E85D00' + '08', border: '1px solid #E85D0020' }}>
-                    <div className="flex items-center gap-2 mb-1"><StatusDot status="critical" /><span className="text-sm font-medium text-[#EDF1F7]" style={{ fontFamily: B }}>No billing connected — $0 MRR</span></div>
-                    <p className="text-xs text-[#8FA0B8] ml-4" style={{ fontFamily: B }}>Revenue: $0. All users on free tier. Connect Stripe to enable subscriptions.</p>
+                    <div className="flex items-center gap-2 mb-1"><StatusDot status="critical" /><span className="text-sm font-medium text-[var(--ink-display)]" style={{ fontFamily: B }}>No billing connected — $0 MRR</span></div>
+                    <p className="text-xs text-[var(--ink-secondary)] ml-4" style={{ fontFamily: B }}>Revenue: $0. All users on free tier. Connect Stripe to enable subscriptions.</p>
                   </div>
                   <div className="p-4 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B20' }}>
-                    <div className="flex items-center gap-2 mb-1"><StatusDot status="warning" /><span className="text-sm font-medium text-[#EDF1F7]" style={{ fontFamily: B }}>2 Edge Functions without source control</span></div>
-                    <p className="text-xs text-[#8FA0B8] ml-4" style={{ fontFamily: B }}>intelligence-snapshot and signal-evaluator deployed but not in git. Recovery needed.</p>
+                    <div className="flex items-center gap-2 mb-1"><StatusDot status="warning" /><span className="text-sm font-medium text-[var(--ink-display)]" style={{ fontFamily: B }}>2 Edge Functions without source control</span></div>
+                    <p className="text-xs text-[var(--ink-secondary)] ml-4" style={{ fontFamily: B }}>intelligence-snapshot and signal-evaluator deployed but not in git. Recovery needed.</p>
                   </div>
                 </div>
               </Sec>
@@ -243,7 +243,7 @@ const AdminDashboard = () => {
               <div className="lg:col-span-2">
                 <div className="flex gap-3 mb-4">
                   <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)]" />
                     <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users..." className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm outline-none" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: B }} data-testid="admin-user-search" />
                   </div>
                 </div>
@@ -253,8 +253,8 @@ const AdminDashboard = () => {
                     <button key={u.id} onClick={() => loadUserDetail(u.id)} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left hover:bg-white/5 transition-all" style={{ background: selectedUser === u.id ? '#E85D0010' : 'transparent', border: `1px solid ${selectedUser === u.id ? '#E85D0030' : 'rgba(140,170,210,0.15)'}` }} data-testid={`admin-user-${u.id}`}>
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0" style={{ background: u.role === 'suspended' ? '#EF444420' : '#E85D0020', color: u.role === 'suspended' ? '#EF4444' : '#E85D00', fontFamily: B }}>{(u.full_name || u.email || '?').charAt(0).toUpperCase()}</div>
                       <div className="flex-1 min-w-0">
-                        <span className="text-sm text-[#EDF1F7] block truncate" style={{ fontFamily: B }}>{u.full_name || 'Unnamed'}</span>
-                        <span className="text-[10px] text-[#64748B] block truncate" style={{ fontFamily: M }}>{u.email}</span>
+                        <span className="text-sm text-[var(--ink-display)] block truncate" style={{ fontFamily: B }}>{u.full_name || 'Unnamed'}</span>
+                        <span className="text-[10px] text-[var(--ink-muted)] block truncate" style={{ fontFamily: M }}>{u.email}</span>
                       </div>
                       <Badge text={u.role || 'user'} color={u.role === 'superadmin' ? '#E85D00' : u.role === 'suspended' ? '#EF4444' : '#10B981'} />
                     </button>
@@ -264,10 +264,10 @@ const AdminDashboard = () => {
               <div>
                 {su ? (
                   <Pnl>
-                    <div className="flex justify-between mb-3"><h3 className="text-base text-[#EDF1F7]" style={{ fontFamily: D }}>{su.full_name || 'User'}</h3><button onClick={() => setSelectedUser(null)} className="text-[#64748B] hover:text-white"><X className="w-4 h-4" /></button></div>
+                    <div className="flex justify-between mb-3"><h3 className="text-base text-[var(--ink-display)]" style={{ fontFamily: D }}>{su.full_name || 'User'}</h3><button onClick={() => setSelectedUser(null)} className="text-[var(--ink-muted)] hover:text-white"><X className="w-4 h-4" /></button></div>
                     <div className="space-y-2 mb-4 text-xs">
                       {[['Email', su.email, M], ['Company', su.company_name || 'Not set', B], ['Role', su.role || 'user', M], ['Tier', su.subscription_tier || 'free', M], ['Joined', su.created_at ? new Date(su.created_at).toLocaleDateString() : '—', M]].map(([l, v, f]) => (
-                        <div key={l}><span className="text-[10px] text-[#64748B] uppercase" style={{ fontFamily: M }}>{l}</span><p className="text-[#EDF1F7]" style={{ fontFamily: f }}>{v}</p></div>
+                        <div key={l}><span className="text-[10px] text-[var(--ink-muted)] uppercase" style={{ fontFamily: M }}>{l}</span><p className="text-[var(--ink-display)]" style={{ fontFamily: f }}>{v}</p></div>
                       ))}
                     </div>
                     {loadingDetail ? <div className="flex justify-center py-4"><RadarSweep compact /></div> : userDetail && (
@@ -275,7 +275,7 @@ const AdminDashboard = () => {
                         {[['Calibrated', userDetail.operator_profile?.persona_calibration_status || 'No', userDetail.operator_profile?.persona_calibration_status === 'complete' ? '#10B981' : '#F59E0B'],
                           ['Integrations', `${userDetail.integrations.length}`, '#3B82F6'], ['Snapshots', `${userDetail.snapshots.length}`, 'var(--ink-display, #EDF1F7)'], ['Signals', `${userDetail.signal_count}`, 'var(--ink-display, #EDF1F7)']].map(([l, v, c]) => (
                           <div key={l} className="p-2 rounded" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                            <span className="text-[10px] text-[#64748B]" style={{ fontFamily: M }}>{l}</span>
+                            <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: M }}>{l}</span>
                             <span className="text-xs block" style={{ fontFamily: M, color: c }}>{v}</span>
                           </div>
                         ))}
@@ -284,8 +284,8 @@ const AdminDashboard = () => {
                     {rateLimitDetail && (
                       <div className="space-y-3 mb-4" style={{ borderTop: '1px solid var(--biqc-border)', paddingTop: 12 }}>
                         <div>
-                          <span className="text-[10px] text-[#64748B] uppercase" style={{ fontFamily: M }}>AI Rate Limits</span>
-                          <p className="text-[11px] text-[#8FA0B8]" style={{ fontFamily: B }}>
+                          <span className="text-[10px] text-[var(--ink-muted)] uppercase" style={{ fontFamily: M }}>AI Rate Limits</span>
+                          <p className="text-[11px] text-[var(--ink-secondary)]" style={{ fontFamily: B }}>
                             Tier: {rateLimitDetail.tier} {rateLimitDetail.admin_bypass ? '• Andre bypass active' : '• monthly quota + burst window'}
                           </p>
                         </div>
@@ -297,19 +297,19 @@ const AdminDashboard = () => {
                             <div key={feature} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                               <div className="flex items-center justify-between gap-2 mb-2">
                                 <div>
-                                  <p className="text-xs text-[#EDF1F7]" style={{ fontFamily: B }}>{label}</p>
-                                  <p className="text-[10px] text-[#64748B]" style={{ fontFamily: M }}>
+                                  <p className="text-xs text-[var(--ink-display)]" style={{ fontFamily: B }}>{label}</p>
+                                  <p className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: M }}>
                                     Usage this month: {usage} / {effective.monthly_limit === -1 ? '∞' : effective.monthly_limit}
                                   </p>
                                 </div>
-                                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: M }}>
+                                <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: M }}>
                                   Default {defaults.monthly_limit ?? '—'} • burst {defaults.burst_limit ?? '—'}
                                 </span>
                               </div>
                               <div className="grid grid-cols-3 gap-2">
                                 {[['monthly_limit', 'Monthly'], ['burst_limit', 'Burst'], ['burst_window_seconds', 'Window(s)']].map(([field, labelText]) => (
                                   <label key={field} className="block">
-                                    <span className="text-[10px] text-[#64748B]" style={{ fontFamily: M }}>{labelText}</span>
+                                    <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: M }}>{labelText}</span>
                                     <input
                                       type="number"
                                       value={rateLimitDetail.overrides?.[feature]?.[field] ?? effective[field] ?? ''}
@@ -328,7 +328,7 @@ const AdminDashboard = () => {
                           <button onClick={saveRateLimits} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#E85D0015', color: '#E85D00', border: '1px solid #E85D0030', fontFamily: B }} data-testid="admin-save-rate-limits-btn">
                             {rateLimitSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Gauge className="w-3.5 h-3.5" />} Save Limits
                           </button>
-                          <button onClick={resetRateOverrides} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#64748B15', color: '#64748B', border: '1px solid #64748B30', fontFamily: B }} data-testid="admin-reset-rate-overrides-btn">
+                          <button onClick={resetRateOverrides} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#64748B15', color: 'var(--ink-muted)', border: '1px solid #64748B30', fontFamily: B }} data-testid="admin-reset-rate-overrides-btn">
                             <RefreshCw className="w-3.5 h-3.5" /> Reset to Tier
                           </button>
                           <button onClick={resetMonthlyUsage} disabled={rateLimitSaving} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F620', fontFamily: B }} data-testid="admin-reset-usage-btn">
@@ -347,7 +347,7 @@ const AdminDashboard = () => {
                     </div>
                   </Pnl>
                 ) : (
-                  <Pnl><div className="text-center py-8"><Users className="w-8 h-8 mx-auto mb-3 text-[#64748B]" /><p className="text-sm text-[#64748B]" style={{ fontFamily: B }}>Select a user</p></div></Pnl>
+                  <Pnl><div className="text-center py-8"><Users className="w-8 h-8 mx-auto mb-3 text-[var(--ink-muted)]" /><p className="text-sm text-[var(--ink-muted)]" style={{ fontFamily: B }}>Select a user</p></div></Pnl>
                 )}
               </div>
             </div>
@@ -357,7 +357,7 @@ const AdminDashboard = () => {
           {page === 'governance' && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <Mc label="Role Tiers" value="4" icon={Users} color="#EDF1F7" sub="superadmin, admin, user, suspended" />
+                <Mc label="Role Tiers" value="4" icon={Users} color="var(--ink-display)" sub="superadmin, admin, user, suspended" />
                 <Mc label="Audit Events" value="Active" icon={FileText} color="#10B981" sub="prompt_audit_logs" />
                 <Mc label="Admin Actions" value="Logged" icon={Shield} color="#3B82F6" sub="All CRUD + impersonate" />
                 <Mc label="Data Residency" value="AU" icon={Globe} color="#E85D00" sub="Sydney + Melbourne" />
@@ -375,8 +375,8 @@ const AdminDashboard = () => {
                       <div key={r.role} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <div className="w-3 h-3 rounded-full shrink-0" style={{ background: r.color }} />
                         <div className="flex-1">
-                          <span className="text-sm text-[#EDF1F7]" style={{ fontFamily: B }}>{r.role}</span>
-                          <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: B }}>{r.access}</span>
+                          <span className="text-sm text-[var(--ink-display)]" style={{ fontFamily: B }}>{r.role}</span>
+                          <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: B }}>{r.access}</span>
                         </div>
                         <Badge text={`${r.users} users`} color={r.color} />
                       </div>
@@ -405,8 +405,8 @@ const AdminDashboard = () => {
                     { label: 'Forensic Recovery Mode', value: 'Planned', icon: Terminal, status: 'Planned' },
                   ].map(item => (
                     <div key={item.label} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                      <item.icon className="w-4 h-4 text-[#64748B] mb-2" />
-                      <span className="text-xs text-[#EDF1F7] block" style={{ fontFamily: B }}>{item.label}</span>
+                      <item.icon className="w-4 h-4 text-[var(--ink-muted)] mb-2" />
+                      <span className="text-xs text-[var(--ink-display)] block" style={{ fontFamily: B }}>{item.label}</span>
                       <span className="text-[10px]" style={{ fontFamily: M, color: item.status === 'Active' ? '#10B981' : '#64748B' }}>{item.value}</span>
                     </div>
                   ))}
@@ -457,9 +457,9 @@ const AdminDashboard = () => {
                     ].map(([l, href, s]) => (
                       <div key={l} className="flex items-center gap-3 px-4 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <StatusDot status={s === 'Ready' ? 'healthy' : s === 'In Progress' ? 'warning' : 'unknown'} />
-                        <span className="text-sm text-[#EDF1F7] flex-1" style={{ fontFamily: B }}>{l}</span>
+                        <span className="text-sm text-[var(--ink-display)] flex-1" style={{ fontFamily: B }}>{l}</span>
                         <Badge text={s} color={s === 'Ready' ? '#10B981' : s === 'In Progress' ? '#F59E0B' : '#64748B'} />
-                        {href && <a href={href} target="_blank" rel="noreferrer" className="text-[#64748B] hover:text-[#E85D00]"><ExternalLink className="w-3 h-3" /></a>}
+                        {href && <a href={href} target="_blank" rel="noreferrer" className="text-[var(--ink-muted)] hover:text-[#E85D00]"><ExternalLink className="w-3 h-3" /></a>}
                       </div>
                     ))}
                   </div>
@@ -472,7 +472,7 @@ const AdminDashboard = () => {
           {page === 'ai' && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <Mc label="AI Providers" value="3" icon={Brain} color="#EDF1F7" sub="OpenAI, Perplexity, Firecrawl" />
+                <Mc label="AI Providers" value="3" icon={Brain} color="var(--ink-display)" sub="OpenAI, Perplexity, Firecrawl" />
                 <Mc label="Edge Functions" value="19" icon={Cpu} color="#3B82F6" sub="Active on Supabase" />
                 <Mc label="Token Tracking" value="Active" icon={Hash} color="#10B981" sub="usage_tracking table" />
                 <Mc label="Cost Control" value="Monitor" icon={DollarSign} color="#E85D00" sub="Per-function, per-user" />
@@ -497,10 +497,10 @@ const AdminDashboard = () => {
                       <div key={name} className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <Bot className="w-4 h-4 text-[#3B82F6] shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <span className="text-xs text-[#EDF1F7] block truncate" style={{ fontFamily: M }}>{name}</span>
-                          <span className="text-[10px] text-[#64748B]" style={{ fontFamily: B }}>{desc}</span>
+                          <span className="text-xs text-[var(--ink-display)] block truncate" style={{ fontFamily: M }}>{name}</span>
+                          <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: B }}>{desc}</span>
                         </div>
-                        <span className="text-[10px] text-[#64748B] shrink-0" style={{ fontFamily: M }}>{deploys}</span>
+                        <span className="text-[10px] text-[var(--ink-muted)] shrink-0" style={{ fontFamily: M }}>{deploys}</span>
                       </div>
                     ))}
                   </div>
@@ -530,7 +530,7 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Mc label="MRR" value="$0" icon={DollarSign} color="#E85D00" sub="Connect Stripe" alert />
-                <Mc label="ARR" value="$0" icon={TrendingUp} color="#EDF1F7" />
+                <Mc label="ARR" value="$0" icon={TrendingUp} color="var(--ink-display)" />
                 <Mc label="Paid Users" value="0" icon={Users} color="#64748B" sub={`${users.length} free`} />
                 <Mc label="Churn Rate" value="N/A" icon={AlertTriangle} color="#64748B" sub="No billing data" />
               </div>
@@ -561,27 +561,27 @@ const AdminDashboard = () => {
                       <div key={l.name} className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <StatusDot status={l.status === 'hot' ? 'critical' : l.status === 'warm' ? 'warning' : 'healthy'} />
                         <div className="flex-1">
-                          <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: B }}>{l.name}</span>
-                          <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: M }}>{l.stage}</span>
+                          <span className="text-xs text-[var(--ink-display)]" style={{ fontFamily: B }}>{l.name}</span>
+                          <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: M }}>{l.stage}</span>
                         </div>
-                        <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: M }}>{l.value}</span>
+                        <span className="text-xs text-[var(--ink-display)]" style={{ fontFamily: M }}>{l.value}</span>
                       </div>
                     ))}
                   </div>
-                  <p className="text-[10px] text-[#64748B] mt-2 italic" style={{ fontFamily: B }}>Mock data. Connect CRM for live pipeline.</p>
+                  <p className="text-[10px] text-[var(--ink-muted)] mt-2 italic" style={{ fontFamily: B }}>Mock data. Connect CRM for live pipeline.</p>
                 </Sec>
               </div>
               <Pnl>
-                <h3 className="text-base text-[#EDF1F7] mb-3" style={{ fontFamily: D }}>Subscription Tiers</h3>
+                <h3 className="text-base text-[var(--ink-display)] mb-3" style={{ fontFamily: D }}>Subscription Tiers</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {[{ name: 'Starter', price: '$499/mo', f: ['5 integrations', 'Daily intelligence', 'Email alerts'] },
                     { name: 'Professional', price: '$999/mo', f: ['Unlimited integrations', 'Real-time intelligence', 'Auto-email + SMS', 'Full reports'] },
                     { name: 'Enterprise', price: 'Custom', f: ['Everything', 'White label', 'Custom integrations', 'Dedicated AM'] }
                   ].map(t => (
                     <div key={t.name} className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                      <span className="text-sm font-medium text-[#EDF1F7]" style={{ fontFamily: B }}>{t.name}</span>
+                      <span className="text-sm font-medium text-[var(--ink-display)]" style={{ fontFamily: B }}>{t.name}</span>
                       <span className="text-lg font-bold text-[#E85D00] block mb-2" style={{ fontFamily: M }}>{t.price}</span>
-                      {t.f.map(f => <div key={f} className="flex items-center gap-1.5 text-xs text-[#8FA0B8] mb-1" style={{ fontFamily: B }}><CheckCircle className="w-3 h-3 text-[#10B981]" />{f}</div>)}
+                      {t.f.map(f => <div key={f} className="flex items-center gap-1.5 text-xs text-[var(--ink-secondary)] mb-1" style={{ fontFamily: B }}><CheckCircle className="w-3 h-3 text-[#10B981]" />{f}</div>)}
                     </div>
                   ))}
                 </div>
@@ -603,10 +603,10 @@ const AdminDashboard = () => {
                     { label: 'Emergency Broadcast', desc: 'Notify all users', icon: Radio, active: false },
                   ].map(ks => (
                     <div key={ks.label} className="flex items-center gap-3 p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                      <ks.icon className="w-5 h-5 text-[#64748B] shrink-0" />
+                      <ks.icon className="w-5 h-5 text-[var(--ink-muted)] shrink-0" />
                       <div className="flex-1">
-                        <span className="text-sm text-[#EDF1F7]" style={{ fontFamily: B }}>{ks.label}</span>
-                        <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: B }}>{ks.desc}</span>
+                        <span className="text-sm text-[var(--ink-display)]" style={{ fontFamily: B }}>{ks.label}</span>
+                        <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: B }}>{ks.desc}</span>
                       </div>
                       <div className={`w-9 h-5 rounded-full cursor-pointer flex items-center px-0.5`} style={{ background: ks.active ? '#E85D00' : 'rgba(140,170,210,0.15)' }}>
                         <div className={`w-4 h-4 rounded-full ${ks.active ? 'ml-auto bg-white' : 'bg-[#64748B]'}`} />
@@ -647,7 +647,7 @@ const AdminDashboard = () => {
           {page === 'growth' && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <Mc label="Active Users" value={users.length} icon={Users} color="#EDF1F7" />
+                <Mc label="Active Users" value={users.length} icon={Users} color="var(--ink-display)" />
                 <Mc label="Calibrated" value={stats?.calibrated || 0} icon={Shield} color="#3B82F6" sub={`${users.length > 0 ? Math.round(((stats?.calibrated || 0) / users.length) * 100) : 0}% rate`} />
                 <Mc label="With Integrations" value={stats?.with_integrations || '—'} icon={Plug} color="#10B981" />
                 <Mc label="Activation Rate" value="—" icon={Rocket} color="#E85D00" sub="Needs telemetry" />
@@ -679,7 +679,7 @@ const AdminDashboard = () => {
                     ].map(([l, href, s]) => (
                       <div key={l} className="flex items-center gap-3 px-3 py-2.5 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <StatusDot status={s === 'Ready' ? 'healthy' : 'unknown'} />
-                        <span className="text-xs text-[#EDF1F7] flex-1" style={{ fontFamily: B }}>{l}</span>
+                        <span className="text-xs text-[var(--ink-display)] flex-1" style={{ fontFamily: B }}>{l}</span>
                         <Badge text={s} color={s === 'Ready' ? '#10B981' : '#64748B'} />
                       </div>
                     ))}
@@ -697,8 +697,8 @@ const AdminDashboard = () => {
                     { label: 'Canary Releases', desc: 'Gradual rollout to subset of users', status: 'Planned' },
                   ].map(item => (
                     <div key={item.label} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                      <span className="text-xs text-[#EDF1F7] block mb-1" style={{ fontFamily: B }}>{item.label}</span>
-                      <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: B }}>{item.desc}</span>
+                      <span className="text-xs text-[var(--ink-display)] block mb-1" style={{ fontFamily: B }}>{item.label}</span>
+                      <span className="text-[10px] text-[var(--ink-muted)] block mb-2" style={{ fontFamily: B }}>{item.desc}</span>
                       <Badge text={item.status} color="#64748B" />
                     </div>
                   ))}

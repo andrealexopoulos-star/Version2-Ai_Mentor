@@ -23,10 +23,10 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
         <div className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto" style={{ background: '#E85D00', animation: 'revealPulse 2s ease-in-out infinite' }}>
           <Zap className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-2xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
+        <h2 className="text-2xl font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>
           Calibration Complete{firstName ? `, ${firstName}` : ''}.
         </h2>
-        <p className="text-sm text-[#8FA0B8] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+        <p className="text-sm text-[var(--ink-secondary)] leading-relaxed" style={{ fontFamily: fontFamily.body }}>
           Your Business DNA has been captured. Your AI agents are now calibrated to your communication style, risk posture, and decision-making approach.
         </p>
 
@@ -41,14 +41,14 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
             <div key={item.label} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <item.icon className="w-3.5 h-3.5" style={{ color: item.color }} />
-                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{item.label}</span>
+                <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{item.label}</span>
               </div>
-              <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>{item.value}</span>
+              <span className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.body }}>{item.value}</span>
             </div>
           ))}
         </div>
 
-        <p className="text-xs text-[#64748B] mt-4" style={{ fontFamily: fontFamily.mono }}>
+        <p className="text-xs text-[var(--ink-muted)] mt-4" style={{ fontFamily: fontFamily.mono }}>
           Connecting to your Intelligence Platform...
         </p>
       </div>
@@ -59,11 +59,11 @@ const ExecutiveReveal = ({ firstName, lastResponse, revealPhase }) => (
           <span className="text-white font-bold text-xl" style={{ fontFamily: fontFamily.mono }}>B</span>
         </div>
 
-        <p className="text-lg mb-2 text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
+        <p className="text-lg mb-2 text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>
           Thank you{firstName ? `, ${firstName}` : ''}.
         </p>
         {lastResponse && (
-          <p className="text-sm text-[#8FA0B8] mb-8" style={{ fontFamily: fontFamily.body }}>
+          <p className="text-sm text-[var(--ink-secondary)] mb-8" style={{ fontFamily: fontFamily.body }}>
             Your alignment preferences have been integrated into your Decision DNA.
           </p>
         )}

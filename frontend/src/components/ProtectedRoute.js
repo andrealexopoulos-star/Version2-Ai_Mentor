@@ -31,10 +31,10 @@ const LoadingScreen = () => {
           <span className="text-white font-bold text-xl" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
         </div>
         <div style={{ animation: 'biqcFade 0.8s ease-out' }}>
-          <p className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+          <p className="text-lg font-semibold text-[var(--ink-display)]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
             Good {greeting}.
           </p>
-          <p className="text-sm text-[#64748B] mt-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+          <p className="text-sm text-[var(--ink-muted)] mt-1" style={{ fontFamily: "'Inter', sans-serif" }}>
             Establishing secure connection...
           </p>
         </div>
@@ -49,7 +49,7 @@ const LoadingScreen = () => {
 };
 
 const AuthError = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[#050505]" data-testid="auth-error-screen">
+  <div className="min-h-screen flex items-center justify-center bg-[var(--canvas-app)]" data-testid="auth-error-screen">
     <div className="text-center space-y-3">
       <p className="text-xs tracking-widest text-red-400/60 uppercase">Connection interrupted</p>
       <p className="text-sm text-white/50">Unable to establish session. Please try again.</p>
@@ -64,7 +64,7 @@ const AuthError = () => (
 );
 
 const AccessDenied = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[#050505]" data-testid="access-denied-screen">
+  <div className="min-h-screen flex items-center justify-center bg-[var(--canvas-app)]" data-testid="access-denied-screen">
     <div className="text-center space-y-3">
       <p className="text-xs tracking-widest text-amber-400/60 uppercase">Access restricted</p>
       <p className="text-sm text-white/50">You do not have permission to view this page.</p>

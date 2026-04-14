@@ -85,8 +85,8 @@ const AdminUxFeedbackPage = () => {
       <div className="space-y-4 max-w-[1280px]" style={{ fontFamily: fontFamily.body, color: 'var(--biqc-text)' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>UX Feedback Control</h1>
-            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+            <h1 className="text-2xl text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>UX Feedback Control</h1>
+            <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
               User feedback events, usability checkpoints, and milestone success tracking.
             </p>
           </div>
@@ -97,20 +97,20 @@ const AdminUxFeedbackPage = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="p-3" style={cardStyle}>
-            <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Total Feedback Events</div>
-            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{summary?.total_events ?? 0}</div>
+            <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Total Feedback Events</div>
+            <div className="text-xl text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{summary?.total_events ?? 0}</div>
           </div>
           <div className="p-3" style={cardStyle}>
-            <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Average Rating</div>
-            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{summary?.average_rating ?? '—'}</div>
+            <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Average Rating</div>
+            <div className="text-xl text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{summary?.average_rating ?? '—'}</div>
           </div>
           <div className="p-3" style={cardStyle}>
-            <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Checkpoint Count</div>
-            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{checkpoints.length}</div>
+            <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Checkpoint Count</div>
+            <div className="text-xl text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{checkpoints.length}</div>
           </div>
           <div className="p-3" style={cardStyle}>
-            <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Open Checkpoints</div>
-            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
+            <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Open Checkpoints</div>
+            <div className="text-xl text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>
               {checkpoints.filter((c) => !['completed', 'pass'].includes(String(c.status || '').toLowerCase())).length}
             </div>
           </div>
@@ -123,11 +123,11 @@ const AdminUxFeedbackPage = () => {
               {Object.entries(summary?.by_type || {}).map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between px-2 py-1 rounded" style={{ background: 'var(--biqc-bg)' }}>
                   <span className="text-xs" style={{ fontFamily: fontFamily.mono }}>{k}</span>
-                  <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{v}</span>
+                  <span className="text-xs text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{v}</span>
                 </div>
               ))}
               {Object.keys(summary?.by_type || {}).length === 0 && (
-                <div className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No feedback events yet.</div>
+                <div className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>No feedback events yet.</div>
               )}
             </div>
           </div>
@@ -144,7 +144,7 @@ const AdminUxFeedbackPage = () => {
                 ['due_at', 'Due at (ISO)'],
               ].map(([field, label]) => (
                 <div key={field}>
-                  <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{label}</div>
+                  <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{label}</div>
                   <input
                     style={inputStyle}
                     value={checkpointForm[field]}
@@ -160,7 +160,7 @@ const AdminUxFeedbackPage = () => {
                 ['current_value', 'Current'],
               ].map(([field, label]) => (
                 <div key={field}>
-                  <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{label}</div>
+                  <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{label}</div>
                   <input
                     style={inputStyle}
                     value={checkpointForm[field]}
@@ -170,7 +170,7 @@ const AdminUxFeedbackPage = () => {
               ))}
             </div>
             <div>
-              <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Notes</div>
+              <div className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Notes</div>
               <textarea
                 style={{ ...inputStyle, minHeight: 80 }}
                 value={checkpointForm.notes}
@@ -191,14 +191,14 @@ const AdminUxFeedbackPage = () => {
                 <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#3B82F615', color: '#3B82F6', fontFamily: fontFamily.mono }}>
                   {e.feedback_type || 'unknown'}
                 </span>
-                <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>{e.message || '—'}</span>
-                <span className="ml-auto text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                <span className="text-xs text-[var(--ink-display)]" style={{ fontFamily: fontFamily.body }}>{e.message || '—'}</span>
+                <span className="ml-auto text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                   {e.rating ? `rating ${e.rating}` : ''}
                 </span>
               </div>
             ))}
             {events.length === 0 && (
-              <div className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No feedback events captured yet.</div>
+              <div className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>No feedback events captured yet.</div>
             )}
           </div>
         </div>
@@ -211,13 +211,13 @@ const AdminUxFeedbackPage = () => {
                 <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#E85D0015', color: '#E85D00', fontFamily: fontFamily.mono }}>
                   {item.integration_key}
                 </span>
-                <span className="text-xs text-[#EDF1F7] flex-1">{item.display_name}</span>
-                <span className="text-[10px] text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>P{item.priority}</span>
-                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{item.status}</span>
+                <span className="text-xs text-[var(--ink-display)] flex-1">{item.display_name}</span>
+                <span className="text-[10px] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>P{item.priority}</span>
+                <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{item.status}</span>
               </div>
             ))}
             {deferredItems.length === 0 && (
-              <div className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No deferred integrations tracked yet.</div>
+              <div className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>No deferred integrations tracked yet.</div>
             )}
           </div>
         </div>

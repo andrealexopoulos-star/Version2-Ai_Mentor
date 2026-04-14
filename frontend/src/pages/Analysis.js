@@ -91,31 +91,31 @@ const Analysis = () => {
               <CardContent className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-[#EDF1F7]">Analysis Title</Label>
+                    <Label className="text-[var(--ink-display)]">Analysis Title</Label>
                     <Input
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder="e.g., Q4 Growth Strategy Review"
-                      className="bg-[#0E1628]"
+                      className="bg-[var(--surface)]"
                       data-testid="analysis-title-input"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[#EDF1F7]">Analysis Type</Label>
+                    <Label className="text-[var(--ink-display)]">Analysis Type</Label>
                     <Select 
                       value={formData.analysis_type}
                       onValueChange={(value) => setFormData({ ...formData, analysis_type: value })}
                     >
-                      <SelectTrigger className="bg-[#0E1628]" data-testid="analysis-type-select">
+                      <SelectTrigger className="bg-[var(--surface)]" data-testid="analysis-type-select">
                         <SelectValue placeholder="Select analysis type" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0E1628]">
+                      <SelectContent className="bg-[var(--surface)]">
                         {analysisTypes.map((type) => (
                           <SelectItem key={type.value} value={type.value}>
                             <div>
                               <p className="font-medium">{type.label}</p>
-                              <p className="text-xs text-[#8FA0B8]">{type.desc}</p>
+                              <p className="text-xs text-[var(--ink-secondary)]">{type.desc}</p>
                             </div>
                           </SelectItem>
                         ))}
@@ -124,15 +124,15 @@ const Analysis = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[#EDF1F7]">Business Context</Label>
+                    <Label className="text-[var(--ink-display)]">Business Context</Label>
                     <Textarea
                       value={formData.business_context}
                       onChange={(e) => setFormData({ ...formData, business_context: e.target.value })}
                       placeholder="Describe your business, current situation, challenges, and what you'd like to analyze..."
-                      className="min-h-[200px] bg-[#0E1628]"
+                      className="min-h-[200px] bg-[var(--surface)]"
                       data-testid="analysis-context-input"
                     />
-                    <p className="text-xs text-[#8FA0B8]">
+                    <p className="text-xs text-[var(--ink-secondary)]">
                       Include details like industry, size, current revenue, main challenges, and goals.
                     </p>
                   </div>
@@ -165,8 +165,8 @@ const Analysis = () => {
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
                     <CognitiveMesh compact />
-                    <p className="text-[#EDF1F7] font-medium">Analyzing your business...</p>
-                    <p className="text-sm text-[#8FA0B8] mt-1">This may take a moment</p>
+                    <p className="text-[var(--ink-display)] font-medium">Analyzing your business...</p>
+                    <p className="text-sm text-[var(--ink-secondary)] mt-1">This may take a moment</p>
                   </CardContent>
                 </Card>
               )}
@@ -279,8 +279,8 @@ const Analysis = () => {
               {!loading && !result && (
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
-                    <BarChart3 className="w-12 h-12 text-[#EDF1F7]/20 mx-auto mb-4" />
-                    <p className="text-[#8FA0B8]">
+                    <BarChart3 className="w-12 h-12 text-[var(--ink-display)]/20 mx-auto mb-4" />
+                    <p className="text-[var(--ink-secondary)]">
                       Fill in the form and run analysis to get AI-powered insights
                     </p>
                   </CardContent>

@@ -490,14 +490,14 @@ const OnboardingWizard = () => {
                     value={formData.business_name || ''}
                     onChange={(e) => updateField('business_name', e.target.value)}
                     placeholder="Your company name"
-                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
+                    className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
                     data-testid="input-business-name"
                   />
                 )}
 
                 {renderField('industry', 'Industry',
                   <Select value={formData.industry || ''} onValueChange={(val) => updateField('industry', val)}>
-                    <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-industry">
+                    <SelectTrigger className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]" data-testid="select-industry">
                       <SelectValue placeholder="Select industry" />
                     </SelectTrigger>
                     <SelectContent>
@@ -511,7 +511,7 @@ const OnboardingWizard = () => {
                 <div className="grid grid-cols-2 gap-4">
                   {renderField('business_stage', 'Business Stage',
                     <Select value={formData.business_stage || ''} onValueChange={(val) => updateField('business_stage', val)}>
-                      <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-stage">
+                      <SelectTrigger className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]" data-testid="select-stage">
                         <SelectValue placeholder="Select stage" />
                       </SelectTrigger>
                       <SelectContent>
@@ -527,7 +527,7 @@ const OnboardingWizard = () => {
                       value={formData.location || ''}
                       onChange={(e) => updateField('location', e.target.value)}
                       placeholder="City, Country"
-                      className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
+                      className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
                       data-testid="input-location"
                     />
                   )}
@@ -547,14 +547,14 @@ const OnboardingWizard = () => {
                       value={formData.website || ''}
                       onChange={(e) => updateField('website', e.target.value)}
                       placeholder="www.yourcompany.com"
-                      className="flex-1 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
+                      className="flex-1 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
                       data-testid="input-website"
                     />
                     <Button
                       onClick={enrichWebsite}
                       disabled={!formData.website || enriching}
                       variant="outline"
-                      className="text-[#8FA0B8]"
+                      className="text-[var(--ink-secondary)]"
                       style={{ border: '1px solid rgba(140,170,210,0.15)' }}
                       data-testid="btn-enrich"
                     >
@@ -600,14 +600,14 @@ const OnboardingWizard = () => {
                       value={formData.abn || ''}
                       onChange={(e) => updateField('abn', e.target.value)}
                       placeholder="12 345 678 901"
-                      className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
+                      className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
                       data-testid="input-abn"
                     />
                   )}
 
                   {renderField('years_operating', 'Years Operating',
                     <Select value={formData.years_operating || ''} onValueChange={(val) => updateField('years_operating', val)}>
-                      <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-years">
+                      <SelectTrigger className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]" data-testid="select-years">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
@@ -634,7 +634,7 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('target_market', e.target.value)}
                     placeholder="Describe your target market..."
                     rows={3}
-                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
+                    className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
                     data-testid="input-target-market"
                   />
                 )}
@@ -642,7 +642,7 @@ const OnboardingWizard = () => {
                 <div className="grid grid-cols-2 gap-4">
                   {renderField('business_model', 'Business Model',
                     <Select value={formData.business_model || ''} onValueChange={(val) => updateField('business_model', val)}>
-                      <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-model">
+                      <SelectTrigger className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]" data-testid="select-model">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
@@ -655,7 +655,7 @@ const OnboardingWizard = () => {
 
                   {renderField('revenue_range', 'Revenue Range',
                     <Select value={formData.revenue_range || ''} onValueChange={(val) => updateField('revenue_range', val)}>
-                      <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-revenue">
+                      <SelectTrigger className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]" data-testid="select-revenue">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
@@ -672,7 +672,7 @@ const OnboardingWizard = () => {
 
                 {renderField('customer_count', 'Customer Count',
                   <Select value={formData.customer_count || ''} onValueChange={(val) => updateField('customer_count', val)}>
-                    <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-customers">
+                    <SelectTrigger className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]" data-testid="select-customers">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
@@ -699,7 +699,7 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('products_services', e.target.value)}
                     placeholder="Describe your main offerings..."
                     rows={3}
-                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
+                    className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
                     data-testid="input-products"
                   />
                 )}
@@ -710,14 +710,14 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('unique_value_proposition', e.target.value)}
                     placeholder="Your unique value proposition..."
                     rows={3}
-                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
+                    className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
                     data-testid="input-uvp"
                   />
                 )}
 
                 {renderField('pricing_model', 'Pricing Model',
                   <Select value={formData.pricing_model || ''} onValueChange={(val) => updateField('pricing_model', val)}>
-                    <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-pricing">
+                    <SelectTrigger className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]" data-testid="select-pricing">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
@@ -737,7 +737,7 @@ const OnboardingWizard = () => {
 
                 {renderField('team_size', 'Team Size',
                   <Select value={formData.team_size || ''} onValueChange={(val) => updateField('team_size', val)}>
-                    <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-team-size">
+                    <SelectTrigger className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]" data-testid="select-team-size">
                       <SelectValue placeholder="Select size" />
                     </SelectTrigger>
                     <SelectContent>
@@ -762,9 +762,9 @@ const OnboardingWizard = () => {
                       { value: 'planning', label: 'Planning to hire' },
                       { value: 'not-now', label: 'Not at this time' },
                     ].map(opt => (
-                      <div key={opt.value} className="flex items-center gap-2 p-3 rounded-lg bg-[#0E1628] border border-[rgba(140,170,210,0.15)]">
+                      <div key={opt.value} className="flex items-center gap-2 p-3 rounded-lg bg-[var(--surface)] border border-[rgba(140,170,210,0.15)]">
                         <RadioGroupItem value={opt.value} id={`hire-${opt.value}`} />
-                        <Label htmlFor={`hire-${opt.value}`} className="text-[#8FA0B8] cursor-pointer">{opt.label}</Label>
+                        <Label htmlFor={`hire-${opt.value}`} className="text-[var(--ink-secondary)] cursor-pointer">{opt.label}</Label>
                       </div>
                     ))}
                   </RadioGroup>
@@ -783,7 +783,7 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('short_term_goals', e.target.value)}
                     placeholder="What do you want to achieve in the next year?"
                     rows={3}
-                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
+                    className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
                     data-testid="input-short-goals"
                   />
                 )}
@@ -794,7 +794,7 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('main_challenges', e.target.value)}
                     placeholder="What obstacles are you facing right now?"
                     rows={3}
-                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
+                    className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
                     data-testid="input-challenges"
                   />
                 )}
@@ -805,14 +805,14 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('growth_strategy', e.target.value)}
                     placeholder="How do you plan to grow?"
                     rows={3}
-                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
+                    className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)] placeholder:text-[var(--ink-muted)]"
                     data-testid="input-growth"
                   />
                 )}
 
                 {renderField('growth_goals', 'Growth Goals',
                   <Select value={formData.growth_goals || ''} onValueChange={(val) => updateField('growth_goals', val)}>
-                    <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-growth-goals">
+                    <SelectTrigger className="mt-2 bg-[var(--surface)] border-[rgba(140,170,210,0.15)] text-[var(--ink-display)]" data-testid="select-growth-goals">
                       <SelectValue placeholder="Select primary growth goal" />
                     </SelectTrigger>
                     <SelectContent>
@@ -847,7 +847,7 @@ const OnboardingWizard = () => {
                       { value: 'detailed', label: 'Detailed & Thorough', desc: 'Explain the reasoning and context' },
                       { value: 'conversational', label: 'Conversational', desc: 'Like chatting with a business partner' },
                     ].map(opt => (
-                      <div key={opt.value} className="flex items-start gap-3 p-4 rounded-lg bg-[#0E1628] border border-[rgba(140,170,210,0.15)] cursor-pointer hover:bg-[#121D30]">
+                      <div key={opt.value} className="flex items-start gap-3 p-4 rounded-lg bg-[var(--surface)] border border-[rgba(140,170,210,0.15)] cursor-pointer hover:bg-[var(--surface-2)]">
                         <RadioGroupItem value={opt.value} id={`style-${opt.value}`} className="mt-0.5" />
                         <Label htmlFor={`style-${opt.value}`} className="cursor-pointer">
                           <div className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{opt.label}</div>
@@ -862,7 +862,7 @@ const OnboardingWizard = () => {
                   <Label className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>What tools do you use?</Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {['Xero / QuickBooks', 'HubSpot / CRM', 'Slack / Teams', 'Google Workspace', 'Notion / Asana', 'Stripe', 'None yet', 'Other'].map(tool => (
-                      <label key={tool} className="flex items-center gap-2 p-3 rounded-lg bg-[#0E1628] border border-[rgba(140,170,210,0.15)] cursor-pointer hover:bg-[#121D30] text-[#8FA0B8] text-sm">
+                      <label key={tool} className="flex items-center gap-2 p-3 rounded-lg bg-[var(--surface)] border border-[rgba(140,170,210,0.15)] cursor-pointer hover:bg-[var(--surface-2)] text-[var(--ink-secondary)] text-sm">
                         <input
                           type="checkbox"
                           checked={(formData.current_tools || []).includes(tool)}

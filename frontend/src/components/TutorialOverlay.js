@@ -205,7 +205,7 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
           </div>
           <button onClick={onDismissForNow} className="p-1 rounded-lg hover:bg-white/5 transition-colors"
             data-testid="tutorial-close-btn" aria-label="Close tutorial">
-            <X className="w-4 h-4" style={{ color: '#64748B' }} />
+            <X className="w-4 h-4" style={{ color: 'var(--ink-muted)' }} />
           </button>
         </div>
 
@@ -215,7 +215,7 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
             <div className="h-full rounded-full transition-all duration-300"
               style={{ background: '#E85D00', width: `${((step + 1) / total) * 100}%` }} />
           </div>
-          <p className="text-[10px] mt-1" style={{ color: '#64748B' }}>Step {step + 1} of {total}</p>
+          <p className="text-[10px] mt-1" style={{ color: 'var(--ink-muted)' }}>Step {step + 1} of {total}</p>
         </div>
 
         {/* Body */}
@@ -227,8 +227,8 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
         {/* Footer */}
         <div className="flex items-center justify-between px-6 pb-5 pt-1">
           <button onClick={onDismissForNow}
-            className="text-xs transition-colors hover:text-[#8FA0B8]"
-            style={{ color: '#64748B' }} data-testid="tutorial-dismiss-btn">
+            className="text-xs transition-colors hover:text-[var(--ink-secondary)]"
+            style={{ color: 'var(--ink-muted)' }} data-testid="tutorial-dismiss-btn">
             Learn later
           </button>
           <div className="flex gap-2">
@@ -338,7 +338,7 @@ export const useTutorial = (pageKey) => {
 export const HelpButton = ({ onClick }) => (
   <button onClick={onClick}
     className="p-2 rounded-lg transition-colors hover:bg-white/5"
-    style={{ color: '#64748B' }}
+    style={{ color: 'var(--ink-muted)' }}
     title="Show page guide" aria-label="Show page guide"
     data-testid="tutorial-help-btn">
     <HelpCircle className="w-5 h-5" />

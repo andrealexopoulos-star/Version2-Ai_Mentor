@@ -25,7 +25,7 @@ export const SurfaceHeader = ({ eyebrow, title, question, summary, rightSlot, te
       <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }} data-testid={`${testIdPrefix}-question`}>
         {question}
       </p>
-      <p className="text-sm text-[#94A3B8]" style={{ fontFamily: fontFamily.body }} data-testid={`${testIdPrefix}-summary`}>
+      <p className="text-sm text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }} data-testid={`${testIdPrefix}-summary`}>
         {summary}
       </p>
     </div>
@@ -35,17 +35,17 @@ export const SurfaceHeader = ({ eyebrow, title, question, summary, rightSlot, te
 
 export const MetricCard = ({ label, value, caption, tone = '#E85D00', testId }) => (
   <SurfaceCard testId={testId}>
-    <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>{label}</p>
+    <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>{label}</p>
     <div className="mt-3 flex items-end gap-2">
       <span className="text-3xl md:text-4xl font-bold" style={{ color: tone, fontFamily: fontFamily.mono }}>{value}</span>
     </div>
-    <p className="mt-2 text-sm text-[#94A3B8]" style={{ fontFamily: fontFamily.body }}>{caption}</p>
+    <p className="mt-2 text-sm text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>{caption}</p>
   </SurfaceCard>
 );
 
 export const SectionLabel = ({ title, detail, testId }) => (
   <div className="space-y-1" data-testid={testId}>
-    <p className="text-[10px] uppercase tracking-[0.16em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>{title}</p>
+    <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>{title}</p>
     {detail ? <p className="text-sm text-[#CBD5E1]" style={{ fontFamily: fontFamily.body }}>{detail}</p> : null}
   </div>
 );
@@ -81,7 +81,7 @@ export const EmptyStateCard = ({ title, detail, testId }) => (
       <AlertTriangle className="mt-0.5 h-5 w-5 text-[#F59E0B]" />
       <div>
         <p className="text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>{title}</p>
-        <p className="mt-2 text-sm text-[#94A3B8]" style={{ fontFamily: fontFamily.body }}>{detail}</p>
+        <p className="mt-2 text-sm text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>{detail}</p>
       </div>
     </div>
   </SurfaceCard>

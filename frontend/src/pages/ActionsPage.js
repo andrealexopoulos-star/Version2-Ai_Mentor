@@ -215,7 +215,7 @@ const ActionsPage = () => {
               className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
               style={{
                 background: activeFilter === val ? 'var(--surface-sunken, #060A12)' : 'transparent',
-                color: activeFilter === val ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
+                color: activeFilter === val ? 'var(--ink-display, #EDF1F7)' : 'var(--ink-secondary)',
                 border: activeFilter === val ? '1px solid rgba(140,170,210,0.2)' : '1px solid rgba(140,170,210,0.08)',
                 fontFamily: fontFamily.mono,
               }}
@@ -252,10 +252,10 @@ const ActionsPage = () => {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="max-w-3xl">
                     <p className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Advisor handoff</p>
-                    <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{advisorAssignment.title}</p>
-                    <p className="mt-2 text-xs text-[#8FA0B8] leading-relaxed">{advisorAssignment.summary}</p>
-                    <p className="mt-2 text-xs text-[#64748B]">Why now: {advisorAssignment.whyNow}</p>
-                    <p className="mt-2 text-xs text-[#64748B]">If ignored: {advisorAssignment.ifIgnored}</p>
+                    <p className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>{advisorAssignment.title}</p>
+                    <p className="mt-2 text-xs text-[var(--ink-secondary)] leading-relaxed">{advisorAssignment.summary}</p>
+                    <p className="mt-2 text-xs text-[var(--ink-muted)]">Why now: {advisorAssignment.whyNow}</p>
+                    <p className="mt-2 text-xs text-[var(--ink-muted)]">If ignored: {advisorAssignment.ifIgnored}</p>
                   </div>
                   <button
                     onClick={() => setDelegateModalOpen(true)}
@@ -275,17 +275,17 @@ const ActionsPage = () => {
                 <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Priority Focus</h3>
                 {cleanPriority.primary && (
                   <div className="mb-3">
-                    <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{cleanPriority.primary}</span>
-                    {cleanPriority.primary_hrs && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: fontFamily.mono }}>{cleanPriority.primary_hrs}</span>}
+                    <span className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>{cleanPriority.primary}</span>
+                    {cleanPriority.primary_hrs && <span className="text-xs text-[var(--ink-muted)] ml-2" style={{ fontFamily: fontFamily.mono }}>{cleanPriority.primary_hrs}</span>}
                   </div>
                 )}
                 {cleanPriority.secondary && (
                   <div className="mb-2">
-                    <span className="text-sm text-[#8FA0B8]">{cleanPriority.secondary}</span>
-                    {cleanPriority.delegate && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: fontFamily.mono }}>Delegate: {cleanPriority.delegate}</span>}
+                    <span className="text-sm text-[var(--ink-secondary)]">{cleanPriority.secondary}</span>
+                    {cleanPriority.delegate && <span className="text-xs text-[var(--ink-muted)] ml-2" style={{ fontFamily: fontFamily.mono }}>Delegate: {cleanPriority.delegate}</span>}
                   </div>
                 )}
-                {cleanPriority.noise && <p className="text-xs text-[#64748B] mt-2" style={{ fontFamily: fontFamily.mono }}>Ignore: {cleanPriority.noise}</p>}
+                {cleanPriority.noise && <p className="text-xs text-[var(--ink-muted)] mt-2" style={{ fontFamily: fontFamily.mono }}>Ignore: {cleanPriority.noise}</p>}
               </div>
             )}
 
@@ -301,8 +301,8 @@ const ActionsPage = () => {
                         <div className="flex items-start gap-3">
                           <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
-                            {item.detail && <p className="text-xs mt-1 text-[#8FA0B8] leading-relaxed">{item.detail}</p>}
+                            <p className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
+                            {item.detail && <p className="text-xs mt-1 text-[var(--ink-secondary)] leading-relaxed">{item.detail}</p>}
                             <div className="flex flex-wrap gap-2 mt-3">
                               {(item.actions || []).includes('auto-email') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630', fontFamily: fontFamily.mono }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
                               {(item.actions || []).includes('quick-sms') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: fontFamily.mono }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
@@ -319,7 +319,7 @@ const ActionsPage = () => {
             ) : (
               <Panel className="text-center py-8">
                 <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-3" />
-                <p className="text-sm text-[#64748B]">No items in the resolution queue. Connect integrations to activate AI monitoring.</p>
+                <p className="text-sm text-[var(--ink-muted)]">No items in the resolution queue. Connect integrations to activate AI monitoring.</p>
               </Panel>
             )}
 
@@ -333,8 +333,8 @@ const ActionsPage = () => {
                       <div className="flex items-start gap-3">
                         <ArrowRight className="w-4 h-4 text-[#3B82F6] shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{r.action}</p>
-                          <p className="text-xs text-[#8FA0B8] mt-1">{r.impact}</p>
+                          <p className="text-sm text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>{r.action}</p>
+                          <p className="text-xs text-[var(--ink-secondary)] mt-1">{r.impact}</p>
                         </div>
                       </div>
                     </Panel>

@@ -113,8 +113,8 @@ const AuditLogPage = () => {
 
   const renderNullState = () => (
     <Panel className="text-center py-12">
-      <Plug className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-      <p className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>No governance events recorded yet.</p>
+      <Plug className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-3" />
+      <p className="text-sm font-semibold text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>No governance events recorded yet.</p>
       <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: 'var(--biqc-text-2)' }}>
         The audit log records every verified intelligence event from your connected systems — deal changes, invoice movements, compliance flags. Connect CRM or accounting to start building your governance trail.
       </p>
@@ -157,7 +157,7 @@ const AuditLogPage = () => {
         {loading && (
           <Panel className="text-center py-8">
             <Loader2 className="w-6 h-6 text-[#E85D00] mx-auto mb-3 animate-spin" />
-            <p className="text-sm text-[#8FA0B8]">Loading audit trail...</p>
+            <p className="text-sm text-[var(--ink-secondary)]">Loading audit trail...</p>
           </Panel>
         )}
 
@@ -166,8 +166,8 @@ const AuditLogPage = () => {
         {!loading && integrations.length > 0 && events.length === 0 && (
           <Panel className="text-center py-8">
             <Shield className="w-8 h-8 text-[#10B981] mx-auto mb-3" />
-            <p className="text-sm text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>No governance events recorded.</p>
-            <p className="text-xs text-[#64748B]">Events will appear as BIQc processes verified signals from your {integrations.length} connected integration{integrations.length > 1 ? 's' : ''}.</p>
+            <p className="text-sm text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>No governance events recorded.</p>
+            <p className="text-xs text-[var(--ink-muted)]">Events will appear as BIQc processes verified signals from your {integrations.length} connected integration{integrations.length > 1 ? 's' : ''}.</p>
           </Panel>
         )}
 
@@ -180,7 +180,7 @@ const AuditLogPage = () => {
                   className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all capitalize"
                   style={{
                     background: categoryFilter === cat ? 'var(--surface-sunken, #060A12)' : 'transparent',
-                    color: categoryFilter === cat ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
+                    color: categoryFilter === cat ? 'var(--ink-display, #EDF1F7)' : 'var(--ink-secondary)',
                     border: categoryFilter === cat ? '1px solid rgba(140,170,210,0.2)' : '1px solid rgba(140,170,210,0.08)',
                     fontFamily: fontFamily.mono,
                   }}
@@ -247,7 +247,7 @@ const AuditLogPage = () => {
 
             <div className="flex items-center gap-3 mb-2">
               <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#10B981', background: '#10B98115', fontFamily: fontFamily.mono }}>{filteredEvents.length} verified events</span>
-              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{integrations.length} connected source{integrations.length > 1 ? 's' : ''}</span>
+              <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{integrations.length} connected source{integrations.length > 1 ? 's' : ''}</span>
             </div>
 
             <div className="space-y-2">
@@ -257,14 +257,14 @@ const AuditLogPage = () => {
                   <div key={ev.id} className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }} data-testid={`audit-event-${ev.id}`}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm text-[#EDF1F7] block truncate" style={{ fontFamily: fontFamily.body }}>{ev.event_type}</span>
-                      {ev.signal_reference && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>ref: {ev.signal_reference}</span>}
+                      <span className="text-sm text-[var(--ink-display)] block truncate" style={{ fontFamily: fontFamily.body }}>{ev.event_type}</span>
+                      {ev.signal_reference && <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>ref: {ev.signal_reference}</span>}
                     </div>
                     <span className="text-[10px] px-2 py-0.5 rounded shrink-0" style={{ color: 'var(--biqc-text-2)', background: 'rgba(140,170,210,0.15)', fontFamily: fontFamily.mono }}>{ev.source_system}</span>
                     {ev.confidence_score != null && (
                       <span className="text-[10px] shrink-0" style={{ color, fontFamily: fontFamily.mono }}>{Math.round(ev.confidence_score * 100)}%</span>
                     )}
-                    <span className="text-[10px] text-[#64748B] shrink-0" style={{ fontFamily: fontFamily.mono }}>
+                    <span className="text-[10px] text-[var(--ink-muted)] shrink-0" style={{ fontFamily: fontFamily.mono }}>
                       {new Date(ev.signal_timestamp).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' })}
                     </span>
                   </div>
@@ -275,7 +275,7 @@ const AuditLogPage = () => {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between pt-3" data-testid="audit-pagination">
-                <span className="text-[11px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                <span className="text-[11px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                   {(page - 1) * PAGE_SIZE + 1}--{Math.min(page * PAGE_SIZE, filteredEvents.length)} of {filteredEvents.length}
                 </span>
                 <div className="flex gap-1">

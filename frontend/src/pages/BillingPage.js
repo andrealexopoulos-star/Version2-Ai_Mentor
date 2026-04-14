@@ -236,7 +236,7 @@ const BillingPage = () => {
                 </button>
               )}
               <button
-                className="px-5 py-2.5 rounded-lg text-sm font-medium transition-colors hover:text-[#EDF1F7] whitespace-nowrap"
+                className="px-5 py-2.5 rounded-lg text-sm font-medium transition-colors hover:text-[var(--ink-display)] whitespace-nowrap"
                 style={{ border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary, #8FA0B8)' }}
               >
                 Manage subscription
@@ -250,9 +250,9 @@ const BillingPage = () => {
           <Panel>
             <div className="flex items-center gap-2 mb-2">
               <CreditCard className="w-4 h-4 text-[#3B82F6]" />
-              <span className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Paid charges</span>
+              <span className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>Paid charges</span>
             </div>
-            <div className="text-2xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
+            <div className="text-2xl font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>
               {money(chargesSummary.total_paid, chargesSummary.currency)}
             </div>
           </Panel>
@@ -260,9 +260,9 @@ const BillingPage = () => {
           <Panel>
             <div className="flex items-center gap-2 mb-2">
               <CreditCard className="w-4 h-4 text-[#F59E0B]" />
-              <span className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Pending charges</span>
+              <span className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>Pending charges</span>
             </div>
-            <div className="text-2xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
+            <div className="text-2xl font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>
               {money(chargesSummary.total_initiated, chargesSummary.currency)}
             </div>
           </Panel>
@@ -270,9 +270,9 @@ const BillingPage = () => {
           <Panel>
             <div className="flex items-center gap-2 mb-2">
               <Building2 className="w-4 h-4 text-[#E85D00]" />
-              <span className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Supplier outstanding</span>
+              <span className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>Supplier outstanding</span>
             </div>
-            <div className="text-2xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
+            <div className="text-2xl font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>
               {money(supplierSummary.total_outstanding_supplier, chargesSummary.currency || 'AUD')}
             </div>
           </Panel>
@@ -280,9 +280,9 @@ const BillingPage = () => {
           <Panel>
             <div className="flex items-center gap-2 mb-2">
               <Building2 className="w-4 h-4 text-[#EF4444]" />
-              <span className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Supplier overdue</span>
+              <span className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>Supplier overdue</span>
             </div>
-            <div className="text-2xl font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
+            <div className="text-2xl font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>
               {money(supplierSummary.total_overdue_supplier, chargesSummary.currency || 'AUD')}
             </div>
           </Panel>
@@ -349,13 +349,13 @@ const BillingPage = () => {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7] hover:border-[rgba(140,170,210,0.25)]"
+                    className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[var(--ink-display)] hover:border-[rgba(140,170,210,0.25)]"
                     style={{ border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary, #8FA0B8)' }}
                   >
                     Update card
                   </button>
                   <button
-                    className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[#EDF1F7] hover:border-[rgba(140,170,210,0.25)]"
+                    className="px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:text-[var(--ink-display)] hover:border-[rgba(140,170,210,0.25)]"
                     style={{ border: '1px solid rgba(140,170,210,0.12)', color: 'var(--ink-secondary, #8FA0B8)' }}
                   >
                     Add new
@@ -481,7 +481,7 @@ const BillingPage = () => {
         {/* ── Stripe & Supplier Data ── */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <Panel>
-            <h2 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>
+            <h2 className="text-sm font-semibold text-[var(--ink-display)] mb-3" style={{ fontFamily: fontFamily.display }}>
               Recent client charges (Stripe)
             </h2>
             <div className="space-y-2">
@@ -492,24 +492,24 @@ const BillingPage = () => {
                   style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
                 >
                   <div>
-                    <p className="text-xs text-[#EDF1F7]">{row.tier || 'subscription'}</p>
-                    <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                    <p className="text-xs text-[var(--ink-display)]">{row.tier || 'subscription'}</p>
+                    <p className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                       {row.payment_status || 'unknown'} · {row.created_at || ''}
                     </p>
                   </div>
-                  <p className="text-xs font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
+                  <p className="text-xs font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>
                     {money(row.amount, row.currency || chargesSummary.currency || 'AUD')}
                   </p>
                 </div>
               ))}
               {!loading && (!charges || charges.length === 0) && (
-                <p className="text-xs text-[#64748B]">No Stripe charges found for this client workspace yet.</p>
+                <p className="text-xs text-[var(--ink-muted)]">No Stripe charges found for this client workspace yet.</p>
               )}
             </div>
           </Panel>
 
           <Panel>
-            <h2 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>
+            <h2 className="text-sm font-semibold text-[var(--ink-display)] mb-3" style={{ fontFamily: fontFamily.display }}>
               Supplier invoices (Xero/accounting)
             </h2>
             <div className="space-y-2">
@@ -520,8 +520,8 @@ const BillingPage = () => {
                   style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}
                 >
                   <div>
-                    <p className="text-xs text-[#EDF1F7]">{row.supplier}</p>
-                    <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                    <p className="text-xs text-[var(--ink-display)]">{row.supplier}</p>
+                    <p className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                       {row.status} · due {row.due_date || 'n/a'}
                     </p>
                   </div>
@@ -534,7 +534,7 @@ const BillingPage = () => {
                 </div>
               ))}
               {!loading && (!suppliers || suppliers.length === 0) && (
-                <p className="text-xs text-[#64748B]">
+                <p className="text-xs text-[var(--ink-muted)]">
                   No supplier invoices found. Connect Xero/accounting integration to activate supplier billing visibility.
                 </p>
               )}

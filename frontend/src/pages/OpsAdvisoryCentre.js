@@ -390,7 +390,7 @@ const OpsAdvisoryCentre = () => {
                     <div
                       key={idx}
                       className="p-4 rounded-xl"
-                      style={{ background: '#0B1120', border: '1px solid rgba(140,170,210,0.12)' }}
+                      style={{ background: 'var(--canvas-app)', border: '1px solid rgba(140,170,210,0.12)' }}
                       data-testid={`ops-advisory-item-${idx}`}
                     >
                       <div className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>

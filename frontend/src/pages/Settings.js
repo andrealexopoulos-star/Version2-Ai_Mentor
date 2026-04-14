@@ -479,7 +479,7 @@ const Settings = () => {
                     fontFamily: fontFamily.body,
                     fontWeight: activeTab === value ? 500 : 400,
                     background: activeTab === value ? 'var(--surface-sunken, #060A12)' : 'transparent',
-                    color: activeTab === value ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
+                    color: activeTab === value ? 'var(--ink-display, #EDF1F7)' : 'var(--ink-secondary, #8FA0B8)',
                     borderLeft: activeTab === value ? '2px solid #E85D00' : '2px solid transparent',
                   }}
                 >

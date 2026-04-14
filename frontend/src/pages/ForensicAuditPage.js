@@ -46,8 +46,8 @@ const FailureCode = ({ code }) => {
     <div className="flex items-start gap-2 p-2 rounded" style={{ background: '#EF444408', border: '1px solid #EF444415' }}>
       <XCircle className="w-3.5 h-3.5 text-[#EF4444] shrink-0 mt-0.5" />
       <div>
-        <span className="text-xs font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{code}</span>
-        <p className="text-[10px] text-[#64748B] mt-0.5">{descriptions[code] || code}</p>
+        <span className="text-xs font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{code}</span>
+        <p className="text-[10px] text-[var(--ink-muted)] mt-0.5">{descriptions[code] || code}</p>
       </div>
     </div>
   );
@@ -62,10 +62,10 @@ const CollapsibleSection = ({ title, icon: Icon, color, status, children, defaul
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: color + '15' }}>
             <Icon className="w-4 h-4" style={{ color }} />
           </div>
-          <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{title}</h3>
+          <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>{title}</h3>
           <StatusBadge status={status} />
         </div>
-        {open ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
+        {open ? <ChevronUp className="w-4 h-4 text-[var(--ink-muted)]" /> : <ChevronDown className="w-4 h-4 text-[var(--ink-muted)]" />}
       </button>
       {open && <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--biqc-border)' }}>{children}</div>}
     </Panel>
@@ -125,14 +125,14 @@ const ForensicAuditPage = () => {
       <UpgradeCardsGate requiredTier="starter" featureName="Forensic Ingestion Audit">
       <div className="space-y-6 max-w-[1000px]" style={{ fontFamily: fontFamily.body }} data-testid="forensic-audit-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Forensic Ingestion Audit</h1>
-          <p className="text-sm text-[#8FA0B8] mb-2">3-layer deterministic analysis of a public URL — tests data extraction quality, DOM cleaning, and synthesis integrity.</p>
+          <h1 className="text-2xl font-semibold text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>Forensic Ingestion Audit</h1>
+          <p className="text-sm text-[var(--ink-secondary)] mb-2">3-layer deterministic analysis of a public URL — tests data extraction quality, DOM cleaning, and synthesis integrity.</p>
           <div className="p-3 rounded-lg" style={{ background: 'rgba(232,93,0,0.04)', border: '1px solid rgba(232,93,0,0.12)' }}>
             <p className="text-[11px] font-semibold mb-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>WHAT THIS DOES</p>
-            <p className="text-xs text-[#8FA0B8] mb-2">
+            <p className="text-xs text-[var(--ink-secondary)] mb-2">
               Enter any public business URL and BIQc will analyse how cleanly data can be extracted from it. Use this to verify your own website or a competitor's page before connecting it as a data source.
             </p>
-            <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+            <p className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
               Example valid URLs: yourcompany.com • hubspot.com/about • xero.com/au
             </p>
           </div>
@@ -142,7 +142,7 @@ const ForensicAuditPage = () => {
         <Panel>
           <div className="flex gap-3">
             <div className="flex-1 relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]" />
               <input
                 type="text"
                 value={url}
@@ -173,8 +173,8 @@ const ForensicAuditPage = () => {
         {running && (
           <Panel className="text-center py-10">
             <Loader2 className="w-8 h-8 text-[#E85D00] mx-auto mb-3 animate-spin" />
-            <p className="text-sm text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Running forensic audit...</p>
-            <p className="text-xs text-[#64748B]">Fetching URL, cleaning DOM, analysing synthesis integrity. This takes 15–30 seconds.</p>
+            <p className="text-sm text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>Running forensic audit...</p>
+            <p className="text-xs text-[var(--ink-muted)]">Fetching URL, cleaning DOM, analysing synthesis integrity. This takes 15–30 seconds.</p>
           </Panel>
         )}
 
@@ -190,7 +190,7 @@ const ForensicAuditPage = () => {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     {(result.scores?.trust_integrity_score || result.quality_score) >= 70 ? <CheckCircle2 className="w-5 h-5 text-[#10B981]" /> : <AlertTriangle className="w-5 h-5 text-[#EF4444]" />}
-                    <h2 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
+                    <h2 className="text-lg font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>
                       {result.scores ? `Trust Integrity: ${result.scores.confidence_level}` : `Ingestion Quality: ${result.confidence_level}`}
                     </h2>
                   </div>
@@ -222,35 +222,35 @@ const ForensicAuditPage = () => {
                 {result.scores && (
                   <div className="grid grid-cols-3 gap-3 mb-3">
                     <div className="p-3 rounded text-center" style={{ background: 'var(--biqc-bg)' }}>
-                      <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Extraction</span>
+                      <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Extraction</span>
                       <span className="text-lg font-bold" style={{ color: result.scores.extraction_score >= 60 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{result.scores.extraction_score}</span>
                     </div>
                     <div className="p-3 rounded text-center" style={{ background: 'var(--biqc-bg)' }}>
-                      <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Cleaning</span>
+                      <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Cleaning</span>
                       <span className="text-lg font-bold" style={{ color: result.scores.cleaning_score >= 60 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{result.scores.cleaning_score}</span>
                     </div>
                     <div className="p-3 rounded text-center" style={{ background: 'var(--biqc-bg)' }}>
-                      <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Synthesis</span>
+                      <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Synthesis</span>
                       <span className="text-lg font-bold" style={{ color: result.scores.synthesis_score >= 60 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{result.scores.synthesis_score}</span>
                     </div>
                   </div>
                 )}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
                   <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Pages Crawled</span>
-                    <span className="text-lg font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{result.pages_crawled}/7</span>
+                    <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Pages Crawled</span>
+                    <span className="text-lg font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{result.pages_crawled}/7</span>
                   </div>
                   <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Noise Ratio</span>
+                    <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Noise Ratio</span>
                     <span className="text-lg font-bold" style={{ color: result.noise_ratio > 0.35 ? '#EF4444' : '#10B981', fontFamily: fontFamily.mono }}>{result.noise_ratio}</span>
                   </div>
                   <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Hallucination</span>
+                    <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Hallucination</span>
                     <span className="text-lg font-bold" style={{ color: result.hallucination_score > 0.05 ? '#EF4444' : '#10B981', fontFamily: fontFamily.mono }}>{result.hallucination_score}</span>
                   </div>
                   <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                    <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Fields Found</span>
-                    <span className="text-lg font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{Object.keys(result.dna_trace || {}).length}</span>
+                    <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Fields Found</span>
+                    <span className="text-lg font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{Object.keys(result.dna_trace || {}).length}</span>
                   </div>
                 </div>
                 {result.failure_codes?.length > 0 && (
@@ -268,14 +268,14 @@ const ForensicAuditPage = () => {
                   {result.pages.map((p, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 rounded" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <span className="text-[10px] w-6 text-center font-bold" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>P{p.priority}</span>
-                      <span className="text-xs text-[#EDF1F7] flex-1 truncate">{p.url}</span>
-                      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{(p.html_length || 0).toLocaleString()} chars</span>
-                      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{p.fetch_time_ms}ms</span>
+                      <span className="text-xs text-[var(--ink-display)] flex-1 truncate">{p.url}</span>
+                      <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{(p.html_length || 0).toLocaleString()} chars</span>
+                      <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{p.fetch_time_ms}ms</span>
                     </div>
                   ))}
                 </div>
                 {result.canonical_url && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-[#8FA0B8]">
+                  <div className="mt-3 flex items-center gap-2 text-xs text-[var(--ink-secondary)]">
                     <ExternalLink className="w-3 h-3" /> Canonical: <span style={{ fontFamily: fontFamily.mono }}>{result.canonical_url}</span>
                   </div>
                 )}
@@ -289,12 +289,12 @@ const ForensicAuditPage = () => {
                   {Object.entries(result.dna_trace).map(([field, trace]) => (
                     <div key={field} className="p-3 rounded" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-[#EDF1F7] capitalize">{field.replace(/_/g, ' ')}</span>
+                        <span className="text-xs font-semibold text-[var(--ink-display)] capitalize">{field.replace(/_/g, ' ')}</span>
                         <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: trace.confidence >= 0.8 ? '#10B981' : '#F59E0B', background: (trace.confidence >= 0.8 ? '#10B981' : '#F59E0B') + '15', fontFamily: fontFamily.mono }}>{Math.round(trace.confidence * 100)}%</span>
                       </div>
                       <span className="text-sm text-[#3B82F6] block" style={{ fontFamily: fontFamily.mono }}>{trace.value}</span>
-                      <span className="text-[10px] text-[#64748B] block mt-1 italic">"{trace.snippet}"</span>
-                      {trace.source_url && <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Source: {trace.source_url}</span>}
+                      <span className="text-[10px] text-[var(--ink-muted)] block mt-1 italic">"{trace.snippet}"</span>
+                      {trace.source_url && <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Source: {trace.source_url}</span>}
                     </div>
                   ))}
                 </div>
@@ -309,8 +309,8 @@ const ForensicAuditPage = () => {
                     <span className="text-[10px] font-semibold text-[#EF4444] block mb-2" style={{ fontFamily: fontFamily.mono }}>HALLUCINATIONS ({result.hallucinations.length})</span>
                     {result.hallucinations.map((h, i) => (
                       <div key={i} className="p-2 rounded mb-1 text-xs" style={{ background: '#EF444408', border: '1px solid #EF444415' }}>
-                        <span className="text-[#EDF1F7] font-semibold">{h.claim}</span>
-                        <span className="text-[#64748B] ml-2">— {h.evidence}</span>
+                        <span className="text-[var(--ink-display)] font-semibold">{h.claim}</span>
+                        <span className="text-[var(--ink-muted)] ml-2">— {h.evidence}</span>
                       </div>
                     ))}
                   </div>
@@ -320,7 +320,7 @@ const ForensicAuditPage = () => {
                     <span className="text-[10px] font-semibold text-[#F59E0B] block mb-2" style={{ fontFamily: fontFamily.mono }}>LOST SIGNALS ({result.lost_signals.length})</span>
                     {result.lost_signals.map((s, i) => (
                       <div key={i} className="p-2 rounded mb-1 text-xs" style={{ background: '#F59E0B08', border: '1px solid #F59E0B15' }}>
-                        <span className="text-[#EDF1F7]">{s.sentence?.substring(0, 120)}...</span>
+                        <span className="text-[var(--ink-display)]">{s.sentence?.substring(0, 120)}...</span>
                       </div>
                     ))}
                   </div>
@@ -339,7 +339,7 @@ const ForensicAuditPage = () => {
                     return (
                       <div key={k}>
                         <div className="flex justify-between mb-1">
-                          <span className="text-xs text-[#8FA0B8] capitalize">{k.replace(/_/g, ' ')}</span>
+                          <span className="text-xs text-[var(--ink-secondary)] capitalize">{k.replace(/_/g, ' ')}</span>
                           <span className="text-xs font-semibold" style={{ color, fontFamily: fontFamily.mono }}>{isNegative ? '' : '+'}{v}</span>
                         </div>
                         <div className="h-1.5 rounded-full" style={{ background: color + '20' }}>
@@ -365,7 +365,7 @@ const ForensicAuditPage = () => {
                   ) : (
                     <AlertTriangle className="w-5 h-5 text-[#EF4444]" />
                   )}
-                  <h2 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
+                  <h2 className="text-lg font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>
                     {verdict.primary_failure_layer === 'none' ? 'All Layers Pass' : `Primary Failure: ${verdict.primary_failure_layer?.toUpperCase()}`}
                   </h2>
                 </div>
@@ -374,7 +374,7 @@ const ForensicAuditPage = () => {
                 </span>
               </div>
               {verdict.secondary_failure_layer && (
-                <p className="text-xs text-[#8FA0B8]">Secondary: {verdict.secondary_failure_layer}</p>
+                <p className="text-xs text-[var(--ink-secondary)]">Secondary: {verdict.secondary_failure_layer}</p>
               )}
               {verdict.failure_codes?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
@@ -389,25 +389,25 @@ const ForensicAuditPage = () => {
             <CollapsibleSection title="Layer 1 — Extraction" icon={Layers} color="#3B82F6" status={ext.status} defaultOpen>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>HTTP Status</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>HTTP Status</span>
                   <span className="text-lg font-bold" style={{ color: ext.http_status === 200 ? '#10B981' : '#EF4444', fontFamily: fontFamily.mono }}>{ext.http_status}</span>
                 </div>
                 <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>HTML Length</span>
-                  <span className="text-lg font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{(ext.raw_html_length || 0).toLocaleString()}</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>HTML Length</span>
+                  <span className="text-lg font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{(ext.raw_html_length || 0).toLocaleString()}</span>
                 </div>
                 <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Noise Ratio</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Noise Ratio</span>
                   <span className="text-lg font-bold" style={{ color: ext.noise_ratio > 0.35 ? '#EF4444' : ext.noise_ratio > 0.2 ? '#F59E0B' : '#10B981', fontFamily: fontFamily.mono }}>{ext.noise_ratio}</span>
                 </div>
                 <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Fetch Time</span>
-                  <span className="text-lg font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{ext.fetch_time_ms}ms</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Fetch Time</span>
+                  <span className="text-lg font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{ext.fetch_time_ms}ms</span>
                 </div>
               </div>
-              <div className="space-y-2 text-xs text-[#8FA0B8]">
-                <div className="flex justify-between"><span>Final URL</span><span className="text-[#EDF1F7] truncate ml-4" style={{ fontFamily: fontFamily.mono }}>{ext.final_url}</span></div>
-                <div className="flex justify-between"><span>Canonical URL</span><span className="text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{ext.canonical_url || 'Not set'}</span></div>
+              <div className="space-y-2 text-xs text-[var(--ink-secondary)]">
+                <div className="flex justify-between"><span>Final URL</span><span className="text-[var(--ink-display)] truncate ml-4" style={{ fontFamily: fontFamily.mono }}>{ext.final_url}</span></div>
+                <div className="flex justify-between"><span>Canonical URL</span><span className="text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{ext.canonical_url || 'Not set'}</span></div>
                 <div className="flex justify-between"><span>Main Content</span><span style={{ color: ext.main_content_present ? '#10B981' : '#EF4444' }}>{ext.main_content_present ? 'Detected' : 'Not found'}</span></div>
                 <div className="flex justify-between"><span>Structured Data</span><span style={{ color: ext.has_structured_data ? '#10B981' : '#64748B' }}>{ext.has_structured_data ? 'Found' : 'None'}</span></div>
                 <div className="flex justify-between"><span>Redirects</span><span style={{ fontFamily: fontFamily.mono }}>{ext.redirect_chain?.length || 0}</span></div>
@@ -421,25 +421,25 @@ const ForensicAuditPage = () => {
             <CollapsibleSection title="Layer 2 — Semantic Cleaning" icon={Filter} color="#10B981" status={cln.status}>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Unique Sentences</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Unique Sentences</span>
                   <span className="text-lg font-bold" style={{ color: cln.unique_sentence_ratio > 0.7 ? '#10B981' : '#F59E0B', fontFamily: fontFamily.mono }}>{Math.round((cln.unique_sentence_ratio || 0) * 100)}%</span>
                 </div>
                 <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Core Weight</span>
-                  <span className="text-lg font-bold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{cln.core_content_weight}</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Core Weight</span>
+                  <span className="text-lg font-bold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{cln.core_content_weight}</span>
                 </div>
                 <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Nav Removed</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Nav Removed</span>
                   <span style={{ color: cln.nav_removed ? '#10B981' : '#64748B' }}>{cln.nav_removed ? 'Yes' : 'No'}</span>
                 </div>
                 <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Footer Removed</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Footer Removed</span>
                   <span style={{ color: cln.footer_removed ? '#10B981' : '#64748B' }}>{cln.footer_removed ? 'Yes' : 'No'}</span>
                 </div>
               </div>
               {cln.sections?.length > 0 && (
                 <div className="mb-3">
-                  <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: fontFamily.mono }}>Detected Sections</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block mb-2" style={{ fontFamily: fontFamily.mono }}>Detected Sections</span>
                   <div className="flex flex-wrap gap-2">
                     {cln.sections.map((s, i) => (
                       <span key={i} className="text-[10px] px-2 py-1 rounded" style={{ background: 'var(--biqc-bg)', color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>
@@ -458,11 +458,11 @@ const ForensicAuditPage = () => {
             <CollapsibleSection title="Layer 3 — Cognitive Synthesis" icon={Brain} color="#7C3AED" status={syn.status}>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Hallucinations</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Hallucinations</span>
                   <span className="text-lg font-bold" style={{ color: (syn.hallucinations?.length || 0) > 0 ? '#EF4444' : '#10B981', fontFamily: fontFamily.mono }}>{syn.hallucinations?.length || 0}</span>
                 </div>
                 <div className="p-3 rounded" style={{ background: 'var(--biqc-bg)' }}>
-                  <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>Lost Signals</span>
+                  <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>Lost Signals</span>
                   <span className="text-lg font-bold" style={{ color: (syn.lost_signals?.length || 0) > 0 ? '#F59E0B' : '#10B981', fontFamily: fontFamily.mono }}>{syn.lost_signals?.length || 0}</span>
                 </div>
               </div>
@@ -472,9 +472,9 @@ const ForensicAuditPage = () => {
                   <div className="space-y-1">
                     {syn.hallucinations.map((h, i) => (
                       <div key={i} className="p-2 rounded text-xs" style={{ background: '#EF444408', border: '1px solid #EF444415' }}>
-                        <span className="text-[#EDF1F7] font-semibold">{h.claim}</span>
-                        <span className="text-[#64748B] ml-2">({h.type})</span>
-                        <p className="text-[10px] text-[#64748B] mt-0.5">{h.evidence}</p>
+                        <span className="text-[var(--ink-display)] font-semibold">{h.claim}</span>
+                        <span className="text-[var(--ink-muted)] ml-2">({h.type})</span>
+                        <p className="text-[10px] text-[var(--ink-muted)] mt-0.5">{h.evidence}</p>
                       </div>
                     ))}
                   </div>
@@ -486,8 +486,8 @@ const ForensicAuditPage = () => {
                   <div className="space-y-1">
                     {syn.lost_signals.map((s, i) => (
                       <div key={i} className="p-2 rounded text-xs" style={{ background: '#F59E0B08', border: '1px solid #F59E0B15' }}>
-                        <span className="text-[#EDF1F7] font-semibold">{s.type}: {s.value}</span>
-                        <p className="text-[10px] text-[#64748B] mt-0.5">{s.evidence}</p>
+                        <span className="text-[var(--ink-display)] font-semibold">{s.type}: {s.value}</span>
+                        <p className="text-[10px] text-[var(--ink-muted)] mt-0.5">{s.evidence}</p>
                       </div>
                     ))}
                   </div>
@@ -499,8 +499,8 @@ const ForensicAuditPage = () => {
                   <div className="space-y-1">
                     {syn.prompt_inference_flags.map((f, i) => (
                       <div key={i} className="p-2 rounded text-xs" style={{ background: '#F59E0B08', border: '1px solid #F59E0B15' }}>
-                        <span className="text-[#EDF1F7]">"{f.phrase}"</span>
-                        <span className="text-[#64748B] ml-2">— {f.evidence}</span>
+                        <span className="text-[var(--ink-display)]">"{f.phrase}"</span>
+                        <span className="text-[var(--ink-muted)] ml-2">— {f.evidence}</span>
                       </div>
                     ))}
                   </div>
@@ -513,7 +513,7 @@ const ForensicAuditPage = () => {
 
             {/* Metadata */}
             <CollapsibleSection title="Metadata & Freshness" icon={Clock} color="#F59E0B" status={meta.failure_codes?.length > 0 ? 'warning' : 'pass'}>
-              <div className="space-y-2 text-xs text-[#8FA0B8]">
+              <div className="space-y-2 text-xs text-[var(--ink-secondary)]">
                 <div className="flex justify-between"><span>Copyright Year</span><span style={{ color: meta.copyright_year && meta.copyright_year < 2025 ? '#F59E0B' : '#10B981', fontFamily: fontFamily.mono }}>{meta.copyright_year || 'Not found'}</span></div>
                 <div className="flex justify-between"><span>Latest Blog Date</span><span style={{ fontFamily: fontFamily.mono }}>{meta.latest_blog_date || 'Not found'}</span></div>
                 <div className="flex justify-between"><span>Freshness</span><span style={{ color: meta.freshness_status === 'current' ? '#10B981' : meta.freshness_status === 'stale' ? '#EF4444' : '#F59E0B', fontFamily: fontFamily.mono }}>{meta.freshness_status}</span></div>
@@ -526,7 +526,7 @@ const ForensicAuditPage = () => {
             {/* Remediation */}
             {verdict.remediation?.length > 0 && (
               <Panel>
-                <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Remediation Recommendations</h3>
+                <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-3" style={{ fontFamily: fontFamily.display }}>Remediation Recommendations</h3>
                 <div className="space-y-2">
                   {verdict.remediation.map((r, i) => {
                     const prColor = r.priority === 'high' ? '#EF4444' : r.priority === 'medium' ? '#F59E0B' : '#10B981';
@@ -534,8 +534,8 @@ const ForensicAuditPage = () => {
                       <div key={i} className="flex items-start gap-3 p-3 rounded" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                         <span className="text-[10px] px-2 py-0.5 rounded shrink-0 mt-0.5" style={{ color: prColor, background: prColor + '15', fontFamily: fontFamily.mono }}>{r.priority}</span>
                         <div>
-                          <span className="text-xs font-semibold text-[#8FA0B8] capitalize">{r.layer}</span>
-                          <p className="text-xs text-[#64748B] mt-0.5">{r.action}</p>
+                          <span className="text-xs font-semibold text-[var(--ink-secondary)] capitalize">{r.layer}</span>
+                          <p className="text-xs text-[var(--ink-muted)] mt-0.5">{r.action}</p>
                         </div>
                       </div>
                     );
@@ -550,7 +550,7 @@ const ForensicAuditPage = () => {
         {/* Audit History */}
         {history.length > 0 && !result && (
           <Panel>
-            <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Past Audits</h3>
+            <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-3" style={{ fontFamily: fontFamily.display }}>Past Audits</h3>
             <div className="space-y-2">
               {history.map(a => {
                 const qScore = a.quality_score;
@@ -560,15 +560,15 @@ const ForensicAuditPage = () => {
                     onClick={() => { setUrl(a.target_url); }}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: verdictColor }} />
                     <div className="flex-1 min-w-0">
-                      <span className="text-xs text-[#EDF1F7] block truncate">{a.target_url}</span>
-                      <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                      <span className="text-xs text-[var(--ink-display)] block truncate">{a.target_url}</span>
+                      <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                         {qScore != null
                           ? `Score: ${qScore}/100 | ${a.confidence_level || '—'} | Pages: ${a.pages_crawled || '—'}`
                           : `${a.primary_failure_layer === 'none' ? 'All pass' : `Failure: ${a.primary_failure_layer}`} | Noise: ${a.noise_ratio}`
                         }
                       </span>
                     </div>
-                    <span className="text-[10px] text-[#64748B] shrink-0" style={{ fontFamily: fontFamily.mono }}>
+                    <span className="text-[10px] text-[var(--ink-muted)] shrink-0" style={{ fontFamily: fontFamily.mono }}>
                       {new Date(a.created_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' })}
                     </span>
                   </div>

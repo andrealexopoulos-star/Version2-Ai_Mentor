@@ -54,29 +54,29 @@ const UpdatePassword = () => {
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#E85D00' }}>
             <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily.mono }}>B</span>
           </div>
-          <span className="text-xl font-semibold text-[#EDF1F7]" style={{ fontFamily: DISPLAY }}>BIQc</span>
+          <span className="text-xl font-semibold text-[var(--ink-display)]" style={{ fontFamily: DISPLAY }}>BIQc</span>
         </div>
 
         {done ? (
           <div className="text-center" data-testid="password-updated">
             <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-4" />
-            <h1 className="text-2xl font-normal text-[#EDF1F7] mb-2" style={{ fontFamily: DISPLAY }}>Password updated</h1>
-            <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Redirecting to your dashboard...</p>
+            <h1 className="text-2xl font-normal text-[var(--ink-display)] mb-2" style={{ fontFamily: DISPLAY }}>Password updated</h1>
+            <p className="text-sm text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>Redirecting to your dashboard...</p>
           </div>
         ) : !sessionReady ? (
           <div className="text-center" data-testid="password-loading">
             <KeyRound className="w-8 h-8 text-[#E85D00] mx-auto mb-4" />
-            <h1 className="text-xl font-normal text-[#EDF1F7] mb-2" style={{ fontFamily: DISPLAY }}>Verifying reset link...</h1>
-            <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.body }}>If this takes too long, the link may have expired.</p>
+            <h1 className="text-xl font-normal text-[var(--ink-display)] mb-2" style={{ fontFamily: DISPLAY }}>Verifying reset link...</h1>
+            <p className="text-sm text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.body }}>If this takes too long, the link may have expired.</p>
           </div>
         ) : (
           <>
-            <h1 className="text-2xl font-normal text-[#EDF1F7] mb-2" style={{ fontFamily: DISPLAY }}>Set new password</h1>
-            <p className="text-sm text-[#8FA0B8] mb-8" style={{ fontFamily: fontFamily.body }}>Choose a strong password for your account.</p>
+            <h1 className="text-2xl font-normal text-[var(--ink-display)] mb-2" style={{ fontFamily: DISPLAY }}>Set new password</h1>
+            <p className="text-sm text-[var(--ink-secondary)] mb-8" style={{ fontFamily: fontFamily.body }}>Choose a strong password for your account.</p>
 
             <form onSubmit={handleUpdate} className="space-y-5" data-testid="update-password-form">
               <div>
-                <label className="text-xs font-medium text-[#8FA0B8] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>New Password</label>
+                <label className="text-xs font-medium text-[var(--ink-secondary)] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>New Password</label>
                 <div className="relative">
                   <Input type={showPwd ? 'text' : 'password'} value={password}
                     onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" required minLength={8}
@@ -84,13 +84,13 @@ const UpdatePassword = () => {
                     style={{ fontFamily: fontFamily.body, background: 'var(--biqc-bg-input)', border: '1px solid var(--biqc-border)', color: 'var(--biqc-text)' }}
                     data-testid="new-password-input" />
                   <button type="button" onClick={() => setShowPwd(!showPwd)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B]">
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]">
                     {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-[#8FA0B8] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Confirm Password</label>
+                <label className="text-xs font-medium text-[var(--ink-secondary)] block mb-1.5 uppercase tracking-wider" style={{ fontFamily: fontFamily.body }}>Confirm Password</label>
                 <Input type="password" value={confirm}
                   onChange={(e) => setConfirm(e.target.value)} placeholder="Confirm password" required
                   className="h-12 text-sm rounded-xl"

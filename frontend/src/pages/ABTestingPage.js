@@ -16,7 +16,7 @@ const Panel = ({ children, className = '' }) => (
 
 const StatusBadge = ({ status }) => {
   const colors = {
-    draft: { bg: '#64748B15', text: '#64748B', label: 'Draft' },
+    draft: { bg: '#64748B15', text: 'var(--ink-muted)', label: 'Draft' },
     active: { bg: '#10B98115', text: '#10B981', label: 'Active' },
     paused: { bg: '#F59E0B15', text: '#F59E0B', label: 'Paused' },
     completed: { bg: '#3B82F615', text: '#3B82F6', label: 'Completed' },
@@ -87,8 +87,8 @@ const ABTestingPage = () => {
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="ab-testing-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>A/B Testing</h1>
-            <p className="text-sm text-[#8FA0B8]">Create and manage experiments to optimise your intelligence outputs.</p>
+            <h1 className="text-2xl font-semibold text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>A/B Testing</h1>
+            <p className="text-sm text-[var(--ink-secondary)]">Create and manage experiments to optimise your intelligence outputs.</p>
           </div>
           <Button
             onClick={() => setShowCreate(!showCreate)}
@@ -102,10 +102,10 @@ const ABTestingPage = () => {
         {/* Create Form */}
         {showCreate && (
           <Panel>
-            <h3 className="text-sm font-semibold text-[#EDF1F7] mb-4" style={{ fontFamily: fontFamily.display }}>New Experiment</h3>
+            <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-4" style={{ fontFamily: fontFamily.display }}>New Experiment</h3>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Name *</label>
+                <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Name *</label>
                 <input
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -116,7 +116,7 @@ const ABTestingPage = () => {
                 />
               </div>
               <div>
-                <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Description</label>
+                <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Description</label>
                 <textarea
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
@@ -128,7 +128,7 @@ const ABTestingPage = () => {
                 />
               </div>
               <div>
-                <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Primary Metric</label>
+                <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Primary Metric</label>
                 <select
                   value={form.metric}
                   onChange={e => setForm(f => ({ ...f, metric: e.target.value }))}
@@ -149,7 +149,7 @@ const ABTestingPage = () => {
                   Create Experiment
                 </Button>
                 <Button onClick={() => setShowCreate(false)} variant="outline"
-                  className="border-[rgba(140,170,210,0.15)] text-[#8FA0B8]">
+                  className="border-[rgba(140,170,210,0.15)] text-[var(--ink-secondary)]">
                   Cancel
                 </Button>
               </div>
@@ -161,15 +161,15 @@ const ABTestingPage = () => {
         {loading && (
           <Panel className="text-center py-12">
             <Loader2 className="w-6 h-6 text-[#E85D00] mx-auto mb-3 animate-spin" />
-            <p className="text-sm text-[#8FA0B8]">Loading experiments...</p>
+            <p className="text-sm text-[var(--ink-secondary)]">Loading experiments...</p>
           </Panel>
         )}
 
         {!loading && experiments.length === 0 && (
           <Panel className="text-center py-12">
-            <FlaskConical className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-            <p className="text-sm text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>No experiments yet</p>
-            <p className="text-xs text-[#64748B] mb-4">Create your first A/B test to start optimising intelligence outputs.</p>
+            <FlaskConical className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-3" />
+            <p className="text-sm text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>No experiments yet</p>
+            <p className="text-xs text-[var(--ink-muted)] mb-4">Create your first A/B test to start optimising intelligence outputs.</p>
           </Panel>
         )}
 
@@ -184,10 +184,10 @@ const ABTestingPage = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="text-sm font-semibold text-[#EDF1F7] truncate">{exp.name}</h3>
+                      <h3 className="text-sm font-semibold text-[var(--ink-display)] truncate">{exp.name}</h3>
                       <StatusBadge status={exp.status} />
                     </div>
-                    <p className="text-xs text-[#64748B] truncate">{exp.description || 'No description'}</p>
+                    <p className="text-xs text-[var(--ink-muted)] truncate">{exp.description || 'No description'}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {exp.status === 'draft' && (
@@ -204,7 +204,7 @@ const ABTestingPage = () => {
                         <Pause className="w-4 h-4 text-[#F59E0B]" />
                       </button>
                     )}
-                    <ChevronRight className={`w-4 h-4 text-[#64748B] transition-transform ${selected === exp.id ? 'rotate-90' : ''}`} />
+                    <ChevronRight className={`w-4 h-4 text-[var(--ink-muted)] transition-transform ${selected === exp.id ? 'rotate-90' : ''}`} />
                   </div>
                 </div>
 
@@ -213,22 +213,22 @@ const ABTestingPage = () => {
                   <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--biqc-border)' }}>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Metric</span>
-                        <span className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{(exp.metric || 'conversion_rate').replace(/_/g, ' ')}</span>
+                        <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Metric</span>
+                        <span className="text-sm text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{(exp.metric || 'conversion_rate').replace(/_/g, ' ')}</span>
                       </div>
                       <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Variants</span>
-                        <span className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{exp.variants?.length || 2}</span>
+                        <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Variants</span>
+                        <span className="text-sm text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{exp.variants?.length || 2}</span>
                       </div>
                       <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Created</span>
-                        <span className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>
+                        <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Created</span>
+                        <span className="text-sm text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>
                           {exp.created_at ? new Date(exp.created_at).toLocaleDateString() : '—'}
                         </span>
                       </div>
                       <div className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                        <span className="text-[10px] text-[#64748B] block mb-1" style={{ fontFamily: fontFamily.mono }}>Impressions</span>
-                        <span className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{exp.total_impressions || 0}</span>
+                        <span className="text-[10px] text-[var(--ink-muted)] block mb-1" style={{ fontFamily: fontFamily.mono }}>Impressions</span>
+                        <span className="text-sm text-[var(--ink-display)]" style={{ fontFamily: fontFamily.mono }}>{exp.total_impressions || 0}</span>
                       </div>
                     </div>
                   </div>

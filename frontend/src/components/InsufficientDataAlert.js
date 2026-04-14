@@ -31,10 +31,10 @@ const InsufficientDataAlert = ({ missingItems = [] }) => {
       <div onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-white/[0.02] transition-colors cursor-pointer">
         <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0" />
         <div className="flex-1">
-          <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
+          <span className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>
             {alerts.length} data source{alerts.length > 1 ? 's' : ''} needed for full intelligence
           </span>
-          <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: fontFamily.mono }}>
+          <span className="text-[10px] text-[var(--ink-muted)] block" style={{ fontFamily: fontFamily.mono }}>
             Click to see what's needed and how to fix it
           </span>
         </div>
@@ -42,7 +42,7 @@ const InsufficientDataAlert = ({ missingItems = [] }) => {
           {alerts.length} action{alerts.length > 1 ? 's' : ''}
         </span>
         <button onClick={(e) => { e.stopPropagation(); setDismissed(true); }} className="p-1 rounded-lg hover:bg-white/5 shrink-0" data-testid="dismiss-data-alert">
-          <X className="w-3.5 h-3.5 text-[#64748B]" />
+          <X className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
         </button>
       </div>
 
@@ -57,8 +57,8 @@ const InsufficientDataAlert = ({ missingItems = [] }) => {
                 <BookOpen className="w-4 h-4 text-[#F59E0B]" />
               </div>
               <div className="flex-1">
-                <span className="text-sm text-[#EDF1F7] block">{a.label}</span>
-                <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{a.detail}</span>
+                <span className="text-sm text-[var(--ink-display)] block">{a.label}</span>
+                <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{a.detail}</span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <span className="text-[10px] text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>How to fix</span>

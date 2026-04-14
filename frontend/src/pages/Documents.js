@@ -186,20 +186,20 @@ const Documents = () => {
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)]" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search documents..."
-                className="pl-10 bg-[#0E1628]"
+                className="pl-10 bg-[var(--surface)]"
                 data-testid="search-documents-input"
               />
             </div>
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-48 bg-[#0E1628]" data-testid="filter-type-select">
+              <SelectTrigger className="w-48 bg-[var(--surface)]" data-testid="filter-type-select">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#0E1628]">
+              <SelectContent className="bg-[var(--surface)]">
                 {documentTypes.map((type) => (
                   <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                 ))}
@@ -269,13 +269,13 @@ const Documents = () => {
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </button>
                     </div>
-                    <h3 className="font-serif text-lg text-[#EDF1F7] mb-2 line-clamp-2">
+                    <h3 className="font-serif text-lg text-[var(--ink-display)] mb-2 line-clamp-2">
                       {doc.title}
                     </h3>
-                    <p className="text-sm text-[#8FA0B8] line-clamp-3 mb-4">
+                    <p className="text-sm text-[var(--ink-secondary)] line-clamp-3 mb-4">
                       {doc.content.substring(0, 150)}...
                     </p>
-                    <div className="flex items-center justify-between text-xs text-[#64748B]">
+                    <div className="flex items-center justify-between text-xs text-[var(--ink-muted)]">
                       <div className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {new Date(doc.created_at).toLocaleDateString()}
@@ -294,9 +294,9 @@ const Documents = () => {
           ) : (
             <Card className="rounded-lg">
               <CardContent className="p-12 text-center">
-                <FolderOpen className="w-16 h-16 text-[#EDF1F7]/20 mx-auto mb-4" />
-                <h3 className="text-xl font-serif text-[#EDF1F7] mb-2">No documents yet</h3>
-                <p className="text-[#8FA0B8] mb-6">
+                <FolderOpen className="w-16 h-16 text-[var(--ink-display)]/20 mx-auto mb-4" />
+                <h3 className="text-xl font-serif text-[var(--ink-display)] mb-2">No documents yet</h3>
+                <p className="text-[var(--ink-secondary)] mb-6">
                   {searchQuery || filterType !== 'all' 
                     ? 'No documents match your search criteria'
                     : 'Start creating SOPs, analyses, and action plans'
@@ -399,7 +399,7 @@ const Documents = () => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent className="bg-[#0E1628]">
+        <AlertDialogContent className="bg-[var(--surface)]">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Document</AlertDialogTitle>
             <AlertDialogDescription>

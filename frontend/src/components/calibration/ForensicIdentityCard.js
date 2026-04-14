@@ -116,10 +116,10 @@ const SignalBlock = ({ icon: Icon, label, value, sub, warning, hint }) => (
   <div className="rounded-lg p-4" style={{ background: 'var(--biqc-bg-card)', border: `1px solid ${warning ? '#F59E0B20' : 'rgba(140,170,210,0.15)'}` }}>
     <div className="flex items-center gap-2 mb-1.5">
       <Icon className="w-3.5 h-3.5 text-[#3B82F6]" />
-      <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{label}</span>
+      <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{label}</span>
     </div>
-    <span className={`text-sm block ${warning ? 'text-[#64748B]' : 'text-[#EDF1F7]'}`}>{value}</span>
-    {sub && <span className="text-xs text-[#64748B] block mt-0.5">{sub}</span>}
+    <span className={`text-sm block ${warning ? 'text-[var(--ink-muted)]' : 'text-[var(--ink-display)]'}`}>{value}</span>
+    {sub && <span className="text-xs text-[var(--ink-muted)] block mt-0.5">{sub}</span>}
     {hint && <span className="text-[11px] text-[#F59E0B] block mt-1" style={{ fontFamily: fontFamily.mono }}>{hint}</span>}
   </div>
 );
@@ -174,8 +174,8 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
       <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="identity-edit-mode">
         <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-6">
           <div className="text-center mb-4">
-            <h1 className="text-2xl font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Edit Business Details</h1>
-            <p className="text-sm text-[#8FA0B8] mt-1">Correct any details below, then regenerate the scan.</p>
+            <h1 className="text-2xl font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Edit Business Details</h1>
+            <p className="text-sm text-[var(--ink-secondary)] mt-1">Correct any details below, then regenerate the scan.</p>
           </div>
           {[
             { key: 'businessName', label: 'Business Legal / Trading Name', val: editFields.businessName ?? signals.businessName },
@@ -183,9 +183,9 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             { key: 'abn', label: 'ABN (optional)', val: editFields.abn ?? signals.abn },
           ].map(f => (
             <div key={f.key}>
-              <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.label}</label>
+              <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{f.label}</label>
               <input type="text" value={f.val || ''} onChange={e => setEditFields(p => ({ ...p, [f.key]: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg text-sm text-[#EDF1F7] outline-none focus:ring-1 focus:ring-[#E85D00]"
+                className="w-full px-3 py-2.5 rounded-lg text-sm text-[var(--ink-display)] outline-none focus:ring-1 focus:ring-[#E85D00]"
                 style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid={`edit-${f.key}`} />
             </div>
           ))}
@@ -210,7 +210,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
         <div className="max-w-xl mx-auto px-4 sm:px-8 py-8 space-y-6">
           <div className="text-center mb-4">
             <h1 className="text-2xl font-semibold text-[#EF4444]" style={{ fontFamily: fontFamily.display }}>Not Your Business</h1>
-            <p className="text-sm text-[#8FA0B8] mt-1">Please provide at least one identifier so we can find the correct business.</p>
+            <p className="text-sm text-[var(--ink-secondary)] mt-1">Please provide at least one identifier so we can find the correct business.</p>
           </div>
           {[
             { key: 'legalName', label: 'Legal Business Name', ph: 'Your registered business name' },
@@ -218,9 +218,9 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             { key: 'abn', label: 'ABN (optional)', ph: '12 345 678 901' },
           ].map(f => (
             <div key={f.key}>
-              <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{f.label}</label>
+              <label className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>{f.label}</label>
               <input type="text" value={rejectFields[f.key]} onChange={e => setRejectFields(p => ({ ...p, [f.key]: e.target.value }))}
-                placeholder={f.ph} className="w-full px-3 py-2.5 rounded-lg text-sm text-[#EDF1F7] placeholder:text-[#64748B] outline-none focus:ring-1 focus:ring-[#E85D00]"
+                placeholder={f.ph} className="w-full px-3 py-2.5 rounded-lg text-sm text-[var(--ink-display)] placeholder:text-[var(--ink-muted)] outline-none focus:ring-1 focus:ring-[#E85D00]"
                 style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }} data-testid={`reject-${f.key}`} />
             </div>
           ))}
@@ -248,10 +248,10 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
           <span className="text-[10px] font-semibold tracking-widest uppercase block mb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
             Identity Verification
           </span>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>
             Is this your business?
           </h1>
-          <p className="text-sm text-[#8FA0B8]">
+          <p className="text-sm text-[var(--ink-secondary)]">
             Verify the details extracted from your domain before BIQc generates your footprint report.
           </p>
         </div>
@@ -273,15 +273,15 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
           <div className="rounded-lg p-4" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <div className="flex items-center gap-2 mb-2">
               <Mail className="w-3.5 h-3.5 text-[#3B82F6]" />
-              <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Contact Signals</span>
+              <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Contact Signals</span>
             </div>
             <div className="space-y-1">
               {signals.emails?.length > 0 ? signals.emails.map((e, i) => (
-                <span key={i} className="text-sm text-[#8FA0B8] block">{e}</span>
-              )) : <span className="text-sm text-[#64748B]">No email found</span>}
+                <span key={i} className="text-sm text-[var(--ink-secondary)] block">{e}</span>
+              )) : <span className="text-sm text-[var(--ink-muted)]">No email found</span>}
               {signals.phones?.length > 0 && signals.phones.map((p, i) => (
-                <span key={i} className="text-sm text-[#8FA0B8] block flex items-center gap-1.5">
-                  <Phone className="w-3 h-3 text-[#64748B]" />{p}
+                <span key={i} className="text-sm text-[var(--ink-secondary)] block flex items-center gap-1.5">
+                  <Phone className="w-3 h-3 text-[var(--ink-muted)]" />{p}
                 </span>
               ))}
             </div>
@@ -290,7 +290,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
           <div className="rounded-lg p-4" style={{ background: confColor + '08', border: `1px solid ${confColor}25` }}>
             <div className="flex items-center gap-2 mb-3">
               <Shield className="w-3.5 h-3.5" style={{ color: confColor }} />
-              <span className="text-[10px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Identity Confidence</span>
+              <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Identity Confidence</span>
               <span className="text-xs px-2 py-0.5 rounded-full ml-auto" style={{ color: confColor, background: confColor + '15', fontFamily: fontFamily.mono }}>
                 {confidence.level}
               </span>
@@ -298,7 +298,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             <div className="flex flex-wrap gap-1.5">
               {confidence.reasons.map((r, i) => (
                 <span key={i} className="text-[11px] px-2 py-0.5 rounded-full" style={{
-                  color: r.positive ? '#10B981' : '#64748B',
+                  color: r.positive ? '#10B981' : 'var(--ink-muted)',
                   background: r.positive ? '#10B98110' : 'rgba(140,170,210,0.15)50',
                   fontFamily: fontFamily.mono,
                 }}>
@@ -323,7 +323,7 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-[#3B82F6] font-semibold mb-1" style={{ fontFamily: fontFamily.mono }}>ABN Registry Lookup</p>
-                <p className="text-[11px] text-[#64748B]">Search the Australian Business Register to verify identity</p>
+                <p className="text-[11px] text-[var(--ink-muted)]">Search the Australian Business Register to verify identity</p>
               </div>
               <button onClick={handleAbnLookupClick} disabled={lookingUp}
                 className="text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 flex items-center gap-1.5"
@@ -338,24 +338,24 @@ const ForensicIdentityCard = ({ identitySignals, websiteUrl, onConfirm, onRegene
                 {lookupResult.status === 'found' && (
                   <div className="space-y-1">
                     <p className="text-xs text-[#10B981]" style={{ fontFamily: fontFamily.mono }}>Match found in Australian Business Register</p>
-                    {lookupResult.legal_name && <p className="text-sm text-[#EDF1F7]">Legal name: {lookupResult.legal_name}</p>}
-                    {lookupResult.abn && <p className="text-sm text-[#8FA0B8]">ABN: {lookupResult.abn}</p>}
-                    {lookupResult.address && <p className="text-sm text-[#8FA0B8]">Location: {lookupResult.address}</p>}
+                    {lookupResult.legal_name && <p className="text-sm text-[var(--ink-display)]">Legal name: {lookupResult.legal_name}</p>}
+                    {lookupResult.abn && <p className="text-sm text-[var(--ink-secondary)]">ABN: {lookupResult.abn}</p>}
+                    {lookupResult.address && <p className="text-sm text-[var(--ink-secondary)]">Location: {lookupResult.address}</p>}
                   </div>
                 )}
                 {lookupResult.status === 'ambiguous' && lookupResult.suggestions?.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-xs text-[#F59E0B]" style={{ fontFamily: fontFamily.mono }}>Multiple matches — review below</p>
                     {lookupResult.suggestions.slice(0, 3).map((s, i) => (
-                      <p key={i} className="text-[11px] text-[#8FA0B8]">{s.name} (ABN: {s.abn}) — {s.state}</p>
+                      <p key={i} className="text-[11px] text-[var(--ink-secondary)]">{s.name} (ABN: {s.abn}) — {s.state}</p>
                     ))}
                   </div>
                 )}
                 {lookupResult.status === 'not_found' && (
-                  <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{lookupResult.match_reason || 'No match found'}</p>
+                  <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{lookupResult.match_reason || 'No match found'}</p>
                 )}
                 {lookupResult.status === 'unavailable' && (
-                  <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{lookupResult.message}</p>
+                  <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{lookupResult.message}</p>
                 )}
               </div>
             )}

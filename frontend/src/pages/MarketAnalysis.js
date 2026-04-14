@@ -69,7 +69,7 @@ const MarketAnalysis = () => {
           {/* Header */}
           <div className="mb-8">
             <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Market Analysis</h1>
-            <p className="text-[#8FA0B8] mt-2">
+            <p className="text-[var(--ink-secondary)] mt-2">
               Understand your market, competitors, and growth opportunities
             </p>
           </div>
@@ -95,26 +95,26 @@ const MarketAnalysis = () => {
               <CardContent className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-[#EDF1F7]">Analysis Title</Label>
+                    <Label className="text-[var(--ink-display)]">Analysis Title</Label>
                     <Input
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder="e.g., E-commerce Market Analysis 2024"
-                      className="bg-[#0E1628]"
+                      className="bg-[var(--surface)]"
                       data-testid="market-title-input"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[#EDF1F7]">Business & Market Context</Label>
+                    <Label className="text-[var(--ink-display)]">Business & Market Context</Label>
                     <Textarea
                       value={formData.business_context}
                       onChange={(e) => setFormData({ ...formData, business_context: e.target.value })}
                       placeholder="Describe your business, industry, target market, main competitors, and what specific market insights you need..."
-                      className="min-h-[250px] bg-[#0E1628]"
+                      className="min-h-[250px] bg-[var(--surface)]"
                       data-testid="market-context-input"
                     />
-                    <p className="text-xs text-[#8FA0B8]">
+                    <p className="text-xs text-[var(--ink-secondary)]">
                       Include: your industry, products/services, geographic focus, known competitors, and specific questions.
                     </p>
                   </div>
@@ -141,8 +141,8 @@ const MarketAnalysis = () => {
 
                 {/* Quick Tips */}
                 <div className="mt-6 p-4 bg-[#0F1720] rounded-sm">
-                  <h4 className="font-medium text-[#EDF1F7] mb-2 text-sm">Tips for Better Analysis</h4>
-                  <ul className="text-xs text-[#8FA0B8] space-y-1">
+                  <h4 className="font-medium text-[var(--ink-display)] mb-2 text-sm">Tips for Better Analysis</h4>
+                  <ul className="text-xs text-[var(--ink-secondary)] space-y-1">
                     <li>• Be specific about your target market segment</li>
                     <li>• Name your main competitors if known</li>
                     <li>• Include your current market position</li>
@@ -158,8 +158,8 @@ const MarketAnalysis = () => {
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
                     <CognitiveMesh compact />
-                    <p className="text-[#EDF1F7] font-medium">Analyzing market data...</p>
-                    <p className="text-sm text-[#8FA0B8] mt-1">This may take a moment</p>
+                    <p className="text-[var(--ink-display)] font-medium">Analyzing market data...</p>
+                    <p className="text-sm text-[var(--ink-secondary)] mt-1">This may take a moment</p>
                   </CardContent>
                 </Card>
               )}
@@ -177,7 +177,7 @@ const MarketAnalysis = () => {
                           variant="outline" 
                           size="sm"
                           onClick={saveAsDocument}
-                          className="border-[rgba(140,170,210,0.12)] text-[#EDF1F7]"
+                          className="border-[rgba(140,170,210,0.12)] text-[var(--ink-display)]"
                           data-testid="save-market-analysis-btn"
                         >
                           <Save className="w-4 h-4 mr-2" />
@@ -191,7 +191,7 @@ const MarketAnalysis = () => {
                   </Card>
 
                   {result.recommendations?.length > 0 && (
-                    <Card className="rounded-lg bg-[#0E1628] text-white">
+                    <Card className="rounded-lg bg-[var(--surface)] text-white">
                       <CardContent className="p-6">
                         <h4 className="text-lg font-serif text-[#ccff00] mb-4 flex items-center gap-2">
                           <TrendingUp className="w-5 h-5" />
@@ -200,7 +200,7 @@ const MarketAnalysis = () => {
                         <ul className="space-y-3">
                           {result.recommendations.slice(0, 5).map((rec, i) => (
                             <li key={i} className="flex items-start gap-3">
-                              <span className="w-6 h-6 bg-[#ccff00] text-[#EDF1F7] rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
+                              <span className="w-6 h-6 bg-[#ccff00] text-[var(--ink-display)] rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
                                 {i + 1}
                               </span>
                               <span className="text-white/90">{rec}</span>
@@ -216,8 +216,8 @@ const MarketAnalysis = () => {
               {!loading && !result && (
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
-                    <Target className="w-12 h-12 text-[#EDF1F7]/20 mx-auto mb-4" />
-                    <p className="text-[#8FA0B8]">
+                    <Target className="w-12 h-12 text-[var(--ink-display)]/20 mx-auto mb-4" />
+                    <p className="text-[var(--ink-secondary)]">
                       Describe your market and business to get comprehensive analysis
                     </p>
                   </CardContent>

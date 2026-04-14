@@ -35,7 +35,7 @@ const Panel = ({ title, children, empty }) => (
 const StatusCard = ({ label, value, valueColor, sub }) => (
   <div className="rounded-xl p-4" style={{ background: 'var(--biqc-bg-card, rgba(255,255,255,0.02))', border: '1px solid var(--biqc-border, rgba(255,255,255,0.06))' }}>
     <div className="text-[10px] uppercase tracking-[0.1em] font-semibold mb-1" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>{label}</div>
-    <div className="text-[28px] font-bold leading-none" style={{ color: valueColor || '#EDF1F7', fontFamily: fontFamily.mono }}>{value}</div>
+    <div className="text-[28px] font-bold leading-none" style={{ color: valueColor || 'var(--ink-display)', fontFamily: fontFamily.mono }}>{value}</div>
     {sub && <div className="text-xs mt-1" style={{ color: 'var(--ink-muted, #708499)' }}>{sub}</div>}
   </div>
 );

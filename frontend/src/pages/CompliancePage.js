@@ -104,7 +104,7 @@ const ScoreRing = ({ score, color, label, sub, trend }) => {
           transform="rotate(-90 60 60)"
           style={{ transition: 'stroke-dasharray 0.8s ease' }}
         />
-        <text x="60" y="56" textAnchor="middle" fill="#EDF1F7" fontSize="28" fontWeight="700">{score}</text>
+        <text x="60" y="56" textAnchor="middle" fill="var(--ink-display, #EDF1F7)" fontSize="28" fontWeight="700">{score}</text>
         <text x="60" y="74" textAnchor="middle" fill="var(--ink-muted, #708499)" fontSize="11">%</text>
       </svg>
       <p className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>{label}</p>
@@ -396,11 +396,11 @@ const CompliancePage = () => {
             <SurfaceCard testId="compliance-abn-card">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>ABN status</p>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>ABN status</p>
                   <p className="mt-2 text-lg" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="compliance-abn-title">
                     {abnValue ? 'ABN captured for this business' : 'ABN still needs confirmation'}
                   </p>
-                  <p className="mt-2 text-sm text-[#94A3B8]" data-testid="compliance-abn-detail">
+                  <p className="mt-2 text-sm text-[var(--ink-secondary)]" data-testid="compliance-abn-detail">
                     {abnValue ? `Stored ABN: ${abnValue}` : 'Once the business identity scan is confirmed, the ABN can be stored here and reused in the verified business profile.'}
                   </p>
                 </div>
@@ -409,7 +409,7 @@ const CompliancePage = () => {
             </SurfaceCard>
 
             <SurfaceCard testId="compliance-spof-card">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Dependencies</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>Dependencies</p>
               {spofs.length > 0 ? (
                 <div className="mt-3 space-y-2" data-testid="compliance-spof-list">
                   {spofs.slice(0, 4).map((item, index) => (
@@ -419,12 +419,12 @@ const CompliancePage = () => {
                   ))}
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-[#94A3B8]" data-testid="compliance-spof-empty">No single point of failure is currently surfaced in the live risk feed.</p>
+                <p className="mt-3 text-sm text-[var(--ink-secondary)]" data-testid="compliance-spof-empty">No single point of failure is currently surfaced in the live risk feed.</p>
               )}
             </SurfaceCard>
 
             <SurfaceCard testId="compliance-alignment-card">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>Strategic alignment</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>Strategic alignment</p>
               <p className="mt-3 text-sm text-[#CBD5E1]" data-testid="compliance-alignment-narrative">
                 {alignment.narrative || 'No live alignment narrative is available in this cycle.'}
               </p>

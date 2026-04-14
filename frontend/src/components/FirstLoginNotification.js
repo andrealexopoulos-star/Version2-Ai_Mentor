@@ -51,16 +51,16 @@ const FirstLoginNotification = () => {
               <Plug className="w-4 h-4 text-[#E85D00]" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Get Started</h3>
-              <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Connect your systems</p>
+              <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Get Started</h3>
+              <p className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Connect your systems</p>
             </div>
           </div>
-          <button onClick={() => setDismissed(true)} className="p-1 rounded-lg hover:bg-white/5 text-[#64748B]">
+          <button onClick={() => setDismissed(true)} className="p-1 rounded-lg hover:bg-white/5 text-[var(--ink-muted)]">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <p className="text-xs text-[#8FA0B8] mb-4 leading-relaxed" style={{ fontFamily: fontFamily.body }}>
+        <p className="text-xs text-[var(--ink-secondary)] mb-4 leading-relaxed" style={{ fontFamily: fontFamily.body }}>
           Connect your email and integrations to unlock full intelligence capabilities.
         </p>
 
@@ -71,10 +71,10 @@ const FirstLoginNotification = () => {
             data-testid="connect-email-btn">
             <Mail className="w-4 h-4 text-[#3B82F6]" />
             <div className="flex-1">
-              <span className="text-sm text-[#EDF1F7] block">Connect Email</span>
-              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Outlook or Gmail</span>
+              <span className="text-sm text-[var(--ink-display)] block">Connect Email</span>
+              <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Outlook or Gmail</span>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#64748B]" />
+            <ArrowRight className="w-4 h-4 text-[var(--ink-muted)]" />
           </button>
 
           <button onClick={() => { setDismissed(true); navigate('/integrations'); }}
@@ -83,10 +83,10 @@ const FirstLoginNotification = () => {
             data-testid="connect-integrations-btn">
             <Plug className="w-4 h-4 text-[#E85D00]" />
             <div className="flex-1">
-              <span className="text-sm text-[#EDF1F7] block">Connect Integrations</span>
-              <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Xero, HubSpot, CRM</span>
+              <span className="text-sm text-[var(--ink-display)] block">Connect Integrations</span>
+              <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>Xero, HubSpot, CRM</span>
             </div>
-            <ArrowRight className="w-4 h-4 text-[#64748B]" />
+            <ArrowRight className="w-4 h-4 text-[var(--ink-muted)]" />
           </button>
         </div>
       </div>

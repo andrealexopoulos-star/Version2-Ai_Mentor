@@ -178,22 +178,22 @@ export const KpiThresholdTab = () => {
       <CardContent className="space-y-5">
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-plan-card">
-            <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]">Plan Access</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-[var(--ink-secondary)]">Plan Access</p>
             <p className="mt-2 text-xl" data-testid="business-dna-kpi-plan-label">{config.plan_label}</p>
-            <p className="mt-1 text-sm text-[#94A3B8]" data-testid="business-dna-kpi-plan-limit">{config.visible_metric_limit} visible KPIs</p>
+            <p className="mt-1 text-sm text-[var(--ink-secondary)]" data-testid="business-dna-kpi-plan-limit">{config.visible_metric_limit} visible KPIs</p>
           </div>
           <div className="rounded-2xl border p-4" style={{ borderColor: config.selection_limit_reached ? 'rgba(232,93,0,0.32)' : 'var(--biqc-border)', background: config.selection_limit_reached ? 'rgba(232,93,0,0.08)' : 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-selected-count-card">
-            <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]">Selected Now</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-[var(--ink-secondary)]">Selected Now</p>
             <p className="mt-2 flex items-center gap-2 text-xl" data-testid="business-dna-kpi-selected-count">
               {config.selected_count}
-              <span className="text-sm text-[#94A3B8]">/ {config.visible_metric_limit}</span>
+              <span className="text-sm text-[var(--ink-secondary)]">/ {config.visible_metric_limit}</span>
             </p>
-            <p className="mt-1 text-sm text-[#94A3B8]">{availableSlots} slot{availableSlots === 1 ? '' : 's'} remaining</p>
+            <p className="mt-1 text-sm text-[var(--ink-secondary)]">{availableSlots} slot{availableSlots === 1 ? '' : 's'} remaining</p>
           </div>
           <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-threshold-count-card">
-            <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]">Thresholds Active</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-[var(--ink-secondary)]">Thresholds Active</p>
             <p className="mt-2 text-xl" data-testid="business-dna-kpi-threshold-count">{config.custom_thresholds_active}</p>
-            <p className="mt-1 text-sm text-[#94A3B8]">Live Brain policy overrides</p>
+            <p className="mt-1 text-sm text-[var(--ink-secondary)]">Live Brain policy overrides</p>
           </div>
           <div className="rounded-2xl border p-4" style={{ borderColor: 'rgba(16,185,129,0.28)', background: 'rgba(16,185,129,0.08)' }} data-testid="business-dna-kpi-live-note-card">
             <p className="flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-[#A7F3D0]"><ShieldCheck className="h-4 w-4" /> Live Update Behavior</p>
@@ -219,7 +219,7 @@ export const KpiThresholdTab = () => {
         </div>
 
         <div className="relative" data-testid="business-dna-kpi-search-wrapper">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink-secondary)]" />
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -230,7 +230,7 @@ export const KpiThresholdTab = () => {
         </div>
 
         {loading ? (
-          <div className="rounded-2xl border p-6 text-sm text-[#94A3B8]" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-loading-state">
+          <div className="rounded-2xl border p-6 text-sm text-[var(--ink-secondary)]" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-loading-state">
             Loading KPI policy...
           </div>
         ) : (
@@ -244,7 +244,7 @@ export const KpiThresholdTab = () => {
                         <p className="text-sm font-medium" data-testid={`business-dna-kpi-name-${metric.metric_key}`}>{metric.metric_name}</p>
                         {metric.selected && <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]" style={{ color: '#E85D00', background: 'rgba(232,93,0,0.12)', fontFamily: 'var(--font-mono)' }}><CheckCircle2 className="h-3 w-3" /> Active</span>}
                       </div>
-                      <p className="mt-1 text-xs text-[#94A3B8]" data-testid={`business-dna-kpi-meta-${metric.metric_key}`}>{metric.category} · {metric.primary_source}</p>
+                      <p className="mt-1 text-xs text-[var(--ink-secondary)]" data-testid={`business-dna-kpi-meta-${metric.metric_key}`}>{metric.category} · {metric.primary_source}</p>
                       <p className="mt-2 text-sm text-[#CBD5E1]" data-testid={`business-dna-kpi-description-${metric.metric_key}`}>{metric.description}</p>
                     </div>
                     <Button
@@ -260,7 +260,7 @@ export const KpiThresholdTab = () => {
               ))}
 
               {!filteredCatalog.length && (
-                <div className="rounded-2xl border p-6 text-sm text-[#94A3B8]" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-empty-state">
+                <div className="rounded-2xl border p-6 text-sm text-[var(--ink-secondary)]" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-empty-state">
                   No KPIs matched your search.
                 </div>
               )}
@@ -268,7 +268,7 @@ export const KpiThresholdTab = () => {
 
             <div className="space-y-3" data-testid="business-dna-kpi-selected-panel">
               <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]">Active KPI set</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-[var(--ink-secondary)]">Active KPI set</p>
                 <p className="mt-2 text-sm text-[#CBD5E1]">These are the KPI signals BIQc will prioritise for your free-tier intelligence policy.</p>
               </div>
 
@@ -277,7 +277,7 @@ export const KpiThresholdTab = () => {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="max-w-2xl">
                       <p className="text-sm font-medium text-[#F8FAFC]">{metric.metric_name}</p>
-                      <p className="mt-1 text-xs text-[#94A3B8]">{metric.category} · {metric.primary_source}</p>
+                      <p className="mt-1 text-xs text-[var(--ink-secondary)]">{metric.category} · {metric.primary_source}</p>
                     </div>
                     <label className="flex items-center gap-2 text-sm text-[#E2E8F0]" data-testid={`business-dna-kpi-enabled-label-${metric.metric_key}`}>
                       <input
@@ -345,7 +345,7 @@ export const KpiThresholdTab = () => {
               ))}
 
               {!selectedMetrics.length && (
-                <div className="rounded-2xl border p-6 text-sm text-[#94A3B8]" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-selected-empty-state">
+                <div className="rounded-2xl border p-6 text-sm text-[var(--ink-secondary)]" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="business-dna-kpi-selected-empty-state">
                   Select up to {config.visible_metric_limit} KPIs from the catalog to define your active BIQc free-tier policy.
                 </div>
               )}

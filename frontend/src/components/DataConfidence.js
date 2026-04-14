@@ -19,7 +19,7 @@ const DataConfidence = ({ cognitive, channelsData, loading = false }) => {
     return (
       <div className="flex flex-col items-start gap-1.5" data-testid="data-confidence">
         <div className="flex items-center gap-2">
-          <Shield className="w-3.5 h-3.5" style={{ color: '#64748B' }} />
+          <Shield className="w-3.5 h-3.5" style={{ color: 'var(--ink-muted)' }} />
           <span className="text-[11px]" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>
             Data Confidence: Verifying
           </span>
@@ -66,7 +66,7 @@ const DataConfidence = ({ cognitive, channelsData, loading = false }) => {
         <span className="text-[11px]" style={{ color, fontFamily: fontFamily.mono }}>
           Data Confidence: {level}
         </span>
-        <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+        <span className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
           ({signals}/{total} signals)
         </span>
       </div>

@@ -64,7 +64,7 @@ const VerificationBadge = ({ navigate }) => {
           <div className="h-1.5 rounded-full mb-3" style={{ background: colors.border }}>
             <div className="h-1.5 rounded-full" style={{ width: `${score}%`, background: color }} />
           </div>
-          <p className="text-[11px] text-[#8FA0B8] mb-3" style={{ fontFamily: fontFamily.body }}>
+          <p className="text-[11px] mb-3" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary)' }}>
             {score > 70 ? 'Strong data coverage. Intelligence is well-grounded.' : score > 40 ? 'Moderate coverage. Connect more systems to improve.' : 'Limited data. Most insights based on public signals.'}
           </p>
           <button onClick={() => { setShowTooltip(false); navigate('/integrations'); }}
@@ -463,7 +463,7 @@ const DashboardLayout = ({ children }) => {
             {showNotifications && (
               <div className="absolute right-0 top-12 w-96 max-h-[480px] overflow-y-auto rounded-xl shadow-xl" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', zIndex: 9999, position: 'fixed', right: 16, top: 64 }}>
                 <div className="p-3 flex items-center justify-between sticky top-0" style={{ borderBottom: '1px solid var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                  <h3 className="font-semibold text-sm text-[#EDF1F7]" style={{ fontFamily: DISPLAY }}>Alerts</h3>
+                  <h3 className="font-semibold text-sm" style={{ fontFamily: DISPLAY, color: 'var(--ink-display)' }}>Alerts</h3>
                   <div className="flex items-center gap-2">
                     {notifications.high > 0 && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: colors.dangerDim, color: colors.danger, fontFamily: fontFamily.mono }}>{notifications.high} urgent</span>}
                     <button onClick={() => { setShowNotifications(false); navigate('/alerts'); }} className="text-xs px-2 py-1 rounded-lg" style={{ color: colors.brand, background: colors.brandDim, fontFamily: fontFamily.mono }}>View all</button>
@@ -471,9 +471,9 @@ const DashboardLayout = ({ children }) => {
                 </div>
                 {notificationsList.length === 0 ? (
                   <div className="p-6 text-center">
-                    <Bell className="w-8 h-8 mx-auto mb-2 text-[#64748B]" />
-                    <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.body }}>No alerts</p>
-                    <p className="text-xs mt-1 text-[#64748B]">Connect integrations to activate real-time alerts</p>
+                    <Bell className="w-8 h-8 mx-auto mb-2 text-[var(--ink-muted)]" />
+                    <p className="text-sm text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.body }}>No alerts</p>
+                    <p className="text-xs mt-1 text-[var(--ink-muted)]">Connect integrations to activate real-time alerts</p>
                   </div>
                 ) : (
                   <div>
@@ -484,8 +484,8 @@ const DashboardLayout = ({ children }) => {
                             <AlertCircle className="w-3.5 h-3.5" style={{ color: notif.severity === 'high' ? colors.danger : colors.warning }} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-[#EDF1F7] mb-0.5" style={{ fontFamily: fontFamily.body }}>{notif.title}</p>
-                            <p className="text-[11px] text-[#64748B] line-clamp-2 mb-1" style={{ fontFamily: fontFamily.body }}>{notif.message}</p>
+                            <p className="text-xs font-semibold mb-0.5" style={{ fontFamily: fontFamily.body, color: 'var(--ink-display)' }}>{notif.title}</p>
+                            <p className="text-[11px] text-[var(--ink-muted)] line-clamp-2 mb-1" style={{ fontFamily: fontFamily.body }}>{notif.message}</p>
                             {notif.action && <p className="text-[11px] text-[#E85D00]">{notif.action}</p>}
                             {/* Action buttons inline in bell */}
                             <div className="flex gap-1.5 mt-2">
@@ -499,7 +499,7 @@ const DashboardLayout = ({ children }) => {
                               <button
                                 onClick={async (e) => { e.stopPropagation(); try { await apiClient.post(`/notifications/dismiss/${notif.id}`); fetchNotifications(); } catch {} }}
                                 className="text-[10px] px-2 py-1 rounded-md flex items-center gap-1"
-                                style={{ background: '#64748B15', color: '#64748B', border: '1px solid #64748B30', fontFamily: fontFamily.mono }}
+                                style={{ background: '#64748B15', color: 'var(--ink-muted)', border: '1px solid #64748B30', fontFamily: fontFamily.mono }}
                                 data-testid={`notif-ignore-${notif.id}`}>
                                 Ignore
                               </button>
@@ -531,22 +531,22 @@ const DashboardLayout = ({ children }) => {
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: '#E85D00', fontFamily: fontFamily.body }}>
                   {user?.full_name?.charAt(0).toUpperCase() || 'U'}
                 </div>
-                <span className="hidden sm:block text-sm font-medium text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>{user?.full_name?.split(' ')[0] || 'User'}</span>
-                <ChevronDown className="w-3.5 h-3.5 hidden sm:block text-[#64748B]" />
+                <span className="hidden sm:block text-sm font-medium" style={{ fontFamily: fontFamily.body, color: 'var(--ink-display)' }}>{user?.full_name?.split(' ')[0] || 'User'}</span>
+                <ChevronDown className="w-3.5 h-3.5 hidden sm:block text-[var(--ink-muted)]" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', borderRadius: '12px' }}>
               <div className="px-3 py-2.5">
-                <p className="font-medium text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>{user?.full_name}</p>
-                <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{user?.email}</p>
+                <p className="font-medium" style={{ fontFamily: fontFamily.body, color: 'var(--ink-display)' }}>{user?.full_name}</p>
+                <p className="text-sm text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{user?.email}</p>
               </div>
               <DropdownMenuSeparator style={{ background: 'rgba(140,170,210,0.15)' }} />
-              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/subscribe')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Zap className="w-4 h-4 mr-2" /> Subscription: plans and feature unlocks</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5" style={{ color: 'var(--ink-secondary)' }}><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/subscribe')} className="cursor-pointer py-2.5" style={{ color: 'var(--ink-secondary)' }}><Zap className="w-4 h-4 mr-2" /> Subscription: plans and feature unlocks</DropdownMenuItem>
               {(user?.role === 'admin' || user?.role === 'superadmin' || isPrivilegedUser(user)) && (
                 <>
-                  <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Shield className="w-4 h-4 mr-2" /> Super Admin</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/calibration')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Settings className="w-4 h-4 mr-2" /> Recalibrate</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5" style={{ color: 'var(--ink-secondary)' }}><Shield className="w-4 h-4 mr-2" /> Super Admin</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/calibration')} className="cursor-pointer py-2.5" style={{ color: 'var(--ink-secondary)' }}><Settings className="w-4 h-4 mr-2" /> Recalibrate</DropdownMenuItem>
                 </>
               )}
               <DropdownMenuSeparator style={{ background: 'rgba(140,170,210,0.15)' }} />
@@ -802,18 +802,20 @@ const DashboardLayout = ({ children }) => {
           paddingTop: trialDaysLeft !== null ? 32 : 0,
         }}
       >
-        <main id="main-content" className="flex-1" style={{ background: 'var(--biqc-bg, #0B1120)', overflowY: 'visible' }}>
+        <main id="main-content" className="flex-1" style={{ background: 'var(--canvas-app)', overflowY: 'visible' }}>
           <div className="px-4 py-4 md:px-6 md:py-6">
             <div className="mb-4 flex items-center justify-between gap-3" data-testid="page-navigation-row">
               <button
                 onClick={() => navigate(-1)}
-                className="inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-colors hover:bg-white/5"
+                className="inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-colors"
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 style={{ borderColor: 'var(--biqc-border)', color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}
                 data-testid="page-back-button"
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> Back
               </button>
-              <p className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="page-current-label">
+              <p className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }} data-testid="page-current-label">
                 {currentPageLabel}
               </p>
             </div>
@@ -841,11 +843,11 @@ const DashboardLayout = ({ children }) => {
           <div className="fixed inset-0 z-[1200] bg-black/50" onClick={() => setFeedbackOpen(false)} />
           <div className="fixed z-[1201] w-[min(460px,92vw)] p-4 rounded-xl" style={{ ...cardStyleFromTheme(), right: 16, bottom: 84 }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Quick UX Feedback</span>
-              <button onClick={() => setFeedbackOpen(false)} className="text-[#64748B]">✕</button>
+              <span className="text-sm" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display)' }}>Quick UX Feedback</span>
+              <button onClick={() => setFeedbackOpen(false)} className="text-[var(--ink-muted)]">✕</button>
             </div>
             <div className="grid grid-cols-2 gap-2 mb-2">
-              <label className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+              <label className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                 Rating (1-10)
                 <input
                   type="number"
@@ -856,7 +858,7 @@ const DashboardLayout = ({ children }) => {
                   style={inputStyleFromTheme()}
                 />
               </label>
-              <label className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+              <label className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                 Sentiment
                 <select
                   value={feedbackForm.sentiment}
@@ -869,7 +871,7 @@ const DashboardLayout = ({ children }) => {
                 </select>
               </label>
             </div>
-            <label className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+            <label className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
               Message
               <textarea
                 value={feedbackForm.message}

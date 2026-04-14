@@ -68,21 +68,21 @@ const MarketingAutomationPage = () => {
   const renderContent = (content) => {
     if (!content) return null;
     if (typeof content === 'string') {
-      try { content = JSON.parse(content); } catch { return <p className="text-sm text-[#8FA0B8] whitespace-pre-wrap">{content}</p>; }
+      try { content = JSON.parse(content); } catch { return <p className="text-sm text-[var(--ink-secondary)] whitespace-pre-wrap">{content}</p>; }
     }
     return (
       <div className="space-y-4">
         {Object.entries(content).map(([key, value]) => (
           <div key={key} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-            <span className="text-[10px] text-[#64748B] uppercase tracking-wider block mb-1.5" style={{ fontFamily: fontFamily.mono }}>{key.replace(/_/g, ' ')}</span>
+            <span className="text-[10px] text-[var(--ink-muted)] uppercase tracking-wider block mb-1.5" style={{ fontFamily: fontFamily.mono }}>{key.replace(/_/g, ' ')}</span>
             {Array.isArray(value) ? (
               <div className="space-y-2">
                 {value.map((item, i) => (
-                  <div key={i} className="text-sm text-[#8FA0B8]">
+                  <div key={i} className="text-sm text-[var(--ink-secondary)]">
                     {typeof item === 'object' ? (
                       <div className="pl-3 border-l-2 border-[rgba(140,170,210,0.15)]">
                         {Object.entries(item).map(([k, v]) => (
-                          <p key={k}><span className="text-[#64748B]">{k}:</span> {String(v)}</p>
+                          <p key={k}><span className="text-[var(--ink-muted)]">{k}:</span> {String(v)}</p>
                         ))}
                       </div>
                     ) : String(item)}
@@ -90,7 +90,7 @@ const MarketingAutomationPage = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-[#EDF1F7]">{String(value)}</p>
+              <p className="text-sm text-[var(--ink-display)]">{String(value)}</p>
             )}
           </div>
         ))}
@@ -143,7 +143,7 @@ const MarketingAutomationPage = () => {
           {/* Left: Config */}
           <div className="space-y-5">
             <Panel>
-              <h3 className="text-sm font-semibold text-[#EDF1F7] mb-4" style={{ fontFamily: fontFamily.display }}>Content Type</h3>
+              <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-4" style={{ fontFamily: fontFamily.display }}>Content Type</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {CONTENT_TYPES.map(ct => (
                   <button
@@ -160,17 +160,17 @@ const MarketingAutomationPage = () => {
                       <ct.icon className="w-4 h-4" style={{ color: selectedType === ct.id ? '#E85D00' : '#64748B' }} />
                       <span className="text-sm font-medium" style={{ color: selectedType === ct.id ? '#E85D00' : 'var(--ink-display, #EDF1F7)' }}>{ct.label}</span>
                     </div>
-                    <p className="text-[11px] text-[#64748B]">{ct.description}</p>
+                    <p className="text-[11px] text-[var(--ink-muted)]">{ct.description}</p>
                   </button>
                 ))}
               </div>
             </Panel>
 
             <Panel>
-              <h3 className="text-sm font-semibold text-[#EDF1F7] mb-4" style={{ fontFamily: fontFamily.display }}>Parameters</h3>
+              <h3 className="text-sm font-semibold text-[var(--ink-display)] mb-4" style={{ fontFamily: fontFamily.display }}>Parameters</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Topic *</label>
+                  <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Topic *</label>
                   <input
                     value={topic}
                     onChange={e => setTopic(e.target.value)}
@@ -182,7 +182,7 @@ const MarketingAutomationPage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Tone</label>
+                    <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Tone</label>
                     <div className="relative">
                       <select
                         value={tone}
@@ -196,11 +196,11 @@ const MarketingAutomationPage = () => {
                         <option value="bold">Bold & Direct</option>
                         <option value="empathetic">Empathetic</option>
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B] pointer-events-none" />
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)] pointer-events-none" />
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Audience</label>
+                    <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Audience</label>
                     <input
                       value={audience}
                       onChange={e => setAudience(e.target.value)}
@@ -212,7 +212,7 @@ const MarketingAutomationPage = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-[#64748B] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Additional Context</label>
+                  <label className="text-xs text-[var(--ink-muted)] block mb-1.5" style={{ fontFamily: fontFamily.mono }}>Additional Context</label>
                   <textarea
                     value={context}
                     onChange={e => setContext(e.target.value)}
@@ -241,7 +241,7 @@ const MarketingAutomationPage = () => {
           <div>
             <Panel className="min-h-[400px]">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Generated Content</h3>
+                <h3 className="text-sm font-semibold text-[var(--ink-display)]" style={{ fontFamily: fontFamily.display }}>Generated Content</h3>
                 {result?.content && (
                   <button onClick={handleCopy} data-testid="marketing-copy-btn"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-colors"
@@ -255,8 +255,8 @@ const MarketingAutomationPage = () => {
               {!result && !generating && (
                 <div className="flex items-center justify-center h-[300px]">
                   <div className="text-center">
-                    <Sparkles className="w-8 h-8 text-[#64748B] mx-auto mb-3" />
-                    <p className="text-sm text-[#64748B]">Select a content type and generate to see results.</p>
+                    <Sparkles className="w-8 h-8 text-[var(--ink-muted)] mx-auto mb-3" />
+                    <p className="text-sm text-[var(--ink-muted)]">Select a content type and generate to see results.</p>
                   </div>
                 </div>
               )}
@@ -265,7 +265,7 @@ const MarketingAutomationPage = () => {
                 <div className="flex items-center justify-center h-[300px]">
                   <div className="text-center">
                     <Loader2 className="w-8 h-8 text-[#E85D00] mx-auto mb-3 animate-spin" />
-                    <p className="text-sm text-[#8FA0B8]">Generating content from your business intelligence...</p>
+                    <p className="text-sm text-[var(--ink-secondary)]">Generating content from your business intelligence...</p>
                   </div>
                 </div>
               )}

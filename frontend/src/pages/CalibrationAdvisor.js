@@ -22,8 +22,8 @@ import { ExecutiveCMOSnapshot, ForensicCalibrationUI } from "../components/calib
 import { SkipForward, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
-const CHARCOAL = '#EDF1F7';
-const MUTED = '#8FA0B8';
+const CHARCOAL = 'var(--ink-display, #EDF1F7)';
+const MUTED = 'var(--ink-secondary, #8FA0B8)';
 const CARD_BORDER = 'rgba(140,170,210,0.12)';
 
 const CalibrationAdvisor = () => {

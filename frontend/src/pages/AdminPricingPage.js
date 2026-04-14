@@ -276,8 +276,8 @@ const AdminPricingPage = () => {
       <div style={{ fontFamily: fontFamily.body, color: 'var(--biqc-text)' }} className="space-y-4 max-w-[1320px]">
         <div className="flex items-center justify-between">
           <div>
-            <h1 style={{ fontFamily: fontFamily.display }} className="text-2xl text-[#EDF1F7]">Admin Pricing Control</h1>
-            <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+            <h1 style={{ fontFamily: fontFamily.display }} className="text-2xl text-[var(--ink-display)]">Admin Pricing Control</h1>
+            <p className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
               Draft plans, adjust entitlements, publish/rollback, and set custom pricing overrides.
             </p>
           </div>
@@ -317,7 +317,7 @@ const AdminPricingPage = () => {
               {(plans || []).map((p) => (
                 <div key={`${p.plan_key}-${p.version}`} className="px-3 py-2 flex items-center justify-between" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                   <span style={{ fontFamily: fontFamily.mono }}>{p.plan_key} v{p.version}</span>
-                  <span style={{ fontFamily: fontFamily.mono, color: p.is_active ? '#10B981' : p.is_draft ? '#F59E0B' : '#64748B' }}>
+                  <span style={{ fontFamily: fontFamily.mono, color: p.is_active ? '#10B981' : p.is_draft ? '#F59E0B' : 'var(--ink-muted)' }}>
                     {p.is_active ? 'active' : p.is_draft ? 'draft' : 'inactive'}
                   </span>
                 </div>
@@ -339,7 +339,7 @@ const AdminPricingPage = () => {
               <thead>
                 <tr>
                   {['feature_key', 'min_tier', 'launch_type', 'usage_limit_monthly', 'overage_unit', 'overage_price_cents'].map((h) => (
-                    <th key={h} className="text-left p-2 text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{h}</th>
+                    <th key={h} className="text-left p-2 text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -370,7 +370,7 @@ const AdminPricingPage = () => {
             <button onClick={publishPlan} className="px-3 py-2 rounded-lg text-xs" style={{ ...CARD, borderColor: '#10B98135', color: '#10B981', fontFamily: fontFamily.mono }}>
               Publish
             </button>
-            <p className="text-[10px] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>
+            <p className="text-[10px] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>
               Governance: actor must be distinct from product, finance, and legal approvers.
             </p>
           </div>
@@ -410,12 +410,12 @@ const AdminPricingPage = () => {
                   <span style={{ fontFamily: fontFamily.mono }}>
                     {o.feature_key || 'global'} | user:{o.user_id ? String(o.user_id).slice(0, 8) : '-'} | account:{o.account_id ? String(o.account_id).slice(0, 8) : '-'}
                   </span>
-                  <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                  <p className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                     {o.id}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span style={{ fontFamily: fontFamily.mono, color: o.status === 'active' ? '#10B981' : '#64748B' }}>{o.status}</span>
+                  <span style={{ fontFamily: fontFamily.mono, color: o.status === 'active' ? '#10B981' : 'var(--ink-muted)' }}>{o.status}</span>
                   {o.status === 'active' ? (
                     <button
                       onClick={() => setOverrideStatus(o, 'inactive')}
@@ -444,7 +444,7 @@ const AdminPricingPage = () => {
             <h2 style={{ fontFamily: fontFamily.display }} className="text-lg">Release History</h2>
             <div className="max-h-[260px] overflow-auto text-xs" style={{ border: '1px solid var(--biqc-border)', borderRadius: 8 }}>
               {releases.length === 0 && (
-                <div className="px-3 py-3 text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No releases yet</div>
+                <div className="px-3 py-3 text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>No releases yet</div>
               )}
               {releases.map((r) => (
                 <div key={r.id || `${r.plan_key}-${r.to_version}-${r.published_at}`} className="px-3 py-2" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
@@ -456,7 +456,7 @@ const AdminPricingPage = () => {
                       {r.status}
                     </span>
                   </div>
-                  <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                  <p className="text-[10px] text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                     {r.published_at ? new Date(r.published_at).toLocaleString('en-AU') : 'unknown time'}
                   </p>
                 </div>
@@ -467,17 +467,17 @@ const AdminPricingPage = () => {
             <h2 style={{ fontFamily: fontFamily.display }} className="text-lg">Audit Log</h2>
             <div className="max-h-[260px] overflow-auto text-xs" style={{ border: '1px solid var(--biqc-border)', borderRadius: 8 }}>
               {auditLog.length === 0 && (
-                <div className="px-3 py-3 text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>No audit records</div>
+                <div className="px-3 py-3 text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>No audit records</div>
               )}
               {auditLog.map((row) => (
                 <div key={row.id || `${row.action}-${row.created_at}`} className="px-3 py-2" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                   <div className="flex items-center justify-between">
                     <span style={{ fontFamily: fontFamily.mono }}>{row.action}</span>
-                    <span className="text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                    <span className="text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>
                       {row.entity_type}
                     </span>
                   </div>
-                  <p className="text-[10px] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>
+                  <p className="text-[10px] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }}>
                     {row.entity_id || '-'} · {row.created_at ? new Date(row.created_at).toLocaleString('en-AU') : 'unknown'}
                   </p>
                 </div>

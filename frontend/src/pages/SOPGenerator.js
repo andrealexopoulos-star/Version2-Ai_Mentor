@@ -502,7 +502,7 @@ const SOPGenerator = () => {
                   fontSize: 14,
                   fontWeight: isActive ? 600 : 500,
                   fontFamily: fontFamily.body,
-                  color: isActive ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
+                  color: isActive ? 'var(--ink-display, #EDF1F7)' : 'var(--ink-secondary, #8FA0B8)',
                   cursor: 'pointer',
                   transition: 'color 0.2s, border-color 0.2s',
                   whiteSpace: 'nowrap',

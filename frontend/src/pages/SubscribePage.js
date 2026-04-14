@@ -144,14 +144,14 @@ const SubscribePage = () => {
           One platform, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>three ways in</em>.
         </h1>
         {featureLabel && <p className="text-xs text-[#E85D00] mb-2" style={{ fontFamily: fontFamily.mono }}>{featureLabel} requires a paid plan</p>}
-        <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[#EDF1F7] capitalize">{currentTier}</strong></p>
+        <p className="text-sm text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.body }}>Current plan: <strong className="text-[var(--ink-display)] capitalize">{currentTier}</strong></p>
         <p className="mt-2 text-xs" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
           Transparent billing: shown amount is charged exactly as displayed. No hidden fees.
         </p>
       </div>
 
       <div className="w-full max-w-3xl mb-6 rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Checkout flow</p>
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>Checkout flow</p>
         <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
           {['Select plan', 'Review amount', 'Secure payment auth', 'Activation confirmation'].map((step, idx) => (
             <div key={step} className="rounded-lg border px-3 py-2 text-xs" style={{ borderColor: 'var(--biqc-border)', color: '#CBD5E1' }}>
@@ -173,21 +173,21 @@ const SubscribePage = () => {
               {plan.recommended && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-3 py-1 rounded-full text-white" style={{ background: plan.color, fontFamily: fontFamily.mono }}>RECOMMENDED</span>
               )}
-              <h3 className="text-lg font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>{plan.name}</h3>
+              <h3 className="text-lg font-semibold text-[var(--ink-display)] mb-1" style={{ fontFamily: fontFamily.display }}>{plan.name}</h3>
               <div className="flex items-baseline gap-1 mb-4">
                 <span className="text-3xl font-bold" style={{ color: plan.color, fontFamily: fontFamily.mono }}>{plan.price}</span>
-                <span className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{plan.period}</span>
+                <span className="text-xs text-[var(--ink-muted)]" style={{ fontFamily: fontFamily.mono }}>{plan.period}</span>
               </div>
               <div className="space-y-2 mb-6">
                 {plan.features.map(f => (
                   <div key={f} className="flex items-center gap-2">
                     <Check className="w-3.5 h-3.5 shrink-0" style={{ color: plan.color }} />
-                    <span className="text-xs text-[#8FA0B8]">{f}</span>
+                    <span className="text-xs text-[var(--ink-secondary)]">{f}</span>
                   </div>
                 ))}
               </div>
               {isCurrent ? (
-                <span className="block text-center text-xs text-[#64748B] py-2.5" style={{ fontFamily: fontFamily.mono }}>Current Plan</span>
+                <span className="block text-center text-xs text-[var(--ink-muted)] py-2.5" style={{ fontFamily: fontFamily.mono }}>Current Plan</span>
               ) : (
                 <button onClick={() => handleUpgrade(plan.id)} disabled={loading === plan.id}
                   className="w-full py-2.5 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
@@ -201,9 +201,9 @@ const SubscribePage = () => {
       </div>
 
       <div className="w-full max-w-4xl mb-8 rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>Custom Build</p>
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>Custom Build</p>
         <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-[#8FA0B8]">
+          <p className="text-sm text-[var(--ink-secondary)]">
             Need bespoke module packaging, custom entitlements, or contracted integration delivery?
           </p>
           <button
@@ -223,14 +223,14 @@ const SubscribePage = () => {
         style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}
         data-testid="subscribe-foundation-modules"
       >
-        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
+        <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>
           Foundation Modules
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
           {FOUNDATION_FEATURES.map((feature) => (
             <div key={feature.key} className="rounded-lg border p-3" style={{ borderColor: 'rgba(140,170,210,0.12)' }}>
-              <p className="text-sm font-semibold text-[#EDF1F7]">{feature.title}</p>
-              <p className="text-xs mt-1 text-[#8FA0B8]">{feature.summary}</p>
+              <p className="text-sm font-semibold text-[var(--ink-display)]">{feature.title}</p>
+              <p className="text-xs mt-1 text-[var(--ink-secondary)]">{feature.summary}</p>
               <div className="mt-2 flex items-center justify-between">
                 <span
                   className="text-[10px] px-2 py-1 rounded-full"
@@ -264,22 +264,22 @@ const SubscribePage = () => {
       >
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-[#E85D00]" />
-          <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }}>
+          <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }}>
             More Features Roadmap
           </p>
         </div>
-        <p className="text-xs mt-2 text-[#8FA0B8]">
+        <p className="text-xs mt-2 text-[var(--ink-secondary)]">
           These are staged modules. Join waitlist for priority rollout and packaging feedback.
         </p>
         <div className="mt-3 space-y-3">
           {groupedWaitlist.map(([category, features]) => (
             <div key={category} className="rounded-lg border p-3" style={{ borderColor: 'rgba(140,170,210,0.12)' }}>
-              <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]">{category}</p>
+              <p className="text-xs uppercase tracking-[0.12em] text-[var(--ink-secondary)]">{category}</p>
               <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
                 {features.map((feature) => (
                   <div key={feature.key} className="rounded-md border px-3 py-2" style={{ borderColor: '#1F2937' }}>
-                    <p className="text-sm text-[#EDF1F7]">{feature.title}</p>
-                    <p className="text-[11px] mt-1 text-[#8FA0B8] line-clamp-2">{feature.about}</p>
+                    <p className="text-sm text-[var(--ink-display)]">{feature.title}</p>
+                    <p className="text-[11px] mt-1 text-[var(--ink-secondary)] line-clamp-2">{feature.about}</p>
                   </div>
                 ))}
               </div>

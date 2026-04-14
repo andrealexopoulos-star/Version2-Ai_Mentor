@@ -97,7 +97,7 @@ const prettySignal = (value = '') => value.replace(/_/g, ' ').replace(/\b\w/g, (
 
 const InlineInfo = ({ description, testId }) => (
   <span
-    className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#334155] text-[#94A3B8]"
+    className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#334155] text-[var(--ink-secondary)]"
     title={description}
     data-testid={testId}
   >
@@ -1842,7 +1842,7 @@ export default function AdvisorWatchtower() {
 
             <div className="flex flex-wrap items-center justify-end gap-2">
               <div className="flex items-center gap-2" data-testid="advisor-role-personalization-control">
-                <label className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} htmlFor="advisor-role-select">View as</label>
+                <label className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }} htmlFor="advisor-role-select">View as</label>
                 <select
                   id="advisor-role-select"
                   value={rolePreference}
@@ -1917,7 +1917,7 @@ export default function AdvisorWatchtower() {
                     <article className="rounded-2xl border p-5 flex flex-col justify-between min-h-[108px]" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-state-card">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
+                          <p className="text-xs uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-state-label">Business State</p>
                           <p className="mt-2 text-xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-state-value">{executiveState}</p>
                         </div>
                         <button
@@ -1944,12 +1944,12 @@ export default function AdvisorWatchtower() {
                     <article className="rounded-2xl border p-5 flex flex-col justify-between min-h-[108px]" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-queue-status-section">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-xs uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-status-label">Decision Queue Status</p>
+                          <p className="text-xs uppercase tracking-[0.14em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-status-label">Decision Queue Status</p>
                           <p className="mt-2 text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-queue-status-value">{openSignals.length} open signal{openSignals.length === 1 ? '' : 's'} · showing top 3 executive decisions now.</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid="advisor-queue-backlog-count">{queuedBeyondThree}</p>
-                          <p className="text-xs text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-backlog-label">Queued after top 3</p>
+                          <p className="text-xs text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-queue-backlog-label">Queued after top 3</p>
                         </div>
                       </div>
                       <div className="mt-3">
@@ -2071,7 +2071,7 @@ export default function AdvisorWatchtower() {
                                   {decision.title}
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-severity-${decision.id}`}>
+                                  <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-severity-${decision.id}`}>
                                     {decision.severity}
                                   </span>
                                   {signal && (
@@ -2083,10 +2083,10 @@ export default function AdvisorWatchtower() {
                               </div>
 
                               <div className="flex-1">
-                                <p className="mb-1 text-sm" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-intent-${decision.id}`}>{decision.intent}</p>
+                                <p className="mb-1 text-sm" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-intent-${decision.id}`}>{decision.intent}</p>
                                 <p className="mb-1 text-sm" style={{ color: style.text }} data-testid={`advisor-decision-headline-${decision.id}`}>{decision.headline}</p>
                                 {signal && (
-                                  <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
+                                  <p className="mb-2 text-[10px] uppercase tracking-[0.12em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }} data-testid={`advisor-decision-confidence-${decision.id}`}>
                                     {signal.confidenceNote || `Confidence interval: ${decision.confidenceInterval}`}
                                   </p>
                                 )}
@@ -2097,7 +2097,7 @@ export default function AdvisorWatchtower() {
                                 {signal ? (
                                   <SourceProvenanceBadge source={signal.source} signalType={signal.signalType} timestamp={signal.createdAt} testId={`advisor-provenance-${decision.id}`} />
                                 ) : (
-                                  <p className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-provenance-${decision.id}`}>
+                                  <p className="text-xs" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }} data-testid={`advisor-provenance-${decision.id}`}>
                                     Waiting for data from your connected tools.
                                   </p>
                                 )}
@@ -2215,7 +2215,7 @@ export default function AdvisorWatchtower() {
                               )}
 
                               {index === 2 && queuedBeyondThree > 0 && (
-                                <p className="mt-3 text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid="advisor-next-up-indicator">
+                                <p className="mt-3 text-xs" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }} data-testid="advisor-next-up-indicator">
                                   Next up automatically after action: {queuedBeyondThree} queued signal{queuedBeyondThree === 1 ? '' : 's'}.
                                 </p>
                               )}
@@ -2353,7 +2353,7 @@ export default function AdvisorWatchtower() {
               <section className="mb-8 rounded-2xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }} data-testid="advisor-page-feedback-section">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.12em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-page-feedback-label">
+                    <p className="text-xs uppercase tracking-[0.12em] text-[var(--ink-secondary)]" style={{ fontFamily: fontFamily.mono }} data-testid="advisor-page-feedback-label">
                       Quick feedback
                     </p>
                     <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }} data-testid="advisor-page-feedback-copy">
@@ -2426,7 +2426,7 @@ export default function AdvisorWatchtower() {
                   </select>
 
                   <div className="flex items-center gap-1 rounded-xl border px-3 py-2" style={{ borderColor: '#334155', background: '#0F172A' }}>
-                    <Search className="h-3.5 w-3.5 text-[#94A3B8]" />
+                    <Search className="h-3.5 w-3.5 text-[var(--ink-secondary)]" />
                     <input
                       value={auditSearch}
                       onChange={(event) => setAuditSearch(event.target.value)}
@@ -2454,12 +2454,12 @@ export default function AdvisorWatchtower() {
                           <p className="text-sm" style={{ color: 'var(--biqc-text)' }} data-testid={`advisor-action-audit-row-title-${row.dedupeKey.replace(/\|/g, '-')}`}>
                             {row.title}
                           </p>
-                          <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-action-audit-row-meta-${row.dedupeKey.replace(/\|/g, '-')}`}>
+                          <span className="text-[10px] uppercase tracking-[0.12em]" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }} data-testid={`advisor-action-audit-row-meta-${row.dedupeKey.replace(/\|/g, '-')}`}>
                             {row.action} · {formatTime(row.at)}
                           </span>
                         </div>
                         <div className="mt-2 flex items-center justify-between gap-2">
-                          <p className="text-xs" style={{ color: '#94A3B8', fontFamily: fontFamily.mono }} data-testid={`advisor-action-audit-row-source-${row.dedupeKey.replace(/\|/g, '-')}`}>
+                          <p className="text-xs" style={{ color: 'var(--ink-secondary)', fontFamily: fontFamily.mono }} data-testid={`advisor-action-audit-row-source-${row.dedupeKey.replace(/\|/g, '-')}`}>
                             {row.source} · {row.domain}
                           </p>
                           <button

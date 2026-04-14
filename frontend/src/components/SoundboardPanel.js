@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Send, Paperclip, Video, X, ChevronDown, FileText } from 'lucide-react';
+import { Send, Paperclip, Video, X, ChevronDown, FileText, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../lib/api';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { supabase } from '../context/SupabaseAuthContext';
@@ -407,6 +408,7 @@ function InlineDataRequirements({ requirements, originalMessage, conversationId,
 }
 
 const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
+  const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -1068,6 +1070,14 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             background: '#0a0f1a',
           }}
         >
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-colors"
+            style={{ borderColor: 'var(--border)', color: 'var(--ink-secondary)', fontFamily: '"JetBrains Mono", monospace' }}
+            data-testid="page-back-button"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Back
+          </button>
           {sidebarCollapsed && (
             <button
               onClick={() => setSidebarCollapsed(false)}
@@ -1259,7 +1269,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             <FileText className="w-3 h-3 shrink-0" style={{ color: '#E85D00' }} />
             <span className="flex-1 text-[10px] truncate" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}>{attachedFile.name}</span>
             {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>ready</span>}
-            <button onClick={() => setAttachedFile(null)} className="p-0.5 rounded" style={{ color: '#64748B' }}>
+            <button onClick={() => setAttachedFile(null)} className="p-0.5 rounded" style={{ color: 'var(--ink-muted)' }}>
               <X className="w-3 h-3" />
             </button>
           </div>
@@ -1336,14 +1346,14 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                         <span className="text-sm shrink-0">{mode.icon}</span>
                         <div>
                           <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#E85D00' : 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{mode.label}</p>
-                          <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
+                          <p className="text-[10px]" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.body }}>{mode.desc}</p>
                         </div>
                       </button>
                     ))}
 
                     {!canUseTrinity && (
                       <a href="/subscribe?section=foundation" className="block px-3 py-2 text-[10px] no-underline"
-                        style={{ color: '#64748B', fontFamily: fontFamily.body }} data-testid="soundboard-panel-trinity-upgrade-link">
+                        style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.body }} data-testid="soundboard-panel-trinity-upgrade-link">
                         Unlock BIQc Trinity: get consensus intelligence across BIQc pathways.
                       </a>
                     )}
@@ -1366,7 +1376,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 {showAgentMenu && (
                   <div className="absolute bottom-full left-0 mb-2 w-60 rounded-xl overflow-hidden shadow-xl z-50"
                     style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
-                    <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Agent persona</p>
+                    <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.mono }}>Agent persona</p>
                     {BIQC_AGENTS.map((agent) => (
                       <button
                         key={agent.id}
@@ -1380,7 +1390,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                           <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
                             {agent.label}
                           </p>
-                          <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
+                          <p className="text-[10px] truncate" style={{ color: 'var(--ink-muted)', fontFamily: fontFamily.body }}>
                             {agent.shortDesc}
                           </p>
                         </div>
@@ -1425,7 +1435,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0"
             data-testid="sb-video"
             onClick={() => setShowVoiceChat(true)}>
-            <Video className="w-4 h-4 text-[#64748B]" />
+            <Video className="w-4 h-4 text-[var(--ink-muted)]" />
           </button>
           {loading && (
             <button
@@ -1463,7 +1473,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             )}
           </button>
         </div>
-        <p className="text-[9px] text-[#64748B] text-center mt-1.5" style={{ fontFamily: fontFamily.mono }}>
+        <p className="text-[9px] text-[var(--ink-muted)] text-center mt-1.5" style={{ fontFamily: fontFamily.mono }}>
           BIQc uses connected data only. No fabrication.
         </p>
       </div>

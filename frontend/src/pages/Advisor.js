@@ -642,7 +642,7 @@ const Advisor = () => {
                     style={{
                       fontFamily: fontFamily.mono,
                       background: signalFilter === f.toLowerCase() ? '#E85D00' : 'var(--surface-2, #121D30)',
-                      color: signalFilter === f.toLowerCase() ? 'white' : '#8FA0B8',
+                      color: signalFilter === f.toLowerCase() ? 'white' : 'var(--ink-secondary)',
                       border: `1px solid ${signalFilter === f.toLowerCase() ? '#E85D00' : 'rgba(140,170,210,0.12)'}`,
                       cursor: 'pointer',
                     }}
@@ -656,7 +656,7 @@ const Advisor = () => {
             {/* Signal rows from watchtower events */}
             <div className="flex flex-col">
               {watchtowerEvents.length > 0 ? watchtowerEvents.slice(0, 6).map((evt, i) => (
-                <div key={evt.id || i} className="grid gap-4 p-5 cursor-pointer transition-colors hover:bg-[#121D30]" style={{ gridTemplateColumns: '44px 1fr auto', borderBottom: i < Math.min(watchtowerEvents.length, 6) - 1 ? '1px solid rgba(140,170,210,0.12)' : 'none', alignItems: 'flex-start' }}>
+                <div key={evt.id || i} className="grid gap-4 p-5 cursor-pointer transition-colors hover:bg-[var(--surface-2)]" style={{ gridTemplateColumns: '44px 1fr auto', borderBottom: i < Math.min(watchtowerEvents.length, 6) - 1 ? '1px solid rgba(140,170,210,0.12)' : 'none', alignItems: 'flex-start' }}>
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{
                     background: evt.severity === 'critical' ? 'var(--danger-wash, rgba(239,68,68,0.10))' : evt.severity === 'high' ? 'var(--lava-wash, rgba(232,93,0,0.12))' : evt.severity === 'warn' || evt.severity === 'warning' ? 'var(--warning-wash, rgba(245,158,11,0.10))' : 'var(--info-wash, rgba(59,130,246,0.10))',
                     color: evt.severity === 'critical' ? 'var(--danger, #DC2626)' : evt.severity === 'high' ? 'var(--lava, #E85D00)' : evt.severity === 'warn' || evt.severity === 'warning' ? 'var(--warning, #D97706)' : 'var(--info, #2563EB)'

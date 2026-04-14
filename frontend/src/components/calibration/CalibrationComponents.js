@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Shield, Lock, Database, RefreshCw, X, ChevronRight, DollarSign, Target, Eye, Zap, Clock, ChevronDown } from 'lucide-react';
 
 const CREAM = '#0F1720';
-const CHARCOAL = '#EDF1F7';
-const MUTED = '#8FA0B8';
+const CHARCOAL = 'var(--ink-display, #EDF1F7)';
+const MUTED = 'var(--ink-secondary, #8FA0B8)';
 const GOLD = '#E85D00';
 const CARD_BG = 'var(--surface, #0E1628)';
 const CARD_BORDER = 'rgba(140,170,210,0.15)';
@@ -319,7 +319,7 @@ export const ManualSummaryFallback = ({ firstName, onSubmit, isSubmitting }) => 
             type="submit"
             disabled={isSubmitting || summary.trim().length < 10}
             className="w-full px-8 py-3.5 rounded-full text-sm font-medium transition-opacity disabled:opacity-40"
-            style={{ background: CHARCOAL, color: '#FFFFFF' }}
+            style={{ background: CHARCOAL, color: 'var(--canvas, #080C14)' }}
             data-testid="submit-summary-btn"
           >
             Continue
