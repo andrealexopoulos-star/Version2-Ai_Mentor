@@ -157,9 +157,12 @@ async def startup_core_runtime():
 
 @app.on_event("startup")
 async def startup_redis_runtime():
-    """Initialize Redis client for job enqueue only. Worker runs in biqc_job_worker.py."""
+    """Initialize Redis client and start worker within API process."""
     try:
         await biqc_jobs.initialize()
+        if biqc_jobs.redis_connected:
+            await biqc_jobs.start_worker()
+            logger.info("Redis job worker started within API process")
     except Exception as exc:
         logger.warning("Redis runtime skipped during startup: %s", exc)
     app.state.biqc_jobs = biqc_jobs

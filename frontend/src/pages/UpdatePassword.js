@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { KeyRound, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 
-const DISPLAY = "'Cormorant Garamond', Georgia, serif";
+const DISPLAY = "var(--font-display)";
 
 const UpdatePassword = () => {
   const navigate = useNavigate();

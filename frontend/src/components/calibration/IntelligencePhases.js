@@ -371,7 +371,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
             </p>
             {!isReady && (
               <div className="flex justify-center gap-3 mt-3">
-                <a href="mailto:support@biqc.com.au" className="text-[10px] text-[var(--ink-muted)] hover:text-[var(--ink-secondary)] underline" style={{ fontFamily: fontFamily.mono }}>
+                <a href="mailto:support@biqc.ai" className="text-[10px] text-[var(--ink-muted)] hover:text-[var(--ink-secondary)] underline" style={{ fontFamily: fontFamily.mono }}>
                   Contact support
                 </a>
                 <span className="text-[10px] text-[#3A4A5C]">·</span>

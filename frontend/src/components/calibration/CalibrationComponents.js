@@ -23,7 +23,7 @@ export const CalibrationLoading = () => (
   <div className="flex-1 flex items-center justify-center" style={{ background: 'var(--biqc-bg)' }} data-testid="calibration-loading">
     <div className="text-center">
       <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: '#E85D00', animation: 'pulse 2s ease-in-out infinite' }}>
-        <span className="text-white font-bold text-lg" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
+        <span className="text-white font-bold text-lg" style={{ fontFamily: "var(--font-mono)" }}>B</span>
       </div>
       <p className="text-sm" style={{ color: 'var(--biqc-text-2)' }}>Loading calibration...</p>
     </div>
@@ -100,7 +100,7 @@ const PrivacyModal = ({ onClose }) => (
           <p className="text-xs leading-relaxed" style={{ color: MUTED }}>
             BIQc operates under Australia's Privacy Act 1988 and the Australian Privacy Principles (APPs).
             You can request deletion of all your data at any time by contacting us at{' '}
-            <span style={{ color: '#E85D00' }}>privacy@biqc.com.au</span>.
+            <span style={{ color: '#E85D00' }}>support@biqc.ai</span>.
             We will action your request within 30 days.
           </p>
         </div>
@@ -153,7 +153,7 @@ export const WelcomeHandshake = ({
             {/* BIQc logo mark */}
             <div className="w-16 h-16 rounded-2xl mx-auto mb-7 flex items-center justify-center"
               style={{ background: 'linear-gradient(135deg, #E85D00, #E56A08)', boxShadow: '0 0 40px rgba(232,93,0,0.25)' }}>
-              <span className="text-white font-bold text-2xl" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
+              <span className="text-white font-bold text-2xl" style={{ fontFamily: "var(--font-mono)" }}>B</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: SERIF, color: CHARCOAL, fontWeight: 600 }}>
@@ -187,7 +187,7 @@ export const WelcomeHandshake = ({
             {/* Privacy link */}
             <button onClick={() => setShowPrivacy(true)}
               className="flex items-center gap-1.5 mx-auto mb-6 text-xs transition-colors hover:text-green-400"
-              style={{ color: '#10B981', fontFamily: "'JetBrains Mono', monospace" }}
+              style={{ color: '#10B981', fontFamily: "var(--font-mono)" }}
               data-testid="privacy-link">
               <Shield className="w-3.5 h-3.5" />
               See BIQc Privacy Commitment
@@ -202,7 +202,7 @@ export const WelcomeHandshake = ({
               <ChevronRight className="w-4 h-4" />
             </button>
 
-            <p className="mt-4 text-[10px]" style={{ color: '#4A5568', fontFamily: "'JetBrains Mono', monospace" }}>
+            <p className="mt-4 text-[10px]" style={{ color: '#4A5568', fontFamily: "var(--font-mono)" }}>
               Takes under 2 minutes · Read-only · Australian hosted
             </p>
           </div>
@@ -258,7 +258,7 @@ export const WelcomeHandshake = ({
             {['Market positioning', 'Competitive signals', 'Trust architecture', 'Growth pressure'].map(item => (
               <div key={item} className="flex items-center gap-2 text-left">
                 <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#E85D00' }} />
-                <span className="text-xs" style={{ color: MUTED, fontFamily: "'JetBrains Mono', monospace" }}>{item}</span>
+                <span className="text-xs" style={{ color: MUTED, fontFamily: "var(--font-mono)" }}>{item}</span>
               </div>
             ))}
           </div>
@@ -426,7 +426,7 @@ export const AuditProgress = ({ onManualFallback = null }) => {
           </div>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-2 text-[11px]" style={{ color: '#B9C8D8', fontFamily: "'JetBrains Mono', monospace" }}>
+            <div className="grid grid-cols-3 gap-2 text-[11px]" style={{ color: '#B9C8D8', fontFamily: "var(--font-mono)" }}>
               <div className="rounded-lg px-2.5 py-2" style={{ background: '#0B141F', border: '1px solid #223243' }}>
                 <div style={{ color: '#6C8095' }}>SIGNAL</div>
                 <div style={{ color: '#FFB06E' }}>{signalStrength}%</div>

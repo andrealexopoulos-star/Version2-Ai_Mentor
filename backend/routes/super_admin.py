@@ -350,3 +350,16 @@ async def list_enterprise_contacts(current_user: dict = Depends(get_current_user
     except Exception as e:
         logger.warning(f"enterprise_contact_requests table may not exist: {e}")
         return {'requests': []}
+
+
+@router.get("/admin/jobs/dead-letter")
+async def get_dead_letter_queue(current_user: dict = Depends(get_current_user)):
+    """Retrieve failed jobs from the Redis dead-letter queue (admin only)."""
+    _require_super_admin(current_user)
+    try:
+        from biqc_jobs import biqc_jobs
+        jobs = await biqc_jobs.get_dead_letter_jobs(limit=50)
+        return {"dead_letter_jobs": jobs, "count": len(jobs)}
+    except Exception as e:
+        logger.warning(f"Failed to read dead-letter queue: {e}")
+        return {"dead_letter_jobs": [], "count": 0, "error": str(e)}

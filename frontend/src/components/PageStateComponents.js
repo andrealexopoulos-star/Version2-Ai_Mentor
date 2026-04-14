@@ -73,7 +73,7 @@ export const PageErrorState = ({ error, onRetry, moduleName = 'this page' }) => 
         </button>
       )}
       <a
-        href="mailto:support@biqc.com.au"
+        href="mailto:support@biqc.ai"
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
         style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
         data-testid="page-error-support-link"

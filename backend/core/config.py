@@ -53,7 +53,7 @@ RATE_LIMIT_BUCKETS = defaultdict(deque)
 RATE_LIMIT_LOCK = Lock()
 # Admin inbox for operational alerts (waitlist / contact form, etc.)
 BIQC_ADMIN_NOTIFICATION_EMAIL = (
-    os.environ.get("BIQC_ADMIN_NOTIFICATION_EMAIL") or "ops@biqc.ai"
+    os.environ.get("BIQC_ADMIN_NOTIFICATION_EMAIL") or "support@biqc.ai"
 ).strip()
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 RESEND_FROM_EMAIL = (

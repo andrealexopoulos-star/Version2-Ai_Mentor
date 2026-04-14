@@ -948,7 +948,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         background: '#0a0f1a',
         color: '#fff',
         overflow: 'hidden',
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "var(--font-ui)",
       }}
       data-testid="soundboard-panel"
     >
@@ -1099,7 +1099,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           <button
             onClick={() => navigate(-1)}
             className="inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-colors"
-            style={{ borderColor: 'var(--border)', color: 'var(--ink-secondary)', fontFamily: '"JetBrains Mono", monospace' }}
+            style={{ borderColor: 'var(--border)', color: 'var(--ink-secondary)', fontFamily: 'var(--font-mono)' }}
             data-testid="page-back-button"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back

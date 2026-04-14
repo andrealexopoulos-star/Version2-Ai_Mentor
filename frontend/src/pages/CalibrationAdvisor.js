@@ -78,7 +78,7 @@ const CalibrationAdvisor = () => {
       {cal.entry !== "loading" && cal.user && (
         <div className="flex items-center justify-between px-5 py-2.5" style={{ borderBottom: `1px solid ${CARD_BORDER}` }} data-testid="identity-bar">
           <div className="flex items-center gap-3">
-            <span className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: "'Inter', sans-serif", color: '#E85D00' }}>— Calibration</span>
+            <span className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: "var(--font-ui)", color: '#E85D00' }}>— Calibration</span>
             <div className="w-px h-4" style={{ background: CARD_BORDER }} />
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full" style={{ background: '#10B981' }} />

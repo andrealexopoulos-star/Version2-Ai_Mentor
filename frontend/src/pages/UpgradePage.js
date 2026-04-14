@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, CheckCircle2, Loader2, Lock } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
@@ -12,6 +12,24 @@ export default function UpgradePage({ success = false }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [selectedTier, setSelectedTier] = useState('starter');
+  const purchaseTracked = useRef(false);
+
+  // Fire GA4 purchase conversion event on successful checkout return
+  useEffect(() => {
+    if (success && !purchaseTracked.current) {
+      purchaseTracked.current = true;
+      trackGoogleTagEvent('purchase', {
+        transaction_id: `biqc_${Date.now()}`,
+        value: 69,
+        currency: 'AUD',
+        items: [{ item_name: 'BIQc Foundation', item_category: 'subscription' }],
+      });
+      trackGoogleTagEvent('biqc_subscription_activated', {
+        plan: 'foundation',
+        source: 'stripe_checkout',
+      });
+    }
+  }, [success]);
 
   const handleUpgrade = async () => {
     setLoading(true);

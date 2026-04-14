@@ -306,7 +306,7 @@ const RegisterSupabase = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="company_name" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #708499)' }}>Business name</label>
-                  <Input id="company_name" type="text" value={formData.company_name} onChange={(e) => set('company_name', e.target.value)} placeholder="The Strategy Squad" className="h-12 text-sm" style={inputStyle} data-testid="register-company-input" />
+                  <Input id="company_name" type="text" value={formData.company_name} onChange={(e) => set('company_name', e.target.value)} placeholder="Your Business Name" className="h-12 text-sm" style={inputStyle} data-testid="register-company-input" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="industry" className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: MONO, color: 'var(--ink-muted, #708499)' }}>Team size</label>

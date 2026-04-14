@@ -1,12 +1,29 @@
 User-agent: *
 Allow: /
+Allow: /platform
+Allow: /intelligence
 Allow: /pricing
+Allow: /our-integrations
+Allow: /about
+Allow: /contact
 Allow: /blog
 Allow: /blog/*
+Allow: /trust
+Allow: /trust/*
+Allow: /knowledge-base
+
 Disallow: /dashboard
-Disallow: /advisor
+Disallow: /soundboard
+Disallow: /war-room
+Disallow: /boardroom
 Disallow: /business-profile
 Disallow: /data-center
 Disallow: /admin
+Disallow: /admin/*
+Disallow: /support-admin
+Disallow: /observability
+Disallow: /upgrade
+Disallow: /billing
+Disallow: /settings
 
 Sitemap: https://biqc.ai/sitemap.xml
