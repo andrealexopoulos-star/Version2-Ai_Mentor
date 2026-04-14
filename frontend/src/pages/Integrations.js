@@ -36,7 +36,7 @@ const Logo = ({ domain, name, size = 36 }) => {
         width: size,
         height: size,
         background: `linear-gradient(135deg, hsla(${hue}, 70%, 45%, 0.28), hsla(${(hue + 40) % 360}, 70%, 38%, 0.28))`,
-        border: '1px solid var(--biqc-border, #243140)',
+        border: '1px solid var(--biqc-border, rgba(140,170,210,0.12))',
         color: '#E2E8F0',
         fontSize: size * 0.3,
         fontFamily: fontFamily.mono,
@@ -530,16 +530,19 @@ export default function Integrations() {
   }, []);
 
   const handleConnect = useCallback(async (integration) => {
-    if (integration.type === 'outlook') {
+    if (integration.type === 'outlook' || integration.type === 'gmail') {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) { toast.error('Please log in'); return; }
-      window.location.assign(`${getBackendUrl()}/api/auth/outlook/login?token=${session.access_token}&returnTo=/integrations`);
-      return;
-    }
-    if (integration.type === 'gmail') {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) { toast.error('Please log in'); return; }
-      window.location.assign(`${getBackendUrl()}/api/auth/gmail/login?token=${session.access_token}&returnTo=/integrations`);
+      try {
+        const initResp = await fetch(`${getBackendUrl()}/api/auth/email-connect/initiate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+          body: JSON.stringify({ provider: integration.type, returnTo: '/integrations' }),
+        });
+        if (!initResp.ok) throw new Error('Failed to initiate connection');
+        const { redirect_url } = await initResp.json();
+        window.location.assign(`${getBackendUrl()}${redirect_url}`);
+      } catch (e) { toast.error(`Failed to connect ${integration.type}: ${e.message}`); }
       return;
     }
     if (integration.type === 'gcal') {
@@ -725,9 +728,14 @@ export default function Integrations() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <h1 className="text-[36px] leading-[1.05] font-semibold tracking-[-0.01em]" style={{ color: '#F8FAFC', fontFamily: fontFamily.display }}>Connectors</h1>
-                <p className="mt-2 text-[14px]" style={{ color: '#94A3B8' }}>
-                  Connect your tools to BIQc to search across them and take action. Your permissions are always respected.
+                <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+                  — Integrations
+                </div>
+                <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+                  Connect your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>tools</em>.
+                </h1>
+                <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+                  BIQc reads from the tools you already use. Every connection unlocks new signals. All third-party integrations go through Merge.dev — one auth, one dashboard.
                 </p>
               </div>
               <button
@@ -750,7 +758,7 @@ export default function Integrations() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search all connectors"
                   className="w-full rounded-lg py-2.5 pl-9 pr-9 text-[13px] outline-none"
-                  style={{ background: '#0B1220', border: '1px solid #1E293B', color: '#F4F7FA' }}
+                  style={{ background: '#0B1220', border: '1px solid #1E293B', color: 'var(--ink-display, #EDF1F7)' }}
                   data-testid="integrations-search"
                 />
                 {searchTerm && (
@@ -833,7 +841,7 @@ export default function Integrations() {
             </div>
           ) : (
             <div className="py-20 text-center">
-              <Search className="w-8 h-8 mx-auto mb-3" style={{ color: '#243140' }} />
+              <Search className="w-8 h-8 mx-auto mb-3" style={{ color: 'rgba(140,170,210,0.12)' }} />
               <p className="text-sm mb-1" style={{ color: '#64748B' }}>No connectors found for this filter.</p>
             </div>
           )}

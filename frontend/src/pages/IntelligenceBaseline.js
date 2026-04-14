@@ -1,299 +1,465 @@
-import { RadarSweep } from '../components/LoadingSystems';
 import { useState, useEffect } from 'react';
-import { useSupabaseAuth } from '../context/SupabaseAuthContext';
-import { apiClient } from '../lib/api';
-import { toast } from 'sonner';
-import { Loader2, Save, Shield, TrendingUp, Users, Globe, Clock, Bell } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Sparkles, Calendar, Activity, Loader2, AlertCircle } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily, colors, radius } from '../design-system/tokens';
+import { apiClient } from '../lib/api';
 
-const DOMAINS = [
-  { key: 'finance', label: 'Finance', desc: 'Cash flow, invoices, revenue signals' },
-  { key: 'sales', label: 'Sales', desc: 'Pipeline, deals, client communication' },
-  { key: 'operations', label: 'Operations', desc: 'Meetings, capacity, process drift' },
-  { key: 'team', label: 'Team', desc: 'Capacity, strain, gaps' },
-  { key: 'market', label: 'Market', desc: 'Competitors, regulatory, external shifts' },
-];
+/* --- Domain display config --- */
+const DOMAIN_CONFIG = {
+  revenue:    { label: 'Revenue',    color: '#E85D00' },
+  operations: { label: 'Operations', color: '#2563EB' },
+  customer:   { label: 'Customer',   color: '#16A34A' },
+  finance:    { label: 'Financial',  color: '#F59E0B' },
+  financial:  { label: 'Financial',  color: '#F59E0B' },
+  compliance: { label: 'Compliance', color: '#7C3AED' },
+  security:   { label: 'Security',   color: '#0891B2' },
+  strategy:   { label: 'Strategy',   color: '#E85D00' },
+  retention:  { label: 'Retention',  color: '#7C3AED' },
+  peoplerisk: { label: 'People Risk', color: '#DC2626' },
+  team:       { label: 'Team',       color: '#7C3AED' },
+  market:     { label: 'Market',     color: '#2563EB' },
+  sales:      { label: 'Sales',      color: '#16A34A' },
+};
 
-const SENSITIVITY_OPTIONS = [
-  { value: 'low', label: 'Low', desc: 'Only major shifts' },
-  { value: 'medium', label: 'Medium', desc: 'Meaningful changes' },
-  { value: 'high', label: 'High', desc: 'Early detection' },
-];
+function scoreToStatus(score) {
+  if (score == null) return { key: 'unknown', label: 'No Data' };
+  if (score >= 85) return { key: 'above', label: 'Above Baseline' };
+  if (score >= 75) return { key: 'at', label: 'At Baseline' };
+  if (score >= 60) return { key: 'below', label: 'Below Baseline' };
+  return { key: 'declining', label: 'Declining' };
+}
 
-const ALERT_OPTIONS = [
-  { value: 'silent', label: 'Silent', desc: 'Only critical escalations' },
-  { value: 'moderate', label: 'Moderate', desc: 'Balanced awareness' },
-  { value: 'aggressive', label: 'Aggressive', desc: 'Maximum visibility' },
-];
+/* --- Status badge colors (dark theme) --- */
+const STATUS_STYLES = {
+  above:    { bg: 'rgba(22,163,74,0.15)', color: '#4ADE80', border: 'rgba(22,163,74,0.3)' },
+  at:       { bg: 'rgba(37,99,235,0.15)', color: '#60A5FA', border: 'rgba(37,99,235,0.3)' },
+  below:    { bg: 'rgba(245,158,11,0.15)', color: '#FBBF24', border: 'rgba(245,158,11,0.3)' },
+  declining:{ bg: 'rgba(220,38,38,0.15)', color: '#F87171', border: 'rgba(220,38,38,0.3)' },
+  unknown:  { bg: 'rgba(140,170,210,0.08)', color: 'var(--ink-muted, #708499)', border: 'rgba(140,170,210,0.12)' },
+};
 
-const FREQUENCY_OPTIONS = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'fortnightly', label: 'Fortnightly' },
-  { value: 'monthly', label: 'Monthly' },
-];
+/* --- Delta icon --- */
+const DeltaIcon = ({ direction }) => {
+  if (direction === 'up') return <TrendingUp style={{ width: 12, height: 12, color: colors.success }} />;
+  if (direction === 'down') return <TrendingDown style={{ width: 12, height: 12, color: colors.danger }} />;
+  return <Minus style={{ width: 12, height: 12, color: colors.textMuted }} />;
+};
 
-const HORIZON_OPTIONS = [
-  { value: 'weekly', label: 'This week' },
-  { value: 'monthly', label: 'This month' },
-  { value: 'quarterly', label: 'This quarter' },
-  { value: 'annual', label: 'This year' },
-];
-
-const FOCUS_OPTIONS = [
-  { value: 'growth', label: 'Growth', desc: 'Prioritise opportunity signals' },
-  { value: 'balanced', label: 'Balanced', desc: 'Equal weight' },
-  { value: 'efficiency', label: 'Efficiency', desc: 'Prioritise risk and waste signals' },
-];
-
-const Toggle = ({ checked, onChange, label, desc }) => (
-  <label data-testid={`toggle-${label.toLowerCase().replace(/\s/g, '-')}`} className="flex items-center justify-between py-3 cursor-pointer group">
-    <div>
-      <div className="text-sm text-white/80 group-hover:text-white transition-colors">{label}</div>
-      {desc && <div className="text-xs text-white/30 mt-0.5">{desc}</div>}
-    </div>
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative w-10 h-5 rounded-full transition-colors ${checked ? 'bg-white/30' : 'bg-white/8'}`}
+/* --- Domain Card --- */
+const DomainCard = ({ domain }) => {
+  const sts = STATUS_STYLES[domain.status] || STATUS_STYLES.unknown;
+  return (
+    <div
+      style={{
+        background: colors.bgCard,
+        border: '1px solid rgba(140,170,210,0.12)',
+        borderRadius: radius.card,
+        padding: 20,
+        transition: 'border-color 0.2s, box-shadow 0.2s',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.25)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)'; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(140,170,210,0.12)'; e.currentTarget.style.boxShadow = 'none'; }}
     >
-      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${checked ? 'translate-x-5 bg-white' : 'translate-x-0 bg-white/40'}`} />
-    </button>
-  </label>
-);
+      {/* Head: name + score */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontFamily: fontFamily.body, fontWeight: 600, fontSize: 15, color: colors.text }}>{domain.name}</span>
+        <span style={{ fontFamily: fontFamily.display, fontWeight: 700, fontSize: 28, color: domain.color, lineHeight: 1 }}>
+          {domain.score != null ? domain.score : '--'}
+        </span>
+      </div>
 
-const RadioGroup = ({ value, onChange, options, name }) => (
-  <div className="flex flex-wrap gap-2">
-    {options.map(opt => (
-      <button
-        key={opt.value}
-        type="button"
-        data-testid={`radio-${name}-${opt.value}`}
-        onClick={() => onChange(opt.value)}
-        className={`px-4 py-2 text-xs tracking-wider border transition-all ${
-          value === opt.value
-            ? 'border-white/40 bg-white/10 text-white'
-            : 'border-white/8 bg-transparent text-white/40 hover:border-white/20 hover:text-white/60'
-        }`}
-      >
-        <div>{opt.label}</div>
-        {opt.desc && <div className="text-[10px] mt-0.5 opacity-60">{opt.desc}</div>}
-      </button>
-    ))}
-  </div>
-);
+      {/* Status badge */}
+      <div style={{ marginBottom: 12 }}>
+        <span style={{
+          display: 'inline-block',
+          fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
+          padding: '3px 10px', borderRadius: 9999,
+          background: sts.bg, color: sts.color, border: '1px solid ' + sts.border,
+        }}>
+          {domain.statusLabel}
+        </span>
+      </div>
 
-const Section = ({ icon: Icon, title, children }) => (
-  <div className="border border-white/6 p-6 space-y-4">
-    <div className="flex items-center gap-3">
-      <Icon className="w-4 h-4 text-white/30" />
-      <h3 className="text-xs tracking-[0.25em] uppercase text-white/50">{title}</h3>
-    </div>
-    {children}
-  </div>
-);
+      {/* Progress bar */}
+      <div style={{ height: 6, background: colors.bgInput, borderRadius: 9999, overflow: 'hidden', marginBottom: 16 }}>
+        <div style={{ height: '100%', width: (domain.score != null ? domain.score : 0) + '%', background: domain.color, borderRadius: 9999, transition: 'width 0.6s ease' }} />
+      </div>
 
-const IntelligenceBaselinePage = () => {
-  const { user } = useSupabaseAuth();
-  const [baseline, setBaseline] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [configured, setConfigured] = useState(false);
-
-  useEffect(() => { loadBaseline(); }, []);
-
-  const loadBaseline = async () => {
-    try {
-      const res = await apiClient.get('/baseline');
-      setBaseline(res.data.baseline);
-      setConfigured(res.data.configured);
-    } catch (e) {
-      console.error('[baseline] Load failed:', e);
-      toast.error('Failed to load configuration');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await apiClient.post('/baseline', { baseline });
-      setConfigured(true);
-      toast.success('Intelligence baseline saved');
-    } catch (e) {
-      console.error('[baseline] Save failed:', e);
-      toast.error('Failed to save configuration');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const update = (path, value) => {
-    setBaseline(prev => {
-      const next = JSON.parse(JSON.stringify(prev));
-      const keys = path.split('.');
-      let obj = next;
-      for (let i = 0; i < keys.length - 1; i++) obj = obj[keys[i]];
-      obj[keys[keys.length - 1]] = value;
-      return next;
-    });
-  };
-
-  if (loading || !baseline) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-full">
-          <RadarSweep compact />
+      {/* 4 metrics (2x2 grid) */}
+      {domain.metrics && domain.metrics.length > 0 ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {domain.metrics.map((m, i) => (
+            <div key={i} style={{ padding: '6px 0' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: colors.textMuted, marginBottom: 2, fontFamily: fontFamily.mono }}>
+                {m.label}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontFamily: fontFamily.mono, fontSize: 14, fontWeight: 600, color: colors.text }}>{m.value}</span>
+                {m.delta && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 11, color: m.direction === 'up' ? colors.success : m.direction === 'down' ? colors.danger : colors.textMuted }}>
+                    <DeltaIcon direction={m.direction} />
+                    {m.delta}
+                  </span>
+                )}
+              </div>
+              {m.baseline && (
+                <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 1, fontFamily: fontFamily.body }}>
+                  Baseline: {m.baseline}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-      </DashboardLayout>
-    );
+      ) : (
+        <div style={{ fontSize: 12, color: colors.textMuted, fontFamily: fontFamily.body, textAlign: 'center', padding: '8px 0' }}>
+          Connect data sources to see domain metrics.
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ---------------------------------------------------------------
+   BUILD DOMAINS FROM SNAPSHOT DATA
+   --------------------------------------------------------------- */
+function buildDomainsFromSnapshot(cognitive) {
+  if (!cognitive) return [];
+
+  const domains = [];
+
+  // Try to extract domain scores from various snapshot structures
+  // 1. Check resolution_queue for domain-level signals
+  const rq = cognitive.resolution_queue || [];
+  const openRisks = cognitive.open_risks || [];
+
+  // 2. Check system_state for domain scores
+  const systemState = cognitive.system_state || {};
+
+  // 3. Check for direct domain scores in the cognitive object
+  const knownDomains = ['revenue', 'operations', 'customer', 'finance', 'financial', 'compliance', 'security', 'strategy', 'retention', 'team', 'market', 'sales'];
+
+  // Build a score map from available data
+  const scoreMap = {};
+
+  // Check if cognitive has direct domain data
+  for (const key of knownDomains) {
+    if (cognitive[key] && typeof cognitive[key] === 'object') {
+      const domainData = cognitive[key];
+      const score = domainData.score || domainData.health_score || domainData.baseline_score;
+      if (score != null) {
+        scoreMap[key] = { score: Math.round(score), data: domainData };
+      }
+    }
   }
 
-  const domains = baseline.monitored_domains || {};
-  const thresholds = baseline.escalation_thresholds || {};
+  // Check system_state for domain scores
+  if (systemState.domain_scores && typeof systemState.domain_scores === 'object') {
+    for (const [key, val] of Object.entries(systemState.domain_scores)) {
+      const k = key.toLowerCase();
+      if (!scoreMap[k]) {
+        scoreMap[k] = { score: typeof val === 'number' ? Math.round(val) : (val?.score ? Math.round(val.score) : null), data: typeof val === 'object' ? val : {} };
+      }
+    }
+  }
+
+  // Check execution for ops-related data
+  const exec = cognitive.execution || {};
+  if (exec.sla_breaches != null || exec.task_aging != null) {
+    if (!scoreMap.operations) {
+      const opsScore = exec.task_aging != null ? Math.max(0, 100 - exec.task_aging) : null;
+      scoreMap.operations = { score: opsScore, data: exec };
+    }
+  }
+
+  // Check founder_vitals for people-related data
+  const vitals = cognitive.founder_vitals || {};
+
+  // Map resolution_queue items to domain severity
+  const domainSeverity = {};
+  [...rq, ...openRisks].forEach(item => {
+    const d = (item.domain || '').toLowerCase();
+    if (!domainSeverity[d]) domainSeverity[d] = [];
+    domainSeverity[d].push(item.severity || 'info');
+  });
+
+  // If we have no scores at all but have resolution queue items, derive basic domains
+  if (Object.keys(scoreMap).length === 0 && (rq.length > 0 || openRisks.length > 0)) {
+    const seenDomains = new Set();
+    [...rq, ...openRisks].forEach(item => {
+      const d = (item.domain || '').toLowerCase();
+      if (d && !seenDomains.has(d)) {
+        seenDomains.add(d);
+        scoreMap[d] = { score: null, data: {} };
+      }
+    });
+  }
+
+  // Build domain cards
+  for (const [key, { score, data }] of Object.entries(scoreMap)) {
+    const config = DOMAIN_CONFIG[key] || { label: key.charAt(0).toUpperCase() + key.slice(1), color: 'var(--ink-muted, #708499)' };
+    const status = scoreToStatus(score);
+
+    // Build metrics from available data
+    const metrics = [];
+    if (data && typeof data === 'object') {
+      // Extract up to 4 meaningful metrics from domain data
+      const metricKeys = Object.keys(data).filter(k =>
+        !['score', 'health_score', 'baseline_score', 'domain', 'status'].includes(k)
+        && (typeof data[k] === 'number' || typeof data[k] === 'string')
+      ).slice(0, 4);
+
+      metricKeys.forEach(mk => {
+        const val = data[mk];
+        metrics.push({
+          label: mk.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+          value: typeof val === 'number' ? String(val) : val,
+          direction: 'flat',
+        });
+      });
+    }
+
+    domains.push({
+      name: config.label,
+      score,
+      color: config.color,
+      status: status.key,
+      statusLabel: status.label,
+      metrics,
+    });
+  }
+
+  // If no domains found at all, return empty
+  return domains;
+}
+
+/* ---------------------------------------------------------------
+   Main Page
+   --------------------------------------------------------------- */
+const IntelligenceBaselinePage = () => {
+  const [domains, setDomains] = useState([]);
+  const [insightText, setInsightText] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [snapshotRes, cognitionRes] = await Promise.allSettled([
+          apiClient.get('/snapshot/latest', { timeout: 10000 }),
+          apiClient.get('/cognition/overview', { timeout: 10000 }),
+        ]);
+
+        if (cancelled) return;
+
+        let cognitive = null;
+        let cogOverview = null;
+
+        if (snapshotRes.status === 'fulfilled') {
+          cognitive = snapshotRes.value.data?.cognitive;
+        }
+        if (cognitionRes.status === 'fulfilled') {
+          cogOverview = cognitionRes.value.data;
+        }
+
+        // Build domains from snapshot data
+        const builtDomains = buildDomainsFromSnapshot(cognitive);
+        setDomains(builtDomains);
+
+        // Build insight text
+        if (cognitive) {
+          const memo = cognitive.executive_memo;
+          const rq = cognitive.resolution_queue || [];
+          const openRisks = cognitive.open_risks || [];
+
+          if (memo) {
+            setInsightText(memo);
+          } else if (builtDomains.length > 0) {
+            const belowDomains = builtDomains.filter(d => d.status === 'below' || d.status === 'declining');
+            if (belowDomains.length > 0) {
+              setInsightText(
+                belowDomains.map(d => d.name).join(' and ')
+                + (belowDomains.length === 1 ? ' shows' : ' show')
+                + ' below-baseline drift this period. Review signals in each domain for recommended actions.'
+              );
+            } else if (rq.length > 0 || openRisks.length > 0) {
+              setInsightText(
+                (rq.length + openRisks.length) + ' active signal'
+                + ((rq.length + openRisks.length) === 1 ? '' : 's')
+                + ' detected across your intelligence baseline.'
+              );
+            }
+          }
+        }
+
+        // Merge cognition overview data if available
+        if (cogOverview && cogOverview.propagation_map) {
+          // Could enhance domain cards with propagation data in future
+        }
+
+      } catch (err) {
+        if (!cancelled) {
+          setError(err?.response?.data?.detail || err?.message || 'Failed to load baseline data.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    loadData();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <DashboardLayout>
-      <div data-testid="intelligence-baseline-page" className="min-h-screen bg-[#050505] text-white/80">
-        <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+      <div data-testid="intelligence-baseline-page" style={{ minHeight: '100vh', background: colors.bg, color: colors.textSecondary }}>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '40px 24px' }}>
 
           {/* Header */}
-          <div>
-            <div className="text-[10px] tracking-[0.4em] uppercase text-white/25 mb-1">BIQC</div>
-            <h1 className="text-lg tracking-[0.15em] text-white/70 font-semibold">Intelligence Baseline</h1>
-            <p className="text-xs text-white/30 mt-2 leading-relaxed max-w-lg">
-              Configure what BIQC monitors, how often it briefs, and how aggressively it escalates. This drives all downstream intelligence.
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+            <h1 style={{ fontFamily: fontFamily.display, fontSize: 28, fontWeight: 700, color: colors.text, letterSpacing: '-0.02em', margin: 0 }}>
+              Intelligence Baseline
+            </h1>
+            <button
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '10px 20px', borderRadius: radius.button, border: 'none',
+                background: 'linear-gradient(135deg, ' + colors.brand + ', ' + colors.brandDark + ')',
+                color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                transition: 'box-shadow 0.2s, transform 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(232,93,0,0.35)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
+            >
+              <Activity style={{ width: 16, height: 16 }} />
+              Recalibrate
+            </button>
+          </div>
+          <p style={{ fontSize: 14, color: colors.textSecondary, lineHeight: 1.5, maxWidth: 640, marginBottom: 32, marginTop: 0 }}>
+            Your intelligence baseline is a personalised benchmark that BIQc uses to detect drift, anomalies, and emerging patterns. It recalibrates quarterly.
+          </p>
+
+          {/* Error state */}
+          {error && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: colors.dangerDim, border: '1px solid rgba(220,38,38,0.3)',
+              borderRadius: radius.card, padding: 16, marginBottom: 24,
+              fontSize: 13, color: '#F87171', fontFamily: fontFamily.body,
+            }}>
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+
+          {/* AI Insight Banner */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(232,93,0,0.08) 0%, ' + colors.bgCard + ' 40%)',
+            border: '1px solid rgba(140,170,210,0.12)',
+            borderLeft: '3px solid ' + colors.brand,
+            borderRadius: radius.card,
+            padding: 20, marginBottom: 32,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <Sparkles style={{ width: 16, height: 16, color: colors.brand }} />
+              <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: colors.brand }}>
+                Baseline Intelligence
+              </span>
+            </div>
+            <p style={{ fontSize: 14, color: colors.textSecondary, lineHeight: 1.6, margin: 0 }}>
+              {loading ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />
+                  Analysing baseline data...
+                </span>
+              ) : insightText ? (
+                <span><strong style={{ color: colors.text }}>{insightText}</strong></span>
+              ) : (
+                <span style={{ color: colors.textMuted }}>
+                  Connect data sources and run initial calibration to establish your intelligence baseline.
+                </span>
+              )}
             </p>
-            {!configured && (
-              <div className="mt-3 text-xs text-amber-400/70 border border-amber-400/20 px-3 py-2 inline-block">
-                Not yet configured. Set your preferences and save.
-              </div>
-            )}
           </div>
 
-          {/* Monitored Domains */}
-          <Section icon={Shield} title="Monitored Domains">
-            {DOMAINS.map(d => (
-              <Toggle
-                key={d.key}
-                checked={domains[d.key] || false}
-                onChange={v => update(`monitored_domains.${d.key}`, v)}
-                label={d.label}
-                desc={d.desc}
-              />
-            ))}
-          </Section>
-
-          {/* Risk Sensitivity */}
-          <Section icon={TrendingUp} title="Risk Sensitivity">
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs text-white/40 mb-2">Client Risk</div>
-                <RadioGroup
-                  name="client-risk"
-                  value={baseline.client_risk_sensitivity}
-                  onChange={v => update('client_risk_sensitivity', v)}
-                  options={SENSITIVITY_OPTIONS}
-                />
-              </div>
-              <div>
-                <div className="text-xs text-white/40 mb-2">Team Risk</div>
-                <RadioGroup
-                  name="team-risk"
-                  value={baseline.team_risk_sensitivity}
-                  onChange={v => update('team_risk_sensitivity', v)}
-                  options={SENSITIVITY_OPTIONS}
-                />
+          {/* Domain Baseline Cards */}
+          {loading ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              padding: 64, color: colors.textMuted, fontSize: 14, fontFamily: fontFamily.body,
+            }}>
+              <Loader2 style={{ width: 20, height: 20, animation: 'spin 1s linear infinite' }} />
+              Loading baseline domains...
+            </div>
+          ) : domains.length > 0 ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 16, marginBottom: 40,
+            }}>
+              {domains.map(d => <DomainCard key={d.name} domain={d} />)}
+            </div>
+          ) : (
+            <div style={{
+              background: colors.bgCard, border: '1px solid rgba(140,170,210,0.12)',
+              borderRadius: radius.card, padding: '40px 24px',
+              textAlign: 'center', marginBottom: 40,
+            }}>
+              <div style={{ fontSize: 14, color: colors.textMuted, fontFamily: fontFamily.body, lineHeight: 1.6 }}>
+                Connect data sources and run initial calibration to establish your intelligence baseline.
               </div>
             </div>
-          </Section>
+          )}
 
-          {/* Strategic Focus */}
-          <Section icon={Globe} title="Strategic Focus">
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs text-white/40 mb-2">Growth vs Efficiency</div>
-                <RadioGroup
-                  name="focus"
-                  value={baseline.growth_vs_efficiency}
-                  onChange={v => update('growth_vs_efficiency', v)}
-                  options={FOCUS_OPTIONS}
-                />
-              </div>
-              <div>
-                <div className="text-xs text-white/40 mb-2">Time Horizon</div>
-                <RadioGroup
-                  name="horizon"
-                  value={baseline.time_horizon}
-                  onChange={v => update('time_horizon', v)}
-                  options={HORIZON_OPTIONS}
-                />
+          {/* Responsive override for the grid */}
+          <style>{`
+            @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+            @media (max-width: 900px) {
+              [data-testid="intelligence-baseline-page"] > div > div:nth-child(4) {
+                grid-template-columns: repeat(2, 1fr) !important;
+              }
+            }
+            @media (max-width: 600px) {
+              [data-testid="intelligence-baseline-page"] > div > div:nth-child(4) {
+                grid-template-columns: 1fr !important;
+              }
+            }
+            @media (max-width: 767px) {
+              .ib-table-wrap th:nth-child(4),
+              .ib-table-wrap td:nth-child(4),
+              .ib-table-wrap th:nth-child(5),
+              .ib-table-wrap td:nth-child(5),
+              .ib-table-wrap th:nth-child(6),
+              .ib-table-wrap td:nth-child(6) { display: none; }
+            }
+          `}</style>
+
+          {/* Calibration History Table */}
+          <div style={{ marginBottom: 40 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <Calendar style={{ width: 18, height: 18, color: colors.textMuted }} />
+              <h2 style={{ fontFamily: fontFamily.display, fontSize: 22, fontWeight: 700, color: colors.text, margin: 0 }}>
+                Calibration History
+              </h2>
+            </div>
+            <div className="ib-table-wrap" style={{
+              background: colors.bgCard,
+              border: '1px solid rgba(140,170,210,0.12)',
+              borderRadius: radius.card,
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                padding: '24px 20px',
+                textAlign: 'center',
+                color: colors.textMuted,
+                fontSize: 14,
+                fontFamily: fontFamily.body,
+                lineHeight: 1.6,
+              }}>
+                No calibration history. Run a baseline calibration to establish your starting metrics.
               </div>
             </div>
-          </Section>
-
-          {/* Briefing Preferences */}
-          <Section icon={Clock} title="Briefing Preferences">
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs text-white/40 mb-2">Briefing Frequency</div>
-                <RadioGroup
-                  name="frequency"
-                  value={baseline.briefing_frequency}
-                  onChange={v => update('briefing_frequency', v)}
-                  options={FREQUENCY_OPTIONS}
-                />
-              </div>
-            </div>
-          </Section>
-
-          {/* Alert Tolerance */}
-          <Section icon={Bell} title="Alert Tolerance">
-            <RadioGroup
-              name="alerts"
-              value={baseline.alert_tolerance}
-              onChange={v => update('alert_tolerance', v)}
-              options={ALERT_OPTIONS}
-            />
-          </Section>
-
-          {/* Escalation Thresholds */}
-          <Section icon={Users} title="Escalation Thresholds">
-            <p className="text-xs text-white/30 mb-3">Confidence threshold before escalation. Lower = more sensitive.</p>
-            {DOMAINS.filter(d => domains[d.key]).map(d => (
-              <div key={d.key} className="flex items-center justify-between py-2">
-                <span className="text-sm text-white/60">{d.label}</span>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min="0.4"
-                    max="0.95"
-                    step="0.05"
-                    value={thresholds[d.key] || 0.7}
-                    onChange={e => update(`escalation_thresholds.${d.key}`, parseFloat(e.target.value))}
-                    className="w-32 accent-white/50"
-                    data-testid={`threshold-${d.key}`}
-                  />
-                  <span className="text-xs text-white/40 w-10 text-right">{(thresholds[d.key] || 0.7).toFixed(2)}</span>
-                </div>
-              </div>
-            ))}
-          </Section>
-
-          {/* Save */}
-          <div className="flex justify-end pt-4 border-t border-white/6">
-            <button
-              data-testid="save-baseline"
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 px-6 py-2.5 text-xs tracking-[0.2em] uppercase bg-white/10 border border-white/20 text-white/80 hover:bg-white/15 transition-colors disabled:opacity-30"
-            >
-              {saving ? null : <Save className="w-3.5 h-3.5" />}
-              {saving ? 'Saving...' : 'Save Configuration'}
-            </button>
           </div>
 
         </div>

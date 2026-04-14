@@ -83,9 +83,9 @@ export const DailyBriefCard = () => {
     <div
       className="rounded-xl p-5 mb-6 relative overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #141C26 0%, #141C26 100%)',
-        border: '1px solid #FF6A0030',
-        boxShadow: '0 4px 24px rgba(255, 106, 0, 0.08)',
+        background: 'linear-gradient(135deg, var(--surface, #0E1628) 0%, var(--surface, #0E1628) 100%)',
+        border: '1px solid #E85D0030',
+        boxShadow: '0 4px 24px rgba(232, 93, 0, 0.08)',
       }}
       data-testid="daily-brief-card"
     >
@@ -100,14 +100,14 @@ export const DailyBriefCard = () => {
       </button>
 
       {/* Accent bar */}
-      <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: 'linear-gradient(90deg, #FF6A00, #FF8C33, transparent)' }} />
+      <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: 'linear-gradient(90deg, #E85D00, #FF8C33, transparent)' }} />
 
       <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FF6A0015' }}>
-          <Zap className="w-5 h-5" style={{ color: '#FF6A00' }} />
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#E85D0015' }}>
+          <Zap className="w-5 h-5" style={{ color: '#E85D00' }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
             Today's Priority
           </p>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body }}>
@@ -120,8 +120,8 @@ export const DailyBriefCard = () => {
           )}
           <button
             onClick={handleOpen}
-            className="flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-[#FF6A00]/10"
-            style={{ color: '#FF6A00', fontFamily: fontFamily.mono, border: '1px solid #FF6A0030' }}
+            className="flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-[#E85D00]/10"
+            style={{ color: '#E85D00', fontFamily: fontFamily.mono, border: '1px solid #E85D0030' }}
             data-testid="open-brief-btn"
           >
             Open Brief <ArrowRight className="w-3 h-3" />
@@ -133,7 +133,7 @@ export const DailyBriefCard = () => {
       {(brief.alerts_count > 0 || brief.priority_domain || degradedTruth.length > 0) && (
         <div className="flex items-center gap-4 mt-4 pt-3" style={{ borderTop: '1px solid var(--biqc-border)' }}>
           {brief.priority_domain && (
-            <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#FF6A0010', color: '#FF6A00', fontFamily: fontFamily.mono }}>
+            <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#E85D0010', color: '#E85D00', fontFamily: fontFamily.mono }}>
               {brief.priority_domain}
             </span>
           )}
@@ -174,19 +174,19 @@ export const DailyBriefBanner = ({ onOpen }) => {
 
   return (
     <div
-      className="pointer-events-none fixed top-14 left-0 right-0 z-40 flex items-center justify-center px-4 py-3"
-      style={{ background: '#FF6A0010', borderBottom: '1px solid #FF6A0030', backdropFilter: 'blur(8px)' }}
+      className="pointer-events-none fixed top-[60px] left-0 right-0 z-40 flex items-center justify-center px-4 py-3"
+      style={{ background: '#E85D0010', borderBottom: '1px solid #E85D0030', backdropFilter: 'blur(8px)' }}
       data-testid="daily-brief-banner"
     >
       <div className="pointer-events-auto flex items-center gap-3 max-w-xl">
-        <Zap className="w-4 h-4 shrink-0" style={{ color: '#FF6A00' }} />
+        <Zap className="w-4 h-4 shrink-0" style={{ color: '#E85D00' }} />
         <p className="text-sm" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.body }}>
           Your Business Brief is ready.
         </p>
         <button
           onClick={() => { setVisible(false); onOpen?.(); }}
           className="px-3 py-1 rounded-lg text-xs font-semibold shrink-0"
-          style={{ background: '#FF6A00', color: 'white', fontFamily: fontFamily.mono }}
+          style={{ background: '#E85D00', color: 'white', fontFamily: fontFamily.mono }}
           data-testid="view-brief-btn"
         >
           View

@@ -159,14 +159,14 @@ const AuthCallbackSupabase = () => {
       <div className="text-center space-y-5">
         <div
           className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto"
-          style={{ background: '#FF6A00', animation: 'biqcPulse 2s ease-in-out infinite' }}
+          style={{ background: '#E85D00', animation: 'biqcPulse 2s ease-in-out infinite' }}
         >
           <span className="text-white font-bold text-xl" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
         </div>
         <p className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: "'Inter', sans-serif" }}>{status}</p>
         <div className="w-40 mx-auto">
-          <div className="h-0.5 rounded-full overflow-hidden" style={{ background: '#243140' }}>
-            <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg,#FF6A00,#FF8C33)', animation: 'biqcBar 3s ease-in-out infinite' }} />
+          <div className="h-0.5 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
+            <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg,#E85D00,#FF8C33)', animation: 'biqcBar 3s ease-in-out infinite' }} />
           </div>
         </div>
       </div>

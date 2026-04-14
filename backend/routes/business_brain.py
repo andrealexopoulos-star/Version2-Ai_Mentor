@@ -234,7 +234,10 @@ async def get_brain_priorities(
     engine = BusinessBrainEngine(get_sb(), tenant_id, current_user)
     try:
         if not engine.business_core_ready:
-            fallback = await _build_transient_priorities_from_live_integrations(current_user)
+            try:
+                fallback = await _build_transient_priorities_from_live_integrations(current_user)
+            except Exception:
+                fallback = {"concerns": [], "tier_mode": "free", "all_clear": True}
             concerns = [_enrich_concern_contract(item, "live_transient") for item in (fallback.get("concerns") or [])]
             return {
                 "tenant_id": tenant_id,

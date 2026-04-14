@@ -116,8 +116,8 @@ const EnergyGalaxyBackground = () => {
       const glowAlpha = 0.08 + pulsePhase * 0.02;
 
       const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, CONVERGENCE_RADIUS * scale);
-      grad.addColorStop(0, `rgba(255,140,40,${glowAlpha})`);
-      grad.addColorStop(0.3, `rgba(255,106,0,${glowAlpha * 0.6})`);
+      grad.addColorStop(0, `rgba(232,93,0,${glowAlpha})`);
+      grad.addColorStop(0.3, `rgba(232,93,0,${glowAlpha * 0.6})`);
       grad.addColorStop(0.6, `rgba(200,70,0,${glowAlpha * 0.2})`);
       grad.addColorStop(1, 'transparent');
       ctx.fillStyle = grad;
@@ -162,16 +162,16 @@ const EnergyGalaxyBackground = () => {
         // Stroke with center-fading gradient
         const fadeGrad = ctx.createLinearGradient(0, 0, W, 0);
         const a = thread.alpha;
-        fadeGrad.addColorStop(0, `rgba(255,122,24,${a * 0.8})`);
-        fadeGrad.addColorStop(0.25, `rgba(255,140,40,${a})`);
+        fadeGrad.addColorStop(0, `rgba(232,93,0,${a * 0.8})`);
+        fadeGrad.addColorStop(0.25, `rgba(232,93,0,${a})`);
         fadeGrad.addColorStop(0.38, `rgba(255,156,69,${a * 0.3})`);
         fadeGrad.addColorStop(0.5, `rgba(255,156,69,0)`);         // transparent at center
         fadeGrad.addColorStop(0.62, `rgba(255,156,69,${a * 0.3})`);
-        fadeGrad.addColorStop(0.75, `rgba(255,140,40,${a})`);
-        fadeGrad.addColorStop(1, `rgba(255,122,24,${a * 0.8})`);
+        fadeGrad.addColorStop(0.75, `rgba(232,93,0,${a})`);
+        fadeGrad.addColorStop(1, `rgba(232,93,0,${a * 0.8})`);
         ctx.strokeStyle = fadeGrad;
         ctx.lineWidth = 1.5;
-        ctx.shadowColor = 'rgba(255,140,40,0.15)';
+        ctx.shadowColor = 'rgba(232,93,0,0.15)';
         ctx.shadowBlur = 8;
         ctx.stroke();
         ctx.shadowBlur = 0;
@@ -218,7 +218,7 @@ const EnergyGalaxyBackground = () => {
         // Tiny dot only — no glow halo
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,140,40,${fadeAlpha})`;
+        ctx.fillStyle = `rgba(232,93,0,${fadeAlpha})`;
         ctx.fill();
       });
 

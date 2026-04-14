@@ -5,8 +5,8 @@ const AgencyView = () => (
   <PlatformLayout title="Marketing / Digital Agency — Executive Overview">
     <div className="space-y-6 max-w-[1200px]">
       <div>
-        <h2 className="text-xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Good morning, Andre.</h2>
-        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: INTER }}>Agency Intelligence &middot; Last scan: 5 minutes ago</p>
+        <h2 className="text-xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: SORA }}>Good morning, Andre.</h2>
+        <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: INTER }}>Agency Intelligence &middot; Last scan: 5 minutes ago</p>
       </div>
       <SystemState state="DRIFT" confidence={77} velocity="worsening" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -14,8 +14,8 @@ const AgencyView = () => (
           {/* Retainer Stability */}
           <Panel>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Retainer Stability Monitor</h3>
-              <span className="text-xs px-2 py-0.5 rounded" style={{ fontFamily: MONO, color: '#FF6A00', background: '#FF6A0015' }}>2 at risk</span>
+              <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: SORA }}>Retainer Stability Monitor</h3>
+              <span className="text-xs px-2 py-0.5 rounded" style={{ fontFamily: MONO, color: '#E85D00', background: '#E85D0015' }}>2 at risk</span>
             </div>
             {[
               { client: 'BluePeak Ventures', monthly: '$8,500', renewal: 42, engagement: 'declining', risk: 'high' },
@@ -24,45 +24,45 @@ const AgencyView = () => (
               { client: 'Catalyst Finance', monthly: '$9,800', renewal: 120, engagement: 'growing', risk: 'low' },
               { client: 'Pinnacle Legal', monthly: '$4,500', renewal: 65, engagement: 'stable', risk: 'medium' },
             ].map(c => {
-              const rc = { high: '#FF6A00', medium: '#F59E0B', low: '#10B981' };
+              const rc = { high: '#E85D00', medium: '#F59E0B', low: '#10B981' };
               return (
-                <div key={c.client} className="flex items-center gap-3 p-2.5 rounded mb-2" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                <div key={c.client} className="flex items-center gap-3 p-2.5 rounded mb-2" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
                   <div className="w-2 h-2 rounded-full" style={{ background: rc[c.risk] }} />
                   <div className="flex-1">
-                    <span className="text-xs text-[#F4F7FA]" style={{ fontFamily: SORA }}>{c.client}</span>
+                    <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: SORA }}>{c.client}</span>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>Engagement: {c.engagement} &middot; {c.renewal}d to renewal</span>
                   </div>
-                  <span className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: MONO }}>{c.monthly}/mo</span>
+                  <span className="text-xs font-semibold text-[#EDF1F7]" style={{ fontFamily: MONO }}>{c.monthly}/mo</span>
                 </div>
               );
             })}
-            <div className="mt-3 pt-3 flex justify-between" style={{ borderTop: '1px solid #243140' }}>
+            <div className="mt-3 pt-3 flex justify-between" style={{ borderTop: '1px solid rgba(140,170,210,0.15)' }}>
               <span className="text-xs text-[#64748B]" style={{ fontFamily: MONO }}>Total MRR</span>
-              <span className="text-sm font-bold text-[#F4F7FA]" style={{ fontFamily: MONO }}>$41,000/mo</span>
+              <span className="text-sm font-bold text-[#EDF1F7]" style={{ fontFamily: MONO }}>$41,000/mo</span>
             </div>
           </Panel>
           {/* Revenue Concentration */}
           <Panel>
-            <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: SORA }}>Revenue Concentration</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7] mb-4" style={{ fontFamily: SORA }}>Revenue Concentration</h3>
             <div className="grid grid-cols-2 gap-3">
               <MetricCard label="Top Client" value="29%" sub="Horizon Health" color="#F59E0B" />
-              <MetricCard label="Top 3" value="74%" sub="$30.3K of $41K MRR" color="#FF6A00" alert />
+              <MetricCard label="Top 3" value="74%" sub="$30.3K of $41K MRR" color="#E85D00" alert />
             </div>
           </Panel>
           {/* Scope Creep */}
           <Panel>
-            <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: SORA }}>Scope Creep Monitor</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7] mb-4" style={{ fontFamily: SORA }}>Scope Creep Monitor</h3>
             {[
               { client: 'BluePeak — Brand Refresh', quoted: 60, actual: 78, impact: -3600 },
               { client: 'Metro — Monthly Content', quoted: 20, actual: 26, impact: -1200 },
             ].map(p => (
-              <div key={p.client} className="p-3 rounded-lg mb-2" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+              <div key={p.client} className="p-3 rounded-lg mb-2" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
                 <div className="flex justify-between mb-1">
-                  <span className="text-xs text-[#F4F7FA]" style={{ fontFamily: SORA }}>{p.client}</span>
-                  <span className="text-xs text-[#FF6A00]" style={{ fontFamily: MONO }}>-${Math.abs(p.impact)}</span>
+                  <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: SORA }}>{p.client}</span>
+                  <span className="text-xs text-[#E85D00]" style={{ fontFamily: MONO }}>-${Math.abs(p.impact)}</span>
                 </div>
                 <div className="flex gap-4 text-[10px] text-[#64748B]" style={{ fontFamily: MONO }}>
-                  <span>Quoted: {p.quoted}hrs</span><span>Actual: {p.actual}hrs</span><span style={{ color: '#FF6A00' }}>+{p.actual - p.quoted}hrs over</span>
+                  <span>Quoted: {p.quoted}hrs</span><span>Actual: {p.actual}hrs</span><span style={{ color: '#E85D00' }}>+{p.actual - p.quoted}hrs over</span>
                 </div>
               </div>
             ))}
@@ -71,7 +71,7 @@ const AgencyView = () => (
         <div className="space-y-4">
           <DecisionPressure score={6} />
           <Panel>
-            <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: SORA }}>Active Inevitabilities</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: SORA }}>Active Inevitabilities</h3>
             <div className="space-y-2">
               <Inevitability title="BluePeak & Metro retainers at risk — engagement declining" why="Response times up 2x. Meeting cancellations increasing. Content feedback delays." impact="-$14,700/mo if both churn ($176K annualised)" window="Re-engage within 14 days" severity="high" />
               <Inevitability title="Scope creep across 2 clients — $4,800 unbilled" why="Extra revisions and deliverables without change orders." impact="-$4,800 this month. Pattern compounds." window="Issue change orders or set boundaries this week" severity="medium" />

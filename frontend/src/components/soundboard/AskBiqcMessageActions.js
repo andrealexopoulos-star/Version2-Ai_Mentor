@@ -4,7 +4,7 @@ import { fontFamily } from '../../design-system/tokens';
 const VARIANT_STYLES = {
   neutral: { background: 'rgba(148,163,184,0.12)', color: '#CBD5E1' },
   accent: { background: 'rgba(59,130,246,0.12)', color: '#93C5FD' },
-  highlight: { background: 'rgba(255,106,0,0.12)', color: '#FFB36B' },
+  highlight: { background: 'rgba(232,93,0,0.12)', color: '#FFB36B' },
 };
 
 function ActionButton({ label, onClick, compact = false, variant = 'neutral', testId }) {

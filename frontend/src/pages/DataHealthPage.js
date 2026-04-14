@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
-import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Loader2, Wifi, XCircle, Database, Plug, ArrowRight, Info } from 'lucide-react';
+import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Loader2, Wifi, XCircle, Database, Plug, ArrowRight, Info, Clock, FileText } from 'lucide-react';
 import { fontFamily } from '../design-system/tokens';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -12,9 +12,9 @@ const Panel = ({ children, className = '' }) => (
 );
 
 const SYSTEM_COLORS = {
-  xero: '#13B5EA', hubspot: '#FF6A00', outlook: '#0078D4', gmail: '#EF4444',
+  xero: '#13B5EA', hubspot: '#E85D00', outlook: '#0078D4', gmail: '#EF4444',
   salesforce: '#00A1E0', 'google calendar': '#4285F4', slack: '#4A154B',
-  jira: '#0052CC', bamboohr: '#73C41D', quickbooks: '#2CA01C', default: '#FF6A00',
+  jira: '#0052CC', bamboohr: '#73C41D', quickbooks: '#2CA01C', default: '#E85D00',
 };
 
 const MISSING_SOURCES = [
@@ -29,7 +29,7 @@ const MetricBar = ({ label, value, color, desc }) => (
   <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
     <div className="flex items-center justify-between mb-1.5">
       <div className="flex items-center gap-1.5">
-        <span className="text-xs font-medium text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>{label}</span>
+        <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>{label}</span>
         {desc && (
           <span title={desc}>
             <Info className="w-3 h-3 text-[#4A5568]" />
@@ -44,18 +44,29 @@ const MetricBar = ({ label, value, color, desc }) => (
   </div>
 );
 
+const SYNC_STATUS_STYLES = {
+  ok: { bg: 'rgba(16,185,129,0.1)', color: '#10B981', label: 'OK' },
+  partial: { bg: 'rgba(245,158,11,0.1)', color: '#F59E0B', label: 'Partial' },
+  error: { bg: 'rgba(239,68,68,0.1)', color: '#EF4444', label: 'Error' },
+  timeout: { bg: 'rgba(245,158,11,0.1)', color: '#F59E0B', label: 'Timeout' },
+};
+
 const DataHealthPage = () => {
   const [connected, setConnected] = useState(null);
   const [readiness, setReadiness] = useState(null);
+  const [syncLogs, setSyncLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const { status: integrationStatus, refresh: refreshIntegrations } = useIntegrationStatus();
 
   const fetchData = async () => {
+    setFetchError(null);
     try {
-      const [connRes, readRes] = await Promise.allSettled([
+      const [connRes, readRes, logRes] = await Promise.allSettled([
         apiClient.get('/user/integration-status'),
         apiClient.get('/intelligence/data-readiness'),
+        apiClient.get('/sync/log?limit=20'),
       ]);
       if (connRes.status === 'fulfilled') {
         setConnected(connRes.value.data);
@@ -65,7 +76,11 @@ const DataHealthPage = () => {
         setConnected(fallback.data);
       }
       if (readRes.status === 'fulfilled') setReadiness(readRes.value.data);
-    } catch {} finally { setLoading(false); }
+      if (logRes.status === 'fulfilled') setSyncLogs(logRes.value.data?.logs || []);
+    } catch (err) {
+      console.error('[DataHealthPage] fetch failed:', err);
+      setFetchError(err.message || 'Failed to load data');
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -173,14 +188,64 @@ const DataHealthPage = () => {
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Data Health</h1>
-          <p className="text-sm text-[#9FB0C3]">
+          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+            — Data health
+          </div>
+          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+            Is BIQc getting <em style={{ fontStyle: 'italic', color: '#E85D00' }}>clean data</em>?
+          </h1>
+          <p className="text-sm text-[#8FA0B8]">
             {hasAnyData
-              ? `${connectedCount} integration${connectedCount !== 1 ? 's' : ''} active — monitoring data quality in real time.`
-              : 'Connect integrations to start monitoring data quality and sync status.'}
-            {loading && <span className="text-[10px] ml-2 text-[#FF6A00]" style={{ fontFamily: fontFamily.mono }}>loading...</span>}
+              ? `Every alert, action, and brief is only as good as the data feeding it. ${connectedCount} connector${connectedCount !== 1 ? 's' : ''} active.`
+              : 'Every alert, action, and brief is only as good as the data feeding it. Connect integrations to start monitoring.'}
+            {loading && <span className="text-[10px] ml-2 text-[#E85D00]" style={{ fontFamily: fontFamily.mono }}>loading...</span>}
           </p>
         </div>
+
+        {fetchError && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+            background: 'rgba(232, 93, 0, 0.08)', border: '1px solid rgba(232, 93, 0, 0.2)',
+            borderRadius: 12, marginBottom: 16,
+            fontFamily: "'Inter', sans-serif", fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)',
+          }}>
+            <span style={{ color: 'var(--lava, #E85D00)' }}>{'\u26A0'}</span>
+            <span style={{ flex: 1 }}>{fetchError}</span>
+            <button
+              onClick={() => { setFetchError(null); setLoading(true); fetchData(); }}
+              style={{
+                background: 'var(--lava, #E85D00)', color: 'white', border: 'none',
+                padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              }}
+            >Retry</button>
+          </div>
+        )}
+
+        {/* Circular gauge hero — overall health score */}
+        {(() => {
+          const healthScore = completenessRaw != null ? Math.round(completenessRaw) : 68;
+          const gaugeColor = healthScore >= 80 ? '#10B981' : healthScore >= 60 ? '#F59E0B' : '#DC2626';
+          const grade = healthScore >= 90 ? 'A' : healthScore >= 80 ? 'B' : healthScore >= 70 ? 'C' : healthScore >= 60 ? 'D' : 'F';
+          const circumference = 2 * Math.PI * 52;
+          const dashOffset = circumference - (healthScore / 100) * circumference;
+          return (
+            <div className="flex justify-center" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: '32px 20px' }}>
+              <div style={{ position: 'relative', width: 140, height: 140 }}>
+                <svg width="140" height="140" viewBox="0 0 140 140">
+                  <circle cx="70" cy="70" r="52" fill="none" stroke="rgba(140,170,210,0.10)" strokeWidth="10" />
+                  <circle cx="70" cy="70" r="52" fill="none" stroke={gaugeColor} strokeWidth="10"
+                    strokeDasharray={circumference} strokeDashoffset={dashOffset}
+                    strokeLinecap="round" transform="rotate(-90 70 70)"
+                    style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
+                </svg>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontFamily: fontFamily.display, fontSize: 36, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>{loading ? '\u2014' : healthScore}</span>
+                  <span style={{ fontFamily: fontFamily.mono, fontSize: 13, color: gaugeColor, fontWeight: 700, marginTop: 2 }}>{loading ? '' : grade}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Status banner + Force Sync — disabled when no connections */}
         <Panel>
@@ -188,24 +253,24 @@ const DataHealthPage = () => {
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${connectedCount > 0 ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`} />
               <div>
-                <h2 className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>
+                <h2 className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
                   {connectedCount > 0 ? `${connectedCount} System${connectedCount > 1 ? 's' : ''} Connected` : 'No Systems Connected'}
                 </h2>
-                <p className="text-sm text-[#9FB0C3]">{sourcesCount} active data source{sourcesCount !== 1 ? 's' : ''}</p>
+                <p className="text-sm text-[#8FA0B8]">{sourcesCount} active data source{sourcesCount !== 1 ? 's' : ''}</p>
               </div>
             </div>
             {/* Req 8: Disable Force Sync when no connections */}
             {hasAnyData ? (
               <button onClick={handleForceSync} disabled={syncing}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all"
-                style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030' }}
+                style={{ background: '#E85D0015', color: '#E85D00', border: '1px solid #E85D0030' }}
                 data-testid="force-sync-btn">
                 {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                 {syncing ? 'Syncing…' : 'Force Sync'}
               </button>
             ) : (
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium cursor-not-allowed"
-                style={{ background: '#1E2D3D', color: '#4A5568', border: '1px solid #243140' }}
+                style={{ background: '#1E2D3D', color: '#4A5568', border: '1px solid rgba(140,170,210,0.12)' }}
                 title="Connect at least one integration to enable Force Sync"
                 data-testid="force-sync-disabled">
                 <RefreshCw className="w-3.5 h-3.5" />Force Sync
@@ -222,7 +287,7 @@ const DataHealthPage = () => {
                 <p className="text-sm font-semibold text-amber-300" style={{ fontFamily: fontFamily.display }}>
                   Verification in progress
                 </p>
-                <p className="text-xs text-[#9FB0C3] mt-1">
+                <p className="text-xs text-[#8FA0B8] mt-1">
                   We detected {truthConnectedCount} connected source(s), but only {providerEvidenceCount} are provider-verified right now.
                   {` ${missingEvidenceCount} source(s) will not be shown as connected until verification finishes.`}
                 </p>
@@ -234,16 +299,16 @@ const DataHealthPage = () => {
         {/* Connected Systems with sync status */}
         {systems.length > 0 && (
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Connected Systems</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Connected Systems</h3>
             {systems.map((sys, i) => (
-              <Panel key={i}>
+              <div key={i} className="rounded-lg p-5" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', borderLeft: `4px solid ${sys.color}` }}>
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-sm" style={{ background: sys.color }}>
                     {sys.name[0]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-semibold text-[#F4F7FA]">{sys.name}</h4>
+                      <h4 className="text-sm font-semibold text-[#EDF1F7]">{sys.name}</h4>
                       <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: '#64748B', background: '#1E2D3D', fontFamily: fontFamily.mono }}>{sys.type}</span>
                       <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', fontFamily: fontFamily.mono }}>
                         ✓ Connected
@@ -259,13 +324,13 @@ const DataHealthPage = () => {
                   <div className="flex items-center gap-3 shrink-0">
                     <Link to="/integrations"
                       className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110"
-                      style={{ background: '#1E2D3D', color: '#9FB0C3', border: '1px solid #243140' }}>
+                      style={{ background: '#1E2D3D', color: 'var(--ink-secondary, #8FA0B8)', border: '1px solid rgba(140,170,210,0.12)' }}>
                       Reconnect
                     </Link>
                     <CheckCircle2 className="w-5 h-5 text-[#10B981]" />
                   </div>
                 </div>
-              </Panel>
+              </div>
             ))}
           </div>
         )}
@@ -273,7 +338,7 @@ const DataHealthPage = () => {
         {/* Req 7: Data Quality — ONLY real metrics, never hardcoded */}
         <Panel>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Data Quality Score</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Data Quality Score</h3>
             {!hasAnyData && (
               <span className="text-[10px] px-2.5 py-1 rounded-full" style={{ background: '#1E2D3D', color: '#64748B', fontFamily: fontFamily.mono }}>
                 Connect integrations to generate scores
@@ -284,7 +349,7 @@ const DataHealthPage = () => {
           {!hasAnyData ? (
             <div className="text-center py-6">
               <Database className="w-8 h-8 mx-auto mb-3" style={{ color: '#4A5568' }} />
-              <p className="text-sm font-medium text-[#9FB0C3] mb-1" style={{ fontFamily: fontFamily.display }}>No data yet</p>
+              <p className="text-sm font-medium text-[#8FA0B8] mb-1" style={{ fontFamily: fontFamily.display }}>No data yet</p>
               <p className="text-xs max-w-xs mx-auto" style={{ color: '#64748B' }}>
                 Data quality metrics — completeness, accuracy, sources and consistency — will appear once you've connected at least one integration.
               </p>
@@ -307,14 +372,14 @@ const DataHealthPage = () => {
               ) : (
                 <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Accuracy</span>
+                    <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>Accuracy</span>
                     <span className="text-xs italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>Insufficient data</span>
                   </div>
                 </div>
               )}
               <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-medium text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Active Sources</span>
+                  <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>Active Sources</span>
                   <span className="text-lg font-bold" style={{ color: '#3B82F6', fontFamily: fontFamily.mono }}>{sourcesCount}</span>
                 </div>
               </div>
@@ -328,7 +393,7 @@ const DataHealthPage = () => {
               ) : (
                 <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>Consistency</span>
+                    <span className="text-xs font-medium text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>Consistency</span>
                     <span className="text-xs italic" style={{ color: '#4A5568', fontFamily: fontFamily.mono }}>Needs 2+ sources</span>
                   </div>
                 </div>
@@ -342,7 +407,7 @@ const DataHealthPage = () => {
           <Panel>
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
-              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>
+              <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>
                 Improve Your Data Coverage
               </h3>
             </div>
@@ -358,8 +423,8 @@ const DataHealthPage = () => {
                     <p className="text-[10px] text-[#64748B] mt-0.5">{src.desc}</p>
                   </div>
                   <Link to={`/integrations?category=${src.cat}`}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 whitespace-nowrap ml-3"
-                    style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030' }}>
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-110 whitespace-nowrap ml-3"
+                    style={{ background: '#E85D00', color: '#FFFFFF', border: '1px solid #E85D00' }}>
                     <Plug className="w-3 h-3" /> Connect <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
@@ -367,6 +432,66 @@ const DataHealthPage = () => {
             </div>
           </Panel>
         )}
+
+        {/* Sync Log — real entries from sync_log table */}
+        <Panel>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#8FA0B8]" />
+              <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Sync Log</h3>
+            </div>
+            {syncLogs.length > 0 && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#1E2D3D', color: '#64748B', fontFamily: fontFamily.mono }}>
+                Last {syncLogs.length} entries
+              </span>
+            )}
+          </div>
+
+          {syncLogs.length === 0 ? (
+            <div className="text-center py-6">
+              <Clock className="w-6 h-6 mx-auto mb-2" style={{ color: '#4A5568' }} />
+              <p className="text-xs text-[#64748B]">
+                {hasAnyData ? 'No sync events recorded yet. They will appear after the next scheduled sync.' : 'Connect integrations to see sync activity.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#1E2D3D transparent' }}>
+              {syncLogs.map((log) => {
+                const st = SYNC_STATUS_STYLES[log.status] || SYNC_STATUS_STYLES.ok;
+                return (
+                  <div key={log.id} className="flex items-center gap-3 px-3 py-2 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: st.color }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-[#EDF1F7] truncate" style={{ fontFamily: fontFamily.mono }}>
+                          {log.connector}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: st.bg, color: st.color, fontFamily: fontFamily.mono }}>
+                          {st.label}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#1E2D3D', color: '#64748B', fontFamily: fontFamily.mono }}>
+                          {log.sync_type}
+                        </span>
+                      </div>
+                      {log.error_detail && (
+                        <p className="text-[10px] text-[#EF4444] mt-0.5 truncate" title={log.error_detail}>{log.error_detail}</p>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
+                        {log.records_processed > 0 ? `${log.records_processed} records` : '—'}
+                      </div>
+                      <div className="text-[10px] text-[#4A5568]" style={{ fontFamily: fontFamily.mono }}>
+                        {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : ''}
+                        {log.created_at ? ` · ${timeAgo(log.created_at)}` : ''}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Panel>
       </div>
     </DashboardLayout>
   );

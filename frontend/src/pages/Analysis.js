@@ -12,6 +12,7 @@ import { apiClient } from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { Loader2, BarChart3, ArrowRight, Save, FileText } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 import { toast } from 'sonner';
 
 
@@ -78,9 +79,8 @@ const Analysis = () => {
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <p className="overline text-[#9FB0C3] mb-2">Business Intelligence</p>
-            <h1 className="text-3xl md:text-4xl font-serif text-[#F4F7FA]">Business Analysis</h1>
-            <p className="text-[#9FB0C3] mt-2">
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Analysis Suite</h1>
+            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
               Get AI-powered insights and recommendations for your business
             </p>
           </div>
@@ -91,31 +91,31 @@ const Analysis = () => {
               <CardContent className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-[#F4F7FA]">Analysis Title</Label>
+                    <Label className="text-[#EDF1F7]">Analysis Title</Label>
                     <Input
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder="e.g., Q4 Growth Strategy Review"
-                      className="bg-[#141C26]"
+                      className="bg-[#0E1628]"
                       data-testid="analysis-title-input"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[#F4F7FA]">Analysis Type</Label>
+                    <Label className="text-[#EDF1F7]">Analysis Type</Label>
                     <Select 
                       value={formData.analysis_type}
                       onValueChange={(value) => setFormData({ ...formData, analysis_type: value })}
                     >
-                      <SelectTrigger className="bg-[#141C26]" data-testid="analysis-type-select">
+                      <SelectTrigger className="bg-[#0E1628]" data-testid="analysis-type-select">
                         <SelectValue placeholder="Select analysis type" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#141C26]">
+                      <SelectContent className="bg-[#0E1628]">
                         {analysisTypes.map((type) => (
                           <SelectItem key={type.value} value={type.value}>
                             <div>
                               <p className="font-medium">{type.label}</p>
-                              <p className="text-xs text-[#9FB0C3]">{type.desc}</p>
+                              <p className="text-xs text-[#8FA0B8]">{type.desc}</p>
                             </div>
                           </SelectItem>
                         ))}
@@ -124,15 +124,15 @@ const Analysis = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[#F4F7FA]">Business Context</Label>
+                    <Label className="text-[#EDF1F7]">Business Context</Label>
                     <Textarea
                       value={formData.business_context}
                       onChange={(e) => setFormData({ ...formData, business_context: e.target.value })}
                       placeholder="Describe your business, current situation, challenges, and what you'd like to analyze..."
-                      className="min-h-[200px] bg-[#141C26]"
+                      className="min-h-[200px] bg-[#0E1628]"
                       data-testid="analysis-context-input"
                     />
-                    <p className="text-xs text-[#9FB0C3]">
+                    <p className="text-xs text-[#8FA0B8]">
                       Include details like industry, size, current revenue, main challenges, and goals.
                     </p>
                   </div>
@@ -165,8 +165,8 @@ const Analysis = () => {
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
                     <CognitiveMesh compact />
-                    <p className="text-[#F4F7FA] font-medium">Analyzing your business...</p>
-                    <p className="text-sm text-[#9FB0C3] mt-1">This may take a moment</p>
+                    <p className="text-[#EDF1F7] font-medium">Analyzing your business...</p>
+                    <p className="text-sm text-[#8FA0B8] mt-1">This may take a moment</p>
                   </CardContent>
                 </Card>
               )}
@@ -279,8 +279,8 @@ const Analysis = () => {
               {!loading && !result && (
                 <Card className="rounded-lg">
                   <CardContent className="p-8 text-center">
-                    <BarChart3 className="w-12 h-12 text-[#F4F7FA]/20 mx-auto mb-4" />
-                    <p className="text-[#9FB0C3]">
+                    <BarChart3 className="w-12 h-12 text-[#EDF1F7]/20 mx-auto mb-4" />
+                    <p className="text-[#8FA0B8]">
                       Fill in the form and run analysis to get AI-powered insights
                     </p>
                   </CardContent>

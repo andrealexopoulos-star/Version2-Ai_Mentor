@@ -4,18 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
-import { User, Settings as SettingsIcon, Zap, Bell, Activity, BarChart3, Brain, Loader2, Save, CreditCard, RefreshCw, BookOpen, AlertTriangle, Lock, ArrowRight } from 'lucide-react';
+import { Switch } from '../components/ui/switch';
+import { User, Bell, Activity, Loader2, Save, CreditCard, RefreshCw, AlertTriangle, Trash2, Download, Unplug, Plus } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
 import { supabase } from '../context/SupabaseAuthContext';
-import { invalidateTutorialCache } from '../components/TutorialOverlay';
 const sectionResizeStyle = { resize: 'horizontal', overflow: 'auto', minWidth: '320px', maxWidth: '100%' };
 const TIER_DISPLAY = {
   free: 'Free',
@@ -55,10 +54,10 @@ const SettingsBillingContent = ({ navigate, user }) => {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border p-5" style={{ borderColor: 'rgba(255,106,0,0.3)', background: 'rgba(255,106,0,0.05)' }}>
+      <div className="rounded-xl border p-5" style={{ borderColor: 'rgba(232,93,0,0.3)', background: 'rgba(232,93,0,0.05)' }}>
         <div className="flex items-start justify-between mb-3">
           <div>
-            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#FF6A00' }}>Current Plan</p>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#E85D00' }}>Current Plan</p>
             <p className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>{displayName}</p>
           </div>
           <div
@@ -69,7 +68,7 @@ const SettingsBillingContent = ({ navigate, user }) => {
           </div>
         </div>
         {isPaid ? (
-          <Button onClick={() => navigate('/billing')} className="btn-primary" style={{ background: '#FF6A00', color: 'white' }}>
+          <Button onClick={() => navigate('/billing')} className="btn-primary" style={{ background: '#E85D00', color: 'white' }}>
             Open Billing Centre
           </Button>
         ) : (
@@ -80,7 +79,7 @@ const SettingsBillingContent = ({ navigate, user }) => {
               </p>
             )}
             <div className="flex gap-2 flex-wrap">
-              <Button onClick={() => navigate('/subscribe')} className="btn-primary" style={{ background: '#FF6A00', color: 'white' }}>
+              <Button onClick={() => navigate('/subscribe')} className="btn-primary" style={{ background: '#E85D00', color: 'white' }}>
                 {onTrial ? 'Upgrade Before Trial Ends' : 'View Plans & Upgrade'}
               </Button>
               <Button variant="outline" onClick={() => { window.location.href = 'mailto:billing@biqc.com.au'; }}>Contact Billing</Button>
@@ -106,8 +105,41 @@ const SettingsBillingContent = ({ navigate, user }) => {
         </div>
       )}
 
+      {/* Payment Method */}
+      <div className="rounded-xl border p-5" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
+        <p className="text-[10px] uppercase tracking-widest mb-3" style={{ color: '#94A3B8', fontFamily: 'var(--font-mono, monospace)' }}>Payment Method</p>
+        {overview?.billing_connectors?.stripe_connected ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CreditCard className="w-5 h-5" style={{ color: '#E85D00' }} />
+              <div>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Card on file</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Managed through Stripe</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => navigate('/billing')} style={{ borderColor: '#E85D00', color: '#E85D00' }}>
+              Manage
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>No card on file</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/billing')}
+              className="flex items-center gap-2"
+              style={{ borderColor: '#E85D00', color: '#E85D00' }}
+            >
+              <Plus className="w-4 h-4" />
+              Add card
+            </Button>
+          </div>
+        )}
+      </div>
+
       <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-        Billing questions? <a href="mailto:billing@biqc.com.au" style={{ color: '#FF6A00' }}>billing@biqc.com.au</a>
+        Billing questions? <a href="mailto:billing@biqc.com.au" style={{ color: '#E85D00' }}>billing@biqc.com.au</a>
       </p>
     </div>
   );
@@ -122,25 +154,44 @@ const Settings = () => {
   const [profile, setProfile] = useState({});
   const [calibrationStatus, setCalibrationStatus] = useState(null);
   const [resettingCalibration, setResettingCalibration] = useState(false);
-  const [tutorialPrefs, setTutorialPrefs] = useState({ tutorials_disabled: false });
-  const [tutorialAction, setTutorialAction] = useState(null); // 'resetting' | 'toggling'
-  const [tutorialConfirm, setTutorialConfirm] = useState(null); // 'reset' | 'disable' | null
   const [syncing, setSyncing] = useState(false);
   const [accountData, setAccountData] = useState({
     name: user?.name || '',
-    email: user?.email || ''
+    email: user?.email || '',
+    company: user?.company || '',
   });
-  const [opsLoading, setOpsLoading] = useState(true);
+  const [timezone, setTimezone] = useState('Australia/Sydney');
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [memberSince, setMemberSince] = useState(null);
-  const [opsSummary, setOpsSummary] = useState({
-    actions_count: 0,
-    alerts_total: 0,
-    alerts_high: 0,
-    business_dna_completeness: 0,
-    business_dna_strength: 0,
-    data_health_score: 0,
-    connected_sources: 0,
+
+  // Notifications state (6 toggles from mockup)
+  const [notifications, setNotifications] = useState({
+    notify_morning_brief: true,
+    notify_critical_alerts: true,
+    notify_high_alerts: true,
+    notify_weekly_report: true,
+    notify_nudges: true,
+    notify_marketing: false,
   });
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifSaving, setNotifSaving] = useState(false);
+
+  // Signal thresholds state (5 selects from mockup)
+  const [thresholds, setThresholds] = useState({
+    threshold_deal_stall_days: 14,
+    threshold_cash_runway_months: 6,
+    threshold_meeting_overload_pct: 60,
+    threshold_churn_silence_days: 21,
+    threshold_invoice_aging_pct: 15,
+  });
+  const [threshLoading, setThreshLoading] = useState(true);
+  const [threshSaving, setThreshSaving] = useState(false);
+
+  // Danger zone state
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const syncFromCalibration = async () => {
     setSyncing(true);
@@ -183,7 +234,8 @@ const Settings = () => {
   useEffect(() => {
     fetchProfile();
     fetchCalibrationStatus();
-    fetchOpsSummary();
+    fetchNotifications();
+    fetchThresholds();
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user?.created_at) {
         setMemberSince(new Date(data.user.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }));
@@ -205,50 +257,91 @@ const Settings = () => {
     }
   };
 
-  const fetchOpsSummary = async () => {
-    setOpsLoading(true);
+  // Fetch notification preferences from API
+  const fetchNotifications = async () => {
+    setNotifLoading(true);
     try {
-      const [snapshotRes, alertsRes, scoresRes, readinessRes, integrationRes] = await Promise.allSettled([
-        apiClient.get('/snapshot/latest'),
-        apiClient.get('/notifications/alerts'),
-        apiClient.get('/business-profile/scores'),
-        apiClient.get('/intelligence/data-readiness'),
-        apiClient.get('/user/integration-status'),
-      ]);
+      const res = await apiClient.get('/settings/notifications');
+      const data = res.data || {};
+      setNotifications(prev => ({ ...prev, ...data }));
+    } catch { /* use defaults */ }
+    finally { setNotifLoading(false); }
+  };
 
-      const actionsCount = snapshotRes.status === 'fulfilled'
-        ? Number((snapshotRes.value?.data?.cognitive?.resolution_queue || []).length || 0)
-        : 0;
-      const alertsSummary = alertsRes.status === 'fulfilled'
-        ? (alertsRes.value?.data?.summary || {})
-        : {};
-      const scores = scoresRes.status === 'fulfilled'
-        ? (scoresRes.value?.data || {})
-        : {};
-      const readiness = readinessRes.status === 'fulfilled'
-        ? (readinessRes.value?.data || {})
-        : {};
-      const integrationStatus = integrationRes.status === 'fulfilled'
-        ? (integrationRes.value?.data || {})
-        : {};
-      const connectedSources = Array.isArray(integrationStatus?.integrations)
-        ? integrationStatus.integrations.filter((row) => Boolean(row?.connected)).length
-        : Number(integrationStatus?.total_connected || 0);
+  const saveNotifications = async (updated) => {
+    setNotifSaving(true);
+    try {
+      await apiClient.put('/settings/notifications', updated);
+      setNotifications(updated);
+      toast.success('Notification preferences saved');
+    } catch { toast.error('Failed to save notifications'); }
+    finally { setNotifSaving(false); }
+  };
 
-      setOpsSummary({
-        actions_count: actionsCount,
-        alerts_total: Number(alertsSummary.total || 0),
-        alerts_high: Number(alertsSummary.high || 0),
-        business_dna_completeness: Number(scores.completeness || 0),
-        business_dna_strength: Number(scores.strength || 0),
-        data_health_score: Number(readiness.score || 0),
-        connected_sources: connectedSources,
-      });
-    } catch {
-      // non-blocking, settings core still loads
-    } finally {
-      setOpsLoading(false);
-    }
+  const toggleNotification = (key) => {
+    const updated = { ...notifications, [key]: !notifications[key] };
+    setNotifications(updated);
+    saveNotifications(updated);
+  };
+
+  // Fetch signal thresholds from API
+  const fetchThresholds = async () => {
+    setThreshLoading(true);
+    try {
+      const res = await apiClient.get('/settings/thresholds');
+      const data = res.data || {};
+      setThresholds(prev => ({ ...prev, ...data }));
+    } catch { /* use defaults */ }
+    finally { setThreshLoading(false); }
+  };
+
+  const saveThresholds = async () => {
+    setThreshSaving(true);
+    try {
+      await apiClient.put('/settings/thresholds', thresholds);
+      toast.success('Signal thresholds saved');
+    } catch { toast.error('Failed to save thresholds'); }
+    finally { setThreshSaving(false); }
+  };
+
+  const resetThresholdDefaults = () => {
+    const defaults = {
+      threshold_deal_stall_days: 14,
+      threshold_cash_runway_months: 6,
+      threshold_meeting_overload_pct: 60,
+      threshold_churn_silence_days: 21,
+      threshold_invoice_aging_pct: 15,
+    };
+    setThresholds(defaults);
+    saveThresholds();
+  };
+
+  // Danger zone handlers
+  const handleDisconnectAll = async () => {
+    setDisconnecting(true);
+    try {
+      await apiClient.post('/user/disconnect-all');
+      toast.success('All integrations disconnected');
+    } catch { toast.error('Failed to disconnect integrations'); }
+    finally { setDisconnecting(false); }
+  };
+
+  const handleExportData = async () => {
+    setExporting(true);
+    try {
+      await apiClient.post('/user/export');
+      toast.success('Data export started — you\'ll receive a download link shortly');
+    } catch { toast.error('Failed to start data export'); }
+    finally { setExporting(false); }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await apiClient.delete('/user/account');
+      toast.success('Account scheduled for deletion');
+      setTimeout(() => { window.location.href = '/'; }, 2000);
+    } catch { toast.error('Failed to delete account'); setDeleting(false); }
   };
 
   const fetchProfile = async () => {
@@ -269,40 +362,6 @@ const Settings = () => {
     } finally {
       setLoading(false);
     }
-    // Load tutorial preferences
-    try {
-      const tutRes = await apiClient.get('/tutorials/status');
-      setTutorialPrefs({ tutorials_disabled: tutRes.data?.tutorials_disabled || false });
-    } catch { /* non-fatal */ }
-  };
-
-  const handleResetTutorials = async () => {
-    setTutorialAction('resetting');
-    try {
-      await apiClient.post('/tutorials/reset');
-      invalidateTutorialCache();
-      localStorage.removeItem('biqc_tutorials_seen');
-      setTutorialPrefs(prev => ({ ...prev }));
-      toast.success('Tutorials reset — they will show again on your next visit to each page.');
-    } catch {
-      toast.error('Could not reset tutorials. Please try again.');
-    } finally {
-      setTutorialAction(null);
-    }
-  };
-
-  const handleToggleTutorials = async (disabled) => {
-    setTutorialAction('toggling');
-    try {
-      await apiClient.post('/tutorials/preferences', { tutorials_disabled: disabled });
-      invalidateTutorialCache();
-      setTutorialPrefs({ tutorials_disabled: disabled });
-      toast.success(disabled ? 'Tutorials disabled across all pages.' : 'Tutorials re-enabled.');
-    } catch {
-      toast.error('Could not update tutorial preferences.');
-    } finally {
-      setTutorialAction(null);
-    }
   };
 
   const handleSaveProfile = async () => {
@@ -322,14 +381,6 @@ const Settings = () => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  const toggleArrayItem = (field, item) => {
-    const current = profile[field] || [];
-    const updated = current.includes(item)
-      ? current.filter(i => i !== item)
-      : [...current, item];
-    updateProfile(field, updated);
-  };
-
   if (loading) {
     return (
       <DashboardLayout>
@@ -346,10 +397,13 @@ const Settings = () => {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-heading mb-2" style={{ color: 'var(--text-primary)' }}>
-              Settings
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+              — Settings
+            </div>
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              Your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>account</em>.
             </h1>
-            <p style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
               Manage your account, preferences, and billing
             </p>
           </div>
@@ -400,736 +454,417 @@ const Settings = () => {
             </CardContent>
           </Card>
 
-          {/* Tabs */}
+          {/* Settings Navigation — 200px left sidebar + 1fr content */}
+          <style>{`.settings-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; } @media (max-width: 900px) { .settings-layout { grid-template-columns: 1fr; } .settings-layout .settings-nav { flex-direction: row; flex-wrap: wrap; position: static; } }`}</style>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 w-full mb-8 gap-1">
-              <TabsTrigger value="account" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                <span className="hidden sm:inline">Account</span>
-              </TabsTrigger>
-              <TabsTrigger value="preferences" className="flex items-center gap-2">
-                <Brain className="w-4 h-4" />
-                <span className="hidden sm:inline">Preferences</span>
-              </TabsTrigger>
-              <TabsTrigger value="tools" className="flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                <span className="hidden sm:inline">Tools</span>
-              </TabsTrigger>
-              <TabsTrigger value="actions" className="flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                <span className="hidden sm:inline">Actions</span>
-              </TabsTrigger>
-              <TabsTrigger value="alerts" className="flex items-center gap-2">
-                <Bell className="w-4 h-4" />
-                <span className="hidden sm:inline">Alerts</span>
-              </TabsTrigger>
-              <TabsTrigger value="business-dna" className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" />
-                <span className="hidden sm:inline">Business DNA</span>
-              </TabsTrigger>
-              <TabsTrigger value="data-health" className="flex items-center gap-2">
-                <Activity className="w-4 h-4" />
-                <span className="hidden sm:inline">Data Health</span>
-              </TabsTrigger>
-              <TabsTrigger value="connectors" className="flex items-center gap-2">
-                <RefreshCw className="w-4 h-4" />
-                <span className="hidden sm:inline">Connectors</span>
-              </TabsTrigger>
-              <TabsTrigger value="billing" className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4" />
-                <span className="hidden sm:inline">Billing</span>
-              </TabsTrigger>
+            <div className="settings-layout">
+            {/* Settings Sidebar Nav */}
+            <nav className="settings-nav flex flex-col gap-1 sticky" style={{ top: 'calc(60px + 16px)', alignSelf: 'start' }}>
+              {[
+                { value: 'account', label: 'Account' },
+                { value: 'notifications', label: 'Notifications' },
+                { value: 'signals', label: 'Signals' },
+                { value: 'billing', label: 'Plan & billing' },
+                { value: 'danger-zone', label: 'Danger zone' },
+              ].map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setActiveTab(value)}
+                  className="text-left transition-all"
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontFamily: fontFamily.body,
+                    fontWeight: activeTab === value ? 500 : 400,
+                    background: activeTab === value ? 'var(--surface-sunken, #060A12)' : 'transparent',
+                    color: activeTab === value ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
+                    borderLeft: activeTab === value ? '2px solid #E85D00' : '2px solid transparent',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+            {/* Settings Content */}
+            <div className="min-w-0">
+            <TabsList className="hidden">
+              <TabsTrigger value="account">Account</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
+              <TabsTrigger value="signals">Signals</TabsTrigger>
+              <TabsTrigger value="billing">Billing</TabsTrigger>
+              <TabsTrigger value="danger-zone">Danger</TabsTrigger>
             </TabsList>
 
             {/* ACCOUNT TAB */}
             <TabsContent value="account">
               <Card style={sectionResizeStyle}>
                 <CardHeader>
-                  <CardTitle>Account Information</CardTitle>
-                  <CardDescription>Your personal and business details</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex items-center justify-between w-full">
                     <div>
-                      <Label>Full Name</Label>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--lava, #E85D00)', fontFamily: 'var(--font-mono, monospace)' }}>— Account</p>
+                      <CardTitle>Profile</CardTitle>
+                    </div>
+                    <Button onClick={handleSaveProfile} size="sm" disabled={saving} className="flex items-center gap-2" style={{ background: 'var(--lava, #E85D00)', color: '#fff' }}>
+                      {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save changes
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="divide-y" style={{ borderColor: 'var(--border, rgba(140,170,210,0.12))' }}>
+                    {/* Full name */}
+                    <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                      <div>
+                        <p className="text-sm font-medium pt-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Full name</p>
+                      </div>
                       <Input
                         value={accountData.name}
                         onChange={(e) => setAccountData({ ...accountData, name: e.target.value })}
-                        className="mt-2"
                       />
                     </div>
-                    <div>
-                      <Label>Email Address</Label>
+
+                    {/* Email */}
+                    <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                      <div>
+                        <p className="text-sm font-medium pt-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Email</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>Used for login + alerts</p>
+                      </div>
                       <Input
                         value={accountData.email}
                         disabled
-                        className="mt-2"
                         style={{ background: 'var(--biqc-bg-card)' }}
                       />
-                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Email cannot be changed</p>
                     </div>
-                  </div>
 
-                  {/* Onboarding Section */}
-                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Onboarding</h3>
-                    <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                      Complete your onboarding to help BIQC understand your business better.
-                    </p>
-                    <Button
-                      onClick={() => window.location.href = '/onboarding'}
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <SettingsIcon className="w-4 h-4" />
-                      Complete Onboarding
-                    </Button>
-                  </div>
-
-                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Business Profile</h3>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Business Name</Label>
-                          <Input value={profile.business_name || ''} onChange={(e) => updateProfile('business_name', e.target.value)} placeholder="Your Company Name" className="mt-1" />
-                        </div>
-                        <div>
-                          <Label>Industry</Label>
-                          <Input value={profile.industry || ''} onChange={(e) => updateProfile('industry', e.target.value)} placeholder="e.g., Technology" className="mt-1" />
-                        </div>
+                    {/* Company */}
+                    <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                      <div>
+                        <p className="text-sm font-medium pt-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Company</p>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>ABN</Label>
-                          <Input value={profile.abn || ''} onChange={(e) => updateProfile('abn', e.target.value)} placeholder="12 345 678 901" className="mt-1" />
-                        </div>
-                        <div>
-                          <Label>Location</Label>
-                          <Input value={profile.location || ''} onChange={(e) => updateProfile('location', e.target.value)} placeholder="City, State" className="mt-1" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Website</Label>
-                          <Input value={profile.website || ''} onChange={(e) => updateProfile('website', e.target.value)} placeholder="www.company.com" className="mt-1" />
-                        </div>
-                        <div>
-                          <Label>Years Operating</Label>
-                          <Input value={profile.years_operating || ''} onChange={(e) => updateProfile('years_operating', e.target.value)} placeholder="e.g., 2-5 years" className="mt-1" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 gap-4">
-                        <div>
-                          <Label>Market Position</Label>
-                          <Input value={profile.market_position || ''} onChange={(e) => updateProfile('market_position', e.target.value)} placeholder="How your business is positioned in the current market" className="mt-1" />
-                        </div>
-                        <div>
-                          <Label>Competitor Intelligence Snapshot</Label>
-                          <Input value={profile.competitor_scan_result || ''} onChange={(e) => updateProfile('competitor_scan_result', e.target.value)} placeholder="Competitor SWOT / SEO / paid / social analysis summary" className="mt-1" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <Label>Business Stage</Label>
-                          <Select value={profile.business_stage || ''} onValueChange={(val) => updateProfile('business_stage', val)}>
-                            <SelectTrigger className="mt-1" data-testid="settings-select-stage">
-                              <SelectValue placeholder="Select stage" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="idea">Idea</SelectItem>
-                              <SelectItem value="startup">Startup</SelectItem>
-                              <SelectItem value="established">Established</SelectItem>
-                              <SelectItem value="enterprise">Enterprise</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>Growth Goals</Label>
-                          <Select value={profile.growth_goals || ''} onValueChange={(val) => updateProfile('growth_goals', val)}>
-                            <SelectTrigger className="mt-1" data-testid="settings-select-growth-goals">
-                              <SelectValue placeholder="Select goal" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="revenue_growth">Revenue Growth</SelectItem>
-                              <SelectItem value="market_expansion">Market Expansion</SelectItem>
-                              <SelectItem value="product_diversification">Product Diversification</SelectItem>
-                              <SelectItem value="operational_efficiency">Operational Efficiency</SelectItem>
-                              <SelectItem value="team_scaling">Team Scaling</SelectItem>
-                              <SelectItem value="profitability">Profitability Focus</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>Risk Profile</Label>
-                          <Select value={profile.risk_profile || ''} onValueChange={(val) => updateProfile('risk_profile', val)}>
-                            <SelectTrigger className="mt-1" data-testid="settings-select-risk-profile">
-                              <SelectValue placeholder="Select profile" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="conservative">Conservative</SelectItem>
-                              <SelectItem value="moderate">Moderate</SelectItem>
-                              <SelectItem value="aggressive">Aggressive</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="flex justify-end pt-2">
-                        <Button onClick={handleSaveProfile} variant="outline" size="sm" disabled={saving}>
-                          {saving ? null : <Save className="w-4 h-4 mr-1" />} Save
-                        </Button>
-                      </div>
+                      <Input
+                        value={accountData.company}
+                        onChange={(e) => setAccountData({ ...accountData, company: e.target.value })}
+                        placeholder="Your company name"
+                      />
                     </div>
-                  </div>
 
-                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Account Details</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-4 rounded-lg" style={{ background: 'var(--biqc-bg-card)' }}>
-                        <div>
-                          <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Account Type</p>
-                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Your current role and access level</p>
-                        </div>
-                        <span className="badge badge-primary text-xs px-3 py-1 rounded-full"
-                          style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)' }}>
-                          {user?.role === 'superadmin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'Business Owner'}
-                        </span>
+                    {/* Timezone */}
+                    <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                      <div>
+                        <p className="text-sm font-medium pt-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Timezone</p>
                       </div>
-                      <div className="flex justify-between items-center p-4 rounded-lg" style={{ background: 'var(--biqc-bg-card)' }}>
-                        <div>
-                          <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Member Since</p>
-                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Account creation date</p>
-                        </div>
-                        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {memberSince || 'Loading...'}
-                        </span>
-                      </div>
-
-                      {/* Email lock explanation */}
-                      <div className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Lock className="w-4 h-4" style={{ color: '#64748B' }} />
-                          <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Email Address</p>
-                        </div>
-                        <p className="text-sm mb-1" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
-                        <p className="text-xs" style={{ color: '#64748B' }}>
-                          Your email is managed by your authentication provider (Google or Microsoft) and cannot be changed here.
-                          To change it, update your email in Google or Microsoft account settings, then sign in again.
-                        </p>
-                      </div>
-
-                      {/* Calibration review link */}
-                      <div className="p-4 rounded-lg flex items-center justify-between"
-                        style={{ background: 'rgba(255,106,0,0.04)', border: '1px solid rgba(255,106,0,0.15)' }}>
-                        <div>
-                          <p className="font-medium" style={{ color: 'var(--text-primary)' }}>AI Calibration Answers</p>
-                          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Review or update your calibration to refine your AI agent's behaviour</p>
-                        </div>
-                        <Button variant="outline" onClick={() => navigate('/calibration')}
-                          className="flex items-center gap-2 text-sm"
-                          style={{ borderColor: '#FF6A00', color: '#FF6A00' }}
-                          data-testid="recalibrate-btn">
-                          Review Calibration <ArrowRight className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      <Select value={timezone} onValueChange={setTimezone}>
+                        <SelectTrigger data-testid="settings-select-timezone">
+                          <SelectValue placeholder="Select timezone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Australia/Sydney">Australia/Sydney (AEST UTC+10)</SelectItem>
+                          <SelectItem value="Australia/Melbourne">Australia/Melbourne</SelectItem>
+                          <SelectItem value="Australia/Brisbane">Australia/Brisbane</SelectItem>
+                          <SelectItem value="Australia/Perth">Australia/Perth</SelectItem>
+                          <SelectItem value="Australia/Adelaide">Australia/Adelaide</SelectItem>
+                          <SelectItem value="Australia/Hobart">Australia/Hobart</SelectItem>
+                          <SelectItem value="Australia/Darwin">Australia/Darwin</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
 
-            {/* PREFERENCES TAB */}
-            <TabsContent value="preferences">
-              <Card style={sectionResizeStyle}>
-                <CardHeader>
-                  <CardTitle>AI Intelligence Preferences</CardTitle>
-                  <CardDescription>Customize how your AI intelligence system communicates and provides guidance</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <Label className="text-base mb-3 block">Communication Style</Label>
-                    <RadioGroup 
-                      value={profile.advice_style || 'conversational'} 
-                      onValueChange={(val) => updateProfile('advice_style', val)}
-                      className="space-y-3"
-                    >
-                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                        <RadioGroupItem value="concise" id="style-concise" className="mt-1" />
-                        <Label htmlFor="style-concise" className="cursor-pointer flex-1">
-                          <div className="font-medium" style={{ color: 'var(--text-primary)' }}>Quick & Concise</div>
-                          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Brief, actionable bullet points</div>
-                        </Label>
+                    {/* Password */}
+                    <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start" style={{ borderBottom: 0 }}>
+                      <div>
+                        <p className="text-sm font-medium pt-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Password</p>
                       </div>
-                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                        <RadioGroupItem value="detailed" id="style-detailed" className="mt-1" />
-                        <Label htmlFor="style-detailed" className="cursor-pointer flex-1">
-                          <div className="font-medium" style={{ color: 'var(--text-primary)' }}>Detailed & Thorough</div>
-                          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>In-depth explanations with context and reasoning</div>
-                        </Label>
-                      </div>
-                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                        <RadioGroupItem value="conversational" id="style-conversational" className="mt-1" />
-                        <Label htmlFor="style-conversational" className="cursor-pointer flex-1">
-                          <div className="font-medium" style={{ color: 'var(--text-primary)' }}>Conversational</div>
-                          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Like chatting with a trusted business partner</div>
-                        </Label>
-                      </div>
-                      <div className="flex items-start space-x-3 p-4 rounded-lg border cursor-pointer hover:bg-white/5" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                        <RadioGroupItem value="data-driven" id="style-data" className="mt-1" />
-                        <Label htmlFor="style-data" className="cursor-pointer flex-1">
-                          <div className="font-medium" style={{ color: 'var(--text-primary)' }}>Data-Driven</div>
-                          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Focus on metrics, analytics, and evidence</div>
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <Label className="text-base mb-3 block">Time Availability</Label>
-                    <Select 
-                      value={profile.time_availability || ''} 
-                      onValueChange={(val) => updateProfile('time_availability', val)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your weekly availability" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="< 2 hours/week">Less than 2 hours/week</SelectItem>
-                        <SelectItem value="2-5 hours/week">2-5 hours/week</SelectItem>
-                        <SelectItem value="5-10 hours/week">5-10 hours/week</SelectItem>
-                        <SelectItem value="10-20 hours/week">10-20 hours/week</SelectItem>
-                        <SelectItem value="20+ hours/week">20+ hours/week</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-                      Helps us tailor recommendations to match your capacity
-                    </p>
-                  </div>
-
-                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <Label className="text-base mb-3 block">Preferred Guidance Format</Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        'Action items & checklists',
-                        'Detailed analysis',
-                        'Strategic discussion',
-                        'Quick tips',
-                        'Step-by-step guides',
-                        'Case studies'
-                      ].map(format => {
-                        const current = profile.advice_formats || [];
-                        const isSelected = current.includes(format);
-                        return (
-                          <label
-                            key={format}
-                            className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-white/5"
-                            style={{ 
-                              borderColor: isSelected ? '#FF6A00' : '#243140',
-                              background: isSelected ? 'rgba(0,102,255,0.05)' : 'transparent'
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="password"
+                            value="••••••••••"
+                            disabled
+                            className="flex-1"
+                            style={{ background: 'var(--biqc-bg-card)' }}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setShowPasswordChange(true);
+                              supabase.auth.resetPasswordForEmail(user?.email, {
+                                redirectTo: `${window.location.origin}/settings`,
+                              }).then(() => {
+                                toast.success('Password reset email sent. Check your inbox.');
+                              }).catch(() => {
+                                toast.error('Failed to send password reset email');
+                              });
                             }}
+                            style={{ borderColor: '#E85D00', color: '#E85D00', whiteSpace: 'nowrap' }}
                           >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleArrayItem('advice_formats', format)}
-                            />
-                            <span className="text-sm">{format}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-4">
-                    <Button onClick={handleSaveProfile} className="btn-primary" disabled={saving}>
-                      {saving ? null : <Save className="w-4 h-4 mr-2" />}
-                      Save Preferences
-                    </Button>
-                  </div>
-
-                  {/* Tutorial Preferences */}
-                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <BookOpen className="w-4 h-4" style={{ color: '#FF6A00' }} />
-                      <Label className="text-base">Tutorial Guides</Label>
-                    </div>
-                    <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-                      Page guides appear once on your first visit to each section. You can reset or disable them here.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      {/* Tutorial Reset — with confirmation */}
-                      {tutorialConfirm === 'reset' ? (
-                        <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}>
-                          <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0" />
-                          <span className="text-xs" style={{ color: '#F59E0B' }}>Reset all tutorial progress?</span>
-                          <Button size="sm" onClick={() => { setTutorialConfirm(null); handleResetTutorials(); }}
-                            className="text-xs h-7 px-3" style={{ background: '#F59E0B', color: 'white' }}>Confirm</Button>
-                          <Button size="sm" variant="ghost" onClick={() => setTutorialConfirm(null)}
-                            className="text-xs h-7 px-3" style={{ color: '#64748B' }}>Cancel</Button>
+                            Change
+                          </Button>
                         </div>
-                      ) : (
-                        <Button variant="outline" onClick={() => setTutorialConfirm('reset')}
-                          disabled={tutorialAction !== null} data-testid="reset-tutorials-btn"
-                          className="flex items-center gap-2">
-                          {tutorialAction === 'resetting' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                          Reset all tutorials
-                        </Button>
-                      )}
-
-                      {/* Tutorial Disable — with confirmation */}
-                      {tutorialConfirm === 'disable' ? (
-                        <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
-                          <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0" />
-                          <span className="text-xs" style={{ color: '#EF4444' }}>
-                            {tutorialPrefs.tutorials_disabled ? 'Re-enable all tutorials?' : 'Disable all tutorials? You won\'t see guides again.'}
-                          </span>
-                          <Button size="sm" onClick={() => { setTutorialConfirm(null); handleToggleTutorials(!tutorialPrefs.tutorials_disabled); }}
-                            className="text-xs h-7 px-3" style={{ background: '#EF4444', color: 'white' }}>Confirm</Button>
-                          <Button size="sm" variant="ghost" onClick={() => setTutorialConfirm(null)}
-                            className="text-xs h-7 px-3" style={{ color: '#64748B' }}>Cancel</Button>
-                        </div>
-                      ) : (
-                        <Button variant="outline" onClick={() => setTutorialConfirm('disable')}
-                          disabled={tutorialAction !== null} data-testid="toggle-tutorials-btn"
-                          className="flex items-center gap-2"
-                          style={tutorialPrefs.tutorials_disabled ? { borderColor: '#10B981', color: '#10B981' } : { borderColor: '#64748B', color: '#64748B' }}>
-                          {tutorialAction === 'toggling' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                          {tutorialPrefs.tutorials_disabled ? 'Re-enable tutorials' : 'Disable all tutorials'}
-                        </Button>
-                      )}
+                        {showPasswordChange && (
+                          <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                            A password reset link has been sent to your email address.
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    {tutorialPrefs.tutorials_disabled && (
-                      <p className="text-xs mt-2" style={{ color: '#F59E0B' }}>
-                        Tutorials are currently disabled. Click Re-enable to turn them back on.
-                      </p>
-                    )}
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* TOOLS TAB */}
-            <TabsContent value="tools">
+            {/* NOTIFICATIONS TAB — 6 toggles matching mockup */}
+            <TabsContent value="notifications">
               <Card style={sectionResizeStyle}>
                 <CardHeader>
-                  <CardTitle>Tools & Systems</CardTitle>
-                  <CardDescription>Tools and platforms you use to run your business</CardDescription>
+                  <div className="flex items-center justify-between w-full">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--lava, #E85D00)', fontFamily: 'var(--font-mono, monospace)' }}>— Notifications</p>
+                      <CardTitle>When should BIQc nudge you?</CardTitle>
+                    </div>
+                    {notifSaving && <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--lava, #E85D00)' }} />}
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <Label className="text-base mb-3 block">Current Tools (Select all that apply)</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <CardContent>
+                  {notifLoading ? (
+                    <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--ink-muted)' }} /></div>
+                  ) : (
+                    <div className="divide-y" style={{ borderColor: 'var(--border, rgba(140,170,210,0.12))' }}>
                       {[
-                        'HubSpot / CRM',
-                        'Salesforce',
-                        'Xero / QuickBooks',
-                        'Slack / Teams',
-                        'Google Workspace',
-                        'Notion / Asana',
-                        'Monday.com',
-                        'Trello / ClickUp',
-                        'Stripe / Payment',
-                        'Mailchimp / Email',
-                        'Zapier / Automation',
-                        'Analytics Tools',
-                        'None yet',
-                        'Other'
-                      ].map(tool => {
-                        const current = profile.current_tools || [];
-                        const isSelected = current.includes(tool);
-                        return (
-                          <label
-                            key={tool}
-                            className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-white/5"
-                            style={{ 
-                              borderColor: isSelected ? '#FF6A00' : '#243140',
-                              background: isSelected ? 'rgba(0,102,255,0.05)' : 'transparent'
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleArrayItem('current_tools', tool)}
-                            />
-                            <span className="text-sm">{tool}</span>
-                          </label>
-                        );
-                      })}
+                        { key: 'notify_morning_brief', label: 'Morning brief email', hint: 'Daily digest at 7:30am AEST with the top 3 things to know' },
+                        { key: 'notify_critical_alerts', label: 'Critical alerts (push)', hint: 'Immediate notification for critical-severity signals' },
+                        { key: 'notify_high_alerts', label: 'High alerts (push)', hint: 'Same-day notification for high-severity signals' },
+                        { key: 'notify_weekly_report', label: 'Weekly report email', hint: 'Summary of all signals, actions, and pipeline changes — sent Mondays' },
+                        { key: 'notify_nudges', label: 'BIQc nudges (in-app)', hint: 'Proactive suggestions like "decline 3 meetings" or "follow up on Bramwell"' },
+                        { key: 'notify_marketing', label: 'Marketing emails', hint: 'Product updates, tips, and feature announcements' },
+                      ].map(({ key, label, hint }) => (
+                        <div key={key} className="flex items-center justify-between py-4">
+                          <div className="pr-4">
+                            <p className="text-sm font-medium" style={{ color: 'var(--ink, #C8D4E4)' }}>{label}</p>
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>{hint}</p>
+                          </div>
+                          <Switch
+                            checked={!!notifications[key]}
+                            onCheckedChange={() => toggleNotification(key)}
+                            disabled={notifSaving}
+                            className="data-[state=checked]:bg-[#E85D00]"
+                          />
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                  <div className="pt-6 border-t" style={{ borderColor: 'var(--border-light)' }}>
-                    <Label>CRM System</Label>
-                    <Select 
-                      value={profile.crm_system || ''} 
-                      onValueChange={(val) => updateProfile('crm_system', val)}
-                    >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue placeholder="Select your CRM" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="None">None</SelectItem>
-                        <SelectItem value="HubSpot">HubSpot</SelectItem>
-                        <SelectItem value="Salesforce">Salesforce</SelectItem>
-                        <SelectItem value="Zoho CRM">Zoho CRM</SelectItem>
-                        <SelectItem value="Pipedrive">Pipedrive</SelectItem>
-                        <SelectItem value="Monday.com">Monday.com</SelectItem>
-                        <SelectItem value="Custom/Other">Custom/Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+            {/* SIGNALS TAB — 5 threshold selects matching mockup */}
+            <TabsContent value="signals">
+              <Card style={sectionResizeStyle}>
+                <CardHeader>
+                  <div className="flex items-center justify-between w-full">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--lava, #E85D00)', fontFamily: 'var(--font-mono, monospace)' }}>— Signals</p>
+                      <CardTitle>Alert thresholds</CardTitle>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={resetThresholdDefaults} disabled={threshSaving}>
+                      Reset defaults
+                    </Button>
                   </div>
-
-                  <div>
-                    <Label>Accounting System</Label>
-                    <Select 
-                      value={profile.accounting_system || ''} 
-                      onValueChange={(val) => updateProfile('accounting_system', val)}
-                    >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue placeholder="Select your accounting system" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="None">None</SelectItem>
-                        <SelectItem value="Xero">Xero</SelectItem>
-                        <SelectItem value="QuickBooks">QuickBooks</SelectItem>
-                        <SelectItem value="FreshBooks">FreshBooks</SelectItem>
-                        <SelectItem value="MYOB">MYOB</SelectItem>
-                        <SelectItem value="Sage">Sage</SelectItem>
-                        <SelectItem value="Custom/Other">Custom/Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label>Project Management Tool</Label>
-                    <Select 
-                      value={profile.project_management_tool || ''} 
-                      onValueChange={(val) => updateProfile('project_management_tool', val)}
-                    >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue placeholder="Select your PM tool" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="None">None</SelectItem>
-                        <SelectItem value="Asana">Asana</SelectItem>
-                        <SelectItem value="Monday.com">Monday.com</SelectItem>
-                        <SelectItem value="Trello">Trello</SelectItem>
-                        <SelectItem value="ClickUp">ClickUp</SelectItem>
-                        <SelectItem value="Notion">Notion</SelectItem>
-                        <SelectItem value="Jira">Jira</SelectItem>
-                        <SelectItem value="Custom/Other">Custom/Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
+                </CardHeader>
+                <CardContent>
+                  {threshLoading ? (
+                    <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--ink-muted)' }} /></div>
+                  ) : (
+                    <div className="space-y-0 divide-y" style={{ borderColor: 'var(--border, rgba(140,170,210,0.12))' }}>
+                      <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Deal stall threshold</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>Days of silence before alert</p>
+                        </div>
+                        <Select value={String(thresholds.threshold_deal_stall_days)} onValueChange={(v) => setThresholds(p => ({ ...p, threshold_deal_stall_days: Number(v) }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="7">7 days</SelectItem>
+                            <SelectItem value="10">10 days</SelectItem>
+                            <SelectItem value="14">14 days</SelectItem>
+                            <SelectItem value="21">21 days</SelectItem>
+                            <SelectItem value="30">30 days</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Cash runway alert</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>Months remaining</p>
+                        </div>
+                        <Select value={String(thresholds.threshold_cash_runway_months)} onValueChange={(v) => setThresholds(p => ({ ...p, threshold_cash_runway_months: Number(v) }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="3">3 months</SelectItem>
+                            <SelectItem value="6">6 months</SelectItem>
+                            <SelectItem value="9">9 months</SelectItem>
+                            <SelectItem value="12">12 months</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Meeting overload</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>% above baseline</p>
+                        </div>
+                        <Select value={String(thresholds.threshold_meeting_overload_pct)} onValueChange={(v) => setThresholds(p => ({ ...p, threshold_meeting_overload_pct: Number(v) }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="40">40% above avg</SelectItem>
+                            <SelectItem value="60">60% above avg</SelectItem>
+                            <SelectItem value="80">80% above avg</SelectItem>
+                            <SelectItem value="100">100% above avg</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Churn risk silence</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>Days before flagging</p>
+                        </div>
+                        <Select value={String(thresholds.threshold_churn_silence_days)} onValueChange={(v) => setThresholds(p => ({ ...p, threshold_churn_silence_days: Number(v) }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="14">14 days</SelectItem>
+                            <SelectItem value="21">21 days</SelectItem>
+                            <SelectItem value="30">30 days</SelectItem>
+                            <SelectItem value="45">45 days</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-[200px_1fr] gap-4 py-4 items-start">
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Invoice aging spike</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>% of AR over 60 days</p>
+                        </div>
+                        <Select value={String(thresholds.threshold_invoice_aging_pct)} onValueChange={(v) => setThresholds(p => ({ ...p, threshold_invoice_aging_pct: Number(v) }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10% of AR</SelectItem>
+                            <SelectItem value="15">15% of AR</SelectItem>
+                            <SelectItem value="20">20% of AR</SelectItem>
+                            <SelectItem value="25">25% of AR</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex justify-end pt-4">
-                    <Button onClick={handleSaveProfile} className="btn-primary" disabled={saving}>
-                      {saving ? null : <Save className="w-4 h-4 mr-2" />}
-                      Save Tools
+                    <Button onClick={saveThresholds} disabled={threshSaving} style={{ background: 'var(--lava, #E85D00)', color: '#fff' }}>
+                      {threshSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                      Save thresholds
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* ACTIONS TAB */}
-            <TabsContent value="actions">
-              <Card style={sectionResizeStyle}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="w-5 h-5" style={{ color: '#FF6A00' }} />
-                    Actions Workspace
-                  </CardTitle>
-                  <CardDescription>
-                    Keep execution work visible and move directly into your full Actions page.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Open actions</p>
-                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
-                        {opsLoading ? '--' : opsSummary.actions_count}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Connected sources</p>
-                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
-                        {opsLoading ? '--' : opsSummary.connected_sources}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Business Health Score</p>
-                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
-                        {opsLoading ? '--' : `${Math.max(0, Math.min(100, Math.round((opsSummary.data_health_score + opsSummary.business_dna_strength) / 2)))}%`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'rgba(255,106,0,0.05)' }}>
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      Actions in Settings are a quick control surface. Use the full Actions workspace for prioritization, assignment, and completion tracking.
-                    </p>
-                    <Button className="mt-3 btn-primary" onClick={() => navigate('/actions')} data-testid="settings-open-actions">
-                      Open Actions Page
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* ALERTS TAB */}
-            <TabsContent value="alerts">
-              <Card style={sectionResizeStyle}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Bell className="w-5 h-5" style={{ color: '#F59E0B' }} />
-                    Alerts Center
-                  </CardTitle>
-                  <CardDescription>
-                    View critical alert pressure before jumping to the full triage console.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="rounded-xl border p-4" style={{ borderColor: 'rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.06)' }}>
-                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#F59E0B' }}>Total alerts</p>
-                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
-                        {opsLoading ? '--' : opsSummary.alerts_total}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border p-4" style={{ borderColor: 'rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)' }}>
-                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#EF4444' }}>High urgency</p>
-                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
-                        {opsLoading ? '--' : opsSummary.alerts_high}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      Alerts are grounded in connected systems and BIQc policies. Resolve urgent cards first to stabilize forecasting and execution confidence.
-                    </p>
-                    <Button className="mt-3 btn-primary" onClick={() => navigate('/alerts')} data-testid="settings-open-alerts">
-                      Open Alerts Page
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* BUSINESS DNA TAB */}
-            <TabsContent value="business-dna">
-              <Card style={sectionResizeStyle}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5" style={{ color: '#06B6D4' }} />
-                    Business DNA
-                  </CardTitle>
-                  <CardDescription>
-                    Monitor profile completeness and strategic signal strength used by Ask BIQc.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Profile completeness</p>
-                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
-                        {opsLoading ? '--' : `${Math.round(opsSummary.business_dna_completeness)}%`}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                      <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Signal strength</p>
-                      <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
-                        {opsLoading ? '--' : `${Math.round(opsSummary.business_dna_strength)}%`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'rgba(6,182,212,0.05)' }}>
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      Business DNA drives personalization, priority scoring, and recommendation style across Ask BIQc and operating modules.
-                    </p>
-                    <Button className="mt-3 btn-primary" onClick={() => navigate('/business-profile')} data-testid="settings-open-business-dna">
-                      Open Business DNA Page
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* DATA HEALTH TAB */}
-            <TabsContent value="data-health">
-              <Card style={sectionResizeStyle}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="w-5 h-5" style={{ color: '#10B981' }} />
-                    Data Health
-                  </CardTitle>
-                  <CardDescription>
-                    Check ingestion readiness and connector-backed data confidence.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-xl border p-4" style={{ borderColor: 'rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.06)' }}>
-                    <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#10B981' }}>Readiness score</p>
-                    <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
-                      {opsLoading ? '--' : `${Math.round(opsSummary.data_health_score)}%`}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      Data Health reflects coverage, freshness, and integration validity. Keep this score high to improve Ask BIQc answer depth and reliability.
-                    </p>
-                    <Button className="mt-3 btn-primary" onClick={() => navigate('/data-health')} data-testid="settings-open-data-health">
-                      Open Data Health Page
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* CONNECTORS TAB */}
-            <TabsContent value="connectors">
-              <Card style={sectionResizeStyle}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <RefreshCw className="w-5 h-5" style={{ color: '#8B5CF6' }} />
-                    Connectors
-                  </CardTitle>
-                  <CardDescription>
-                    Manage integrations and validate post-connect sync health.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-xl border p-4" style={{ borderColor: 'var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                    <p className="text-[10px] uppercase tracking-[0.12em]" style={{ color: '#94A3B8' }}>Connected systems</p>
-                    <p className="text-2xl font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
-                      {opsLoading ? '--' : opsSummary.connected_sources}
-                    </p>
-                    <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                      Connected sources directly influence retrieval depth across Ask BIQc and platform modules.
-                    </p>
-                  </div>
-                  <Button className="btn-primary" onClick={() => navigate('/integrations')} data-testid="settings-open-connectors">
-                    Open Connectors Page
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* BILLING TAB */}
+            {/* BILLING TAB — Plan & billing (mockup position: 4th) */}
             <TabsContent value="billing">
               <Card style={sectionResizeStyle}>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5" style={{ color: '#FF6A00' }} />
-                    Billing & Subscription
-                  </CardTitle>
-                  <CardDescription>Your plan and usage</CardDescription>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--lava, #E85D00)', fontFamily: 'var(--font-mono, monospace)' }}>— Plan & billing</p>
+                    <CardTitle>Your subscription</CardTitle>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <SettingsBillingContent navigate={navigate} user={user} />
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* DANGER ZONE TAB — 3 irreversible actions (mockup position: 5th) */}
+            <TabsContent value="danger-zone">
+              <Card style={{ ...sectionResizeStyle, borderColor: 'rgba(220,38,38,0.3)' }}>
+                <CardHeader>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: '#DC2626', fontFamily: 'var(--font-mono, monospace)' }}>— Danger zone</p>
+                    <CardTitle style={{ color: '#DC2626' }}>Irreversible actions</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="divide-y" style={{ borderColor: 'var(--border, rgba(140,170,210,0.12))' }}>
+                    {/* Disconnect all integrations */}
+                    <div className="flex items-center justify-between py-4 gap-4">
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: 'var(--ink, #C8D4E4)' }}>Disconnect all integrations</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>
+                          Removes all OAuth tokens and Merge.dev connections. You'll need to re-authorize each tool.
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={disconnecting}
+                        onClick={handleDisconnectAll}
+                        style={{ color: '#DC2626', borderColor: 'rgba(220,38,38,0.3)' }}
+                      >
+                        {disconnecting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Unplug className="w-4 h-4 mr-1" />}
+                        Disconnect all
+                      </Button>
+                    </div>
+
+                    {/* Export all data */}
+                    <div className="flex items-center justify-between py-4 gap-4">
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: 'var(--ink, #C8D4E4)' }}>Export all data</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>
+                          Download a ZIP of your signals, alerts, actions, and profile as JSON. Takes ~30 seconds.
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={exporting}
+                        onClick={handleExportData}
+                      >
+                        {exporting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Download className="w-4 h-4 mr-1" />}
+                        Export
+                      </Button>
+                    </div>
+
+                    {/* Delete account */}
+                    <div className="flex items-center justify-between py-4 gap-4">
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: 'var(--ink, #C8D4E4)' }}>Delete account</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>
+                          Permanently deletes your account, all data, all integrations, and all history. This cannot be undone.
+                        </p>
+                      </div>
+                      {deleteConfirm ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs" style={{ color: '#DC2626' }}>Are you sure?</span>
+                          <Button size="sm" disabled={deleting} onClick={handleDeleteAccount}
+                            style={{ background: '#DC2626', color: '#fff' }}>
+                            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Yes, delete'}
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setDeleteConfirm(false)}>Cancel</Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDeleteConfirm(true)}
+                          style={{ color: '#DC2626', borderColor: 'rgba(220,38,38,0.3)' }}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete account
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </div>{/* end settings content */}
+          </div>{/* end settings grid */}
           </Tabs>
         </div>
       </div>

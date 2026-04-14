@@ -318,7 +318,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 z-50 w-12 h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
-        style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', boxShadow: '0 8px 32px rgba(255,106,0,0.4)' }}
+        style={{ background: 'linear-gradient(135deg, #E85D00, #E85D00)', boxShadow: '0 8px 32px rgba(232,93,0,0.4)' }}
         data-testid="soundboard-fab"
       >
         <Lightbulb className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
@@ -337,11 +337,11 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#FF6A0020' }}>
-            <Lightbulb className="w-4 h-4 text-[#FF6A00]" />
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#E85D0020' }}>
+            <Lightbulb className="w-4 h-4 text-[#E85D00]" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Ask BIQc</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Ask BIQc</h3>
             <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Brainstorm on your data</p>
           </div>
         </div>
@@ -354,7 +354,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.length === 0 && (
           <div className="text-center py-8">
-            <Lightbulb className="w-8 h-8 mx-auto mb-3 text-[#FF6A00]/30" />
+            <Lightbulb className="w-8 h-8 mx-auto mb-3 text-[#E85D00]/30" />
             <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.body }}>Ask a question about your data or brainstorm ideas.</p>
             <div className="flex flex-wrap gap-2 mt-4 justify-center">
               {['What should I focus on?', 'Show me my pipeline', 'How can I grow revenue?'].map(q => (
@@ -369,9 +369,9 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] px-3.5 py-2.5 rounded-xl text-sm leading-relaxed`}
               style={{
-                background: msg.role === 'user' ? '#FF6A00' : msg.type === 'integration_prompt' ? '#F59E0B10' : '#141C26',
-                color: msg.role === 'user' ? 'white' : '#9FB0C3',
-                border: msg.role === 'user' ? 'none' : msg.type === 'integration_prompt' ? '1px solid #F59E0B25' : '1px solid #243140',
+                background: msg.role === 'user' ? '#E85D00' : msg.type === 'integration_prompt' ? '#F59E0B10' : 'var(--surface, #0E1628)',
+                color: msg.role === 'user' ? 'white' : '#8FA0B8',
+                border: msg.role === 'user' ? 'none' : msg.type === 'integration_prompt' ? '1px solid #F59E0B25' : '1px solid rgba(140,170,210,0.15)',
                 fontFamily: fontFamily.body,
                 whiteSpace: 'pre-line',
               }}>
@@ -412,10 +412,10 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
               {msg.file && (
                 <a href={msg.file.download_url} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg hover:brightness-110 transition-all"
-                  style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', textDecoration: 'none' }}>
-                  <Download className="w-3.5 h-3.5 text-[#FF6A00] shrink-0" />
+                  style={{ background: '#E85D0015', border: '1px solid #E85D0030', textDecoration: 'none' }}>
+                  <Download className="w-3.5 h-3.5 text-[#E85D00] shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold truncate" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>{msg.file.name}</p>
+                    <p className="text-[11px] font-semibold truncate" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>{msg.file.name}</p>
                     <p className="text-[9px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>{msg.file.type} · {Math.round((msg.file.size || 0) / 1024)}KB</p>
                   </div>
                 </a>
@@ -428,8 +428,8 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
         {pendingBnaUpdate && (
           <div className="flex justify-start">
             <div className="max-w-[85%] px-3.5 py-2.5 rounded-xl" style={{ background: '#3B82F610', border: '1px solid #3B82F625' }}>
-              <p className="text-sm text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>
-                Update <strong className="text-[#F4F7FA]">{pendingBnaUpdate.field}</strong> to <strong className="text-[#F4F7FA]">"{pendingBnaUpdate.value}"</strong>?
+              <p className="text-sm text-[#8FA0B8] mb-2" style={{ fontFamily: fontFamily.body }}>
+                Update <strong className="text-[#EDF1F7]">{pendingBnaUpdate.field}</strong> to <strong className="text-[#EDF1F7]">"{pendingBnaUpdate.value}"</strong>?
               </p>
               <div className="flex gap-2">
                 <button onClick={confirmBnaUpdate} className="text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
@@ -447,7 +447,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
 
         {loading && (
           <div className="flex justify-start">
-            <div className="px-3.5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#FF6A00', fontFamily: fontFamily.mono }}>
+            <div className="px-3.5 py-2.5 rounded-xl text-sm" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#E85D00', fontFamily: fontFamily.mono }}>
               BIQc is thinking...
             </div>
           </div>
@@ -458,8 +458,8 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
       <div className="px-4 pb-4 pt-2" style={{ borderTop: '1px solid var(--biqc-border)' }}>
         {/* File attachment preview */}
         {attachedFile && (
-          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #FF6A0030' }}>
-            <FileText className="w-3.5 h-3.5 text-[#FF6A00] shrink-0" />
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #E85D0030' }}>
+            <FileText className="w-3.5 h-3.5 text-[#E85D00] shrink-0" />
             <span className="flex-1 text-[11px] truncate" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}>{attachedFile.name}</span>
             {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>ready</span>}
             {attachedFile.hint && <span className="text-[9px] max-w-[100px] truncate" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{attachedFile.hint}</span>}
@@ -480,9 +480,9 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
           {/* Paperclip button */}
           <button onClick={() => fileRef.current?.click()}
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all hover:brightness-110"
-            style={{ background: attachedFile ? '#FF6A0020' : '#141C26', border: `1px solid ${attachedFile ? '#FF6A0040' : '#243140'}` }}
+            style={{ background: attachedFile ? '#E85D0020' : 'var(--surface, #0E1628)', border: `1px solid ${attachedFile ? '#E85D0040' : 'rgba(140,170,210,0.15)'}` }}
             data-testid="soundboard-attach" title="Attach file">
-            <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#FF6A00' : '#64748B' }} />
+            <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#E85D00' : '#64748B' }} />
           </button>
           <input
             ref={inputRef}
@@ -496,7 +496,7 @@ const FloatingSoundboard = ({ context = '', subscriptionTier = 'free', integrati
           />
           <button onClick={sendMessage} disabled={(!input.trim() && !attachedFile) || loading}
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:opacity-30"
-            style={{ background: '#FF6A00' }}
+            style={{ background: '#E85D00' }}
             data-testid="soundboard-send">
             <Send className="w-4 h-4 text-white" />
           </button>

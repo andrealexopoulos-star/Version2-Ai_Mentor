@@ -1,65 +1,71 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import WebsiteLayout from '../../components/website/WebsiteLayout';
-import ModernIntegrationBanner from '../../components/website/ModernIntegrationBanner';
 import { IntelligenceDiagram } from '../../components/website/IntelligenceDiagram';
-import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle, DollarSign, TrendingDown, AlertCircle, FileWarning, Check } from 'lucide-react';
+import { Shield, ArrowRight, Zap, Eye, BarChart3, Lock, Users, AlertTriangle, DollarSign, TrendingDown, AlertCircle, FileWarning } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
 // ─── Reusable card wrappers ───────────────────────────────────────────────────
 
 const GlassCard = ({ children, className = '' }) => (
-  <div className={`rounded-xl p-6 transition-all duration-300 hover:border-[#FF7A18]/30 hover:translate-y-[-2px] ${className}`}
-    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,140,40,0.15)', borderRadius: 12 }}>
+  <div className={`rounded-xl p-6 transition-all duration-300 hover:border-[#E85D00]/30 hover:translate-y-[-2px] ${className}`}
+    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(232,93,0,0.15)', borderRadius: 12 }}>
     {children}
   </div>
 );
 
-const StatCard = ({ stat, body, biqc }) => (
+const StatCard = ({ number, stat, body, biqc }) => (
   <div
     className="rounded-2xl p-7 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1"
     style={{
       background: 'rgba(20,28,38,0.85)',
-      border: '1px solid rgba(255,122,24,0.25)',
+      border: '1px solid rgba(232,93,0,0.25)',
       borderRadius: 18,
-      boxShadow: '0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,122,24,0.08), inset 0 1px 0 rgba(255,255,255,0.04)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(232,93,0,0.08), inset 0 1px 0 rgba(255,255,255,0.04)',
       backdropFilter: 'blur(12px)',
     }}
   >
+    <p style={{ fontFamily: fontFamily.display, fontSize: '36px', fontWeight: 700, color: '#E85D00', lineHeight: 1.1, marginBottom: 0 }}>{number}</p>
     <p className="text-base sm:text-lg font-bold leading-snug" style={{ color: '#FFFFFF', fontFamily: fontFamily.body }}>{stat}</p>
-    <p className="text-sm leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{body}</p>
-    <p className="text-sm italic leading-relaxed" style={{ color: '#FF7A18', fontFamily: fontFamily.body }}>{biqc}</p>
+    <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{body}</p>
+    <p className="text-sm italic leading-relaxed" style={{ color: '#E85D00', fontFamily: fontFamily.body }}>{biqc}</p>
   </div>
 );
 
 const STATS = [
   {
-    stat: '90% of data is created every two years',
+    number: '90%',
+    stat: 'of data is created every two years',
     body: <>Yet most businesses use less than <strong style={{ color: '#FFFFFF' }}>10% of it.</strong></>,
     biqc: 'BIQc transforms scattered data into practical business intelligence.',
   },
   {
-    stat: '40% of business decisions lack the right data',
+    number: '40%',
+    stat: 'of business decisions lack the right data',
     body: 'Leaders often rely on instinct instead of insight.',
     biqc: 'BIQc highlights the signals that matter before decisions are made.',
   },
   {
-    stat: '75% of businesses are experimenting with AI',
+    number: '75%',
+    stat: 'of businesses are experimenting with AI',
     body: <>But fewer than <strong style={{ color: '#FFFFFF' }}>5% see real operational value.</strong></>,
     biqc: 'BIQc delivers practical AI insights for everyday decisions.',
   },
   {
+    number: '3%',
     stat: 'Poor decisions can cost up to 3% of revenue',
     body: 'Small mistakes add up quickly.',
     biqc: 'BIQc helps identify risks and opportunities early.',
   },
   {
+    number: '5x',
     stat: 'Data-driven companies grow significantly faster',
     body: 'Intelligence creates competitive advantage.',
     biqc: 'BIQc provides the clarity leaders need to scale.',
   },
   {
-    stat: 'Business leaders spend up to 40% of their time gathering information',
+    number: '40%',
+    stat: 'of their time gathering information',
     body: 'Making decisions consumes far more time than it should.',
     biqc: 'BIQc brings the most important signals from across your business into one place, helping you understand what matters faster.',
   },
@@ -74,12 +80,12 @@ const WHAT_YOU_GET_CARDS = [
     iconColor: '#10B981',
     border: 'rgba(16,185,129,0.2)',
     title: 'Revenue Leakage & Missed Opportunities',
-    subtitle: "Identify revenue you're losing—without realising it.",
+    subtitle: "Identify revenue you're losing \u2014 without realising it.",
     bullets: [
-      'Missed follow-ups and unconverted leads',
-      'Deals stalling in your pipeline',
-      'Customers disengaging or reducing spend',
-      'Revenue concentrated in too few clients',
+      'Missed follow-ups and abandoned leads slipping through your pipeline',
+      'Deals stalling at critical stages without intervention',
+      'Customers disengaging before renewal without early warning',
+      'Revenue concentrated in too few clients, increasing risk',
     ],
     cta: 'Recover lost revenue and close gaps before they widen',
     ctaColor: '#10B981',
@@ -92,10 +98,10 @@ const WHAT_YOU_GET_CARDS = [
     title: 'Cost & Payroll Blowouts',
     subtitle: 'Stop costs creeping up unnoticed.',
     bullets: [
-      'Payroll exceeding expected output',
-      'Overtime and staffing inefficiencies',
-      'Underperforming roles or resource misallocation',
-      'Rising operational costs without clear return',
+      'Payroll exceeding output value without visibility',
+      'Overtime and contractor costs growing unchecked',
+      'Underperforming roles consuming budget without ROI',
+      'Rising operational costs with no clear driver identified',
     ],
     cta: 'Control costs and protect your margins',
     ctaColor: '#3B82F6',
@@ -108,10 +114,10 @@ const WHAT_YOU_GET_CARDS = [
     title: 'Customer & Operational Risk',
     subtitle: 'Catch issues before they impact your reputation.',
     bullets: [
-      'Customer complaints and negative patterns',
-      'Missed service expectations or delays',
-      'Internal communication breakdowns',
-      'Processes not being followed by staff',
+      'Customer complaints surfacing too late for recovery',
+      'Missed service-level expectations eroding trust',
+      'Communication breakdowns between teams and clients',
+      'Processes not followed, creating inconsistent outcomes',
     ],
     cta: 'Fix problems early — before customers feel them',
     ctaColor: '#F59E0B',
@@ -124,10 +130,10 @@ const WHAT_YOU_GET_CARDS = [
     title: 'Compliance & Legal Exposure',
     subtitle: 'Reduce risk before it becomes a liability.',
     bullets: [
-      'Gaps in compliance or documentation',
-      'Missed obligations, deadlines, or policies',
-      'Inconsistent processes that create legal exposure',
-      'Audit and governance blind spots',
+      'Gaps in compliance documentation going unnoticed',
+      'Missed regulatory obligations creating legal exposure',
+      'Inconsistent processes across teams and locations',
+      'Audit blind spots that compound over time',
     ],
     cta: 'Protect your business from avoidable risk',
     ctaColor: '#EF4444',
@@ -144,7 +150,7 @@ const HomePage = () => (
     ══════════════════════════════════════════════════════════ */}
     <section
       className="relative overflow-hidden"
-      style={{ background: '#070D1A' }}
+      style={{ background: '#080C14' }}
       data-testid="hero-section"
     >
       <style>{`
@@ -153,8 +159,8 @@ const HomePage = () => (
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes badgePulse {
-          0%,100% { box-shadow: 0 0 0 0 rgba(255,122,24,0); }
-          50%     { box-shadow: 0 0 0 6px rgba(255,122,24,0.08); }
+          0%,100% { box-shadow: 0 0 0 0 rgba(140,170,210,0); }
+          50%     { box-shadow: 0 0 0 6px rgba(140,170,210,0.08); }
         }
         @keyframes orbFloat {
           0%,100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.55; }
@@ -172,7 +178,7 @@ const HomePage = () => (
       <div className="absolute pointer-events-none" style={{
         top: '0%', left: '50%', width: 900, height: 560,
         transform: 'translate(-50%, -30%)',
-        background: 'radial-gradient(ellipse, rgba(198,95,46,0.13) 0%, rgba(255,122,24,0.04) 40%, transparent 70%)',
+        background: 'radial-gradient(ellipse, rgba(198,95,46,0.13) 0%, rgba(232,93,0,0.04) 40%, transparent 70%)',
         animation: 'orbFloat 12s ease-in-out infinite',
       }} />
       {/* Left accent orb */}
@@ -188,24 +194,24 @@ const HomePage = () => (
         backgroundSize: '64px 64px',
       }} />
       {/* Top vignette */}
-      <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,122,24,0.3), transparent)' }} />
+      <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(232,93,0,0.3), transparent)' }} />
 
       {/* ── Hero content ── */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 sm:px-10 text-center" style={{ paddingTop: 96, paddingBottom: 72 }}>
 
         {/* Badge */}
         <div className="hero-fade-1 inline-flex items-center gap-2.5 px-4 py-2 rounded-full mb-8 cursor-default" style={{
-          background: 'rgba(255,122,24,0.06)',
-          border: '1px solid rgba(255,122,24,0.22)',
+          background: 'linear-gradient(135deg, rgba(140,170,210,0.08), rgba(140,170,210,0.03))',
+          border: '1px solid rgba(140,170,210,0.15)',
           animation: 'heroFadeUp 0.7s ease both 0.05s, badgePulse 4s ease-in-out infinite 1s',
         }}>
           {/* Live indicator dot */}
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: '#FF7A18' }} />
-            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#FF7A18' }} />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: '#10B981' }} />
+            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#10B981' }} />
           </span>
-          <Shield className="w-3 h-3 flex-shrink-0" style={{ color: '#FF7A18' }} />
-          <span style={{ fontFamily: fontFamily.mono, color: '#FF7A18', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+          <Shield className="w-3 h-3 flex-shrink-0" style={{ color: '#9BB0CC' }} />
+          <span style={{ fontFamily: fontFamily.mono, color: '#9BB0CC', fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
             Australian Owned &amp; Operated
           </span>
         </div>
@@ -217,13 +223,13 @@ const HomePage = () => (
             fontFamily: fontFamily.display,
             fontSize: 'clamp(26px, 3.8vw, 44px)',
             lineHeight: 1.1,
-            color: '#F4F7FA',
+            color: 'var(--ink-display, #EDF1F7)',
           }}
         >
           One intelligence layer for every{' '}
           <span style={{
             fontFamily: fontFamily.display,
-            background: 'linear-gradient(135deg, #FF8C3A 0%, #C65F2E 60%, #A64F26 100%)',
+            background: 'linear-gradient(135deg, #FF7A18 0%, #E85D00 40%, var(--ink, #C8D4E4) 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
@@ -246,11 +252,14 @@ const HomePage = () => (
         <div className="hero-fade-4 flex justify-center mb-6">
           <Link
             to="/register-supabase"
-            className="group relative inline-flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5"
+            className="group relative inline-flex items-center justify-center gap-2 font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5"
             style={{
-              background: 'linear-gradient(135deg, #D06832, #A64F26)',
+              background: 'linear-gradient(135deg, #FF7A18, #E85D00)',
               fontFamily: fontFamily.body,
               fontWeight: 600,
+              fontSize: '16px',
+              padding: '14px 32px',
+              borderRadius: '10px',
               boxShadow: '0 8px 28px rgba(198,95,46,0.38), 0 2px 4px rgba(0,0,0,0.3)',
               minWidth: 220,
             }}
@@ -269,16 +278,16 @@ const HomePage = () => (
             { icon: '✅', label: '14-Day Guarantee' },
           ].map((t, i) => (
             <span key={t.label} className="flex items-center gap-1.5">
-              {i > 0 && <span style={{ color: 'rgba(100,116,139,0.5)', marginRight: 4 }}>·</span>}
+              {i > 0 && <span style={{ display: 'inline-block', width: 1, height: 14, background: 'rgba(255,255,255,0.25)', marginRight: 4 }} />}
               <span style={{ fontSize: '13px' }}>{t.icon}</span>
               <span style={{ fontFamily: fontFamily.mono, color: '#64748B', fontSize: '11px', fontWeight: 500 }}>{t.label}</span>
             </span>
           ))}
-          <span style={{ color: 'rgba(100,116,139,0.5)' }}>·</span>
+          <span style={{ display: 'inline-block', width: 1, height: 14, background: 'rgba(255,255,255,0.25)' }} />
           <Link
             to="/login-supabase"
             className="hover:text-white transition-colors"
-            style={{ fontFamily: fontFamily.mono, color: '#64748B', fontSize: '11px' }}
+            style={{ fontFamily: fontFamily.mono, color: '#E85D00', fontSize: '11px' }}
             data-testid="hero-login"
           >
             Already have an account?
@@ -296,7 +305,7 @@ const HomePage = () => (
     {/* ══════════════════════════════════════════════════════════
         ANIMATED CONNECTOR — diagram → What You Get
     ══════════════════════════════════════════════════════════ */}
-    <div style={{ background: '#07121E', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 0, paddingBottom: 0 }}>
+    <div style={{ background: '#0B1120', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 0, paddingBottom: 0 }}>
       <style>{`
         @keyframes connectorPulse {
           0%   { transform: translateX(-50%) translateY(0);    opacity: 0; }
@@ -320,8 +329,8 @@ const HomePage = () => (
       <div style={{ position: 'relative', width: 2, height: 80 }}>
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, rgba(255,140,40,0.55), rgba(255,140,40,0.12))',
-          boxShadow: '0 0 8px rgba(255,140,40,0.25)',
+          background: 'linear-gradient(to bottom, rgba(232,93,0,0.55), rgba(232,93,0,0.12))',
+          boxShadow: '0 0 8px rgba(232,93,0,0.25)',
           borderRadius: 1,
         }} />
         <div
@@ -330,7 +339,7 @@ const HomePage = () => (
             position: 'absolute', left: '50%',
             width: 8, height: 8, borderRadius: '50%',
             background: '#FF8C28',
-            boxShadow: '0 0 14px rgba(255,140,40,0.9), 0 0 28px rgba(255,140,40,0.4)',
+            boxShadow: '0 0 14px rgba(232,93,0,0.9), 0 0 28px rgba(232,93,0,0.4)',
             top: 0,
           }}
         />
@@ -341,22 +350,22 @@ const HomePage = () => (
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
         padding: '18px 36px',
         borderRadius: 16,
-        background: 'rgba(255,122,24,0.06)',
-        border: '1px solid rgba(255,122,24,0.25)',
-        boxShadow: '0 0 40px rgba(255,122,24,0.08)',
+        background: 'rgba(232,93,0,0.06)',
+        border: '1px solid rgba(232,93,0,0.25)',
+        boxShadow: '0 0 40px rgba(232,93,0,0.08)',
         marginTop: 0,
       }}>
         {/* Pulsing ring */}
         <div style={{ position: 'relative', width: 14, height: 14 }}>
           <div style={{
             position: 'absolute', inset: -4, borderRadius: '50%',
-            border: '1px solid rgba(255,122,24,0.3)',
+            border: '1px solid rgba(232,93,0,0.3)',
             animation: 'corePulse 3s ease-in-out infinite',
           }} />
           <div style={{
             width: 14, height: 14, borderRadius: '50%',
-            background: '#FF7A18',
-            boxShadow: '0 0 12px rgba(255,122,24,0.8)',
+            background: '#E85D00',
+            boxShadow: '0 0 12px rgba(232,93,0,0.8)',
           }} />
         </div>
         <span
@@ -366,10 +375,10 @@ const HomePage = () => (
           Intelligence Output
         </span>
         <svg width="180" height="10" viewBox="0 0 180 10" fill="none" style={{ marginTop: -4 }}>
-          <line x1="0" y1="5" x2="172" y2="5" stroke="rgba(255,140,40,0.3)" strokeWidth="1.2" strokeDasharray="4 3">
+          <line x1="0" y1="5" x2="172" y2="5" stroke="rgba(232,93,0,0.3)" strokeWidth="1.2" strokeDasharray="4 3">
             <animate attributeName="stroke-dashoffset" from="14" to="0" dur="1.5s" repeatCount="indefinite" />
           </line>
-          <polygon points="170,2 180,5 170,8" fill="rgba(255,140,40,0.45)" />
+          <polygon points="170,2 180,5 170,8" fill="rgba(232,93,0,0.45)" />
         </svg>
       </div>
 
@@ -377,8 +386,8 @@ const HomePage = () => (
       <div style={{ position: 'relative', width: 2, height: 80 }}>
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, rgba(255,140,40,0.45), rgba(255,140,40,0.08))',
-          boxShadow: '0 0 8px rgba(255,140,40,0.2)',
+          background: 'linear-gradient(to bottom, rgba(232,93,0,0.45), rgba(232,93,0,0.08))',
+          boxShadow: '0 0 8px rgba(232,93,0,0.2)',
           borderRadius: 1,
         }} />
         <div
@@ -387,7 +396,7 @@ const HomePage = () => (
             position: 'absolute', left: '50%',
             width: 8, height: 8, borderRadius: '50%',
             background: '#FF8C28',
-            boxShadow: '0 0 14px rgba(255,140,40,0.9), 0 0 28px rgba(255,140,40,0.4)',
+            boxShadow: '0 0 14px rgba(232,93,0,0.9), 0 0 28px rgba(232,93,0,0.4)',
             top: 0, animationDelay: '0.5s',
           }}
         />
@@ -397,22 +406,31 @@ const HomePage = () => (
     {/* ══════════════════════════════════════════════════════════
         WHAT YOU GET — pain-point framing
     ══════════════════════════════════════════════════════════ */}
-    <section className="pb-16 sm:pb-24" style={{ background: '#07121E' }} data-testid="what-you-get">
+    <section className="pb-16 sm:pb-24" style={{ background: '#0B1120' }} data-testid="what-you-get">
+      <style>{`
+        .wyg-card-enhanced:hover {
+          box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(140,170,210,0.08) !important;
+          border-color: rgba(160,185,220,0.22) !important;
+        }
+      `}</style>
       <div className="max-w-5xl mx-auto px-6">
 
         {/* Section header */}
         <div className="text-center mb-4">
+          <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+            Intelligence Output
+          </p>
           <h2
             className="text-3xl sm:text-4xl lg:text-5xl font-semibold mb-4"
-            style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}
+            style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}
           >
             What You Get
           </h2>
           <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
-            style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
-            Full visibility over where you&rsquo;re <strong style={{ color: '#F4F7FA' }}>losing money</strong>;
-            {' '}where risk is building, and where <strong style={{ color: '#F4F7FA' }}>growth</strong> is being{' '}
-            <strong style={{ color: '#F4F7FA' }}>missed</strong>&mdash;<strong style={{ color: '#F4F7FA' }}>in real time.</strong>
+            style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
+            Full visibility over where you&rsquo;re <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>losing money</strong>;
+            {' '}where risk is building, and where <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>growth</strong> is being{' '}
+            <strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>missed</strong>&mdash;<strong style={{ color: 'var(--ink-display, #EDF1F7)' }}>in real time.</strong>
           </p>
         </div>
 
@@ -421,20 +439,24 @@ const HomePage = () => (
           {WHAT_YOU_GET_CARDS.map((card) => (
             <div
               key={card.title}
-              className="rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-0.5"
+              className="wyg-card-enhanced relative rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-1.5 overflow-hidden"
               style={{
-                background: 'rgba(255,255,255,0.025)',
+                background: 'linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
                 border: `1px solid ${card.border}`,
                 boxShadow: `0 4px 32px ${card.iconColor}0a`,
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
               }}
             >
+              {/* Top accent bar matching mockup */}
+              <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: card.iconColor, opacity: 0.6 }} />
               {/* Card header */}
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: card.iconBg }}>
                   <card.icon className="w-5 h-5" style={{ color: card.iconColor }} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold leading-snug mb-0.5" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+                  <h3 className="text-sm font-bold leading-snug mb-0.5" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
                     {card.title}
                   </h3>
                   <p className="text-xs leading-relaxed" style={{ color: 'rgba(159,176,195,0.7)', fontFamily: fontFamily.body }}>
@@ -447,8 +469,8 @@ const HomePage = () => (
               <ul className="flex flex-col gap-2 pl-1">
                 {card.bullets.map((b) => (
                   <li key={b} className="flex items-start gap-2">
-                    <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: card.iconColor }} />
-                    <span className="text-xs leading-relaxed" style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>{b}</span>
+                    <span className="flex-shrink-0 mt-1.5" style={{ width: 6, height: 6, borderRadius: '50%', background: card.iconColor }} />
+                    <span className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>{b}</span>
                   </li>
                 ))}
               </ul>
@@ -468,18 +490,18 @@ const HomePage = () => (
         <div
           className="mt-6 rounded-2xl p-8 text-center"
           style={{
-            background: 'linear-gradient(135deg, rgba(198,95,46,0.07) 0%, rgba(15,23,32,0.6) 50%, rgba(16,185,129,0.05) 100%)',
-            border: '1px solid rgba(255,122,24,0.2)',
-            boxShadow: '0 0 60px rgba(255,122,24,0.06)',
+            background: 'linear-gradient(135deg, rgba(140,170,210,0.04), rgba(255,122,24,0.02))',
+            border: '1px solid rgba(140,170,210,0.15)',
+            boxShadow: '0 0 60px rgba(140,170,210,0.04)',
           }}
         >
-          <h3 className="text-lg sm:text-xl font-bold mb-3" style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
-            Then&mdash;<span style={{ color: '#FF7A18' }}>BIQc Brings It Together</span>
+          <h3 className="text-lg sm:text-xl font-bold mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>
+            Then&mdash;<span style={{ color: '#E85D00' }}>BIQc Brings It Together</span>
           </h3>
           <p className="text-sm mb-3" style={{ color: 'rgba(159,176,195,0.7)', fontFamily: fontFamily.body }}>
             Daily Executive Brief &nbsp;·&nbsp; Strategic Action Plans &nbsp;·&nbsp; Market &amp; Competitor Intelligence
           </p>
-          <p className="text-base font-semibold" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+          <p className="text-base font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
             The full picture &nbsp;·&nbsp; The right moves &nbsp;·&nbsp; The confidence to act
           </p>
         </div>
@@ -487,17 +509,18 @@ const HomePage = () => (
       </div>
     </section>
 
-    <ModernIntegrationBanner />
-
     {/* AI era evidence cards */}
-    <section className="py-14 sm:py-16" style={{ background: '#07121E' }} data-testid="ai-era-section">
+    <section className="py-14 sm:py-16" style={{ background: '#0B1120' }} data-testid="ai-era-section">
       <div className="max-w-5xl mx-auto px-6">
+        <p className="text-xs font-semibold tracking-widest uppercase mb-3 text-center" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+          The Opportunity
+        </p>
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 text-center"
-          style={{ fontFamily: fontFamily.display, color: '#F4F7FA' }}>
+          style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>
           What Businesses Are Achieving In The AI Era
         </h2>
         <p className="text-base sm:text-lg mb-10 max-w-2xl mx-auto leading-relaxed text-center"
-          style={{ color: '#9FB0C3', fontFamily: fontFamily.body }}>
+          style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
           Business leaders make hundreds of decisions every day, and research shows up to{' '}
           <span style={{ color: '#C65F2E', fontWeight: 600 }}>40%</span> of those decisions are made without the right data.
         </p>
@@ -510,19 +533,16 @@ const HomePage = () => (
     </section>
 
     {/* TRUST & COMPLIANCE BADGES */}
-    <section className="py-10" style={{ background: '#07121E', borderTop: '1px solid rgba(255,122,24,0.1)', borderBottom: '1px solid rgba(255,122,24,0.1)' }} data-testid="trust-badges">
+    <section className="py-10" style={{ background: '#0B1120', borderTop: '1px solid rgba(140,170,210,0.1)', borderBottom: '1px solid rgba(140,170,210,0.1)' }} data-testid="trust-badges">
       <div className="max-w-5xl mx-auto px-6">
-        <p className="text-center text-xs font-semibold tracking-widest uppercase mb-6" style={{ fontFamily: fontFamily.mono, color: '#FF7A18' }}>
-          Security &amp; Compliance
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-4">
           {[
             { icon: '🇦🇺', label: 'Australian Hosted', sub: 'Sydney & Melbourne data centres' },
             { icon: '🔒', label: 'AES-256 Encrypted', sub: 'Defence-grade at rest & in transit' },
             { icon: '🛡️', label: 'Privacy Act Compliant', sub: 'Australian Privacy Principles' },
             { icon: '✅', label: '14-Day Guarantee', sub: 'No questions asked refund' },
           ].map(b => (
-            <div key={b.label} className="flex items-start gap-3 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,122,24,0.12)' }}>
+            <div key={b.label} className="flex items-center gap-3 p-4 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(140,170,210,0.15)' }}>
               <span className="text-2xl">{b.icon}</span>
               <div>
                 <p className="text-xs font-semibold" style={{ color: '#E6EEF7', fontFamily: fontFamily.mono }}>{b.label}</p>
@@ -535,17 +555,14 @@ const HomePage = () => (
     </section>
 
     {/* WHAT COGNITION DELIVERS */}
-    <section className="py-14 sm:py-20" style={{ background: '#07121E' }} data-testid="cognition-section">
+    <section className="py-14 sm:py-20" style={{ background: '#0B1120' }} data-testid="cognition-section">
       <div className="max-w-5xl mx-auto px-6">
-        <div className="mb-10 sm:mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-[2px]" style={{ background: '#FF7A18' }} />
-            <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#FF7A18' }}>What Cognition-as-a-Service Delivers</span>
-          </div>
+        <div className="mb-10 sm:mb-12 text-center">
+          <p className="text-xs font-medium tracking-widest uppercase mb-4" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>What Cognition-as-a-Service Delivers</p>
           <h2 className="text-2xl sm:text-3xl font-medium mb-3" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>
             Enterprise-grade intelligence.<br />SMB-sized investment.
           </h2>
-          <p className="text-base max-w-xl" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>Businesses embedding AI-driven decision systems experience:</p>
+          <p className="text-base max-w-xl mx-auto" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>Businesses embedding AI-driven decision systems experience:</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -558,11 +575,11 @@ const HomePage = () => (
             { icon: Users, title: 'Maximise Output', desc: 'Boost leverage and performance without expanding headcount.' },
           ].map((item, i) => (
             <GlassCard key={i}>
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'rgba(255,122,24,0.08)' }}>
-                <item.icon className="w-5 h-5" style={{ color: '#FF7A18' }} />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: 'rgba(232,93,0,0.08)' }}>
+                <item.icon className="w-5 h-5" style={{ color: '#E85D00' }} />
               </div>
               <h3 className="text-base font-semibold mb-2" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>{item.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>{item.desc}</p>
+              <p className="text-sm leading-relaxed" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>{item.desc}</p>
             </GlassCard>
           ))}
         </div>
@@ -570,73 +587,110 @@ const HomePage = () => (
     </section>
 
     {/* SOCIAL PROOF */}
-    <section className="py-14 sm:py-20" style={{ background: '#060E18' }} data-testid="testimonials-section">
+    <section className="py-14 sm:py-20" style={{ background: 'radial-gradient(ellipse 60% 50% at 70% 30%, rgba(46,74,110,0.06) 0%, transparent 60%), linear-gradient(180deg, #0B1120 0%, #080C14 100%)' }} data-testid="testimonials-section">
+      <style>{`
+        .testimonial-card-enhanced:hover {
+          box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(140,170,210,0.08) !important;
+          border-color: rgba(160,185,220,0.22) !important;
+        }
+      `}</style>
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="w-8 h-[2px]" style={{ background: '#FF7A18' }} />
-            <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#FF7A18' }}>What Australian SMBs Say</span>
-            <div className="w-8 h-[2px]" style={{ background: '#FF7A18' }} />
+            <div className="w-8 h-[2px]" style={{ background: '#E85D00' }} />
+            <span className="text-xs font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>What Australian SMBs Say</span>
+            <div className="w-8 h-[2px]" style={{ background: '#E85D00' }} />
           </div>
           <h2 className="text-2xl sm:text-3xl font-medium" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>
             Built for operators, not analysts.
           </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             {
-              quote: "BIQc flagged a cash flow issue two weeks before it would have hit. We were able to collect early and avoid a painful overdraft.",
+              quote: "We had no idea how much revenue was leaking through missed follow-ups and stalled deals. BIQc surfaced it within the first week \u2014 and the daily briefs keep us on top of it now.",
               author: "Operations Director",
               company: "Manufacturing SMB, NSW",
               metric: "$47K recovered",
             },
             {
-              quote: "I used to spend 6 hours a week pulling together reports for our board. Now I walk in with the BIQc brief and it's done.",
+              quote: "I used to spend half my Monday pulling data from five different systems just to understand where we stood. Now I get a brief before I\u2019ve finished my coffee. It\u2019s changed how I run my week.",
               author: "Founder & CEO",
               company: "Professional Services, VIC",
               metric: "6hrs saved weekly",
             },
             {
-              quote: "The competitive benchmark showed us we were invisible online while our competitors had 4× more review presence. We fixed it in 30 days.",
+              quote: "We caught a compliance gap that would have cost us our largest contract. BIQc flagged it three weeks before our internal audit would have found it. That alone paid for the year.",
               author: "Marketing Manager",
               company: "Retail Group, QLD",
               metric: "83% faster detection",
             },
           ].map((t, i) => (
-            <GlassCard key={i} className="flex flex-col">
+            <div
+              key={i}
+              className="testimonial-card-enhanced flex flex-col rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1"
+              style={{
+                background: 'linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
+                border: '1px solid rgba(140,170,210,0.15)',
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+              }}
+            >
+              {/* Prominent stat header */}
+              <p style={{
+                fontFamily: fontFamily.display,
+                fontSize: '28px',
+                fontWeight: 700,
+                color: '#FF7A18',
+                marginBottom: '12px',
+                lineHeight: 1.2,
+              }}>
+                {t.metric}
+              </p>
+
+              {/* Quote */}
               <div className="flex-1">
-                <p className="text-sm leading-relaxed mb-4" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+                <p className="text-sm leading-relaxed mb-5" style={{
+                  fontFamily: fontFamily.body,
+                  color: 'var(--ink-secondary, #8FA0B8)',
+                  fontStyle: 'italic',
+                  lineHeight: 1.7,
+                }}>
                   &ldquo;{t.quote}&rdquo;
                 </p>
               </div>
-              <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid rgba(255,122,24,0.15)' }}>
-                <div>
-                  <p className="text-xs font-semibold" style={{ color: '#E6EEF7', fontFamily: fontFamily.display }}>{t.author}</p>
-                  <p className="text-[10px] mt-0.5" style={{ color: '#6B7B8D', fontFamily: fontFamily.body }}>{t.company}</p>
-                </div>
-                <span className="text-[11px] px-2.5 py-1 rounded-full font-semibold" style={{ background: 'rgba(255,122,24,0.12)', color: '#FF7A18', fontFamily: fontFamily.mono }}>
-                  {t.metric}
-                </span>
+
+              {/* Author */}
+              <div>
+                <p className="text-[13px] font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{t.author}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#5C6E82' }}>{t.company}</p>
               </div>
-            </GlassCard>
+            </div>
           ))}
         </div>
       </div>
     </section>
 
     {/* CTA */}
-    <section className="py-14 sm:py-20" style={{ background: '#0A1520' }} data-testid="cta-section">
-      <div className="max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-2xl sm:text-3xl font-medium mb-4" style={{ fontFamily: fontFamily.display, color: '#E6EEF7' }}>
-          Stop reacting. Start <span style={{ color: '#FF7A18' }}>preventing.</span>
+    <section className="relative py-20 sm:py-24 overflow-hidden" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }} data-testid="cta-section">
+      {/* Decorative orb behind content */}
+      <div className="absolute pointer-events-none" style={{
+        width: 600, height: 600, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(255,122,24,0.05), rgba(140,170,210,0.03) 50%, transparent 70%)',
+        top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+      }} />
+      <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
+        <h2 className="font-medium mb-4" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: '40px' }}>
+          Stop reacting. Start preventing.
         </h2>
-        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: '#9FB0C3' }}>
+        <p className="text-base mb-8 max-w-lg mx-auto" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.7 }}>
           Join the operators who replaced reactive firefighting with autonomous intelligence.
         </p>
-        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E56A08)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="bottom-cta">
+        <Link to="/register-supabase" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-base font-semibold text-white transition-all hover:brightness-110 hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)', fontFamily: fontFamily.body, fontWeight: 600, boxShadow: '0 8px 32px rgba(255,122,24,0.25)' }} data-testid="bottom-cta">
           Try It For Free <ArrowRight className="w-4 h-4" />
         </Link>
-        <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#9FB0C3', opacity: 0.3, fontSize: '12px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
+        <p className="mt-4" style={{ fontFamily: fontFamily.mono, color: '#5C6E82', fontSize: '13px' }}>14-day trial &middot; No credit card &middot; Australian support</p>
       </div>
     </section>
 

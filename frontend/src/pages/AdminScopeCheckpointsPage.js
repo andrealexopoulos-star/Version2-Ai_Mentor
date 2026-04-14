@@ -35,7 +35,7 @@ export default function AdminScopeCheckpointsPage() {
       <div className="space-y-4 max-w-[1280px]" style={{ fontFamily: fontFamily.body, color: 'var(--biqc-text)' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Scope Checkpoints</h1>
+            <h1 className="text-2xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Scope Checkpoints</h1>
             <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
               Persistent checkpoint placeholder for current scope blocks and gate outcomes.
             </p>
@@ -54,15 +54,15 @@ export default function AdminScopeCheckpointsPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="p-3" style={cardStyle}>
             <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Source</div>
-            <div className="text-xs text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{payload?.source || '—'}</div>
+            <div className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{payload?.source || '—'}</div>
           </div>
           <div className="p-3" style={cardStyle}>
             <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Total Entries</div>
-            <div className="text-xl text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{payload?.entry_count ?? 0}</div>
+            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{payload?.entry_count ?? 0}</div>
           </div>
           <div className="p-3" style={cardStyle}>
             <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Unique Gates</div>
-            <div className="text-xl text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{payload?.unique_gate_count ?? 0}</div>
+            <div className="text-xl text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{payload?.unique_gate_count ?? 0}</div>
           </div>
           <div className="p-3" style={cardStyle}>
             <div className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Open Failures</div>
@@ -80,8 +80,8 @@ export default function AdminScopeCheckpointsPage() {
                 <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: '#EF444415', color: '#EF4444', fontFamily: fontFamily.mono }}>
                   FAIL
                 </span>
-                <span className="text-xs text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{entry.gate_id}</span>
-                <span className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
+                <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{entry.gate_id}</span>
+                <span className="text-[10px] text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
                 <span className="ml-auto text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{entry.artifact}</span>
               </div>
             ))}
@@ -106,8 +106,8 @@ export default function AdminScopeCheckpointsPage() {
                 >
                   {entry.status}
                 </span>
-                <span className="text-xs text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>{entry.gate_id}</span>
-                <span className="text-[10px] text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
+                <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>{entry.gate_id}</span>
+                <span className="text-[10px] text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono }}>{entry.failure_code || '-'}</span>
                 <span className="ml-auto text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{entry.artifact}</span>
               </div>
             ))}

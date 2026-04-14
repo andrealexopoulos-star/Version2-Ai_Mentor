@@ -16,13 +16,13 @@ export const SurfaceCard = ({ children, className = '', testId }) => (
 export const SurfaceHeader = ({ eyebrow, title, question, summary, rightSlot, testIdPrefix }) => (
   <div className="flex flex-wrap items-start justify-between gap-4" data-testid={`${testIdPrefix}-header`}>
     <div className="max-w-3xl space-y-2">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }} data-testid={`${testIdPrefix}-eyebrow`}>
-        {eyebrow}
+      <p className="text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }} data-testid={`${testIdPrefix}-eyebrow`}>
+        — {eyebrow}
       </p>
-      <h1 className="text-4xl md:text-5xl" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }} data-testid={`${testIdPrefix}-title`}>
+      <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }} data-testid={`${testIdPrefix}-title`}>
         {title}
       </h1>
-      <p className="text-base text-[#E2E8F0]" style={{ fontFamily: fontFamily.body }} data-testid={`${testIdPrefix}-question`}>
+      <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }} data-testid={`${testIdPrefix}-question`}>
         {question}
       </p>
       <p className="text-sm text-[#94A3B8]" style={{ fontFamily: fontFamily.body }} data-testid={`${testIdPrefix}-summary`}>
@@ -33,7 +33,7 @@ export const SurfaceHeader = ({ eyebrow, title, question, summary, rightSlot, te
   </div>
 );
 
-export const MetricCard = ({ label, value, caption, tone = '#FF6A00', testId }) => (
+export const MetricCard = ({ label, value, caption, tone = '#E85D00', testId }) => (
   <SurfaceCard testId={testId}>
     <p className="text-[10px] uppercase tracking-[0.14em] text-[#94A3B8]" style={{ fontFamily: fontFamily.mono }}>{label}</p>
     <div className="mt-3 flex items-end gap-2">

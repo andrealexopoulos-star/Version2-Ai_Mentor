@@ -1,0 +1,260 @@
+/* ═══════════════════════════════════════════════════════════════════
+   BIQc Motion System — Apple/Vercel premium animations
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── REVEAL (used by IntersectionObserver) ─── */
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 32px, 0);
+  transition: opacity var(--dur-hero) var(--ease-liquid),
+              transform var(--dur-hero) var(--ease-liquid);
+  will-change: opacity, transform;
+}
+[data-reveal].is-visible { opacity: 1; transform: translate3d(0, 0, 0); }
+
+[data-reveal="left"] { transform: translate3d(-32px, 0, 0); }
+[data-reveal="right"] { transform: translate3d(32px, 0, 0); }
+[data-reveal="scale"] { transform: scale(0.96); }
+[data-reveal="blur"] { filter: blur(8px); }
+
+[data-reveal="left"].is-visible,
+[data-reveal="right"].is-visible,
+[data-reveal="scale"].is-visible { transform: none; }
+[data-reveal="blur"].is-visible { filter: none; }
+
+[data-reveal-delay="1"] { transition-delay: 80ms; }
+[data-reveal-delay="2"] { transition-delay: 160ms; }
+[data-reveal-delay="3"] { transition-delay: 240ms; }
+[data-reveal-delay="4"] { transition-delay: 320ms; }
+[data-reveal-delay="5"] { transition-delay: 400ms; }
+[data-reveal-delay="6"] { transition-delay: 480ms; }
+
+/* ─── STAGGER CHILDREN ─── */
+[data-stagger] > * {
+  opacity: 0;
+  transform: translate3d(0, 16px, 0);
+  transition: opacity var(--dur-std) var(--ease-liquid),
+              transform var(--dur-std) var(--ease-liquid);
+}
+[data-stagger].is-visible > *:nth-child(1) { opacity: 1; transform: none; transition-delay: 0ms; }
+[data-stagger].is-visible > *:nth-child(2) { opacity: 1; transform: none; transition-delay: 60ms; }
+[data-stagger].is-visible > *:nth-child(3) { opacity: 1; transform: none; transition-delay: 120ms; }
+[data-stagger].is-visible > *:nth-child(4) { opacity: 1; transform: none; transition-delay: 180ms; }
+[data-stagger].is-visible > *:nth-child(5) { opacity: 1; transform: none; transition-delay: 240ms; }
+[data-stagger].is-visible > *:nth-child(6) { opacity: 1; transform: none; transition-delay: 300ms; }
+[data-stagger].is-visible > *:nth-child(7) { opacity: 1; transform: none; transition-delay: 360ms; }
+[data-stagger].is-visible > *:nth-child(8) { opacity: 1; transform: none; transition-delay: 420ms; }
+[data-stagger].is-visible > *:nth-child(n+9) { opacity: 1; transform: none; transition-delay: 480ms; }
+
+/* ─── LIQUID TEXT WAVE ENTRY ─── */
+.liquid-text {
+  display: inline-block;
+  overflow: hidden;
+  line-height: 0.95;
+  vertical-align: bottom;
+}
+.liquid-text .line {
+  display: block;
+  overflow: hidden;
+}
+.liquid-text .word {
+  display: inline-block;
+  transform: translate3d(0, 120%, 0);
+  opacity: 0;
+  transition: transform 1100ms var(--ease-liquid), opacity 600ms var(--ease-liquid);
+}
+.liquid-text.is-visible .word { transform: none; opacity: 1; }
+.liquid-text.is-visible .word:nth-child(1) { transition-delay: 0ms; }
+.liquid-text.is-visible .word:nth-child(2) { transition-delay: 60ms; }
+.liquid-text.is-visible .word:nth-child(3) { transition-delay: 120ms; }
+.liquid-text.is-visible .word:nth-child(4) { transition-delay: 180ms; }
+.liquid-text.is-visible .word:nth-child(5) { transition-delay: 240ms; }
+.liquid-text.is-visible .word:nth-child(6) { transition-delay: 300ms; }
+.liquid-text.is-visible .word:nth-child(7) { transition-delay: 360ms; }
+.liquid-text.is-visible .word:nth-child(8) { transition-delay: 420ms; }
+.liquid-text.is-visible .word:nth-child(9) { transition-delay: 480ms; }
+.liquid-text.is-visible .word:nth-child(n+10) { transition-delay: 540ms; }
+
+/* ─── LAVA SHIMMER (for CTAs) ─── */
+@keyframes lava-shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ─── LIQUID SILVER SHIMMER (for hero mesh) ─── */
+@keyframes silver-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(2%, -2%, 0) scale(1.03); }
+}
+
+/* ─── FLOATING ORBS (hero decorations) ─── */
+@keyframes orb-float-a {
+  0%, 100% { transform: translate3d(-20px, -10px, 0) scale(1); }
+  33%      { transform: translate3d(40px, -30px, 0) scale(1.1); }
+  66%      { transform: translate3d(20px, 20px, 0) scale(0.95); }
+}
+@keyframes orb-float-b {
+  0%, 100% { transform: translate3d(20px, 10px, 0) scale(1); }
+  33%      { transform: translate3d(-30px, 40px, 0) scale(0.9); }
+  66%      { transform: translate3d(30px, -10px, 0) scale(1.08); }
+}
+
+/* ─── MAGNETIC BUTTON (driven by app-shell.js) ─── */
+[data-magnetic] {
+  transition: transform var(--dur-std) var(--ease-liquid);
+  will-change: transform;
+}
+
+/* ─── BUTTON RIPPLE / LIFT ─── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  font-family: var(--font-ui);
+  font-size: var(--size-sm);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-ui);
+  line-height: 1;
+  height: 44px;
+  padding: 0 var(--sp-5);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  transition: transform var(--dur-fast) var(--ease-liquid),
+              box-shadow var(--dur-fast) var(--ease-standard),
+              background var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard),
+              color var(--dur-fast) var(--ease-standard);
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+.btn:active { transform: translate3d(0, 1px, 0); }
+.btn:focus-visible { outline: 0; box-shadow: var(--ring-focus); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--lava-warm) 0%, var(--lava) 50%, var(--lava-deep) 100%);
+  background-size: 200% 200%;
+  color: var(--ink-inverse);
+  box-shadow: 0 1px 2px rgba(232,93,0,0.28), 0 8px 24px -8px rgba(232,93,0,0.32);
+  animation: lava-shimmer 6s ease-in-out infinite;
+}
+.btn-primary:hover {
+  transform: translate3d(0, -1px, 0);
+  box-shadow: 0 2px 4px rgba(232,93,0,0.32), 0 16px 32px -8px rgba(232,93,0,0.40);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--border-strong);
+}
+.btn-secondary:hover {
+  border-color: var(--border-hover);
+  background: var(--surface-tint);
+  transform: translate3d(0, -1px, 0);
+}
+
+.btn-ghost { background: transparent; color: var(--ink); }
+.btn-ghost:hover { background: var(--surface-sunken); }
+
+.btn-sm { height: 36px; padding: 0 var(--sp-4); font-size: var(--size-xs); border-radius: var(--r-sm); }
+.btn-md { height: 44px; padding: 0 var(--sp-5); font-size: var(--size-sm); border-radius: var(--r-md); }
+.btn-lg { height: 52px; padding: 0 var(--sp-6); font-size: var(--size-body); border-radius: var(--r-lg); }
+.btn-icon { width: 44px; padding: 0; }
+
+.btn > .arrow {
+  display: inline-block;
+  transition: transform var(--dur-std) var(--ease-liquid);
+}
+.btn:hover > .arrow { transform: translate3d(4px, 0, 0); }
+
+/* ─── CARD HOVER LIFT ─── */
+.card-lift {
+  transition: transform var(--dur-std) var(--ease-liquid),
+              box-shadow var(--dur-std) var(--ease-standard),
+              border-color var(--dur-std) var(--ease-standard);
+}
+.card-lift:hover {
+  transform: translate3d(0, -2px, 0);
+  box-shadow: var(--elev-3);
+  border-color: var(--border-hover);
+}
+
+/* ─── PULSE (live indicator) ─── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.6; transform: scale(0.95); }
+}
+.live-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--positive);
+  animation: pulse-dot 2s var(--ease-standard) infinite;
+  box-shadow: 0 0 0 4px rgba(22,163,74,0.12);
+}
+.live-dot-lava { background: var(--lava); box-shadow: 0 0 0 4px var(--lava-ring); }
+.live-dot-danger { background: var(--danger); box-shadow: 0 0 0 4px rgba(220,38,38,0.12); }
+
+/* ─── LIVE CHART LINE DRAW ─── */
+@keyframes draw-line {
+  0%   { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+.chart-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw-line 2600ms var(--ease-liquid) forwards;
+}
+
+/* ─── MARQUEE (logo strip) ─── */
+@keyframes marquee {
+  0%   { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+.marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent 0, #000 10%, #000 90%, transparent 100%); -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 10%, #000 90%, transparent 100%); }
+.marquee__track {
+  display: flex;
+  gap: var(--sp-14);
+  width: max-content;
+  animation: marquee 32s linear infinite;
+}
+.marquee:hover .marquee__track { animation-play-state: paused; }
+
+/* ─── SKELETON SHIMMER ─── */
+@keyframes skeleton {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-sunken) 0%, var(--silver-2) 40%, var(--surface-sunken) 80%);
+  background-size: 200% 100%;
+  animation: skeleton 1.6s ease-in-out infinite;
+  border-radius: var(--r-sm);
+}
+
+/* ─── PAGE TRANSITION ─── */
+@keyframes page-enter {
+  0%   { opacity: 0; transform: translate3d(0, 8px, 0); }
+  100% { opacity: 1; transform: none; }
+}
+.page-enter { animation: page-enter var(--dur-page) var(--ease-liquid) both; }
+
+/* ─── TYPING CURSOR ─── */
+@keyframes blink { 50% { opacity: 0; } }
+.type-cursor { display: inline-block; width: 3px; height: 1.2em; background: var(--lava); vertical-align: text-top; animation: blink 1s steps(2) infinite; }
+
+/* ─── REDUCED MOTION ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  [data-reveal], [data-stagger] > *, .liquid-text .word {
+    opacity: 1 !important; transform: none !important; filter: none !important;
+  }
+}

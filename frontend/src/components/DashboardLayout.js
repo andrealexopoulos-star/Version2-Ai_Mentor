@@ -6,7 +6,6 @@ import { apiClient } from '../lib/api';
 import { useTutorial, HelpButton, PageTutorial } from './TutorialOverlay';
 import FirstLoginNotification from './FirstLoginNotification';
 import MobileNav from './MobileNav';
-import SoundboardPanel from './SoundboardPanel';
 import { DailyBriefBanner } from './DailyBriefCard';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -16,17 +15,17 @@ import {
   Zap, Bell, AlertCircle, ChevronRight, BarChart3, Activity,
   Radar, HelpCircle, LayoutDashboard, AlertTriangle, Link2,
   ClipboardList, MessageSquare, Lock, Eye, FlaskConical,
-  BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox, CreditCard
+  BookOpen, Scale, Gavel, Target, Sun, Moon, Calendar, Inbox, CreditCard,
+  Search
 } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
-import { resolveTier, getRouteAccess } from '../lib/tierResolver';
+import { getRouteAccess } from '../lib/tierResolver';
 import { canAccess, requiredTier, TIERS } from '../config/tiers';
 import { isPrivilegedUser } from '../lib/privilegedUser';
 import { fontFamily, colors, shadow } from '../design-system/tokens';
 
 const DISPLAY = fontFamily.display;
 const SIDEBAR_WIDTH_STORAGE_KEY = 'biqc_sidebar_width';
-const SOUNDBOARD_WIDTH_STORAGE_KEY = 'biqc_soundboard_width';
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 // Business Verification Score Badge — shows identity confidence + data coverage
@@ -65,11 +64,11 @@ const VerificationBadge = ({ navigate }) => {
           <div className="h-1.5 rounded-full mb-3" style={{ background: colors.border }}>
             <div className="h-1.5 rounded-full" style={{ width: `${score}%`, background: color }} />
           </div>
-          <p className="text-[11px] text-[#9FB0C3] mb-3" style={{ fontFamily: fontFamily.body }}>
+          <p className="text-[11px] text-[#8FA0B8] mb-3" style={{ fontFamily: fontFamily.body }}>
             {score > 70 ? 'Strong data coverage. Intelligence is well-grounded.' : score > 40 ? 'Moderate coverage. Connect more systems to improve.' : 'Limited data. Most insights based on public signals.'}
           </p>
           <button onClick={() => { setShowTooltip(false); navigate('/integrations'); }}
-            className="text-[11px] text-[#FF6A00] hover:underline w-full text-left" style={{ fontFamily: fontFamily.mono }}>
+            className="text-[11px] text-[#E85D00] hover:underline w-full text-left" style={{ fontFamily: fontFamily.mono }}>
             Improve score — connect systems
           </button>
         </div>
@@ -78,14 +77,13 @@ const VerificationBadge = ({ navigate }) => {
   );
 };
 
-const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
+const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, authState } = useSupabaseAuth();
   const { isNavOpen, openNav, closeAll } = useMobileDrawer();
   const isCalibrated = authState === AUTH_STATE.READY;
   const { openTutorial, tutorial } = useTutorial(location.pathname);
-  const [sbOpen, setSbOpen] = useState(false);
 
   // Selective clear — preserve tutorials and preferences on logout
   const clearAuthStorage = () => {
@@ -111,11 +109,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true');
   const [sidebarWidthPx, setSidebarWidthPx] = useState(() => {
     const stored = Number(localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY));
-    return Number.isFinite(stored) ? clamp(stored, 220, 420) : 256;
-  });
-  const [soundboardWidthPx, setSoundboardWidthPx] = useState(() => {
-    const stored = Number(localStorage.getItem(SOUNDBOARD_WIDTH_STORAGE_KEY));
-    return Number.isFinite(stored) ? clamp(stored, 320, 560) : 380;
+    return Number.isFinite(stored) ? clamp(stored, 220, 420) : 248;
   });
   const trialDaysLeft = useMemo(() => {
     if (!user?.trial_expires_at) return null;
@@ -132,11 +126,9 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackForm, setFeedbackForm] = useState({ rating: 8, sentiment: 'positive', message: '' });
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
-  const hideEmbeddedSoundboard = location.pathname === '/soundboard' || location.pathname.startsWith('/soundboard/');
 
   useEffect(() => { localStorage.setItem('sidebar-collapsed', sidebarCollapsed); }, [sidebarCollapsed]);
   useEffect(() => { localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(sidebarWidthPx)); }, [sidebarWidthPx]);
-  useEffect(() => { localStorage.setItem(SOUNDBOARD_WIDTH_STORAGE_KEY, String(soundboardWidthPx)); }, [soundboardWidthPx]);
 
   useEffect(() => {
     const handleResize = () => setIsDesktopViewport(window.innerWidth >= 1024);
@@ -185,10 +177,6 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
         setSidebarWidthPx(clamp(e.clientX, 220, 420));
         return;
       }
-      if (activeResizeTarget === 'soundboard') {
-        const nextWidth = window.innerWidth - e.clientX;
-        setSoundboardWidthPx(clamp(nextWidth, 320, 560));
-      }
     };
 
     const handleMouseUp = () => setActiveResizeTarget(null);
@@ -220,21 +208,21 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   const toggleTheme = () => setIsDark(prev => !prev);
 
   // Notifications — Supabase Realtime (replaces polling)
+  // Depends on user?.id so channel re-subscribes if user changes (logout → login as different user)
   useEffect(() => {
+    if (!user?.id) return;
     fetchNotifications();
 
     // Subscribe to watchtower_events for real-time alert updates
     let channel;
     const setup = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.id) return;
       channel = supabase
-        .channel('notification-updates')
+        .channel(`notification-updates-${user.id}`)
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'watchtower_events',
-          filter: `user_id=eq.${session.user.id}`,
+          filter: `user_id=eq.${user.id}`,
         }, () => {
           fetchNotifications();
         })
@@ -243,7 +231,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
     setup();
 
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, []);
+  }, [user?.id]);
 
   const fetchNotifications = async () => {
     try {
@@ -265,36 +253,36 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   };
 
   const isSA = isPrivilegedUser(user);
-  const resolvedTier = resolveTier(user);
-  const isFreeTier = !isSA && resolvedTier === 'free';
 
+  // Navigation sections matching mockup groupings: Today, Inbox, Intelligence, System
   const navSections = useMemo(() => {
-    const navSectionsBase = [
-      { id: 'overview', label: 'BIQc Overview', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [] },
-      { id: 'soundboard', label: 'Ask BIQc', path: '/soundboard', icon: MessageSquare, items: [] },
-      { id: 'priority-inbox', label: 'Inbox', path: '/email-inbox', icon: Inbox, items: [] },
-      { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [] },
-      { id: 'market', label: 'Market & Position', path: '/market', icon: Radar, items: [] },
-      { id: 'benchmark', label: 'Competitive Benchmark', path: '/competitive-benchmark', icon: Target, items: [] },
-      { id: 'business-dna', label: 'Business DNA', path: '/business-profile', icon: BarChart3, items: [] },
-      { id: 'actions', label: 'Actions', path: '/actions', icon: Zap, items: [] },
-      { id: 'alerts', label: 'Alerts', path: '/alerts', icon: Bell, showBadge: true, items: [] },
-      { id: 'data-health', label: 'Data Health', path: '/data-health', icon: Activity, items: [] },
-      { id: 'integrations', label: 'Connectors', path: '/integrations', icon: Link2, items: [] },
-      { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, items: [] },
-      { id: 'subscription', label: 'Subscription', path: '/subscribe', icon: CreditCard, items: [] },
+    const sections = [
+      // — Today
+      { id: 'overview', label: 'Advisor', path: '/advisor', icon: LayoutDashboard, showBadge: true, items: [], group: 'today' },
+      { id: 'alerts', label: 'Alert Centre', path: '/alerts', icon: Bell, showBadge: true, items: [], group: 'today' },
+      { id: 'soundboard', label: 'Ask BIQc', path: '/soundboard', icon: MessageSquare, items: [], group: 'today' },
+      { id: 'actions', label: 'Actions', path: '/actions', icon: Zap, items: [], group: 'today' },
+      // — Inbox
+      { id: 'priority-inbox', label: 'Email', path: '/email-inbox', icon: Inbox, items: [], group: 'inbox' },
+      { id: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar, items: [], group: 'inbox' },
+      // — Intelligence
+      { id: 'market', label: 'Market & position', path: '/market', icon: Radar, items: [], group: 'intelligence' },
+      { id: 'business-dna', label: 'Business DNA', path: '/business-profile', icon: BarChart3, items: [], group: 'intelligence' },
+      { id: 'benchmark', label: 'Benchmark', path: '/competitive-benchmark', icon: Target, items: [], group: 'intelligence' },
+      { id: 'boardroom', label: 'BoardRoom', path: '/board-room', icon: Target, items: [], group: 'intelligence' },
+      { id: 'warroom', label: 'WarRoom', path: '/war-room', icon: Shield, items: [], group: 'intelligence' },
+      // — System
+      { id: 'data-health', label: 'Data health', path: '/data-health', icon: Activity, items: [], group: 'system' },
+      { id: 'integrations', label: 'Integrations', path: '/integrations', icon: Link2, items: [], group: 'system' },
+      { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, items: [], group: 'system' },
     ];
-    const scopedSections = isFreeTier
-      ? navSectionsBase.filter((section) => (
-        ['soundboard', 'priority-inbox', 'calendar', 'benchmark', 'integrations', 'settings'].includes(section.id)
-      ))
-      : navSectionsBase;
 
-    if (!isSA) return scopedSections;
-    return [
-      ...scopedSections,
-      {
-        id: 'admin', label: 'Admin', items: [
+    // Free tier: show all groups but lock paid items via canAccess
+    // No need to filter sections — tier gating handles visibility
+    if (isSA) {
+      sections.push(
+        // — Admin (only for super_admin / privileged)
+        { id: 'admin', label: 'Admin', group: 'admin', items: [
           { icon: FlaskConical, label: 'A/B Testing', path: '/ab-testing' },
           { icon: Settings, label: 'Admin Dashboard', path: '/admin' },
           { icon: CreditCard, label: 'Pricing Control', path: '/admin/pricing' },
@@ -306,10 +294,11 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           { icon: Zap, label: 'Prompt Lab', path: '/admin/prompt-lab' },
           { icon: Shield, label: 'Support Console', path: '/support-admin' },
           { icon: Eye, label: 'Watchtower', path: '/watchtower' },
-        ],
-      },
-    ];
-  }, [isFreeTier, isSA]);
+        ]},
+      );
+    }
+    return sections;
+  }, [isSA]);
 
   const visibleSections = useMemo(() => {
     return navSections.map(section => ({
@@ -356,15 +345,11 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       return next;
     });
   }, [visibleSections, isSA, isActive]);
-  const activeSidebarWidth = sidebarCollapsed ? 64 : sidebarWidthPx;
+  const activeSidebarWidth = sidebarCollapsed ? 68 : sidebarWidthPx;
   const startSidebarResize = (event) => {
     if (sidebarCollapsed) return;
     event.preventDefault();
     setActiveResizeTarget('sidebar');
-  };
-  const startSoundboardResize = (event) => {
-    event.preventDefault();
-    setActiveResizeTarget('soundboard');
   };
 
   const submitFeedback = async () => {
@@ -391,18 +376,61 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: `var(--biqc-bg, ${colors.bg})`, color: `var(--biqc-text, ${colors.text})` }}>
       {/* ═══ TOP BAR ═══ */}
-      <header className="fixed top-0 left-0 right-0 h-14 px-4 lg:px-6 flex items-center justify-between" style={{ background: `var(--biqc-bg-input, ${colors.bgInput})`, borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
+      <header className="fixed top-0 left-0 right-0 h-[60px] px-4 lg:px-6 flex items-center justify-between" style={{ background: 'var(--biqc-topbar-bg, rgba(11, 17, 32, 0.88))', backdropFilter: 'saturate(180%) blur(16px)', WebkitBackdropFilter: 'saturate(180%) blur(16px)', borderBottom: `1px solid var(--biqc-border, ${colors.border})`, zIndex: 1000 }}>
         <div className="flex items-center gap-3">
           <button onClick={() => isNavOpen ? closeAll() : openNav()} className="lg:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors" style={{ color: 'var(--biqc-text-2)' }} aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'} data-testid="mobile-menu-toggle">
             {isNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: colors.brand }}>
-              <span className="text-white font-bold text-xs" style={{ fontFamily: fontFamily.mono }}>B</span>
-            </div>
-            <span className="font-semibold text-sm hidden sm:block" style={{ fontFamily: DISPLAY, color: 'var(--biqc-text)' }}>Strategy Squad</span>
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: '#E85D00', boxShadow: '0 0 8px rgba(232,93,0,0.4)' }} />
+            <span className="font-semibold text-sm" style={{ fontFamily: DISPLAY, color: 'var(--ink-display, #EDF1F7)' }}>BIQc</span>
           </div>
         </div>
+
+        {/* ═══ SEARCH BAR (center of topbar) ═══ */}
+        <div className="hidden md:flex flex-1 justify-center px-4" style={{ maxWidth: 560 }}>
+          <button
+            onClick={() => navigate('/soundboard')}
+            className="flex items-center gap-2 w-full px-3 rounded-lg transition-colors hover:border-[rgba(140,170,210,0.25)]"
+            style={{
+              maxWidth: 520,
+              height: 36,
+              background: `var(--biqc-bg-input, ${colors.bgInput})`,
+              border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))',
+              borderRadius: 'var(--r-md, 8px)',
+              cursor: 'text',
+            }}
+            aria-label="Search signals, actions, insights"
+            data-testid="topbar-search"
+          >
+            <Search className="w-4 h-4 shrink-0" style={{ color: 'var(--ink-muted, #708499)' }} />
+            <span className="flex-1 text-left text-sm" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.body }}>
+              Search signals, actions, insights...
+            </span>
+            <kbd
+              className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium"
+              style={{
+                background: 'rgba(140,170,210,0.08)',
+                border: '1px solid rgba(140,170,210,0.15)',
+                color: 'var(--ink-muted, #708499)',
+                fontFamily: fontFamily.mono,
+                lineHeight: 1,
+              }}
+            >
+              ⌘K
+            </kbd>
+          </button>
+        </div>
+        {/* Mobile: search icon only */}
+        <button
+          className="md:hidden p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+          style={{ color: 'var(--biqc-text-2)' }}
+          aria-label="Search"
+          data-testid="topbar-search-mobile"
+          onClick={() => {/* future: open search modal */}}
+        >
+          <Search className="w-5 h-5" />
+        </button>
 
         <div className="flex items-center gap-2">
           {tutorial && <HelpButton onClick={openTutorial} />}
@@ -435,7 +463,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             {showNotifications && (
               <div className="absolute right-0 top-12 w-96 max-h-[480px] overflow-y-auto rounded-xl shadow-xl" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', zIndex: 9999, position: 'fixed', right: 16, top: 64 }}>
                 <div className="p-3 flex items-center justify-between sticky top-0" style={{ borderBottom: '1px solid var(--biqc-border)', background: 'var(--biqc-bg-card)' }}>
-                  <h3 className="font-semibold text-sm text-[#F4F7FA]" style={{ fontFamily: DISPLAY }}>Alerts</h3>
+                  <h3 className="font-semibold text-sm text-[#EDF1F7]" style={{ fontFamily: DISPLAY }}>Alerts</h3>
                   <div className="flex items-center gap-2">
                     {notifications.high > 0 && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: colors.dangerDim, color: colors.danger, fontFamily: fontFamily.mono }}>{notifications.high} urgent</span>}
                     <button onClick={() => { setShowNotifications(false); navigate('/alerts'); }} className="text-xs px-2 py-1 rounded-lg" style={{ color: colors.brand, background: colors.brandDim, fontFamily: fontFamily.mono }}>View all</button>
@@ -456,9 +484,9 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                             <AlertCircle className="w-3.5 h-3.5" style={{ color: notif.severity === 'high' ? colors.danger : colors.warning }} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.body }}>{notif.title}</p>
+                            <p className="text-xs font-semibold text-[#EDF1F7] mb-0.5" style={{ fontFamily: fontFamily.body }}>{notif.title}</p>
                             <p className="text-[11px] text-[#64748B] line-clamp-2 mb-1" style={{ fontFamily: fontFamily.body }}>{notif.message}</p>
-                            {notif.action && <p className="text-[11px] text-[#FF6A00]">{notif.action}</p>}
+                            {notif.action && <p className="text-[11px] text-[#E85D00]">{notif.action}</p>}
                             {/* Action buttons inline in bell */}
                             <div className="flex gap-1.5 mt-2">
                               <button
@@ -494,34 +522,34 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
 
           <button className="p-2 rounded-lg hover:bg-white/5 hidden md:flex" style={{ color: 'var(--biqc-text-2)' }} aria-label="Help"><HelpCircle className="w-5 h-5" /></button>
 
-          <div className="w-px h-6 mx-1 hidden md:block" style={{ background: '#243140' }} />
+          <div className="w-px h-6 mx-1 hidden md:block" style={{ background: 'rgba(140,170,210,0.15)' }} />
 
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 p-1 pr-3 rounded-xl hover:bg-white/5 transition-colors" aria-label="User menu">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: '#FF6A00', fontFamily: fontFamily.body }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: '#E85D00', fontFamily: fontFamily.body }}>
                   {user?.full_name?.charAt(0).toUpperCase() || 'U'}
                 </div>
-                <span className="hidden sm:block text-sm font-medium text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{user?.full_name?.split(' ')[0] || 'User'}</span>
+                <span className="hidden sm:block text-sm font-medium text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>{user?.full_name?.split(' ')[0] || 'User'}</span>
                 <ChevronDown className="w-3.5 h-3.5 hidden sm:block text-[#64748B]" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', borderRadius: '12px' }}>
               <div className="px-3 py-2.5">
-                <p className="font-medium text-[#F4F7FA]" style={{ fontFamily: fontFamily.body }}>{user?.full_name}</p>
+                <p className="font-medium text-[#EDF1F7]" style={{ fontFamily: fontFamily.body }}>{user?.full_name}</p>
                 <p className="text-sm text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{user?.email}</p>
               </div>
-              <DropdownMenuSeparator style={{ background: '#243140' }} />
-              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/subscribe')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Zap className="w-4 h-4 mr-2" /> Subscription: plans and feature unlocks</DropdownMenuItem>
+              <DropdownMenuSeparator style={{ background: 'rgba(140,170,210,0.15)' }} />
+              <DropdownMenuItem onClick={() => navigate('/settings')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><User className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/subscribe')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Zap className="w-4 h-4 mr-2" /> Subscription: plans and feature unlocks</DropdownMenuItem>
               {(user?.role === 'admin' || user?.role === 'superadmin' || isPrivilegedUser(user)) && (
                 <>
-                  <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Shield className="w-4 h-4 mr-2" /> Super Admin</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/calibration')} className="cursor-pointer py-2.5 text-[#9FB0C3] hover:text-[#F4F7FA] focus:text-[#F4F7FA] focus:bg-white/5"><Settings className="w-4 h-4 mr-2" /> Recalibrate</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Shield className="w-4 h-4 mr-2" /> Super Admin</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/calibration')} className="cursor-pointer py-2.5 text-[#8FA0B8] hover:text-[#EDF1F7] focus:text-[#EDF1F7] focus:bg-white/5"><Settings className="w-4 h-4 mr-2" /> Recalibrate</DropdownMenuItem>
                 </>
               )}
-              <DropdownMenuSeparator style={{ background: '#243140' }} />
+              <DropdownMenuSeparator style={{ background: 'rgba(140,170,210,0.15)' }} />
               <DropdownMenuItem onClick={() => { logout(); navigate('/'); }} className="cursor-pointer py-2.5 text-[#EF4444] focus:text-[#EF4444] focus:bg-red-500/5"><LogOut className="w-4 h-4 mr-2" /> Sign Out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -529,13 +557,13 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       </header>
 
       {/* ═══ SIDEBAR ═══ */}
-      <aside className={`fixed left-0 transition-all duration-300 ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-14 h-[calc(100vh-3.5rem)]`}
-        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, #0A1018)', borderRight: '1px solid var(--biqc-border, #243140)', width: `${activeSidebarWidth}px` }}
+      <aside className={`fixed left-0 transition-all duration-300 ${isNavOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 top-[60px] h-[calc(100vh-60px)]`}
+        style={{ zIndex: 999, background: 'var(--biqc-sidebar-bg, linear-gradient(180deg, #0B1120 0%, #080C14 100%))', borderRight: '1px solid rgba(140,170,210,0.08)', width: `${activeSidebarWidth}px` }}
         role="navigation" aria-label="Main navigation">
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="hidden lg:flex absolute -right-3 top-6 w-6 h-6 rounded-full items-center justify-center hover:bg-white/10 transition-colors"
-          style={{ background: 'var(--biqc-bg-card, #141C26)', border: '1px solid var(--biqc-border, #243140)' }}
+          style={{ background: 'var(--biqc-bg-card, #0E1628)', border: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}
           aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           {sidebarCollapsed ? <ChevronRight className="w-4 h-4" style={{ color: 'var(--biqc-text-muted)' }} /> : <ChevronRight className="w-4 h-4 rotate-180" style={{ color: 'var(--biqc-text-muted)' }} />}
         </button>
@@ -560,15 +588,25 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             el.addEventListener('scroll', handler, { passive: true });
             return () => el.removeEventListener('scroll', handler);
           }}
-          className="p-3 space-y-1 overflow-y-auto flex flex-col" style={{ height: '100%' }} aria-label="Platform navigation">
-          {visibleSections.map((section) => {
+          className="p-3 space-y-0.5 overflow-y-auto flex flex-col" style={{ height: '100%' }} aria-label="Platform navigation">
+          {visibleSections.map((section, idx) => {
             const isExpanded = expandedSections.has(section.id);
             const sectionActive = (section.path && isActive(section.path)) || section.items.some((item) => isActive(item.path));
             const sectionLocked = section.path ? !canAccess(user?.subscription_tier || 'free', section.path, user?.email || '') : false;
             const SectionIcon = section.icon;
+            // Render group header when group changes (mockup: "— Today", "— Inbox", etc.)
+            const prevGroup = idx > 0 ? visibleSections[idx - 1].group : null;
+            const showGroupHeader = section.group && section.group !== prevGroup && !sidebarCollapsed;
+            const groupLabels = { today: 'Today', inbox: 'Inbox', intelligence: 'Intelligence', system: 'System', admin: 'Admin' };
 
             return (
-              <div key={section.id} className="mb-1">
+              <div key={section.id}>
+                {showGroupHeader && (
+                  <div className="px-3 pt-4 pb-1 text-[10px] font-medium uppercase tracking-[0.12em]"
+                    style={{ color: 'var(--ink-muted, #708499)', fontFamily: 'var(--font-mono, monospace)' }}>
+                    {groupLabels[section.group] || section.group}
+                  </div>
+                )}
                 {section.path ? (
                   <div className="flex items-center gap-0.5">
                     <button
@@ -580,14 +618,14 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                       aria-current={sectionActive ? 'page' : undefined}
                       style={{
                         fontFamily: fontFamily.body,
-                        color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
-                        background: sectionActive ? '#FF6A0015' : 'transparent',
-                        borderLeft: sectionActive ? '2px solid #FF6A00' : '2px solid transparent',
+                        color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
+                        background: sectionActive ? 'var(--surface-sunken, #060A12)' : 'transparent',
+                        borderLeft: sectionActive ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                       }}
                       data-testid={`nav-section-${section.id}`}
                       title={sectionLocked ? `Requires ${TIERS[requiredTier(section.path)]?.label} plan` : section.label}
                     >
-                      {SectionIcon ? <SectionIcon className="w-4 h-4 shrink-0" style={{ color: sectionLocked ? '#4A5568' : sectionActive ? '#FF6A00' : '#64748B' }} /> : null}
+                      {SectionIcon ? <SectionIcon className="w-4 h-4 shrink-0" style={{ color: sectionLocked ? '#4A5568' : sectionActive ? 'var(--lava, #E85D00)' : 'var(--ink-muted, #708499)' }} /> : null}
                       <span className="flex-1 text-left">{section.label}</span>
                       {section.showBadge && notifications.total > 0 && !sectionLocked && <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-[#EF4444]">{notifications.total > 9 ? '9+' : notifications.total}</span>}
                       {sectionLocked && <Lock className="w-3 h-3 shrink-0" style={{ color: '#4A5568' }} />}
@@ -596,7 +634,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                       <button
                         onClick={() => toggleSection(section.id)}
                         className="p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0"
-                        style={{ color: sectionActive ? '#FF6A00' : '#64748B' }}
+                        style={{ color: sectionActive ? 'var(--lava, #E85D00)' : 'var(--ink-muted, #708499)' }}
                         aria-expanded={isExpanded}
                         aria-controls={`nav-section-items-${section.id}`}
                         data-testid={`nav-section-toggle-${section.id}`}
@@ -608,7 +646,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                 ) : (
                   <button onClick={() => toggleSection(section.id)}
                     className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3 justify-between'} w-full ${sidebarCollapsed ? 'px-2' : 'px-3'} py-2.5 rounded-lg text-xs font-semibold uppercase tracking-[0.1em] transition-all`}
-                    style={{ color: sectionActive ? '#FF6A00' : 'var(--biqc-text-muted, #8B9DB5)', fontFamily: fontFamily.mono, minHeight: '40px' }}
+                    style={{ color: sectionActive ? '#E85D00' : 'var(--biqc-text-muted, #8B9DB5)', fontFamily: fontFamily.mono, minHeight: '40px' }}
                     title={sidebarCollapsed ? section.label : undefined}
                     aria-expanded={isExpanded}
                     aria-controls={`nav-section-items-${section.id}`}
@@ -640,14 +678,14 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                           aria-current={active ? 'page' : undefined}
                           style={{
                             fontFamily: fontFamily.body,
-                            color: locked ? '#4A5568' : active ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
-                            background: active ? '#FF6A0015' : 'transparent',
-                            borderLeft: active ? '2px solid #FF6A00' : '2px solid transparent',
+                            color: locked ? '#4A5568' : active ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
+                            background: active ? '#E85D0015' : 'transparent',
+                            borderLeft: active ? '2px solid #E85D00' : '2px solid transparent',
                             cursor: 'pointer',
                           }}
                           data-testid={`nav-item-${item.path.replace('/', '')}`}
                           title={locked ? `Requires ${TIERS[requiredTier(item.path)]?.label} plan` : item.label}>
-                          <item.icon className="w-4 h-4 shrink-0" style={{ color: locked ? '#4A5568' : active ? '#FF6A00' : '#64748B' }} />
+                          <item.icon className="w-4 h-4 shrink-0" style={{ color: locked ? '#4A5568' : active ? 'var(--lava, #E85D00)' : 'var(--ink-muted, #708499)' }} />
                           <span className="flex-1 text-left">{item.label}</span>
                           {locked && <Lock className="w-3 h-3 shrink-0" style={{ color: '#4A5568' }} />}
                           {showBadge && !locked && <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-white rounded-full bg-[#EF4444]">{notifications.total > 9 ? '9+' : notifications.total}</span>}
@@ -660,21 +698,63 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             );
           })}
 
-          <div className="mt-auto pt-2 pb-2" style={{ borderTop: '1px solid var(--biqc-border, #243140)' }}>
+          <div className="mt-auto pt-2 pb-2" style={{ borderTop: '1px solid var(--biqc-border, rgba(140,170,210,0.15))' }}>
             <button
               onClick={() => { navigate('/biqc-legal'); closeAll(); }}
               className="flex items-center gap-2.5 w-full px-3 py-2.5 min-h-[44px] rounded-lg text-sm transition-all hover:bg-white/5"
               style={{
-                color: isActive('/biqc-legal') ? 'var(--biqc-text, #F4F7FA)' : 'var(--biqc-text-2, #9FB0C3)',
-                background: isActive('/biqc-legal') ? '#FF6A0015' : 'transparent',
-                borderLeft: isActive('/biqc-legal') ? '2px solid #FF6A00' : '2px solid transparent',
+                color: isActive('/biqc-legal') ? 'var(--biqc-text, #EDF1F7)' : 'var(--biqc-text-2, #8FA0B8)',
+                background: isActive('/biqc-legal') ? 'var(--surface-sunken, #060A12)' : 'transparent',
+                borderLeft: isActive('/biqc-legal') ? '2px solid var(--lava, #E85D00)' : '2px solid transparent',
                 fontFamily: fontFamily.body,
               }}
               data-testid="nav-biqc-legal"
             >
-              <Scale className="w-4 h-4 shrink-0" style={{ color: isActive('/biqc-legal') ? '#FF6A00' : '#64748B' }} />
+              <Scale className="w-4 h-4 shrink-0" style={{ color: isActive('/biqc-legal') ? 'var(--lava, #E85D00)' : 'var(--ink-muted, #708499)' }} />
               {!sidebarCollapsed && <span className="flex-1 text-left">BIQc Legal</span>}
             </button>
+          </div>
+
+          {/* ═══ USER PROFILE BLOCK ═══ */}
+          <div
+            className="mx-2 mb-2 flex items-center gap-2.5 rounded-xl"
+            style={{
+              background: `var(--biqc-bg-input, ${colors.bgInput})`,
+              padding: sidebarCollapsed ? '8px' : '12px',
+              borderRadius: 'var(--r-lg, 12px)',
+            }}
+            data-testid="sidebar-user-profile"
+          >
+            {/* Avatar */}
+            <div
+              className="shrink-0 flex items-center justify-center rounded-full text-xs font-semibold text-white"
+              style={{
+                width: 36,
+                height: 36,
+                background: 'linear-gradient(135deg, #E85D00, #FF8A3D)',
+                fontFamily: fontFamily.body,
+              }}
+            >
+              {user?.full_name
+                ? user.full_name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+                : (user?.email?.charAt(0).toUpperCase() || 'U')}
+            </div>
+            {!sidebarCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-sm font-medium truncate"
+                  style={{ color: 'var(--biqc-text, #EDF1F7)', fontFamily: fontFamily.body, lineHeight: 1.3 }}
+                >
+                  {user?.full_name || user?.email || 'User'}
+                </p>
+                <p
+                  className="text-[11px] capitalize"
+                  style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono, lineHeight: 1.3 }}
+                >
+                  {(user?.subscription_tier || 'free').replace('_', ' ')}
+                </p>
+              </div>
+            )}
           </div>
         </nav>
       </aside>
@@ -694,7 +774,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
             left: 0,
             right: 0,
             zIndex: 998,
-            background: '#FF6A00',
+            background: '#E85D00',
             padding: '6px 20px',
             display: 'flex',
             alignItems: 'center',
@@ -707,7 +787,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           </span>
           <button
             onClick={() => navigate('/subscribe')}
-            style={{ background: 'white', color: '#FF6A00', border: 'none', borderRadius: 6, padding: '3px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+            style={{ background: 'white', color: '#E85D00', border: 'none', borderRadius: 6, padding: '3px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
           >
             Upgrade now
           </button>
@@ -715,14 +795,14 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       )}
 
       <div
-        className="pt-14 pb-[76px] lg:pb-0 transition-all duration-300 flex"
+        className="pt-[60px] pb-[76px] lg:pb-0 transition-all duration-300 flex"
         style={{
           minHeight: '100dvh',
           marginLeft: isDesktopViewport ? `${activeSidebarWidth}px` : undefined,
           paddingTop: trialDaysLeft !== null ? 32 : 0,
         }}
       >
-        <main id="main-content" className="flex-1" style={{ background: 'var(--biqc-bg, #0F1720)', overflowY: 'visible' }}>
+        <main id="main-content" className="flex-1" style={{ background: 'var(--biqc-bg, #0B1120)', overflowY: 'visible' }}>
           <div className="px-4 py-4 md:px-6 md:py-6">
             <div className="mb-4 flex items-center justify-between gap-3" data-testid="page-navigation-row">
               <button
@@ -741,45 +821,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           </div>
         </main>
 
-        {/* Desktop Soundboard Panel — hidden on dedicated /soundboard route */}
-        {!hideEmbeddedSoundboard && (
-          <aside className="hidden lg:flex shrink-0 flex-col relative" style={{ width: `${soundboardWidthPx}px`, background: 'var(--biqc-bg-input, #0A1018)', borderLeft: '1px solid var(--biqc-border, #243140)', height: 'calc(100dvh - 56px)', position: 'sticky', top: '56px' }}>
-            <div
-              className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-white/10"
-              onMouseDown={startSoundboardResize}
-              role="separator"
-              aria-label="Resize Ask BIQc panel"
-              data-testid="soundboard-resize-handle"
-            />
-            <SoundboardPanel actionMessage={actionMessage} onActionConsumed={onActionConsumed} />
-          </aside>
-        )}
       </div>
-
-      {/* Mobile Soundboard FAB + Overlay */}
-      {!hideEmbeddedSoundboard && <div className="lg:hidden">
-        {!sbOpen ? (
-          <button onClick={() => setSbOpen(true)}
-            className="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
-            style={{ background: `linear-gradient(135deg, ${colors.brand}, ${colors.brand})`, boxShadow: shadow.brandGlow }}
-            data-testid="soundboard-fab">
-            <MessageSquare className="w-5 h-5 text-white" />
-          </button>
-        ) : (
-          <>
-            <div className="fixed inset-0 bg-black/60 z-[1200]" onClick={() => setSbOpen(false)} />
-            <div className="fixed inset-0 z-[1201] flex flex-col" style={{ background: 'var(--biqc-bg-input, #0A1018)' }}>
-              <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-                <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Ask BIQc</span>
-                <button onClick={() => setSbOpen(false)} className="p-2 rounded-lg hover:bg-white/5"><X className="w-5 h-5 text-[#64748B]" /></button>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <SoundboardPanel actionMessage={actionMessage} onActionConsumed={onActionConsumed} />
-              </div>
-            </div>
-          </>
-        )}
-      </div>}
 
       {/* Mobile Bottom Navigation */}
       <MobileNav />
@@ -788,7 +830,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
       <button
         onClick={() => setFeedbackOpen(true)}
         className="fixed bottom-20 left-4 z-40 px-3 py-2 rounded-full text-xs"
-        style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: '#9FB0C3', fontFamily: fontFamily.mono }}
+        style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}
         data-testid="ux-feedback-fab"
       >
         Feedback
@@ -799,7 +841,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
           <div className="fixed inset-0 z-[1200] bg-black/50" onClick={() => setFeedbackOpen(false)} />
           <div className="fixed z-[1201] w-[min(460px,92vw)] p-4 rounded-xl" style={{ ...cardStyleFromTheme(), right: 16, bottom: 84 }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Quick UX Feedback</span>
+              <span className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Quick UX Feedback</span>
               <button onClick={() => setFeedbackOpen(false)} className="text-[#64748B]">✕</button>
             </div>
             <div className="grid grid-cols-2 gap-2 mb-2">
@@ -841,7 +883,7 @@ const DashboardLayout = ({ children, actionMessage, onActionConsumed }) => {
                 onClick={submitFeedback}
                 disabled={feedbackSubmitting}
                 className="px-3 py-2 rounded-lg text-xs"
-                style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                style={{ background: '#E85D0015', border: '1px solid #E85D0030', color: '#E85D00', fontFamily: fontFamily.mono }}
               >
                 {feedbackSubmitting ? 'Sending...' : 'Send feedback'}
               </button>

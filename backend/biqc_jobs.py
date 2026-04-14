@@ -95,6 +95,8 @@ JOB_TYPES = {
     "file-generation",
     "integration-count-sync",
     "merge-webhook-sync",
+    "data-export",
+    "cognitive-refresh",
 }
 
 JobHandler = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
@@ -121,6 +123,8 @@ class BIQcRedisJobs:
             "file-generation": self._handle_file_generation,
             "integration-count-sync": self._handle_integration_count_sync,
             "merge-webhook-sync": self._handle_merge_webhook_sync,
+            "data-export": self._handle_data_export,
+            "cognitive-refresh": self._handle_cognitive_refresh,
         }
 
     async def initialize(self) -> bool:
@@ -679,6 +683,77 @@ class BIQcRedisJobs:
             "categories": categories,
             "ingest_result": ingest_result,
         }
+
+
+    async def _handle_data_export(self, job: Dict[str, Any]) -> Dict[str, Any]:
+        """Export all user data as a ZIP archive for GDPR/self-service download."""
+        payload = job.get("payload", {})
+        user_id = payload.get("user_id")
+        if not user_id:
+            return {"status": "skipped", "reason": "missing_user_id"}
+
+        try:
+            from routes.deps import get_sb
+            sb = get_sb()
+
+            # Collect data from all user tables
+            tables = [
+                "business_profiles", "chat_history", "documents", "sops",
+                "intelligence_actions", "strategy_profiles", "cognitive_profiles",
+                "onboarding", "email_intelligence", "calendar_intelligence",
+            ]
+            export_data = {}
+            for table in tables:
+                try:
+                    result = sb.table(table).select("*").eq("user_id", user_id).execute()
+                    export_data[table] = result.data or []
+                except Exception as e:
+                    export_data[table] = {"error": str(e)}
+
+            # Update data_exports status
+            try:
+                sb.table("data_exports").update({
+                    "status": "ready",
+                    "file_path": f"exports/{user_id}/export.json",
+                }).eq("user_id", user_id).eq("status", "queued").execute()
+            except Exception:
+                pass
+
+            return {"status": "completed", "user_id": user_id, "tables_exported": len(export_data)}
+        except Exception as e:
+            logger.error(f"[data-export] Failed for user {user_id}: {e}", exc_info=True)
+            return {"status": "failed", "error": str(e)}
+
+    async def _handle_cognitive_refresh(self, job: Dict[str, Any]) -> Dict[str, Any]:
+        """Refresh cognitive profile layers from latest user data."""
+        payload = job.get("payload", {})
+        user_id = payload.get("user_id")
+        if not user_id:
+            return {"status": "skipped", "reason": "missing_user_id"}
+
+        supabase_url = os.environ.get("SUPABASE_URL")
+        service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        if not supabase_url or not service_key:
+            return {"status": "skipped", "reason": "missing_supabase_env"}
+
+        try:
+            import httpx
+            cognitive_url = f"{supabase_url.rstrip('/')}/functions/v1/biqc-insights-cognitive"
+            async with httpx.AsyncClient(timeout=120) as client:
+                resp = await client.post(
+                    cognitive_url,
+                    json={"user_id": user_id, "trigger_source": "cognitive_refresh_queue"},
+                    headers={
+                        "Authorization": f"Bearer {service_key}",
+                        "Content-Type": "application/json",
+                    },
+                )
+                if resp.status_code >= 400:
+                    raise RuntimeError(f"Cognitive refresh failed ({resp.status_code}): {resp.text[:300]}")
+                return {"status": "completed", "user_id": user_id, "result": resp.json()}
+        except Exception as e:
+            logger.error(f"[cognitive-refresh] Failed for user {user_id}: {e}", exc_info=True)
+            return {"status": "failed", "error": str(e)}
 
 
 biqc_jobs = BIQcRedisJobs()

@@ -42,8 +42,8 @@ const AutomationsPageAuth = () => {
       <UpgradeCardsGate requiredTier="starter" featureName="Automations">
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="automations-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Automations</h1>
-          <p className="text-sm text-[#9FB0C3]">AI-suggested automations based on resolution queue patterns.</p>
+          <h1 className="text-2xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Automations</h1>
+          <p className="text-sm text-[#8FA0B8]">AI-suggested automations based on resolution queue patterns.</p>
         </div>
 
         {loading && <CognitiveMesh message="Analysing automation opportunities..." />}
@@ -53,18 +53,18 @@ const AutomationsPageAuth = () => {
             {/* Automation Opportunities */}
             {automatable.length > 0 ? (
               <div>
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Automatable Actions ({automatable.length})</h3>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Automatable Actions ({automatable.length})</h3>
                 <div className="space-y-3">
                   {automatable.map((item, i) => (
                     <Panel key={i}>
                       <div className="flex items-start gap-3">
-                        <Zap className="w-4 h-4 text-[#FF6A00] shrink-0 mt-0.5" />
+                        <Zap className="w-4 h-4 text-[#E85D00] shrink-0 mt-0.5" />
                         <div className="flex-1">
-                          <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
-                          <p className="text-xs text-[#9FB0C3] mt-1">{item.detail}</p>
+                          <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
+                          <p className="text-xs text-[#8FA0B8] mt-1">{item.detail}</p>
                           <div className="flex gap-2 mt-2">
                             {(item.actions || []).filter(a => a === 'auto-email' || a === 'quick-sms').map(a => (
-                              <span key={a} className="text-[10px] px-2 py-1 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: fontFamily.mono }}>{a}</span>
+                              <span key={a} className="text-[10px] px-2 py-1 rounded" style={{ color: '#E85D00', background: '#E85D0015', fontFamily: fontFamily.mono }}>{a}</span>
                             ))}
                           </div>
                         </div>
@@ -89,7 +89,7 @@ const AutomationsPageAuth = () => {
                     <Panel key={i}>
                       <div className="flex items-start gap-3">
                         <ArrowRight className="w-4 h-4 text-[#3B82F6] shrink-0 mt-0.5" />
-                        <p className="text-sm text-[#9FB0C3]">{r}</p>
+                        <p className="text-sm text-[#8FA0B8]">{r}</p>
                       </div>
                     </Panel>
                   ))}

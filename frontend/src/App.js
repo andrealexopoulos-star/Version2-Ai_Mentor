@@ -6,122 +6,144 @@ import ProtectedRoute, { LoadingScreen } from "./components/ProtectedRoute";
 import { MobileDrawerProvider } from "./context/MobileDrawerContext";
 import { Toaster } from "./components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import InstallPrompt from './components/InstallPrompt';
+import RouteErrorBoundary from './components/RouteErrorBoundary';
 import { apiClient } from './lib/api';
+import { resolveTier, getRouteAccess } from './lib/tierResolver';
+import { isPrivilegedUser } from './lib/privilegedUser';
 
-// ── Auth pages ────────────────────────────────────────────────────────────────
+// ── Page loading fallback ─────────────────────────────────────────────────────
+const PageLoader = () => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--canvas-app, #0B1120)' }}>
+    <div style={{ width: 40, height: 40, border: '3px solid var(--border, rgba(140,170,210,0.12))', borderTopColor: 'var(--lava, #E85D00)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
+);
+
+// ── Auth pages (static — needed before lazy routes mount) ─────────────────────
 import LoginSupabase from "./pages/LoginSupabase";
 import RegisterSupabase from "./pages/RegisterSupabase";
 import AuthCallbackSupabase from "./pages/AuthCallbackSupabase";
 import ResetPassword from './pages/ResetPassword';
 import UpdatePassword from './pages/UpdatePassword';
 
-// ── Website pages ─────────────────────────────────────────────────────────────
-import SiteHomePage from './pages/website/HomePage';
-import SitePlatformPage from './pages/website/PlatformPage';
-import SiteIntelligencePage from './pages/website/IntelligencePage';
-import SiteIntegrationsPage from './pages/website/IntegrationsPage';
-import SiteTrustLandingPage from './pages/website/TrustLandingPage';
-import AILearningGuarantee from './pages/AILearningGuarantee';
-import BlogPage from './pages/BlogPage';
-import BlogArticlePage from './pages/BlogArticlePage';
-import ContactPage from './pages/ContactPage';
-import Pricing from './pages/Pricing';
-import SubscribePage from './pages/SubscribePage';
-import EnterpriseTerms from './pages/EnterpriseTerms';
-import LandingIntelligent from './pages/LandingIntelligent';
-import BIQcLegalPage from './pages/BIQcLegalPage';
-import { TermsPage as SiteTermsPage, PrivacyPage as SitePrivacyPage, DPAPage as SiteDPAPage, SecurityPage as SiteSecurityPage, TrustCentrePage as SiteTrustCentrePage } from './pages/website/TrustSubPages';
-import { resolveTier, getRouteAccess } from './lib/tierResolver';
-import { isPrivilegedUser } from './lib/privilegedUser';
+// ── ALL other pages — lazy-loaded with tier-based chunks ──────────────────────
 
-// ── Core app pages ────────────────────────────────────────────────────────────
-import AdvisorWatchtower from './pages/AdvisorWatchtower';
-import Settings from './pages/Settings';
-import BusinessProfile from './pages/BusinessProfile';
-import Integrations from './pages/Integrations';
-import EmailInbox from './pages/EmailInbox';
-import CalendarView from './pages/CalendarView';
-import CalibrationAdvisor from './pages/CalibrationAdvisor';
-// CalibrationQaAccess removed — calibration runs after first signup only
-import ForensicCalibration from './pages/ForensicCalibration';
+// Website / marketing
+const SiteHomePage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/website/HomePage'));
+const SitePlatformPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/website/PlatformPage'));
+const SiteIntelligencePage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/website/IntelligencePage'));
+const SiteIntegrationsPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/website/IntegrationsPage'));
+const SiteTrustLandingPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/website/TrustLandingPage'));
+const AboutPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/website/AboutPage'));
+const AILearningGuarantee = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/AILearningGuarantee'));
+const BlogPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/BlogPage'));
+const BlogArticlePage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/BlogArticlePage'));
+const ContactPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/ContactPage'));
+const Pricing = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/Pricing'));
+const SubscribePage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/SubscribePage'));
+const EnterpriseTerms = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/EnterpriseTerms'));
+const LandingIntelligent = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/LandingIntelligent'));
+const BIQcLegalPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/BIQcLegalPage'));
 
-// ── Intelligence pages ────────────────────────────────────────────────────────
-import RevenuePage from './pages/RevenuePage';
-import OperationsPage from './pages/OperationsPage';
-import RiskPage from './pages/RiskPage';
-import CompliancePage from './pages/CompliancePage';
-import MarketPage from './pages/MarketPage';
-import AlertsPageAuth from './pages/AlertsPageAuth';
-import ActionsPage from './pages/ActionsPage';
-import AutomationsPageAuth from './pages/AutomationsPageAuth';
-import DataHealthPage from './pages/DataHealthPage';
-import ReportsPage from './pages/ReportsPage';
-import AuditLogPage from './pages/AuditLogPage';
-import ForensicAuditPage from './pages/ForensicAuditPage';
-import DSEEPage from './pages/DSEEPage';
-import MarketingIntelPage from './pages/MarketingIntelPage';
-import MarketingAutomationPage from './pages/MarketingAutomationPage';
-import ABTestingPage from './pages/ABTestingPage';
-import KnowledgeBasePage from './pages/KnowledgeBasePage';
-import CompetitiveBenchmarkPage from './pages/CompetitiveBenchmarkPage';
-import ObservabilityPage from './pages/ObservabilityPage';
+// Trust sub-pages (named exports need wrapper)
+const SiteTermsPage = React.lazy(() => import('./pages/website/TrustSubPages').then(m => ({ default: m.TermsPage })));
+const SitePrivacyPage = React.lazy(() => import('./pages/website/TrustSubPages').then(m => ({ default: m.PrivacyPage })));
+const SiteDPAPage = React.lazy(() => import('./pages/website/TrustSubPages').then(m => ({ default: m.DPAPage })));
+const SiteSecurityPage = React.lazy(() => import('./pages/website/TrustSubPages').then(m => ({ default: m.SecurityPage })));
+const SiteTrustCentrePage = React.lazy(() => import('./pages/website/TrustSubPages').then(m => ({ default: m.TrustCentrePage })));
 
-// ── Board/War room ────────────────────────────────────────────────────────────
-import WarRoomConsole from './components/WarRoomConsole';
-import BoardRoom from './components/BoardRoom';
+// Free tier
+const Advisor = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/Advisor'));
+const Settings = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/Settings'));
+const BusinessProfile = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/BusinessProfile'));
+const Integrations = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/Integrations'));
+const EmailInbox = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/EmailInbox'));
+const CalendarView = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/CalendarView'));
+const AlertsPageAuth = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/AlertsPageAuth'));
+const ActionsPage = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/ActionsPage'));
+const MarketPage = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/MarketPage'));
+const DataHealthPage = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/DataHealthPage'));
+const ConnectEmail = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/ConnectEmail'));
+const OutlookAdminConsentPage = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/OutlookAdminConsentPage'));
+const CompetitiveBenchmarkPage = React.lazy(() => import(/* webpackChunkName: "free" */ './pages/CompetitiveBenchmarkPage'));
+const SoundboardPanel = React.lazy(() => import(/* webpackChunkName: "free" */ './components/SoundboardPanel'));
 
-// ── Other pages ───────────────────────────────────────────────────────────────
-import AdminDashboard from './pages/AdminDashboard';
-import Dashboard from './pages/Dashboard';
-import Analysis from './pages/Analysis';
-import SOPGenerator from './pages/SOPGenerator';
-import MarketAnalysis from './pages/MarketAnalysis';
-import Documents from './pages/Documents';
-import DocumentView from './pages/DocumentView';
-import Diagnosis from './pages/Diagnosis';
-import DataCenter from './pages/DataCenter';
-import OpsAdvisoryCentre from './pages/OpsAdvisoryCentre';
-import ConnectEmail from './pages/ConnectEmail';
-import IntelCentre from './pages/IntelCentre';
-import SoundboardPanel from './components/SoundboardPanel';
-import BoardRoomPage from './pages/BoardRoomPage';
-import WarRoomPage from './pages/WarRoomPage';
-import IntelligenceBaseline from './pages/IntelligenceBaseline';
-import OperatorDashboard from './pages/OperatorDashboard';
-import PromptLab from './pages/PromptLab';
-import SupportConsolePage from './pages/SupportConsolePage';
-import Watchtower from './components/Watchtower';
-import PlatformLogin from './pages/website/platform/PlatformLogin';
-import ExecOverview from './pages/website/platform/ExecOverview';
-import RevenueModule from './pages/website/platform/RevenueModule';
-import AlertsPage from './pages/website/platform/AlertsPage';
-import ConsultingView from './pages/website/platform/industries/ConsultingView';
-import AgencyView from './pages/website/platform/industries/AgencyView';
-import SaaSView from './pages/website/platform/industries/SaaSView';
-import DecisionsPage from './pages/DecisionsPage';
-import OnboardingWizard from './pages/OnboardingWizard';
-import OnboardingDecision from './pages/OnboardingDecision';
-import UpgradePage from './pages/UpgradePage';
-import BillingPage from './pages/BillingPage';
-import AdminPricingPage from './pages/AdminPricingPage';
-import AdminUxFeedbackPage from './pages/AdminUxFeedbackPage';
-import AdminScopeCheckpointsPage from './pages/AdminScopeCheckpointsPage';
+// Onboarding
+const OnboardingWizard = React.lazy(() => import(/* webpackChunkName: "onboarding" */ './pages/OnboardingWizard'));
+const OnboardingDecision = React.lazy(() => import(/* webpackChunkName: "onboarding" */ './pages/OnboardingDecision'));
+const CalibrationAdvisor = React.lazy(() => import(/* webpackChunkName: "onboarding" */ './pages/CalibrationAdvisor'));
+const ForensicCalibration = React.lazy(() => import(/* webpackChunkName: "onboarding" */ './pages/ForensicCalibration'));
 
-// ── Conditional imports (pages that may not exist) ────────────────────────────
-let CognitiveV2Mockup, LoadingPreview, CalibrationPreview, ProfileImport;
-try { CognitiveV2Mockup   = require('./pages/CognitiveV2Mockup').default; } catch { CognitiveV2Mockup = () => null; }
-try { LoadingPreview      = require('./pages/LoadingPreview').default; } catch { LoadingPreview = () => null; }
-try { CalibrationPreview  = require('./pages/CalibrationPreview').default; } catch { CalibrationPreview = () => null; }
-try { ProfileImport       = require('./pages/ProfileImport').default; } catch { ProfileImport = () => null; }
+// Growth tier
+const RevenuePage = React.lazy(() => import(/* webpackChunkName: "growth" */ './pages/RevenuePage'));
+const OperationsPage = React.lazy(() => import(/* webpackChunkName: "growth" */ './pages/OperationsPage'));
+const BoardRoomPage = React.lazy(() => import(/* webpackChunkName: "growth" */ './pages/BoardRoomPage'));
+const DecisionsPage = React.lazy(() => import(/* webpackChunkName: "growth" */ './pages/DecisionsPage'));
+const ReportsPage = React.lazy(() => import(/* webpackChunkName: "growth" */ './pages/ReportsPage'));
+const ExposureScanPage = React.lazy(() => import(/* webpackChunkName: "growth" */ './pages/ExposureScanPage'));
+const SOPGenerator = React.lazy(() => import(/* webpackChunkName: "growth" */ './pages/SOPGenerator'));
+const BillingPage = React.lazy(() => import(/* webpackChunkName: "growth" */ './pages/BillingPage'));
+const MarketingIntelPage = React.lazy(() => import(/* webpackChunkName: "growth" */ './pages/MarketingIntelPage'));
+const MarketingAutomationPage = React.lazy(() => import(/* webpackChunkName: "growth" */ './pages/MarketingAutomationPage'));
+const UpgradePage = React.lazy(() => import(/* webpackChunkName: "growth" */ './pages/UpgradePage'));
 
+// Pro tier
+const WarRoomPage = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/WarRoomPage'));
+const IntelCentre = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/IntelCentre'));
+const RiskPage = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/RiskPage'));
+const CompliancePage = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/CompliancePage'));
+const AuditLogPage = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/AuditLogPage'));
+const Documents = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/Documents'));
+const DocumentView = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/DocumentView'));
+const Analysis = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/Analysis'));
+const DataCenter = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/DataCenter'));
+const Diagnosis = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/Diagnosis'));
+const CMOReportPage = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/CMOReportPage'));
+const IntelligenceBaseline = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/IntelligenceBaseline'));
+const MarketAnalysis = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/MarketAnalysis'));
+const OperatorDashboard = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/OperatorDashboard'));
+const OpsAdvisoryCentre = React.lazy(() => import(/* webpackChunkName: "pro" */ './pages/OpsAdvisoryCentre'));
+const Watchtower = React.lazy(() => import(/* webpackChunkName: "pro" */ './components/Watchtower'));
+const WarRoomConsole = React.lazy(() => import(/* webpackChunkName: "pro" */ './components/WarRoomConsole'));
+const BoardRoom = React.lazy(() => import(/* webpackChunkName: "pro" */ './components/BoardRoom'));
 
-// ── Additional platform pages ────────────────────────────────────────────────
-import AutomationsPage from './pages/website/platform/AutomationsPage';
-import IntegrationsPlatform from './pages/website/platform/IntegrationsPlatform';
-import MSPView from './pages/website/platform/industries/MSPView';
-import ConstructionView from './pages/website/platform/industries/ConstructionView';
+// Admin
+const AdminDashboard = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/AdminDashboard'));
+const AdminPricingPage = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/AdminPricingPage'));
+const AdminUxFeedbackPage = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/AdminUxFeedbackPage'));
+const AdminScopeCheckpointsPage = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/AdminScopeCheckpointsPage'));
+const SupportConsolePage = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/SupportConsolePage'));
+const ObservabilityPage = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/ObservabilityPage'));
+const PromptLab = React.lazy(() => import(/* webpackChunkName: "admin" */ './pages/PromptLab'));
+
+// Misc
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const AutomationsPageAuth = React.lazy(() => import('./pages/AutomationsPageAuth'));
+const ForensicAuditPage = React.lazy(() => import('./pages/ForensicAuditPage'));
+const DSEEPage = React.lazy(() => import('./pages/DSEEPage'));
+const ABTestingPage = React.lazy(() => import('./pages/ABTestingPage'));
+const KnowledgeBasePage = React.lazy(() => import('./pages/KnowledgeBasePage'));
+
+// Platform demo pages
+const PlatformLogin = React.lazy(() => import(/* webpackChunkName: "platform" */ './pages/website/platform/PlatformLogin'));
+const ExecOverview = React.lazy(() => import(/* webpackChunkName: "platform" */ './pages/website/platform/ExecOverview'));
+const RevenueModule = React.lazy(() => import(/* webpackChunkName: "platform" */ './pages/website/platform/RevenueModule'));
+const AlertsPage = React.lazy(() => import(/* webpackChunkName: "platform" */ './pages/website/platform/AlertsPage'));
+const AutomationsPage = React.lazy(() => import(/* webpackChunkName: "platform" */ './pages/website/platform/AutomationsPage'));
+const IntegrationsPlatform = React.lazy(() => import(/* webpackChunkName: "platform" */ './pages/website/platform/IntegrationsPlatform'));
+const ConsultingView = React.lazy(() => import(/* webpackChunkName: "platform" */ './pages/website/platform/industries/ConsultingView'));
+const AgencyView = React.lazy(() => import(/* webpackChunkName: "platform" */ './pages/website/platform/industries/AgencyView'));
+const SaaSView = React.lazy(() => import(/* webpackChunkName: "platform" */ './pages/website/platform/industries/SaaSView'));
+const MSPView = React.lazy(() => import(/* webpackChunkName: "platform" */ './pages/website/platform/industries/MSPView'));
+const ConstructionView = React.lazy(() => import(/* webpackChunkName: "platform" */ './pages/website/platform/industries/ConstructionView'));
+
+// Conditional pages (may not exist)
+const CognitiveV2Mockup = React.lazy(() => import('./pages/CognitiveV2Mockup').catch(() => ({ default: () => null })));
+const LoadingPreview = React.lazy(() => import('./pages/LoadingPreview').catch(() => ({ default: () => null })));
+const CalibrationPreview = React.lazy(() => import('./pages/CalibrationPreview').catch(() => ({ default: () => null })));
+const ProfileImport = React.lazy(() => import('./pages/ProfileImport').catch(() => ({ default: () => null })));
 
 // ── Error boundary ────────────────────────────────────────────────────────────
 class AppErrorBoundary extends React.Component {
@@ -131,13 +153,13 @@ class AppErrorBoundary extends React.Component {
     if (this.state.error) {
       return (
         <div style={{ minHeight: '100vh', background: '#070E18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 32 }}>
-          <div style={{ color: '#FF6A00', fontSize: 32, fontWeight: 'bold' }}>B</div>
-          <p style={{ color: '#F4F7FA', fontFamily: 'sans-serif', fontSize: 18, fontWeight: 600 }}>Something went wrong</p>
+          <div style={{ color: '#E85D00', fontSize: 32, fontWeight: 'bold' }}>B</div>
+          <p style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: 'sans-serif', fontSize: 18, fontWeight: 600 }}>Something went wrong</p>
           <p style={{ color: '#64748B', fontFamily: 'sans-serif', fontSize: 14, textAlign: 'center', maxWidth: 400 }}>
             BIQc encountered an error. Please refresh to continue.
           </p>
           <button onClick={() => window.location.reload()}
-            style={{ background: '#FF6A00', color: 'white', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontFamily: 'sans-serif', fontSize: 14 }}>
+            style={{ background: '#E85D00', color: 'white', border: 'none', padding: '10px 24px', borderRadius: 8, cursor: 'pointer', fontFamily: 'sans-serif', fontSize: 14 }}>
             Refresh Page
           </button>
         </div>
@@ -234,6 +256,7 @@ function AppRoutes() {
 
   return (
     <AppErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public website */}
         <Route path="/" element={<SiteHomePage />} />
@@ -248,6 +271,7 @@ function AppRoutes() {
         <Route path="/trust/dpa" element={<SiteDPAPage />} />
         <Route path="/trust/security" element={<SiteSecurityPage />} />
         <Route path="/trust/centre" element={<SiteTrustCentrePage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
         <Route path="/blog" element={<BlogPage />} />
@@ -290,84 +314,87 @@ function AppRoutes() {
         <Route path="/register" element={<Navigate to="/register-supabase" replace />} />
 
         {/* Onboarding */}
-        <Route path="/onboarding-decision" element={<ProtectedRoute><OnboardingDecision /></ProtectedRoute>} />
-        <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
-        <Route path="/calibration" element={<ProtectedRoute><CalibrationAdvisor /></ProtectedRoute>} />
+        <Route path="/onboarding-decision" element={<ProtectedRoute><RouteErrorBoundary><OnboardingDecision /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/onboarding" element={<ProtectedRoute><RouteErrorBoundary><OnboardingWizard /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/calibration" element={<ProtectedRoute><RouteErrorBoundary><CalibrationAdvisor /></RouteErrorBoundary></ProtectedRoute>} />
         {/* /calibration-qa removed — calibration is triggered after first signup only */}
-        <Route path="/profile-import" element={<ProtectedRoute><ProfileImport /></ProtectedRoute>} />
+        <Route path="/profile-import" element={<ProtectedRoute><RouteErrorBoundary><ProfileImport /></RouteErrorBoundary></ProtectedRoute>} />
 
         {/* Subscription (canonical entrypoint for all paid/waitlist upsell routing) */}
-        <Route path="/subscribe" element={<ProtectedRoute><SubscribePage /></ProtectedRoute>} />
-        <Route path="/upgrade" element={<ProtectedRoute><UpgradePage /></ProtectedRoute>} />
-        <Route path="/upgrade/success" element={<ProtectedRoute><UpgradePage success /></ProtectedRoute>} />
+        <Route path="/subscribe" element={<ProtectedRoute><RouteErrorBoundary><SubscribePage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/upgrade" element={<ProtectedRoute><RouteErrorBoundary><UpgradePage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/upgrade/success" element={<ProtectedRoute><RouteErrorBoundary><UpgradePage success /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/biqc-foundation" element={<ProtectedRoute><Navigate to="/subscribe?section=foundation" replace /></ProtectedRoute>} />
         <Route path="/more-features" element={<ProtectedRoute><Navigate to="/subscribe?section=advanced" replace /></ProtectedRoute>} />
-        <Route path="/biqc-legal" element={<ProtectedRoute><BIQcLegalPage /></ProtectedRoute>} />
+        <Route path="/biqc-legal" element={<ProtectedRoute><RouteErrorBoundary><BIQcLegalPage /></RouteErrorBoundary></ProtectedRoute>} />
 
         {/* Core app — free */}
-        <Route path="/advisor" element={<ProtectedRoute><AdvisorWatchtower /></ProtectedRoute>} />
+        <Route path="/advisor" element={<ProtectedRoute><RouteErrorBoundary><Advisor /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/dashboard" element={<Navigate to="/advisor" replace />} />
-        <Route path="/market" element={<ProtectedRoute><MarketPage /></ProtectedRoute>} />
-        <Route path="/market/calibration" element={<ProtectedRoute><ForensicCalibration /></ProtectedRoute>} />
-        <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
-        <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
+        <Route path="/market" element={<ProtectedRoute><RouteErrorBoundary><MarketPage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/market/calibration" element={<ProtectedRoute><RouteErrorBoundary><ForensicCalibration /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/business-profile" element={<ProtectedRoute><RouteErrorBoundary><BusinessProfile /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/integrations" element={<ProtectedRoute><RouteErrorBoundary><Integrations /></RouteErrorBoundary></ProtectedRoute>} />
         <Route
           path="/integrations/:legacyQuery"
-          element={<ProtectedRoute><LegacyIntegrationsQueryRedirect /></ProtectedRoute>}
+          element={<ProtectedRoute><RouteErrorBoundary><LegacyIntegrationsQueryRedirect /></RouteErrorBoundary></ProtectedRoute>}
         />
-        <Route path="/connect-email" element={<ProtectedRoute><ConnectEmail /></ProtectedRoute>} />
-        <Route path="/data-health" element={<ProtectedRoute><DataHealthPage /></ProtectedRoute>} />
-        <Route path="/forensic-audit" element={<ProtectedRoute><LaunchRoute access="foundation"><ForensicAuditPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/exposure-scan" element={<ProtectedRoute><LaunchRoute access="foundation"><DSEEPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/marketing-intelligence" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="marketing-intelligence"><MarketingIntelPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
-        <Route path="/competitive-benchmark" element={<ProtectedRoute><CompetitiveBenchmarkPage /></ProtectedRoute>} />
+        <Route path="/connect-email" element={<ProtectedRoute><RouteErrorBoundary><ConnectEmail /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/outlook-admin-consent" element={<ProtectedRoute><RouteErrorBoundary><OutlookAdminConsentPage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/data-health" element={<ProtectedRoute><RouteErrorBoundary><DataHealthPage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/forensic-audit" element={<ProtectedRoute><LaunchRoute access="foundation"><RouteErrorBoundary><ForensicAuditPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/exposure-scan" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="exposure-scan"><RouteErrorBoundary><ExposureScanPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/marketing-intelligence" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="marketing-intelligence"><RouteErrorBoundary><MarketingIntelPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><RouteErrorBoundary><Settings /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/calendar" element={<ProtectedRoute><RouteErrorBoundary><CalendarView /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/competitive-benchmark" element={<ProtectedRoute><RouteErrorBoundary><CompetitiveBenchmarkPage /></RouteErrorBoundary></ProtectedRoute>} />
 
         {/* Paid routes */}
-        <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="revenue"><RevenuePage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/billing" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="billing"><BillingPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="operations"><OperationsPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/risk" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="risk-workforce"><RiskPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="compliance"><CompliancePage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><LaunchRoute access="foundation"><ReportsPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/audit-log" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="risk-workforce"><AuditLogPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/alerts" element={<ProtectedRoute><AlertsPageAuth /></ProtectedRoute>} />
-        <Route path="/actions" element={<ProtectedRoute><ActionsPage /></ProtectedRoute>} />
-        <Route path="/automations" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="automations"><AutomationsPageAuth /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/soundboard" element={<ProtectedRoute><SoundboardPanel /></ProtectedRoute>} />
-        <Route path="/email-inbox" element={<ProtectedRoute><EmailInbox /></ProtectedRoute>} />
-        <Route path="/war-room" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="war-room"><WarRoomPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/board-room" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="boardroom"><BoardRoomPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/revenue" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="revenue"><RouteErrorBoundary><RevenuePage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/billing" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="billing"><RouteErrorBoundary><BillingPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/operations" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="operations"><RouteErrorBoundary><OperationsPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/risk" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="risk-workforce"><RouteErrorBoundary><RiskPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/compliance" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="compliance"><RouteErrorBoundary><CompliancePage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><LaunchRoute access="foundation"><RouteErrorBoundary><ReportsPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/audit-log" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="risk-workforce"><RouteErrorBoundary><AuditLogPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/alerts" element={<ProtectedRoute><RouteErrorBoundary><AlertsPageAuth /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/actions" element={<ProtectedRoute><RouteErrorBoundary><ActionsPage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/automations" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="automations"><RouteErrorBoundary><AutomationsPageAuth /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/soundboard" element={<ProtectedRoute><RouteErrorBoundary><SoundboardPanel /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/email-inbox" element={<ProtectedRoute><RouteErrorBoundary><EmailInbox /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/war-room" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="war-room"><RouteErrorBoundary><WarRoomPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/board-room" element={<ProtectedRoute><LaunchRoute access="foundation" featureKey="boardroom"><RouteErrorBoundary><BoardRoomPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/warroom" element={<Navigate to="/war-room" replace />} />
         <Route path="/boardroom" element={<Navigate to="/board-room" replace />} />
-        <Route path="/sop-generator" element={<ProtectedRoute><LaunchRoute access="foundation"><SOPGenerator /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/decisions" element={<ProtectedRoute><LaunchRoute access="foundation"><DecisionsPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/diagnosis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="diagnosis"><Diagnosis /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/analysis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="analysis"><Analysis /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/documents" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="documents-library"><Documents /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/documents/:id" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="documents-library"><DocumentView /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/data-center" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="watchtower"><DataCenter /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/intel-centre" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="intel-centre"><IntelCentre /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/watchtower" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="watchtower"><Watchtower /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/intelligence-baseline" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="watchtower"><IntelligenceBaseline /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/operator" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="operations-intelligence"><OperatorDashboard /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/market-analysis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="market-analysis"><MarketAnalysis /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/ops-advisory" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="ops-advisory"><OpsAdvisoryCentre /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/sop-generator" element={<ProtectedRoute><LaunchRoute access="foundation"><RouteErrorBoundary><SOPGenerator /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/decisions" element={<ProtectedRoute><LaunchRoute access="foundation"><RouteErrorBoundary><DecisionsPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/diagnosis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="diagnosis"><RouteErrorBoundary><Diagnosis /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/analysis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="analysis"><RouteErrorBoundary><Analysis /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/documents" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="documents-library"><RouteErrorBoundary><Documents /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/documents/:id" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="documents-library"><RouteErrorBoundary><DocumentView /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/data-center" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="watchtower"><RouteErrorBoundary><DataCenter /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/intel-centre" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="intel-centre"><RouteErrorBoundary><IntelCentre /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/watchtower" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="watchtower"><RouteErrorBoundary><Watchtower /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/intelligence-baseline" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="watchtower"><RouteErrorBoundary><IntelligenceBaseline /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/operator" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="operations-intelligence"><RouteErrorBoundary><OperatorDashboard /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/market-analysis" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="market-analysis"><RouteErrorBoundary><MarketAnalysis /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/cmo-report" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="cmo-report"><RouteErrorBoundary><CMOReportPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/ops-advisory" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="ops-advisory"><RouteErrorBoundary><OpsAdvisoryCentre /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
         <Route path="/oac" element={<Navigate to="/ops-advisory" replace />} />
-        <Route path="/marketing-automation" element={<ProtectedRoute><LaunchRoute access="foundation"><MarketingAutomationPage /></LaunchRoute></ProtectedRoute>} />
-        <Route path="/ab-testing" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="ab-testing"><ABTestingPage /></LaunchRoute></ProtectedRoute>} />
+        <Route path="/marketing-automation" element={<ProtectedRoute><LaunchRoute access="foundation"><RouteErrorBoundary><MarketingAutomationPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
+        <Route path="/ab-testing" element={<ProtectedRoute><LaunchRoute access="paid" featureKey="ab-testing"><RouteErrorBoundary><ABTestingPage /></RouteErrorBoundary></LaunchRoute></ProtectedRoute>} />
 
         {/* Admin */}
-        <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/admin/pricing" element={<ProtectedRoute adminOnly><AdminPricingPage /></ProtectedRoute>} />
-        <Route path="/admin/ux-feedback" element={<ProtectedRoute adminOnly><AdminUxFeedbackPage /></ProtectedRoute>} />
-        <Route path="/admin/scope-checkpoints" element={<ProtectedRoute adminOnly><AdminScopeCheckpointsPage /></ProtectedRoute>} />
-        <Route path="/admin/prompt-lab" element={<ProtectedRoute adminOnly><PromptLab /></ProtectedRoute>} />
-        <Route path="/support-admin" element={<ProtectedRoute adminOnly><SupportConsolePage /></ProtectedRoute>} />
-        <Route path="/observability" element={<ProtectedRoute adminOnly><ObservabilityPage /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute adminOnly><RouteErrorBoundary><AdminDashboard /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/admin/pricing" element={<ProtectedRoute adminOnly><RouteErrorBoundary><AdminPricingPage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/admin/ux-feedback" element={<ProtectedRoute adminOnly><RouteErrorBoundary><AdminUxFeedbackPage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/admin/scope-checkpoints" element={<ProtectedRoute adminOnly><RouteErrorBoundary><AdminScopeCheckpointsPage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/admin/prompt-lab" element={<ProtectedRoute adminOnly><RouteErrorBoundary><PromptLab /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/support-admin" element={<ProtectedRoute adminOnly><RouteErrorBoundary><SupportConsolePage /></RouteErrorBoundary></ProtectedRoute>} />
+        <Route path="/observability" element={<ProtectedRoute adminOnly><RouteErrorBoundary><ObservabilityPage /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </AppErrorBoundary>
   );
 }

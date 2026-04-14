@@ -470,39 +470,153 @@ async def store_outlook_tokens(user_id: str, access_token: str, refresh_token: s
         return False
 
 
-# ==================== MICROSOFT OUTLOOK INTEGRATION ====================
+# ==================== OAuth Initiation (Secure — no token in URL) ====================
 
-@router.get("/auth/outlook/login")
-async def outlook_login(request: Request, returnTo: str = "/connect-email", token: Optional[str] = None, provider: Optional[str] = None):
+class EmailConnectInitiateRequest(BaseModel):
+    provider: str  # "outlook" or "gmail"
+    returnTo: str = "/connect-email"
+
+@router.post("/auth/email-connect/initiate")
+async def email_connect_initiate(body: EmailConnectInitiateRequest, request: Request):
     """
-    Initiate Microsoft OAuth flow for Outlook
-    Accepts authentication token as query parameter (for browser redirects)
+    Secure OAuth initiation — accepts Supabase token via Authorization header,
+    returns a short-lived auth_code for the redirect URL.
+    This prevents the real token from appearing in server logs or browser history.
     """
-    import hashlib
-    import hmac
-    # provider param is optional — endpoint URL already defines this as outlook
-    
-    # Browser redirects cannot send Authorization header; verify bearer token via Supabase Auth.
+    import jwt as pyjwt
+
+    # Extract token from Authorization header
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header required")
+    supabase_token = auth_header[7:]
+
+    # Validate with Supabase
+    try:
+        from routes.deps import get_sb
+        auth_resp = get_sb().auth.get_user(supabase_token)
+        if not auth_resp or not auth_resp.user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"[email-connect/initiate] Token validation failed: {e}")
+        raise HTTPException(status_code=401, detail="Authentication failed")
+
+    user_id = str(auth_resp.user.id)
+    provider = body.provider.lower()
+    if provider not in ("outlook", "gmail"):
+        raise HTTPException(status_code=400, detail="Provider must be 'outlook' or 'gmail'")
+
+    # Create a short-lived signed auth code (5 minutes)
+    auth_code = pyjwt.encode(
+        {
+            "user_id": user_id,
+            "email": auth_resp.user.email or "",
+            "provider": provider,
+            "returnTo": body.returnTo,
+            "exp": datetime.now(timezone.utc) + timedelta(minutes=5),
+            "iat": datetime.now(timezone.utc),
+            "type": "oauth_initiate",
+        },
+        JWT_SECRET,
+        algorithm="HS256",
+    )
+
+    redirect_path = f"/api/auth/{provider}/login?auth_code={auth_code}&returnTo={quote(body.returnTo, safe='')}"
+    logger.info(f"[email-connect/initiate] Secure auth code issued for user {user_id}, provider={provider}")
+
+    return {"auth_code": auth_code, "redirect_url": redirect_path}
+
+
+def _resolve_user_from_auth_code_or_token(auth_code: Optional[str], token: Optional[str], endpoint_name: str):
+    """
+    Resolves the current user from either a secure auth_code (preferred)
+    or a legacy token query param (deprecated, logged).
+    Returns (current_user_dict, user_id_str) or raises HTTPException.
+    """
+    import jwt as pyjwt
+
     current_user = None
+
+    # Preferred: auth_code (short-lived JWT, token never in URL)
+    if auth_code:
+        try:
+            payload = pyjwt.decode(auth_code, JWT_SECRET, algorithms=["HS256"])
+            if payload.get("type") != "oauth_initiate":
+                raise HTTPException(status_code=400, detail="Invalid auth code type")
+            user_id = payload["user_id"]
+            user_data = None
+            import asyncio
+            # get_user_by_id is async; run sync if needed
+            try:
+                loop = asyncio.get_running_loop()
+                user_data_coro = get_user_by_id(user_id)
+                # We're already in an async context
+                import inspect
+                if inspect.isawaitable(user_data_coro):
+                    # Can't await here since this is sync; use token validation approach
+                    pass
+            except RuntimeError:
+                pass
+
+            from routes.deps import get_sb
+            # Fetch user from DB directly
+            try:
+                result = get_sb().table("users").select("*").eq("id", user_id).maybe_single().execute()
+                if result and result.data:
+                    current_user = result.data
+            except Exception:
+                pass
+
+            if not current_user:
+                # Auto-provision from auth code claims
+                now_iso = datetime.now(timezone.utc).isoformat()
+                current_user = {
+                    "id": user_id,
+                    "email": payload.get("email", ""),
+                    "full_name": "",
+                    "role": "user",
+                    "subscription_tier": "free",
+                    "is_master_account": _is_master_admin(payload.get("email", "")),
+                    "created_at": now_iso,
+                    "updated_at": now_iso,
+                }
+                try:
+                    get_sb().table("users").upsert(current_user, on_conflict="id").execute()
+                    logger.info(f"[{endpoint_name}] Auto-provisioned user {user_id} from auth_code")
+                except Exception as e:
+                    logger.warning(f"[{endpoint_name}] users upsert failed (non-fatal): {e}")
+
+            return current_user, user_id
+
+        except pyjwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Auth code expired. Please retry the connection.")
+        except pyjwt.InvalidTokenError as e:
+            logger.warning(f"[{endpoint_name}] Invalid auth_code: {e}")
+            raise HTTPException(status_code=401, detail="Invalid auth code")
+
+    # Legacy fallback: token in query param (DEPRECATED — logs warning)
     if token:
+        logger.warning(f"[{endpoint_name}] DEPRECATED: Token passed via URL query param. Use POST /auth/email-connect/initiate instead.")
         try:
             from routes.deps import get_sb
             auth_resp = get_sb().auth.get_user(token)
             if auth_resp and auth_resp.user:
                 user_id = auth_resp.user.id
-                user_data = await get_user_by_id(user_id)
-                if user_data:
-                    current_user = user_data
-                else:
+                try:
+                    result = get_sb().table("users").select("*").eq("id", str(user_id)).maybe_single().execute()
+                    if result and result.data:
+                        current_user = result.data
+                except Exception:
+                    pass
+
+                if not current_user:
                     now_iso = datetime.now(timezone.utc).isoformat()
-                    user_record = {
-                        "id": auth_resp.user.id,
+                    current_user = {
+                        "id": str(auth_resp.user.id),
                         "email": auth_resp.user.email or "",
-                        "full_name": (
-                            (auth_resp.user.user_metadata or {}).get("full_name")
-                            or (auth_resp.user.user_metadata or {}).get("name")
-                            or ""
-                        ),
+                        "full_name": (auth_resp.user.user_metadata or {}).get("full_name") or (auth_resp.user.user_metadata or {}).get("name") or "",
                         "role": "user",
                         "subscription_tier": "free",
                         "is_master_account": _is_master_admin(auth_resp.user.email),
@@ -510,16 +624,29 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
                         "updated_at": now_iso,
                     }
                     try:
-                        get_sb().table("users").upsert(user_record, on_conflict="id").execute()
-                        logger.info(f"[outlook/login] Auto-provisioned missing users record for {auth_resp.user.id}")
-                    except Exception as upsert_err:
-                        logger.warning(f"[outlook/login] users upsert failed (non-fatal): {upsert_err}")
-                    current_user = user_record
-        except Exception as token_err:
-            logger.warning(f"[outlook/login] Supabase token validation failed: {token_err}")
+                        get_sb().table("users").upsert(current_user, on_conflict="id").execute()
+                    except Exception:
+                        pass
+                return current_user, str(user_id)
+        except Exception as e:
+            logger.warning(f"[{endpoint_name}] Token validation failed: {e}")
 
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
+    raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
+
+
+# ==================== MICROSOFT OUTLOOK INTEGRATION ====================
+
+@router.get("/auth/outlook/login")
+async def outlook_login(request: Request, returnTo: str = "/connect-email", token: Optional[str] = None, provider: Optional[str] = None, auth_code: Optional[str] = None):
+    """
+    Initiate Microsoft OAuth flow for Outlook.
+    Preferred: auth_code from POST /auth/email-connect/initiate (no token in URL).
+    Legacy: token query param (deprecated, still works).
+    """
+    import hashlib
+    import hmac
+
+    current_user, user_id = _resolve_user_from_auth_code_or_token(auth_code, token, "outlook/login")
 
     _ensure_launch_email_slot(current_user, 'outlook')
     
@@ -569,52 +696,18 @@ async def outlook_login(request: Request, returnTo: str = "/connect-email", toke
 
 
 @router.get("/auth/gmail/login")
-async def gmail_login(request: Request, returnTo: str = "/connect-email", token: Optional[str] = None, provider: Optional[str] = None):
+async def gmail_login(request: Request, returnTo: str = "/connect-email", token: Optional[str] = None, provider: Optional[str] = None, auth_code: Optional[str] = None):
     """
-    Initiate Google OAuth flow for Gmail
-    Accepts authentication token as query parameter (for browser redirects)
+    Initiate Google OAuth flow for Gmail.
+    Preferred: auth_code from POST /auth/email-connect/initiate (no token in URL).
+    Legacy: token query param (deprecated, still works).
     """
     import hashlib
     import hmac
-    # provider param is optional — endpoint URL already defines this as gmail
-    
-    current_user = None
-    if token:
-        try:
-            from routes.deps import get_sb
-            auth_resp = get_sb().auth.get_user(token)
-            if auth_resp and auth_resp.user:
-                user_id = auth_resp.user.id
-                user_data = await get_user_by_id(user_id)
-                if user_data:
-                    current_user = user_data
-                else:
-                    now_iso = datetime.now(timezone.utc).isoformat()
-                    user_record = {
-                        "id": auth_resp.user.id,
-                        "email": auth_resp.user.email or "",
-                        "full_name": (auth_resp.user.user_metadata or {}).get("full_name") or (auth_resp.user.user_metadata or {}).get("name") or "",
-                        "role": "user",
-                        "subscription_tier": "free",
-                        "is_master_account": _is_master_admin(auth_resp.user.email),
-                        "created_at": now_iso,
-                        "updated_at": now_iso,
-                    }
-                    try:
-                        get_sb().table("users").upsert(user_record, on_conflict="id").execute()
-                        logger.info(f"[gmail/login] Auto-provisioned missing users record for {auth_resp.user.id}")
-                    except Exception as upsert_err:
-                        logger.warning(f"[gmail/login] users upsert failed (non-fatal): {upsert_err}")
-                    current_user = user_record
-        except Exception as token_err:
-            logger.warning(f"[gmail/login] Supabase token validation failed: {token_err}")
 
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
+    current_user, user_id = _resolve_user_from_auth_code_or_token(auth_code, token, "gmail/login")
 
     _ensure_launch_email_slot(current_user, 'gmail')
-    
-    user_id = current_user['id']
     
     callback_base_url = _get_oauth_callback_base_url()
     frontend_base_url = _get_frontend_base_url()
@@ -912,6 +1005,46 @@ async def outlook_callback(code: str, state: str = None, error: str = None, erro
     # Handle OAuth errors
     if error:
         logger.error(f"Outlook OAuth error: {error} - {error_description}")
+
+        # Detect admin consent requirement
+        desc = (error_description or "").lower()
+        is_admin_consent = (
+            "aadsts65001" in desc
+            or "admin_consent_required" in desc
+            or "consent_required" in desc
+            or error in ("interaction_required", "consent_required")
+        )
+
+        if is_admin_consent:
+            # Track the failed attempt
+            try:
+                sb = get_sb()
+                sb.table("integration_attempts").insert({
+                    "user_id": None,  # user_id not parsed yet at this point
+                    "provider": "microsoft",
+                    "status": "admin_required",
+                    "error_code": error,
+                    "error_detail": error_description,
+                }).execute()
+            except Exception as track_err:
+                logger.warning(f"Failed to track integration attempt: {track_err}")
+
+            azure_client_id = os.environ.get("AZURE_CLIENT_ID", "")
+            redirect_uri = os.environ.get(
+                "AZURE_REDIRECT_URI",
+                f"{os.environ.get('PUBLIC_FRONTEND_URL', frontend_url)}/api/auth/outlook/callback"
+            )
+            admin_consent_url = (
+                f"https://login.microsoftonline.com/common/adminconsent"
+                f"?client_id={azure_client_id}"
+                f"&redirect_uri={urllib.parse.quote(redirect_uri, safe='')}"
+            )
+            params = urllib.parse.urlencode({
+                "outlook_error": "admin_consent_required",
+                "admin_consent_url": admin_consent_url,
+            })
+            return RedirectResponse(url=f"{frontend_url}/connect-email?{params}")
+
         return RedirectResponse(url=f"{frontend_url}/connect-email?outlook_error={error}")
     
     # Extract and validate state parameter (contains user_id, returnTo, and verification hash)

@@ -44,7 +44,7 @@ const CalibratingSession = ({
       <header className="px-6 sm:px-8 py-3" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#FF6A00' }}>
+            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: '#E85D00' }}>
               <span className="text-white font-bold text-[10px]" style={{ fontFamily: fontFamily.mono }}>B</span>
             </div>
             <h1 className="text-sm font-medium tracking-wide uppercase" style={{ color: 'var(--biqc-text-2)', letterSpacing: '0.12em', fontFamily: fontFamily.mono }}>
@@ -55,20 +55,20 @@ const CalibratingSession = ({
             <span className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
               {STEP_LABELS[stepNum] || `Step ${stepNum}`}
             </span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ color: '#FF6A00', background: '#FF6A0015', fontFamily: fontFamily.mono }}>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ color: '#E85D00', background: '#E85D0015', fontFamily: fontFamily.mono }}>
               {stepNum}/{TOTAL_STEPS}
             </span>
           </div>
         </div>
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#243140' }}>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
           <div className="h-full rounded-full transition-all duration-700 ease-out"
-            style={{ width: `${progressPct}%`, background: 'linear-gradient(90deg, #FF6A00, #FF8C33)' }} />
+            style={{ width: `${progressPct}%`, background: 'linear-gradient(90deg, #E85D00, #FF8C33)' }} />
         </div>
         {/* Step indicators */}
         <div className="flex gap-1 mt-2">
           {Array.from({ length: TOTAL_STEPS }, (_, i) => (
             <div key={i} className="flex-1 h-1 rounded-full transition-all" style={{
-              background: i < stepNum - 1 ? '#FF6A00' : i === stepNum - 1 ? '#FF6A0060' : '#243140'
+              background: i < stepNum - 1 ? '#E85D00' : i === stepNum - 1 ? '#E85D0060' : 'rgba(140,170,210,0.15)'
             }} />
           ))}
         </div>
@@ -78,8 +78,8 @@ const CalibratingSession = ({
       {!calMode && !error && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-3" style={{ background: '#FF6A0020' }}>
-              <div className="w-3 h-3 rounded-full" style={{ background: '#FF6A00', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-3" style={{ background: '#E85D0020' }}>
+              <div className="w-3 h-3 rounded-full" style={{ background: '#E85D00', animation: 'pulse 1.5s ease-in-out infinite' }} />
             </div>
             <p className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>Preparing your next question...</p>
           </div>
@@ -121,18 +121,18 @@ const CalibratingSession = ({
                     <button key={i} onClick={() => setSelectedOption(opt)} disabled={isSubmitting}
                       className="w-full text-left rounded-xl px-6 py-5 transition-all duration-200 group"
                       style={{
-                        background: isSelected ? '#FF6A0010' : '#141C26',
-                        border: `2px solid ${isSelected ? '#FF6A00' : '#243140'}`,
-                        boxShadow: isSelected ? '0 0 0 1px #FF6A0040' : 'none',
+                        background: isSelected ? '#E85D0010' : 'var(--surface, #0E1628)',
+                        border: `2px solid ${isSelected ? '#E85D00' : 'rgba(140,170,210,0.15)'}`,
+                        boxShadow: isSelected ? '0 0 0 1px #E85D0040' : 'none',
                       }}
-                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.borderColor = '#FF6A0060'; }}
-                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.borderColor = isSelected ? '#FF6A00' : '#243140'; }}
+                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.borderColor = '#E85D0060'; }}
+                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.borderColor = isSelected ? '#E85D00' : 'rgba(140,170,210,0.15)'; }}
                       data-testid={`calibration-option-${i}`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{
-                          border: `2px solid ${isSelected ? '#FF6A00' : '#64748B'}`,
-                          background: isSelected ? '#FF6A00' : 'transparent',
+                          border: `2px solid ${isSelected ? '#E85D00' : '#64748B'}`,
+                          background: isSelected ? '#E85D00' : 'transparent',
                         }}>
                           {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
                         </div>
@@ -158,7 +158,7 @@ const CalibratingSession = ({
             <div className="text-center pt-2">
               <button onClick={handleWizardContinue} disabled={isSubmitting || !selectedOption}
                 className="px-10 py-3.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-30 flex items-center gap-2 mx-auto"
-                style={{ background: '#FF6A00', color: '#FFFFFF' }}
+                style={{ background: '#E85D00', color: '#FFFFFF' }}
                 data-testid="calibration-continue-btn">
                 {isSubmitting ? 'Processing...' : 'Continue'}
                 {!isSubmitting && <ArrowRight className="w-4 h-4" />}

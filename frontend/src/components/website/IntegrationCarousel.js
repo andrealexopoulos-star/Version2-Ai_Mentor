@@ -34,12 +34,12 @@ const LogoCard = ({ name }) => (
 );
 
 export const IntegrationCarousel = () => (
-  <section className="py-14 sm:py-20 overflow-hidden" style={{ background: '#07121E' }} data-testid="integration-carousel">
+  <section className="py-14 sm:py-20 overflow-hidden" style={{ background: '#0B1120' }} data-testid="integration-carousel">
     <div className="max-w-5xl mx-auto px-6 mb-12 text-center">
-      <span className="font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#FF7A18', fontSize: '12px' }}>
+      <span className="font-medium tracking-widest uppercase" style={{ fontFamily: fontFamily.mono, color: '#E85D00', fontSize: '12px' }}>
         500+ Integrations
       </span>
-      <p className="text-sm sm:text-base mt-3" style={{ fontFamily: fontFamily.body, color: '#9FB0C3', opacity: 0.45, fontWeight: 300 }}>
+      <p className="text-sm sm:text-base mt-3" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)', opacity: 0.45, fontWeight: 300 }}>
         Connects to the tools your business already uses
       </p>
     </div>
@@ -64,8 +64,8 @@ export const IntegrationCarousel = () => (
         animation-play-state: paused;
       }
       .logo-card:hover {
-        background: rgba(255,140,40,0.35) !important;
-        border-color: rgba(255,140,40,0.5) !important;
+        background: rgba(232,93,0,0.35) !important;
+        border-color: rgba(232,93,0,0.5) !important;
         transform: translateY(-2px);
       }
     `}</style>

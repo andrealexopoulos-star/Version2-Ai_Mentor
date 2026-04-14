@@ -31,11 +31,13 @@ DAILY_SCAN_INTERVAL = 86400
 EMISSION_INTERVAL = 900  # 15 minutes
 MERGE_INGEST_INTERVAL = 900  # 15 minutes baseline polling fallback
 WEBHOOK_POLL_INTERVAL = 60
+QUEUE_POLL_INTERVAL = 30  # Poll intelligence_queue every 30s
 WORKER_LOOP_INTERVAL = 60
 MAX_WEBHOOK_RETRIES = 5
 WEBHOOK_RETRY_BASE_SECONDS = 30
 WEEKLY_SYNTHESIS_DAY = 0
 FEATURE_MERGE_WEBHOOK_ENABLED = os.environ.get("FEATURE_MERGE_WEBHOOK_ENABLED", "true").lower() in {"1", "true", "yes"}
+QUEUE_BATCH_SIZE = 10  # Process up to 10 queue items per poll
 
 
 async def get_active_users_with_email():
@@ -88,16 +90,127 @@ async def run_automatic_intelligence(user_id: str):
 
 
 async def daily_intelligence_scan():
-    """Daily scan for all active users"""
+    """Daily scan for all active users — includes supernatural engines"""
     logger.info("Starting daily intelligence scan")
-    
+
     users = await get_active_users_with_email()
-    
+
     for user_id in users:
         await run_automatic_intelligence(user_id)
+        # Run supernatural engines after standard intelligence
+        await _run_supernatural_engines(user_id)
         await asyncio.sleep(1)
-    
+
     logger.info(f"Daily scan complete. Processed {len(users)} users")
+
+
+async def _run_supernatural_engines(user_id: str):
+    """Run proactive + predictive + narrative engines for a user."""
+    try:
+        from proactive_intelligence import ProactiveIntelligenceEngine
+        engine = ProactiveIntelligenceEngine(supabase_admin)
+        result = engine.run_full_scan(user_id)
+        if result.get("alerts_created", 0) > 0:
+            logger.info(f"[PROACTIVE] {result['alerts_created']} alerts for user {user_id[:8]}...")
+    except Exception as e:
+        logger.error(f"[PROACTIVE] Error for user {user_id[:8]}...: {e}")
+
+    try:
+        from predictive_intelligence import PredictiveIntelligenceEngine
+        engine = PredictiveIntelligenceEngine(supabase_admin)
+        result = engine.run_all_predictions(user_id)
+        if result.get("predictions_created", 0) > 0:
+            logger.info(f"[PREDICTIVE] {result['predictions_created']} predictions for user {user_id[:8]}...")
+    except Exception as e:
+        logger.error(f"[PREDICTIVE] Error for user {user_id[:8]}...: {e}")
+
+    try:
+        from narrative_synthesis import NarrativeSynthesisEngine
+        engine = NarrativeSynthesisEngine(supabase_admin)
+        result = engine.generate_weekly_narrative(user_id)
+        if result.get("narrative_id"):
+            logger.info(f"[NARRATIVE] Generated narrative for user {user_id[:8]}...")
+    except Exception as e:
+        logger.error(f"[NARRATIVE] Error for user {user_id[:8]}...: {e}")
+
+
+# ═══ INTELLIGENCE QUEUE PROCESSING ═══
+
+SCHEDULE_DISPATCH = {
+    # schedule_key -> (module, class, method)
+    "proactive_scan":       ("proactive_intelligence",  "ProactiveIntelligenceEngine",  "run_full_scan"),
+    "predictive_models":    ("predictive_intelligence", "PredictiveIntelligenceEngine", "run_all_predictions"),
+    "weekly_narrative":     ("narrative_synthesis",      "NarrativeSynthesisEngine",     "generate_weekly_narrative"),
+    "monthly_narrative":    ("narrative_synthesis",      "NarrativeSynthesisEngine",     "generate_weekly_narrative"),
+    "calendar_intelligence":("calendar_intelligence",   "CalendarIntelligenceEngine",   "store_intelligence"),
+}
+
+
+async def process_intelligence_queue():
+    """Poll intelligence_queue for queued items and dispatch to handlers."""
+    try:
+        # Fetch next batch of queued items (oldest first, highest priority first)
+        result = supabase_admin.table("intelligence_queue") \
+            .select("*") \
+            .eq("status", "queued") \
+            .order("priority") \
+            .order("queued_at") \
+            .limit(QUEUE_BATCH_SIZE) \
+            .execute()
+
+        items = result.data or []
+        if not items:
+            return 0
+
+        processed = 0
+        for item in items:
+            queue_id = item["id"]
+            user_id = item["user_id"]
+            schedule_key = item["schedule_key"]
+
+            # Mark as processing
+            supabase_admin.table("intelligence_queue").update({
+                "status": "processing",
+                "started_at": datetime.now(timezone.utc).isoformat(),
+            }).eq("id", queue_id).execute()
+
+            try:
+                dispatch_info = SCHEDULE_DISPATCH.get(schedule_key)
+                if dispatch_info:
+                    module_name, class_name, method_name = dispatch_info
+                    import importlib
+                    mod = importlib.import_module(module_name)
+                    cls = getattr(mod, class_name)
+                    instance = cls(supabase_admin)
+                    method = getattr(instance, method_name)
+                    method(user_id)
+                else:
+                    # For schedule_keys without local dispatch, just run standard intelligence
+                    await run_automatic_intelligence(user_id)
+
+                # Mark completed
+                supabase_admin.table("intelligence_queue").update({
+                    "status": "completed",
+                    "completed_at": datetime.now(timezone.utc).isoformat(),
+                }).eq("id", queue_id).execute()
+                processed += 1
+
+            except Exception as e:
+                logger.error(f"[QUEUE] Failed {schedule_key} for user {user_id[:8]}...: {e}")
+                supabase_admin.table("intelligence_queue").update({
+                    "status": "failed",
+                    "completed_at": datetime.now(timezone.utc).isoformat(),
+                    "error_detail": str(e)[:500],
+                }).eq("id", queue_id).execute()
+
+        if processed > 0:
+            logger.info(f"[QUEUE] Processed {processed}/{len(items)} queue items")
+
+        return processed
+
+    except Exception as e:
+        logger.error(f"[QUEUE] Error polling queue: {e}")
+        return 0
 
 
 async def weekly_synthesis():
@@ -282,16 +395,23 @@ async def intelligence_loop():
     logger.info("Emission Cycle: Every 15 minutes")
     logger.info("Merge Data Sync Fallback: Every 15 minutes")
     logger.info("Merge Webhook Poll: Every 60 seconds")
+    logger.info("Intelligence Queue Poll: Every 30 seconds")
     logger.info("Daily Scan: Every 24 hours")
-    
+
     last_daily = datetime.min.replace(tzinfo=timezone.utc)
     last_merge_ingest = datetime.min.replace(tzinfo=timezone.utc)
     last_emission = datetime.min.replace(tzinfo=timezone.utc)
     last_webhook_poll = datetime.min.replace(tzinfo=timezone.utc)
+    last_queue_poll = datetime.min.replace(tzinfo=timezone.utc)
     
     while True:
         try:
             now = datetime.now(timezone.utc)
+
+            # ═══ INTELLIGENCE QUEUE (every 30s) ═══
+            if (now - last_queue_poll).total_seconds() >= QUEUE_POLL_INTERVAL:
+                await process_intelligence_queue()
+                last_queue_poll = now
 
             # ═══ WEBHOOK EVENT DRAIN (every 60s) ═══
             if (now - last_webhook_poll).total_seconds() >= WEBHOOK_POLL_INTERVAL:

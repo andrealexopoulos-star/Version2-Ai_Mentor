@@ -595,191 +595,190 @@ const MySoundBoard = () => {
     return date.toLocaleDateString();
   };
 
+  /* ── Mockup-matched inline style constants ── */
+  const SB = {
+    surface:     'var(--surface, #0E1628)',
+    surface2:    'var(--surface-2, #151D2E)',
+    border:      'var(--border, rgba(140,170,210,0.12))',
+    lava:        'var(--lava, #E85D00)',
+    lavaWash:    'var(--lava-wash, rgba(232,93,0,0.08))',
+    lavaDeep:    'var(--lava-deep, #C44D00)',
+    lavaRing:    'var(--lava-ring, rgba(232,93,0,0.15))',
+    inkDisplay:  'var(--ink-display, #EDF1F7)',
+    ink:         'var(--ink, #C8D4E4)',
+    inkSecondary:'var(--ink-secondary, #8FA0B8)',
+    inkMuted:    'var(--ink-muted, #708499)',
+    userBubble:  '#1E293B',
+  };
+
   return (
     <DashboardLayout>
-      <div className="flex h-full relative">
-        {/* Sidebar - Desktop: static, Mobile: overlay */}
-        <div 
-          className={`
-            ${isChatOpen ? 'translate-x-0' : '-translate-x-full'} 
-            ${activeDrawer === 'nav' ? 'lg:translate-x-0 md:hidden' : 'lg:translate-x-0'}
-            fixed lg:relative 
-            left-0 top-0 
-            h-full 
-            transition-transform duration-300 
-            flex-shrink-0 border-r overflow-hidden z-50 lg:z-auto
-          `}
-          style={{ borderColor: 'var(--border-light)', background: 'var(--bg-secondary)' }}
-        >
-          <div className="h-full flex flex-col" style={{ width: `${sidebarWidth}px` }}>
-            {/* New Chat Button */}
-            <div className="p-4">
-              <Button
-                onClick={startNewConversation}
-                className="w-full btn-primary justify-start gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                New Conversation
-              </Button>
-            </div>
+      {/* CSS keyframes for mockup animations */}
+      <style>{`
+        @keyframes sbPulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+        @keyframes sbMsgIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        @media (max-width: 1100px) {
+          .sb-shell-grid { grid-template-columns: 1fr !important; }
+          .sb-side-panel { display: none !important; }
+        }
+      `}</style>
 
-            {/* Conversations List */}
-            <div className="flex-1 overflow-y-auto px-2 pb-4">
-              {loadingConversations ? (
-                <div className="px-2 py-4">
-                  <PageLoadingState message="Loading conversations..." compact />
-                </div>
-              ) : conversations.length === 0 ? (
-                <div className="text-center py-8 px-4">
-                  <MessageSquare className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    No conversations yet
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {conversations.map((conv) => (
-                    <div
-                      key={conv.id}
-                      onClick={() => loadConversation(conv.id)}
-                      className={`group flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${
-                        activeConversation === conv.id ? 'bg-opacity-100' : 'hover:bg-opacity-50'
-                      }`}
-                      style={{ 
-                        background: activeConversation === conv.id ? 'var(--bg-tertiary)' : 'transparent'
-                      }}
-                    >
-                      <MessageSquare className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                      
-                      {editingId === conv.id ? (
-                        <div className="flex-1 flex items-center gap-1">
-                          <input
-                            type="text"
-                            value={editingTitle}
-                            onChange={(e) => setEditingTitle(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') renameConversation(conv.id);
-                              if (e.key === 'Escape') setEditingId(null);
-                            }}
-                            className="flex-1 px-2 py-1 text-sm rounded"
-                            style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <button onClick={() => renameConversation(conv.id)} className="p-1">
-                            <Check className="w-3 h-3 text-green-500" />
-                          </button>
-                          <button onClick={() => setEditingId(null)} className="p-1">
-                            <X className="w-3 h-3 text-red-500" />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>
-                              {conv.title || 'New Conversation'}
-                            </p>
-                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                              {formatTime(conv.updated_at)}
-                            </p>
-                          </div>
-                          
-                          <div className="hidden group-hover:flex items-center gap-1">
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingId(conv.id);
-                                setEditingTitle(conv.title || '');
-                              }}
-                              className="p-1 rounded hover:bg-black/10"
-                            >
-                              <Edit2 className="w-3 h-3" style={{ color: 'var(--text-muted)' }} />
-                            </button>
-                            <button 
-                              onClick={(e) => deleteConversation(conv.id, e)}
-                              className="p-1 rounded hover:bg-red-100"
-                            >
-                              <Trash2 className="w-3 h-3 text-red-500" />
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+      <div className="sb-shell-grid" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 20, height: 'calc(100vh - 80px)', padding: '0 20px 20px', fontFamily: fontFamily.body }}>
+
+        {/* ════════ CONVERSATION SIDEBAR ════════ */}
+        <aside className="sb-side-panel" style={{
+          background: SB.surface, border: `1px solid ${SB.border}`, borderRadius: 12,
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        }}>
+          {/* Sidebar header */}
+          <div style={{
+            padding: 16, borderBottom: `1px solid ${SB.border}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <span style={{ fontFamily: fontFamily.mono, fontSize: 11, color: SB.inkMuted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Recent conversations
+            </span>
+            <button
+              onClick={startNewConversation}
+              aria-label="New conversation"
+              style={{
+                width: 28, height: 28, background: SB.lavaWash, color: SB.lava,
+                borderRadius: 6, display: 'grid', placeItems: 'center',
+                border: 0, cursor: 'pointer', transition: 'all 180ms ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = SB.lava; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = SB.lavaWash; e.currentTarget.style.color = SB.lava; }}
+            >
+              <Plus size={14} />
+            </button>
           </div>
-        </div>
 
-        {/* Toggle Sidebar Button */}
-        <button
-          onClick={() => isChatOpen ? closeAll() : openChat()}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-r-lg lg:block hidden"
-          style={{ 
-            background: 'var(--bg-card)', 
-            border: '1px solid var(--border-light)',
-            borderLeft: 'none',
-            left: isChatOpen ? `${sidebarWidth}px` : '0'
-          }}
-        >
-          {isChatOpen ? (
-            <ChevronLeft className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-          ) : (
-            <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-          )}
-        </button>
-        
+          {/* Conversation list */}
+          <div style={{ overflowY: 'auto', flex: 1 }}>
+            {loadingConversations ? (
+              <div style={{ padding: 16 }}>
+                <PageLoadingState message="Loading conversations..." compact />
+              </div>
+            ) : conversations.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+                <MessageSquare size={32} style={{ color: SB.inkMuted, margin: '0 auto 8px' }} />
+                <p style={{ fontSize: 13, color: SB.inkMuted }}>No conversations yet</p>
+              </div>
+            ) : (
+              conversations.map((conv) => (
+                <div
+                  key={conv.id}
+                  onClick={() => loadConversation(conv.id)}
+                  style={{
+                    display: 'block', padding: '12px 16px',
+                    borderBottom: `1px solid ${SB.border}`,
+                    cursor: 'pointer', transition: 'background 150ms ease',
+                    background: activeConversation === conv.id ? SB.lavaWash : 'transparent',
+                    borderLeft: activeConversation === conv.id ? `3px solid ${SB.lava}` : '3px solid transparent',
+                    paddingLeft: activeConversation === conv.id ? 13 : 16,
+                    position: 'relative',
+                  }}
+                  className="group"
+                >
+                  {editingId === conv.id ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <input
+                        type="text"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') renameConversation(conv.id);
+                          if (e.key === 'Escape') setEditingId(null);
+                        }}
+                        style={{ flex: 1, padding: '4px 8px', fontSize: 13, borderRadius: 4, background: SB.surface2, color: SB.inkDisplay, border: `1px solid ${SB.border}`, outline: 'none' }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <button onClick={() => renameConversation(conv.id)} style={{ padding: 4, background: 'none', border: 0, cursor: 'pointer' }}>
+                        <Check size={12} style={{ color: '#16A34A' }} />
+                      </button>
+                      <button onClick={() => setEditingId(null)} style={{ padding: 4, background: 'none', border: 0, cursor: 'pointer' }}>
+                        <X size={12} style={{ color: '#DC2626' }} />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{
+                        fontSize: 13, fontWeight: 500, color: SB.inkDisplay, lineHeight: 1.3,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {conv.title || 'New Conversation'}
+                      </div>
+                      <div style={{ fontFamily: fontFamily.mono, fontSize: 10, color: SB.inkMuted, marginTop: 4 }}>
+                        {formatTime(conv.updated_at)}
+                      </div>
+                      <div className="hidden group-hover:flex" style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', gap: 2 }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingId(conv.id); setEditingTitle(conv.title || ''); }}
+                          style={{ padding: 4, background: 'none', border: 0, cursor: 'pointer', borderRadius: 4 }}
+                        >
+                          <Edit2 size={12} style={{ color: SB.inkMuted }} />
+                        </button>
+                        <button
+                          onClick={(e) => deleteConversation(conv.id, e)}
+                          style={{ padding: 4, background: 'none', border: 0, cursor: 'pointer', borderRadius: 4 }}
+                        >
+                          <Trash2 size={12} style={{ color: '#DC2626' }} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
+
         {/* Mobile: Backdrop overlay */}
         {isChatOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/40 lg:hidden z-40"
             onClick={closeAll}
             aria-hidden="true"
           />
         )}
 
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0 w-full lg:w-auto overflow-hidden"
->
-          {/* Header */}
-          <div 
-            className="px-4 md:px-6 py-2 md:py-4 border-b flex items-center justify-between gap-2"
-            style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}
-          >
-            {/* Mobile: Hamburger to open chat list */}
-            <button 
-              onClick={openChat}
-              className="lg:hidden p-1.5 rounded-lg hover:bg-black/5"
-              aria-label="Open conversations"
-            >
-              <MessageSquare className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
-            </button>
-
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg md:text-xl font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                Ask BIQc
-              </h1>
-              <p className="text-xs md:text-sm truncate hidden md:block" style={{ color: 'var(--text-muted)' }}>
-                Your AI workspace for grounded business decisions
-              </p>
+        {/* ════════ CHAT PANEL ════════ */}
+        <section style={{
+          background: SB.surface, border: `1px solid ${SB.border}`, borderRadius: 12,
+          display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative',
+        }}>
+          {/* Chat header */}
+          <header style={{
+            padding: '20px 24px', borderBottom: `1px solid ${SB.border}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ fontFamily: fontFamily.display, fontSize: 26, color: SB.inkDisplay, lineHeight: 1.1, margin: 0 }}>
+                A second brain for <em style={{ color: SB.lava, fontStyle: 'italic' }}>your business</em>.
+              </h2>
+              <div style={{
+                fontFamily: fontFamily.mono, fontSize: 11, color: SB.inkMuted, marginTop: 4,
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                <span style={{
+                  width: 6, height: 6, background: '#16A34A', borderRadius: '50%',
+                  boxShadow: '0 0 8px rgba(22,163,74,0.5)', animation: 'sbPulse 1.6s infinite',
+                }} />
+                BIQc Pro model active
+              </div>
             </div>
 
-            {/* Top Action Buttons — Calibration + Forensic Market Exposure */}
-            <div className="hidden md:flex items-center gap-2 shrink-0">
-              <label className="hidden lg:flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: fontFamily.mono }}>
-                Nav
-                <input type="range" min="240" max="420" step="8" value={sidebarWidth} onChange={(e) => setSidebarWidth(Number(e.target.value))} />
-              </label>
-              <label className="hidden lg:flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: fontFamily.mono }}>
-                Memo/Chat
-                <input type="range" min="620" max="1200" step="10" value={chatColumnMaxWidth} onChange={(e) => setChatColumnMaxWidth(Number(e.target.value))} />
-              </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               {scanUsage && !scanUsage.calibration_complete && (
                 <a href="/calibration"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110"
-                  style={{ background: '#FF6A0015', border: '1px solid #FF6A0030', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                    borderRadius: 8, fontSize: 12, fontWeight: 500, textDecoration: 'none',
+                    background: 'rgba(232,93,0,0.08)', border: '1px solid rgba(232,93,0,0.2)',
+                    color: SB.lava, fontFamily: fontFamily.mono,
+                  }}
                   data-testid="mysb-calibration-btn">
-                  <Zap className="w-3.5 h-3.5" /> Complete Calibration
+                  <Zap size={14} /> Calibrate
                 </a>
               )}
               {(() => {
@@ -796,55 +795,59 @@ const MySoundBoard = () => {
                         setRecordingScans(prev => ({ ...prev, exposure_scan: true }));
                         try {
                           await apiClient.post('/soundboard/record-scan', { feature_name: 'exposure_scan' });
-                          sessionStorage.removeItem('biqc_scan_usage_cache'); // Invalidate cache
-                          await fetchScanUsage(true); // Force fresh fetch
+                          sessionStorage.removeItem('biqc_scan_usage_cache');
+                          await fetchScanUsage(true);
                         } catch {}
                         setRecordingScans(prev => ({ ...prev, exposure_scan: false }));
                       }
                       window.location.href = '/exposure-scan';
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                     style={{
-                      background: canRun || isPaid ? '#3B82F615' : '#243140',
-                      border: `1px solid ${canRun || isPaid ? '#3B82F630' : '#243140'}`,
+                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                      borderRadius: 8, fontSize: 12, fontWeight: 500, border: 'none',
+                      background: canRun || isPaid ? 'rgba(59,130,246,0.08)' : 'rgba(140,170,210,0.08)',
                       color: canRun || isPaid ? '#3B82F6' : '#64748B',
-                      fontFamily: fontFamily.mono,
-                      cursor: canRun || isPaid ? 'pointer' : 'not-allowed',
+                      fontFamily: fontFamily.mono, cursor: canRun || isPaid ? 'pointer' : 'not-allowed',
                     }}
                     data-testid="mysb-exposure-scan-btn">
-                    <Eye className="w-3.5 h-3.5" />
+                    <Eye size={14} />
                     {recordingScans.exposure_scan ? 'Recording...' :
-                      !canRun && !isPaid ? `Forensic Market Exposure (${daysLeft}d)` :
-                      'Forensic Market Exposure'}
-                    {!canRun && !isPaid && <Clock className="w-3 h-3 opacity-50" />}
+                      !canRun && !isPaid ? `Exposure (${daysLeft}d)` :
+                      'Exposure Scan'}
+                    {!canRun && !isPaid && <Clock size={12} style={{ opacity: 0.5 }} />}
                   </button>
                 );
               })()}
-            </div>
-            
-            {/* Voice Call Button - Icon only on mobile */}
-            <button 
-              onClick={() => setShowVoiceChat(true)}
-              className="bg-green-600 hover:bg-green-700 text-white rounded-lg p-2 md:px-4 md:py-2 flex items-center gap-2 flex-shrink-0"
-              aria-label="Start voice call"
-            >
-              <Video className="w-5 h-5 md:w-4 md:h-4" />
-              <span className="hidden md:inline text-sm font-medium">Start Voice Call</span>
-            </button>
-            {loading && (
               <button
-                onClick={stopStreaming}
-                className="bg-red-600/90 hover:bg-red-600 text-white rounded-lg p-2 md:px-4 md:py-2 flex items-center gap-2 flex-shrink-0"
-                aria-label="Stop Ask BIQc response"
+                onClick={() => setShowVoiceChat(true)}
+                aria-label="Start voice call"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px',
+                  borderRadius: 8, fontSize: 13, fontWeight: 500, border: 'none',
+                  background: '#16A34A', color: '#fff', cursor: 'pointer', fontFamily: fontFamily.body,
+                }}
               >
-                <X className="w-5 h-5 md:w-4 md:h-4" />
-                <span className="hidden md:inline text-sm font-medium">Stop</span>
+                <Video size={14} />
+                <span className="hidden md:inline">Voice</span>
               </button>
-            )}
-          </div>
+              {loading && (
+                <button
+                  onClick={stopStreaming}
+                  aria-label="Stop Ask BIQc response"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px',
+                    borderRadius: 8, fontSize: 13, fontWeight: 500, border: 'none',
+                    background: 'rgba(220,38,38,0.9)', color: '#fff', cursor: 'pointer',
+                  }}
+                >
+                  <X size={14} /> Stop
+                </button>
+              )}
+            </div>
+          </header>
 
           {!loadingConversations && conversationsError ? (
-            <div className="flex flex-1 items-center justify-center p-6 min-h-0">
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
               <PageErrorState
                 error={conversationsError}
                 onRetry={fetchConversations}
@@ -853,9 +856,8 @@ const MySoundBoard = () => {
             </div>
           ) : (
           <>
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto touch-pan-y" style={{ background: 'var(--bg-primary)', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
-            <div className="mx-auto px-6 py-6" style={{ maxWidth: `${chatColumnMaxWidth}px` }}>
+          {/* ── Chat thread ── */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
               <span className="sr-only">Edit &amp; resend Regenerate Coverage window</span>
               <AskBiqcSessionLineage
                 latestAssistantMessage={latestAssistantMessage}
@@ -865,55 +867,78 @@ const MySoundBoard = () => {
               />
 
               {messages.length === 0 ? (
-                <div className="text-center py-12 px-4">
-                  <div 
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                    style={{ background: 'var(--bg-tertiary)' }}
-                  >
-                    <MessageSquare className="w-7 h-7" style={{ color: 'var(--accent-primary)' }} />
+                /* ── Empty state / suggestions grid ── */
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 16px' }}>
+                  <div style={{ width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', background: SB.surface2, marginBottom: 16 }}>
+                    <MessageSquare size={28} style={{ color: SB.lava }} />
                   </div>
-                  <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: SB.inkDisplay, marginBottom: 4, textAlign: 'center' }}>
                     {firstName ? `${firstName}, what do you want to tackle?` : 'Ask anything about your business'}
                   </p>
-                  <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: 12, color: SB.inkMuted, marginBottom: 20, textAlign: 'center' }}>
                     {advisorHandoff ? 'or choose a BIQc next move below' : 'pick a prompt or type your own'}
                   </p>
-                  <div className="flex flex-wrap gap-2 justify-center max-w-sm mx-auto">
-                    {(advisorHandoff ? buildAdvisorSuggestedOptions(advisorHandoff) : ["What's the one thing I should focus on?", 'Summarise my risks', 'Show me my pipeline', "How's my revenue looking?", 'Analyse Inbox vs Sent vs Deleted for risk signals', 'Give me cross-integration analytics from Merge data'].map((q) => ({ label: q, prompt: q }))).map((q) => (
-                      <button key={q.label} onClick={() => sendMessage(q.prompt, advisorHandoff)}
-                        className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: '1px solid var(--border-light)' }}>
+                  {/* Suggestion chips - 2x2 grid like mockup */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, maxWidth: 560, width: '100%' }}>
+                    {(advisorHandoff ? buildAdvisorSuggestedOptions(advisorHandoff) : [
+                      { label: "What's the one thing I should focus on?", prompt: "What's the one thing I should focus on?" },
+                      { label: 'Summarise my risks', prompt: 'Summarise my risks' },
+                      { label: 'Show me my pipeline', prompt: 'Show me my pipeline' },
+                      { label: "How's my revenue looking?", prompt: "How's my revenue looking?" },
+                    ]).map((q) => (
+                      <button
+                        key={q.label}
+                        onClick={() => sendMessage(q.prompt, advisorHandoff)}
+                        style={{
+                          textAlign: 'left', padding: '12px 16px',
+                          background: SB.surface2, border: `1px solid ${SB.border}`,
+                          borderRadius: 8, cursor: 'pointer', transition: 'all 180ms ease',
+                          display: 'flex', alignItems: 'center', gap: 12,
+                          fontSize: 13, color: SB.ink, fontFamily: fontFamily.body,
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = SB.lavaWash; e.currentTarget.style.borderColor = SB.lava; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = SB.surface2; e.currentTarget.style.borderColor = SB.border; e.currentTarget.style.transform = 'translateY(0)'; }}
+                      >
+                        <span style={{
+                          width: 28, height: 28, background: SB.surface, borderRadius: 6,
+                          color: SB.lava, display: 'grid', placeItems: 'center', flexShrink: 0,
+                          border: `1px solid ${SB.border}`,
+                        }}>
+                          <Zap size={14} />
+                        </span>
                         {q.label}
                       </button>
                     ))}
                   </div>
                 </div>
               ) : (
-                <div className="space-y-6">
+                /* ── Message bubbles ── */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                   {messages.map((message, index) => (
                     <div
                       key={index}
-                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      style={{
+                        display: 'flex',
+                        justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
+                        animation: 'sbMsgIn 320ms cubic-bezier(0.25, 1, 0.5, 1)',
+                      }}
                     >
-                      <div
-                        className={`max-w-[85%] px-4 py-3 rounded-2xl ${
-                          message.role === 'user' ? 'rounded-br-md' : 'rounded-bl-md'
-                        }`}
-                        style={{
-                          background: message.role === 'user' 
-                            ? 'linear-gradient(135deg, rgba(255,106,0,0.20), rgba(255,106,0,0.10))'
-                            : 'var(--bg-card)',
-                          color: message.role === 'user' 
-                            ? '#F8FAFC'
-                            : 'var(--text-primary)',
-                          border: message.role === 'user' 
-                            ? '1px solid rgba(255,106,0,0.28)'
-                            : '1px solid var(--border-light)',
-                          boxShadow: message.role === 'user'
-                            ? 'inset 0 1px 0 rgba(255,255,255,0.05)'
-                            : 'none',
-                        }}
-                      >
+                      <div style={{
+                        maxWidth: '78%', padding: '16px 20px', borderRadius: 12,
+                        fontSize: 15, lineHeight: 1.6,
+                        ...(message.role === 'user' ? {
+                          alignSelf: 'flex-end',
+                          background: SB.userBubble,
+                          color: '#fff',
+                          borderBottomRightRadius: 4,
+                        } : {
+                          alignSelf: 'flex-start',
+                          background: SB.surface2,
+                          color: SB.ink,
+                          borderBottomLeftRadius: 4,
+                          border: `1px solid ${SB.border}`,
+                        }),
+                      }}>
                         {message.role === 'assistant' ? (
                           <AskBiqcAssistantResponse
                             message={message}
@@ -938,7 +963,7 @@ const MySoundBoard = () => {
                           />
                         ) : (
                           <>
-                            <div className="markdown-body text-sm leading-relaxed">
+                            <div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.6 }}>
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {normalizeMessageContent(message.content)}
                               </ReactMarkdown>
@@ -953,47 +978,52 @@ const MySoundBoard = () => {
                             />
                           </>
                         )}
+                        {/* Message meta line */}
+                        <div style={{
+                          fontFamily: fontFamily.mono, fontSize: 10, marginTop: 8,
+                          textTransform: 'uppercase', letterSpacing: '0.08em',
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          color: message.role === 'user' ? 'rgba(255,255,255,0.5)' : SB.inkMuted,
+                        }}>
+                          {message.role === 'user' ? 'You' : 'BIQc'}
+                          {message.model_used && ` \u00B7 ${message.model_used}`}
+                          {message.agent_name && ` \u00B7 ${message.agent_name}`}
+                        </div>
                       </div>
                     </div>
                   ))}
-                  
+
                   {loading && (
-                    <div className="flex justify-start">
-                      <div 
-                        className="px-4 py-3 rounded-2xl rounded-bl-md"
-                        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-1">
-                            <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                      <div style={{
+                        padding: '16px 20px', borderRadius: 12, borderBottomLeftRadius: 4,
+                        background: SB.surface2, border: `1px solid ${SB.border}`,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <span className="animate-bounce" style={{ width: 8, height: 8, borderRadius: '50%', background: '#64748B', animationDelay: '0ms' }} />
+                            <span className="animate-bounce" style={{ width: 8, height: 8, borderRadius: '50%', background: '#64748B', animationDelay: '150ms' }} />
+                            <span className="animate-bounce" style={{ width: 8, height: 8, borderRadius: '50%', background: '#64748B', animationDelay: '300ms' }} />
                           </div>
-                          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                          <span style={{ fontSize: 14, color: SB.inkMuted }}>
                             {showBoardroomViz ? `${activeBoardroomCheck.role}: ${activeBoardroomCheck.line}` : 'BIQc is thinking...'}
                           </span>
                         </div>
                         {showBoardroomViz && (
-                          <div className="mt-2 space-y-2">
-                            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(30, 41, 59, 0.8)' }}>
-                              <div
-                                className="h-full rounded-full transition-all duration-700"
-                                style={{
-                                  width: `${boardroomProgress}%`,
-                                  background: 'linear-gradient(90deg, #3B82F6 0%, #10B981 100%)',
-                                }}
-                              />
+                          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <div style={{ width: '100%', height: 6, borderRadius: 999, overflow: 'hidden', background: 'rgba(30,41,59,0.8)' }}>
+                              <div style={{ height: '100%', borderRadius: 999, width: `${boardroomProgress}%`, background: 'linear-gradient(90deg, #3B82F6, #10B981)', transition: 'width 700ms ease' }} />
                             </div>
-                            <div className="flex flex-wrap gap-1">
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                               {boardroomChecks.map((step, i) => (
                                 <span
                                   key={`${step.role}-${i}`}
-                                  className="text-[9px] px-1.5 py-0.5 rounded animate-pulse"
+                                  className="animate-pulse"
                                   style={{
+                                    fontSize: 9, padding: '2px 6px', borderRadius: 4,
                                     background: i === boardroomNarrationIndex % Math.max(1, boardroomChecks.length) ? 'rgba(59,130,246,0.22)' : 'rgba(59,130,246,0.12)',
                                     color: i === boardroomNarrationIndex % Math.max(1, boardroomChecks.length) ? '#DBEAFE' : '#93C5FD',
-                                    fontFamily: fontFamily.mono,
-                                    animationDelay: `${i * 120}ms`,
+                                    fontFamily: fontFamily.mono, animationDelay: `${i * 120}ms`,
                                   }}
                                 >
                                   {step.role}
@@ -1005,167 +1035,176 @@ const MySoundBoard = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   <div ref={messagesEndRef} />
                 </div>
               )}
-            </div>
           </div>
 
-          {/* Input Area */}
-          <div 
-            className="border-t px-6 py-4"
-            style={{ borderColor: 'var(--border-light)', background: 'var(--bg-card)' }}
-          >
-            <div className="mx-auto" style={{ maxWidth: `${chatColumnMaxWidth}px` }}>
+          {/* ── Input area ── */}
+          <div style={{ padding: '20px 24px', borderTop: `1px solid ${SB.border}`, background: SB.surface }}>
               {/* File attachment preview */}
               {attachedFile && (
-                <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(255,106,0,0.3)' }}>
-                  <FileText className="w-3.5 h-3.5 shrink-0" style={{ color: '#FF6A00' }} />
-                  <span className="flex-1 text-xs truncate" style={{ color: 'var(--text-primary)', fontFamily: fontFamily.mono }}>{attachedFile.name}</span>
-                  {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>ready</span>}
-                  {attachedFile.hint && <span className="text-[9px] truncate max-w-[100px]" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{attachedFile.hint}</span>}
-                  <button onClick={() => setAttachedFile(null)} className="p-0.5 rounded" style={{ color: 'var(--text-muted)' }}>
-                    <X className="w-3 h-3" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '8px 12px', borderRadius: 8, background: SB.surface2, border: '1px solid rgba(232,93,0,0.3)' }}>
+                  <FileText size={14} style={{ color: SB.lava, flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: 12, color: SB.inkDisplay, fontFamily: fontFamily.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{attachedFile.name}</span>
+                  {attachedFile.type === 'text' && <span style={{ fontSize: 9, color: '#10B981', fontFamily: fontFamily.mono }}>ready</span>}
+                  {attachedFile.hint && <span style={{ fontSize: 9, color: '#F59E0B', fontFamily: fontFamily.mono, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{attachedFile.hint}</span>}
+                  <button onClick={() => setAttachedFile(null)} style={{ padding: 2, background: 'none', border: 0, cursor: 'pointer', color: SB.inkMuted }}>
+                    <X size={12} />
                   </button>
                 </div>
               )}
               {uploadedFiles.length > 0 && (
-                <p className="mb-2 text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: fontFamily.mono }}>
+                <p style={{ marginBottom: 8, fontSize: 10, color: SB.inkMuted, fontFamily: fontFamily.mono }}>
                   Uploaded files in this session: {uploadedFiles.length}
                 </p>
               )}
-              <div className="px-1 mb-2 relative" data-testid="soundboard-mode-toggle-wrapper">
-                <div className="flex flex-wrap items-center gap-2">
+
+              {/* Agent / mode toggle bar */}
+              <div style={{ marginBottom: 8, position: 'relative' }} data-testid="soundboard-mode-toggle-wrapper">
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                   <button
                     onClick={() => setSelectedAgent('general')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
                     style={{
+                      display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                      borderRadius: 999, fontSize: 12, fontWeight: 600, fontFamily: fontFamily.mono,
                       background: selectedAgent === 'general' ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.1)',
                       border: `1px solid ${selectedAgent === 'general' ? 'rgba(129,140,248,0.55)' : 'rgba(99,102,241,0.25)'}`,
-                      color: '#C7D2FE',
-                      fontFamily: fontFamily.mono
+                      color: '#C7D2FE', cursor: 'pointer',
                     }}
                   >
-                    <span>◎</span>
-                    <span>Advisor</span>
+                    <span>&#9678;</span><span>Advisor</span>
                   </button>
                   <button
                     onClick={() => setSelectedAgent('boardroom')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
                     style={{
+                      display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                      borderRadius: 999, fontSize: 12, fontWeight: 600, fontFamily: fontFamily.mono,
                       background: selectedAgent === 'boardroom' ? 'rgba(59,130,246,0.22)' : 'rgba(59,130,246,0.1)',
                       border: `1px solid ${selectedAgent === 'boardroom' ? 'rgba(96,165,250,0.55)' : 'rgba(59,130,246,0.25)'}`,
-                      color: '#93C5FD',
-                      fontFamily: fontFamily.mono
+                      color: '#93C5FD', cursor: 'pointer',
                     }}
                   >
-                    <span>🏛️</span>
-                    <span>Boardroom</span>
+                    <span>{'\uD83C\uDFDB\uFE0F'}</span><span>Boardroom</span>
                   </button>
                   <button
                     onClick={() => {
                       setShowAdvancedControls((prev) => !prev);
-                      if (showAdvancedControls) {
-                        setShowModeMenu(false);
-                        setShowAgentMenu(false);
-                      }
+                      if (showAdvancedControls) { setShowModeMenu(false); setShowAgentMenu(false); }
                     }}
-                    className="px-3 py-1.5 rounded-full text-[11px] font-semibold"
-                    style={{ background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.35)', color: '#CBD5E1', fontFamily: fontFamily.mono }}
+                    style={{
+                      padding: '6px 12px', borderRadius: 999, fontSize: 11, fontWeight: 600,
+                      background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.35)',
+                      color: '#CBD5E1', fontFamily: fontFamily.mono, cursor: 'pointer',
+                    }}
                   >
-                    {showAdvancedControls ? 'Hide advanced controls' : 'Show advanced controls'}
+                    {showAdvancedControls ? 'Hide advanced' : 'Advanced'}
                   </button>
                 </div>
 
                 {showAdvancedControls && (
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <div className="relative">
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                    <div style={{ position: 'relative' }}>
                       <button
                         onClick={() => { setShowModeMenu((v) => !v); setShowAgentMenu(false); }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110"
-                        style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                          borderRadius: 999, fontSize: 12, fontWeight: 600, fontFamily: fontFamily.mono,
+                          background: 'rgba(232,93,0,0.1)', border: '1px solid rgba(232,93,0,0.2)',
+                          color: SB.lava, cursor: 'pointer',
+                        }}
                         data-testid="soundboard-mode-selector"
                       >
                         <span>{activeMode?.icon}</span>
                         <span>{activeMode?.label}</span>
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </button>
-
                       {showModeMenu && (
-                        <div className="absolute bottom-full left-0 mb-2 w-80 rounded-xl overflow-hidden shadow-xl z-50"
-                          style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
+                        <div style={{ position: 'absolute', bottom: '100%', left: 0, marginBottom: 8, width: 320, borderRadius: 12, overflow: 'hidden', background: '#0F1720', border: '1px solid #1E2D3D', zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
                           {availableModes.map((mode, idx) => (
                             <button
                               key={mode.id}
                               onClick={() => { setSelectedMode(mode.id); setShowModeMenu(false); }}
-                              className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5"
-                              style={{ borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none' }}
+                              style={{
+                                width: '100%', display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px',
+                                textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer',
+                                borderBottom: idx < availableModes.length - 1 ? '1px solid #1E2D3D' : 'none',
+                              }}
                               data-testid={`soundboard-mode-option-${mode.id}`}
                             >
-                              <span className="text-lg shrink-0">{mode.icon}</span>
+                              <span style={{ fontSize: 18, flexShrink: 0 }}>{mode.icon}</span>
                               <div>
-                                <p className="text-sm font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>
+                                <p style={{ fontSize: 14, fontWeight: 600, color: selectedMode === mode.id ? SB.lava : SB.inkDisplay, fontFamily: fontFamily.body, margin: 0 }}>
                                   {mode.label}
                                   {selectedMode === mode.id && (
-                                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,106,0,0.15)', color: '#FF6A00' }}>
-                                      Active
-                                    </span>
+                                    <span style={{ marginLeft: 8, fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'rgba(232,93,0,0.15)', color: SB.lava }}>Active</span>
                                   )}
                                 </p>
-                                <p className="text-[11px] mt-0.5" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
+                                <p style={{ fontSize: 11, marginTop: 2, color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
                               </div>
                             </button>
                           ))}
-
                           {!canUseTrinity && (
-                            <a href="/subscribe" className="w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 no-underline"
-                              style={{ textDecoration: 'none' }} data-testid="soundboard-trinity-upgrade-link">
-                              <span className="text-lg shrink-0 opacity-40">◈</span>
+                            <a href="/subscribe" style={{
+                              width: '100%', display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px',
+                              textAlign: 'left', textDecoration: 'none',
+                            }} data-testid="soundboard-trinity-upgrade-link">
+                              <span style={{ fontSize: 18, flexShrink: 0, opacity: 0.4 }}>{'\u25C8'}</span>
                               <div>
-                                <p className="text-sm font-semibold" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>BIQc Trinity</p>
-                                <p className="text-[11px] mt-0.5" style={{ color: '#4A5568', fontFamily: fontFamily.body }}>Available on the paid plan</p>
+                                <p style={{ fontSize: 14, fontWeight: 600, color: '#4A5568', fontFamily: fontFamily.body, margin: 0 }}>BIQc Trinity</p>
+                                <p style={{ fontSize: 11, marginTop: 2, color: '#4A5568', fontFamily: fontFamily.body }}>Available on the paid plan</p>
                               </div>
                             </a>
                           )}
                         </div>
                       )}
                     </div>
-                    <div className="relative">
+                    <div style={{ position: 'relative' }}>
                       <button
                         onClick={() => { setShowAgentMenu((v) => !v); setShowModeMenu(false); }}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-                        style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', color: '#3B82F6', fontFamily: fontFamily.mono }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px',
+                          borderRadius: 999, fontSize: 12, fontWeight: 600, fontFamily: fontFamily.mono,
+                          background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
+                          color: '#3B82F6', cursor: 'pointer',
+                        }}
                         data-testid="soundboard-agent-selector"
                       >
-                        <span>{BIQC_AGENTS.find(a => a.id === selectedAgent)?.icon || '⚡'}</span>
+                        <span>{BIQC_AGENTS.find(a => a.id === selectedAgent)?.icon || '\u26A1'}</span>
                         <span>{BIQC_AGENTS.find(a => a.id === selectedAgent)?.label || 'Auto'}</span>
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </button>
                       {showAgentMenu && (
-                        <div className="absolute bottom-full left-0 mb-2 w-56 rounded-xl overflow-hidden shadow-xl z-50"
-                          style={{ background: '#0F1720', border: '1px solid #1E2D3D' }}>
-                          <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Agent</p>
+                        <div style={{ position: 'absolute', bottom: '100%', left: 0, marginBottom: 8, width: 224, borderRadius: 12, overflow: 'hidden', background: '#0F1720', border: '1px solid #1E2D3D', zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+                          <p style={{ padding: '6px 12px', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748B', fontFamily: fontFamily.mono, margin: 0 }}>Agent</p>
                           {BIQC_AGENTS.map((agent) => (
                             <button
                               key={agent.id}
                               onClick={() => { setSelectedAgent(agent.id); setShowAgentMenu(false); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all hover:bg-white/5"
-                              style={{ borderTop: '1px solid #1E2D3D' }}
+                              style={{
+                                width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                                textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer',
+                                borderTop: '1px solid #1E2D3D',
+                              }}
                               data-testid={`soundboard-agent-${agent.id}`}
                             >
-                              <span className="text-sm shrink-0">{agent.icon}</span>
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#F4F7FA', fontFamily: fontFamily.body }}>{agent.label}</p>
-                                <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{agent.shortDesc}</p>
+                              <span style={{ fontSize: 14, flexShrink: 0 }}>{agent.icon}</span>
+                              <div style={{ minWidth: 0 }}>
+                                <p style={{ fontSize: 12, fontWeight: 600, color: selectedAgent === agent.id ? '#3B82F6' : SB.inkDisplay, fontFamily: fontFamily.body, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{agent.label}</p>
+                                <p style={{ fontSize: 10, color: '#64748B', fontFamily: fontFamily.body, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{agent.shortDesc}</p>
                               </div>
                             </button>
                           ))}
                         </div>
                       )}
                     </div>
-                    <label className="flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold"
-                      style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#C7D2FE', fontFamily: fontFamily.mono }}>
+                    <label style={{
+                      display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px',
+                      borderRadius: 999, fontSize: 11, fontWeight: 600,
+                      background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
+                      color: '#C7D2FE', fontFamily: fontFamily.mono, cursor: 'pointer',
+                    }}>
                       <input
                         type="checkbox"
                         checked={deepForensicRun}
@@ -1177,6 +1216,7 @@ const MySoundBoard = () => {
                   </div>
                 )}
               </div>
+
               {showBoardroomViz && (
                 <BoardroomCouncilCard
                   checks={boardroomChecks}
@@ -1197,52 +1237,68 @@ const MySoundBoard = () => {
                 />
               )}
 
-              <div 
-                className="flex items-end gap-3 p-3 rounded-xl"
-                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
-              >
+              {/* Composer input row - mockup style */}
+              <div style={{
+                display: 'flex', alignItems: 'flex-end', gap: 12, padding: '12px 16px',
+                background: SB.surface2, border: `1px solid ${SB.border}`, borderRadius: 12,
+                transition: 'border-color 180ms ease',
+              }}>
                 <textarea
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : "Share what's on your mind..."}
-                  className="flex-1 resize-none bg-transparent outline-none text-sm"
-                  style={{ color: 'var(--text-primary)', minHeight: '24px', maxHeight: '120px' }}
+                  placeholder={attachedFile ? `Ask about ${attachedFile.name}...` : 'Ask BIQc anything...'}
+                  style={{
+                    flex: 1, border: 0, background: 'transparent', outline: 'none', resize: 'none',
+                    font: `400 15px/1.5 ${fontFamily.body}`, color: SB.ink,
+                    minHeight: 22, maxHeight: 160,
+                  }}
                   rows={1}
                   data-testid="soundboard-input"
+                  onFocus={(e) => { e.currentTarget.parentElement.style.borderColor = SB.lava; e.currentTarget.parentElement.style.boxShadow = `0 0 0 4px ${SB.lavaRing}`; }}
+                  onBlur={(e) => { e.currentTarget.parentElement.style.borderColor = SB.border; e.currentTarget.parentElement.style.boxShadow = 'none'; }}
                 />
-                {/* File attachment button */}
-                <input ref={fileRef} type="file" className="hidden" onChange={handleFileSelect}
+                <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={handleFileSelect}
                   accept=".txt,.csv,.md,.json,.log,.xml,.html,.py,.js,.ts,.sql,.pdf,.doc,.docx,.png,.jpg" />
-                <button onClick={() => fileRef.current?.click()}
-                  className="p-2 rounded-lg transition-all hover:bg-white/5 shrink-0"
-                  style={{ color: attachedFile ? '#FF6A00' : 'var(--text-muted)' }}
-                  data-testid="soundboard-attach" title="Attach file">
-                  <Paperclip className="w-4 h-4" />
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  style={{ padding: 8, background: 'none', border: 0, cursor: 'pointer', color: attachedFile ? SB.lava : SB.inkMuted, flexShrink: 0, borderRadius: 8 }}
+                  data-testid="soundboard-attach" title="Attach file"
+                >
+                  <Paperclip size={16} />
                 </button>
-                <Button
+                <button
                   onClick={() => sendMessage()}
                   disabled={(!input.trim() && !attachedFile) || loading}
-                  className="btn-primary p-2"
                   data-testid="send-message-btn"
+                  style={{
+                    width: 40, height: 40, background: SB.lava, color: '#fff',
+                    border: 0, borderRadius: 8, display: 'grid', placeItems: 'center',
+                    cursor: (!input.trim() && !attachedFile) || loading ? 'not-allowed' : 'pointer',
+                    flexShrink: 0, transition: 'all 180ms ease',
+                    opacity: (!input.trim() && !attachedFile) || loading ? 0.5 : 1,
+                  }}
                 >
-                  <Send className="w-4 h-4" />
-                </Button>
+                  <Send size={18} />
+                </button>
               </div>
-              <p className="text-xs text-center mt-2 hidden md:block" style={{ color: 'var(--text-muted)' }}>
-                Press Enter to send • Shift+Enter for new line
-              </p>
-            </div>
+
+              {/* Hint line */}
+              <div style={{ fontFamily: fontFamily.mono, fontSize: 10, color: SB.inkMuted, marginTop: 8, textAlign: 'center' }}>
+                <kbd style={{ padding: '1px 5px', background: SB.surface, border: `1px solid ${SB.border}`, borderRadius: 3 }}>{'\u21B5'}</kbd> to send{' \u00B7 '}
+                <kbd style={{ padding: '1px 5px', background: SB.surface, border: `1px solid ${SB.border}`, borderRadius: 3 }}>{'\u21E7\u21B5'}</kbd> for newline{' \u00B7 '}
+                BIQc reads your inbox, calendar, deals, and accounting
+              </div>
           </div>
           </>
           )}
-        </div>
+        </section>
       </div>
-      
+
       {/* Voice Chat Modal */}
       {showVoiceChat && (
-        <VoiceChat 
+        <VoiceChat
           onClose={() => setShowVoiceChat(false)}
           onSwitchToText={() => setShowVoiceChat(false)}
         />

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Pencil } from 'lucide-react';
 
-const CHARCOAL = '#F4F7FA';
-const MUTED = '#9FB0C3';
-const GOLD = '#FF6A00';
-const CARD_BG = '#141C26';
-const CARD_BORDER = '#243140';
+const CHARCOAL = '#EDF1F7';
+const MUTED = '#8FA0B8';
+const GOLD = '#E85D00';
+const CARD_BG = 'var(--surface, #0E1628)';
+const CARD_BORDER = 'rgba(140,170,210,0.15)';
 const SERIF = "var(--font-heading)";
 
 const WOW_CATEGORIES = ['Profile', 'Market', 'Product', 'Team', 'Strategy'];
@@ -135,7 +135,7 @@ const WowSummary = ({
           <button
             onClick={handleConfirmWow} disabled={isSubmitting}
             className="px-8 py-3.5 rounded-full text-sm font-medium transition-all disabled:opacity-40 hover:brightness-110"
-            style={{ background: '#FF6A00', color: '#FFFFFF' }}
+            style={{ background: '#E85D00', color: '#FFFFFF' }}
             data-testid="confirm-wow-btn"
           >{isSubmitting ? 'Confirming...' : 'Confirm & Continue'}</button>
         </div>
@@ -151,7 +151,7 @@ const DissolveTransition = ({ firstName }) => (
         Thank you, {firstName || 'there'}. With your foundation verified, I now need to understand how you navigate high-stakes decisions.
       </p>
       <div className="mt-6">
-        <span className="text-xs" style={{ color: '#FF6A00', fontFamily: "'JetBrains Mono', monospace" }}>confirming...</span>
+        <span className="text-xs" style={{ color: '#E85D00', fontFamily: "'JetBrains Mono', monospace" }}>confirming...</span>
       </div>
     </div>
   </div>

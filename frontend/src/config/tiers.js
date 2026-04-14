@@ -3,7 +3,7 @@ import { checkRouteAccess } from '../lib/tierResolver';
 
 export const TIERS = {
   free: { id: 'free', label: 'Free', price: 0, color: '#64748B' },
-  starter: { id: 'starter', label: 'Growth', price: 69, color: '#FF6A00' },
+  starter: { id: 'starter', label: 'Growth', price: 69, color: '#E85D00' },
   pro: { id: 'pro', label: 'Professional', price: 199, color: '#3B82F6' },
   enterprise: { id: 'enterprise', label: 'Enterprise', price: null, color: '#8B5CF6' },
   custom_build: { id: 'custom_build', label: 'Custom Build', price: null, color: '#10B981' },

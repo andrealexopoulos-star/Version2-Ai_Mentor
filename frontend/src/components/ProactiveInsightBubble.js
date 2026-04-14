@@ -19,16 +19,16 @@ const DISMISSED_KEY = 'biqc_dismissed_proactive';
 
 const ICON_MAP = {
   alert:        { icon: AlertTriangle, color: '#EF4444' },
-  deal:         { icon: TrendingDown,  color: '#FF6A00' },
+  deal:         { icon: TrendingDown,  color: '#E85D00' },
   calendar:     { icon: Calendar,      color: '#3B82F6' },
   email:        { icon: Mail,          color: '#8B5CF6' },
   cash:         { icon: DollarSign,    color: '#EF4444' },
-  default:      { icon: Zap,           color: '#FF6A00' },
+  default:      { icon: Zap,           color: '#E85D00' },
 };
 
 const PRIORITY_COLORS = {
   critical: '#EF4444',
-  high:     '#FF6A00',
+  high:     '#E85D00',
   medium:   '#F59E0B',
   low:      '#64748B',
 };
@@ -106,7 +106,7 @@ export const ProactiveInsightBubble = () => {
   if (!visible || !insight) return null;
 
   const { icon: Icon, color } = ICON_MAP[insight.icon] || ICON_MAP.default;
-  const priorityColor = PRIORITY_COLORS[insight.priority] || '#FF6A00';
+  const priorityColor = PRIORITY_COLORS[insight.priority] || '#E85D00';
 
   return (
     <div
@@ -149,7 +149,7 @@ export const ProactiveInsightBubble = () => {
                     · {insight.source}
                   </span>
                 </div>
-                <p className="text-sm font-semibold leading-snug" style={{ color: '#F4F7FA', fontFamily: fontFamily.display }}>
+                <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
                   {insight.title}
                 </p>
               </div>
@@ -162,7 +162,7 @@ export const ProactiveInsightBubble = () => {
 
           {/* Message */}
           <p className="text-xs leading-relaxed mb-3"
-            style={{ color: '#9FB0C3', fontFamily: fontFamily.body, marginLeft: 44 }}>
+            style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body, marginLeft: 44 }}>
             {insight.message}
           </p>
 
@@ -180,13 +180,13 @@ export const ProactiveInsightBubble = () => {
           <div className="flex items-center gap-2 ml-11">
             <button onClick={handleAsk}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:brightness-110"
-              style={{ background: '#FF6A00', color: 'white', fontFamily: fontFamily.body }}
+              style={{ background: '#E85D00', color: 'white', fontFamily: fontFamily.body }}
               data-testid="proactive-ask-soundboard">
               Ask BIQc <ArrowRight className="w-3 h-3" />
             </button>
             <button onClick={() => handleDismiss()}
               className="px-3 py-1.5 rounded-lg text-xs transition-all"
-              style={{ background: 'transparent', border: '1px solid #243140', color: '#64748B', fontFamily: fontFamily.body }}>
+              style={{ background: 'transparent', border: '1px solid rgba(140,170,210,0.15)', color: '#64748B', fontFamily: fontFamily.body }}>
               Dismiss
             </button>
           </div>

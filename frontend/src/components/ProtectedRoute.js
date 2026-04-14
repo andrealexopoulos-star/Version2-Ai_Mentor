@@ -27,11 +27,11 @@ const LoadingScreen = () => {
         @keyframes biqcBar{0%{width:0}100%{width:100%}}
       `}</style>
       <div className="text-center space-y-6">
-        <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto" style={{ background: '#FF6A00', animation: 'biqcPulse 2s ease-in-out infinite' }}>
+        <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto" style={{ background: '#E85D00', animation: 'biqcPulse 2s ease-in-out infinite' }}>
           <span className="text-white font-bold text-xl" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
         </div>
         <div style={{ animation: 'biqcFade 0.8s ease-out' }}>
-          <p className="text-lg font-semibold text-[#F4F7FA]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+          <p className="text-lg font-semibold text-[#EDF1F7]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
             Good {greeting}.
           </p>
           <p className="text-sm text-[#64748B] mt-1" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -39,8 +39,8 @@ const LoadingScreen = () => {
           </p>
         </div>
         <div className="w-48 mx-auto">
-          <div className="h-1 rounded-full overflow-hidden" style={{ background: '#243140' }}>
-            <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, #FF6A00, #FF8C33)', animation: 'biqcBar 3s ease-in-out infinite' }} />
+          <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
+            <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, #E85D00, #FF8C33)', animation: 'biqcBar 3s ease-in-out infinite' }} />
           </div>
         </div>
       </div>

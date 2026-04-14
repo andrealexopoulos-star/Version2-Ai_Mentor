@@ -1,30 +1,43 @@
+/**
+ * ContactPage — "Get in Touch" marketing page.
+ *
+ * Sections: Hero, Two-column (Form + Info cards), Map, Footer (via WebsiteLayout).
+ * Supports ?source=waitlist&label=X and ?source=custom_connector query params.
+ * Posts to /api/enterprise/contact-request.
+ */
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Shield, ChevronDown, ChevronUp, Send } from 'lucide-react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import WebsiteLayout from '../components/website/WebsiteLayout';
+import { Shield, Send, Mail, MapPin, Clock, Calendar, ArrowRight, Lock, Zap } from 'lucide-react';
 import { apiClient } from '../lib/api';
+import { fontFamily } from '../design-system/tokens';
 
-const CHARCOAL = '#0F1720';
-const MUTED = '#64748B';
-const ORANGE = '#FF6A00';
-const BORDER = 'rgba(180,195,215,0.35)';
-
-const ContactPage = () => {
+export default function ContactPage() {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
   const waitlistLabel = searchParams.get('label') || '';
   const isWaitlist = searchParams.get('source') === 'waitlist';
   const isCustomConnector = searchParams.get('source') === 'custom_connector';
-  const [form, setForm] = useState({ name: '', email: '', company: '', phone: '', businessSize: '', featureLabel: waitlistLabel, message: '' });
-  const [infoOpen, setInfoOpen] = useState(true);
+
+  const [form, setForm] = useState({
+    name: '', email: '', company: '', subject: '',
+    featureLabel: waitlistLabel, businessSize: '', message: '',
+  });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
   const heading = useMemo(() => {
-    if (isCustomConnector) return 'Add a custom connector';
-    if (isWaitlist && waitlistLabel) return `Join the waitlist for ${waitlistLabel}`;
-    return 'Get in touch';
+    if (isCustomConnector) return 'Add a Custom Connector';
+    if (isWaitlist && waitlistLabel) return `Join the Waitlist for ${waitlistLabel}`;
+    return 'Get in Touch';
   }, [isCustomConnector, isWaitlist, waitlistLabel]);
+
+  const subtitle = useMemo(() => {
+    if (isWaitlist) return 'Tell us why this feature matters and how large your business is.';
+    if (isCustomConnector) return 'Tell us which platform you need and what data BIQc should support.';
+    return "We'd love to hear from you.";
+  }, [isWaitlist, isCustomConnector]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,17 +45,15 @@ const ContactPage = () => {
     setSubmitError('');
     try {
       const now = new Date();
-      const callbackDate = now.toISOString().slice(0, 10);
-      const callbackTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       await apiClient.post('/enterprise/contact-request', {
         name: form.name,
         business_name: form.company,
         email: form.email,
-        phone: form.phone,
-        callback_date: callbackDate,
-        callback_time: callbackTime,
-        description: `${isWaitlist && form.businessSize ? `Business size: ${form.businessSize}. ` : ''}${isCustomConnector ? 'Custom connector request. ' : ''}${form.message}`,
-        feature_requested: form.featureLabel || waitlistLabel || (isCustomConnector ? 'Custom Connector' : ''),
+        phone: '',
+        callback_date: now.toISOString().slice(0, 10),
+        callback_time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+        description: `${form.subject ? `Subject: ${form.subject}. ` : ''}${isWaitlist && form.businessSize ? `Business size: ${form.businessSize}. ` : ''}${isCustomConnector ? 'Custom connector request. ' : ''}${form.message}`,
+        feature_requested: form.featureLabel || waitlistLabel || (isCustomConnector ? 'Custom Connector' : form.subject || ''),
         current_tier: isWaitlist ? 'waitlist' : (isCustomConnector ? 'custom_connector' : 'contact'),
       });
       setSubmitted(true);
@@ -55,194 +66,246 @@ const ContactPage = () => {
 
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
+  const inputStyle = {
+    background: 'var(--bg-secondary, #0B1120)',
+    border: '1px solid var(--border-card, rgba(140,170,210,0.12))',
+    color: 'var(--ink-body, #C8D4E4)',
+  };
+
   return (
-    <div className="min-h-screen" style={{ background: '#FAFAF8' }}>
-      {/* Nav */}
-      <header className="flex items-center justify-between px-6 py-4 border-b" style={{ background: 'white', borderColor: BORDER }}>
-        <button onClick={() => nav('/')} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors" data-testid="back-to-home">
-          <ArrowLeft className="w-4 h-4" /> Back to BIQc
-        </button>
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-black text-xs" style={{ background: ORANGE }}>B</div>
-          <span className="font-semibold text-sm" style={{ color: CHARCOAL }}>BIQc</span>
+    <WebsiteLayout>
+      {/* Hero */}
+      <section className="py-20 md:py-24 text-center px-6"
+        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(46,74,110,0.08) 0%, transparent 60%), linear-gradient(180deg, #080C14 0%, #0B1120 100%)' }}>
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-4xl md:text-[48px] font-bold leading-[1.15] tracking-tight mb-4"
+            style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+            {heading}
+          </h1>
+          <p className="text-lg max-w-[500px] mx-auto leading-relaxed"
+            style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            {subtitle}
+          </p>
         </div>
-      </header>
+      </section>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
+      {/* Contact Grid */}
+      <section className="pb-20 px-6" style={{ background: 'var(--bg-primary, #080C14)' }}>
+        <div className="max-w-[1120px] mx-auto">
+          <div className="grid lg:grid-cols-5 gap-8 items-start">
 
-          {/* LEFT — Contact Form */}
-          <div className="lg:col-span-3">
-            <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ fontFamily: 'var(--font-heading)', color: CHARCOAL, letterSpacing: '-0.03em' }}>
-              {heading}
-            </h1>
-            <p className="text-base text-slate-500 mb-8" style={{ fontFamily: 'var(--font-body)' }}>
-              {isWaitlist
-                ? 'Tell us why this feature matters, how large your business is, and what outcome you need. We’ll use that to prioritise launch demand.'
-                : isCustomConnector
-                  ? 'Tell us which platform you need, what data/actions BIQc should support, and where it should appear in your workflows.'
-                : 'Have questions? We\'ll show you exactly how BIQc works for your business.'}
-            </p>
-
-            {submitted ? (
-              <div className="rounded-2xl p-8 text-center" style={{ background: 'white', border: `1px solid ${BORDER}` }} data-testid="contact-success">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: '#ECFDF5' }}>
-                  <Shield className="w-6 h-6 text-emerald-600" />
-                </div>
-                <h2 className="text-xl font-bold mb-2" style={{ color: CHARCOAL, fontFamily: 'var(--font-heading)' }}>{isWaitlist ? 'You’re on the waitlist' : (isCustomConnector ? 'Connector request received' : 'We\'ve received your request')}</h2>
-                <p className="text-sm text-slate-500 mb-6">
-                  {isWaitlist
-                    ? 'Thanks for sharing your use case. We’ll use this to shape launch priorities and reach out when this module opens.'
-                    : isCustomConnector
-                      ? 'Our support team has received your connector request and will follow up shortly.'
-                      : 'A BIQc specialist will be in touch within 24 hours to schedule your demo.'}
-                </p>
-                <button onClick={() => nav('/')} className="px-6 py-3 rounded-full text-sm font-semibold text-white" style={{ background: CHARCOAL }}>
-                  Back to home
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5" data-testid="contact-form">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Full Name *</label>
-                    <input type="text" required value={form.name} onChange={(e) => update('name', e.target.value)}
-                      className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
-                      style={{ background: 'white', border: `1px solid ${BORDER}`, color: CHARCOAL }}
-                      placeholder="Your name" data-testid="contact-name" />
+            {/* Left: Form */}
+            <div className="lg:col-span-3 rounded-xl p-9"
+              style={{
+                background: 'linear-gradient(105deg, rgba(200,220,240,0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0) 55%), linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
+                border: '1px solid rgba(140,170,210,0.15)',
+              }}>
+              {submitted ? (
+                <div className="text-center py-8" data-testid="contact-success">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(22,163,74,0.15)' }}>
+                    <Shield className="w-6 h-6" style={{ color: '#16A34A' }} />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Work Email *</label>
-                    <input type="email" required value={form.email} onChange={(e) => update('email', e.target.value)}
-                      className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
-                      style={{ background: 'white', border: `1px solid ${BORDER}`, color: CHARCOAL }}
-                      placeholder="you@company.com" data-testid="contact-email" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Company</label>
-                    <input type="text" value={form.company} onChange={(e) => update('company', e.target.value)}
-                      className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
-                      style={{ background: 'white', border: `1px solid ${BORDER}`, color: CHARCOAL }}
-                      placeholder="Your company" data-testid="contact-company" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Phone</label>
-                    <input type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)}
-                      className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
-                      style={{ background: 'white', border: `1px solid ${BORDER}`, color: CHARCOAL }}
-                      placeholder="+61 400 000 000" data-testid="contact-phone" />
-                  </div>
-                </div>
-                {(isWaitlist || isCustomConnector) && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Feature Interest *</label>
-                      <select value={form.featureLabel} onChange={(e) => update('featureLabel', e.target.value)} required
-                        className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
-                        style={{ background: 'white', border: `1px solid ${BORDER}`, color: CHARCOAL }}
-                        data-testid="contact-feature-label">
-                        <option value="">Select feature</option>
-                        {[
-                          waitlistLabel,
-                          'Revenue Engine',
-                          'Operations Intelligence',
-                          'Risk & Workforce',
-                          'Boardroom',
-                          'War Room',
-                          'Intel Centre',
-                          'Analysis & Diagnosis Suite',
-                          'Automations',
-                          'Documents Library',
-                          'Watchtower',
-                          'Market Analysis',
-                          'Ops Advisory Centre',
-                          'Marketing Intelligence',
-                          'Custom Connector',
-                        ].filter(Boolean).filter((value, index, arr) => arr.indexOf(value) === index).map((option) => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>Business Size *</label>
-                      <select value={form.businessSize} onChange={(e) => update('businessSize', e.target.value)} required
-                        className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
-                        style={{ background: 'white', border: `1px solid ${BORDER}`, color: CHARCOAL }}
-                        data-testid="contact-business-size">
-                        <option value="">Select size</option>
-                        <option value="Solo">Solo</option>
-                        <option value="2-10">2-10 staff</option>
-                        <option value="11-25">11-25 staff</option>
-                        <option value="26-50">26-50 staff</option>
-                        <option value="51-100">51-100 staff</option>
-                        <option value="100+">100+ staff</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" style={{ fontFamily: 'var(--font-mono)' }}>What are you looking to solve?</label>
-                  <textarea value={form.message} onChange={(e) => update('message', e.target.value)} rows={4}
-                    className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none resize-none transition-colors"
-                    style={{ background: 'white', border: `1px solid ${BORDER}`, color: CHARCOAL }}
-                    placeholder={isWaitlist
-                      ? 'Why do you need this feature, what outcome do you want, and what has blocked you so far?'
+                  <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+                    {isWaitlist ? "You're on the waitlist" : isCustomConnector ? 'Connector request received' : 'Message sent'}
+                  </h2>
+                  <p className="text-sm mb-6" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                    {isWaitlist
+                      ? "We'll use this to shape launch priorities and reach out when this module opens."
                       : isCustomConnector
-                        ? 'Example: Connect ServiceM8. Need jobs, invoices, and technician schedules to drive BIQc operations alerts.'
-                        : 'Tell us about your business challenges...'}
-                    data-testid="contact-message" />
+                        ? 'Our team has received your connector request and will follow up shortly.'
+                        : "We'll get back to you within 24 hours."}
+                  </p>
+                  <button onClick={() => nav('/')}
+                    className="px-6 py-3 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110"
+                    style={{ background: 'var(--lava, #E85D00)' }}>
+                    Back to home
+                  </button>
                 </div>
-                <button type="submit" className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white font-semibold w-full sm:w-auto hover:-translate-y-0.5 transition-all"
-                  style={{ fontFamily: 'var(--font-heading)', background: CHARCOAL, fontSize: 15, boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="contact-submit" disabled={submitting}>
-                  <Send className="w-4 h-4" /> {submitting ? 'Submitting...' : (isWaitlist ? 'Join Waitlist' : (isCustomConnector ? 'Submit connector request' : 'Request Demo'))}
-                </button>
-                {submitError && (
-                  <p className="text-xs text-red-400" data-testid="contact-submit-error">{submitError}</p>
-                )}
-                <p className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>We'll respond within 24 hours. No spam, ever.</p>
-              </form>
-            )}
-          </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5" data-testid="contact-form">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Full Name</label>
+                    <input type="text" required value={form.name} onChange={(e) => update('name', e.target.value)}
+                      className="w-full rounded-lg px-3.5 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-[#E85D00]/20 focus:border-[#E85D00]"
+                      style={inputStyle} placeholder="Your full name" data-testid="contact-name" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Work Email</label>
+                    <input type="email" required value={form.email} onChange={(e) => update('email', e.target.value)}
+                      className="w-full rounded-lg px-3.5 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-[#E85D00]/20 focus:border-[#E85D00]"
+                      style={inputStyle} placeholder="you@company.com" data-testid="contact-email" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Company Name</label>
+                    <input type="text" value={form.company} onChange={(e) => update('company', e.target.value)}
+                      className="w-full rounded-lg px-3.5 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-[#E85D00]/20 focus:border-[#E85D00]"
+                      style={inputStyle} placeholder="Your company" data-testid="contact-company" />
+                  </div>
 
-          {/* RIGHT — Collapsible Info Panel */}
-          <div className="lg:col-span-2">
-            <div className="rounded-2xl overflow-hidden" style={{ background: CHARCOAL }}>
-              <button onClick={() => setInfoOpen(!infoOpen)}
-                className="w-full flex items-center justify-between px-6 py-5 text-left lg:cursor-default"
-                data-testid="info-panel-toggle">
-                <span className="text-xs font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)', color: ORANGE }}>Why BIQc?</span>
-                <span className="lg:hidden text-white">
-                  {infoOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </span>
-              </button>
+                  {/* Waitlist / Custom Connector fields */}
+                  {(isWaitlist || isCustomConnector) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Feature Interest *</label>
+                        <select value={form.featureLabel} onChange={(e) => update('featureLabel', e.target.value)} required
+                          className="w-full rounded-lg px-3.5 py-2.5 text-sm outline-none appearance-none"
+                          style={inputStyle} data-testid="contact-feature-label">
+                          <option value="">Select feature</option>
+                          {[waitlistLabel, 'Revenue Engine', 'Operations Intelligence', 'Risk & Workforce', 'Boardroom', 'War Room', 'Intel Centre', 'Analysis & Diagnosis Suite', 'Automations', 'Documents Library', 'Watchtower', 'Market Analysis', 'Ops Advisory Centre', 'Marketing Intelligence', 'Custom Connector']
+                            .filter(Boolean).filter((v, i, a) => a.indexOf(v) === i)
+                            .map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Business Size *</label>
+                        <select value={form.businessSize} onChange={(e) => update('businessSize', e.target.value)} required
+                          className="w-full rounded-lg px-3.5 py-2.5 text-sm outline-none appearance-none"
+                          style={inputStyle} data-testid="contact-business-size">
+                          <option value="">Select size</option>
+                          {['Solo', '2-10 staff', '11-25 staff', '26-50 staff', '51-100 staff', '100+ staff'].map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
 
-              <div className={`px-6 pb-6 space-y-5 transition-all duration-300 ${infoOpen ? 'block' : 'hidden lg:block'}`}>
+                  {/* Standard Subject (only for non-waitlist/connector) */}
+                  {!isWaitlist && !isCustomConnector && (
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Subject</label>
+                      <select value={form.subject} onChange={(e) => update('subject', e.target.value)} required
+                        className="w-full rounded-lg px-3.5 py-2.5 text-sm outline-none appearance-none"
+                        style={inputStyle} data-testid="contact-subject">
+                        <option value="" disabled>Select a topic</option>
+                        <option value="general">General Inquiry</option>
+                        <option value="demo">Product Demo</option>
+                        <option value="enterprise">Enterprise Sales</option>
+                        <option value="support">Support</option>
+                        <option value="partnership">Partnership</option>
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Message</label>
+                    <textarea value={form.message} onChange={(e) => update('message', e.target.value)} rows={5} required
+                      className="w-full rounded-lg px-3.5 py-2.5 text-sm outline-none resize-y transition-all focus:ring-2 focus:ring-[#E85D00]/20 focus:border-[#E85D00]"
+                      style={{ ...inputStyle, minHeight: 120 }}
+                      placeholder={isWaitlist ? 'Why do you need this feature and what outcome do you want?' : isCustomConnector ? 'Which platform, what data/actions, and where it should appear in BIQc...' : 'How can we help?'}
+                      data-testid="contact-message" />
+                  </div>
+                  <button type="submit" disabled={submitting}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-[15px] font-semibold text-white transition-all hover:brightness-110 disabled:opacity-60"
+                    style={{ background: 'var(--lava, #E85D00)' }} data-testid="contact-submit">
+                    <Send className="w-4 h-4" />
+                    {submitting ? 'Sending...' : isWaitlist ? 'Join Waitlist' : isCustomConnector ? 'Submit Request' : 'Send Message'}
+                  </button>
+                  {submitError && <p className="text-xs text-red-400" data-testid="contact-submit-error">{submitError}</p>}
+                </form>
+              )}
+            </div>
+
+            {/* Right: Info Column */}
+            <div className="lg:col-span-2 flex flex-col gap-5">
+              {/* Contact Details Card */}
+              <div className="rounded-xl p-7"
+                style={{
+                  background: 'linear-gradient(105deg, rgba(200,220,240,0) 0%, rgba(200,220,240,0.06) 45%, rgba(200,220,240,0) 55%), linear-gradient(180deg, rgba(140,170,210,0.04) 0%, rgba(140,170,210,0.01) 100%)',
+                  border: '1px solid rgba(140,170,210,0.15)',
+                }}>
+                <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Contact details</h3>
                 {[
-                  { label: 'Your Digital Leadership Team', desc: 'CTO, Finance Manager, Marketing Manager, COO, CCO - deployed as AI agents working 24/7 across your business.' },
-                  { label: 'Australian Sovereign', desc: 'Your data stays on Australian soil. Protected by local privacy laws. Zero foreign access.' },
-                  { label: 'Not a Dashboard', desc: 'BIQc doesn\'t wait for you to ask. It monitors, detects, alerts, and acts — before problems become crises.' },
-                  { label: 'Live in Minutes', desc: 'Connect one tool and BIQc begins monitoring immediately. No implementation project. No consultants.' },
-                ].map((item, i) => (
-                  <div key={i} className="border-l-2 pl-4" style={{ borderColor: `${ORANGE}60` }}>
-                    <p className="text-sm font-semibold text-white mb-1" style={{ fontFamily: 'var(--font-heading)' }}>{item.label}</p>
-                    <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
+                  { icon: <Mail className="w-4 h-4" />, label: 'Email', value: 'hello@biqc.com' },
+                  { icon: <MapPin className="w-4 h-4" />, label: 'Location', value: 'Sydney, Australia' },
+                  { icon: <Clock className="w-4 h-4" />, label: 'Response time', value: 'We typically respond within 24 hours' },
+                  { icon: <Calendar className="w-4 h-4" />, label: 'Office hours', value: 'Mon\u2013Fri, 9am\u20135pm AEST' },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-start gap-3 mb-4 last:mb-0">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(232,93,0,0.12)', color: 'var(--lava, #E85D00)' }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <div className="text-[13px] mb-0.5" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{item.label}</div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{item.value}</div>
+                    </div>
                   </div>
                 ))}
-                <div className="pt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-emerald-400" strokeWidth={2} />
-                    <p className="text-[10px] text-slate-500" style={{ fontFamily: 'var(--font-mono)' }}>No credit card required · Australian owned & operated</p>
-                  </div>
-                </div>
+              </div>
+
+              {/* Support Card */}
+              <div className="rounded-xl p-7"
+                style={{ background: 'rgba(232,93,0,0.06)', border: '1px solid rgba(232,93,0,0.2)' }}>
+                <h4 className="text-[15px] font-semibold mb-2" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Looking for support?</h4>
+                <p className="text-sm mb-4 leading-relaxed" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                  Check our knowledge base for answers to common questions, troubleshooting guides, and getting-started resources.
+                </p>
+                <Link to="/knowledge-base" className="inline-flex items-center gap-1 text-sm font-semibold transition-colors hover:underline"
+                  style={{ color: 'var(--lava, #E85D00)' }}>
+                  Visit Knowledge Base <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-};
+      </section>
 
-export default ContactPage;
+      {/* Map Section */}
+      <section className="pb-24 px-6" style={{ background: 'var(--bg-primary, #080C14)' }}>
+        <div className="max-w-[1120px] mx-auto">
+          <div className="rounded-xl overflow-hidden grid md:grid-cols-2 min-h-[280px]"
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid var(--border-card, rgba(140,170,210,0.12))' }}>
+            {/* Map Visual */}
+            <div className="flex flex-col items-center justify-center py-10 px-10 relative"
+              style={{ background: 'linear-gradient(135deg, rgba(232,93,0,0.08) 0%, rgba(232,93,0,0.12) 50%, rgba(232,93,0,0.06) 100%)' }}>
+              <div className="w-12 h-12 rounded-full rounded-bl-none rotate-[-45deg] flex items-center justify-center mb-5"
+                style={{ background: 'var(--lava, #E85D00)', boxShadow: '0 4px 12px rgba(232,93,0,0.2)' }}>
+                <div className="w-[18px] h-[18px] rounded-full rotate-45" style={{ background: 'var(--surface, #0E1628)' }} />
+              </div>
+              <div className="text-lg font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>Sydney, Australia</div>
+              <div className="text-sm mt-1" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Headquarters</div>
+            </div>
+            {/* Map Info */}
+            <div className="flex flex-col justify-center py-10 px-10">
+              <h3 className="text-2xl font-semibold mb-4"
+                style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>
+                Built in Australia, for Australia
+              </h3>
+              <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                BIQc is headquartered in Sydney, with all data infrastructure hosted domestically in Sydney and Melbourne data centres.
+              </p>
+              {[
+                { icon: '🇦🇺', text: '100% Australian-hosted data' },
+                { icon: <Lock className="w-4 h-4" />, text: 'SOC 2 aligned infrastructure' },
+                { icon: <Zap className="w-4 h-4" />, text: 'Low-latency for APAC region' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 mb-2 text-sm" style={{ color: 'var(--ink-body, #C8D4E4)' }}>
+                  <span className="text-base">{item.icon}</span>
+                  {item.text}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom CTA */}
+      <section className="py-24 px-6 text-center" style={{ background: 'var(--bg-primary, #080C14)' }}>
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--ink-display, #EDF1F7)' }}>
+            Ready to See Your Business Clearly?
+          </h2>
+          <p className="text-lg mb-8" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+            Start free. No credit card required. Intelligence in minutes.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/register"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-white transition-all hover:brightness-110"
+              style={{ background: 'var(--lava, #E85D00)', boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }}>
+              Start Free Today <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+    </WebsiteLayout>
+  );
+}

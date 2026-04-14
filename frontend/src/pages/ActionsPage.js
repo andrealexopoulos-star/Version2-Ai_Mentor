@@ -11,8 +11,8 @@ import { toast } from 'sonner';
 import { DelegateActionModal } from '../components/advisor/DelegateActionModal';
 
 
-const Panel = ({ children, className = '' }) => (
-  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>
+const Panel = ({ children, className = '', ...props }) => (
+  <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }} {...props}>{children}</div>
 );
 
 const SEV = { high: { bg: '#EF444410', b: '#EF444425', d: '#EF4444' }, medium: { bg: '#F59E0B10', b: '#F59E0B25', d: '#F59E0B' }, low: { bg: '#10B98110', b: '#10B98125', d: '#10B981' } };
@@ -26,6 +26,8 @@ const ActionsPage = () => {
   const reallocation = c.reallocation || [];
   const priority = c.priority || {};
   const advisorAssignment = location.state?.advisorAssignment || null;
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [delegateModalOpen, setDelegateModalOpen] = useState(false);
   const [delegateSubmitting, setDelegateSubmitting] = useState(false);
   const [delegateProviders, setDelegateProviders] = useState([]);
@@ -162,12 +164,83 @@ const ActionsPage = () => {
     (priorityPrimary.includes('integrate email, crm') && hasEmail && hasCRM);
   const cleanPriority = isStaleIntegrationPriority ? {} : priority;
 
+  // Filter resolution queue based on toolbar filter and search query
+  const filteredRq = rq.filter(item => {
+    // Filter by status/severity pill
+    if (activeFilter === 'urgent') return item.severity === 'high';
+    if (activeFilter === 'inprogress') return item.status === 'in_progress';
+    if (activeFilter === 'done') return item.status === 'done' || item.status === 'complete';
+    if (activeFilter === 'overdue') return item.severity === 'high' || item.overdue;
+    return true; // 'all'
+  }).filter(item => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (item.title || '').toLowerCase().includes(q) ||
+           (item.issue || '').toLowerCase().includes(q) ||
+           (item.detail || '').toLowerCase().includes(q);
+  });
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-[1200px]" style={{ fontFamily: fontFamily.body }} data-testid="actions-page">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Resolution Centre</h1>
-          <p className="text-sm text-[#9FB0C3]">AI-detected issues requiring action. Each item maps to a one-click resolution.</p>
+          <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+            — Actions · {rq.length} open
+          </div>
+          <h1 className="font-medium mb-1" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+            What's <em style={{ fontStyle: 'italic', color: '#E85D00' }}>actually moving</em>.
+          </h1>
+          <p className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>Every action started life as an alert, an email thread, a deal change, or a BIQc nudge. Drag a card forward when you've done it.</p>
+        </div>
+
+        {/* Stats cards — matches mockup */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'To-Do', value: loading ? '\u2014' : rq.length },
+            { label: 'In Flight', value: loading ? '\u2014' : 0 },
+            { label: 'Done This Week', value: loading ? '\u2014' : 0 },
+            { label: 'Overdue', value: loading ? '\u2014' : rq.filter(i => i.severity === 'high').length },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: '20px' }}>
+              <span style={{ fontFamily: fontFamily.display, fontSize: 28, color: 'var(--ink-display, #EDF1F7)', display: 'block', lineHeight: 1 }}>{value}</span>
+              <span style={{ fontFamily: fontFamily.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-secondary, #8FA0B8)', display: 'block', marginTop: 8 }}>{label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Filter + Search toolbar */}
+        <div className="flex items-center gap-3 flex-wrap" data-testid="actions-toolbar">
+          {[['all','All'],['urgent','Urgent'],['inprogress','In Progress'],['done','Done'],['overdue','Overdue']].map(([val,label]) => (
+            <button key={val} onClick={() => setActiveFilter(val)}
+              className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all"
+              style={{
+                background: activeFilter === val ? 'var(--surface-sunken, #060A12)' : 'transparent',
+                color: activeFilter === val ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8',
+                border: activeFilter === val ? '1px solid rgba(140,170,210,0.2)' : '1px solid rgba(140,170,210,0.08)',
+                fontFamily: fontFamily.mono,
+              }}
+              data-testid={`actions-filter-${val}`}>
+              {label}
+            </button>
+          ))}
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search actions..."
+            className="flex-1 min-w-[200px] px-3 py-2 rounded-lg text-sm actions-toolbar-search"
+            style={{
+              background: 'var(--surface, #0E1628)',
+              border: '1px solid rgba(140,170,210,0.12)',
+              color: 'var(--ink-display, #EDF1F7)',
+              fontFamily: fontFamily.body,
+              outline: 'none',
+            }}
+            data-testid="actions-search-input"
+          />
+          <style>{`
+            .actions-toolbar-search::placeholder { color: #5C6E82 !important; }
+          `}</style>
         </div>
 
         {loading && <CognitiveMesh message="Scanning resolution queue..." />}
@@ -178,9 +251,9 @@ const ActionsPage = () => {
               <Panel className="mb-2" data-testid="actions-advisor-assignment-card">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="max-w-3xl">
-                    <p className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Advisor handoff</p>
-                    <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{advisorAssignment.title}</p>
-                    <p className="mt-2 text-xs text-[#9FB0C3] leading-relaxed">{advisorAssignment.summary}</p>
+                    <p className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Advisor handoff</p>
+                    <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{advisorAssignment.title}</p>
+                    <p className="mt-2 text-xs text-[#8FA0B8] leading-relaxed">{advisorAssignment.summary}</p>
                     <p className="mt-2 text-xs text-[#64748B]">Why now: {advisorAssignment.whyNow}</p>
                     <p className="mt-2 text-xs text-[#64748B]">If ignored: {advisorAssignment.ifIgnored}</p>
                   </div>
@@ -198,17 +271,17 @@ const ActionsPage = () => {
 
             {/* Priority Focus — filtered to remove stale integration prompts */}
             {(cleanPriority.primary || cleanPriority.secondary) && (
-              <div className="rounded-xl p-5" style={{ background: '#FF6A0008', border: '1px solid #FF6A0025' }}>
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Priority Focus</h3>
+              <div className="rounded-xl p-5" style={{ background: '#E85D0008', border: '1px solid #E85D0025' }}>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Priority Focus</h3>
                 {cleanPriority.primary && (
                   <div className="mb-3">
-                    <span className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{cleanPriority.primary}</span>
+                    <span className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{cleanPriority.primary}</span>
                     {cleanPriority.primary_hrs && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: fontFamily.mono }}>{cleanPriority.primary_hrs}</span>}
                   </div>
                 )}
                 {cleanPriority.secondary && (
                   <div className="mb-2">
-                    <span className="text-sm text-[#9FB0C3]">{cleanPriority.secondary}</span>
+                    <span className="text-sm text-[#8FA0B8]">{cleanPriority.secondary}</span>
                     {cleanPriority.delegate && <span className="text-xs text-[#64748B] ml-2" style={{ fontFamily: fontFamily.mono }}>Delegate: {cleanPriority.delegate}</span>}
                   </div>
                 )}
@@ -217,23 +290,23 @@ const ActionsPage = () => {
             )}
 
             {/* Resolution Queue */}
-            {rq.length > 0 ? (
+            {filteredRq.length > 0 ? (
               <div>
-                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Resolution Queue ({rq.length})</h3>
+                <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Resolution Queue ({filteredRq.length})</h3>
                 <div className="space-y-3">
-                  {rq.map((item, i) => {
+                  {filteredRq.map((item, i) => {
                     const sv = SEV[item.severity] || SEV.medium;
                     return (
                       <div key={i} className="rounded-xl p-5" style={{ background: sv.bg, border: `1px solid ${sv.b}` }}>
                         <div className="flex items-start gap-3">
                           <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: sv.d }} />
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
-                            {item.detail && <p className="text-xs mt-1 text-[#9FB0C3] leading-relaxed">{item.detail}</p>}
+                            <p className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{item.title}</p>
+                            {item.detail && <p className="text-xs mt-1 text-[#8FA0B8] leading-relaxed">{item.detail}</p>}
                             <div className="flex flex-wrap gap-2 mt-3">
                               {(item.actions || []).includes('auto-email') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#3B82F615', color: '#3B82F6', border: '1px solid #3B82F630', fontFamily: fontFamily.mono }}><Mail className="w-3.5 h-3.5" />Auto-Email</button>}
                               {(item.actions || []).includes('quick-sms') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: fontFamily.mono }}><MessageSquare className="w-3.5 h-3.5" />Quick-SMS</button>}
-                              {(item.actions || []).includes('hand-off') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#FF6A0015', color: '#FF6A00', border: '1px solid #FF6A0030', fontFamily: fontFamily.mono }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
+                              {(item.actions || []).includes('hand-off') && <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#E85D0015', color: '#E85D00', border: '1px solid #E85D0030', fontFamily: fontFamily.mono }}><Users className="w-3.5 h-3.5" />Hand Off</button>}
                               <button className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg text-[11px] font-semibold" style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: fontFamily.mono }}><CheckCircle2 className="w-3.5 h-3.5" />Complete</button>
                             </div>
                           </div>
@@ -260,8 +333,8 @@ const ActionsPage = () => {
                       <div className="flex items-start gap-3">
                         <ArrowRight className="w-4 h-4 text-[#3B82F6] shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>{r.action}</p>
-                          <p className="text-xs text-[#9FB0C3] mt-1">{r.impact}</p>
+                          <p className="text-sm text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>{r.action}</p>
+                          <p className="text-xs text-[#8FA0B8] mt-1">{r.impact}</p>
                         </div>
                       </div>
                     </Panel>

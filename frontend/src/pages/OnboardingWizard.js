@@ -1,23 +1,22 @@
 import { CognitiveMesh } from '../components/LoadingSystems';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
-import { Card, CardContent } from '../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Progress } from '../components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
-import { 
-  Rocket, Building2, Lightbulb, ArrowRight, ArrowLeft, 
-  CheckCircle, Loader2, Target, Users, TrendingUp,
-  DollarSign, Zap, Brain, Globe, ExternalLink, Package
+import {
+  Building2, ArrowRight, ArrowLeft,
+  CheckCircle, Target, Users, TrendingUp,
+  Zap, Brain, Globe, ExternalLink, Package, Check, Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
 import { trackActivationStep } from '../lib/analytics';
+import { fontFamily } from '../design-system/tokens';
 
 const STEPS = [
   { id: 'welcome', label: 'Welcome', icon: Zap },
@@ -28,6 +27,16 @@ const STEPS = [
   { id: 'team', label: 'Team', icon: Users },
   { id: 'goals', label: 'Goals & Strategy', icon: TrendingUp },
   { id: 'preferences', label: 'BIQC Preferences', icon: Brain },
+  { id: 'signals', label: 'Tune Signals', icon: Activity },
+];
+
+/* Sidebar steps match the mockup's 5-step wizard chrome */
+const SIDEBAR_STEPS = [
+  { num: 1, name: 'Account created', hint: 'Done' },
+  { num: 2, name: "What's your business?", hint: '~3 min' },
+  { num: 3, name: 'Connect your tools', hint: 'Inbox, CRM, accounting' },
+  { num: 4, name: 'Tune your signals', hint: 'What good looks like' },
+  { num: 5, name: 'Your first brief', hint: 'Live in 90 seconds' },
 ];
 
 const OnboardingWizard = () => {
@@ -40,6 +49,15 @@ const OnboardingWizard = () => {
   const [existingProfile, setExistingProfile] = useState({});
   const [resolvedFieldsMap, setResolvedFieldsMap] = useState({});
   const [enriching, setEnriching] = useState(false);
+  const [signalToggles, setSignalToggles] = useState({
+    deal_stalled: true,
+    cash_runway: true,
+    churn_risk: true,
+    invoice_aging: true,
+    meeting_overload: false,
+    competitor_mentions: true,
+    press_mentions: false,
+  });
   const [enrichPreview, setEnrichPreview] = useState(null);
   const saveTimerRef = useRef(null);
 
@@ -187,10 +205,14 @@ const OnboardingWizard = () => {
     }
   };
 
+  const toggleSignal = (key) => {
+    setSignalToggles(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const completeOnboarding = async () => {
     setSaving(true);
     try {
-      await apiClient.put('/business-profile', formData);
+      await apiClient.put('/business-profile', { ...formData, signal_preferences: signalToggles });
       await apiClient.post('/onboarding/complete');
       markOnboardingComplete();
       trackActivationStep('onboarding_complete', { entrypoint: 'onboarding_wizard' });
@@ -257,15 +279,15 @@ const OnboardingWizard = () => {
     const isConfirmed = resolvedFieldsMap[field]?.confirmed;
     return (
       <div key={field}>
-        <Label className="flex items-center gap-2">
+        <Label className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>
           {label}
           {existing && isConfirmed && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-normal">
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-normal" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981' }}>
               confirmed
             </span>
           )}
           {existing && !isConfirmed && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-normal">
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-normal" style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>
               {source === 'profile' ? 'from profile' : 'detected'}
             </span>
           )}
@@ -279,80 +301,123 @@ const OnboardingWizard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#080c14]">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#080C14' }}>
         <div className="text-center space-y-4">
           <CognitiveMesh compact />
-          <p className="text-sm text-white/40">Loading your profile...</p>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Loading your profile...</p>
         </div>
       </div>
     );
   }
 
+  /* Map internal wizard steps to the 5-step sidebar:
+     Sidebar 1 = Account created (always done)
+     Sidebar 2 = What's your business? (steps 0-7: welcome through preferences)
+     Sidebar 3 = Connect your tools (handled externally)
+     Sidebar 4 = Tune your signals (step 8: signal tuning)
+     Sidebar 5 = Your first brief (handled externally) */
+  const sidebarActive = currentStep >= 8 ? 4 : 2;
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#080c14] via-[#0f172a] to-[#162032]" data-testid="onboarding-wizard">
-      {/* Header */}
-      <header className="border-b border-white/10 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-white text-sm">BIQC Setup</h3>
-            <p className="text-xs text-white/40">{STEPS[currentStep]?.label}</p>
-          </div>
-        </div>
-        {currentStep > 0 && (
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-white/40 font-mono">
-              {currentStep}/{STEPS.length - 1}
-            </span>
-            <div className="w-24 h-1.5 rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-blue-500 transition-all duration-300"
-                style={{ width: `${completeness}%` }}
-              />
+    <div className="min-h-screen flex flex-col relative" style={{ background: '#080C14' }} data-testid="onboarding-wizard">
+      {/* Background glow */}
+      <div className="fixed -top-[300px] -right-[200px] w-[700px] h-[700px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,0,0.15) 0%, transparent 60%)', opacity: 0.4, filter: 'blur(100px)' }} />
+
+      <style>{`
+        .wiz-shell { display: grid; grid-template-columns: 1fr; flex: 1; position: relative; z-index: 1; }
+        .wiz-sidebar { display: none; }
+        @media (min-width: 1100px) { .wiz-shell { grid-template-columns: 320px 1fr; } .wiz-sidebar { display: flex; } }
+        .wiz-radio-card { transition: all 200ms cubic-bezier(0.4,0,0.2,1); cursor: pointer; }
+        .wiz-radio-card:hover { border-color: #E85D00 !important; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; }
+        .wiz-radio-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+        @media (min-width: 720px) { .wiz-radio-grid { grid-template-columns: 1fr 1fr; } }
+      `}</style>
+      <div className="wiz-shell">
+        {/* ── Wizard Sidebar ── */}
+        <aside className="wiz-sidebar flex-col justify-between relative overflow-hidden" style={{ background: '#0A0A0A', color: '#FFFFFF', padding: '40px 32px' }}>
+          {/* Animated lava orb */}
+          <div className="absolute -bottom-[100px] -left-[100px] w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, #E85D00 0%, transparent 60%)', opacity: 0.25, filter: 'blur(60px)', animation: 'wizOrbDrift 18s ease-in-out infinite' }} />
+          <style>{`@keyframes wizOrbDrift { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(40px, -30px); } }`}</style>
+
+          <div className="relative z-[1]">
+            {/* Brand */}
+            <Link to="/" className="flex items-center gap-3" style={{ color: '#FFFFFF', textDecoration: 'none' }}>
+              <span className="inline-block rounded-full" style={{ width: 10, height: 10, background: '#E85D00', boxShadow: '0 0 16px #E85D00' }} />
+              <span className="text-[22px] font-semibold" style={{ fontFamily: fontFamily.display }}>BIQc</span>
+            </Link>
+
+            {/* Step indicators */}
+            <div className="flex flex-col gap-4 mt-12">
+              {SIDEBAR_STEPS.map((s) => {
+                const isDone = s.num < sidebarActive;
+                const isActive = s.num === sidebarActive;
+                return (
+                  <div key={s.num} className="flex items-start gap-4 p-3 rounded-lg transition-all" style={{ background: isActive ? 'rgba(232,93,0,0.12)' : 'transparent' }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[13px] font-semibold" style={{
+                      fontFamily: fontFamily.mono,
+                      background: isDone || isActive ? '#E85D00' : 'rgba(255,255,255,0.08)',
+                      color: isDone || isActive ? 'white' : 'rgba(255,255,255,0.5)',
+                      border: isDone || isActive ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                      boxShadow: isActive ? '0 0 20px rgba(232,93,0,0.5)' : 'none',
+                    }}>
+                      {isDone ? <Check className="w-3.5 h-3.5" /> : s.num}
+                    </div>
+                    <div className="flex-1 pt-1">
+                      <div className="text-sm font-medium" style={{ color: isActive ? '#FF8C33' : '#FFFFFF' }}>{s.name}</div>
+                      <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                        {isDone && s.num === 1 ? (user?.email || 'Done') : s.hint}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        )}
-      </header>
 
-      {/* Content */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <Card className="w-full max-w-2xl bg-[#0f1629]/80 border-white/10 backdrop-blur-sm" data-testid="onboarding-card">
-          <CardContent className="p-8">
+          <div className="relative z-[1] text-[11px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'rgba(255,255,255,0.4)' }}>
+            Skip any step. Resume anytime. Your account is already created.
+          </div>
+        </aside>
+
+        {/* ── Main Content ── */}
+        <main className="overflow-y-auto" style={{ padding: 'clamp(24px, 4vw, 48px) clamp(24px, 4vw, 40px)' }}>
+          <div className="max-w-[720px] mx-auto">
+
             {/* STEP 0: Welcome */}
             {currentStep === 0 && (
               <div className="space-y-8" data-testid="onboarding-welcome">
                 <div className="text-center space-y-3">
-                  <div className="w-16 h-16 rounded-2xl bg-blue-600/20 flex items-center justify-center mx-auto">
-                    <Zap className="w-8 h-8 text-blue-400" />
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ background: 'rgba(232,93,0,0.12)' }}>
+                    <Zap className="w-8 h-8" style={{ color: '#E85D00' }} />
                   </div>
-                  <h1 className="text-3xl font-bold text-white">Welcome to BIQC</h1>
-                  <p className="text-white/60 max-w-md mx-auto">
+                  <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+                    Welcome to <em style={{ fontStyle: 'italic', color: '#E85D00' }}>BIQc</em>
+                  </h1>
+                  <p className="max-w-md mx-auto" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body, fontSize: '18px', lineHeight: 1.5 }}>
                     Your continuous business intelligence and situational awareness system.
                   </p>
                 </div>
 
                 <div className="space-y-4 max-w-lg mx-auto">
                   {[
-                    { icon: Target, title: 'BIQC Insights', desc: 'Real-time intelligence on your business health across finance, operations, and growth.' },
-                    { icon: Building2, title: 'Business DNA', desc: 'Your core identity, team, market, and strategy — the foundation BIQC uses to understand you.' },
-                    { icon: TrendingUp, title: 'Goals & Objectives', desc: 'Your priorities drive what BIQC monitors and what it escalates.' },
-                    { icon: Brain, title: 'How BIQC works', desc: 'BIQC observes signals, forms positions, and only speaks when findings cross your thresholds.' },
+                    { icon: Target, title: 'BIQc Insights', desc: 'Real-time intelligence on your business health across finance, operations, and growth.' },
+                    { icon: Building2, title: 'Business DNA', desc: 'Your core identity, team, market, and strategy — the foundation BIQc uses to understand you.' },
+                    { icon: TrendingUp, title: 'Goals & Objectives', desc: 'Your priorities drive what BIQc monitors and what it escalates.' },
+                    { icon: Brain, title: 'How BIQc works', desc: 'BIQc observes signals, forms positions, and only speaks when findings cross your thresholds.' },
                   ].map(item => (
-                    <div key={item.title} className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
-                      <div className="w-10 h-10 rounded-lg bg-blue-600/10 flex items-center justify-center flex-shrink-0">
-                        <item.icon className="w-5 h-5 text-blue-400" />
+                    <div key={item.title} className="flex items-start gap-4 p-4 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.15)' }}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'rgba(232,93,0,0.12)' }}>
+                        <item.icon className="w-5 h-5" style={{ color: '#E85D00' }} />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-white">{item.title}</h3>
-                        <p className="text-xs text-white/50 mt-0.5">{item.desc}</p>
+                        <h3 className="text-sm font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{item.title}</h3>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-muted, #708499)' }}>{item.desc}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <p className="text-xs text-white/30 text-center">
+                <p className="text-xs text-center" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                   Takes about 5 minutes. Your progress is saved automatically.
                 </p>
               </div>
@@ -361,21 +426,78 @@ const OnboardingWizard = () => {
             {/* STEP 1: Business Identity */}
             {currentStep === 1 && (
               <div className="space-y-6" data-testid="step-basics">
-                <StepHeader icon={Building2} title="Business Identity" subtitle="Let's start with who you are." />
-                
+                <WizStepHeader step={2} total={STEPS.length} title={<>What kind of <em style={{ fontStyle: 'italic', color: '#E85D00' }}>business</em> are you?</>} subtitle="This shapes which signals BIQc surfaces and which thresholds we use. You can fine-tune later." />
+
+                {/* Business type radio cards from mockup */}
+                <div style={{ marginTop: 40 }}>
+                  <h3 style={{ fontFamily: fontFamily.display, fontSize: 22, color: 'var(--ink-display, #EDF1F7)', marginBottom: 16 }}>Pick what fits closest</h3>
+                  <div className="wiz-radio-grid">
+                    {[
+                      { value: 'services', title: 'Services / consulting', desc: 'Project-based revenue, billable hours, retainers, proposals in flight.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h20M5 3v18h14V3M9 8h6M9 12h6M9 16h6"/></svg> },
+                      { value: 'saas', title: 'SaaS / software', desc: 'MRR, trials, churn, expansion. Product-led or sales-led growth.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> },
+                      { value: 'ecommerce', title: 'E-commerce / DTC', desc: 'Orders, AOV, inventory, marketing spend, ad performance.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg> },
+                      { value: 'agency', title: 'Agency / studio', desc: 'Client retainers, project profitability, team utilisation, scope creep.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg> },
+                      { value: 'trades', title: 'Trades / field services', desc: 'Job pipeline, quotes, scheduling, invoicing, AR aging.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
+                      { value: 'other', title: 'Something else', desc: 'Tell us in one line and BIQc will pick smart defaults.', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20M2 12h20"/></svg> },
+                    ].map(opt => {
+                      const isSelected = formData.business_type === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          className="wiz-radio-card"
+                          onClick={() => updateField('business_type', opt.value)}
+                          style={{
+                            padding: 20,
+                            background: isSelected ? 'rgba(232,93,0,0.06)' : 'var(--surface, #0E1628)',
+                            border: isSelected ? '1px solid #E85D00' : '1px solid rgba(140,170,210,0.12)',
+                            borderRadius: 12,
+                            textAlign: 'left',
+                            boxShadow: isSelected ? '0 8px 24px rgba(0,0,0,0.3)' : 'none',
+                            position: 'relative',
+                          }}
+                          data-testid={`radio-type-${opt.value}`}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                            <div style={{
+                              width: 36, height: 36, borderRadius: 8,
+                              display: 'grid', placeItems: 'center',
+                              background: isSelected ? '#E85D00' : 'var(--surface-2, #121D30)',
+                              color: isSelected ? 'white' : 'var(--ink-display, #EDF1F7)',
+                            }}>
+                              {opt.icon}
+                            </div>
+                            <div style={{
+                              width: 22, height: 22, borderRadius: '50%',
+                              background: isSelected ? '#E85D00' : 'transparent',
+                              border: isSelected ? '2px solid #E85D00' : '2px solid rgba(140,170,210,0.12)',
+                              display: 'grid', placeItems: 'center',
+                              fontSize: 13, fontWeight: 700, color: 'white',
+                            }}>
+                              {isSelected && <Check style={{ width: 12, height: 12 }} />}
+                            </div>
+                          </div>
+                          <h4 style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{opt.title}</h4>
+                          <p style={{ marginTop: 8, color: 'var(--ink-secondary, #8FA0B8)', fontSize: 13, lineHeight: 1.5, fontFamily: fontFamily.body }}>{opt.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {renderField('business_name', 'Business Name',
                   <Input
                     value={formData.business_name || ''}
                     onChange={(e) => updateField('business_name', e.target.value)}
                     placeholder="Your company name"
-                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
                     data-testid="input-business-name"
                   />
                 )}
 
                 {renderField('industry', 'Industry',
                   <Select value={formData.industry || ''} onValueChange={(val) => updateField('industry', val)}>
-                    <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-industry">
+                    <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-industry">
                       <SelectValue placeholder="Select industry" />
                     </SelectTrigger>
                     <SelectContent>
@@ -389,7 +511,7 @@ const OnboardingWizard = () => {
                 <div className="grid grid-cols-2 gap-4">
                   {renderField('business_stage', 'Business Stage',
                     <Select value={formData.business_stage || ''} onValueChange={(val) => updateField('business_stage', val)}>
-                      <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-stage">
+                      <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-stage">
                         <SelectValue placeholder="Select stage" />
                       </SelectTrigger>
                       <SelectContent>
@@ -405,7 +527,7 @@ const OnboardingWizard = () => {
                       value={formData.location || ''}
                       onChange={(e) => updateField('location', e.target.value)}
                       placeholder="City, Country"
-                      className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                      className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
                       data-testid="input-location"
                     />
                   )}
@@ -416,23 +538,24 @@ const OnboardingWizard = () => {
             {/* STEP 2: Website */}
             {currentStep === 2 && (
               <div className="space-y-6" data-testid="step-website">
-                <StepHeader icon={Globe} title="Website" subtitle="We can auto-detect details from your website." />
+                <WizStepHeader step={3} total={STEPS.length} title={<>Your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>website</em></>} subtitle="We can auto-detect details from your website." />
                 
                 <div>
-                  <Label className="text-white/70">Website URL</Label>
+                  <Label className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Website URL</Label>
                   <div className="flex gap-2 mt-2">
                     <Input
                       value={formData.website || ''}
                       onChange={(e) => updateField('website', e.target.value)}
                       placeholder="www.yourcompany.com"
-                      className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                      className="flex-1 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
                       data-testid="input-website"
                     />
                     <Button
                       onClick={enrichWebsite}
                       disabled={!formData.website || enriching}
                       variant="outline"
-                      className="border-white/10 text-white/70 hover:bg-white/5"
+                      className="text-[#8FA0B8]"
+                      style={{ border: '1px solid rgba(140,170,210,0.15)' }}
                       data-testid="btn-enrich"
                     >
                       {enriching ? <CognitiveMesh compact /> : <ExternalLink className="w-4 h-4" />}
@@ -442,27 +565,28 @@ const OnboardingWizard = () => {
                 </div>
 
                 {enrichPreview && (
-                  <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-3" data-testid="enrich-preview">
-                    <p className="text-sm font-medium text-blue-400">Detected from your website:</p>
+                  <div className="p-4 rounded-xl space-y-3" style={{ background: 'rgba(232,93,0,0.08)', border: '1px solid rgba(232,93,0,0.2)' }} data-testid="enrich-preview">
+                    <p className="text-sm font-medium" style={{ color: '#E85D00' }}>Detected from your website:</p>
                     {enrichPreview.title && (
-                      <div className="text-sm text-white/70">
-                        <span className="text-white/40 text-xs">Title: </span>{enrichPreview.title}
+                      <div className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>Title: </span>{enrichPreview.title}
                       </div>
                     )}
                     {enrichPreview.description && (
-                      <div className="text-sm text-white/70">
-                        <span className="text-white/40 text-xs">Description: </span>{enrichPreview.description}
+                      <div className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>Description: </span>{enrichPreview.description}
                       </div>
                     )}
                     {enrichPreview.inferred_name && (
-                      <div className="text-sm text-white/70">
-                        <span className="text-white/40 text-xs">Business name: </span>{enrichPreview.inferred_name}
+                      <div className="text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+                        <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>Business name: </span>{enrichPreview.inferred_name}
                       </div>
                     )}
                     <Button
                       onClick={applyEnrichment}
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="text-white"
+                      style={{ background: '#E85D00' }}
                       data-testid="btn-apply-enrichment"
                     >
                       <CheckCircle className="w-3 h-3 mr-1" /> Apply these details
@@ -476,14 +600,14 @@ const OnboardingWizard = () => {
                       value={formData.abn || ''}
                       onChange={(e) => updateField('abn', e.target.value)}
                       placeholder="12 345 678 901"
-                      className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                      className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
                       data-testid="input-abn"
                     />
                   )}
 
                   {renderField('years_operating', 'Years Operating',
                     <Select value={formData.years_operating || ''} onValueChange={(val) => updateField('years_operating', val)}>
-                      <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-years">
+                      <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-years">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
@@ -502,7 +626,7 @@ const OnboardingWizard = () => {
             {/* STEP 3: Market & Customers */}
             {currentStep === 3 && (
               <div className="space-y-6" data-testid="step-market">
-                <StepHeader icon={Target} title="Market & Customers" subtitle="Understanding your market helps BIQC prioritize signals." />
+                <WizStepHeader step={4} total={STEPS.length} title={<>Market & <em style={{ fontStyle: 'italic', color: '#E85D00' }}>customers</em></>} subtitle="Understanding your market helps BIQc prioritize signals." />
                 
                 {renderField('target_market', 'Target Market',
                   <Textarea
@@ -510,7 +634,7 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('target_market', e.target.value)}
                     placeholder="Describe your target market..."
                     rows={3}
-                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
                     data-testid="input-target-market"
                   />
                 )}
@@ -518,7 +642,7 @@ const OnboardingWizard = () => {
                 <div className="grid grid-cols-2 gap-4">
                   {renderField('business_model', 'Business Model',
                     <Select value={formData.business_model || ''} onValueChange={(val) => updateField('business_model', val)}>
-                      <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-model">
+                      <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-model">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
@@ -531,7 +655,7 @@ const OnboardingWizard = () => {
 
                   {renderField('revenue_range', 'Revenue Range',
                     <Select value={formData.revenue_range || ''} onValueChange={(val) => updateField('revenue_range', val)}>
-                      <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-revenue">
+                      <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-revenue">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
@@ -548,7 +672,7 @@ const OnboardingWizard = () => {
 
                 {renderField('customer_count', 'Customer Count',
                   <Select value={formData.customer_count || ''} onValueChange={(val) => updateField('customer_count', val)}>
-                    <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-customers">
+                    <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-customers">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
@@ -567,7 +691,7 @@ const OnboardingWizard = () => {
             {/* STEP 4: Products & Services */}
             {currentStep === 4 && (
               <div className="space-y-6" data-testid="step-product">
-                <StepHeader icon={Package} title="Products & Services" subtitle="What you offer and why customers choose you." />
+                <WizStepHeader step={5} total={STEPS.length} title={<>Products & <em style={{ fontStyle: 'italic', color: '#E85D00' }}>services</em></>} subtitle="What you offer and why customers choose you." />
                 
                 {renderField('products_services', 'Main Products/Services',
                   <Textarea
@@ -575,7 +699,7 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('products_services', e.target.value)}
                     placeholder="Describe your main offerings..."
                     rows={3}
-                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
                     data-testid="input-products"
                   />
                 )}
@@ -586,14 +710,14 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('unique_value_proposition', e.target.value)}
                     placeholder="Your unique value proposition..."
                     rows={3}
-                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
                     data-testid="input-uvp"
                   />
                 )}
 
                 {renderField('pricing_model', 'Pricing Model',
                   <Select value={formData.pricing_model || ''} onValueChange={(val) => updateField('pricing_model', val)}>
-                    <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-pricing">
+                    <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-pricing">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
@@ -609,11 +733,11 @@ const OnboardingWizard = () => {
             {/* STEP 5: Team */}
             {currentStep === 5 && (
               <div className="space-y-6" data-testid="step-team">
-                <StepHeader icon={Users} title="Team" subtitle="Your people and organizational shape." />
+                <WizStepHeader step={6} total={STEPS.length} title={<>Your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>team</em></>} subtitle="Your people and organizational shape." />
 
                 {renderField('team_size', 'Team Size',
                   <Select value={formData.team_size || ''} onValueChange={(val) => updateField('team_size', val)}>
-                    <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-team-size">
+                    <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-team-size">
                       <SelectValue placeholder="Select size" />
                     </SelectTrigger>
                     <SelectContent>
@@ -638,9 +762,9 @@ const OnboardingWizard = () => {
                       { value: 'planning', label: 'Planning to hire' },
                       { value: 'not-now', label: 'Not at this time' },
                     ].map(opt => (
-                      <div key={opt.value} className="flex items-center gap-2 p-3 rounded-lg bg-white/5 border border-white/5">
+                      <div key={opt.value} className="flex items-center gap-2 p-3 rounded-lg bg-[#0E1628] border border-[rgba(140,170,210,0.15)]">
                         <RadioGroupItem value={opt.value} id={`hire-${opt.value}`} />
-                        <Label htmlFor={`hire-${opt.value}`} className="text-white/70 cursor-pointer">{opt.label}</Label>
+                        <Label htmlFor={`hire-${opt.value}`} className="text-[#8FA0B8] cursor-pointer">{opt.label}</Label>
                       </div>
                     ))}
                   </RadioGroup>
@@ -651,7 +775,7 @@ const OnboardingWizard = () => {
             {/* STEP 6: Goals & Strategy */}
             {currentStep === 6 && (
               <div className="space-y-6" data-testid="step-goals">
-                <StepHeader icon={TrendingUp} title="Goals & Strategy" subtitle="Your priorities drive what BIQC monitors." />
+                <WizStepHeader step={7} total={STEPS.length} title={<>Goals & <em style={{ fontStyle: 'italic', color: '#E85D00' }}>strategy</em></>} subtitle="Your priorities drive what BIQc monitors." />
 
                 {renderField('short_term_goals', 'Short-term Goals (6-12 months)',
                   <Textarea
@@ -659,7 +783,7 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('short_term_goals', e.target.value)}
                     placeholder="What do you want to achieve in the next year?"
                     rows={3}
-                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
                     data-testid="input-short-goals"
                   />
                 )}
@@ -670,7 +794,7 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('main_challenges', e.target.value)}
                     placeholder="What obstacles are you facing right now?"
                     rows={3}
-                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
                     data-testid="input-challenges"
                   />
                 )}
@@ -681,14 +805,14 @@ const OnboardingWizard = () => {
                     onChange={(e) => updateField('growth_strategy', e.target.value)}
                     placeholder="How do you plan to grow?"
                     rows={3}
-                    className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7] placeholder:text-[#708499]"
                     data-testid="input-growth"
                   />
                 )}
 
                 {renderField('growth_goals', 'Growth Goals',
                   <Select value={formData.growth_goals || ''} onValueChange={(val) => updateField('growth_goals', val)}>
-                    <SelectTrigger className="mt-2 bg-white/5 border-white/10 text-white" data-testid="select-growth-goals">
+                    <SelectTrigger className="mt-2 bg-[#0E1628] border-[rgba(140,170,210,0.15)] text-[#EDF1F7]" data-testid="select-growth-goals">
                       <SelectValue placeholder="Select primary growth goal" />
                     </SelectTrigger>
                     <SelectContent>
@@ -709,10 +833,10 @@ const OnboardingWizard = () => {
             {/* STEP 7: BIQC Preferences */}
             {currentStep === 7 && (
               <div className="space-y-6" data-testid="step-preferences">
-                <StepHeader icon={Brain} title="BIQC Preferences" subtitle="How should BIQC communicate with you?" />
+                <WizStepHeader step={8} total={STEPS.length} title={<>BIQc <em style={{ fontStyle: 'italic', color: '#E85D00' }}>preferences</em></>} subtitle="How should BIQc communicate with you?" />
 
                 <div>
-                  <Label className="text-white/70">Communication Style</Label>
+                  <Label className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Communication Style</Label>
                   <RadioGroup
                     value={formData.advice_style || ''}
                     onValueChange={(val) => updateField('advice_style', val)}
@@ -723,11 +847,11 @@ const OnboardingWizard = () => {
                       { value: 'detailed', label: 'Detailed & Thorough', desc: 'Explain the reasoning and context' },
                       { value: 'conversational', label: 'Conversational', desc: 'Like chatting with a business partner' },
                     ].map(opt => (
-                      <div key={opt.value} className="flex items-start gap-3 p-4 rounded-lg bg-white/5 border border-white/5 cursor-pointer hover:bg-white/8">
+                      <div key={opt.value} className="flex items-start gap-3 p-4 rounded-lg bg-[#0E1628] border border-[rgba(140,170,210,0.15)] cursor-pointer hover:bg-[#121D30]">
                         <RadioGroupItem value={opt.value} id={`style-${opt.value}`} className="mt-0.5" />
                         <Label htmlFor={`style-${opt.value}`} className="cursor-pointer">
-                          <div className="text-sm font-medium text-white">{opt.label}</div>
-                          <div className="text-xs text-white/40">{opt.desc}</div>
+                          <div className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{opt.label}</div>
+                          <div className="text-xs" style={{ color: 'var(--ink-muted, #708499)' }}>{opt.desc}</div>
                         </Label>
                       </div>
                     ))}
@@ -735,10 +859,10 @@ const OnboardingWizard = () => {
                 </div>
 
                 <div>
-                  <Label className="text-white/70">What tools do you use?</Label>
+                  <Label className="text-[10px] font-medium uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>What tools do you use?</Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {['Xero / QuickBooks', 'HubSpot / CRM', 'Slack / Teams', 'Google Workspace', 'Notion / Asana', 'Stripe', 'None yet', 'Other'].map(tool => (
-                      <label key={tool} className="flex items-center gap-2 p-3 rounded-lg bg-white/5 border border-white/5 cursor-pointer hover:bg-white/8 text-white/70 text-sm">
+                      <label key={tool} className="flex items-center gap-2 p-3 rounded-lg bg-[#0E1628] border border-[rgba(140,170,210,0.15)] cursor-pointer hover:bg-[#121D30] text-[#8FA0B8] text-sm">
                         <input
                           type="checkbox"
                           checked={(formData.current_tools || []).includes(tool)}
@@ -753,70 +877,138 @@ const OnboardingWizard = () => {
               </div>
             )}
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between pt-8 mt-8 border-t border-white/10">
-              {currentStep > 0 ? (
-                <Button
-                  onClick={handleBack}
-                  variant="ghost"
-                  className="text-white/50 hover:text-white hover:bg-white/5"
-                  data-testid="btn-back"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-1" /> Back
-                </Button>
-              ) : <div />}
+            {/* STEP 8: Tune Signals — matches calibration.html mockup */}
+            {currentStep === 8 && (
+              <div className="space-y-6" data-testid="step-signals">
+                <WizStepHeader step={9} total={STEPS.length} title={<>Which signals matter <em style={{ fontStyle: 'italic', color: '#E85D00' }}>most to you</em>?</>} subtitle="BIQc starts with default signals tuned for your business type. Toggle anything you don't care about — you can adjust thresholds later." />
 
-              <Button
-                onClick={handleNext}
-                disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6"
-                data-testid="btn-next"
-              >
-                {saving ? (
-                  <><CognitiveMesh compact /> Completing...</>
-                ) : currentStep === STEPS.length - 1 ? (
-                  <><CheckCircle className="w-4 h-4 mr-1" /> Complete Setup</>
-                ) : currentStep === 0 ? (
-                  <>Get Started <ArrowRight className="w-4 h-4 ml-1" /></>
-                ) : (
-                  <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
-                )}
-              </Button>
-            </div>
+                <div className="flex flex-col gap-3">
+                  {[
+                    { key: 'deal_stalled', title: 'Deal stalled in pipeline', hint: 'Active opportunity with no inbox activity for N days', threshold: 'Default threshold \u00b7 14 days' },
+                    { key: 'cash_runway', title: 'Cash runway alert', hint: 'Burn rate \u00f7 cash on hand drops below threshold', threshold: 'Default threshold \u00b7 6 months' },
+                    { key: 'churn_risk', title: 'Customer churn risk', hint: 'Engagement drop or sentiment shift in inbound emails', threshold: 'Default threshold \u00b7 21 days silence' },
+                    { key: 'invoice_aging', title: 'Invoice aging spike', hint: 'AR over 60 days as % of total trending up', threshold: 'Default threshold \u00b7 15% of AR' },
+                    { key: 'meeting_overload', title: 'Meeting overload', hint: 'Calendar density above your historical baseline', threshold: 'Default threshold \u00b7 60% above 4-week avg' },
+                    { key: 'competitor_mentions', title: 'Competitor mentions', hint: 'Inbound emails referencing named competitors', threshold: 'Default threshold \u00b7 3 mentions / 7 days' },
+                    { key: 'press_mentions', title: 'Press / media mentions', hint: 'Your business name surfacing in news, blogs, social', threshold: 'Default threshold \u00b7 Any mention' },
+                  ].map(signal => (
+                    <div key={signal.key} className="flex items-center justify-between gap-4 p-5 rounded-xl transition-all" style={{ background: 'var(--surface, #0E1628)', border: `1px solid ${signalToggles[signal.key] ? 'rgba(232,93,0,0.3)' : 'rgba(140,170,210,0.15)'}` }}>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[15px] font-semibold" style={{ color: 'var(--ink-display, #EDF1F7)' }}>{signal.title}</div>
+                        <div className="text-[13px] mt-0.5" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>{signal.hint}</div>
+                        <div className="text-[11px] mt-2 uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>{signal.threshold}</div>
+                      </div>
+                      <button
+                        onClick={() => toggleSignal(signal.key)}
+                        className="relative shrink-0 rounded-full transition-all duration-200"
+                        style={{
+                          width: 44, height: 26,
+                          background: signalToggles[signal.key] ? '#E85D00' : 'rgba(140,170,210,0.3)',
+                          cursor: 'pointer', border: 'none',
+                        }}
+                        aria-label={`${signal.title} signal ${signalToggles[signal.key] ? 'enabled' : 'disabled'}`}
+                        data-testid={`toggle-${signal.key}`}
+                      >
+                        <span className="absolute top-[3px] rounded-full transition-all duration-200" style={{
+                          width: 20, height: 20,
+                          background: 'white',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                          left: signalToggles[signal.key] ? 21 : 3,
+                        }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
 
-            {/* Save for later */}
-            {currentStep > 0 && (
-              <div className="text-center pt-4">
-                <button
-                  onClick={() => {
-                    persistProgress(formData, currentStep);
-                    deferOnboarding();
-                    toast.success('Progress saved. You can continue anytime.');
-                    navigate('/advisor');
-                  }}
-                  className="text-xs text-white/30 hover:text-white/50 transition-colors"
-                  data-testid="btn-save-later"
-                >
-                  Save and continue later
-                </button>
+                <div className="flex items-center justify-between pt-4">
+                  <span className="text-xs" style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
+                    {Object.values(signalToggles).filter(Boolean).length} of 7 signals active
+                  </span>
+                  <button
+                    onClick={() => setSignalToggles({ deal_stalled: true, cash_runway: true, churn_risk: true, invoice_aging: true, meeting_overload: false, competitor_mentions: true, press_mentions: false })}
+                    className="text-xs transition-colors"
+                    style={{ color: '#E85D00', background: 'none', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}
+                  >
+                    Use defaults
+                  </button>
+                </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+
+            {/* Progress bar */}
+            <div className="mt-6 h-1 rounded-full overflow-hidden" style={{ background: 'var(--surface-2, #121D30)' }}>
+              <div className="h-full rounded-full transition-all duration-500" style={{ background: 'linear-gradient(90deg, #E85D00, #FF8C33)', width: `${completeness}%` }} />
+            </div>
+
+            {/* Navigation */}
+            <div className="flex items-center justify-between pt-6 mt-6" style={{ borderTop: '1px solid rgba(140,170,210,0.15)' }}>
+              {currentStep > 0 ? (
+                <button
+                  onClick={handleBack}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-white/5"
+                  style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body, background: 'transparent', border: '1px solid rgba(140,170,210,0.15)', cursor: 'pointer' }}
+                  data-testid="btn-back"
+                >
+                  <ArrowLeft className="w-4 h-4" /> Back
+                </button>
+              ) : <div />}
+
+              <div className="flex items-center gap-3">
+                {currentStep > 0 && (
+                  <button
+                    onClick={() => {
+                      persistProgress(formData, currentStep);
+                      deferOnboarding();
+                      toast.success('Progress saved. You can continue anytime.');
+                      navigate('/advisor');
+                    }}
+                    className="text-sm transition-colors"
+                    style={{ color: 'var(--ink-muted, #708499)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: fontFamily.body }}
+                    data-testid="btn-save-later"
+                  >
+                    Skip for now
+                  </button>
+                )}
+                <button
+                  onClick={handleNext}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-[15px] font-semibold transition-all disabled:opacity-50"
+                  style={{ background: '#E85D00', color: 'white', fontFamily: fontFamily.body, border: 'none', cursor: 'pointer' }}
+                  data-testid="btn-next"
+                >
+                  {saving ? (
+                    <><CognitiveMesh compact /> Completing...</>
+                  ) : currentStep === STEPS.length - 1 ? (
+                    <><CheckCircle className="w-4 h-4" /> Complete Setup</>
+                  ) : currentStep === 0 ? (
+                    <>Get Started <ArrowRight className="w-4 h-4" /></>
+                  ) : (
+                    <>Continue <ArrowRight className="w-4 h-4" /></>
+                  )}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </main>
       </div>
     </div>
   );
 };
 
-const StepHeader = ({ icon: Icon, title, subtitle }) => (
-  <div className="flex items-center gap-3 pb-2">
-    <div className="w-10 h-10 rounded-xl bg-blue-600/10 flex items-center justify-center">
-      <Icon className="w-5 h-5 text-blue-400" />
+const WizStepHeader = ({ step, total, title, subtitle }) => (
+  <div className="pb-2">
+    <div className="text-[11px] uppercase tracking-[0.08em] mb-3" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+      — Step {step} of {total}
     </div>
-    <div>
-      <h2 className="text-xl font-bold text-white">{title}</h2>
-      <p className="text-sm text-white/40">{subtitle}</p>
-    </div>
+    <h1 className="font-medium mb-3" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(2.4rem, 4vw, 3.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+      {title}
+    </h1>
+    {subtitle && (
+      <p className="text-lg leading-relaxed max-w-[580px]" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
+        {subtitle}
+      </p>
+    )}
   </div>
 );
 

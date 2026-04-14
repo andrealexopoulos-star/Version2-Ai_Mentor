@@ -70,7 +70,7 @@ const CATEGORY_META = {
 const STATUS_COLORS = {
   connected: { text: '#10B981', bg: 'rgba(16, 185, 129, 0.06)', border: 'rgba(16, 185, 129, 0.2)' },
   empty:     { text: '#F59E0B', bg: 'rgba(245, 158, 11, 0.06)', border: 'rgba(245, 158, 11, 0.2)' },
-  missing:   { text: '#FF6A00', bg: 'rgba(255, 106, 0, 0.06)',  border: 'rgba(255, 106, 0, 0.2)'  },
+  missing:   { text: '#E85D00', bg: 'rgba(232, 93, 0, 0.06)',  border: 'rgba(232, 93, 0, 0.2)'  },
 };
 
 const IntegrationStatusRow = ({ category, integrationData, compact, navigate }) => {
@@ -190,7 +190,7 @@ const IntegrationStatusWidget = ({
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-2" data-testid="integration-status-loading">
-        <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#FF6A00' }} />
+        <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#E85D00' }} />
         <span className="text-xs" style={{ color: 'var(--biqc-text-2)' }}>Checking integrations...</span>
       </div>
     );
@@ -247,10 +247,10 @@ const IntegrationStatusWidget = ({
             data-testid="integration-status-refresh-btn"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
             style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = '#FF6A00'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = '#243140'}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#E85D00'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(140,170,210,0.15)'}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} style={{ color: syncing ? '#FF6A00' : undefined }} />
+            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} style={{ color: syncing ? '#E85D00' : undefined }} />
             {syncing ? 'Syncing...' : 'Refresh Data'}
           </button>
         </div>

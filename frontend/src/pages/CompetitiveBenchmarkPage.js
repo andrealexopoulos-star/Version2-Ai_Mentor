@@ -122,7 +122,7 @@ const Tooltip = ({ text, children }) => {
       {children}
       {show && (
         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-xs leading-snug z-50 w-56"
-          style={{ background: '#1E2D3D', color: '#F4F7FA', border: '1px solid #334155', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
+          style={{ background: '#1E2D3D', color: 'var(--ink-display, #EDF1F7)', border: '1px solid #334155', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
           {text}
         </span>
       )}
@@ -138,7 +138,7 @@ const ScoreGauge = ({ score, label, color, isReal }) => {
   return (
     <div className="flex flex-col items-center">
       <svg width="130" height="130" viewBox="0 0 130 130">
-        <circle cx="65" cy="65" r={radius} fill="none" stroke="#243140" strokeWidth="8" />
+        <circle cx="65" cy="65" r={radius} fill="none" stroke="rgba(140,170,210,0.12)" strokeWidth="8" />
         {isReal && score != null && (
           <circle cx="65" cy="65" r={radius} fill="none" stroke={color} strokeWidth="8"
             strokeDasharray={circumference} strokeDashoffset={offset}
@@ -147,7 +147,7 @@ const ScoreGauge = ({ score, label, color, isReal }) => {
         )}
         {isReal && score != null
           ? <>
-              <text x="65" y="58" textAnchor="middle" style={{ fill: '#F4F7FA', fontSize: '28px', fontFamily: fontFamily.mono, fontWeight: 700 }}>{score}</text>
+              <text x="65" y="58" textAnchor="middle" style={{ fill: '#EDF1F7', fontSize: '28px', fontFamily: fontFamily.mono, fontWeight: 700 }}>{score}</text>
               <text x="65" y="78" textAnchor="middle" style={{ fill: '#64748B', fontSize: '10px', fontFamily: fontFamily.mono }}>/100</text>
             </>
           : <text x="65" y="68" textAnchor="middle" style={{ fill: '#4A5568', fontSize: '11px', fontFamily: fontFamily.mono }}>No data</text>
@@ -194,18 +194,18 @@ const PillarBar = ({ pillar, score, isReal, isWeakest }) => {
               </button>
             </div>
           </div>
-          <div className="h-1.5 rounded-full" style={{ background: '#243140' }}>
+          <div className="h-1.5 rounded-full" style={{ background: 'rgba(140,170,210,0.12)' }}>
             <div className="h-full rounded-full transition-all duration-700" style={{ background: color, width: `${pct}%` }} />
           </div>
         </div>
       </div>
       {expanded && (
-        <div className="mt-2 ml-11 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid #243140' }}>
-          <p className="text-xs text-[#9FB0C3] mb-2">{pillar.desc}</p>
+        <div className="mt-2 ml-11 p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid rgba(140,170,210,0.12)' }}>
+          <p className="text-xs text-[#8FA0B8] mb-2">{pillar.desc}</p>
           {isReal && score != null && (
             <div className="flex items-start gap-1.5">
-              <Zap className="w-3 h-3 shrink-0 mt-0.5" style={{ color: '#FF6A00' }} />
-              <p className="text-[11px]" style={{ color: '#FF6A00', fontFamily: fontFamily.body }}>{pillar.action}</p>
+              <Zap className="w-3 h-3 shrink-0 mt-0.5" style={{ color: '#E85D00' }} />
+              <p className="text-[11px]" style={{ color: '#E85D00', fontFamily: fontFamily.body }}>{pillar.action}</p>
             </div>
           )}
         </div>
@@ -368,10 +368,13 @@ export default function CompetitiveBenchmarkPage() {
         {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
-              Competitive Benchmark
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+              — Competitive benchmark
+            </div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              Where you <em style={{ fontStyle: 'italic', color: '#E85D00' }}>stand</em>.
             </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.body }}>
+            <p className="text-sm mt-2" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.body }}>
               {hasRealData
                 ? `Digital footprint analysis${data?.scanDomain ? ` for ${data.scanDomain}` : ''}. Last scanned: ${data?.lastUpdated ? new Date(data.lastUpdated).toLocaleDateString('en-AU') : 'recently'}.`
                 : 'Complete calibration with your business website to generate your Digital Footprint score.'
@@ -407,15 +410,67 @@ export default function CompetitiveBenchmarkPage() {
           </CardContent>
         </Card>
 
+        {/* Radar / Spider Chart */}
+        {!loading && hasRealData && data?.pillars && (() => {
+          const labels = ['Website', 'Social', 'Reviews', 'Content', 'SEO'];
+          const keys = ['website', 'social', 'reviews', 'content', 'seo'];
+          const cx = 200, cy = 200, maxR = 150;
+          const angleStep = (2 * Math.PI) / 5;
+          const startAngle = -Math.PI / 2;
+          const getPoint = (i, r) => ({
+            x: cx + r * Math.cos(startAngle + i * angleStep),
+            y: cy + r * Math.sin(startAngle + i * angleStep),
+          });
+          const polygon = (r) => keys.map((_, i) => getPoint(i, r)).map(p => `${p.x},${p.y}`).join(' ');
+          const dataPoints = keys.map((k, i) => {
+            const score = data.pillars[k] != null ? Math.min(data.pillars[k], 100) : 0;
+            return getPoint(i, (score / 100) * maxR);
+          });
+          const dataPolygon = dataPoints.map(p => `${p.x},${p.y}`).join(' ');
+          return (
+            <div className="flex justify-center">
+              <div style={{ maxWidth: 400, width: '100%' }}>
+                <svg viewBox="0 0 400 420" width="100%" style={{ display: 'block' }}>
+                  {/* Background pentagons at 20%, 40%, 60%, 80%, 100% */}
+                  {[0.2, 0.4, 0.6, 0.8, 1.0].map(pct => (
+                    <polygon key={pct} points={polygon(maxR * pct)} fill="none" stroke="rgba(140,170,210,0.12)" strokeWidth="1" />
+                  ))}
+                  {/* Axis lines */}
+                  {keys.map((_, i) => {
+                    const p = getPoint(i, maxR);
+                    return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(140,170,210,0.08)" strokeWidth="1" />;
+                  })}
+                  {/* Data shape */}
+                  <polygon points={dataPolygon} fill="rgba(232,93,0,0.15)" stroke="#E85D00" strokeWidth="2" />
+                  {/* Data points */}
+                  {dataPoints.map((p, i) => (
+                    <circle key={i} cx={p.x} cy={p.y} r="4" fill="#E85D00" />
+                  ))}
+                  {/* Labels */}
+                  {labels.map((label, i) => {
+                    const p = getPoint(i, maxR + 24);
+                    return (
+                      <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central"
+                        style={{ fill: '#8FA0B8', fontSize: '11px', fontFamily: fontFamily.mono }}>
+                        {label}
+                      </text>
+                    );
+                  })}
+                </svg>
+              </div>
+            </div>
+          );
+        })()}
+
         {loading ? (
-          <div className="py-8"><PageLoadingState message="Loading benchmark data…" /></div>
+          <div className="py-8"><PageLoadingState message="Loading benchmark data..." /></div>
         ) : (
           <>
             {/* Req 3: Score + Percentile (real data only) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                 <CardContent className="pt-6 flex flex-col items-center">
-                  <ScoreGauge score={data?.overallScore} label="Digital Footprint" color="#FF6A00" isReal={hasRealData} />
+                  <ScoreGauge score={data?.overallScore} label="Digital Footprint" color="#E85D00" isReal={hasRealData} />
                   {hasRealData ? (
                     <div className="flex items-center gap-2 mt-4">
                       {data?.trend === 'improving' ? <TrendingUp className="w-4 h-4 text-[#10B981]" /> : data?.trend === 'declining' ? <TrendingDown className="w-4 h-4 text-[#EF4444]" /> : null}
@@ -433,7 +488,7 @@ export default function CompetitiveBenchmarkPage() {
                           BIQc has started a benchmark scan for your website. Refresh shortly to see your first score.
                         </p>
                       )}
-                      <Link to="/calibration" className="text-xs flex items-center justify-center gap-1 mt-2" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                      <Link to="/calibration" className="text-xs flex items-center justify-center gap-1 mt-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                         Start calibration <ArrowRight className="w-3 h-3" />
                       </Link>
                       <p className="text-[11px] mt-3" style={{ color: '#94A3B8', fontFamily: fontFamily.body }}>
@@ -447,8 +502,8 @@ export default function CompetitiveBenchmarkPage() {
               <Card style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <Award className="w-5 h-5" style={{ color: '#FF6A00' }} />
-                    <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Industry Ranking</span>
+                    <Award className="w-5 h-5" style={{ color: '#E85D00' }} />
+                    <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Industry Ranking</span>
                   </div>
                   {hasRealData && data?.percentile != null ? (
                     <>
@@ -466,13 +521,13 @@ export default function CompetitiveBenchmarkPage() {
                               {data.overallScore >= data.industryAvg ? `+${data.overallScore - data.industryAvg} above avg` : `${data.overallScore - data.industryAvg} below avg`}
                             </span>
                           </div>
-                          <div className="h-2 rounded-full relative" style={{ background: '#243140' }}>
+                          <div className="h-2 rounded-full relative" style={{ background: 'rgba(140,170,210,0.12)' }}>
                             <div className="absolute h-full rounded-full" style={{ background: '#64748B', width: `${data.industryAvg}%` }} />
-                            <div className="absolute h-full rounded-full" style={{ background: '#FF6A00', width: `${data.overallScore}%`, opacity: 0.8 }} />
+                            <div className="absolute h-full rounded-full" style={{ background: '#E85D00', width: `${data.overallScore}%`, opacity: 0.8 }} />
                           </div>
                           <div className="flex justify-between mt-1">
                             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Avg: {data.industryAvg}</span>
-                            <span className="text-[10px]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>You: {data.overallScore}</span>
+                            <span className="text-[10px]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>You: {data.overallScore}</span>
                           </div>
                         </div>
                       )}
@@ -492,7 +547,7 @@ export default function CompetitiveBenchmarkPage() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
                   <div className="flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5" style={{ color: '#FF6A00' }} />
+                    <BarChart3 className="w-5 h-5" style={{ color: '#E85D00' }} />
                     5-Pillar Digital Footprint
                   </div>
                   <Tooltip text="Each pillar measures a different aspect of your digital presence. Click any row to see what it means and how to improve it.">
@@ -527,7 +582,7 @@ export default function CompetitiveBenchmarkPage() {
             <Card style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
-                  <Users className="w-5 h-5" style={{ color: '#FF6A00' }} />
+                  <Users className="w-5 h-5" style={{ color: '#E85D00' }} />
                   Competitor Benchmarking
                   <Tooltip text="Enter up to 5 competitor domains. BIQc will scan their digital presence and compare them against your 5 pillars.">
                     <Info className="w-4 h-4 cursor-help" style={{ color: '#4A5568' }} />
@@ -558,7 +613,7 @@ export default function CompetitiveBenchmarkPage() {
                       />
                     </div>
                     <Button onClick={() => analyzeCompetitor(input, idx)} disabled={!input.trim() || analyzingCompetitor === idx}
-                      className="gap-1.5 text-xs px-3" style={{ background: '#FF6A00', color: 'white', border: 'none' }}
+                      className="gap-1.5 text-xs px-3" style={{ background: '#E85D00', color: 'white', border: 'none' }}
                       data-testid={`analyze-competitor-${idx}`}>
                       {analyzingCompetitor === idx ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
                       {analyzingCompetitor === idx ? 'Scanning…' : 'Analyse'}
@@ -576,7 +631,7 @@ export default function CompetitiveBenchmarkPage() {
                 )}
 
                 {competitorInputs.length < 5 && (
-                  <button onClick={addCompetitorInput} className="flex items-center gap-1.5 text-xs transition-colors hover:text-[#FF6A00]"
+                  <button onClick={addCompetitorInput} className="flex items-center gap-1.5 text-xs transition-colors hover:text-[#E85D00]"
                     style={{ color: '#64748B', fontFamily: fontFamily.mono }}>
                     <Plus className="w-3.5 h-3.5" /> Add another competitor (max 5)
                   </button>
@@ -591,9 +646,9 @@ export default function CompetitiveBenchmarkPage() {
                         <thead>
                           <tr>
                             <th className="text-left pb-2" style={{ color: '#64748B', fontFamily: fontFamily.mono, fontWeight: 500 }}>Pillar</th>
-                            <th className="text-center pb-2" style={{ color: '#FF6A00', fontFamily: fontFamily.mono, fontWeight: 700 }}>You</th>
+                            <th className="text-center pb-2" style={{ color: '#E85D00', fontFamily: fontFamily.mono, fontWeight: 700 }}>You</th>
                             {competitorResults.map(r => (
-                              <th key={r.domain} className="text-center pb-2 max-w-[80px] truncate" style={{ color: '#9FB0C3', fontFamily: fontFamily.mono }}>
+                              <th key={r.domain} className="text-center pb-2 max-w-[80px] truncate" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>
                                 {r.domain.replace('www.', '').split('.')[0]}
                               </th>
                             ))}
@@ -606,7 +661,7 @@ export default function CompetitiveBenchmarkPage() {
                                 <p.icon className="w-3 h-3" style={{ color: '#64748B' }} />
                                 {p.label.split(' ')[0]}
                               </td>
-                              <td className="text-center py-2 font-bold" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                              <td className="text-center py-2 font-bold" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                                 {hasRealData && data?.pillars?.[p.key] != null ? data.pillars[p.key] : '—'}
                               </td>
                               {competitorResults.map(r => {
@@ -616,7 +671,7 @@ export default function CompetitiveBenchmarkPage() {
                                 const worse = cScore != null && youScore != null && youScore < cScore;
                                 return (
                                   <td key={r.domain} className="text-center py-2 font-semibold" style={{
-                                    color: worse ? '#EF4444' : better ? '#10B981' : '#9FB0C3',
+                                    color: worse ? '#EF4444' : better ? '#10B981' : '#8FA0B8',
                                     fontFamily: fontFamily.mono,
                                   }}>
                                     {cScore ?? '—'}
@@ -625,9 +680,9 @@ export default function CompetitiveBenchmarkPage() {
                               })}
                             </tr>
                           ))}
-                          <tr style={{ borderTop: '2px solid #243140' }}>
+                          <tr style={{ borderTop: '2px solid rgba(140,170,210,0.12)' }}>
                             <td className="py-2 font-semibold" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}>Overall</td>
-                            <td className="text-center py-2 font-bold text-base" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                            <td className="text-center py-2 font-bold text-base" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                               {hasRealData && data?.overallScore != null ? data.overallScore : '—'}
                             </td>
                             {competitorResults.map(r => (
@@ -671,7 +726,7 @@ export default function CompetitiveBenchmarkPage() {
                               if (emptyIdx >= 0) {
                                 const updated = [...competitorInputs]; updated[emptyIdx] = domain; setCompetitorInputs(updated);
                               }
-                            }} className="text-[9px]" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+                            }} className="text-[9px]" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
                               Analyse →
                             </button>
                           </div>

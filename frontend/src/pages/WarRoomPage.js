@@ -1,9 +1,80 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { AlertTriangle, Shield, TrendingDown, Users, BarChart3, FileWarning } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { WarRoomConsoleBody } from '../components/WarRoomConsole';
 import { useSnapshot } from '../hooks/useSnapshot';
+import { useWatchtowerRealtime } from '../hooks/useWatchtowerRealtime';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
+import { colors, fontFamily } from '../design-system/tokens';
+
+/* ── Map watchtower event domain to icon ──────────────────────────── */
+const DOMAIN_ICON_MAP = {
+  Financial: TrendingDown,
+  Pipeline: BarChart3,
+  Customer: Users,
+  Security: Shield,
+  Compliance: FileWarning,
+  Operations: BarChart3,
+  Market: BarChart3,
+  Team: Users,
+};
+
+const inferDomain = (event) => {
+  const raw = event.domain || event.signal_type || event.event_type || '';
+  const text = String(raw).toLowerCase();
+  if (/(pipeline|deal|sales|crm)/.test(text)) return 'Pipeline';
+  if (/(cash|finance|invoice|revenue|accounting)/.test(text)) return 'Financial';
+  if (/(customer|churn|nps|retention)/.test(text)) return 'Customer';
+  if (/(operations|delivery|sla|approval)/.test(text)) return 'Operations';
+  if (/(market|competitor|benchmark)/.test(text)) return 'Market';
+  if (/(team|meeting|burnout|capacity)/.test(text)) return 'Team';
+  if (/(compliance|privacy|policy|legal)/.test(text)) return 'Compliance';
+  if (/(security|mfa|auth|access)/.test(text)) return 'Security';
+  return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'General';
+};
+
+const normalizeSeverity = (value) => {
+  const s = String(value || 'medium').toLowerCase();
+  if (['critical', 'high', 'medium'].includes(s)) return s;
+  if (s === 'moderate') return 'medium';
+  if (s === 'low') return 'medium';
+  return 'medium';
+};
+
+const formatRelativeTime = (dateString) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) return '';
+  const diffMs = Date.now() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return diffMin + ' min ago';
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return diffH + 'h ago';
+  const diffD = Math.floor(diffH / 24);
+  return diffD + 'd ago';
+};
+
+const mapEventToAlert = (event) => ({
+  id: event.id || ('wt-' + Math.random().toString(36).slice(2)),
+  severity: normalizeSeverity(event.severity),
+  title: event.headline || event.title || event.finding || event.signal_type || 'Signal detected',
+  source: inferDomain(event),
+  timestamp: formatRelativeTime(event.created_at),
+  description: event.statement || event.description || event.detail || event.impact || '',
+  icon: DOMAIN_ICON_MAP[inferDomain(event)] || AlertTriangle,
+});
+
+const SEVERITY_COLORS = {
+  critical: '#DC2626',
+  high: '#D97706',
+  medium: '#2563EB',
+};
+
+const FILTER_TABS = ['All', 'Critical', 'High', 'Medium'];
+
+/* ── Shared sub-components ─────────────────────────────────────────── */
 
 function useWarRoomUrlState() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,9 +120,146 @@ function WarRoomPageNotes({ hasBlockingState, conversationId }) {
   );
 }
 
+/* ── Alert card for the left panel ─────────────────────────────────── */
+
+function AlertCard({ alert, isSelected, onClick }) {
+  const sevColor = SEVERITY_COLORS[alert.severity] || colors.textMuted;
+
+  return (
+    <button
+      onClick={onClick}
+      aria-label={`${alert.severity} alert: ${alert.title}`}
+      data-testid={`war-room-feed-alert-${alert.id}`}
+      style={{
+        display: 'block',
+        width: '100%',
+        textAlign: 'left',
+        padding: '12px 14px',
+        marginBottom: '6px',
+        borderRadius: '10px',
+        borderLeft: `3px solid ${sevColor}`,
+        background: isSelected ? 'rgba(140,170,210,0.08)' : 'transparent',
+        cursor: 'pointer',
+        transition: 'background 0.15s ease',
+        border: 'none',
+        borderLeftStyle: 'solid',
+        borderLeftWidth: '3px',
+        borderLeftColor: sevColor,
+      }}
+      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'rgba(140,170,210,0.05)'; }}
+      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+    >
+      {/* Severity + icon row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+        <span
+          style={{
+            width: '7px',
+            height: '7px',
+            borderRadius: '50%',
+            background: sevColor,
+            flexShrink: 0,
+          }}
+          aria-hidden="true"
+        />
+        <span
+          style={{
+            fontSize: '9px',
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: sevColor,
+            fontFamily: fontFamily.mono,
+          }}
+        >
+          {alert.severity}
+        </span>
+      </div>
+
+      {/* Title */}
+      <h4
+        style={{
+          fontSize: '13px',
+          fontWeight: 600,
+          color: 'var(--ink-display, #EDF1F7)',
+          lineHeight: 1.35,
+          marginBottom: '4px',
+          margin: 0,
+          marginTop: 0,
+        }}
+      >
+        {alert.title}
+      </h4>
+
+      {/* Source + timestamp */}
+      <div style={{ fontSize: '11px', color: 'var(--ink-muted, #708499)', marginBottom: '4px' }}>
+        {alert.source} &middot; {alert.timestamp}
+      </div>
+
+      {/* Description (truncated to 2 lines) */}
+      <p
+        style={{
+          fontSize: '11px',
+          color: 'var(--ink-secondary, #8FA0B8)',
+          lineHeight: 1.4,
+          margin: 0,
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}
+      >
+        {alert.description}
+      </p>
+    </button>
+  );
+}
+
+/* ── Empty state for right panel ───────────────────────────────────── */
+
+function ConsoleEmptyState() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        gap: '16px',
+        padding: '40px',
+      }}
+    >
+      <AlertTriangle size={40} style={{ color: 'var(--ink-muted, #708499)', opacity: 0.4 }} />
+      <p style={{ fontSize: '15px', color: 'var(--ink-muted, #708499)', textAlign: 'center', maxWidth: '320px', lineHeight: 1.5 }}>
+        Select an alert to begin crisis analysis
+      </p>
+    </div>
+  );
+}
+
+/* ── Main page component ───────────────────────────────────────────── */
+
 export default function WarRoomPage() {
   const snapshot = useSnapshot();
+  const { alerts: watchtowerEvents, loading: alertsLoading } = useWatchtowerRealtime();
   const { conversationId, setConversationId } = useWarRoomUrlState();
+  const [selectedAlertId, setSelectedAlertId] = useState(null);
+  const [activeFilter, setActiveFilter] = useState('All');
+
+  const liveAlerts = useMemo(
+    () => watchtowerEvents.map(mapEventToAlert),
+    [watchtowerEvents]
+  );
+
+  const selectedAlert = useMemo(
+    () => liveAlerts.find((a) => a.id === selectedAlertId) || null,
+    [selectedAlertId, liveAlerts]
+  );
+
+  const filteredAlerts = useMemo(() => {
+    if (activeFilter === 'All') return liveAlerts;
+    return liveAlerts.filter((a) => a.severity === activeFilter.toLowerCase());
+  }, [activeFilter, liveAlerts]);
 
   const hasBlockingState = useMemo(() => {
     return (snapshot.loading && !snapshot.cognitive)
@@ -66,24 +274,271 @@ export default function WarRoomPage() {
 
   return (
     <DashboardLayout>
-      <div data-testid="war-room-shell-page" className="h-full min-h-[calc(100vh-72px)]" aria-label={shellLabel}>
+      <div data-testid="war-room-shell-page" aria-label={shellLabel}>
         <WarRoomUrlHints conversationId={conversationId} />
         <WarRoomPageNotes hasBlockingState={hasBlockingState} conversationId={conversationId} />
-        <WarRoomStateBanner
-          loading={snapshot.loading}
-          error={snapshot.error}
-          cognitive={snapshot.cognitive}
-          onRetry={snapshot.refresh}
-        />
 
-        {!hasBlockingState && (
-          <WarRoomConsoleBody
-            embeddedShell
-            {...snapshot}
-            conversationId={conversationId}
-            onConversationChange={setConversationId}
-          />
-        )}
+        {/* ── 2-Panel Split Layout ── */}
+        <div style={{ display: 'flex', height: 'calc(100vh - 60px)' }}>
+
+          {/* ── LEFT PANEL: Active Alerts ── */}
+          <div
+            className="war-room-sidebar"
+            style={{
+              width: '350px',
+              flexShrink: 0,
+              borderRight: '1px solid rgba(140,170,210,0.12)',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              background: 'var(--surface, #0E1628)',
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                padding: '20px 16px 14px',
+                borderBottom: '1px solid rgba(140,170,210,0.12)',
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: '18px',
+                  fontFamily: fontFamily.display,
+                  fontWeight: 600,
+                  color: 'var(--ink-display, #EDF1F7)',
+                  margin: 0,
+                  marginBottom: '12px',
+                }}
+              >
+                Live Alerts
+              </h2>
+
+              {/* Filter tabs */}
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {FILTER_TABS.map((tab) => {
+                  const isActive = activeFilter === tab;
+                  const isCritical = tab === 'Critical';
+                  let bg = 'transparent';
+                  let borderColor = 'rgba(140,170,210,0.15)';
+                  let textColor = 'var(--ink-muted, #708499)';
+                  if (isActive && isCritical) {
+                    bg = '#DC2626';
+                    borderColor = '#DC2626';
+                    textColor = '#FFFFFF';
+                  } else if (isActive) {
+                    bg = '#1E293B';
+                    borderColor = '#1E293B';
+                    textColor = '#FFFFFF';
+                  }
+
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveFilter(tab)}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '9999px',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        border: `1px solid ${borderColor}`,
+                        background: bg,
+                        color: textColor,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        fontFamily: fontFamily.mono,
+                      }}
+                    >
+                      {tab}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Alert list */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+              {alertsLoading && filteredAlerts.length === 0 && (
+                <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                  <p style={{ fontSize: '13px', color: 'var(--ink-muted, #708499)', lineHeight: 1.5 }}>
+                    Loading alerts...
+                  </p>
+                </div>
+              )}
+              {!alertsLoading && filteredAlerts.length === 0 && (
+                <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                  <AlertTriangle size={28} style={{ color: 'var(--ink-muted, #708499)', opacity: 0.35, marginBottom: '12px' }} />
+                  <p style={{ fontSize: '13px', color: 'var(--ink-muted, #708499)', lineHeight: 1.5, maxWidth: '260px', margin: '0 auto' }}>
+                    No active alerts. Crisis signals will appear here when detected by BIQc monitoring.
+                  </p>
+                </div>
+              )}
+              {filteredAlerts.map((alert) => (
+                <AlertCard
+                  key={alert.id}
+                  alert={alert}
+                  isSelected={selectedAlertId === alert.id}
+                  onClick={() => setSelectedAlertId(alert.id)}
+                />
+              ))}
+            </div>
+
+            {/* Live status footer */}
+            <div
+              style={{
+                padding: '12px 16px',
+                borderTop: '1px solid rgba(140,170,210,0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '11px',
+                color: 'var(--ink-muted, #708499)',
+              }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', animation: 'warRoomPulse 2s ease-in-out infinite', flexShrink: 0 }} />
+              Realtime &middot; {filteredAlerts.length} active alert{filteredAlerts.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+
+          {/* ── RIGHT PANEL: Crisis Console ── */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              background: 'var(--surface, #0E1628)',
+            }}
+          >
+            {/* Console header — selected alert info */}
+            <div
+              style={{
+                padding: '16px 24px',
+                borderBottom: '1px solid rgba(140,170,210,0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                minHeight: '60px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <h2
+                  style={{
+                    fontSize: '20px',
+                    fontFamily: fontFamily.display,
+                    fontWeight: 600,
+                    color: 'var(--ink-display, #EDF1F7)',
+                    margin: 0,
+                  }}
+                >
+                  {selectedAlert ? selectedAlert.title : 'Crisis Console'}
+                </h2>
+                {selectedAlert && (
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      background: SEVERITY_COLORS[selectedAlert.severity] || 'var(--ink-muted, #708499)',
+                      color: '#FFFFFF',
+                      whiteSpace: 'nowrap',
+                      fontFamily: fontFamily.mono,
+                    }}
+                  >
+                    {selectedAlert.severity}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    padding: '4px 12px',
+                    borderRadius: '9999px',
+                    background: '#FEE2E2',
+                    color: '#991B1B',
+                    fontFamily: fontFamily.mono,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: '#DC2626',
+                      animation: 'warRoomPulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                  Elevated Alert
+                </span>
+                {selectedAlert && (
+                  <button
+                    style={{
+                      padding: '6px 16px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      background: colors.danger,
+                      color: '#FFFFFF',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#991B1B'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = colors.danger; }}
+                  >
+                    Escalate
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Console body */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <WarRoomStateBanner
+                loading={snapshot.loading}
+                error={snapshot.error}
+                cognitive={snapshot.cognitive}
+                onRetry={snapshot.refresh}
+              />
+
+              {selectedAlert ? (
+                !hasBlockingState && (
+                  <WarRoomConsoleBody
+                    embeddedShell
+                    {...snapshot}
+                    conversationId={conversationId}
+                    onConversationChange={setConversationId}
+                  />
+                )
+              ) : (
+                <ConsoleEmptyState />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Pulse animation for elevated alert badge */}
+        <style>{`
+          @keyframes warRoomPulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(220,38,38,0); }
+          }
+          @media (max-width: 900px) {
+            .war-room-sidebar { display: none !important; }
+          }
+        `}</style>
       </div>
     </DashboardLayout>
   );

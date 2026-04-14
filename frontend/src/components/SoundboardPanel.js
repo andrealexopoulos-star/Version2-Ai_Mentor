@@ -166,9 +166,9 @@ function InlineIntegrationConnect({ req, onDismiss }) {
           style={{
             padding: '6px 14px',
             borderRadius: 8,
-            background: 'rgba(255,106,0,0.15)',
-            border: '1px solid rgba(255,106,0,0.3)',
-            color: '#FF6A00',
+            background: 'rgba(232,93,0,0.15)',
+            border: '1px solid rgba(232,93,0,0.3)',
+            color: '#E85D00',
             fontSize: 12,
             fontWeight: 600,
             cursor: connecting ? 'default' : 'pointer',
@@ -236,11 +236,11 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
         <span
           style={{
             fontSize: 11,
-            color: '#FF6A00',
+            color: '#E85D00',
             padding: '2px 10px',
-            background: 'rgba(255,106,0,0.1)',
+            background: 'rgba(232,93,0,0.1)',
             borderRadius: 20,
-            border: '1px solid rgba(255,106,0,0.2)',
+            border: '1px solid rgba(232,93,0,0.2)',
             flexShrink: 0,
             marginLeft: 8,
           }}
@@ -301,7 +301,7 @@ function InlineFieldCapture({ req, value, onChange, onSave, onDismiss, saving })
               style={{
                 padding: '6px 16px',
                 borderRadius: 8,
-                background: value ? '#FF6A00' : 'rgba(255,255,255,0.1)',
+                background: value ? '#E85D00' : 'rgba(255,255,255,0.1)',
                 color: value ? 'white' : 'rgba(255,255,255,0.3)',
                 border: 'none',
                 fontSize: 12,
@@ -814,7 +814,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               width: 26,
               height: 26,
               borderRadius: 8,
-              background: 'linear-gradient(135deg, #FF7A18, #E56A08)',
+              background: 'linear-gradient(135deg, #E85D00, #E56A08)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -847,7 +847,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             </span>
           )}
           {isLatestAssistant && (
-            <span style={{ fontSize: 12, color: '#FF6A00', marginLeft: 4 }}>
+            <span style={{ fontSize: 12, color: '#E85D00', marginLeft: 4 }}>
               <span style={{ animation: 'pulse 1s infinite' }}>●</span>
             </span>
           )}
@@ -902,8 +902,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           style={{
             maxWidth: '70%',
             padding: '12px 16px',
-            background: 'rgba(255,106,0,0.15)',
-            border: '1px solid rgba(255,106,0,0.25)',
+            background: 'rgba(232,93,0,0.15)',
+            border: '1px solid rgba(232,93,0,0.25)',
             borderRadius: '18px 18px 4px 18px',
             fontSize: 14,
             color: 'rgba(255,255,255,0.9)',
@@ -969,10 +969,10 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             style={{
               width: '100%',
               padding: '10px 14px',
-              background: 'rgba(255,106,0,0.12)',
-              border: '1px solid rgba(255,106,0,0.3)',
+              background: 'rgba(232,93,0,0.12)',
+              border: '1px solid rgba(232,93,0,0.3)',
               borderRadius: 10,
-              color: '#FF6A00',
+              color: '#E85D00',
               fontSize: 13,
               fontWeight: 600,
               cursor: 'pointer',
@@ -1099,7 +1099,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   width: 48,
                   height: 48,
                   borderRadius: 12,
-                  background: 'linear-gradient(135deg, #FF7A18, #E56A08)',
+                  background: 'linear-gradient(135deg, #E85D00, #E56A08)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1157,7 +1157,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
               style={{
                 padding: '10px 20px',
                 borderTop: '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(255,106,0,0.04)',
+                background: 'rgba(232,93,0,0.04)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -1165,7 +1165,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   style={{
                     fontSize: 10,
                     fontWeight: 700,
-                    color: '#FF6A00',
+                    color: '#E85D00',
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
                   }}
@@ -1211,9 +1211,9 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                       fontSize: 11,
                       padding: '3px 10px',
                       borderRadius: 20,
-                      background: 'rgba(255,106,0,0.1)',
-                      border: '1px solid rgba(255,106,0,0.2)',
-                      color: '#FF6A00',
+                      background: 'rgba(232,93,0,0.1)',
+                      border: '1px solid rgba(232,93,0,0.2)',
+                      color: '#E85D00',
                     }}
                   >
                     {role}
@@ -1231,7 +1231,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                     width: 24,
                     height: 24,
                     borderRadius: 6,
-                    background: 'linear-gradient(135deg, #FF7A18, #E56A08)',
+                    background: 'linear-gradient(135deg, #E85D00, #E56A08)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1244,7 +1244,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                   B
                 </div>
                 <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
-                  BIQc <span style={{ color: '#FF6A00', marginLeft: 8 }}>thinking...</span>
+                  BIQc <span style={{ color: '#E85D00', marginLeft: 8 }}>thinking...</span>
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>BIQc is thinking...</p>
@@ -1255,8 +1255,8 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
         <div className="px-3 pb-3 pt-2 shrink-0" style={{ borderTop: '1px solid var(--biqc-border)' }}>
         {/* Attachment preview */}
         {attachedFile && (
-          <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid rgba(255,106,0,0.3)' }}>
-            <FileText className="w-3 h-3 shrink-0" style={{ color: '#FF6A00' }} />
+          <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid rgba(232,93,0,0.3)' }}>
+            <FileText className="w-3 h-3 shrink-0" style={{ color: '#E85D00' }} />
             <span className="flex-1 text-[10px] truncate" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.mono }}>{attachedFile.name}</span>
             {attachedFile.type === 'text' && <span className="text-[9px]" style={{ color: '#10B981', fontFamily: fontFamily.mono }}>ready</span>}
             <button onClick={() => setAttachedFile(null)} className="p-0.5 rounded" style={{ color: '#64748B' }}>
@@ -1314,7 +1314,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                 <button
                   onClick={() => { setShowModeMenu((v) => !v); setShowAgentMenu(false); }}
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', border: '1px solid rgba(255,106,0,0.2)', color: '#FF6A00', fontFamily: fontFamily.mono }}
+                  style={{ background: 'rgba(232,93,0,0.1)', border: '1px solid rgba(232,93,0,0.2)', color: '#E85D00', fontFamily: fontFamily.mono }}
                   data-testid="soundboard-panel-mode-selector"
                 >
                   <span>{activeMode?.icon}</span>
@@ -1335,7 +1335,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                       >
                         <span className="text-sm shrink-0">{mode.icon}</span>
                         <div>
-                          <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#FF6A00' : '#F4F7FA', fontFamily: fontFamily.body }}>{mode.label}</p>
+                          <p className="text-xs font-semibold" style={{ color: selectedMode === mode.id ? '#E85D00' : 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{mode.label}</p>
                           <p className="text-[10px]" style={{ color: '#64748B', fontFamily: fontFamily.body }}>{mode.desc}</p>
                         </div>
                       </button>
@@ -1377,7 +1377,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
                       >
                         <span className="text-sm shrink-0">{agent.icon}</span>
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : '#F4F7FA', fontFamily: fontFamily.body }}>
+                          <p className="text-xs font-semibold truncate" style={{ color: selectedAgent === agent.id ? '#3B82F6' : 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>
                             {agent.label}
                           </p>
                           <p className="text-[10px] truncate" style={{ color: '#64748B', fontFamily: fontFamily.body }}>
@@ -1409,7 +1409,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
           className="rounded-2xl flex items-end gap-1 p-2"
           style={{
             background: 'rgba(255,255,255,0.05)',
-            border: `1px solid ${attachedFile ? 'rgba(255,106,0,0.4)' : 'rgba(255,255,255,0.1)'}`,
+            border: `1px solid ${attachedFile ? 'rgba(232,93,0,0.4)' : 'rgba(255,255,255,0.1)'}`,
           }}
         >
           <input type="file" ref={fileRef} className="hidden" onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.md,.json,.py,.js" />
@@ -1419,7 +1419,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             data-testid="sb-upload"
             title="Attach file"
           >
-            <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#FF6A00' : '#64748B' }} />
+            <Paperclip className="w-4 h-4" style={{ color: attachedFile ? '#E85D00' : '#64748B' }} />
           </button>
           <button
             className="p-2 rounded-xl hover:bg-white/5 transition-colors shrink-0"
@@ -1453,7 +1453,7 @@ const SoundboardPanel = ({ actionMessage, onActionConsumed }) => {
             onClick={sendMessage}
             disabled={(!input.trim() && !attachedFile) || loading}
             className="p-2 rounded-xl shrink-0 transition-all disabled:opacity-20"
-            style={{ background: (input.trim() || attachedFile) ? '#FF6A00' : 'rgba(255,255,255,0.1)', width: 32, height: 32 }}
+            style={{ background: (input.trim() || attachedFile) ? '#E85D00' : 'rgba(255,255,255,0.1)', width: 32, height: 32 }}
             data-testid="sb-send"
           >
             {loading ? (

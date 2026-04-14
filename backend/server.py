@@ -458,6 +458,12 @@ api_router.include_router(tutorials_router)
 from routes.business_brain import router as business_brain_router
 api_router.include_router(business_brain_router)
 
+from routes.user_settings import router as user_settings_router
+api_router.include_router(user_settings_router)
+
+from routes.marketing_ads import router as marketing_ads_router
+api_router.include_router(marketing_ads_router)
+
 
 # ═══ MOUNT ROUTERS ═══
 app.include_router(api_router)

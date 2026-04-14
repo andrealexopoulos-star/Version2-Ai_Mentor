@@ -5,7 +5,7 @@ import { Shield, CheckCircle2, Users, Key, UserX, Edit, Eye, AlertTriangle, Load
 import { fontFamily } from '../design-system/tokens';
 
 
-const TIER_COLORS = { free: '#64748B', starter: '#FF6A00', professional: '#FF6A00', growth: '#FF6A00', enterprise: '#FF6A00', super_admin: '#EF4444' };
+const TIER_COLORS = { free: '#64748B', starter: '#E85D00', professional: '#E85D00', growth: '#E85D00', enterprise: '#E85D00', super_admin: '#EF4444' };
 const TIER_LABELS = { free: 'Free', starter: 'BIQc Foundation $349', professional: 'BIQc Foundation $349', growth: 'BIQc Foundation $349', enterprise: 'BIQc Foundation $349', super_admin: 'Super Admin' };
 
 const SupportConsolePage = () => {
@@ -79,14 +79,14 @@ const SupportConsolePage = () => {
     } catch {} finally { setActionLoading(null); }
   };
 
-  if (loading) return <DashboardLayout><div className="flex items-center justify-center h-96"><Loader2 className="w-6 h-6 text-[#FF6A00] animate-spin" /></div></DashboardLayout>;
+  if (loading) return <DashboardLayout><div className="flex items-center justify-center h-96"><Loader2 className="w-6 h-6 text-[#E85D00] animate-spin" /></div></DashboardLayout>;
 
   if (!admin?.is_super_admin) return (
     <DashboardLayout>
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Shield className="w-12 h-12 text-[#EF4444] mx-auto mb-3" />
-          <h2 className="text-lg text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Access Denied</h2>
+          <h2 className="text-lg text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Access Denied</h2>
           <p className="text-sm text-[#64748B]">Super admin role required.</p>
         </div>
       </div>
@@ -110,7 +110,7 @@ const SupportConsolePage = () => {
           <span className="text-[10px] text-[#64748B] block mb-2" style={{ fontFamily: fontFamily.mono }}>Feature Flags</span>
           <div className="flex flex-wrap gap-2">
             {Object.entries(admin.feature_flags || {}).map(([k, v]) => (
-              <span key={k} className="text-[10px] px-2 py-0.5 rounded" style={{ color: v ? '#10B981' : '#64748B', background: v ? '#10B98115' : '#24314050', fontFamily: fontFamily.mono }}>{k}: {v ? 'ON' : 'OFF'}</span>
+              <span key={k} className="text-[10px] px-2 py-0.5 rounded" style={{ color: v ? '#10B981' : '#64748B', background: v ? '#10B98115' : 'rgba(140,170,210,0.15)50', fontFamily: fontFamily.mono }}>{k}: {v ? 'ON' : 'OFF'}</span>
             ))}
           </div>
         </div>
@@ -119,8 +119,8 @@ const SupportConsolePage = () => {
         <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
         {[{ id: 'users', label: 'Users & Access', icon: Users }, { id: 'contacts', label: 'Enterprise Leads', icon: Eye }, { id: 'audit', label: 'Audit Log', icon: AlertTriangle }].map(t => (
             <button key={t.id} onClick={() => { setTab(t.id); if (t.id === 'audit') loadAudit(); if (t.id === 'contacts') loadContacts(); }}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium ${tab === t.id ? 'text-[#F4F7FA]' : 'text-[#64748B]'}`}
-              style={{ background: tab === t.id ? '#FF6A0015' : 'transparent', fontFamily: fontFamily.mono }}>
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium ${tab === t.id ? 'text-[#EDF1F7]' : 'text-[#64748B]'}`}
+              style={{ background: tab === t.id ? '#E85D0015' : 'transparent', fontFamily: fontFamily.mono }}>
               <t.icon className="w-3.5 h-3.5" />{t.label}
             </button>
           ))}
@@ -143,9 +143,9 @@ const SupportConsolePage = () => {
                     const tc = TIER_COLORS[u.subscription_tier] || '#64748B';
                     return (
                       <tr key={u.id} style={{ borderBottom: '1px solid var(--biqc-border)' }} className={u.is_disabled ? 'opacity-50' : ''}>
-                        <td className="px-3 py-2 text-[#F4F7FA]">{u.email}</td>
-                        <td className="px-3 py-2 text-[#9FB0C3]">{u.full_name || '—'}</td>
-                        <td className="px-3 py-2 text-[#9FB0C3]">{u.business_name || '—'}</td>
+                        <td className="px-3 py-2 text-[#EDF1F7]">{u.email}</td>
+                        <td className="px-3 py-2 text-[#8FA0B8]">{u.full_name || '—'}</td>
+                        <td className="px-3 py-2 text-[#8FA0B8]">{u.business_name || '—'}</td>
                         <td className="px-3 py-2">
                           <select value={u.subscription_tier || 'free'} onChange={e => updateTier(u.id, e.target.value)}
                             className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: (TIER_COLORS[u.subscription_tier] || '#64748B') + '15', color: TIER_COLORS[u.subscription_tier] || '#64748B', border: 'none', fontFamily: fontFamily.mono }}>
@@ -191,7 +191,7 @@ const SupportConsolePage = () => {
         {tab === 'contacts' && (
           <div className="rounded-xl overflow-hidden" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
             <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-              <span className="text-xs font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.mono }}>Enterprise Contact Requests ({contacts.length})</span>
+              <span className="text-xs font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.mono }}>Enterprise Contact Requests ({contacts.length})</span>
               <p className="text-[10px] text-[#64748B] mt-0.5">Users requesting access to paid or waitlist modules. Route to sales follow-up when configured.</p>
             </div>
             {contacts.length === 0 && <p className="text-xs text-[#64748B] p-4">No contact requests yet.</p>}
@@ -207,12 +207,12 @@ const SupportConsolePage = () => {
                 <tbody>
                   {contacts.map(c => (
                     <tr key={c.id} style={{ borderBottom: '1px solid var(--biqc-border)' }}>
-                      <td className="px-3 py-2 text-[#F4F7FA]">{c.name}</td>
-                      <td className="px-3 py-2 text-[#9FB0C3]">{c.business_name || '—'}</td>
-                      <td className="px-3 py-2 text-[#9FB0C3]">{c.email}</td>
-                      <td className="px-3 py-2 text-[#9FB0C3]">{c.phone || '—'}</td>
-                      <td className="px-3 py-2"><span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#FF6A0015', color: '#FF6A00', fontFamily: fontFamily.mono }}>{c.feature_requested || '—'}</span></td>
-                      <td className="px-3 py-2 text-[#9FB0C3]" style={{ fontFamily: fontFamily.mono, fontSize: '10px' }}>{c.callback_date} {c.callback_time}</td>
+                      <td className="px-3 py-2 text-[#EDF1F7]">{c.name}</td>
+                      <td className="px-3 py-2 text-[#8FA0B8]">{c.business_name || '—'}</td>
+                      <td className="px-3 py-2 text-[#8FA0B8]">{c.email}</td>
+                      <td className="px-3 py-2 text-[#8FA0B8]">{c.phone || '—'}</td>
+                      <td className="px-3 py-2"><span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#E85D0015', color: '#E85D00', fontFamily: fontFamily.mono }}>{c.feature_requested || '—'}</span></td>
+                      <td className="px-3 py-2 text-[#8FA0B8]" style={{ fontFamily: fontFamily.mono, fontSize: '10px' }}>{c.callback_date} {c.callback_time}</td>
                       <td className="px-3 py-2 text-[#64748B] max-w-[200px]"><span className="line-clamp-2">{c.description}</span></td>
                       <td className="px-3 py-2 text-[#64748B]" style={{ fontFamily: fontFamily.mono, fontSize: '10px' }}>{c.created_at ? new Date(c.created_at).toLocaleDateString('en-AU') : ''}</td>
                     </tr>
@@ -230,7 +230,7 @@ const SupportConsolePage = () => {
             {auditLog.map(a => (
               <div key={a.id} className="flex items-center gap-2 py-2 text-xs" style={{ borderBottom: '1px solid var(--biqc-border)' }}>
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: a.action_type?.includes('disable') ? '#EF4444' : '#10B981' }} />
-                <span className="text-[#F4F7FA] flex-1">{a.action_type}</span>
+                <span className="text-[#EDF1F7] flex-1">{a.action_type}</span>
                 <span className="text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{a.target_user_id?.substring(0, 8)}</span>
                 <span className="text-[10px] text-[#64748B]">{a.created_at ? new Date(a.created_at).toLocaleString('en-AU') : ''}</span>
               </div>

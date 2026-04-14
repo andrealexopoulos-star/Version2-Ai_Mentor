@@ -5,8 +5,8 @@ const ConstructionView = () => (
   <PlatformLayout title="Commercial Contractors / HVAC — Executive Overview">
     <div className="space-y-6 max-w-[1200px]">
       <div>
-        <h2 className="text-xl font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: SORA }}>Good morning, Andre.</h2>
-        <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: INTER }}>Construction & HVAC Intelligence &middot; Last scan: 6 minutes ago</p>
+        <h2 className="text-xl font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: SORA }}>Good morning, Andre.</h2>
+        <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: INTER }}>Construction & HVAC Intelligence &middot; Last scan: 6 minutes ago</p>
       </div>
 
       <SystemState state="COMPRESSION" confidence={79} velocity="worsening" />
@@ -17,8 +17,8 @@ const ConstructionView = () => (
           {/* Project Margin Tracker */}
           <Panel>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: SORA }}>Project Margin Tracker</h3>
-              <span className="text-xs px-2 py-0.5 rounded" style={{ fontFamily: MONO, color: '#FF6A00', background: '#FF6A0015' }}>2 jobs below target</span>
+              <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: SORA }}>Project Margin Tracker</h3>
+              <span className="text-xs px-2 py-0.5 rounded" style={{ fontFamily: MONO, color: '#E85D00', background: '#E85D0015' }}>2 jobs below target</span>
             </div>
             {[
               { job: 'JOB #142 — Westfield HVAC Fit-out', quoted: 15, current: 8, variance: -6200, status: 'critical' },
@@ -26,11 +26,11 @@ const ConstructionView = () => (
               { job: 'JOB #163 — Meridian Office Tower', quoted: 20, current: 22, variance: 2400, status: 'healthy' },
               { job: 'JOB #171 — Harbour City Residential', quoted: 14, current: 14, variance: 0, status: 'healthy' },
             ].map(j => {
-              const mc = { healthy: '#10B981', warning: '#F59E0B', critical: '#FF6A00' };
+              const mc = { healthy: '#10B981', warning: '#F59E0B', critical: '#E85D00' };
               return (
                 <div key={j.job} className="mb-4">
                   <div className="flex justify-between mb-1">
-                    <span className="text-xs text-[#F4F7FA]" style={{ fontFamily: SORA }}>{j.job}</span>
+                    <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: SORA }}>{j.job}</span>
                     <span className="text-xs" style={{ fontFamily: MONO, color: mc[j.status] }}>{j.variance > 0 ? '+' : ''}{j.variance < 0 ? '-' : ''}${Math.abs(j.variance).toLocaleString()}</span>
                   </div>
                   <div className="flex gap-2 items-center">
@@ -38,7 +38,7 @@ const ConstructionView = () => (
                       <div className="flex justify-between text-[10px] text-[#64748B] mb-0.5" style={{ fontFamily: MONO }}>
                         <span>Quoted: {j.quoted}%</span><span>Current: {j.current}%</span>
                       </div>
-                      <div className="h-2 rounded-full" style={{ background: '#243140' }}>
+                      <div className="h-2 rounded-full" style={{ background: 'rgba(140,170,210,0.15)' }}>
                         <div className="h-2 rounded-full" style={{ width: `${(j.current / 25) * 100}%`, background: mc[j.status] }} />
                       </div>
                     </div>
@@ -50,10 +50,10 @@ const ConstructionView = () => (
 
           {/* Progress Claim Exposure */}
           <Panel>
-            <h3 className="text-sm font-semibold text-[#F4F7FA] mb-4" style={{ fontFamily: SORA }}>Progress Claim Exposure</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7] mb-4" style={{ fontFamily: SORA }}>Progress Claim Exposure</h3>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <MetricCard label="Total Outstanding" value="$184,000" color="#F59E0B" />
-              <MetricCard label="Over 30 Days" value="$62,000" color="#FF6A00" alert />
+              <MetricCard label="Over 30 Days" value="$62,000" color="#E85D00" alert />
             </div>
             <div className="space-y-2">
               {[
@@ -62,14 +62,14 @@ const ConstructionView = () => (
                 { claim: 'Claim #18 — Harbour City', amount: '$68,000', days: 12, status: 'current' },
                 { claim: 'Claim #19 — Meridian', amount: '$54,000', days: 8, status: 'current' },
               ].map(cl => (
-                <div key={cl.claim} className="flex items-center justify-between p-2.5 rounded" style={{ background: '#0F1720', border: '1px solid #243140' }}>
+                <div key={cl.claim} className="flex items-center justify-between p-2.5 rounded" style={{ background: '#0F1720', border: '1px solid rgba(140,170,210,0.15)' }}>
                   <div>
-                    <span className="text-xs text-[#F4F7FA]" style={{ fontFamily: SORA }}>{cl.claim}</span>
+                    <span className="text-xs text-[#EDF1F7]" style={{ fontFamily: SORA }}>{cl.claim}</span>
                     <span className="text-[10px] text-[#64748B] block" style={{ fontFamily: MONO }}>{cl.days} days outstanding</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs font-semibold" style={{ fontFamily: MONO, color: cl.status === 'overdue' ? '#FF6A00' : '#F4F7FA' }}>{cl.amount}</span>
-                    <span className="text-[10px] block" style={{ fontFamily: MONO, color: cl.status === 'overdue' ? '#FF6A00' : '#10B981' }}>{cl.status.toUpperCase()}</span>
+                    <span className="text-xs font-semibold" style={{ fontFamily: MONO, color: cl.status === 'overdue' ? '#E85D00' : 'var(--ink-display, #EDF1F7)' }}>{cl.amount}</span>
+                    <span className="text-[10px] block" style={{ fontFamily: MONO, color: cl.status === 'overdue' ? '#E85D00' : '#10B981' }}>{cl.status.toUpperCase()}</span>
                   </div>
                 </div>
               ))}
@@ -78,7 +78,7 @@ const ConstructionView = () => (
 
           {/* Forward Work Coverage */}
           <Panel>
-            <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: SORA }}>Forward Work Coverage</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: SORA }}>Forward Work Coverage</h3>
             <div className="flex items-center gap-4">
               <div className="text-center">
                 <span className="text-3xl font-bold text-[#F59E0B]" style={{ fontFamily: MONO }}>4.2</span>
@@ -97,7 +97,7 @@ const ConstructionView = () => (
           <DecisionPressure score={8} />
 
           <Panel>
-            <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: SORA }}>Active Inevitabilities</h3>
+            <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: SORA }}>Active Inevitabilities</h3>
             <div className="space-y-2">
               <Inevitability title="JOB #142 margin collapse — currently at 8%" why="Subcontractor costs exceeded quote by $6,200. Two variation requests unapproved by client." impact="-$6,200 on this job. Pattern repeating on 2 other jobs." window="Approve variations within 14 days or absorb loss" severity="high" />
               <Inevitability title="$62K in progress claims overdue 30+ days" why="Westfield ($42K) and Crown ($20K) claims past due. Payroll due in 12 days." impact="Cash gap of $62K. Payroll exposure if not collected." window="Chase within 7 days" severity="high" />

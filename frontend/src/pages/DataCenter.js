@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Progress } from '../components/ui/progress';
+import { fontFamily } from '../design-system/tokens';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -193,22 +194,32 @@ const DataCenter = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <p className="overline text-[#9FB0C3] mb-2">Knowledge Base</p>
-            <h1 className="text-3xl md:text-4xl font-serif text-[#F4F7FA]">Data Center</h1>
-            <p className="text-[#9FB0C3] mt-2">
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 28, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Data Centre</h1>
+            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
               Upload your business documents to make the AI your subject matter expert
             </p>
           </div>
 
-          {/* Stats Cards */}
+          {/* Stats Strip — 4 cards: Data Sources, Records, Storage Used, Last Sync */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <Card className="stat-card">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <Database className="w-8 h-8 text-[#ccff00]" />
                   <div>
-                    <p className="stat-label text-xs">Total Files</p>
-                    <p className="text-2xl font-serif font-semibold">{stats?.total_files || 0}</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Data Sources</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.categories?.length || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="stat-card">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-8 h-8 text-[#ccff00]" />
+                  <div>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Records</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.total_files || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -218,19 +229,8 @@ const DataCenter = () => {
                 <div className="flex items-center gap-3">
                   <HardDrive className="w-8 h-8 text-[#ccff00]" />
                   <div>
-                    <p className="stat-label text-xs">Storage Used</p>
-                    <p className="text-2xl font-serif font-semibold">{stats?.total_size_mb || 0} MB</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="stat-card">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <FolderOpen className="w-8 h-8 text-[#ccff00]" />
-                  <div>
-                    <p className="stat-label text-xs">Categories</p>
-                    <p className="text-2xl font-serif font-semibold">{stats?.categories?.length || 0}</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Storage Used</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.total_size_mb || 0} MB</p>
                   </div>
                 </div>
               </CardContent>
@@ -240,23 +240,99 @@ const DataCenter = () => {
                 <div className="flex items-center gap-3">
                   <Building2 className="w-8 h-8 text-[#ccff00]" />
                   <div>
-                    <p className="stat-label text-xs">Profile Complete</p>
-                    <p className="text-2xl font-serif font-semibold">{stats?.profile_completeness || 0}%</p>
+                    <p className="stat-label text-xs" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Last Sync</p>
+                    <p className="text-2xl font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>{stats?.last_sync ? new Date(stats.last_sync).toLocaleDateString() : 'N/A'}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
+          {/* ── Data Sources Table ── */}
+          {files.length > 0 && (
+            <Card className="mb-8" style={{ borderRadius: 16, border: '1px solid rgba(140,170,210,0.12)', overflow: 'hidden' }}>
+              <CardHeader className="pb-3">
+                <CardTitle style={{ fontFamily: fontFamily.display, fontSize: 18, color: 'var(--ink-display, #EDF1F7)' }}>
+                  Data Sources
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: fontFamily.body, fontSize: 14 }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(140,170,210,0.12)' }}>
+                        {['Source', 'Type', 'Records', 'Last Sync', 'Status', 'Health'].map(col => (
+                          <th key={col} style={{
+                            textAlign: 'left', padding: '12px 16px',
+                            fontFamily: fontFamily.mono, fontSize: 10, color: 'var(--ink-muted, #708499)',
+                            textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500,
+                          }}>{col}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {files.map(file => {
+                        const catLabel = fileCategories.find(c => c.value === file.category)?.label || file.category;
+                        const hasText = !!file.extracted_text;
+                        // Derive status from file state
+                        const status = hasText ? 'active' : 'syncing';
+                        const healthPct = hasText ? 100 : 40;
+                        const statusColor = status === 'active' ? '#10B981' : status === 'syncing' ? '#F59E0B' : '#EF4444';
+                        return (
+                          <tr key={file.id} style={{ borderBottom: '1px solid rgba(140,170,210,0.06)' }}>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-display, #EDF1F7)', fontWeight: 500 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Database className="w-4 h-4" style={{ color: 'var(--ink-muted, #708499)', flexShrink: 0 }} />
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{file.filename}</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary, #8FA0B8)' }}>{catLabel}</td>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono, fontSize: 12 }}>
+                              {formatFileSize(file.file_size)}
+                            </td>
+                            <td style={{ padding: '12px 16px', color: 'var(--ink-secondary, #8FA0B8)', fontSize: 13 }}>
+                              {new Date(file.created_at).toLocaleDateString()}
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{
+                                display: 'inline-block', padding: '3px 10px', borderRadius: 9999,
+                                fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em',
+                                color: statusColor, background: `${statusColor}18`,
+                              }}>
+                                {status}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{
+                                width: 60, height: 6, borderRadius: 3,
+                                background: 'rgba(140,170,210,0.12)', overflow: 'hidden',
+                              }}>
+                                <div style={{
+                                  width: `${healthPct}%`, height: '100%', borderRadius: 3,
+                                  background: healthPct >= 80 ? '#10B981' : healthPct >= 50 ? '#F59E0B' : '#EF4444',
+                                  transition: 'width 0.4s ease',
+                                }} />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-[#0F1720] p-1 mb-6">
-              <TabsTrigger value="files" className="data-[state=active]:bg-[#141C26]" data-testid="tab-files">
+              <TabsTrigger value="files" className="data-[state=active]:bg-[#0E1628]" data-testid="tab-files">
                 <Database className="w-4 h-4 mr-2" /> Files & Documents
               </TabsTrigger>
-              <TabsTrigger value="profile" className="data-[state=active]:bg-[#141C26]" data-testid="tab-profile">
+              <TabsTrigger value="profile" className="data-[state=active]:bg-[#0E1628]" data-testid="tab-profile">
                 <Building2 className="w-4 h-4 mr-2" /> Business Profile
               </TabsTrigger>
-              <TabsTrigger value="upload" className="data-[state=active]:bg-[#141C26]" data-testid="tab-upload">
+              <TabsTrigger value="upload" className="data-[state=active]:bg-[#0E1628]" data-testid="tab-upload">
                 <Upload className="w-4 h-4 mr-2" /> Upload
               </TabsTrigger>
             </TabsList>
@@ -272,7 +348,7 @@ const DataCenter = () => {
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
                             <div className="w-10 h-10 bg-[#ccff00]/20 rounded-sm flex items-center justify-center">
-                              <Icon className="w-5 h-5 text-[#F4F7FA]" />
+                              <Icon className="w-5 h-5 text-[#EDF1F7]" />
                             </div>
                             <button
                               onClick={() => setDeleteFileId(file.id)}
@@ -282,19 +358,19 @@ const DataCenter = () => {
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </button>
                           </div>
-                          <h3 className="font-medium text-[#F4F7FA] truncate mb-1">{file.filename}</h3>
-                          <p className="text-xs text-[#9FB0C3] mb-2">
+                          <h3 className="font-medium text-[#EDF1F7] truncate mb-1">{file.filename}</h3>
+                          <p className="text-xs text-[#8FA0B8] mb-2">
                             {fileCategories.find(c => c.value === file.category)?.label || file.category}
                           </p>
                           {file.description && (
-                            <p className="text-sm text-[#9FB0C3] line-clamp-2 mb-2">{file.description}</p>
+                            <p className="text-sm text-[#8FA0B8] line-clamp-2 mb-2">{file.description}</p>
                           )}
                           <div className="flex items-center justify-between text-xs text-[#64748B]">
                             <span>{formatFileSize(file.file_size)}</span>
                             <span>{new Date(file.created_at).toLocaleDateString()}</span>
                           </div>
                           {file.extracted_text && (
-                            <div className="mt-3 pt-3 border-t border-[#243140]">
+                            <div className="mt-3 pt-3 border-t border-[rgba(140,170,210,0.12)]">
                               <div className="flex items-center gap-1 text-xs text-green-600">
                                 <Check className="w-3 h-3" />
                                 Text extracted for AI
@@ -309,9 +385,9 @@ const DataCenter = () => {
               ) : (
                 <Card className="rounded-lg">
                   <CardContent className="p-12 text-center">
-                    <Database className="w-16 h-16 text-[#F4F7FA]/20 mx-auto mb-4" />
-                    <h3 className="text-xl font-serif text-[#F4F7FA] mb-2">No files yet</h3>
-                    <p className="text-[#9FB0C3] mb-6">
+                    <Database className="w-16 h-16 text-[#EDF1F7]/20 mx-auto mb-4" />
+                    <h3 className="text-xl font-serif text-[#EDF1F7] mb-2">No files yet</h3>
+                    <p className="text-[#8FA0B8] mb-6">
                       Upload your business documents to help the AI understand your business better
                     </p>
                     <Button onClick={() => setActiveTab('upload')} className="btn-lime">
@@ -330,7 +406,7 @@ const DataCenter = () => {
                     <Building2 className="w-5 h-5" />
                     Business Profile
                   </CardTitle>
-                  <p className="text-sm text-[#9FB0C3]">
+                  <p className="text-sm text-[#8FA0B8]">
                     Complete your profile to get more personalized AI recommendations
                   </p>
                   {stats?.profile_completeness !== undefined && (
@@ -360,7 +436,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-industry">
                           <SelectValue placeholder="Select industry" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#141C26]">
+                        <SelectContent className="bg-[#0E1628]">
                           {industries.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
                         </SelectContent>
                       </Select>
@@ -371,7 +447,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-business-type">
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#141C26]">
+                        <SelectContent className="bg-[#0E1628]">
                           <SelectItem value="Sole Proprietorship">Sole Proprietorship</SelectItem>
                           <SelectItem value="LLC">LLC</SelectItem>
                           <SelectItem value="Corporation">Corporation</SelectItem>
@@ -396,7 +472,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-employees">
                           <SelectValue placeholder="Select range" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#141C26]">
+                        <SelectContent className="bg-[#0E1628]">
                           {employeeCounts.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
                         </SelectContent>
                       </Select>
@@ -407,7 +483,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="profile-revenue">
                           <SelectValue placeholder="Select range" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#141C26]">
+                        <SelectContent className="bg-[#0E1628]">
                           {revenueRanges.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                         </SelectContent>
                       </Select>
@@ -482,7 +558,7 @@ const DataCenter = () => {
               <Card className="rounded-lg">
                 <CardHeader>
                   <CardTitle className="font-serif">Upload Documents</CardTitle>
-                  <p className="text-sm text-[#9FB0C3]">
+                  <p className="text-sm text-[#8FA0B8]">
                     Supported formats: PDF, Word, Excel, CSV, TXT, JSON (Max 10MB)
                   </p>
                 </CardHeader>
@@ -490,14 +566,14 @@ const DataCenter = () => {
                   {/* Drop Zone */}
                   <div
                     className={`border-2 border-dashed rounded-sm p-8 text-center transition-colors ${
-                      dragActive ? 'border-[#ccff00] bg-[#ccff00]/10' : 'border-[#243140] hover:border-[#243140]'
+                      dragActive ? 'border-[#ccff00] bg-[#ccff00]/10' : 'border-[rgba(140,170,210,0.12)] hover:border-[rgba(140,170,210,0.12)]'
                     }`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
                   >
-                    <Upload className="w-12 h-12 text-[#F4F7FA]/30 mx-auto mb-4" />
+                    <Upload className="w-12 h-12 text-[#EDF1F7]/30 mx-auto mb-4" />
                     {uploadForm.file ? (
                       <div className="flex items-center justify-center gap-2">
                         <Check className="w-5 h-5 text-green-600" />
@@ -511,7 +587,7 @@ const DataCenter = () => {
                       </div>
                     ) : (
                       <>
-                        <p className="text-[#9FB0C3] mb-2">Drag and drop your file here, or</p>
+                        <p className="text-[#8FA0B8] mb-2">Drag and drop your file here, or</p>
                         <label className="btn-lime px-6 py-2 rounded-sm cursor-pointer inline-block">
                           Browse Files
                           <input
@@ -533,7 +609,7 @@ const DataCenter = () => {
                         <SelectTrigger data-testid="upload-category">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#141C26]">
+                        <SelectContent className="bg-[#0E1628]">
                           {fileCategories.map(cat => (
                             <SelectItem key={cat.value} value={cat.value}>
                               <div className="flex items-center gap-2">
@@ -565,8 +641,8 @@ const DataCenter = () => {
 
                   <div className="p-4 bg-[#0F1720] rounded-sm">
                     <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-[#9FB0C3] flex-shrink-0 mt-0.5" />
-                      <div className="text-sm text-[#9FB0C3]">
+                      <AlertCircle className="w-5 h-5 text-[#8FA0B8] flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-[#8FA0B8]">
                         <p className="font-medium mb-1">How your data is used:</p>
                         <ul className="space-y-1 text-xs">
                           <li>• Text is extracted from your documents automatically</li>
@@ -586,7 +662,7 @@ const DataCenter = () => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteFileId} onOpenChange={() => setDeleteFileId(null)}>
-        <AlertDialogContent className="bg-[#141C26]">
+        <AlertDialogContent className="bg-[#0E1628]">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete File</AlertDialogTitle>
             <AlertDialogDescription>

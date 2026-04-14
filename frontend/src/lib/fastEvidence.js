@@ -377,7 +377,7 @@ export const generateFastInsight = (emailEvidence, calendarEvidence, crmEvidence
   
   // Developer trace logging (dev mode only)
   if (process.env.NODE_ENV !== 'production' && filteredInsights.length > 0) {
-    // console.debug('🔍 [TRACK A] Evidence Trace:', {
+    /* console.debug('[TRACK A] Evidence Trace:', {
       generated_at: now.toISOString(),
       reinforcing_signals: reinforcingSignals,
       total_insights_generated: insights.length,
@@ -386,7 +386,7 @@ export const generateFastInsight = (emailEvidence, calendarEvidence, crmEvidence
         text_preview: i.text.substring(0, 50) + '...',
         trace: i.evidence_trace
       }))
-    });
+    }); */
   }
   
   // Return first 1-2 insights only (restrained)

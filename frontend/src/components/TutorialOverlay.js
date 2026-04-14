@@ -198,8 +198,8 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-2">
           <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4" style={{ color: '#FF6A00' }} />
-            <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#FF6A00' }}>
+            <BookOpen className="w-4 h-4" style={{ color: '#E85D00' }} />
+            <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#E85D00' }}>
               {tutorial.title}
             </span>
           </div>
@@ -211,9 +211,9 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
 
         {/* Progress bar */}
         <div className="px-6 pb-1">
-          <div className="h-0.5 rounded-full overflow-hidden" style={{ background: '#243140' }}>
+          <div className="h-0.5 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
             <div className="h-full rounded-full transition-all duration-300"
-              style={{ background: '#FF6A00', width: `${((step + 1) / total) * 100}%` }} />
+              style={{ background: '#E85D00', width: `${((step + 1) / total) * 100}%` }} />
           </div>
           <p className="text-[10px] mt-1" style={{ color: '#64748B' }}>Step {step + 1} of {total}</p>
         </div>
@@ -227,7 +227,7 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
         {/* Footer */}
         <div className="flex items-center justify-between px-6 pb-5 pt-1">
           <button onClick={onDismissForNow}
-            className="text-xs transition-colors hover:text-[#9FB0C3]"
+            className="text-xs transition-colors hover:text-[#8FA0B8]"
             style={{ color: '#64748B' }} data-testid="tutorial-dismiss-btn">
             Learn later
           </button>
@@ -242,13 +242,13 @@ const TutorialModal = ({ tutorial, onClose, onDismissForNow, pageKey }) => {
             {step < total - 1 ? (
               <button onClick={() => setStep(s => s + 1)}
                 className="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-medium text-white transition-opacity"
-                style={{ background: '#243140' }} data-testid="tutorial-next-btn">
+                style={{ background: 'rgba(140,170,210,0.15)' }} data-testid="tutorial-next-btn">
                 Next <ChevronRight className="w-3.5 h-3.5" />
               </button>
             ) : (
               <button onClick={onClose}
                 className="px-4 py-2 rounded-lg text-xs font-medium text-white"
-                style={{ background: '#FF6A00' }} data-testid="tutorial-done-btn">
+                style={{ background: '#E85D00' }} data-testid="tutorial-done-btn">
                 Got it
               </button>
             )}

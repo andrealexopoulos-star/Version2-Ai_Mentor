@@ -9,7 +9,7 @@ import { trackSnapshotEvent, EVENTS } from '../../lib/analytics';
 const ST_COLORS = {
   STABLE: { c: '#10B981', label: 'Stable' },
   DRIFT: { c: '#F59E0B', label: 'Drift Detected' },
-  COMPRESSION: { c: '#FF6A00', label: 'Compression' },
+  COMPRESSION: { c: '#E85D00', label: 'Compression' },
   CRITICAL: { c: '#EF4444', label: 'Critical' },
 };
 
@@ -109,13 +109,13 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
       <div className="max-w-3xl mx-auto px-6 py-10">
         {/* Header */}
         <div className="text-center mb-10" style={{ animation: 'snapFade 0.6s ease-out' }}>
-          <span className="text-[10px] font-semibold tracking-widest uppercase mb-3 block" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>
+          <span className="text-[10px] font-semibold tracking-widest uppercase mb-3 block" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>
             Executive Intelligence Snapshot
           </span>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>
             Here's what BIQc sees.
           </h1>
-          <p className="text-sm text-[#9FB0C3]" style={{ fontFamily: fontFamily.body }}>
+          <p className="text-sm text-[#8FA0B8]" style={{ fontFamily: fontFamily.body }}>
             Your first intelligence baseline is ready. Review it, then continue into the platform.
           </p>
         </div>
@@ -136,7 +136,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
             </div>
             <div className="flex items-center gap-2">
               {driftVelocity && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: driftVelocity === 'accelerating' ? '#EF4444' : '#64748B', background: driftVelocity === 'accelerating' ? '#EF444415' : '#24314050', fontFamily: fontFamily.mono }}>
+                <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: driftVelocity === 'accelerating' ? '#EF4444' : '#64748B', background: driftVelocity === 'accelerating' ? '#EF444415' : 'rgba(140,170,210,0.15)50', fontFamily: fontFamily.mono }}>
                   {driftVelocity}
                 </span>
               )}
@@ -146,13 +146,13 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
                 </span>
               )}
               {signalFreshness != null && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: signalFreshness > 48 ? '#F59E0B' : '#64748B', background: '#24314050', fontFamily: fontFamily.mono }}>
+                <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ color: signalFreshness > 48 ? '#F59E0B' : '#64748B', background: 'rgba(140,170,210,0.15)50', fontFamily: fontFamily.mono }}>
                   {signalFreshness < 1 ? 'Live' : signalFreshness < 24 ? `${Math.round(signalFreshness)}h old` : `${Math.round(signalFreshness / 24)}d old`}
                 </span>
               )}
             </div>
           </div>
-          {interpretation && <p className="text-sm mt-3 text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{interpretation}</p>}
+          {interpretation && <p className="text-sm mt-3 text-[#8FA0B8] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{interpretation}</p>}
         </div>
 
         {/* ═══ SECTION 2 — 90-Day Trajectory Projection ═══ */}
@@ -167,7 +167,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
             </div>
             {trajectory.projected_state && (
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs text-[#9FB0C3]">Projected state:</span>
+                <span className="text-xs text-[#8FA0B8]">Projected state:</span>
                 <span className="text-xs font-semibold" style={{ color: ST_COLORS[trajectory.projected_state]?.c || '#64748B', fontFamily: fontFamily.mono }}>{trajectory.projected_state}</span>
               </div>
             )}
@@ -179,7 +179,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
               ].filter(s => s.value).map(s => (
                 <div key={s.label} className="p-3 rounded-lg" style={{ background: s.color + '06', border: `1px solid ${s.color}20` }}>
                   <span className="text-[10px] block mb-1" style={{ color: s.color, fontFamily: fontFamily.mono }}>{s.label}</span>
-                  <p className="text-xs text-[#9FB0C3] leading-relaxed">{s.value}</p>
+                  <p className="text-xs text-[#8FA0B8] leading-relaxed">{s.value}</p>
                 </div>
               ))}
             </div>
@@ -195,12 +195,12 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
             <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Strategic Moves</h3>
             <div className="space-y-3">
               {filteredMoves.map((m, i) => (
-                <div key={i} className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid #24314080' }}>
+                <div key={i} className="p-4 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid rgba(140,170,210,0.15)80' }}>
                   <div className="flex items-start gap-2">
-                    <span className="text-xs font-bold text-[#FF6A00] mt-0.5" style={{ fontFamily: fontFamily.mono }}>#{i + 1}</span>
+                    <span className="text-xs font-bold text-[#E85D00] mt-0.5" style={{ fontFamily: fontFamily.mono }}>#{i + 1}</span>
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>{m.move}</p>
-                      <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{m.rationale}</p>
+                      <p className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>{m.move}</p>
+                      <p className="text-xs text-[#8FA0B8] leading-relaxed mb-2">{m.rationale}</p>
                       <div className="flex flex-wrap gap-2">
                         {m.measurable_outcome && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#10B981', background: '#10B98110', fontFamily: fontFamily.mono }}>{m.measurable_outcome}</span>}
                         {m.timeframe_days && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#3B82F6', background: '#3B82F610', fontFamily: fontFamily.mono }}>{m.timeframe_days}d window</span>}
@@ -227,8 +227,8 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
               <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Blindside Risk</h3>
               {blindside.probability != null && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#EF4444', background: '#EF444415', fontFamily: fontFamily.mono }}>{blindside.probability_band || `${blindside.probability}%`}</span>}
             </div>
-            <p className="text-sm text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>{blindside.risk}</p>
-            <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{blindside.evidence}</p>
+            <p className="text-sm text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>{blindside.risk}</p>
+            <p className="text-xs text-[#8FA0B8] leading-relaxed mb-2">{blindside.evidence}</p>
             <div className="flex flex-wrap gap-2">
               {blindside.time_window_days && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#EF4444', background: '#EF444410', fontFamily: fontFamily.mono }}>{blindside.time_window_days}d window</span>}
               {blindside.severity != null && <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#EF4444', background: '#EF444410', fontFamily: fontFamily.mono }}>severity {blindside.severity}/100</span>}
@@ -246,8 +246,8 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
               <h3 className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>Hidden Growth Lever</h3>
               {lever.underutilisation_score != null && <span className="text-[10px] px-2 py-0.5 rounded ml-auto" style={{ color: '#10B981', background: '#10B98115', fontFamily: fontFamily.mono }}>{lever.underutilisation_score}% underutilised</span>}
             </div>
-            <p className="text-sm text-[#F4F7FA] mb-2" style={{ fontFamily: fontFamily.display }}>{lever.lever}</p>
-            <p className="text-xs text-[#9FB0C3] leading-relaxed mb-2">{lever.evidence}</p>
+            <p className="text-sm text-[#EDF1F7] mb-2" style={{ fontFamily: fontFamily.display }}>{lever.lever}</p>
+            <p className="text-xs text-[#8FA0B8] leading-relaxed mb-2">{lever.evidence}</p>
             <div className="flex flex-wrap gap-2">
               {lever.upside_band?.low != null && lever.upside_band?.high != null && (
                 <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: '#10B981', background: '#10B98110', fontFamily: fontFamily.mono }}>${lever.upside_band.low}K-${lever.upside_band.high}K upside</span>
@@ -271,7 +271,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
                 <div key={i} className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full" style={{ background: gap.status === 'not_connected' ? '#EF4444' : gap.status === 'stale' ? '#F59E0B' : '#64748B' }} />
-                    <span className="text-xs text-[#9FB0C3]">{gap.area}</span>
+                    <span className="text-xs text-[#8FA0B8]">{gap.area}</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: gap.status === 'not_connected' ? '#EF4444' : '#F59E0B', background: (gap.status === 'not_connected' ? '#EF4444' : '#F59E0B') + '10', fontFamily: fontFamily.mono }}>{gap.status?.replace('_', ' ')}</span>
                   </div>
                   <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>-{gap.impact_on_confidence || '?'}% confidence</span>
@@ -300,7 +300,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
             <div className="flex items-center gap-4">
               <span className="text-3xl font-bold" style={{ color: snapshotConfidence > 70 ? '#10B981' : snapshotConfidence > 40 ? '#F59E0B' : '#EF4444', fontFamily: fontFamily.mono }}>{Math.round(snapshotConfidence)}%</span>
               <div className="flex-1">
-                <div className="h-2 rounded-full" style={{ background: '#243140' }}>
+                <div className="h-2 rounded-full" style={{ background: 'rgba(140,170,210,0.15)' }}>
                   <div className="h-2 rounded-full transition-all" style={{ width: `${snapshotConfidence}%`, background: snapshotConfidence > 70 ? '#10B981' : snapshotConfidence > 40 ? '#F59E0B' : '#EF4444' }} />
                 </div>
                 <p className="text-[10px] text-[#64748B] mt-1" style={{ fontFamily: fontFamily.mono }}>
@@ -318,7 +318,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
         {memo && (
           <div className="rounded-xl p-5 mb-6" style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)', animation: 'snapFade 1.5s ease-out' }}>
             <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#64748B', fontFamily: fontFamily.mono }}>AI Advisory</h3>
-            <p className="text-sm text-[#9FB0C3] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{memo.substring(0, 500)}</p>
+            <p className="text-sm text-[#8FA0B8] leading-relaxed" style={{ fontFamily: fontFamily.body }}>{memo.substring(0, 500)}</p>
           </div>
         )}
 
@@ -326,7 +326,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
         {(alignment || contradictions.length > 0) && (
           <div className="rounded-xl p-5 mb-6" style={{ background: 'var(--biqc-bg-card)', border: '1px solid #F59E0B25', animation: 'snapFade 1.6s ease-out' }}>
             <h3 className="text-[10px] font-semibold tracking-widest uppercase mb-3" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>Alignment Check</h3>
-            {alignment && <p className="text-sm text-[#9FB0C3] leading-relaxed mb-3" style={{ fontFamily: fontFamily.body }}>{alignment}</p>}
+            {alignment && <p className="text-sm text-[#8FA0B8] leading-relaxed mb-3" style={{ fontFamily: fontFamily.body }}>{alignment}</p>}
             {contradictions.map((ct, i) => (
               <div key={i} className="px-3 py-2 rounded-lg mb-2" style={{ background: '#F59E0B10', border: '1px solid #F59E0B25' }}>
                 <p className="text-xs" style={{ color: '#F59E0B', fontFamily: fontFamily.mono }}>{'\u26A0'} {ct}</p>
@@ -362,7 +362,7 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
           <div className="text-center" style={{ animation: 'ctaReveal 0.6s ease-out' }}>
             <button onClick={onContinue}
               className="px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 inline-flex items-center gap-2"
-              style={{ background: '#FF6A00', fontFamily: fontFamily.display }}
+              style={{ background: '#E85D00', fontFamily: fontFamily.display }}
               data-testid="cmo-continue-btn">
               Continue to Intelligence Platform <ArrowRight className="w-4 h-4" />
             </button>
@@ -371,11 +371,11 @@ export const ExecutiveCMOSnapshot = ({ intelligenceData, onContinue }) => {
             </p>
             {!isReady && (
               <div className="flex justify-center gap-3 mt-3">
-                <a href="mailto:support@biqc.com.au" className="text-[10px] text-[#64748B] hover:text-[#9FB0C3] underline" style={{ fontFamily: fontFamily.mono }}>
+                <a href="mailto:support@biqc.com.au" className="text-[10px] text-[#64748B] hover:text-[#8FA0B8] underline" style={{ fontFamily: fontFamily.mono }}>
                   Contact support
                 </a>
                 <span className="text-[10px] text-[#3A4A5C]">·</span>
-                <a href="/knowledge-base" className="text-[10px] text-[#64748B] hover:text-[#9FB0C3] underline" style={{ fontFamily: fontFamily.mono }}>
+                <a href="/knowledge-base" className="text-[10px] text-[#64748B] hover:text-[#8FA0B8] underline" style={{ fontFamily: fontFamily.mono }}>
                   Troubleshooting guide
                 </a>
               </div>
@@ -395,23 +395,23 @@ export const ForensicCalibrationUI = ({ onSkip }) => (
   <div className="flex-1 overflow-y-auto" style={{ background: 'var(--biqc-bg)' }} data-testid="forensic-calibration">
     <div className="max-w-2xl mx-auto px-6 py-10">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4" style={{ background: '#FF6A0015', border: '1px solid #FF6A0030' }}>
-          <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#FF6A00', fontFamily: fontFamily.mono }}>Premium Intelligence</span>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4" style={{ background: '#E85D0015', border: '1px solid #E85D0030' }}>
+          <span className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: '#E85D00', fontFamily: fontFamily.mono }}>Premium Intelligence</span>
         </div>
-        <h1 className="text-2xl font-bold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Forensic Business Calibration</h1>
-        <p className="text-sm text-[#9FB0C3] max-w-md mx-auto" style={{ fontFamily: fontFamily.body }}>
+        <h1 className="text-2xl font-bold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Forensic Business Calibration</h1>
+        <p className="text-sm text-[#8FA0B8] max-w-md mx-auto" style={{ fontFamily: fontFamily.body }}>
           Deep-dive analysis of your competitive position, revenue architecture, and strategic alignment.
         </p>
       </div>
       <div className="text-center space-y-3">
         <button className="px-10 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110"
-          style={{ background: 'linear-gradient(135deg, #FF6A00, #FF6A00)', fontFamily: fontFamily.display, boxShadow: '0 8px 32px rgba(255,106,0,0.3)' }}
+          style={{ background: 'linear-gradient(135deg, #E85D00, #E85D00)', fontFamily: fontFamily.display, boxShadow: '0 8px 32px rgba(232,93,0,0.3)' }}
           data-testid="forensic-unlock-btn">
           Unlock Forensic Calibration
         </button>
         <p className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Coming soon — included in Pro plan</p>
         {onSkip && (
-          <button onClick={onSkip} className="text-xs text-[#64748B] hover:text-[#9FB0C3] transition-colors" data-testid="forensic-skip-btn">
+          <button onClick={onSkip} className="text-xs text-[#64748B] hover:text-[#8FA0B8] transition-colors" data-testid="forensic-skip-btn">
             Continue with standard calibration
           </button>
         )}

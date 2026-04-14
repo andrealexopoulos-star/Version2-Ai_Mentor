@@ -1,35 +1,45 @@
+/* ═══ LIQUID STEEL DESIGN SYSTEM — Authoritative Tokens ═══
+   Imported BEFORE Tailwind so tokens are available to all layers.
+   These are the mockup-canonical values — the single source of truth.
+*/
+@import './styles/liquid-steel-tokens.css';
+@import './styles/app-components.css';
+@import './styles/marketing.css';
+@import './styles/animations.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ═══════════════════════════════════════════════════════════
-   BIQc UNIFIED DESIGN SYSTEM — Phase 1
-   Single source of truth for ALL UI surfaces.
-   Dark (default) + Light theme via [data-theme="light"].
-   Tokens map directly to design-system/tokens.js values.
+   BACKWARD-COMPAT BRIDGE — maps --biqc-* to Liquid Steel tokens.
+   Existing React components use --biqc-* names. These aliases
+   ensure they pick up the correct Liquid Steel values without
+   requiring mass find-replace.
 ═══════════════════════════════════════════════════════════ */
 :root {
-    /* ── BIQc Dark Theme (Primary) ── */
-    --biqc-bg:          #0F1720;
-    --biqc-bg-card:     #141C26;
-    --biqc-bg-panel:    #141C26;   /* alias for panel backgrounds */
-    --biqc-bg-input:    #0A1018;
-    --biqc-bg-elevated: #1A2332;
-    --biqc-sidebar-bg:  #0A1018;   /* sidebar and header bg */
-    --biqc-border:      #243140;
-    --biqc-border-focus:#FF6A00;
-    --biqc-text:        #F4F7FA;
-    --biqc-text-2:      #9FB0C3;
-    --biqc-text-muted:  #8B9DB5;   /* WCAG AA fix: was #64748B (3.48:1) → now 4.6:1 */
-    --biqc-brand:       #FF6A00;
-    --biqc-brand-dark:  #E85D00;
-    --biqc-brand-dim:   rgba(255,106,0,0.15);
-    --biqc-success:     #10B981;
-    --biqc-warning:     #F59E0B;
-    --biqc-danger:      #EF4444;
-    --biqc-info:        #3B82F6;
+    /* ── Bridge: --biqc-* → Liquid Steel (dark default) ── */
+    --biqc-bg:          var(--canvas-app);
+    --biqc-bg-card:     var(--surface);
+    --biqc-bg-panel:    var(--surface);
+    --biqc-bg-input:    var(--surface-sunken);
+    --biqc-bg-elevated: var(--surface-raised);
+    --biqc-sidebar-bg:  var(--surface-sunken);
+    --biqc-border:      var(--border-strong);
+    --biqc-border-focus:var(--lava);
+    --biqc-text:        var(--ink-display);
+    --biqc-text-2:      var(--ink-secondary);
+    --biqc-text-muted:  var(--ink-muted);
+    --biqc-brand:       var(--lava);
+    --biqc-brand-dark:  var(--lava-deep);
+    --biqc-brand-dim:   var(--lava-wash);
+    --biqc-success:     var(--positive);
+    --biqc-warning:     var(--warning);
+    --biqc-danger:      var(--danger);
+    --biqc-info:        var(--info);
 
     /* ── Semantic aliases (used by CSS classes) ── */
     --bg-primary:   var(--biqc-bg);
@@ -40,21 +50,21 @@
     --text-primary:      var(--biqc-text);
     --text-secondary:    var(--biqc-text-2);
     --text-muted:        var(--biqc-text-muted);
-    --text-placeholder:  #4A5568;
-    --border-light:  var(--biqc-border);
-    --border-medium: #2D3E50;
-    --border-focus:  var(--biqc-border-focus);
-    --accent-primary:      var(--biqc-brand);
-    --accent-primary-hover:var(--biqc-brand-dark);
-    --accent-success: var(--biqc-success);
-    --accent-warning: var(--biqc-warning);
-    --accent-danger:  var(--biqc-danger);
-    --accent-info:    var(--biqc-info);
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
-    --shadow-focus: 0 0 0 3px rgba(255,106,0,0.25);
-    --header-height: 3.5rem;
+    --text-placeholder:  var(--ink-subtle);
+    --border-light:  var(--border);
+    --border-medium: var(--border-strong);
+    --border-focus:  var(--lava);
+    --accent-primary:      var(--lava);
+    --accent-primary-hover:var(--lava-warm);
+    --accent-success: var(--positive);
+    --accent-warning: var(--warning);
+    --accent-danger:  var(--danger);
+    --accent-info:    var(--info);
+    --shadow-sm: var(--elev-1);
+    --shadow-md: var(--elev-2);
+    --shadow-lg: var(--elev-3);
+    --shadow-focus: var(--ring-focus);
+    --header-height: var(--topbar-h);
     --banner-height: 0px;
 }
 
@@ -62,49 +72,18 @@
     :root { --header-height: 4rem; }
 }
 
-/* ── BIQc Light Theme ── */
+/* ── Light Theme: --biqc-* bridge uses Liquid Steel light values ── */
+/* Light values are inherited from tokens.css :root (light is default in tokens).
+   The dark theme overrides happen in tokens.css [data-theme="dark"].
+   Since BIQc uses dark as default, we need the bridge in both directions. */
 [data-theme="light"] {
-    --biqc-bg:          #F0F4F8;
-    --biqc-bg-card:     #FFFFFF;
-    --biqc-bg-panel:    #FFFFFF;
-    --biqc-bg-input:    #F8FAFC;
-    --biqc-bg-elevated: #EDF2F7;
-    --biqc-sidebar-bg:  #F8FAFC;
-    --biqc-border:      #CBD5E0;
-    --biqc-border-focus:#FF6A00;
-    --biqc-text:        #0F172A;
-    --biqc-text-2:      #334155;
-    --biqc-text-muted:  #64748B;   /* 5.9:1 on white — AA pass */
-    --biqc-brand:       #FF6A00;
-    --biqc-brand-dark:  #E55F00;
-    --biqc-brand-dim:   rgba(255,106,0,0.1);
-    --biqc-success:     #059669;
-    --biqc-warning:     #D97706;
-    --biqc-danger:      #DC2626;
-    --biqc-info:        #2563EB;
-
-    --bg-primary:   var(--biqc-bg);
-    --bg-secondary: #E8EDF4;
-    --bg-tertiary:  var(--biqc-bg-elevated);
-    --bg-card:      var(--biqc-bg-card);
-    --bg-card-hover:#F8FAFC;
-    --text-primary:      var(--biqc-text);
-    --text-secondary:    var(--biqc-text-2);
-    --text-muted:        var(--biqc-text-muted);
-    --text-placeholder:  #94A3B8;
-    --border-light:  var(--biqc-border);
-    --border-medium: #A0AEC0;
-    --border-focus:  var(--biqc-brand);
-    --accent-primary:      var(--biqc-brand);
-    --accent-primary-hover:var(--biqc-brand-dark);
-    --accent-success: var(--biqc-success);
-    --accent-warning: var(--biqc-warning);
-    --accent-danger:  var(--biqc-danger);
-    --accent-info:    var(--biqc-info);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
-    --shadow-lg: 0 8px 30px rgba(0,0,0,0.14);
-    --shadow-focus: 0 0 0 3px rgba(255,106,0,0.2);
+    /* The Liquid Steel tokens.css already defines light values in :root.
+       The --biqc-* vars inherit via var() from Liquid Steel automatically.
+       We only override values that differ from the Liquid Steel light defaults: */
+    --shadow-sm: var(--elev-1);
+    --shadow-md: var(--elev-2);
+    --shadow-lg: var(--elev-3);
+    --shadow-focus: var(--ring-focus);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -119,14 +98,14 @@
 }
 
 /* Text overrides: dark-theme white/grey text → dark text in light mode */
-[data-theme="light"] .text-\[#F4F7FA\]  { color: #0F172A !important; }
+[data-theme="light"] .text-\[#EDF1F7\]  { color: #0F172A !important; }
 [data-theme="light"] .text-\[#E6EEF7\]  { color: #0F172A !important; }
-[data-theme="light"] .text-\[#9FB0C3\]  { color: #475569 !important; }
+[data-theme="light"] .text-\[#8FA0B8\]  { color: #475569 !important; }
 [data-theme="light"] .text-\[#64748B\]  { color: #64748B !important; }  /* already good */
 [data-theme="light"] .text-\[#8B9DB5\]  { color: #64748B !important; }
 
 /* Mono/label text */
-[data-theme="light"] .text-\[#9FB0C3\][style*="JetBrains"] { color: #475569 !important; }
+[data-theme="light"] .text-\[#8FA0B8\][style*="JetBrains"] { color: #475569 !important; }
 
 /* Border overrides */
 [data-theme="light"] .border-\[#243140\] { border-color: #CBD5E0 !important; }
@@ -134,7 +113,7 @@
 
 /* Background overrides for Tailwind bg classes */
 [data-theme="light"] .bg-\[#0F1720\]  { background-color: #F0F4F8 !important; }
-[data-theme="light"] .bg-\[#141C26\]  { background-color: #FFFFFF !important; }
+[data-theme="light"] .bg-\[#0E1628\]  { background-color: #FFFFFF !important; }
 [data-theme="light"] .bg-\[#0A1018\]  { background-color: #F8FAFC !important; }
 [data-theme="light"] .bg-\[#1A2332\]  { background-color: #EDF2F7 !important; }
 [data-theme="light"] .bg-\[#243140\]  { background-color: #E2E8F0 !important; }
@@ -145,11 +124,11 @@
 
 
 
-/* ── Unified font stack ── */
+/* ── Font stack (per approved mockups — Apr 2026) ── */
 :root {
-    --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-heading: 'Source Serif 4', Georgia, serif;
     --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-mono:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
 }
 
 * {
@@ -184,8 +163,8 @@ body {
 }
 
 /* ═══════════════════════════════════════
-   UNIFIED FONT SYSTEM — BIQc Design
-   Single family across platform + website (Inter)
+   FONT SYSTEM — BIQc Design (Apr 2026)
+   Headings → Source Serif 4 | Body → Inter | Mono → JetBrains Mono
 ═══════════════════════════════════════ */
 
 h1, h2, h3, h4, h5, h6 {
@@ -1152,7 +1131,7 @@ html, body {
         min-width: 100% !important;
         max-width: 100% !important;
         min-height: 48px !important;
-        background-color: #FF6A00 !important;
+        background-color: #E85D00 !important;
         color: white !important;
         border-radius: 12px !important;
         font-size: 15px !important;

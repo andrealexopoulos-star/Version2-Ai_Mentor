@@ -11,6 +11,8 @@ import {
   AlertCircle, Inbox, X
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
+import AdminConsentModal from '../components/AdminConsentModal';
 
 const ConnectEmail = () => {
   const navigate = useNavigate();
@@ -18,28 +20,36 @@ const ConnectEmail = () => {
   const [outlookStatus, setOutlookStatus] = useState({ connected: false });
   const [gmailStatus, setGmailStatus] = useState({ connected: false });
   const [loading, setLoading] = useState(true);
+  const [showAdminConsent, setShowAdminConsent] = useState(false);
+  const [adminConsentUrl, setAdminConsentUrl] = useState('');
 
   useEffect(() => {
     checkEmailConnections();
-    
+
     // Handle OAuth callback
     const urlParams = new URLSearchParams(window.location.search);
     const outlookConnected = urlParams.get('outlook_connected');
     const gmailConnected = urlParams.get('gmail_connected');
-    
-    if (outlookConnected === 'true') {
-      // console.log("Outlook OAuth completed - refreshing connection status");
-      // Clean URL
+    const outlookError = urlParams.get('outlook_error');
+    const consentUrl = urlParams.get('admin_consent_url');
+
+    // Admin consent required — show modal
+    if (outlookError === 'admin_consent_required' && consentUrl) {
+      setShowAdminConsent(true);
+      setAdminConsentUrl(decodeURIComponent(consentUrl));
       window.history.replaceState({}, '', '/connect-email');
-      // Refresh connection status after a brief delay
+    } else if (outlookError) {
+      toast.error(`Microsoft connection failed: ${outlookError.replace(/_/g, ' ')}`);
+      window.history.replaceState({}, '', '/connect-email');
+    }
+
+    if (outlookConnected === 'true') {
+      window.history.replaceState({}, '', '/connect-email');
       setTimeout(() => checkEmailConnections(), 1500);
     }
-    
+
     if (gmailConnected === 'true') {
-      // console.log("Gmail OAuth completed - refreshing connection status");
-      // Clean URL
       window.history.replaceState({}, '', '/connect-email');
-      // Refresh connection status after a brief delay
       setTimeout(() => checkEmailConnections(), 1500);
     }
   }, []);
@@ -142,10 +152,15 @@ const ConnectEmail = () => {
       
       // console.log("✅ Token obtained, redirecting to OAuth...");
       
-      // EXPLICIT: Pass provider parameter
-      window.location.assign(
-        `${getBackendUrl()}/api/auth/outlook/login?token=${token}&returnTo=/connect-email&provider=outlook`
-      );
+      // Secure: POST token via header, get short-lived auth code for redirect
+      const initResp = await fetch(`${getBackendUrl()}/api/auth/email-connect/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ provider: 'outlook', returnTo: '/connect-email' }),
+      });
+      if (!initResp.ok) throw new Error('Failed to initiate Outlook connection');
+      const { redirect_url } = await initResp.json();
+      window.location.assign(`${getBackendUrl()}${redirect_url}`);
       
     } catch (error) {
       console.error("Outlook connect error:", error);
@@ -188,10 +203,15 @@ const ConnectEmail = () => {
       
       // console.log("✅ Token obtained, redirecting to OAuth...");
       
-      // EXPLICIT: Pass provider parameter
-      window.location.assign(
-        `${getBackendUrl()}/api/auth/gmail/login?token=${token}&returnTo=/connect-email&provider=gmail`
-      );
+      // Secure: POST token via header, get short-lived auth code for redirect
+      const initResp = await fetch(`${getBackendUrl()}/api/auth/email-connect/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ provider: 'gmail', returnTo: '/connect-email' }),
+      });
+      if (!initResp.ok) throw new Error('Failed to initiate Gmail connection');
+      const { redirect_url } = await initResp.json();
+      window.location.assign(`${getBackendUrl()}${redirect_url}`);
       
     } catch (error) {
       console.error("Gmail connect error:", error);
@@ -237,15 +257,24 @@ const ConnectEmail = () => {
 
   return (
     <DashboardLayout>
-      <div className="px-3 sm:px-6 lg:px-8 py-6 sm:py-8 w-full lg:max-w-5xl lg:mx-auto">
+      {showAdminConsent && (
+        <AdminConsentModal
+          adminConsentUrl={adminConsentUrl}
+          onClose={() => setShowAdminConsent(false)}
+        />
+      )}
+      <div className="px-3 sm:px-6 lg:px-8 py-6 sm:py-8 w-full max-w-[680px] mx-auto">
         <div className="space-y-6">
           {/* Header */}
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              Connectors
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+              — Connect email
+            </div>
+            <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              Link your <em style={{ fontStyle: 'italic', color: '#E85D00' }}>inbox</em>.
             </h1>
-            <p className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
-              Connect Outlook or Gmail to activate email and calendar intelligence
+            <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
+              BIQc reads your email to detect deal stalls, customer churn signals, and reply-time patterns. Nothing is sent on your behalf — ever. Read-only access only.
             </p>
           </div>
 

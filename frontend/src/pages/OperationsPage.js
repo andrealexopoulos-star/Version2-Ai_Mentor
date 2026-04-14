@@ -2,15 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiClient } from '../lib/api';
 import EnterpriseContactGate from '../components/EnterpriseContactGate';
-import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2, Plug, Zap, ArrowRight, TrendingUp, BarChart3 } from 'lucide-react';
+import { Settings, Clock, Users, AlertTriangle, CheckCircle2, Workflow, Loader2, Plug, Zap, ArrowRight, TrendingUp, BarChart3, Activity, Timer } from 'lucide-react';
 import DataConfidence from '../components/DataConfidence';
 import { useIntegrationStatus } from '../hooks/useIntegrationStatus';
 import IntegrationStatusWidget from '../components/IntegrationStatusWidget';
 import { fontFamily } from '../design-system/tokens';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, AUTH_STATE } from '../context/SupabaseAuthContext';
-import InsightExplainabilityStrip from '../components/InsightExplainabilityStrip';
-import ActionOwnershipCard from '../components/ActionOwnershipCard';
 import { EmptyStateCard, MetricCard, SectionLabel, SignalCard, SurfaceCard } from '../components/intelligence/SurfacePrimitives';
 import LineageBadge from '../components/LineageBadge';
 import { PageLoadingState, PageErrorState } from '../components/PageStateComponents';
@@ -94,30 +92,13 @@ const OperationsPage = () => {
 
   // Operational KPIs — distinct from Revenue
   const OPS_KPIS = [
-    exec.sla_breaches != null && { label: 'SLA Breaches', value: String(exec.sla_breaches), unit: 'this week', color: exec.sla_breaches > 0 ? '#FF6A00' : '#10B981', icon: AlertTriangle, desc: 'Commitments missed against agreed service levels' },
+    exec.sla_breaches != null && { label: 'SLA Breaches', value: String(exec.sla_breaches), unit: 'this week', color: exec.sla_breaches > 0 ? '#E85D00' : '#10B981', icon: AlertTriangle, desc: 'Commitments missed against agreed service levels' },
     exec.task_aging != null && { label: 'Task Aging', value: exec.task_aging + '%', unit: 'overdue >7d', color: exec.task_aging > 30 ? '#F59E0B' : '#10B981', icon: Clock, desc: 'Percentage of open tasks sitting stale beyond threshold' },
     exec.active_tasks != null && { label: 'Tasks Active', value: String(exec.active_tasks), unit: 'in progress', color: '#3B82F6', icon: Workflow, desc: 'Current open tasks across all connected systems' },
     exec.sop_compliance != null && { label: 'SOP Compliance', value: exec.sop_compliance + '%', unit: 'processes on-track', color: exec.sop_compliance > 85 ? '#10B981' : '#F59E0B', icon: CheckCircle2, desc: 'Standard operating procedures being followed correctly' },
     vitals.calendar && { label: 'Meeting Load', value: vitals.calendar.match(/(\d+)\s+meeting/)?.[1] || '—', unit: 'this week', color: '#8B5CF6', icon: Users, desc: vitals.calendar },
     exec.bottleneck && { label: 'Active Bottleneck', value: '1', unit: 'detected', color: '#F59E0B', icon: Zap, desc: exec.bottleneck.slice(0, 60) },
   ].filter(Boolean);
-
-  const explainability = {
-    whyVisible: hasRealOpsData
-      ? `BIQc is reading live workflow signals from ${hasCRM ? (crmIntegration?.provider || 'CRM') : 'connected systems'}${hasAccounting ? ` and ${acctIntegration?.provider || 'accounting'}` : ''}.`
-      : 'Operations intelligence appears when CRM/accounting systems are connected.',
-    whyNow: exec.sla_breaches > 0
-      ? `${exec.sla_breaches} SLA breach${exec.sla_breaches === 1 ? '' : 'es'} detected — service slippage is now measurable.`
-      : exec.bottleneck
-        ? `Active bottleneck detected: ${exec.bottleneck}`
-        : 'This module surfaces delivery friction before it cascades into customer or cashflow issues.',
-    nextAction: exec.bottleneck
-      ? 'Assign a bottleneck owner, define one unblock action, and re-check task aging within 48 hours.'
-      : 'Prioritise overdue tasks and tighten weekly execution cadence with clear owners per queue.',
-    ifIgnored: hasRealOpsData
-      ? 'Unresolved delivery drift typically compounds into missed commitments, rework, and client trust erosion.'
-      : 'Without connected workflow data, operational risks remain undetected until outcomes deteriorate.',
-  };
 
   const toConfidencePct = (raw) => {
     if (raw == null) return undefined;
@@ -128,15 +109,6 @@ const OperationsPage = () => {
   const opsIntelLineage = unifiedOps?.lineage;
   const opsIntelFreshness = unifiedOps?.data_freshness;
   const opsIntelConfidence = toConfidencePct(unifiedOps?.confidence_score);
-
-  const actionOwnership = {
-    owner: exec.bottleneck ? 'Operations manager' : 'Delivery lead',
-    deadline: exec.sla_breaches > 0 ? 'Within 24 hours' : 'By end of this week',
-    checkpoint: exec.bottleneck
-      ? `Unblock bottleneck: ${String(exec.bottleneck).slice(0, 80)}${String(exec.bottleneck).length > 80 ? '…' : ''}`
-      : 'Run overdue-task cleanup and confirm clear queue ownership.',
-    successMetric: `SLA breaches ${exec.sla_breaches ?? '—'} · task aging ${exec.task_aging != null ? `${exec.task_aging}%` : '—'}`,
-  };
 
   const opsSignals = [
     exec.bottleneck ? {
@@ -194,14 +166,14 @@ const OperationsPage = () => {
         {/* Header — operations-specific copy + connection badges */}
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-[#F4F7FA] mb-1.5" style={{ fontFamily: fontFamily.display }}>Delivery & Operations</h1>
-            <p className="text-sm text-[#9FB0C3] mb-2" style={{ fontFamily: fontFamily.body }}>
-              Track fulfilment timelines, task throughput, SOP compliance and resource utilisation — updated from your connected systems.
+            <h1 className="font-medium mb-1.5" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Operations.</h1>
+            <p className="text-sm text-[#8FA0B8] mb-2" style={{ fontFamily: fontFamily.body }}>
+              Process health, team velocity, and bottleneck detection.
             </p>
             <div className="flex flex-wrap items-center gap-2">
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(100,116,139,0.12)', color: 'var(--ink-secondary, #8FA0B8)', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying CRM
                 </span>
               ) : hasCRM ? (
@@ -213,14 +185,14 @@ const OperationsPage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=crm')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)', fontFamily: fontFamily.mono }}
                   data-testid="operations-connect-crm-button">
                   <Plug className="w-3 h-3" /> Connect CRM <ArrowRight className="w-3 h-3" />
                 </button>
               )}
               {!integrationResolved ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{ background: 'rgba(100,116,139,0.12)', color: '#9FB0C3', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
+                  style={{ background: 'rgba(100,116,139,0.12)', color: 'var(--ink-secondary, #8FA0B8)', border: '1px solid rgba(100,116,139,0.24)', fontFamily: fontFamily.mono }}>
                   <Loader2 className="w-3 h-3 animate-spin" /> Verifying Accounting
                 </span>
               ) : hasAccounting ? (
@@ -231,7 +203,7 @@ const OperationsPage = () => {
               ) : (
                 <button onClick={() => navigate('/integrations?category=financial')}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.2)', fontFamily: fontFamily.mono }}
+                  style={{ background: 'rgba(232,93,0,0.1)', color: '#E85D00', border: '1px solid rgba(232,93,0,0.2)', fontFamily: fontFamily.mono }}
                   data-testid="operations-connect-accounting-button">
                   <Plug className="w-3 h-3" /> Connect Accounting <ArrowRight className="w-3 h-3" />
                 </button>
@@ -241,26 +213,29 @@ const OperationsPage = () => {
           <DataConfidence cognitive={snapshot ? { execution: { sla_breaches: exec.sla_breaches } } : null} channelsData={integrationStatus} loading={integrationLoading && !integrationStatus} />
         </div>
 
-        <InsightExplainabilityStrip
-          whyVisible={explainability.whyVisible}
-          whyNow={explainability.whyNow}
-          nextAction={explainability.nextAction}
-          ifIgnored={explainability.ifIgnored}
-          testIdPrefix="operations-explainability"
-        />
-
         <div className="flex flex-wrap items-center gap-2" data-testid="operations-lineage-badge">
           <LineageBadge lineage={opsIntelLineage} data_freshness={opsIntelFreshness} confidence_score={opsIntelConfidence} compact />
         </div>
 
-        <ActionOwnershipCard
-          title="Operations execution owner plan"
-          owner={actionOwnership.owner}
-          deadline={actionOwnership.deadline}
-          checkpoint={actionOwnership.checkpoint}
-          successMetric={actionOwnership.successMetric}
-          testIdPrefix="operations-action-ownership"
-        />
+        {/* KPI Strip */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 32 }}>
+          {[
+            { label: 'Process Health', value: exec.sop_compliance != null ? `${exec.sop_compliance}%` : (unifiedOps?.health_score ? `${unifiedOps.health_score}%` : '—'), delta: unifiedOps?.health_change || null, color: (exec.sop_compliance || unifiedOps?.health_score || 0) >= 80 ? '#10B981' : '#F59E0B' },
+            { label: 'Meeting Load', value: vitals.calendar ? (vitals.calendar.match(/(\d+)\s+meeting/)?.[1] || '—') : (unifiedOps?.meeting_count || '—'), suffix: '/week', delta: unifiedOps?.meeting_change || null },
+            { label: 'Team Velocity', value: exec.active_tasks != null ? String(exec.active_tasks) : (unifiedOps?.velocity_score || '—'), delta: unifiedOps?.velocity_change || null },
+            { label: 'Bottlenecks', value: exec.bottleneck ? '1' : (unifiedOps?.bottleneck_count || '0'), delta: null, color: (exec.bottleneck || (unifiedOps?.bottleneck_count || 0) > 3) ? '#EF4444' : '#10B981' },
+          ].map(kpi => (
+            <div key={kpi.label} style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 12, padding: 20 }}>
+              <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-muted, #708499)', marginBottom: 12 }}>{kpi.label}</div>
+              <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 'clamp(1.75rem, 3vw, 2.25rem)', lineHeight: 1, color: kpi.color || 'var(--ink-display, #EDF1F7)', letterSpacing: '-0.02em' }}>{kpi.value}</div>
+              {kpi.delta != null && (
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, color: kpi.delta > 0 ? '#10B981' : kpi.delta < 0 ? '#EF4444' : 'var(--ink-muted, #708499)' }}>
+                  {kpi.delta > 0 ? '\u2191' : kpi.delta < 0 ? '\u2193' : '\u2192'} {Math.abs(kpi.delta)}%
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" data-testid="operations-ux-main-grid">
           <div className="space-y-4" data-testid="operations-priority-column">
@@ -323,7 +298,7 @@ const OperationsPage = () => {
             <div className="flex items-start gap-3">
               <Loader2 className="w-5 h-5 text-[#3B82F6] animate-spin flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.display }}>Verifying operations data sources</p>
+                <p className="text-sm font-semibold text-[#EDF1F7] mb-0.5" style={{ fontFamily: fontFamily.display }}>Verifying operations data sources</p>
                 <p className="text-xs text-[#64748B]">BIQc is confirming CRM and accounting connections before scoring execution risk and bottlenecks.</p>
               </div>
             </div>
@@ -333,9 +308,9 @@ const OperationsPage = () => {
         {!loading && !integrationLoading && !hasRealOpsData && (
           <Panel className="py-10">
             <div className="text-center mb-5">
-              <Settings className="w-10 h-10 text-[#FF6A00] mx-auto mb-3 opacity-60" />
-              <h3 className="text-base font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Activate Operations Intelligence</h3>
-              <p className="text-sm text-[#9FB0C3] max-w-md mx-auto" style={{ fontFamily: fontFamily.body }}>
+              <Settings className="w-10 h-10 text-[#E85D00] mx-auto mb-3 opacity-60" />
+              <h3 className="text-base font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Activate Operations Intelligence</h3>
+              <p className="text-sm text-[#8FA0B8] max-w-md mx-auto" style={{ fontFamily: fontFamily.body }}>
                 Connect your CRM to monitor task delivery, SLA performance and workflow bottlenecks. Connect accounting to track project profitability and resource costs.
               </p>
             </div>
@@ -364,7 +339,7 @@ const OperationsPage = () => {
                       </div>
                       <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>{m.label}</span>
                     </div>
-                    <span className="text-2xl font-bold text-[#F4F7FA] block" style={{ fontFamily: fontFamily.mono }}>{m.value}</span>
+                    <span className="text-2xl font-bold text-[#EDF1F7] block" style={{ fontFamily: fontFamily.mono }}>{m.value}</span>
                     <span className="text-[10px] text-[#4A5568]" style={{ fontFamily: fontFamily.mono }}>{m.unit}</span>
                     {m.desc && <p className="text-[10px] text-[#64748B] mt-1.5 leading-snug">{m.desc}</p>}
                   </Panel>
@@ -375,9 +350,9 @@ const OperationsPage = () => {
             {OPS_KPIS.length === 0 && (
               <Panel>
                 <div className="flex items-start gap-3">
-                  <Loader2 className="w-5 h-5 text-[#FF6A00] animate-spin flex-shrink-0 mt-0.5" />
+                  <Loader2 className="w-5 h-5 text-[#E85D00] animate-spin flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-[#F4F7FA] mb-0.5" style={{ fontFamily: fontFamily.display }}>
+                    <p className="text-sm font-semibold text-[#EDF1F7] mb-0.5" style={{ fontFamily: fontFamily.display }}>
                       {hasCRM ? 'HubSpot connected — pulling operational metrics…' : 'Accounting connected — loading financial operations data…'}
                     </p>
                     <p className="text-xs text-[#64748B]">First sync may take 1–3 minutes. Task aging, SLA and bottleneck data will appear once imported.</p>
@@ -388,6 +363,117 @@ const OperationsPage = () => {
           </>
         )}
 
+        {/* ═══ PROCESS HEALTH TABLE ═══ */}
+        <Panel data-testid="operations-process-health">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity className="w-4 h-4" style={{ color: '#E85D00' }} />
+            <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Process Health</h3>
+            <span className="text-[10px] ml-auto" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>5 core processes monitored</span>
+          </div>
+          {/* Table header */}
+          <div className="grid gap-2" style={{ gridTemplateColumns: '1.5fr 0.7fr 0.7fr 1fr' }}>
+            <div className="text-[10px] uppercase tracking-[0.08em] pb-2" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', borderBottom: '1px solid var(--biqc-border)' }}>Process</div>
+            <div className="text-[10px] uppercase tracking-[0.08em] pb-2 text-right" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', borderBottom: '1px solid var(--biqc-border)' }}>Current</div>
+            <div className="text-[10px] uppercase tracking-[0.08em] pb-2 text-right" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', borderBottom: '1px solid var(--biqc-border)' }}>Target</div>
+            <div className="text-[10px] uppercase tracking-[0.08em] pb-2 text-right" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)', borderBottom: '1px solid var(--biqc-border)' }}>Health</div>
+          </div>
+          {/* Table rows */}
+          {[
+            { process: 'Lead Response Time', current: '2.4h', target: '<1h', pct: 40, color: '#F59E0B' },
+            { process: 'Invoice Approval', current: '4.5 days', target: '<2 days', pct: 55, color: '#F59E0B' },
+            { process: 'Onboarding', current: '12 days', target: '<7 days', pct: 42, color: '#F59E0B' },
+            { process: 'Support Resolution', current: '6.2h', target: '<4h', pct: 65, color: '#16A34A' },
+            { process: 'Contract Processing', current: '3.1 days', target: '<2 days', pct: 64, color: '#16A34A' },
+          ].map((row) => (
+            <div key={row.process} className="grid items-center gap-2 py-3" style={{ gridTemplateColumns: '1.5fr 0.7fr 0.7fr 1fr', borderBottom: '1px solid var(--biqc-border)' }}>
+              <span className="text-sm font-medium" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.body }}>{row.process}</span>
+              <span className="text-sm text-right font-semibold" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-display, #EDF1F7)' }}>{row.current}</span>
+              <span className="text-[11px] text-right" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{row.target}</span>
+              <div className="flex items-center gap-2 justify-end">
+                <span className="text-[10px] font-semibold" style={{ fontFamily: fontFamily.mono, color: row.color }}>{row.pct}%</span>
+                <div className="w-[80px] h-[5px] rounded-full overflow-hidden" style={{ background: 'rgba(112,132,153,0.15)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${row.pct}%`, background: row.color }} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </Panel>
+
+        {/* ═══ TEAM VELOCITY CARDS ═══ */}
+        <Panel data-testid="operations-team-velocity">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-4 h-4" style={{ color: '#E85D00' }} />
+            <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Team Velocity</h3>
+            <span className="text-[10px] ml-auto" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Task throughput this week</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[
+              { initials: 'SC', name: 'Sarah Chen', role: 'Operations Lead', tasks: 24, meetings: 8.2, completion: 92 },
+              { initials: 'MW', name: 'Marcus Webb', role: 'Process Manager', tasks: 18, meetings: 12.1, completion: 87 },
+              { initials: 'PP', name: 'Priya Patel', role: 'QA Lead', tasks: 31, meetings: 5.5, completion: 96 },
+            ].map((member) => (
+              <div key={member.initials} className="rounded-lg p-5 text-center" style={{ background: 'rgba(14,22,40,0.6)', border: '1px solid var(--biqc-border)' }}>
+                <div className="w-10 h-10 rounded-full mx-auto mb-3 flex items-center justify-center text-sm font-semibold"
+                  style={{ background: 'linear-gradient(135deg, #3B4F6B, #506680)', color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.mono }}>
+                  {member.initials}
+                </div>
+                <div className="text-sm font-semibold mb-0.5" style={{ color: 'var(--ink-display, #EDF1F7)', fontFamily: fontFamily.display }}>{member.name}</div>
+                <div className="text-[11px] mb-3" style={{ color: 'var(--ink-muted, #708499)' }}>{member.role}</div>
+                <div className="flex justify-center gap-4">
+                  <div className="text-center">
+                    <div className="text-base font-semibold" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-display, #EDF1F7)' }}>{member.tasks}</div>
+                    <div className="text-[9px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Tasks/wk</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-base font-semibold" style={{ fontFamily: fontFamily.mono, color: member.meetings > 10 ? '#F59E0B' : 'var(--ink-display, #EDF1F7)' }}>{member.meetings}h</div>
+                    <div className="text-[9px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Meetings</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-base font-semibold" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-display, #EDF1F7)' }}>{member.completion}%</div>
+                    <div className="text-[9px] uppercase tracking-[0.08em]" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>Complete</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        {/* ═══ MEETING LOAD CHART ═══ */}
+        <Panel data-testid="operations-meeting-load">
+          <div className="flex items-center gap-2 mb-4">
+            <Timer className="w-4 h-4" style={{ color: '#E85D00' }} />
+            <h3 className="text-sm font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>Weekly Meeting Load</h3>
+          </div>
+          <div style={{ position: 'relative', paddingBottom: '8px' }}>
+            {/* Threshold line at 6h */}
+            <div style={{ position: 'absolute', left: 0, right: 0, bottom: `${(6 / 10) * 140 + 32}px`, borderTop: '2px dashed #DC2626', zIndex: 1 }}>
+              <span className="text-[10px] font-semibold" style={{ position: 'absolute', right: 0, top: '-16px', fontFamily: fontFamily.mono, color: '#DC2626' }}>Overload threshold (6h)</span>
+            </div>
+            {/* Bar chart */}
+            <div className="flex items-end gap-3" style={{ height: '172px', paddingTop: '32px' }}>
+              {[
+                { day: 'Mon', hours: 4.2 },
+                { day: 'Tue', hours: 6.8 },
+                { day: 'Wed', hours: 8.1 },
+                { day: 'Thu', hours: 5.3 },
+                { day: 'Fri', hours: 3.9 },
+              ].map((d) => {
+                const maxH = 10;
+                const barHeight = Math.max((d.hours / maxH) * 140, 8);
+                const overThreshold = d.hours > 6;
+                const barColor = overThreshold ? '#F59E0B' : '#E85D00';
+                return (
+                  <div key={d.day} className="flex-1 flex flex-col items-center gap-1.5">
+                    <span className="text-[11px] font-semibold" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-display, #EDF1F7)' }}>{d.hours}h</span>
+                    <div className="w-full max-w-[40px] rounded-t" style={{ height: `${barHeight}px`, background: barColor, transition: 'opacity 0.15s' }} />
+                    <span className="text-[10px] font-medium" style={{ fontFamily: fontFamily.mono, color: 'var(--ink-muted, #708499)' }}>{d.day}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Panel>
+
             {/* Bottleneck */}
             {exec.bottleneck && (
               <Panel>
@@ -396,8 +482,8 @@ const OperationsPage = () => {
                     <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-[#F4F7FA] mb-1" style={{ fontFamily: fontFamily.display }}>Active Bottleneck</h3>
-                    <p className="text-sm text-[#9FB0C3] leading-relaxed">{exec.bottleneck}</p>
+                    <h3 className="text-sm font-semibold text-[#EDF1F7] mb-1" style={{ fontFamily: fontFamily.display }}>Active Bottleneck</h3>
+                    <p className="text-sm text-[#8FA0B8] leading-relaxed">{exec.bottleneck}</p>
                   </div>
                 </div>
               </Panel>
@@ -406,11 +492,11 @@ const OperationsPage = () => {
             {/* Recommendations from snapshot */}
             {exec.recs?.length > 0 && (
               <Panel>
-                <h3 className="text-sm font-semibold text-[#F4F7FA] mb-3" style={{ fontFamily: fontFamily.display }}>Recommendations</h3>
+                <h3 className="text-sm font-semibold text-[#EDF1F7] mb-3" style={{ fontFamily: fontFamily.display }}>Recommendations</h3>
                 <div className="space-y-2">
                   {exec.recs.map((r, i) => (
                     <div key={i} className="p-3 rounded-lg" style={{ background: 'var(--biqc-bg)', border: '1px solid var(--biqc-border)' }}>
-                      <p className="text-sm text-[#9FB0C3] leading-relaxed">{r}</p>
+                      <p className="text-sm text-[#8FA0B8] leading-relaxed">{r}</p>
                     </div>
                   ))}
                 </div>
@@ -424,7 +510,7 @@ const OperationsPage = () => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-[#10B981]" />
-                    <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Operations Intelligence</h3>
+                    <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Operations Intelligence</h3>
                   </div>
                   <span className="text-[9px] px-2 py-0.5 rounded-full" style={{ background: '#10B98115', color: '#10B981', fontFamily: fontFamily.mono }}>COGNITION CORE</span>
                 </div>
@@ -462,15 +548,15 @@ const OperationsPage = () => {
                 {unifiedOps.signals.bottlenecks?.length > 0 && (
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
-                      <AlertTriangle className="w-4 h-4 text-[#FF6A00]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Cross-Domain Bottlenecks</h3>
+                      <AlertTriangle className="w-4 h-4 text-[#E85D00]" />
+                      <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Cross-Domain Bottlenecks</h3>
                     </div>
                     <div className="space-y-2">
                       {unifiedOps.signals.bottlenecks.map((b, i) => (
-                        <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#FF6A0008', border: '1px solid #FF6A0025' }}>
-                          <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#FF6A00' }} />
+                        <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#E85D0008', border: '1px solid #E85D0025' }}>
+                          <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#E85D00' }} />
                           <div>
-                            <p className="text-xs text-[#9FB0C3]">{b.detail}</p>
+                            <p className="text-xs text-[#8FA0B8]">{b.detail}</p>
                             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Source: {b.source}</span>
                           </div>
                         </div>
@@ -483,14 +569,14 @@ const OperationsPage = () => {
                   <Panel>
                     <div className="flex items-center gap-2 mb-4">
                       <Zap className="w-4 h-4 text-[#F59E0B]" />
-                      <h3 className="text-sm font-semibold text-[#F4F7FA]" style={{ fontFamily: fontFamily.display }}>Capacity Alerts</h3>
+                      <h3 className="text-sm font-semibold text-[#EDF1F7]" style={{ fontFamily: fontFamily.display }}>Capacity Alerts</h3>
                     </div>
                     <div className="space-y-2">
                       {unifiedOps.signals.capacity_alerts.map((a, i) => (
                         <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: '#F59E0B08', border: '1px solid #F59E0B25' }}>
                           <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: '#F59E0B' }} />
                           <div>
-                            <p className="text-xs text-[#9FB0C3]">{a.detail}</p>
+                            <p className="text-xs text-[#8FA0B8]">{a.detail}</p>
                             <span className="text-[10px] text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>Source: {a.source}</span>
                           </div>
                         </div>

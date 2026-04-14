@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from routes.deps import get_current_user, get_sb, logger
+from supabase_intelligence_helpers import get_business_profile_supabase
 
 router = APIRouter()
 

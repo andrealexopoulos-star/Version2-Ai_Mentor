@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { apiClient } from '../lib/api';
 import { toast } from 'sonner';
@@ -11,6 +11,8 @@ import {
 import DashboardLayout from '../components/DashboardLayout';
 import { PageLoadingState } from '../components/PageStateComponents';
 import SemanticContractBanner from '../components/SemanticContractBanner';
+import MeetingPrepCard from '../components/intelligence/MeetingPrepCard';
+import { fontFamily } from '../design-system/tokens';
 
 const CalendarView = () => {
   const location = useLocation();
@@ -24,6 +26,7 @@ const CalendarView = () => {
   const [draftSaving, setDraftSaving] = useState(false);
   const [calendarProvider, setCalendarProvider] = useState('outlook');
   const [calendarContract, setCalendarContract] = useState(null);
+  const [weekOffset, setWeekOffset] = useState(0);
   const [advisorDraft, setAdvisorDraft] = useState(() => {
     let initial = location.state?.advisorFollowUp || null;
     if (!initial) {
@@ -169,6 +172,24 @@ const CalendarView = () => {
   const groupedEvents = groupEventsByDate(upcomingEvents);
   const sortedDateKeys = Object.keys(groupedEvents).sort((a, b) => new Date(a) - new Date(b));
   const today = toLocalDateKey(new Date());
+
+  const getWeekDays = (offset = 0) => {
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - now.getDay() + 1 + (offset * 7));
+    return Array.from({ length: 5 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return d;
+    });
+  };
+  const weekDays = getWeekDays(weekOffset);
+
+  const getEventsForDay = (dayDate) => {
+    const dayKey = toLocalDateKey(dayDate);
+    return (groupedEvents[dayKey] || []);
+  };
+
   const intelligenceSummary = calendarIntel?.summary
     || calendarIntel?.insight
     || calendarIntel?.insights
@@ -227,12 +248,12 @@ const CalendarView = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-5xl animate-fade-in">
+      <div className="space-y-6 animate-fade-in" style={{ maxWidth: 1280 }}>
         {advisorDraft && (
-          <div className="p-5 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,106,0,0.25)' }} data-testid="calendar-advisor-draft-card">
+          <div className="p-5 rounded-xl" style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(232,93,0,0.25)' }} data-testid="calendar-advisor-draft-card">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="max-w-3xl">
-                <p className="text-xs uppercase tracking-[0.14em] mb-2" style={{ color: '#FF6A00' }}>Advisor follow-up draft</p>
+                <p className="text-xs uppercase tracking-[0.14em] mb-2" style={{ color: '#E85D00' }}>Advisor follow-up draft</p>
                 <input
                   value={advisorDraft.title}
                   onChange={(event) => setAdvisorDraft((prev) => ({ ...prev, title: event.target.value }))}
@@ -259,7 +280,7 @@ const CalendarView = () => {
                         setAdvisorDraft((prev) => ({ ...prev, startAt: next }));
                       }}
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
+                      style={{ background: 'var(--bg-tertiary)', borderColor: 'rgba(140,170,210,0.12)', color: 'var(--text-primary)' }}
                       data-testid="calendar-advisor-draft-start"
                     />
                   </label>
@@ -274,7 +295,7 @@ const CalendarView = () => {
                         setAdvisorDraft((prev) => ({ ...prev, endAt: next }));
                       }}
                       className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                      style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
+                      style={{ background: 'var(--bg-tertiary)', borderColor: 'rgba(140,170,210,0.12)', color: 'var(--text-primary)' }}
                       data-testid="calendar-advisor-draft-end"
                     />
                   </label>
@@ -295,16 +316,10 @@ const CalendarView = () => {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <CalendarIcon className="w-6 h-6" style={{ color: 'var(--accent-primary)' }} />
-              <span className="badge badge-primary" style={{ background: syncBadge.bg, color: syncBadge.color }}>
-                <TrendingUp className="w-3 h-3" />
-                {syncBadge.label}
-              </span>
-            </div>
-            <h1 style={{ color: 'var(--text-primary)' }}>Calendar Intelligence</h1>
-            <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
-              {loadError ? 'Calendar data has partial issues. Review status and retry sync if needed.' : `Your ${calendarProvider === 'gmail' ? 'Gmail' : 'Outlook'} schedule synced for AI-powered insights`}
+            <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily?.mono || 'monospace', color: '#E85D00' }}>— Calendar · Week of {new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })}</div>
+            <h1 className="font-medium" style={{ fontFamily: fontFamily?.display || 'Inter', color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>Your week, <em style={{ fontStyle: 'italic', color: '#E85D00' }}>read by BIQc</em>.</h1>
+            <p className="mt-2 text-sm" style={{ color: 'var(--ink-secondary, #8FA0B8)' }}>
+              {loadError ? 'Calendar data has partial issues. Review status and retry sync if needed.' : 'Every meeting linked to a deal, customer or alert. BIQc surfaces what to prep, what to decline, and what to hand off.'}
             </p>
           </div>
           
@@ -335,80 +350,80 @@ const CalendarView = () => {
           />
         )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div 
+          <div
             className="p-5 rounded-xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: 'rgba(59, 130, 246, 0.1)' }}
               >
                 <CalendarIcon className="w-5 h-5 text-blue-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                <p className="text-2xl font-bold" style={{ fontFamily: fontFamily?.display, color: 'var(--ink-display, #EDF1F7)' }}>
                   {upcomingEvents.length}
                 </p>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Upcoming Events (30 days)
+                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: fontFamily?.mono, color: 'var(--ink-muted, #708499)' }}>
+                  Upcoming events
                 </p>
               </div>
             </div>
           </div>
-          
-          <div 
+
+          <div
             className="p-5 rounded-xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: 'rgba(34, 197, 94, 0.1)' }}
               >
                 <Users className="w-5 h-5 text-green-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                <p className="text-2xl font-bold" style={{ fontFamily: fontFamily?.display, color: 'var(--ink-display, #EDF1F7)' }}>
                   {upcomingEvents.filter(e => e.attendees?.length > 0).length}
                 </p>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  With Attendees
+                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: fontFamily?.mono, color: 'var(--ink-muted, #708499)' }}>
+                  With attendees
                 </p>
               </div>
             </div>
           </div>
-          
-          <div 
+
+          <div
             className="p-5 rounded-xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: 'rgba(245, 158, 11, 0.1)' }}
               >
                 <Clock className="w-5 h-5 text-yellow-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                <p className="text-2xl font-bold" style={{ fontFamily: fontFamily?.display, color: 'var(--ink-display, #EDF1F7)' }}>
                   {groupedEvents[today]?.length || 0}
                 </p>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Today's Meetings
+                <p className="text-[11px] uppercase tracking-wider mt-1" style={{ fontFamily: fontFamily?.mono, color: 'var(--ink-muted, #708499)' }}>
+                  Today's meetings
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Events List */}
+        {/* Week Grid Calendar */}
         {loading ? (
           <PageLoadingState message="Loading calendar..." />
         ) : loadError && upcomingEvents.length === 0 ? (
           <div
             className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
             <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
               Calendar unavailable right now
@@ -422,11 +437,11 @@ const CalendarView = () => {
             </Button>
           </div>
         ) : upcomingEvents.length === 0 ? (
-          <div 
+          <div
             className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
+            style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)' }}
           >
-            <div 
+            <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
               style={{ background: 'var(--bg-tertiary)' }}
             >
@@ -452,131 +467,153 @@ const CalendarView = () => {
               </p>
             </div>
           )}
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(300px,0.75fr)]" data-testid="calendar-command-grid">
-            <div className="space-y-6">
-              {sortedDateKeys.map((date) => {
-                const dateEvents = groupedEvents[date] || [];
-                return (
-                <div key={date}>
-                  <h3 
-                    className="text-sm font-semibold mb-3 px-1 flex items-center gap-2"
-                    style={{ 
-                      color: date === today ? 'var(--accent-primary)' : 'var(--text-muted)'
-                    }}
-                  >
-                    <CalendarIcon className="w-3.5 h-3.5" />
-                    {date === today ? 'Today' : formatDate(dateEvents[0]?.start)}
-                  </h3>
-                  <div className="space-y-3">
-                    {dateEvents.map((event, idx) => (
-                      <div 
-                        key={event.id || `${date}-${idx}`}
-                        className="p-4 rounded-xl border transition-all hover:shadow-md"
-                        style={{ 
-                          background: 'var(--bg-card)', 
-                          borderColor: 'var(--border-light)',
-                          borderLeft: `4px solid ${event.importance === 'high' ? '#EF4444' : 'var(--accent-primary)'}`
-                        }}
-                        data-testid={`calendar-event-card-${idx}`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span 
-                                className="text-sm font-medium"
-                                style={{ color: 'var(--accent-primary)' }}
-                              >
-                                {formatTime(event.start)} - {formatTime(event.end)}
-                              </span>
-                              {event.importance === 'high' && (
-                                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.18)', color: '#F87171' }}>
-                                  Important
-                                </span>
-                              )}
-                            </div>
-                            <h4 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                              {event.subject || 'Untitled Event'}
-                            </h4>
-                            
-                            {event.location && (
-                              <div className="flex items-center gap-1.5 text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
-                                <MapPin className="w-3.5 h-3.5" />
-                                {event.location}
+
+          {/* Week Grid Calendar + Side Rail */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', alignItems: 'flex-start' }} className="calendar-week-layout" data-testid="calendar-command-grid">
+            {/* Main Calendar Card */}
+            <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 16, overflow: 'hidden' }}>
+              {/* Calendar Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid rgba(140,170,210,0.12)', flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 22, color: 'var(--ink-display, #EDF1F7)' }}>
+                  Week of {weekDays[0]?.toLocaleDateString('en-AU', { day: 'numeric' })}
+                  <span style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 14, color: 'var(--ink-muted, #708499)', fontStyle: 'italic', marginLeft: 8 }}>
+                    {weekDays[0]?.toLocaleDateString('en-AU', { month: 'long' })}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button onClick={() => setWeekOffset(prev => prev - 1)} style={{ width: 32, height: 32, border: '1px solid rgba(140,170,210,0.12)', background: 'var(--surface, #0E1628)', borderRadius: 8, display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--ink-secondary, #8FA0B8)' }}>{'\u2039'}</button>
+                  <button onClick={() => setWeekOffset(0)} style={{ padding: '6px 14px', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 8, fontFamily: fontFamily?.mono || 'monospace', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-secondary, #8FA0B8)', background: 'var(--surface, #0E1628)', cursor: 'pointer' }}>Today</button>
+                  <button onClick={() => setWeekOffset(prev => prev + 1)} style={{ width: 32, height: 32, border: '1px solid rgba(140,170,210,0.12)', background: 'var(--surface, #0E1628)', borderRadius: 8, display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--ink-secondary, #8FA0B8)' }}>{'\u203A'}</button>
+                </div>
+              </div>
+
+              {/* Week Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '60px repeat(5, 1fr)', minHeight: 660, position: 'relative' }}>
+                {/* Day Headers Row */}
+                <div style={{ borderBottom: '1px solid rgba(140,170,210,0.12)', borderRight: '1px solid rgba(140,170,210,0.12)' }} /> {/* empty top-left corner */}
+                {weekDays.map((day, i) => {
+                  const isToday = toLocalDateKey(day) === today;
+                  return (
+                    <div key={i} style={{ borderBottom: '1px solid rgba(140,170,210,0.12)', borderRight: i < 4 ? '1px solid rgba(140,170,210,0.12)' : 'none', padding: '12px 8px', textAlign: 'center', background: 'var(--surface, #0E1628)', position: 'sticky', top: 0, zIndex: 5 }}>
+                      <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        {day.toLocaleDateString('en-AU', { weekday: 'short' })}
+                      </div>
+                      <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 22, color: isToday ? '#E85D00' : 'var(--ink-display, #EDF1F7)', lineHeight: 1, marginTop: 4 }}>
+                        {day.getDate()}
+                      </div>
+                      {isToday && <div style={{ width: 6, height: 6, background: '#E85D00', borderRadius: '50%', margin: '4px auto 0', boxShadow: '0 0 8px #E85D00' }} />}
+                    </div>
+                  );
+                })}
+
+                {/* Hour Rows */}
+                {Array.from({ length: 11 }, (_, h) => h + 8).map(hour => (
+                  <React.Fragment key={hour}>
+                    {/* Hour label */}
+                    <div style={{ borderBottom: '1px solid rgba(140,170,210,0.12)', borderRight: '1px solid rgba(140,170,210,0.12)', height: 60, position: 'relative' }}>
+                      <span style={{ position: 'absolute', top: -8, right: 8, fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, color: 'var(--ink-muted, #708499)' }}>
+                        {hour > 12 ? `${hour - 12}pm` : hour === 12 ? '12pm' : `${hour}am`}
+                      </span>
+                    </div>
+                    {/* Day cells */}
+                    {weekDays.map((day, di) => {
+                      const dayEvents = getEventsForDay(day).filter(ev => {
+                        const startH = new Date(ev.start).getHours();
+                        return startH === hour;
+                      });
+                      return (
+                        <div key={di} style={{ borderBottom: '1px solid rgba(140,170,210,0.12)', borderRight: di < 4 ? '1px solid rgba(140,170,210,0.12)' : 'none', height: 60, position: 'relative' }}>
+                          {dayEvents.map((ev, ei) => {
+                            const startMin = new Date(ev.start).getMinutes();
+                            const endTime = new Date(ev.end || ev.start);
+                            const durationMin = Math.max(20, (endTime - new Date(ev.start)) / 60000);
+                            const heightPx = Math.min(durationMin, 120);
+                            const subjectLower = (ev.subject || '').toLowerCase();
+                            const type = subjectLower.includes('deal') || ev.importance === 'high' ? 'deal' : subjectLower.includes('internal') || subjectLower.includes('standup') || subjectLower.includes('sync') ? 'internal' : 'customer';
+                            const typeColors = { deal: { bg: 'rgba(232,93,0,0.12)', border: '#E85D00', color: '#E85D00' }, customer: { bg: 'rgba(22,163,74,0.1)', border: '#16A34A', color: '#16A34A' }, internal: { bg: 'rgba(37,99,235,0.08)', border: '#2563EB', color: '#93B4F8' } };
+                            const tc = typeColors[type] || typeColors.customer;
+                            return (
+                              <div key={ei} style={{ position: 'absolute', left: 4, right: 4, top: startMin, borderRadius: 4, padding: '4px 6px', fontSize: 11, overflow: 'hidden', cursor: 'pointer', borderLeft: `3px solid ${tc.border}`, background: tc.bg, color: tc.color, height: heightPx, zIndex: 2 }}>
+                                <div style={{ fontWeight: 600, lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.subject || 'Event'}</div>
+                                <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 9, opacity: 0.75 }}>{formatTime(ev.start)}</div>
                               </div>
-                            )}
-                            
-                            {event.attendees?.length > 0 && (
-                              <div className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
-                                <Users className="w-3.5 h-3.5" />
-                                {event.attendees.slice(0, 3).join(', ')}
-                                {event.attendees.length > 3 && ` +${event.attendees.length - 3} more`}
-                              </div>
-                            )}
-                            
-                            {event.preview && (
-                              <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-                                {event.preview}
-                              </p>
-                            )}
-                          </div>
-                          
-                          {event.is_all_day && (
-                            <span 
-                              className="text-xs px-2 py-1 rounded-lg"
-                              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
-                            >
-                              All Day
-                            </span>
-                          )}
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Legend */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 24px', borderTop: '1px solid rgba(140,170,210,0.12)', background: 'var(--surface-tint, rgba(14,22,40,0.5))', flexWrap: 'wrap' }}>
+                {[{ label: 'Deal', color: '#E85D00' }, { label: 'Customer', color: '#16A34A' }, { label: 'Internal', color: '#2563EB' }, { label: 'Personal', color: '#94A3B8' }, { label: 'Critical', color: '#DC2626' }].map(item => (
+                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, color: 'var(--ink-secondary, #8FA0B8)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: item.color }} />
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Side Rail */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Today count */}
+              <div style={{ background: 'var(--surface, #0E1628)', border: '1px solid rgba(140,170,210,0.12)', borderRadius: 16, padding: 20 }}>
+                <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 11, color: 'var(--ink-muted, #708499)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>Today</div>
+                <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 32, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1 }}>{groupedEvents[today]?.length || 0}</div>
+                <div style={{ fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)', marginTop: 4 }}>meetings scheduled</div>
+
+                {/* Agenda list */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                  {(groupedEvents[today] || []).slice(0, 5).map((ev, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '50px 1fr', gap: 12, padding: 12, borderRadius: 8, border: '1px solid transparent', cursor: 'pointer' }}>
+                      <div style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 11, color: 'var(--ink-muted, #708499)', textAlign: 'right', lineHeight: 1.4 }}>
+                        <strong style={{ display: 'block', color: 'var(--ink-display, #EDF1F7)', fontWeight: 600 }}>{formatTime(ev.start)}</strong>
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1.3, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.subject || 'Event'}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          {ev.importance === 'high' && <span style={{ fontFamily: fontFamily?.mono || 'monospace', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '1px 6px', borderRadius: 999, fontWeight: 600, background: 'rgba(232,93,0,0.12)', color: '#E85D00' }}>Deal</span>}
+                          {ev.attendees?.length > 0 && <span style={{ fontSize: 11, color: 'var(--ink-muted, #708499)' }}>{ev.attendees.length} attendees</span>}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              );
-              })}
-            </div>
-            <div className="space-y-4" data-testid="calendar-side-panel">
-              <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
-                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Execution cadence</p>
-                <p className="mt-2 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Keep tomorrow’s schedule decision-ready.</p>
-                <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Stage follow-ups, identify overloaded days, and make each meeting block more intentional.</p>
-              </div>
-              <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
-                <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Today at a glance</p>
-                <div className="mt-3 space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  <div className="flex items-center justify-between"><span>Meetings today</span><strong style={{ color: 'var(--text-primary)' }}>{groupedEvents[today]?.length || 0}</strong></div>
-                  <div className="flex items-center justify-between"><span>Important events</span><strong style={{ color: 'var(--text-primary)' }}>{upcomingEvents.filter((event) => event.importance === 'high').length}</strong></div>
-                  <div className="flex items-center justify-between"><span>Events with attendees</span><strong style={{ color: 'var(--text-primary)' }}>{upcomingEvents.filter((event) => event.attendees?.length > 0).length}</strong></div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              {calendarMeta && (
-                <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }}>
-                  <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Data freshness</p>
-                  <div className="mt-3 space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    <div className="flex items-center justify-between"><span>Events fetched</span><strong style={{ color: 'var(--text-primary)' }}>{calendarMeta.total ?? 0}</strong></div>
-                    <div className="flex items-center justify-between"><span>Last sync</span><strong style={{ color: 'var(--text-primary)' }}>{calendarMeta.syncedAt ? new Date(calendarMeta.syncedAt).toLocaleString('en-AU') : (calendarMeta.fetchedAt ? new Date(calendarMeta.fetchedAt).toLocaleString('en-AU') : 'Unknown')}</strong></div>
-                    {calendarMeta.dateRange?.start && calendarMeta.dateRange?.end && (
-                      <div className="flex items-start justify-between gap-4">
-                        <span>Window</span>
-                        <strong style={{ color: 'var(--text-primary)', textAlign: 'right' }}>
-                          {new Date(calendarMeta.dateRange.start).toLocaleDateString('en-AU')} - {new Date(calendarMeta.dateRange.end).toLocaleDateString('en-AU')}
-                        </strong>
-                      </div>
-                    )}
+
+              {/* Intel card */}
+              {calendarIntel && intelligenceSummaryText && (
+                <div style={{ background: 'linear-gradient(135deg, rgba(232,93,0,0.08) 0%, var(--surface, #0E1628) 80%)', border: '1px solid rgba(232,93,0,0.15)', borderRadius: 16, padding: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: fontFamily?.mono || 'monospace', fontSize: 10, color: '#E85D00', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 12 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#E85D00', boxShadow: '0 0 8px #E85D00' }} />
+                    BIQc Calendar Intel
                   </div>
+                  <div style={{ fontFamily: fontFamily?.display || 'serif', fontSize: 20, color: 'var(--ink-display, #EDF1F7)', lineHeight: 1.2, marginBottom: 8 }}>Schedule Intelligence</div>
+                  <div style={{ fontSize: 13, color: 'var(--ink-secondary, #8FA0B8)', lineHeight: 1.55 }}>{intelligenceSummaryText}</div>
                 </div>
               )}
-              {intelligenceSummary && (
-                <div className="rounded-xl border p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-light)' }} data-testid="calendar-intelligence-summary">
-                  <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#94A3B8' }}>Calendar intelligence</p>
-                  <p className="mt-3 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
-                    {intelligenceSummaryText || 'No summary available.'}
-                  </p>
-                </div>
-              )}
+
+              {/* MeetingPrep card */}
+              <MeetingPrepCard />
             </div>
           </div>
+
+          {/* Responsive style for stacking below 1100px */}
+          <style>{`
+            @media (max-width: 1100px) {
+              .calendar-week-layout {
+                grid-template-columns: 1fr !important;
+              }
+            }
+            @media (max-width: 768px) {
+              .calendar-week-layout {
+                grid-template-columns: 1fr !important;
+              }
+            }
+          `}</style>
           </>
         )}
       </div>

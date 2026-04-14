@@ -4,7 +4,7 @@ import { fontFamily } from '../design-system/tokens';
 
 const STATUS_STYLE = {
   active: { bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.35)', color: '#10B981', label: 'Active' },
-  foundation: { bg: 'rgba(255,106,0,0.15)', border: 'rgba(255,106,0,0.35)', color: '#FF6A00', label: 'Foundation' },
+  foundation: { bg: 'rgba(232,93,0,0.15)', border: 'rgba(232,93,0,0.35)', color: '#E85D00', label: 'Foundation' },
   waitlist: { bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.35)', color: '#3B82F6', label: 'Waitlist' },
   locked: { bg: 'rgba(100,116,139,0.16)', border: 'rgba(100,116,139,0.35)', color: '#94A3B8', label: 'Locked' },
 };
@@ -23,7 +23,7 @@ function UsageMeter({ usage }) {
         </span>
       </div>
       <div className="mt-1 h-1.5 rounded-full" style={{ background: 'rgba(148,163,184,0.24)' }}>
-        <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: pct >= 90 ? '#F97316' : '#FF6A00' }} />
+        <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: pct >= 90 ? '#F97316' : '#E85D00' }} />
       </div>
     </div>
   );
@@ -93,7 +93,7 @@ export default function UnifiedModuleCard({
           <button
             onClick={onPrimary}
             className="inline-flex min-h-[40px] items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-white"
-            style={{ background: '#FF6A00', fontFamily: fontFamily.body }}
+            style={{ background: '#E85D00', fontFamily: fontFamily.body }}
           >
             {primaryLabel}
           </button>

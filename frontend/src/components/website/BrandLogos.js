@@ -1,16 +1,16 @@
 const LOGOS = {
   HubSpot: {
-    color: '#FF6A00',
+    color: '#E85D00',
     svg: (
       <svg viewBox="0 0 32 32" fill="none">
-        <circle cx="16" cy="16" r="4.5" stroke="#FF6A00" strokeWidth="2.5" fill="none" />
-        <circle cx="24.5" cy="8" r="2" fill="#FF6A00" />
-        <path d="M20 13L24 9" stroke="#FF6A00" strokeWidth="1.8" />
-        <path d="M16 11.5V6" stroke="#FF6A00" strokeWidth="2" />
-        <path d="M11 14L7 10" stroke="#FF6A00" strokeWidth="1.8" />
-        <path d="M11 18L7 22" stroke="#FF6A00" strokeWidth="1.8" />
-        <path d="M16 20.5V26" stroke="#FF6A00" strokeWidth="2" />
-        <path d="M21 18L25 22" stroke="#FF6A00" strokeWidth="1.8" />
+        <circle cx="16" cy="16" r="4.5" stroke="#E85D00" strokeWidth="2.5" fill="none" />
+        <circle cx="24.5" cy="8" r="2" fill="#E85D00" />
+        <path d="M20 13L24 9" stroke="#E85D00" strokeWidth="1.8" />
+        <path d="M16 11.5V6" stroke="#E85D00" strokeWidth="2" />
+        <path d="M11 14L7 10" stroke="#E85D00" strokeWidth="1.8" />
+        <path d="M11 18L7 22" stroke="#E85D00" strokeWidth="1.8" />
+        <path d="M16 20.5V26" stroke="#E85D00" strokeWidth="2" />
+        <path d="M21 18L25 22" stroke="#E85D00" strokeWidth="1.8" />
       </svg>
     ),
   },
@@ -240,5 +240,5 @@ export const BrandLogo = ({ name, size = 32 }) => {
 };
 
 export const getAllBrandNames = () => Object.keys(LOGOS);
-export const getBrandColor = (name) => LOGOS[name]?.color || '#FF7A18';
+export const getBrandColor = (name) => LOGOS[name]?.color || '#E85D00';
 export default LOGOS;

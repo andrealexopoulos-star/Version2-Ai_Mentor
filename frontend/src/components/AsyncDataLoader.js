@@ -31,7 +31,7 @@ const STAGE_CONFIG = {
     tooltip: 'Reading your business profile, ABN, connected integrations and preferences.' },
   preprocessing:{ label: 'Preprocessing signals',     pct: 35, color: '#8B5CF6',
     tooltip: 'Cleaning and structuring your data ready for AI analysis.' },
-  analyzing:   { label: 'Analysing your business',    pct: 60, color: '#FF6A00',
+  analyzing:   { label: 'Analysing your business',    pct: 60, color: '#E85D00',
     tooltip: 'Running AI models across your revenue, cash, operations and market data.' },
   assembling:  { label: 'Preparing recommendations',  pct: 85, color: '#F59E0B',
     tooltip: 'Summarising insights and preparing your personalised intelligence report.' },
@@ -42,7 +42,7 @@ const STAGE_CONFIG = {
 // ── Skeleton pulse card ───────────────────────────────────────
 export const SkeletonCard = ({ lines = 3, className = '' }) => (
   <div className={`rounded-xl p-5 animate-pulse ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>
-    <div className="h-2 rounded mb-3 w-1/3" style={{ background: '#243140' }} />
+    <div className="h-2 rounded mb-3 w-1/3" style={{ background: 'rgba(140,170,210,0.15)' }} />
     {Array.from({ length: lines }).map((_, i) => (
       <div key={i} className="h-2 rounded mb-2" style={{ background: '#1E2A38', width: `${100 - i * 15}%` }} />
     ))}
@@ -86,7 +86,7 @@ export const StageProgressBar = ({ stage = 'analyzing', progress = null, started
                 style={{
                   background: active ? sc2.color + '20' : past ? '#10B98110' : 'transparent',
                   color: active ? sc2.color : past ? '#10B981' : '#4A5568',
-                  border: `1px solid ${active ? sc2.color + '40' : past ? '#10B98130' : '#243140'}`,
+                  border: `1px solid ${active ? sc2.color + '40' : past ? '#10B98130' : 'rgba(140,170,210,0.15)'}`,
                   fontFamily: fontFamily.mono,
                 }}
                 tabIndex={0}
@@ -116,7 +116,7 @@ export const StageProgressBar = ({ stage = 'analyzing', progress = null, started
                 </div>
               </div>
               {i < stages.length - 1 && (
-                <div className="w-3 h-px flex-shrink-0" style={{ background: past ? '#10B98150' : '#243140' }} />
+                <div className="w-3 h-px flex-shrink-0" style={{ background: past ? '#10B98150' : 'rgba(140,170,210,0.15)' }} />
               )}
             </div>
           );
@@ -124,7 +124,7 @@ export const StageProgressBar = ({ stage = 'analyzing', progress = null, started
       </div>
 
       {/* Bar */}
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#243140' }}>
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
         <div
           className="h-full rounded-full transition-all duration-700 ease-out"
           style={{ width: `${displayPct}%`, background: sc.color }}
@@ -143,8 +143,8 @@ export const StageProgressBar = ({ stage = 'analyzing', progress = null, started
 const TierGateBanner = ({ feature = 'this feature' }) => {
   const ctx = getUpgradeContext(String(feature || '').toLowerCase());
   return (
-    <div className="rounded-xl p-6 text-center" style={{ background: '#FF6A0006', border: '1px solid #FF6A0025' }} data-testid="tier-gate-banner">
-      <Lock className="w-8 h-8 mx-auto mb-3" style={{ color: '#FF6A00' }} />
+    <div className="rounded-xl p-6 text-center" style={{ background: '#E85D0006', border: '1px solid #E85D0025' }} data-testid="tier-gate-banner">
+      <Lock className="w-8 h-8 mx-auto mb-3" style={{ color: '#E85D00' }} />
       <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
         Unlock {ctx.title}: {ctx.benefit}
       </p>
@@ -154,7 +154,7 @@ const TierGateBanner = ({ feature = 'this feature' }) => {
       <a
         href={ctx.href}
         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-        style={{ background: '#FF6A00' }}
+        style={{ background: '#E85D00' }}
         data-testid="tier-gate-upgrade-btn"
       >
         {ctx.cta} <ArrowRight className="w-4 h-4" />
@@ -292,7 +292,7 @@ const AsyncDataLoader = ({
 
         {/* Timeout fallback CTA */}
         {ctaVisible && onContinue && (
-          <div className="rounded-xl p-5 text-center" style={{ background: '#FF6A0008', border: '1px solid #FF6A0025' }} data-testid="timeout-fallback-cta">
+          <div className="rounded-xl p-5 text-center" style={{ background: '#E85D0008', border: '1px solid #E85D0025' }} data-testid="timeout-fallback-cta">
             <p className="text-sm font-semibold mb-1" style={{ color: 'var(--biqc-text)', fontFamily: fontFamily.display }}>
               Taking longer than expected
             </p>
@@ -302,7 +302,7 @@ const AsyncDataLoader = ({
             <button
               onClick={onContinue}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-              style={{ background: '#FF6A00' }}
+              style={{ background: '#E85D00' }}
               data-testid="timeout-continue-btn"
             >
               Continue to Intelligence Platform <ArrowRight className="w-4 h-4" />

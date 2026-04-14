@@ -13,6 +13,7 @@ import {
   Loader2, Save, CheckCircle, AlertCircle, Package
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import { fontFamily } from '../design-system/tokens';
 import { PageSkeleton } from '../components/ui/skeleton-loader';
 import { toast } from 'sonner';
 import { apiClient } from '../lib/api';
@@ -205,18 +206,52 @@ const BusinessProfile = () => {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-3xl md:text-4xl mb-2" style={{ fontFamily: "var(--font-heading)", color: 'var(--text-primary)' }}>
-                Business DNA
+              <div className="text-[11px] uppercase tracking-[0.08em] mb-2" style={{ fontFamily: fontFamily.mono, color: '#E85D00' }}>
+                — Business DNA
+              </div>
+              <h1 className="font-medium mb-2" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)', fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+                How BIQc <em style={{ fontStyle: 'italic', color: '#E85D00' }}>sees you</em>.
               </h1>
-              <p style={{ color: 'var(--text-secondary)' }}>
-                Your live baselines — the strategic foundation BIQc monitors for drift
+              <p className="text-sm" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
+                This is the working profile every signal, alert, and brief is calibrated against. The more BIQc learns from your inbox and tools, the sharper this gets.
               </p>
             </div>
             <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-              {autoSaveStatus === 'saving' && <><span className="text-xs" style={{ color: '#FF6A00' }}>saving...</span></>}
+              {autoSaveStatus === 'saving' && <><span className="text-xs" style={{ color: '#E85D00' }}>saving...</span></>}
               {autoSaveStatus === 'saved' && <><CheckCircle className="w-4 h-4 text-emerald-500" /> Saved</>}
               {autoSaveStatus === 'error' && <><AlertCircle className="w-4 h-4 text-red-500" /> Save failed</>}
               {!autoSaveStatus && <span className="text-xs">Auto-saves as you type</span>}
+            </div>
+          </div>
+
+          {/* DNA Hero Card */}
+          <div className="mb-6 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(160deg, #111827, #1A1A2E)', position: 'relative' }}>
+            {/* Lava accent line */}
+            <div style={{ height: 3, background: 'linear-gradient(90deg, #E85D00, #FF7A1A, #E85D00)', width: '100%' }} />
+            <div className="p-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold" style={{ fontFamily: fontFamily.display, color: 'var(--ink-display, #EDF1F7)' }}>
+                  {profile.business_name || user?.company_name || user?.business_name || 'Your Business'}
+                </h2>
+                <p className="text-sm mt-1" style={{ fontFamily: fontFamily.body, color: 'var(--ink-secondary, #8FA0B8)' }}>
+                  Business DNA Profile
+                </p>
+              </div>
+              {/* Completion ring gauge */}
+              <div className="flex flex-col items-center">
+                <svg width="48" height="48" viewBox="0 0 48 48">
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(140,170,210,0.12)" strokeWidth="4" />
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="#E85D00" strokeWidth="4"
+                    strokeDasharray={`${2 * Math.PI * 20}`}
+                    strokeDashoffset={`${2 * Math.PI * 20 * (1 - (scores.completeness || 0) / 100)}`}
+                    strokeLinecap="round" transform="rotate(-90 24 24)"
+                    style={{ transition: 'stroke-dashoffset 0.8s ease-out' }} />
+                  <text x="24" y="26" textAnchor="middle" style={{ fill: '#EDF1F7', fontSize: '11px', fontFamily: fontFamily.mono, fontWeight: 700 }}>
+                    {scores.completeness || 0}%
+                  </text>
+                </svg>
+                <span className="text-[10px] mt-1" style={{ color: 'var(--ink-secondary, #8FA0B8)', fontFamily: fontFamily.mono }}>Complete</span>
+              </div>
             </div>
           </div>
 

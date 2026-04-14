@@ -276,7 +276,7 @@ const AdminPricingPage = () => {
       <div style={{ fontFamily: fontFamily.body, color: 'var(--biqc-text)' }} className="space-y-4 max-w-[1320px]">
         <div className="flex items-center justify-between">
           <div>
-            <h1 style={{ fontFamily: fontFamily.display }} className="text-2xl text-[#F4F7FA]">Admin Pricing Control</h1>
+            <h1 style={{ fontFamily: fontFamily.display }} className="text-2xl text-[#EDF1F7]">Admin Pricing Control</h1>
             <p className="text-xs text-[#64748B]" style={{ fontFamily: fontFamily.mono }}>
               Draft plans, adjust entitlements, publish/rollback, and set custom pricing overrides.
             </p>
@@ -297,7 +297,7 @@ const AdminPricingPage = () => {
               <input style={inputStyle} value={planForm.annual_price_cents} onChange={(e) => setPlanForm((p) => ({ ...p, annual_price_cents: e.target.value }))} placeholder="349000" />
             </div>
             <textarea style={{ ...inputStyle, minHeight: 80 }} value={planForm.metadata_json} onChange={(e) => setPlanForm((p) => ({ ...p, metadata_json: e.target.value }))} placeholder='{"notes":"..."}' />
-            <button onClick={createPlanDraft} className="px-3 py-2 rounded-lg text-xs" style={{ ...CARD, borderColor: '#FF6A0030', color: '#FF6A00', fontFamily: fontFamily.mono }}>
+            <button onClick={createPlanDraft} className="px-3 py-2 rounded-lg text-xs" style={{ ...CARD, borderColor: '#E85D0030', color: '#E85D00', fontFamily: fontFamily.mono }}>
               Create Draft Version
             </button>
           </div>
@@ -331,7 +331,7 @@ const AdminPricingPage = () => {
             <h2 style={{ fontFamily: fontFamily.display }} className="text-lg">Entitlements</h2>
             <div className="flex gap-2">
               <button onClick={addFeatureRow} className="px-3 py-2 rounded-lg text-xs" style={{ ...CARD, fontFamily: fontFamily.mono }}>Add Row</button>
-              <button onClick={saveEntitlements} className="px-3 py-2 rounded-lg text-xs" style={{ ...CARD, borderColor: '#FF6A0030', color: '#FF6A00', fontFamily: fontFamily.mono }}>Save Entitlements</button>
+              <button onClick={saveEntitlements} className="px-3 py-2 rounded-lg text-xs" style={{ ...CARD, borderColor: '#E85D0030', color: '#E85D00', fontFamily: fontFamily.mono }}>Save Entitlements</button>
             </div>
           </div>
           <div className="overflow-auto">

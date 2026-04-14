@@ -78,7 +78,7 @@ const SECTIONS = [
     num: '4',
     title: 'Confidentiality',
     icon: '🔒',
-    color: '#FF6A00',
+    color: '#E85D00',
     bg: '#FFF7ED',
     content: 'Each party (the "Receiving Party") shall keep confidential and not disclose to any third party all Confidential Information of the other party (the "Disclosing Party"). Customer Content constitutes Confidential Information of Customer. The terms of this Agreement and the technical inner workings of the Services constitute Confidential Information of the Company.',
   },
@@ -167,7 +167,7 @@ const SECTIONS = [
     num: '10',
     title: 'Miscellaneous',
     icon: '📋',
-    color: '#243140',
+    color: 'rgba(140,170,210,0.15)',
     bg: '#F9FAFB',
     subsections: [
       { id: '10.1', title: 'Governing Law', content: 'This Agreement shall be governed by the laws of New South Wales, Australia. The parties submit to the exclusive jurisdiction of the courts of New South Wales and the Commonwealth of Australia.' },
@@ -283,7 +283,7 @@ const EnterpriseTerms = () => {
           Back to Home
         </button>
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center rounded-xl text-white font-black text-xs" style={{ width: 30, height: 30, background: 'linear-gradient(135deg,#FF6A00,#C2410C)', fontFamily: 'var(--font-heading)', boxShadow: '0 2px 8px rgba(249,115,22,0.3)' }}>B</div>
+          <div className="flex items-center justify-center rounded-xl text-white font-black text-xs" style={{ width: 30, height: 30, background: 'linear-gradient(135deg,#E85D00,#C2410C)', fontFamily: 'var(--font-heading)', boxShadow: '0 2px 8px rgba(249,115,22,0.3)' }}>B</div>
           <span className="font-bold text-sm text-slate-900" style={{ fontFamily: 'var(--font-heading)' }}>BIQc</span>
         </div>
         <button onClick={() => navigate('/register-supabase')} className="text-sm font-semibold text-white px-4 py-2 rounded-full" style={{ fontFamily: 'var(--font-heading)', background: 'var(--biqc-bg)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
@@ -299,13 +299,13 @@ const EnterpriseTerms = () => {
         <div className="max-w-4xl mx-auto relative z-10">
           {/* Enterprise badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6" style={{ background: 'rgba(249,115,22,0.10)', border: '1px solid rgba(249,115,22,0.2)' }}>
-            <Scale className="w-3.5 h-3.5" style={{ color: '#FF6A00' }} />
+            <Scale className="w-3.5 h-3.5" style={{ color: '#E85D00' }} />
             <span className="text-xs font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)', color: '#EA6C0A' }}>Enterprise Agreement</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 mb-4 leading-tight" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
             BIQc Enterprise
-            <span className="block" style={{ color: '#FF6A00' }}>Terms & Conditions</span>
+            <span className="block" style={{ color: '#E85D00' }}>Terms & Conditions</span>
           </h1>
 
           <p className="text-sm text-slate-500 mb-6" style={{ fontFamily: 'var(--font-mono)' }}>
@@ -325,7 +325,7 @@ const EnterpriseTerms = () => {
           {/* Key highlights */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
             {[
-              { icon: Lock, label: 'Your data stays yours', sub: 'Zero model training on Customer Content', color: '#FF6A00' },
+              { icon: Lock, label: 'Your data stays yours', sub: 'Zero model training on Customer Content', color: '#E85D00' },
               { icon: Shield, label: 'Australian data sovereignty', sub: 'Governed by NSW law, Privacy Act 1988', color: '#10B981' },
               { icon: Scale, label: 'ACL protected', sub: 'Full Australian Consumer Law guarantees', color: '#3B82F6' },
             ].map(({ icon: Icon, label, sub, color }, i) => (

@@ -29,7 +29,7 @@ export const PRICING_TIERS = [
     price: '$69',
     priceNum: 69,
     period: '/month',
-    color: '#FF6A00',
+    color: '#E85D00',
     popular: true,
     recommended: true,
     features: [

@@ -19,7 +19,7 @@ export const PageLoadingState = ({ message = 'Loading…', compact = false }) =>
     return (
       <div className="flex items-center gap-2 py-4" data-testid="page-loading-compact">
         <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
-          style={{ borderColor: '#FF6A00', borderTopColor: 'transparent' }} />
+          style={{ borderColor: '#E85D00', borderTopColor: 'transparent' }} />
         <span className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>{message}</span>
       </div>
     );
@@ -29,7 +29,7 @@ export const PageLoadingState = ({ message = 'Loading…', compact = false }) =>
     <div className="space-y-4 w-full" data-testid="page-loading-state">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin flex-shrink-0"
-          style={{ borderColor: '#FF6A00', borderTopColor: 'transparent' }} />
+          style={{ borderColor: '#E85D00', borderTopColor: 'transparent' }} />
         <span className="text-sm" style={{ color: 'var(--biqc-text-2)', fontFamily: fontFamily.mono }}>{message}</span>
       </div>
       <SkeletonCard lines={3} />
