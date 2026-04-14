@@ -95,7 +95,7 @@ export const PrivacyPage = () => (
       <li>Lodge a complaint with the OAIC</li>
     </ul>
     <h2>7. Contact</h2>
-    <p>Privacy Officer: privacy@biqc.ai</p>
+    <p>Privacy Officer: support@biqc.ai</p>
   </TrustPageShell>
 );
 
@@ -206,6 +206,6 @@ export const TrustCentrePage = () => (
       <li><a href="/trust/security" style={{ color: '#E85D00' }}>Security & Infrastructure</a></li>
     </ul>
     <h2>Contact</h2>
-    <p>For security inquiries: security@biqc.ai<br />For privacy inquiries: privacy@biqc.ai</p>
+    <p>For security inquiries: support@biqc.ai<br />For privacy inquiries: support@biqc.ai</p>
   </TrustPageShell>
 );

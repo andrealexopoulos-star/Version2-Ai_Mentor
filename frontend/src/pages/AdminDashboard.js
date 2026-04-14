@@ -13,9 +13,9 @@ import {
   ToggleLeft, Power, Pause, Play, Hash, Terminal, MonitorSmartphone, Plug
 } from 'lucide-react';
 
-const D = "'Cormorant Garamond', Georgia, serif";
-const B = "'Inter', sans-serif";
-const M = "'JetBrains Mono', monospace";
+const D = "var(--font-display)";
+const B = "var(--font-ui)";
+const M = "var(--font-mono)";
 
 const Pnl = ({ children, className = '' }) => (
   <div className={`rounded-lg p-5 ${className}`} style={{ background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}>{children}</div>

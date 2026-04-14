@@ -216,7 +216,7 @@ export default function ContactPage() {
                 }}>
                 <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--ink-display)' }}>Contact details</h3>
                 {[
-                  { icon: <Mail className="w-4 h-4" />, label: 'Email', value: 'hello@biqc.com' },
+                  { icon: <Mail className="w-4 h-4" />, label: 'Email', value: 'support@biqc.ai' },
                   { icon: <MapPin className="w-4 h-4" />, label: 'Location', value: 'Sydney, Australia' },
                   { icon: <Clock className="w-4 h-4" />, label: 'Response time', value: 'We typically respond within 24 hours' },
                   { icon: <Calendar className="w-4 h-4" />, label: 'Office hours', value: 'Mon\u2013Fri, 9am\u20135pm AEST' },

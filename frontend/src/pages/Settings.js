@@ -144,7 +144,7 @@ const SettingsBillingContent = ({ navigate, user }) => {
       </div>
 
       <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-muted, #737373)' }}>
-        Billing questions? <a href="mailto:billing@biqc.com.au" style={{ color: 'var(--lava, #E85D00)' }}>billing@biqc.com.au</a>
+        Billing questions? <a href="mailto:support@biqc.ai" style={{ color: 'var(--lava, #E85D00)' }}>support@biqc.ai</a>
       </p>
     </div>
   );

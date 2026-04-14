@@ -79,6 +79,7 @@ class _AzureManagedIdentityRedisCredentialProvider(CredentialProvider):
 QUEUE_NAMESPACE = "biqc-jobs"
 QUEUE_KEY = f"{QUEUE_NAMESPACE}:queue"
 DELAYED_KEY = f"{QUEUE_NAMESPACE}:delayed"
+DLQ_KEY = f"{QUEUE_NAMESPACE}:dead-letter"
 LOG_BUFFER_KEY = f"{QUEUE_NAMESPACE}:logging-buffer"
 DEDUPE_KEY_PREFIX = f"{QUEUE_NAMESPACE}:dedupe"
 
@@ -160,7 +161,7 @@ class BIQcRedisJobs:
         retry = Retry(ExponentialBackoff(base=1, cap=8), 3)
         return {
             "decode_responses": True,
-            "max_connections": 12,
+            "max_connections": 25,
             "socket_timeout": 5,
             "socket_connect_timeout": 5,
             "retry": retry,
@@ -348,11 +349,13 @@ class BIQcRedisJobs:
         queue_depth = 0
         delayed_depth = 0
         buffer_depth = 0
+        dlq_depth = 0
 
         if self.redis_connected and self.redis is not None:
             queue_depth = -1
             delayed_depth = -1
             buffer_depth = -1
+            dlq_depth = -1
 
         return {
             "redis_connected": self.redis_connected,
@@ -361,6 +364,7 @@ class BIQcRedisJobs:
             "last_error": self.last_error,
             "queue_depth": queue_depth,
             "delayed_depth": delayed_depth,
+            "dead_letter_depth": dlq_depth,
             "logging_buffer_depth": buffer_depth,
         }
 
@@ -372,11 +376,31 @@ class BIQcRedisJobs:
         try:
             state["queue_depth"] = await self.redis.llen(QUEUE_KEY)
             state["delayed_depth"] = await self.redis.zcard(DELAYED_KEY)
+            state["dead_letter_depth"] = await self.redis.zcard(DLQ_KEY)
             state["logging_buffer_depth"] = await self.redis.llen(LOG_BUFFER_KEY)
         except Exception as exc:  # pragma: no cover - health fallback
             state["last_error"] = str(exc)
             state["redis_connected"] = False
         return state
+
+    async def get_dead_letter_jobs(self, limit: int = 50) -> list:
+        """Retrieve failed jobs from the dead-letter queue for admin inspection."""
+        if not self.redis_connected or self.redis is None:
+            return []
+        try:
+            raw_entries = await self.redis.zrevrange(DLQ_KEY, 0, limit - 1, withscores=True)
+            results = []
+            for raw_job, score in raw_entries:
+                try:
+                    job = json.loads(raw_job)
+                    job["dlq_timestamp"] = int(score)
+                    results.append(job)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+            return results
+        except Exception as exc:
+            logger.error("Failed to read DLQ: %s", exc)
+            return []
 
     def build_job_id(self, company_id: str, job_type: str, timestamp_window: int) -> str:
         base = f"{company_id}:{job_type}:{timestamp_window}"
@@ -427,10 +451,17 @@ class BIQcRedisJobs:
     async def _worker_loop(self) -> None:
         logger.info("BIQc Redis worker started for namespace %s", QUEUE_NAMESPACE)
         assert self.redis is not None
+        last_flush = time.time()
 
         while True:
             try:
                 await self._promote_delayed_jobs()
+
+                # Periodic log buffer flush to Supabase (every 5 minutes)
+                if time.time() - last_flush >= 300:
+                    await self._flush_log_buffer()
+                    last_flush = time.time()
+
                 entry = await self.redis.blpop(QUEUE_KEY, timeout=2)
                 if not entry:
                     continue
@@ -457,6 +488,59 @@ class BIQcRedisJobs:
             pipeline.rpush(QUEUE_KEY, raw_job)
         await pipeline.execute()
 
+    async def _flush_log_buffer(self) -> None:
+        """Flush up to 100 log entries from Redis buffer to Supabase for permanent storage."""
+        if not self.redis_connected or self.redis is None:
+            return
+
+        try:
+            buffer_len = await self.redis.llen(LOG_BUFFER_KEY)
+            if buffer_len == 0:
+                return
+
+            batch_size = min(100, buffer_len)
+            entries = []
+            for _ in range(batch_size):
+                raw = await self.redis.lpop(LOG_BUFFER_KEY)
+                if raw is None:
+                    break
+                try:
+                    entries.append(json.loads(raw))
+                except (json.JSONDecodeError, TypeError):
+                    continue
+
+            if not entries:
+                return
+
+            try:
+                from supabase_client import get_supabase_client
+                sb = get_supabase_client()
+                rows = [
+                    {
+                        "job_id": e.get("job_id"),
+                        "job_type": e.get("job_type"),
+                        "company_id": e.get("company_id"),
+                        "status": e.get("status", "success"),
+                        "result_summary": json.dumps(e.get("result", {}), default=str)[:2000],
+                        "processed_at": datetime.fromtimestamp(
+                            e.get("processed_at", time.time()), tz=timezone.utc
+                        ).isoformat(),
+                    }
+                    for e in entries
+                ]
+                sb.table("job_execution_log").upsert(rows, on_conflict="job_id").execute()
+                logger.info("Flushed %d log entries from Redis buffer to Supabase", len(rows))
+            except Exception as flush_exc:
+                # Push entries back to buffer on failure
+                logger.warning("Log buffer flush to Supabase failed, re-queuing %d entries: %s", len(entries), flush_exc)
+                for e in entries:
+                    try:
+                        await self.redis.rpush(LOG_BUFFER_KEY, json.dumps(e, sort_keys=True, default=str))
+                    except Exception:
+                        pass
+        except Exception as exc:
+            logger.warning("Log buffer flush error: %s", exc)
+
     async def _process_job(self, job: Dict[str, Any]) -> None:
         job_type = job.get("job_type")
         handler = self.handlers.get(job_type)
@@ -480,7 +564,21 @@ class BIQcRedisJobs:
             attempts = int(job.get("attempts", 0)) + 1
             logger.error("BIQc Redis job failed: %s (%s) attempt %s/3 — %s", job.get("job_id"), job_type, attempts, exc)
 
-            if attempts >= 3 or self.redis is None:
+            if attempts >= 3:
+                # Move to dead-letter queue instead of silently discarding
+                if self.redis is not None:
+                    dlq_entry = json.dumps({
+                        **job,
+                        "failed_at": int(time.time()),
+                        "last_error": str(exc),
+                        "attempts": attempts,
+                    }, sort_keys=True, default=str)
+                    await self.redis.zadd(DLQ_KEY, {dlq_entry: int(time.time())})
+                    await self.redis.zremrangebyrank(DLQ_KEY, 0, -501)  # keep last 500
+                logger.error("Job moved to DLQ: %s (%s) after %s attempts", job.get("job_id"), job_type, attempts)
+                return
+
+            if self.redis is None:
                 return
 
             job["attempts"] = attempts

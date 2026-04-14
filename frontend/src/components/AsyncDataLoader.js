@@ -220,7 +220,7 @@ const ErrorPanel = ({ error, onRetry, moduleName = 'this module' }) => (
         </button>
       )}
       <a
-        href="mailto:support@biqc.com.au"
+        href="mailto:support@biqc.ai"
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
         style={{ color: 'var(--biqc-text-2)', background: 'var(--biqc-bg-card)', border: '1px solid var(--biqc-border)' }}
         data-testid="async-support-link"

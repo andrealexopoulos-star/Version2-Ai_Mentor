@@ -46,6 +46,7 @@ const SubscribePage = React.lazy(() => import(/* webpackChunkName: "marketing" *
 const EnterpriseTerms = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/EnterpriseTerms'));
 const LandingIntelligent = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/LandingIntelligent'));
 const BIQcLegalPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/BIQcLegalPage'));
+const NotFoundPage = React.lazy(() => import(/* webpackChunkName: "marketing" */ './pages/NotFoundPage'));
 
 // Trust sub-pages (named exports need wrapper)
 const SiteTermsPage = React.lazy(() => import('./pages/website/TrustSubPages').then(m => ({ default: m.TermsPage })));
@@ -392,7 +393,7 @@ function AppRoutes() {
         <Route path="/admin/prompt-lab" element={<ProtectedRoute adminOnly><RouteErrorBoundary><PromptLab /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/support-admin" element={<ProtectedRoute adminOnly><RouteErrorBoundary><SupportConsolePage /></RouteErrorBoundary></ProtectedRoute>} />
         <Route path="/observability" element={<ProtectedRoute adminOnly><RouteErrorBoundary><ObservabilityPage /></RouteErrorBoundary></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </Suspense>
     </AppErrorBoundary>

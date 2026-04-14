@@ -32,10 +32,10 @@ const InitiatingBIQC = ({ onReady }) => {
       `}</style>
       <div className="text-center space-y-6">
         <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto" style={{ background: '#E85D00', animation: 'initPulse 2s ease-in-out infinite' }}>
-          <span className="text-white font-bold text-xl" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
+          <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-mono)" }}>B</span>
         </div>
-        <h1 className="text-xl font-semibold text-[var(--ink-display)] tracking-tight" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>Initiating BIQc{dots}</h1>
-        <p className="text-sm text-[var(--ink-secondary)]" style={{ fontFamily: "'Inter', sans-serif" }}>Preparing your Intelligence Platform.</p>
+        <h1 className="text-xl font-semibold text-[var(--ink-display)] tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Initiating BIQc{dots}</h1>
+        <p className="text-sm text-[var(--ink-secondary)]" style={{ fontFamily: "var(--font-ui)" }}>Preparing your Intelligence Platform.</p>
         <div className="w-48 mx-auto">
           <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(140,170,210,0.15)' }}>
             <div className="h-full rounded-full" style={{ background: '#E85D00', animation: 'initBar 2s ease-in-out' }} />

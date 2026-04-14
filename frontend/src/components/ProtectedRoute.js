@@ -28,13 +28,13 @@ const LoadingScreen = () => {
       `}</style>
       <div className="text-center space-y-6">
         <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto" style={{ background: '#E85D00', animation: 'biqcPulse 2s ease-in-out infinite' }}>
-          <span className="text-white font-bold text-xl" style={{ fontFamily: "'JetBrains Mono', monospace" }}>B</span>
+          <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-mono)" }}>B</span>
         </div>
         <div style={{ animation: 'biqcFade 0.8s ease-out' }}>
-          <p className="text-lg font-semibold text-[var(--ink-display)]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+          <p className="text-lg font-semibold text-[var(--ink-display)]" style={{ fontFamily: "var(--font-display)" }}>
             Good {greeting}.
           </p>
-          <p className="text-sm text-[var(--ink-muted)] mt-1" style={{ fontFamily: "'Inter', sans-serif" }}>
+          <p className="text-sm text-[var(--ink-muted)] mt-1" style={{ fontFamily: "var(--font-ui)" }}>
             Establishing secure connection...
           </p>
         </div>
