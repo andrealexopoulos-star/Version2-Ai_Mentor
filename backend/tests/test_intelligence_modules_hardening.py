@@ -20,11 +20,16 @@ def _install_module_stubs():
                 self.detail = detail
 
         class _APIRouter:
-            def get(self, *_args, **_kwargs):
+            def _passthrough(self, *_args, **_kwargs):
                 def _decorator(func):
                     return func
-
                 return _decorator
+
+            get = _passthrough
+            post = _passthrough
+            put = _passthrough
+            patch = _passthrough
+            delete = _passthrough
 
         fastapi_stub.APIRouter = _APIRouter
         fastapi_stub.Depends = lambda fn: fn
