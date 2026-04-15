@@ -7,6 +7,8 @@ token_allocations per calendar month.
 All DB operations use the service-role Supabase client so they work
 regardless of the calling user's RLS context.
 """
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -41,6 +43,56 @@ TIER_TOKEN_LIMITS: dict[str, dict[str, int]] = {
         "output_allocated": -1,
     },
 }
+
+
+# ─── Model pricing (AUD per 1M tokens) ─────────────────────────────────────────
+# Used to populate ai_usage_log.cost_aud on every LLM call so Gross Profit
+# views can compute margin per user per month.
+# Values are best-effort; keep in sync with provider pricing pages.
+# Sources: openai.com/api/pricing · anthropic.com/pricing · ai.google.dev/pricing
+# Conversion assumption when provider quotes USD: 1 USD ≈ 1.52 AUD (2026-04).
+MODEL_PRICING: dict[str, dict[str, float]] = {
+    # OpenAI GPT-5 family
+    "gpt-5.4-pro":   {"input_per_1m": 22.80, "output_per_1m": 91.20},
+    "gpt-5.4":       {"input_per_1m":  3.80, "output_per_1m": 15.20},
+    "gpt-5.3":       {"input_per_1m":  0.76, "output_per_1m":  3.04},
+    # OpenAI realtime / voice
+    "gpt-4o-realtime-preview-2024-12-17": {"input_per_1m": 7.60, "output_per_1m": 30.40},
+    # Google Gemini 3
+    "gemini-3-pro-preview":   {"input_per_1m": 1.90, "output_per_1m":  7.60},
+    "gemini-3-flash-preview": {"input_per_1m": 0.11, "output_per_1m":  0.46},
+    # Anthropic Claude 4.6
+    "claude-opus-4-6":   {"input_per_1m": 22.80, "output_per_1m": 114.00},
+    "claude-sonnet-4-6": {"input_per_1m":  4.56, "output_per_1m":  22.80},
+    # Embeddings (input-only; output tokens are always 0)
+    "text-embedding-3-small": {"input_per_1m": 0.03, "output_per_1m": 0.0},
+}
+
+# One-shot log guard: warn only once per unknown model to avoid log spam.
+_UNKNOWN_MODEL_WARNED: set[str] = set()
+
+
+def _compute_cost_aud(model: str, input_tokens: int, output_tokens: int) -> float:
+    """Return AUD cost for this call. Unknown models → 0.0 (logged once)."""
+    if not model:
+        return 0.0
+    price = MODEL_PRICING.get(model)
+    if not price:
+        if model not in _UNKNOWN_MODEL_WARNED:
+            _UNKNOWN_MODEL_WARNED.add(model)
+            logger.warning(
+                "[TokenMetering] model missing from MODEL_PRICING: %s (cost_aud=0)",
+                model,
+            )
+        return 0.0
+    try:
+        cost = (
+            (max(0, int(input_tokens))  / 1_000_000.0) * float(price.get("input_per_1m", 0.0)) +
+            (max(0, int(output_tokens)) / 1_000_000.0) * float(price.get("output_per_1m", 0.0))
+        )
+    except (TypeError, ValueError):
+        return 0.0
+    return round(cost, 6)
 
 
 def _current_period() -> tuple[datetime, datetime]:
@@ -153,7 +205,7 @@ def record_token_usage(
 ) -> bool:
     """Record token usage from a single LLM call.
 
-    1. Writes a row to ai_usage_log with token counts.
+    1. Writes / accumulates a row in ai_usage_log (count, tokens, cost).
     2. Increments input_used / output_used on the token_allocations row.
     3. If usage exceeds the allocation, increments overage counters.
 
@@ -165,19 +217,38 @@ def record_token_usage(
     now = datetime.now(timezone.utc)
     today = now.date().isoformat()
     key = f"{user_id}:{feature}:{today}"
+    cost_aud = _compute_cost_aud(model, input_tokens, output_tokens)
 
+    # 1 ── ai_usage_log: ACCUMULATE across all calls in the same (user, feature, date)
+    # The previous implementation overwrote the row on every upsert, erasing
+    # the day's running total. Read-modify-write keeps count / tokens / cost
+    # additive per key.
     try:
-        # 1 ── ai_usage_log entry
+        existing = (
+            sb.table("ai_usage_log")
+            .select("count,input_tokens,output_tokens,cost_aud")
+            .eq("key", key)
+            .maybe_single()
+            .execute()
+        )
+        existing_row = existing.data if existing and getattr(existing, "data", None) else {}
+
+        new_count = int(existing_row.get("count") or 0) + 1
+        new_input = int(existing_row.get("input_tokens") or 0) + int(input_tokens or 0)
+        new_output = int(existing_row.get("output_tokens") or 0) + int(output_tokens or 0)
+        new_cost = round(float(existing_row.get("cost_aud") or 0.0) + cost_aud, 6)
+
         sb.table("ai_usage_log").upsert(
             {
                 "key": key,
                 "user_id": user_id,
                 "feature": feature,
                 "date": today,
-                "count": 1,
+                "count": new_count,
                 "model_used": model,
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
+                "input_tokens": new_input,
+                "output_tokens": new_output,
+                "cost_aud": new_cost,
                 "updated_at": now.isoformat(),
             },
             on_conflict="key",

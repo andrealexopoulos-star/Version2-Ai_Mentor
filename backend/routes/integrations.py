@@ -49,7 +49,9 @@ router = APIRouter()
 EDGE_PROXY_ALLOWLIST = {
     "biqc-insights-cognitive",
     "calibration-psych",
-    "calibration_psych",
+    # `calibration_psych` (underscore) is canonicalised to the hyphen
+    # variant before this allowlist is consulted (see resolved_name below),
+    # so the underscore entry was redundant — removed.
     "calibration-sync",
     "calibration-engine",
     "calibration-business-dna",

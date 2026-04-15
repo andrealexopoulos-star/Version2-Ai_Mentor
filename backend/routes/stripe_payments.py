@@ -19,6 +19,26 @@ STRIPE_KEY = os.environ.get("STRIPE_API_KEY", "")
 stripe.api_key = STRIPE_KEY
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
+
+def _is_stripe_production_ready() -> bool:
+    """True when Stripe is configured with a live secret and a webhook secret.
+
+    Used to harden webhook + checkout paths when the runtime is in
+    production. In non-production we permit test keys (sk_test_…) so local
+    dev and staging still work.
+    """
+    env_is_prod = (
+        (os.environ.get("ENVIRONMENT") or "").strip().lower() == "production"
+        or (os.environ.get("PRODUCTION") or "").strip().lower() in {"1", "true", "yes"}
+    )
+    if not STRIPE_KEY:
+        return False
+    if env_is_prod and STRIPE_KEY.startswith("sk_test_"):
+        return False
+    if env_is_prod and not STRIPE_WEBHOOK_SECRET:
+        return False
+    return True
+
 PLANS = {
     "starter": {
         "amount": 6900,
@@ -275,12 +295,24 @@ class CheckoutRequest(BaseModel):
 @router.post("/payments/checkout")  # legacy route
 async def create_checkout(req: CheckoutRequest, request: Request, current_user: dict = Depends(get_current_user)):
     """Create Stripe checkout session for a subscription plan."""
+    if not _is_stripe_production_ready():
+        # Fail closed instead of creating a checkout against a test/unset key.
+        logger.error(
+            "Checkout rejected: Stripe is not production-ready (key_present=%s, webhook_secret_present=%s)",
+            bool(STRIPE_KEY), bool(STRIPE_WEBHOOK_SECRET),
+        )
+        raise HTTPException(status_code=503, detail="Stripe is not configured for production")
+
     plan_id = req.tier or req.package_id or ''
     if plan_id not in PLANS:
         raise HTTPException(status_code=400, detail=f"Invalid plan. Choose from: {list(PLANS.keys())}")
 
     sb = _get_service_supabase()
     plan = _resolve_governed_plan(sb, plan_id) or PLANS[plan_id]
+    # Reject any plan that resolved to a 0-amount (other than enterprise contact flow).
+    if int(plan.get("amount") or 0) <= 0 and plan_id != "enterprise":
+        logger.error("Checkout rejected: plan %s resolved to 0 amount", plan_id)
+        raise HTTPException(status_code=503, detail="Pricing is not configured for this plan")
     user_id = current_user["id"]
     user_email = current_user.get("email", "")
 

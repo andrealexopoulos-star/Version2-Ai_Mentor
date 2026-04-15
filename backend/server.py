@@ -149,16 +149,28 @@ async def merge_webhook_root_fallback(request: Request):
 
 @app.on_event("startup")
 async def startup_core_runtime():
+    # Hard env validation FIRST. In production, missing critical vars or
+    # placeholder Stripe price IDs raise EnvValidationError and halt boot.
+    try:
+        from core.env_validator import validate_env_or_raise
+        validate_env_or_raise()
+    except Exception as exc:
+        # Re-raise in production so the process does not silently start
+        # in a broken config. In dev/local the validator itself already
+        # downgrades to warnings, so a raise here means a hard failure.
+        logger.error("Env var validation failed at startup: %s", exc)
+        raise
+
     _initialize_core_runtime()
     app.state.supabase_admin = supabase_admin
     app.state.services = services
     app.state.cognitive_core = cognitive_core
-    # Validate all env vars on startup and log any missing critical ones
+    # Soft per-group env inventory for the /health endpoint.
     try:
         from routes.health import log_env_validation_on_startup
         log_env_validation_on_startup()
     except Exception as exc:
-        logger.warning("Env var validation skipped: %s", exc)
+        logger.warning("Env var inventory skipped: %s", exc)
 
 
 @app.on_event("startup")

@@ -72,8 +72,11 @@ AI_MODELS = {
     "market_intelligence": "gemini-3-pro-preview", # Market analysis
 
     # Calibration (critical first impression — use good models)
+    # NOTE: the deployed Edge Function is `calibration-psych` (hyphen). The
+    # underscore `calibration_psych` routing entry previously lived here as
+    # an orphan — removed. Any code that requests the underscore name is
+    # canonicalised to the hyphen variant in routes/integrations.py.
     "calibration":         "gpt-5.3",
-    "calibration_psych":   "gpt-5.3",
 
     # Boardroom / War Room
     "boardroom":           "gpt-5.4-pro",
