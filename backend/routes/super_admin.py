@@ -399,3 +399,74 @@ async def get_ai_pricing_gaps(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         logger.warning(f"Failed to read pricing gaps: {e}")
         return {"pricing_gaps": [], "count": 0, "error": str(e)}
+
+
+# ═══ STRIPE ↔ DB RECONCILE (Step 10 / P1-5) ═══════════════════════
+#
+# Nightly job that compares Stripe's source of truth against our
+# `users` mirror and records drift into `stripe_reconcile_log`
+# (migration 097). Triggered by an Azure Logic App timer hitting this
+# endpoint with super-admin auth.
+#
+# Why an HTTP endpoint and not pg_cron:
+#   • We need access to the Stripe SDK (Python package + secret key),
+#     which the DB can't invoke directly.
+#   • Super-admin auth + audit trail is free here; adding a new cron
+#     service would duplicate that surface.
+#   • Manual "run it now to check drift before a release" is trivial
+#     via curl once the endpoint exists.
+#
+# The underlying job re-raises on Stripe API failure so we surface a
+# 502 rather than return a misleading "0 drifts" success. Per-sub
+# errors are caught inside and become `missing_user` drift rows with
+# internal_error notes so the batch keeps going.
+
+@router.post("/admin/stripe/reconcile")
+async def trigger_stripe_reconcile(current_user: dict = Depends(get_current_user)):
+    """Run one Stripe → DB reconcile pass and return a summary.
+
+    Super-admin only. Intended to be invoked nightly (02:00 UTC) by an
+    Azure Logic App / Cloud Scheduler timer with an admin-issued bearer.
+    The response shape matches what gets written to the `run_summary`
+    row in `stripe_reconcile_log`, so dashboards can dedupe against it.
+
+    Returns
+    -------
+    JSON with run_id, checked_subscriptions, drift_counts, total_drift,
+    started_at / finished_at timestamps, and per-sub error strings (if any).
+
+    Raises
+    ------
+    502 when the Stripe API is unreachable — explicitly NOT swallowed,
+    because a silent zero-drift run would give ops false confidence the
+    mirror is healthy when in fact we never queried Stripe at all.
+    """
+    _require_super_admin(current_user)
+    try:
+        from jobs.stripe_reconcile import run_stripe_reconcile
+        sb = _get_service_client()
+        summary = run_stripe_reconcile(sb)
+        # Audit so ops can see "who ran reconcile at 2:03am last Tuesday".
+        try:
+            sb.table("admin_actions").insert({
+                "admin_user_id": current_user.get("id"),
+                "action_type": "stripe_reconcile_run",
+                "new_value": {
+                    "run_id": summary.get("run_id"),
+                    "checked": summary.get("checked_subscriptions"),
+                    "total_drift": summary.get("total_drift"),
+                },
+            }).execute()
+        except Exception as audit_exc:  # pragma: no cover — audit must never block the response
+            logger.warning("[StripeReconcile] audit insert failed: %s", audit_exc)
+        return summary
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("[StripeReconcile] run failed: %s", exc, exc_info=True)
+        # 502 (Bad Gateway) is the right signal — the failure lives
+        # upstream (Stripe API) or at the job boundary, not in our logic.
+        raise HTTPException(
+            status_code=502,
+            detail=f"Stripe reconcile failed: {type(exc).__name__}: {exc}",
+        )
