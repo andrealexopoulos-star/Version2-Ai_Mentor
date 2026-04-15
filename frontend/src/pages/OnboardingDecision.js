@@ -17,7 +17,9 @@ const OnboardingDecision = () => {
 
   const handleConnectInbox = () => {
     sessionStorage.removeItem('onboarding_deferred');
-    navigate('/connect-email', { replace: true });
+    // Pass returnTo=/advisor so after Outlook/Gmail OAuth the user lands on the
+    // inbox-first intelligence page instead of being stranded on /connect-email.
+    navigate('/connect-email?returnTo=%2Fadvisor', { replace: true });
   };
 
   const handleCalibrate = () => {
