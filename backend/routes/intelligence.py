@@ -127,6 +127,32 @@ async def snapshot_latest(current_user: dict = Depends(get_current_user)):
     if live_truth["canonical_truth"]["accounting_connected"] and "lack of accounting tool integration" in burn_rate_overlay.lower():
         cognitive.setdefault("system_state", {})["burn_rate_overlay"] = "Accounting is connected live. Cash interpretation is using the latest connected-state truth and recent signals."
 
+    # ═══ MERGE DIGITAL FOOTPRINT FROM business_dna_enrichment ═══
+    # Surfaces the Deep Scan result (persisted at onboarding scan time) so
+    # Market & Position can render real Digital Footprint / SEO / Social /
+    # Content Authority scores instead of "Signal still calibrating...".
+    # Wrapped so a read failure never breaks /snapshot/latest.
+    try:
+        profile_row = sb.table("business_profiles") \
+            .select("id") \
+            .eq("user_id", current_user["id"]) \
+            .limit(1).execute()
+        profile_id = (profile_row.data or [{}])[0].get("id") if profile_row else None
+        if profile_id:
+            bde = sb.table("business_dna_enrichment") \
+                .select("digital_footprint,enrichment") \
+                .eq("user_id", current_user["id"]) \
+                .eq("business_profile_id", profile_id) \
+                .limit(1).execute()
+            bde_row = (bde.data or [{}])[0] if bde else {}
+            df = bde_row.get("digital_footprint") or {}
+            if df.get("score") is not None:
+                cognitive["digital_footprint"] = df
+            if bde_row.get("enrichment"):
+                cognitive["business_dna_enrichment"] = bde_row["enrichment"]
+    except Exception as e:
+        logger.warning(f"[/snapshot/latest] business_dna_enrichment read skipped: {e}")
+
     return {"snapshot": snapshot, "cognitive": cognitive}
 
 
