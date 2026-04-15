@@ -13,6 +13,26 @@ import {
 import DashboardLayout from '../components/DashboardLayout';
 import AdminConsentModal from '../components/AdminConsentModal';
 
+// Stored in sessionStorage so the target returnTo survives the OAuth roundtrip
+// (the backend redirects the browser directly to the returnTo URL on success,
+// so ConnectEmail itself is usually bypassed, but we also use this to resume
+// cleanly if the user hits /connect-email as a fallback).
+const RETURN_TO_STORAGE_KEY = 'biqc_connect_email_return_to';
+
+const readInitialReturnTo = () => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get('returnTo');
+    if (fromUrl) {
+      sessionStorage.setItem(RETURN_TO_STORAGE_KEY, fromUrl);
+      return fromUrl;
+    }
+    return sessionStorage.getItem(RETURN_TO_STORAGE_KEY) || '/connect-email';
+  } catch {
+    return '/connect-email';
+  }
+};
+
 const ConnectEmail = () => {
   const navigate = useNavigate();
   const [connecting, setConnecting] = useState(null);
@@ -21,6 +41,10 @@ const ConnectEmail = () => {
   const [loading, setLoading] = useState(true);
   const [showAdminConsent, setShowAdminConsent] = useState(false);
   const [adminConsentUrl, setAdminConsentUrl] = useState('');
+  // Where to send the user back to after OAuth succeeds. Defaults to staying on
+  // this page (legacy behavior); callers that land us here with ?returnTo=/foo
+  // or pre-populate sessionStorage will resume there instead.
+  const [returnTo] = useState(readInitialReturnTo);
 
   useEffect(() => {
     checkEmailConnections();
@@ -32,26 +56,37 @@ const ConnectEmail = () => {
     const outlookError = urlParams.get('outlook_error');
     const consentUrl = urlParams.get('admin_consent_url');
 
+    // Clear OAuth result params from the URL without dropping ?returnTo=,
+    // so a failure + retry still remembers where the user came from.
+    const cleanUrl = () => {
+      const rt = returnTo && returnTo !== '/connect-email' ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
+      window.history.replaceState({}, '', `/connect-email${rt}`);
+    };
+
     // Admin consent required — show modal
     if (outlookError === 'admin_consent_required' && consentUrl) {
       setShowAdminConsent(true);
       setAdminConsentUrl(decodeURIComponent(consentUrl));
-      window.history.replaceState({}, '', '/connect-email');
+      cleanUrl();
     } else if (outlookError) {
       toast.error(`Microsoft connection failed: ${outlookError.replace(/_/g, ' ')}`);
-      window.history.replaceState({}, '', '/connect-email');
+      cleanUrl();
     }
 
-    if (outlookConnected === 'true') {
-      window.history.replaceState({}, '', '/connect-email');
+    const connected = outlookConnected === 'true' || gmailConnected === 'true';
+    if (connected) {
+      const provider = outlookConnected === 'true' ? 'Outlook' : 'Gmail';
+      cleanUrl();
       setTimeout(() => checkEmailConnections(), 1500);
+      // If the caller passed a returnTo (e.g. a calibration step or post-signup
+      // advisor landing), resume there instead of stranding the user on this page.
+      if (returnTo && returnTo !== '/connect-email') {
+        toast.success(`${provider} connected — returning you to where you left off…`);
+        try { sessionStorage.removeItem(RETURN_TO_STORAGE_KEY); } catch {}
+        setTimeout(() => navigate(returnTo, { replace: true }), 1500);
+      }
     }
-
-    if (gmailConnected === 'true') {
-      window.history.replaceState({}, '', '/connect-email');
-      setTimeout(() => checkEmailConnections(), 1500);
-    }
-  }, []);
+  }, [returnTo, navigate]);
 
   const checkEmailConnections = async () => {
     try {
@@ -151,16 +186,19 @@ const ConnectEmail = () => {
       
       // console.log("✅ Token obtained, redirecting to OAuth...");
       
-      // Secure: POST token via header, get short-lived auth code for redirect
+      // Secure: POST token via header, get short-lived auth code for redirect.
+      // returnTo is dynamic so the backend's signed-state callback resumes the
+      // user at the page they actually came from (calibration step, advisor,
+      // settings etc.) instead of always dumping them back on /connect-email.
       const initResp = await fetch(`${getBackendUrl()}/api/auth/email-connect/initiate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ provider: 'outlook', returnTo: '/connect-email' }),
+        body: JSON.stringify({ provider: 'outlook', returnTo }),
       });
       if (!initResp.ok) throw new Error('Failed to initiate Outlook connection');
       const { redirect_url } = await initResp.json();
       window.location.assign(`${getBackendUrl()}${redirect_url}`);
-      
+
     } catch (error) {
       console.error("Outlook connect error:", error);
       toast.error(`Failed to connect: ${error.message}`);
@@ -202,11 +240,12 @@ const ConnectEmail = () => {
       
       // console.log("✅ Token obtained, redirecting to OAuth...");
       
-      // Secure: POST token via header, get short-lived auth code for redirect
+      // Secure: POST token via header, get short-lived auth code for redirect.
+      // Same dynamic returnTo behavior as outlook above.
       const initResp = await fetch(`${getBackendUrl()}/api/auth/email-connect/initiate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ provider: 'gmail', returnTo: '/connect-email' }),
+        body: JSON.stringify({ provider: 'gmail', returnTo }),
       });
       if (!initResp.ok) throw new Error('Failed to initiate Gmail connection');
       const { redirect_url } = await initResp.json();
