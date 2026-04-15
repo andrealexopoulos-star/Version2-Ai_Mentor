@@ -35,7 +35,7 @@ const WebsiteNav = () => {
               || (link.label === 'Platform' && location.pathname.startsWith('/platform'))
               || (link.label === 'Blog' && location.pathname.startsWith('/blog'));
             return (
-              <Link key={link.label} to={link.path} className="px-4 py-2 rounded-lg text-sm transition-all hover:text-white" style={{ color: isActive ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8', fontWeight: isActive ? 600 : 400, fontFamily: fontFamily.display }} data-testid={`nav-${link.label.toLowerCase()}`}>
+              <Link key={link.label} to={link.path} className="px-4 py-2 rounded-lg text-sm transition-all hover:text-white" style={{ color: isActive ? 'var(--ink-display, #EDF1F7)' : '#8FA0B8', fontWeight: isActive ? 600 : 400, fontFamily: fontFamily.body }} data-testid={`nav-${link.label.toLowerCase()}`}>
                 {link.label}
               </Link>
             );
@@ -44,12 +44,12 @@ const WebsiteNav = () => {
 
         {/* CTA + Mobile Toggle */}
         <div className="flex items-center gap-3">
-          <Link to="/login-supabase" className="hidden md:block px-4 py-2 rounded-lg text-sm text-[#8FA0B8] hover:text-white transition-colors" style={{ fontFamily: fontFamily.display }} data-testid="nav-login">Log in</Link>
-          <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)', fontFamily: fontFamily.display, boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }} data-testid="nav-get-started">
+          <Link to="/login-supabase" className="hidden md:block px-4 py-2 rounded-lg text-sm text-[#8FA0B8] hover:text-white transition-colors" style={{ fontFamily: fontFamily.body }} data-testid="nav-login">Log in</Link>
+          <Link to="/register-supabase" className="hidden md:block px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:brightness-110" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)', fontFamily: fontFamily.body, boxShadow: '0 4px 16px rgba(232,93,0,0.3)' }} data-testid="nav-get-started">
             Start Free
           </Link>
           {/* Mobile: Log In text + hamburger */}
-          <Link to="/login-supabase" className="md:hidden text-xs text-[#8FA0B8] hover:text-white" style={{ fontFamily: fontFamily.display }} data-testid="nav-mobile-login">Log in</Link>
+          <Link to="/login-supabase" className="md:hidden text-xs text-[#8FA0B8] hover:text-white" style={{ fontFamily: fontFamily.body }} data-testid="nav-mobile-login">Log in</Link>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="md:hidden p-2 text-[#8FA0B8]"
@@ -65,7 +65,7 @@ const WebsiteNav = () => {
       {mobileOpen && (
         <div className="md:hidden px-6 pb-6 space-y-1" style={{ background: 'linear-gradient(180deg, rgba(8,12,20,0.98), rgba(11,17,32,0.95))' }}>
           {NAV_LINKS.map((link) => (
-            <Link key={link.label} to={link.path} onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-[#8FA0B8] hover:text-white hover:bg-white/5 transition-all" style={{ fontFamily: fontFamily.display }}>{link.label}</Link>
+            <Link key={link.label} to={link.path} onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-[#8FA0B8] hover:text-white hover:bg-white/5 transition-all" style={{ fontFamily: fontFamily.body }}>{link.label}</Link>
           ))}
           <div className="pt-4 space-y-2">
             <Link to="/login-supabase" onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-lg text-sm text-center text-[#8FA0B8] border border-white/10">Log in</Link>
@@ -85,7 +85,7 @@ const WebsiteFooter = () => (
           <span className="text-[30px] leading-none font-semibold tracking-tight text-white block mb-6" style={{ fontFamily: fontFamily.display }}>
             BIQc
           </span>
-          <p className="text-xs text-[#8FA0B8]/60 leading-relaxed" style={{ fontFamily: fontFamily.display }}>Business Intelligence that works while you sleep. One intelligence layer for every decision that matters.</p>
+          <p className="text-xs text-[#8FA0B8]/60 leading-relaxed" style={{ fontFamily: fontFamily.body }}>Business Intelligence that works while you sleep. One intelligence layer for every decision that matters.</p>
           <div className="mt-6 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
             <span className="text-[10px] text-[#8FA0B8]/50" style={{ fontFamily: fontFamily.mono }}>All data hosted in Australia</span>
@@ -95,7 +95,7 @@ const WebsiteFooter = () => (
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[#8FA0B8]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Product</h2>
           <div className="space-y-2.5">
             {[['Platform', '/platform'], ['Intelligence', '/intelligence'], ['Integrations', '/our-integrations'], ['Pricing', '/pricing']].map(([l, p]) => (
-              <Link key={p} to={p} className="block text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
+              <Link key={p} to={p} className="block text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.body }}>{l}</Link>
             ))}
           </div>
         </div>
@@ -103,7 +103,7 @@ const WebsiteFooter = () => (
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[#8FA0B8]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Legal</h2>
           <div className="space-y-2.5">
             {[['Privacy Policy', '/trust/privacy'], ['Terms of Service', '/trust/terms'], ['Trust & Security', '/trust/security']].map(([l, p]) => (
-              <Link key={p} to={p} className="block text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
+              <Link key={p} to={p} className="block text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.body }}>{l}</Link>
             ))}
           </div>
         </div>
@@ -111,7 +111,7 @@ const WebsiteFooter = () => (
           <h2 className="text-xs font-semibold tracking-widest uppercase text-[#8FA0B8]/40 mb-4" style={{ fontFamily: fontFamily.mono }}>Company</h2>
           <div className="space-y-2.5">
             {[['Blog', '/blog'], ['Contact', '/contact'], ['Log In', '/login-supabase'], ['Start Free Trial', '/register-supabase']].map(([l, p]) => (
-              <Link key={l} to={p} className="block text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.display }}>{l}</Link>
+              <Link key={l} to={p} className="block text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors" style={{ fontFamily: fontFamily.body }}>{l}</Link>
             ))}
           </div>
         </div>

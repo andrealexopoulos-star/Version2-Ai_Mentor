@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { fontFamily } from '../../design-system/tokens';
 
-const HEADING = fontFamily.display;
-const BODY = fontFamily.body;
+const HEADING = 'var(--font-display)';
+const BODY = 'var(--font-ui)';
 
 
 const TrustPageShell = ({ title, lastUpdated, children }) => (
@@ -15,7 +15,7 @@ const TrustPageShell = ({ title, lastUpdated, children }) => (
         <Link to="/trust" className="inline-flex items-center gap-2 text-sm text-[#8FA0B8] hover:text-[#E85D00] transition-colors mb-8" style={{ fontFamily: fontFamily.mono }}>
           <ArrowLeft className="w-4 h-4" /> Back to Trust
         </Link>
-        <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ fontFamily: fontFamily.displayING, color: '#FFFFFF' }}>{title}</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ fontFamily: fontFamily.display, color: '#FFFFFF' }}>{title}</h1>
         <p className="text-xs text-[#8FA0B8]/50 mb-10" style={{ fontFamily: fontFamily.mono }}>Last updated: {lastUpdated}</p>
         <div className="prose-steel space-y-6">{children}</div>
       </div>

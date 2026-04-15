@@ -134,10 +134,10 @@ const ConnectionDiagram = () => {
             animation: 'biqcPulse 3s ease-in-out infinite'
           }}>
           <div className="flex items-center justify-center rounded-2xl text-white font-black text-2xl mb-2"
-            style={{ width: 44, height: 44, background: 'linear-gradient(135deg,#E85D00,#C2410C)', fontFamily: 'var(--font-heading)', boxShadow: '0 4px 14px rgba(249,115,22,0.35)' }}>
+            style={{ width: 44, height: 44, background: 'linear-gradient(135deg,#E85D00,#C2410C)', fontFamily: 'var(--font-display)', boxShadow: '0 4px 14px rgba(249,115,22,0.35)' }}>
             B
           </div>
-          <span className="text-xs font-bold text-slate-900" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.01em' }}>BIQc</span>
+          <span className="text-xs font-bold text-slate-900" style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>BIQc</span>
           <span className="text-[9px] text-slate-400 mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>Intelligence</span>
         </div>
       </div>
@@ -158,7 +158,7 @@ const ConnectionDiagram = () => {
               <div className="flex gap-1.5">
                 {row.items.map((item, j) => (
                   <div key={j} className="flex items-center justify-center rounded-lg text-white text-[9px] font-bold"
-                    style={{ width: 22, height: 22, background: row.colors[j] || '#94A3B8', flexShrink: 0, fontFamily: 'var(--font-heading)' }}>
+                    style={{ width: 22, height: 22, background: row.colors[j] || '#94A3B8', flexShrink: 0, fontFamily: 'var(--font-display)' }}>
                     {item}
                   </div>
                 ))}
@@ -203,10 +203,10 @@ const FeatureCards = () => {
           </div>
         </div>
         <div className="p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>The Boardroom</h3>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>The Boardroom</h3>
           <p className="text-sm font-semibold text-slate-700 mb-2">Five AI agents debating your data in real time.</p>
           <p className="text-sm text-slate-500 leading-relaxed mb-4">Finance, Ops, Sales, Risk, and Compliance simultaneously analyse your business and deliver a unified strategic verdict.</p>
-          <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors" style={{ fontFamily: 'var(--font-heading)' }}>Learn more <ArrowRight className="w-3.5 h-3.5" /></button>
+          <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors" style={{ fontFamily: 'var(--font-display)' }}>Learn more <ArrowRight className="w-3.5 h-3.5" /></button>
         </div>
       </div>
 
@@ -224,10 +224,10 @@ const FeatureCards = () => {
           ))}
         </div>
         <div className="p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>BIQc Insights</h3>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>BIQc Insights</h3>
           <p className="text-sm font-semibold text-slate-700 mb-2">The always-on intelligence layer. Sub-second from cache.</p>
           <p className="text-sm text-slate-500 leading-relaxed mb-4">Radar-sweep detection of Silent Killers — forgotten invoices, SOP drift, compliance gaps — before they become crises.</p>
-          <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors" style={{ fontFamily: 'var(--font-heading)' }}>Learn more <ArrowRight className="w-3.5 h-3.5" /></button>
+          <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors" style={{ fontFamily: 'var(--font-display)' }}>Learn more <ArrowRight className="w-3.5 h-3.5" /></button>
         </div>
       </div>
 
@@ -239,13 +239,13 @@ const FeatureCards = () => {
               <div key={i} className="w-1 rounded-full" style={{ background: '#E85D00', height: `${8 + Math.abs(Math.sin(i * 0.7)) * 40}px`, animation: `waveBar ${0.8 + i * 0.06}s ease-in-out ${i * 0.04}s infinite alternate`, opacity: 0.7 + Math.abs(Math.sin(i * 0.7)) * 0.3 }} />
             ))}
           </div>
-          <span className="text-sm font-semibold text-slate-700" style={{ fontFamily: 'var(--font-heading)' }}>🎤 Voice-to-Strategy Calibration</span>
+          <span className="text-sm font-semibold text-slate-700" style={{ fontFamily: 'var(--font-display)' }}>🎤 Voice-to-Strategy Calibration</span>
         </div>
         <div className="p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>SoundBoard</h3>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>SoundBoard</h3>
           <p className="text-sm font-semibold text-slate-700 mb-2">Speak your challenges. Get structured action plans.</p>
           <p className="text-sm text-slate-500 leading-relaxed mb-4">Voice-to-strategy calibration built on your actual business data — not generic templates. Fastest path from problem to plan.</p>
-          <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors" style={{ fontFamily: 'var(--font-heading)' }}>Learn more <ArrowRight className="w-3.5 h-3.5" /></button>
+          <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors" style={{ fontFamily: 'var(--font-display)' }}>Learn more <ArrowRight className="w-3.5 h-3.5" /></button>
         </div>
       </div>
 
@@ -260,10 +260,10 @@ const FeatureCards = () => {
           ))}
         </div>
         <div className="p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>Strategic Console</h3>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>Strategic Console</h3>
           <p className="text-sm font-semibold text-slate-700 mb-2">Daily executive briefing. Ask anything. Get answers.</p>
           <p className="text-sm text-slate-500 leading-relaxed mb-4">Live market intelligence, competitor tracking, and daily force memos. Your AI advisor calibrated to your exact situation.</p>
-          <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors" style={{ fontFamily: 'var(--font-heading)' }}>Learn more <ArrowRight className="w-3.5 h-3.5" /></button>
+          <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors" style={{ fontFamily: 'var(--font-display)' }}>Learn more <ArrowRight className="w-3.5 h-3.5" /></button>
         </div>
       </div>
 
@@ -294,7 +294,7 @@ const ComparisonSection = () => {
           {['The Old Way','The BIQc Way'].map((label,i) => (
             <button key={i} onClick={() => setActive(i)}
               className="px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200"
-              style={{ fontFamily: 'var(--font-heading)', background: active === i ? '#0F1720' : 'transparent', color: active === i ? 'white' : '#64748B', boxShadow: active === i ? '0 2px 8px rgba(0,0,0,0.15)' : 'none' }}>
+              style={{ fontFamily: 'var(--font-display)', background: active === i ? '#0F1720' : 'transparent', color: active === i ? 'white' : '#64748B', boxShadow: active === i ? '0 2px 8px rgba(0,0,0,0.15)' : 'none' }}>
               {label}
             </button>
           ))}
@@ -370,7 +370,7 @@ const LandingIntelligent = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: '#F5F7FA', fontFamily: 'var(--font-body)', color: '#0F1720' }}>
+    <div className="min-h-screen" style={{ background: '#F5F7FA', fontFamily: 'var(--font-ui)', color: '#0F1720' }}>
 
       {/* Subtle grid + radial glow */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
@@ -382,20 +382,20 @@ const LandingIntelligent = () => {
       {/* ── NAV ── */}
       <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 sm:px-12" style={{ height: 64, background: 'rgba(245,247,250,0.88)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(180,195,215,0.35)' }}>
         <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => nav('/')}>
-          <div className="flex items-center justify-center rounded-xl text-white font-black text-sm" style={{ width: 34, height: 34, background: 'linear-gradient(135deg,#E85D00,#C2410C)', fontFamily: 'var(--font-heading)', boxShadow: '0 3px 10px rgba(249,115,22,0.3)' }}>B</div>
-          <span className="font-bold text-base text-slate-900" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>BIQc</span>
+          <div className="flex items-center justify-center rounded-xl text-white font-black text-sm" style={{ width: 34, height: 34, background: 'linear-gradient(135deg,#E85D00,#C2410C)', fontFamily: 'var(--font-display)', boxShadow: '0 3px 10px rgba(249,115,22,0.3)' }}>B</div>
+          <span className="font-bold text-base text-slate-900" style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>BIQc</span>
         </div>
 
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-1">
           {['Platform','Intelligence','Integrations','Pricing','Trust'].map(link => (
-            <button key={link} className="text-sm font-medium text-slate-500 px-4 py-2 rounded-lg hover:bg-white hover:text-slate-900 transition-all" style={{ fontFamily: 'var(--font-body)' }}>{link}</button>
+            <button key={link} className="text-sm font-medium text-slate-500 px-4 py-2 rounded-lg hover:bg-white hover:text-slate-900 transition-all" style={{ fontFamily: 'var(--font-ui)' }}>{link}</button>
           ))}
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => nav('/login-supabase')} className="hidden sm:flex text-sm font-medium text-slate-600 px-4 py-2 rounded-full border hover:bg-white transition-all" style={{ fontFamily: 'var(--font-heading)', borderColor: 'rgba(180,195,215,0.5)' }} data-testid="nav-login">Log in</button>
-          <button onClick={() => nav('/register-supabase')} className="text-xs sm:text-sm font-semibold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-heading)', background: 'var(--biqc-bg)', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-free">Get started →</button>
+          <button onClick={() => nav('/login-supabase')} className="hidden sm:flex text-sm font-medium text-slate-600 px-4 py-2 rounded-full border hover:bg-white transition-all" style={{ fontFamily: 'var(--font-display)', borderColor: 'rgba(180,195,215,0.5)' }} data-testid="nav-login">Log in</button>
+          <button onClick={() => nav('/register-supabase')} className="text-xs sm:text-sm font-semibold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-display)', background: 'var(--biqc-bg)', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }} data-testid="nav-start-free">Get started →</button>
           {/* Mobile hamburger */}
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg ml-0.5 transition-all" style={{ background: mobileMenuOpen ? '#0F1720' : 'transparent', border: '1px solid rgba(180,195,215,0.5)' }}>
             {mobileMenuOpen ? <X className="w-4 h-4 text-white" /> : <Menu className="w-4 h-4 text-slate-700" />}
@@ -408,11 +408,11 @@ const LandingIntelligent = () => {
         <div className="fixed top-16 inset-x-0 z-40 md:hidden" style={{ background: 'rgba(245,247,250,0.97)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(180,195,215,0.35)', boxShadow: '0 8px 30px rgba(0,0,0,0.08)' }}>
           <div className="px-5 py-4 flex flex-col gap-1">
             {['Platform','Intelligence','Integrations','Pricing','Trust'].map(link => (
-              <button key={link} onClick={() => setMobileMenuOpen(false)} className="text-left text-sm font-medium text-slate-700 px-4 py-3 rounded-xl hover:bg-white transition-all" style={{ fontFamily: 'var(--font-body)' }}>{link}</button>
+              <button key={link} onClick={() => setMobileMenuOpen(false)} className="text-left text-sm font-medium text-slate-700 px-4 py-3 rounded-xl hover:bg-white transition-all" style={{ fontFamily: 'var(--font-ui)' }}>{link}</button>
             ))}
             <div className="h-px bg-slate-200 my-2" />
-            <button onClick={() => { nav('/login-supabase'); setMobileMenuOpen(false); }} className="text-left text-sm font-medium text-slate-600 px-4 py-3 rounded-xl hover:bg-white transition-all" style={{ fontFamily: 'var(--font-body)' }}>Log in</button>
-            <button onClick={() => { nav('/register-supabase'); setMobileMenuOpen(false); }} className="text-sm font-semibold text-white px-4 py-3 rounded-xl text-center" style={{ fontFamily: 'var(--font-heading)', background: '#E85D00' }}>Get started →</button>
+            <button onClick={() => { nav('/login-supabase'); setMobileMenuOpen(false); }} className="text-left text-sm font-medium text-slate-600 px-4 py-3 rounded-xl hover:bg-white transition-all" style={{ fontFamily: 'var(--font-ui)' }}>Log in</button>
+            <button onClick={() => { nav('/register-supabase'); setMobileMenuOpen(false); }} className="text-sm font-semibold text-white px-4 py-3 rounded-xl text-center" style={{ fontFamily: 'var(--font-display)', background: '#E85D00' }}>Get started →</button>
           </div>
         </div>
       )}
@@ -426,31 +426,31 @@ const LandingIntelligent = () => {
         </div>
 
         {/* Heading with typewriter */}
-        <h1 className="mx-auto mb-6 text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.08] max-w-4xl" style={{ fontFamily: 'var(--font-heading)' }}>
+        <h1 className="mx-auto mb-6 text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.08] max-w-4xl" style={{ fontFamily: 'var(--font-display)' }}>
           <span style={{ color: '#E85D00' }}>Run Your Business Like The Big </span>
           <span className="font-light" style={{ color: '#64748B' }}>Players </span>
           <span style={{ color: '#E85D00' }}>Without The Cost</span>
         </h1>
 
         <div className="max-w-2xl mx-auto w-full text-left">
-          <p className="mb-2 text-xl sm:text-2xl font-bold text-slate-800 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+          <p className="mb-2 text-xl sm:text-2xl font-bold text-slate-800 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
             Meet BIQc..
           </p>
-          <p className="mb-8 text-lg sm:text-xl font-medium leading-relaxed text-slate-500" style={{ fontFamily: 'var(--font-body)' }}>
+          <p className="mb-8 text-lg sm:text-xl font-medium leading-relaxed text-slate-500" style={{ fontFamily: 'var(--font-ui)' }}>
             Your Digital Leadership team surfacing &amp; preventing risk weeks in advance
           </p>
 
-          <p className="mb-8 text-base sm:text-lg leading-relaxed text-slate-500" style={{ fontFamily: 'var(--font-body)' }}>
+          <p className="mb-8 text-base sm:text-lg leading-relaxed text-slate-500" style={{ fontFamily: 'var(--font-ui)' }}>
             Your Chief Agent that deploys its team of AI agents that monitor, plan, execute, and optimize across your entire business.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 mb-4">
-          <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Not a chatbot.</span>
-          <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all" style={{ fontFamily: 'var(--font-heading)', background: 'var(--biqc-bg)', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
+          <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>Not a chatbot.</span>
+          <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-white text-sm sm:text-base font-semibold hover:-translate-y-0.5 transition-all" style={{ fontFamily: 'var(--font-display)', background: 'var(--biqc-bg)', boxShadow: '0 3px 14px rgba(0,0,0,0.2)' }} data-testid="hero-cta-primary">
             <Shield className="w-4 h-4" strokeWidth={1.5} /> Try It For Free
           </button>
-          <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Not a dashboard.</span>
+          <span className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>Not a dashboard.</span>
         </div>
         <p className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>No credit card required · Australian owned & operated</p>
       </section>
@@ -459,8 +459,8 @@ const LandingIntelligent = () => {
       <section className="relative z-10 py-16 sm:py-24 px-6 sm:px-8 lg:px-12" data-testid="cognition-section">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 pl-4 border-l-2" style={{ borderColor: '#E85D00' }}>
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>What Cognition-as-a-Service Delivers</h3>
-            <p className="text-sm text-slate-500 mt-1 leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>Industry benchmarks show that businesses embedding AI-driven decision systems experience:</p>
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>What Cognition-as-a-Service Delivers</h3>
+            <p className="text-sm text-slate-500 mt-1 leading-relaxed" style={{ fontFamily: 'var(--font-ui)' }}>Industry benchmarks show that businesses embedding AI-driven decision systems experience:</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-12 gap-y-8 border-y py-10" style={{ borderColor: 'rgba(180,195,215,0.35)', background: 'rgba(255,255,255,0.4)' }}>
             {[
@@ -471,12 +471,12 @@ const LandingIntelligent = () => {
               { value: '-25%', label: 'Reduction in preventable errors' },
             ].map((s, i) => (
               <div key={i} className="flex flex-col gap-1">
-                <span className="text-3xl sm:text-4xl font-extrabold leading-none" style={{ fontFamily: 'var(--font-heading)', color: '#E85D00' }}>{s.value}</span>
+                <span className="text-3xl sm:text-4xl font-extrabold leading-none" style={{ fontFamily: 'var(--font-display)', color: '#E85D00' }}>{s.value}</span>
                 <span className="text-[10px] uppercase tracking-widest text-slate-500 leading-tight" style={{ fontFamily: 'var(--font-mono)' }}>{s.label}</span>
               </div>
             ))}
           </div>
-          <p className="mt-4 text-sm font-medium text-slate-700 italic" style={{ fontFamily: 'var(--font-heading)' }}>BIQc brings that cognitive layer to SMBs — without enterprise headcount.</p>
+          <p className="mt-4 text-sm font-medium text-slate-700 italic" style={{ fontFamily: 'var(--font-display)' }}>BIQc brings that cognitive layer to SMBs — without enterprise headcount.</p>
         </div>
       </section>
 
@@ -498,8 +498,8 @@ const LandingIntelligent = () => {
               { quote: "The SOP monitoring alone paid for itself. We caught 4 compliance gaps before our audit.", name: 'Lisa K.', co: 'Sydney Healthcare' },
             ].map((t, i) => (
               <div key={i} className="max-w-xs text-left">
-                <p className="text-sm text-slate-500 italic leading-relaxed mb-3" style={{ fontFamily: 'var(--font-body)' }}>"{t.quote}"</p>
-                <p className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>{t.name}</p>
+                <p className="text-sm text-slate-500 italic leading-relaxed mb-3" style={{ fontFamily: 'var(--font-ui)' }}>"{t.quote}"</p>
+                <p className="text-sm font-semibold text-slate-700 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>{t.name}</p>
                 <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>{t.co}</p>
               </div>
             ))}
@@ -512,7 +512,7 @@ const LandingIntelligent = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 max-w-7xl mx-auto">
           {[['94%','faster loads','vs. live generation'],['15+','hrs/week','Reclaimed per operator'],['500+','integrations','Connected and syncing'],['24/7','sentinel','Always on, always watching']].map(([num,unit,desc],i) => (
             <div key={i} className="py-6 sm:py-10 px-3 sm:px-6 hover:bg-slate-50 transition-colors" style={{ borderRight: i % 2 === 0 ? '1px solid rgba(180,195,215,0.35)' : (i < 3 && i % 2 === 1 ? 'none' : 'none'), borderBottom: i < 2 ? '1px solid rgba(180,195,215,0.35)' : 'none' }}>
-              <div className="text-3xl sm:text-5xl font-extrabold mb-1" style={{ fontFamily: 'var(--font-heading)', color: '#E85D00', letterSpacing: '-0.04em' }}>{num}</div>
+              <div className="text-3xl sm:text-5xl font-extrabold mb-1" style={{ fontFamily: 'var(--font-display)', color: '#E85D00', letterSpacing: '-0.04em' }}>{num}</div>
               <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1" style={{ fontFamily: 'var(--font-mono)' }}>{unit}</div>
               <div className="text-xs sm:text-sm text-slate-500 hidden sm:block">{desc}</div>
             </div>
@@ -528,10 +528,10 @@ const LandingIntelligent = () => {
               <div className="w-5 h-px bg-orange-500" />
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>The Functional Arsenal</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-slate-900 mb-4 tracking-tight leading-[1.1]" style={{ fontFamily: 'var(--font-heading)' }}>
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-slate-900 mb-4 tracking-tight leading-[1.1]" style={{ fontFamily: 'var(--font-display)' }}>
               One platform.<br />Four pillars of intelligence.
             </h2>
-            <p className="text-base sm:text-lg text-slate-500 leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>Every screen built for decisions, not analysis.</p>
+            <p className="text-base sm:text-lg text-slate-500 leading-relaxed" style={{ fontFamily: 'var(--font-ui)' }}>Every screen built for decisions, not analysis.</p>
           </div>
           <FeatureCards />
         </div>
@@ -544,11 +544,11 @@ const LandingIntelligent = () => {
             <div className="inline-flex items-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>Intelligence Evolution</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
               Dashboards tell you what happened.<br />
               <span style={{ color: '#3B82F6' }}>BIQc fixes what's happening.</span>
             </h2>
-            <p className="text-sm sm:text-base text-slate-500 max-w-xl leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>Stop digging through charts to find problems. BIQc spots the leaks and hands you the solution — before you lose money.</p>
+            <p className="text-sm sm:text-base text-slate-500 max-w-xl leading-relaxed" style={{ fontFamily: 'var(--font-ui)' }}>Stop digging through charts to find problems. BIQc spots the leaks and hands you the solution — before you lose money.</p>
           </div>
           <ComparisonSection />
         </div>
@@ -561,7 +561,7 @@ const LandingIntelligent = () => {
             <div className="flex items-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>What Life Looks Like with BIQc</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>What's in it for you?</h2>
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>What's in it for you?</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
             {outcomes.map((o,i) => {
@@ -571,11 +571,11 @@ const LandingIntelligent = () => {
                   <div className="flex items-center gap-3 mb-4 sm:mb-5">
                     <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${o.color}12` }}><Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: o.color }} strokeWidth={1.8} /></div>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-xl sm:text-2xl font-extrabold" style={{ fontFamily: 'var(--font-heading)', color: o.color, letterSpacing: '-0.03em' }}>{o.metric}</span>
+                      <span className="text-xl sm:text-2xl font-extrabold" style={{ fontFamily: 'var(--font-display)', color: o.color, letterSpacing: '-0.03em' }}>{o.metric}</span>
                       <span className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>{o.unit}</span>
                     </div>
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 mb-2" style={{ fontFamily: 'var(--font-heading)' }}>{o.title}</h3>
+                  <h3 className="text-base font-bold text-slate-900 mb-2" style={{ fontFamily: 'var(--font-display)' }}>{o.title}</h3>
                   <p className="text-sm text-slate-500 leading-relaxed mb-4">{o.desc}</p>
                   <div className="pt-3 sm:pt-4 border-t border-slate-100">
                     <p className="text-xs text-slate-400"><span className="font-semibold" style={{ color: o.color }}>BIQc Edge: </span>Powered by calibrated intelligence unique to your business.</p>
@@ -594,28 +594,28 @@ const LandingIntelligent = () => {
             <div className="flex items-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-widest text-orange-500" style={{ fontFamily: 'var(--font-mono)' }}>Strategic Pricing Ladder</span>
             </div>
-            <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-3 tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>Intelligence at every scale</h2>
-            <p className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-body)' }}>All prices in AUD. Cancel anytime. 14-day free trial on The Pulse.</p>
+            <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-slate-900 mb-3 tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>Intelligence at every scale</h2>
+            <p className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-ui)' }}>All prices in AUD. Cancel anytime. 14-day free trial on The Pulse.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {pricingTiers.map((tier, i) => (
               <div key={i} className={`rounded-2xl p-5 sm:p-7 flex flex-col transition-all hover:-translate-y-1 duration-300 ${tier.highlight ? 'sm:col-span-2 md:col-span-1' : ''}`} style={{ background: tier.highlight ? '#0F1720' : 'white', border: tier.highlight ? 'none' : '1px solid rgba(180,195,215,0.35)', boxShadow: tier.highlight ? '0 8px 40px rgba(0,0,0,0.2)' : '0 2px 12px rgba(100,120,160,0.06)', position: 'relative', order: tier.highlight ? -1 : 'unset' }}>
                 {tier.highlight && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white" style={{ background: '#E85D00', fontFamily: 'var(--font-mono)' }}>Recommended</div>}
                 <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ fontFamily: 'var(--font-mono)', color: tier.highlight ? '#93C5FD' : '#64748B' }}>{tier.tagline}</p>
-                <h3 className="text-xl font-bold mb-4" style={{ fontFamily: 'var(--font-heading)', color: tier.highlight ? 'white' : '#0F1720', letterSpacing: '-0.02em' }}>{tier.name}</h3>
+                <h3 className="text-xl font-bold mb-4" style={{ fontFamily: 'var(--font-display)', color: tier.highlight ? 'white' : '#0F1720', letterSpacing: '-0.02em' }}>{tier.name}</h3>
                 <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-extrabold" style={{ fontFamily: 'var(--font-heading)', color: tier.highlight ? 'white' : '#0F1720', letterSpacing: '-0.04em' }}>${tier.price}</span>
+                  <span className="text-4xl font-extrabold" style={{ fontFamily: 'var(--font-display)', color: tier.highlight ? 'white' : '#0F1720', letterSpacing: '-0.04em' }}>${tier.price}</span>
                   <span className="text-sm" style={{ color: tier.highlight ? '#94A3B8' : '#64748B' }}>/mo</span>
                 </div>
                 <ul className="space-y-2.5 mb-7 flex-1">
                   {tier.features.map((f,j) => (
                     <li key={j} className="flex items-start gap-2.5 text-sm">
                       <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: tier.highlight ? '#60A5FA' : '#E85D00' }} strokeWidth={2.5} />
-                      <span style={{ color: tier.highlight ? '#CBD5E1' : '#475569', fontFamily: 'var(--font-body)' }}>{f}</span>
+                      <span style={{ color: tier.highlight ? '#CBD5E1' : '#475569', fontFamily: 'var(--font-ui)' }}>{f}</span>
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => nav('/register-supabase')} className="w-full py-3.5 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-heading)', background: tier.highlight ? '#3B82F6' : '#0F1720', color: 'white', boxShadow: tier.highlight ? '0 3px 14px rgba(37,99,235,0.3)' : '0 2px 8px rgba(0,0,0,0.15)' }}>
+                <button onClick={() => nav('/register-supabase')} className="w-full py-3.5 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ fontFamily: 'var(--font-display)', background: tier.highlight ? '#3B82F6' : '#0F1720', color: 'white', boxShadow: tier.highlight ? '0 3px 14px rgba(37,99,235,0.3)' : '0 2px 8px rgba(0,0,0,0.15)' }}>
                   {tier.cta}
                 </button>
               </div>
@@ -629,13 +629,13 @@ const LandingIntelligent = () => {
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 50%,rgba(249,115,22,0.07),transparent)' }} />
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)', backgroundSize: '48px 48px' }} />
         <div className="relative z-10 max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-4xl lg:text-6xl font-extrabold text-white mb-5 tracking-tight leading-[1.07]" style={{ fontFamily: 'var(--font-heading)' }}>
+          <h2 className="text-2xl sm:text-4xl lg:text-6xl font-extrabold text-white mb-5 tracking-tight leading-[1.07]" style={{ fontFamily: 'var(--font-display)' }}>
             Business clarity,<br /><span style={{ color: '#E85D00' }}>mastered.</span>
           </h2>
-          <p className="text-base sm:text-lg text-slate-400 mb-8" style={{ fontFamily: 'var(--font-body)' }}>Connect your systems. Let BIQc build context. Act with confidence.</p>
+          <p className="text-base sm:text-lg text-slate-400 mb-8" style={{ fontFamily: 'var(--font-ui)' }}>Connect your systems. Let BIQc build context. Act with confidence.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-white text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: '#E85D00', boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }} data-testid="final-cta">Run your free Snapshot <ArrowRight className="w-4 h-4" /></button>
-            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-heading)', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}>Try It For Free</button>
+            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-white text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-display)', background: '#E85D00', boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }} data-testid="final-cta">Run your free Snapshot <ArrowRight className="w-4 h-4" /></button>
+            <button onClick={() => nav('/register-supabase')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-full text-sm sm:text-base font-semibold w-full sm:w-auto" style={{ fontFamily: 'var(--font-display)', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}>Try It For Free</button>
           </div>
           <p className="text-xs text-slate-600 mt-5" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Free to start · No credit card · Australian owned and operated</p>
         </div>
@@ -659,11 +659,11 @@ const LandingIntelligent = () => {
       {/* Footer */}
       <footer className="relative z-10 px-4 sm:px-6 py-6 sm:py-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ background: '#080E18', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center rounded-xl text-white font-black text-xs" style={{ width: 28, height: 28, background: 'rgba(249,115,22,0.2)', fontFamily: 'var(--font-heading)' }}>B</div>
+          <div className="flex items-center justify-center rounded-xl text-white font-black text-xs" style={{ width: 28, height: 28, background: 'rgba(249,115,22,0.2)', fontFamily: 'var(--font-display)' }}>B</div>
           <span className="text-[10px] sm:text-xs text-slate-600" style={{ fontFamily: 'var(--font-mono)' }}>© 2026 BIQc — Business IQ Centre</span>
         </div>
         <div className="flex flex-wrap justify-center gap-3 sm:gap-5">
-          {['Pricing','Trust & Security','Terms','Enterprise Terms','Privacy'].map(l => <button key={l} onClick={() => l === 'Pricing' ? nav('/pricing') : l === 'Trust & Security' ? nav('/trust') : l === 'Terms' ? nav('/terms') : l === 'Enterprise Terms' ? nav('/enterprise-terms') : l === 'Privacy' ? nav('/trust/privacy') : null} className="text-[10px] sm:text-xs text-slate-600 hover:text-slate-400 transition-colors" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>{l}</button>)}
+          {['Pricing','Trust & Security','Terms','Enterprise Terms','Privacy'].map(l => <button key={l} onClick={() => l === 'Pricing' ? nav('/pricing') : l === 'Trust & Security' ? nav('/trust') : l === 'Terms' ? nav('/terms') : l === 'Enterprise Terms' ? nav('/enterprise-terms') : l === 'Privacy' ? nav('/trust/privacy') : null} className="text-[10px] sm:text-xs text-slate-600 hover:text-slate-400 transition-colors" style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>{l}</button>)}
         </div>
       </footer>
 

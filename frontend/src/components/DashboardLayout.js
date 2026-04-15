@@ -603,7 +603,7 @@ const DashboardLayout = ({ children }) => {
               <div key={section.id}>
                 {showGroupHeader && (
                   <div className="px-3 pt-4 pb-1 text-[10px] font-medium uppercase tracking-[0.12em]"
-                    style={{ color: 'var(--ink-muted, #708499)', fontFamily: 'var(--font-mono, monospace)' }}>
+                    style={{ color: 'var(--ink-muted, #708499)', fontFamily: fontFamily.mono }}>
                     {groupLabels[section.group] || section.group}
                   </div>
                 )}

@@ -1,28 +1,30 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield, Scale, AlertTriangle, FileText } from 'lucide-react';
+import { fontFamily } from '../design-system/tokens';
 
 const TermsAndConditions = () => {
   const navigate = useNavigate();
   const lastUpdated = "1 January 2025";
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white" style={{ fontFamily: fontFamily.body }}>
       {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+            style={{ fontFamily: fontFamily.body }}
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="font-bold text-white text-xs">TS</span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #FF7A18, #E85D00)' }}>
+              <span className="font-bold text-white text-xs" style={{ fontFamily: fontFamily.display }}>B</span>
             </div>
-            <span className="font-semibold text-slate-900">Business Intelligence Quotient Centre</span>
+            <span className="font-semibold text-slate-900" style={{ fontFamily: fontFamily.display }}>BIQc</span>
           </div>
         </div>
       </nav>
@@ -37,7 +39,7 @@ const TermsAndConditions = () => {
                 <Scale className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">Terms and Conditions</h1>
+                <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: fontFamily.display }}>Terms and Conditions</h1>
                 <p className="text-slate-500">Last updated: {lastUpdated}</p>
               </div>
             </div>

@@ -196,7 +196,7 @@ const SectionCard = ({ section }) => {
             <span className="text-xs font-semibold uppercase tracking-widest text-slate-400 block mb-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
               Section {section.num}
             </span>
-            <h3 className="text-base font-bold text-slate-900" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.01em' }}>
+            <h3 className="text-base font-bold text-slate-900" style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
               {section.title}
             </h3>
           </div>
@@ -240,7 +240,7 @@ const SectionCard = ({ section }) => {
                     <span className="text-xs font-bold px-2 py-0.5 rounded-md shrink-0 mt-0.5" style={{ background: section.bg, color: section.color, fontFamily: 'var(--font-mono)' }}>
                       {sub.id}
                     </span>
-                    <h4 className="text-sm font-semibold text-slate-800" style={{ fontFamily: 'var(--font-heading)' }}>{sub.title}</h4>
+                    <h4 className="text-sm font-semibold text-slate-800" style={{ fontFamily: 'var(--font-display)' }}>{sub.title}</h4>
                   </div>
                   {sub.content && (
                     <p className="text-sm text-slate-600 leading-relaxed ml-11">{sub.content}</p>
@@ -252,7 +252,7 @@ const SectionCard = ({ section }) => {
                         <div key={ss.id} className="pl-4 border-l-2" style={{ borderColor: section.color + '30' }}>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: section.bg, color: section.color, fontFamily: 'var(--font-mono)' }}>{ss.id}</span>
-                            <span className="text-xs font-semibold text-slate-700" style={{ fontFamily: 'var(--font-heading)' }}>{ss.title}</span>
+                            <span className="text-xs font-semibold text-slate-700" style={{ fontFamily: 'var(--font-display)' }}>{ss.title}</span>
                           </div>
                           <p className="text-sm text-slate-600 leading-relaxed">{ss.content}</p>
                         </div>
@@ -274,19 +274,19 @@ const EnterpriseTerms = () => {
   const [allExpanded, setAllExpanded] = useState(true);
 
   return (
-    <div className="min-h-screen" style={{ background: '#F5F7FA', fontFamily: 'var(--font-body)' }}>
+    <div className="min-h-screen" style={{ background: '#F5F7FA', fontFamily: 'var(--font-ui)' }}>
 
       {/* Sticky Nav */}
       <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 sm:px-10" style={{ height: 60, background: 'rgba(245,247,250,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(180,195,215,0.35)' }}>
-        <button onClick={() => navigate('/')} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors" style={{ fontFamily: 'var(--font-body)' }}>
+        <button onClick={() => navigate('/')} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors" style={{ fontFamily: 'var(--font-ui)' }}>
           <ArrowLeft className="w-4 h-4" />
           Back to Home
         </button>
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center rounded-xl text-white font-black text-xs" style={{ width: 30, height: 30, background: 'linear-gradient(135deg,#E85D00,#C2410C)', fontFamily: 'var(--font-heading)', boxShadow: '0 2px 8px rgba(249,115,22,0.3)' }}>B</div>
-          <span className="font-bold text-sm text-slate-900" style={{ fontFamily: 'var(--font-heading)' }}>BIQc</span>
+          <div className="flex items-center justify-center rounded-xl text-white font-black text-xs" style={{ width: 30, height: 30, background: 'linear-gradient(135deg,#E85D00,#C2410C)', fontFamily: 'var(--font-display)', boxShadow: '0 2px 8px rgba(249,115,22,0.3)' }}>B</div>
+          <span className="font-bold text-sm text-slate-900" style={{ fontFamily: 'var(--font-display)' }}>BIQc</span>
         </div>
-        <button onClick={() => navigate('/register-supabase')} className="text-sm font-semibold text-white px-4 py-2 rounded-full" style={{ fontFamily: 'var(--font-heading)', background: 'var(--biqc-bg)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+        <button onClick={() => navigate('/register-supabase')} className="text-sm font-semibold text-white px-4 py-2 rounded-full" style={{ fontFamily: 'var(--font-display)', background: 'var(--biqc-bg)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
           Get started →
         </button>
       </nav>
@@ -303,7 +303,7 @@ const EnterpriseTerms = () => {
             <span className="text-xs font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)', color: '#EA6C0A' }}>Enterprise Agreement</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 mb-4 leading-tight" style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em' }}>
+          <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 mb-4 leading-tight" style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.03em' }}>
             BIQc Enterprise
             <span className="block" style={{ color: '#E85D00' }}>Terms & Conditions</span>
           </h1>
@@ -334,7 +334,7 @@ const EnterpriseTerms = () => {
                   <Icon className="w-4 h-4" style={{ color }} strokeWidth={1.8} />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-slate-800" style={{ fontFamily: 'var(--font-heading)' }}>{label}</p>
+                  <p className="text-xs font-semibold text-slate-800" style={{ fontFamily: 'var(--font-display)' }}>{label}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{sub}</p>
                 </div>
               </div>
@@ -344,7 +344,7 @@ const EnterpriseTerms = () => {
           {/* Controls */}
           <div className="flex items-center justify-between mb-6">
             <p className="text-xs text-slate-400" style={{ fontFamily: 'var(--font-mono)' }}>10 sections · Scroll or click to expand</p>
-            <button onClick={() => setAllExpanded(!allExpanded)} className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1.5" style={{ fontFamily: 'var(--font-body)' }}>
+            <button onClick={() => setAllExpanded(!allExpanded)} className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1.5" style={{ fontFamily: 'var(--font-ui)' }}>
               {allExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               {allExpanded ? 'Collapse all' : 'Expand all'}
             </button>
@@ -362,7 +362,7 @@ const EnterpriseTerms = () => {
         <div className="mt-6 bg-white rounded-2xl border p-6" style={{ borderColor: 'rgba(180,195,215,0.35)', boxShadow: '0 2px 8px rgba(100,120,160,0.06)' }}>
           <div className="flex items-center gap-2 mb-4">
             <FileText className="w-4 h-4 text-slate-400" />
-            <h3 className="text-sm font-bold text-slate-900" style={{ fontFamily: 'var(--font-heading)' }}>Key Definitions</h3>
+            <h3 className="text-sm font-bold text-slate-900" style={{ fontFamily: 'var(--font-display)' }}>Key Definitions</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
@@ -384,20 +384,20 @@ const EnterpriseTerms = () => {
         {/* Footer note */}
         <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 rounded-2xl" style={{ background: 'var(--biqc-bg)' }}>
           <div>
-            <p className="text-xs font-semibold text-white mb-1" style={{ fontFamily: 'var(--font-heading)' }}>Questions about this Agreement?</p>
+            <p className="text-xs font-semibold text-white mb-1" style={{ fontFamily: 'var(--font-display)' }}>Questions about this Agreement?</p>
             <p className="text-xs text-slate-400">Contact Business Intelligence Quotient Centre at <span className="text-orange-400">support@biqc.ai</span></p>
           </div>
           <div className="flex gap-3">
-            <button onClick={() => navigate('/trust')} className="flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-body)' }}>
+            <button onClick={() => navigate('/trust')} className="flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-ui)' }}>
               <Shield className="w-3.5 h-3.5" /> Trust & Security
             </button>
-            <button onClick={() => navigate('/terms')} className="flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-body)' }}>
+            <button onClick={() => navigate('/terms')} className="flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-ui)' }}>
               <FileText className="w-3.5 h-3.5" /> Standard Terms
             </button>
           </div>
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-6 leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>
+        <p className="text-center text-xs text-slate-400 mt-6 leading-relaxed" style={{ fontFamily: 'var(--font-ui)' }}>
           © 2026 BIQc — Business IQ Centre. Powered by Business Intelligence Quotient Centre Pty Ltd. ABN: [Pending]. <br />
           Governed by the laws of New South Wales, Australia.
         </p>

@@ -58,6 +58,7 @@ export default function NotFoundPage() {
 
         <h2
           style={{
+            fontFamily: 'var(--font-display)',
             fontSize: 20,
             fontWeight: 600,
             color: 'var(--ink, #171717)',

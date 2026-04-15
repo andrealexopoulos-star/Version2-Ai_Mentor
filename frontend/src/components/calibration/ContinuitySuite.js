@@ -4,7 +4,7 @@ const CHARCOAL = 'var(--ink-display, #EDF1F7)';
 const MUTED = 'var(--ink-secondary, #8FA0B8)';
 const GOLD = '#E85D00';
 const CARD_BORDER = 'rgba(140,170,210,0.15)';
-const SERIF = "var(--font-heading)";
+const SERIF = "var(--font-display)";
 
 const ContinuitySuite = ({ firstName, calStep, error, onResume }) => {
   const progressPercent = Math.min(Math.round((calStep / 9) * 100), 99);

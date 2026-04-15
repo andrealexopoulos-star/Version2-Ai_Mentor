@@ -6,7 +6,7 @@ const MUTED = 'var(--ink-secondary, #8FA0B8)';
 const GOLD = '#E85D00';
 const CARD_BG = 'var(--surface, #0E1628)';
 const CARD_BORDER = 'rgba(140,170,210,0.15)';
-const SERIF = "var(--font-heading)";
+const SERIF = "var(--font-display)";
 
 const WOW_CATEGORIES = ['Profile', 'Market', 'Product', 'Team', 'Strategy'];
 
