@@ -732,11 +732,32 @@ const Advisor = () => {
                     return (
                       <>
                         <h2 className="mt-3" style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 'var(--lh-display)', letterSpacing: '-0.025em', color: 'white' }}>
-                          Nothing urgent <em style={{ color: 'var(--lava-warm)', fontStyle: 'italic' }}>right now</em>.
+                          Start getting <em style={{ color: 'var(--lava-warm)', fontStyle: 'italic' }}>intelligence</em>.
                         </h2>
                         <p className="mt-4 leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'var(--size-sm)' }}>
-                          Connect your inbox and CRM to start receiving personalised intelligence briefs each morning.
+                          Ask BIQc any question about your business right now — strategy, pricing, hiring, cash flow.
+                          Connect your inbox and CRM to turn on live brief updates and real-time signals.
                         </p>
+                        <div className="flex flex-wrap gap-2 mt-5">
+                          <button
+                            type="button"
+                            onClick={() => navigate('/soundboard')}
+                            className="inline-flex items-center gap-2 text-sm font-semibold"
+                            style={{ padding: '10px 16px', background: 'var(--lava)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)' }}
+                            data-testid="advisor-empty-ask-biqc"
+                          >
+                            Ask BIQc now <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigate('/integrations')}
+                            className="inline-flex items-center gap-2 text-sm font-medium"
+                            style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-md)' }}
+                            data-testid="advisor-empty-connect"
+                          >
+                            Connect integrations
+                          </button>
+                        </div>
                       </>
                     );
                   }

@@ -50,7 +50,10 @@ function MessageAvatar({ isUser, userName }) {
   return (
     <div
       className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold"
-      style={{ background: 'linear-gradient(135deg, #E85D00, #C24D00)', color: '#fff' }}
+      style={{
+        background: 'linear-gradient(135deg, var(--lava), var(--lava-deep))',
+        color: 'var(--ink-inverse)',
+      }}
       aria-hidden="true"
     >
       B

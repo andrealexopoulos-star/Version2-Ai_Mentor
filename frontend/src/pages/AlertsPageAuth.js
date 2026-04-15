@@ -317,11 +317,11 @@ const AlertsPageAuth = () => {
                   </div>
                   <div>
                     <p className="text-sm font-semibold mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--ink-display)' }}>
-                      No alerts — because no data is being monitored yet.
+                      Alerts need connected data — Ask BIQc works right now.
                     </p>
                     <p className="text-sm" style={{ fontFamily: 'var(--font-ui)', color: 'var(--ink-secondary)' }}>
-                      The Alert Centre can only surface issues from data it can see.
-                      Without connected integrations, BIQc has nothing to watch — so zero alerts simply means zero visibility, not zero risk.
+                      The Alert Centre monitors CRM, email, and accounting signals for anomalies — so it's gated on those integrations.
+                      Meanwhile, Ask BIQc is fully available and can answer strategic questions, generate plans, and critique decisions without any connectors.
                     </p>
                   </div>
                 </div>
@@ -340,12 +340,20 @@ const AlertsPageAuth = () => {
                   ))}
                 </div>
 
-                <Link to="/integrations"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all hover:brightness-110"
-                  style={{ background: 'var(--lava, #E85D00)', color: 'white', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-xl, 16px)' }}
-                  data-testid="alerts-connect-integrations">
-                  <Plug className="w-4 h-4" /> Connect Integrations to Activate Alerts <ArrowRight className="w-4 h-4" />
-                </Link>
+                <div className="flex flex-wrap gap-3">
+                  <Link to="/integrations"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all hover:brightness-110"
+                    style={{ background: 'var(--lava, #E85D00)', color: 'white', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-xl, 16px)' }}
+                    data-testid="alerts-connect-integrations">
+                    <Plug className="w-4 h-4" /> Connect integrations to activate alerts <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link to="/soundboard"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-all hover:brightness-110"
+                    style={{ background: 'var(--surface)', color: 'var(--ink)', border: '1px solid var(--border-strong)', fontFamily: 'var(--font-ui)', borderRadius: 'var(--r-xl, 16px)' }}
+                    data-testid="alerts-use-ask-biqc">
+                    Use Ask BIQc now <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
             )
           ) : null}

@@ -363,3 +363,39 @@ async def get_dead_letter_queue(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         logger.warning(f"Failed to read dead-letter queue: {e}")
         return {"dead_letter_jobs": [], "count": 0, "error": str(e)}
+
+
+@router.get("/admin/jobs/queue-health")
+async def get_queue_health(current_user: dict = Depends(get_current_user)):
+    """Detailed Redis queue + worker health (admin only).
+
+    Surfaces queue depth, delayed depth, DLQ depth, log-buffer depth, and
+    which worker instance currently holds the leader lock for periodic
+    housekeeping (delayed-job promotion + log-buffer flush).
+    """
+    _require_super_admin(current_user)
+    try:
+        from biqc_jobs import biqc_jobs
+        return await biqc_jobs.health_async()
+    except Exception as e:
+        logger.warning(f"Failed to read queue health: {e}")
+        return {"redis_connected": False, "error": str(e)}
+
+
+@router.get("/admin/cost/pricing-gaps")
+async def get_ai_pricing_gaps(current_user: dict = Depends(get_current_user)):
+    """Models that produced billable tokens but recorded zero cost — i.e.
+    they're missing from `MODEL_PRICING`. These distort the GP view; admins
+    must add them to backend/middleware/token_metering.py MODEL_PRICING and
+    redeploy. Empty list = healthy.
+    """
+    _require_super_admin(current_user)
+    try:
+        from supabase_client import get_supabase_client
+        sb = get_supabase_client()
+        result = sb.rpc("admin_ai_pricing_gaps", {"p_limit": 50}).execute()
+        rows = result.data or []
+        return {"pricing_gaps": rows, "count": len(rows)}
+    except Exception as e:
+        logger.warning(f"Failed to read pricing gaps: {e}")
+        return {"pricing_gaps": [], "count": 0, "error": str(e)}

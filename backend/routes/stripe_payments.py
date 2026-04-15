@@ -471,9 +471,103 @@ async def create_portal_session(request: Request, current_user: dict = Depends(g
         raise HTTPException(status_code=500, detail="Failed to open billing portal")
 
 
+def _try_record_webhook_event(sb, event) -> str:
+    """Insert a row keyed by event_id. Return the processing_status:
+       - 'duplicate_skipped' if the event was already processed (idempotent skip)
+       - 'pending' if this is the first time we've seen it
+       - 'failed' if the bookkeeping insert itself errored (we still process)
+    """
+    try:
+        try:
+            payload = event.to_dict() if hasattr(event, "to_dict") else dict(event)
+        except Exception:
+            payload = {"id": getattr(event, "id", None), "type": getattr(event, "type", None)}
+
+        # Pull customer/subscription IDs out of the event payload if present.
+        obj = (payload.get("data") or {}).get("object") or {}
+        customer_id = obj.get("customer") if isinstance(obj, dict) else None
+        subscription_id = (
+            obj.get("subscription") if isinstance(obj, dict) and obj.get("subscription") else
+            (obj.get("id") if isinstance(obj, dict) and obj.get("object") == "subscription" else None)
+        )
+        user_id = None
+        meta = obj.get("metadata") if isinstance(obj, dict) else None
+        if isinstance(meta, dict):
+            user_id = meta.get("user_id") or None
+
+        # Idempotency check: PRIMARY KEY on event_id forces a single row.
+        existing = (
+            sb.table("stripe_webhook_events")
+            .select("event_id, processing_status")
+            .eq("event_id", event.id)
+            .maybe_single()
+            .execute()
+        )
+        if existing and getattr(existing, "data", None):
+            status = (existing.data or {}).get("processing_status") or "duplicate_skipped"
+            if status == "processed":
+                return "duplicate_skipped"
+
+        sb.table("stripe_webhook_events").upsert(
+            {
+                "event_id": event.id,
+                "event_type": event.type,
+                "received_at": datetime.now(timezone.utc).isoformat(),
+                "user_id": user_id,
+                "customer_id": customer_id,
+                "subscription_id": subscription_id,
+                "raw_payload": payload,
+                "processing_status": "pending",
+            },
+            on_conflict="event_id",
+        ).execute()
+        return "pending"
+    except Exception as exc:
+        logger.warning("stripe_webhook_events bookkeeping failed for %s: %s", getattr(event, "id", "?"), exc)
+        return "failed"
+
+
+def _mark_webhook_event(sb, event_id: str, status: str) -> None:
+    try:
+        sb.table("stripe_webhook_events").update({
+            "processing_status": status,
+            "processed_at": datetime.now(timezone.utc).isoformat(),
+        }).eq("event_id", event_id).execute()
+    except Exception as exc:  # pragma: no cover - best-effort audit trail
+        logger.warning("Failed to mark webhook event %s as %s: %s", event_id, status, exc)
+
+
+def _downgrade_user_tier(sb, customer_id: Optional[str], subscription_id: Optional[str]) -> None:
+    """On subscription cancellation, drop the user back to free tier."""
+    if not customer_id and not subscription_id:
+        return
+    try:
+        # Find the user via payment_transactions linkage.
+        query = sb.table("payment_transactions").select("user_id").limit(1)
+        if customer_id:
+            query = query.eq("stripe_customer_id", customer_id)
+        elif subscription_id:
+            query = query.eq("stripe_subscription_id", subscription_id)
+        rows = query.execute()
+        user_id = ((rows.data or [{}])[0] or {}).get("user_id")
+        if not user_id:
+            logger.info("subscription cancel: no user matched cust=%s sub=%s", customer_id, subscription_id)
+            return
+        _apply_tier_upgrade(sb, user_id, "free")
+        logger.info("Subscription cancelled — user %s downgraded to free", user_id)
+    except Exception as exc:
+        logger.error("Subscription cancellation downgrade failed: %s", exc)
+
+
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe webhook events."""
+    """Handle Stripe webhook events.
+
+    Idempotency: every event is recorded in `stripe_webhook_events` keyed by
+    `event_id`. A duplicate Stripe retry will short-circuit with no side
+    effects. Without this, retries can re-apply tier upgrades, double-charge
+    counters, or revert a manual override.
+    """
     if not STRIPE_WEBHOOK_SECRET:
         logger.error("Webhook rejected: STRIPE_WEBHOOK_SECRET is not configured")
         raise HTTPException(status_code=503, detail="Stripe webhook is not configured")
@@ -484,14 +578,18 @@ async def stripe_webhook(request: Request):
             raise HTTPException(status_code=400, detail="Missing Stripe-Signature header")
         event = stripe.Webhook.construct_event(body, signature, STRIPE_WEBHOOK_SECRET)
 
-        logger.info(f"Stripe webhook: {event.type}")
+        logger.info("Stripe webhook: %s (%s)", event.type, event.id)
 
-        if event.type == "checkout.session.completed":
-            session = event.data.object
-            if session.payment_status == "paid":
-                try:
-                    sb = _get_service_supabase()
+        sb = _get_service_supabase()
+        bookkeeping_status = _try_record_webhook_event(sb, event)
+        if bookkeeping_status == "duplicate_skipped":
+            logger.info("Stripe webhook %s already processed — skipping", event.id)
+            return {"received": True, "duplicate": True}
 
+        try:
+            if event.type == "checkout.session.completed":
+                session = event.data.object
+                if session.payment_status == "paid":
                     sb.table("payment_transactions").update({
                         "payment_status": "paid",
                         "paid_at": datetime.now(timezone.utc).isoformat(),
@@ -500,9 +598,30 @@ async def stripe_webhook(request: Request):
                     user_id = (session.metadata or {}).get("user_id")
                     if user_id:
                         _apply_tier_upgrade(sb, user_id, (session.metadata or {}).get("tier", "starter"))
-                except Exception as e:
-                    # Keep webhook idempotent and avoid repeated Stripe retries on transient DB errors.
-                    logger.error(f"Webhook tier update failed: {e}")
+
+            elif event.type == "customer.subscription.updated":
+                sub = event.data.object
+                # If a subscription is set to cancel at period end and is now past_due / unpaid / canceled,
+                # downgrade. Otherwise refresh whatever tier the price metadata implies.
+                status = getattr(sub, "status", "") or ""
+                if status in {"canceled", "unpaid", "incomplete_expired"}:
+                    _downgrade_user_tier(sb, getattr(sub, "customer", None), getattr(sub, "id", None))
+
+            elif event.type == "customer.subscription.deleted":
+                sub = event.data.object
+                _downgrade_user_tier(sb, getattr(sub, "customer", None), getattr(sub, "id", None))
+
+            else:
+                # Recognised event we don't act on yet — record but no-op.
+                pass
+
+            _mark_webhook_event(sb, event.id, "processed")
+
+        except Exception as inner_exc:
+            _mark_webhook_event(sb, event.id, "failed")
+            logger.error("Webhook handler failed for %s (%s): %s", event.type, event.id, inner_exc)
+            # Return 200 anyway to prevent Stripe from infinitely retrying a
+            # poison event — the row is now in `failed` state for admin review.
 
         return {"received": True}
 

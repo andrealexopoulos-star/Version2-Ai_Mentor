@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import time
+import uuid
 from datetime import datetime, timezone
 from contextlib import suppress
 from typing import Any, Awaitable, Callable, Dict, Optional
@@ -82,6 +83,17 @@ DELAYED_KEY = f"{QUEUE_NAMESPACE}:delayed"
 DLQ_KEY = f"{QUEUE_NAMESPACE}:dead-letter"
 LOG_BUFFER_KEY = f"{QUEUE_NAMESPACE}:logging-buffer"
 DEDUPE_KEY_PREFIX = f"{QUEUE_NAMESPACE}:dedupe"
+
+# Cluster-wide leader lock for the periodic log-buffer flush + delayed-job
+# promoter. Multiple API instances can safely BLPOP from QUEUE_KEY in parallel
+# (Redis serialises pops), but the flush + delayed-promote loops would double
+# up — leading to log duplication and pointless DB writes. The leader is the
+# only worker that runs these housekeeping tasks; followers just consume the
+# main queue.
+LEADER_KEY = f"{QUEUE_NAMESPACE}:worker-leader"
+LEADER_TTL_SECONDS = 30
+LEADER_RENEW_SECONDS = 10
+WORKER_INSTANCE_ID = uuid.uuid4().hex
 
 JOB_TYPES = {
     "watchtower-analysis",
@@ -378,6 +390,10 @@ class BIQcRedisJobs:
             state["delayed_depth"] = await self.redis.zcard(DELAYED_KEY)
             state["dead_letter_depth"] = await self.redis.zcard(DLQ_KEY)
             state["logging_buffer_depth"] = await self.redis.llen(LOG_BUFFER_KEY)
+            leader_id = await self.redis.get(LEADER_KEY)
+            state["worker_instance_id"] = WORKER_INSTANCE_ID
+            state["worker_is_leader"] = (leader_id == WORKER_INSTANCE_ID)
+            state["worker_leader_id"] = leader_id
         except Exception as exc:  # pragma: no cover - health fallback
             state["last_error"] = str(exc)
             state["redis_connected"] = False
@@ -448,19 +464,65 @@ class BIQcRedisJobs:
             window_seconds=window_seconds,
         )
 
+    async def _try_acquire_or_renew_leadership(self) -> bool:
+        """Cluster-wide singleton: only one API instance promotes delayed jobs
+        and runs the periodic log-buffer flush. Other instances still pop jobs
+        from the main queue — Redis serialises BLPOP so that's safe — but they
+        skip the housekeeping that would otherwise double-fire.
+
+        Implementation: SET NX with TTL to claim the lock. If we already own
+        it, we GET first to confirm ownership and refresh the TTL.
+        """
+        if self.redis is None:
+            return False
+        try:
+            current = await self.redis.get(LEADER_KEY)
+            if current == WORKER_INSTANCE_ID:
+                # Renew TTL while we still hold leadership.
+                await self.redis.expire(LEADER_KEY, LEADER_TTL_SECONDS)
+                return True
+            if current is None:
+                # Lock is unclaimed — try to take it.
+                acquired = await self.redis.set(
+                    LEADER_KEY,
+                    WORKER_INSTANCE_ID,
+                    ex=LEADER_TTL_SECONDS,
+                    nx=True,
+                )
+                if acquired:
+                    logger.info(
+                        "BIQc Redis worker %s acquired leadership", WORKER_INSTANCE_ID,
+                    )
+                    return True
+            return False
+        except Exception as exc:  # pragma: no cover - lock is best-effort
+            logger.warning("Leadership probe failed: %s", exc)
+            return False
+
     async def _worker_loop(self) -> None:
-        logger.info("BIQc Redis worker started for namespace %s", QUEUE_NAMESPACE)
+        logger.info(
+            "BIQc Redis worker started for namespace %s (instance=%s)",
+            QUEUE_NAMESPACE, WORKER_INSTANCE_ID,
+        )
         assert self.redis is not None
         last_flush = time.time()
+        last_leader_probe = 0.0
 
         while True:
             try:
-                await self._promote_delayed_jobs()
+                # Refresh leadership claim periodically. Only the leader runs
+                # delayed-job promotion + log buffer flush; everyone consumes.
+                now = time.time()
+                am_leader = False
+                if now - last_leader_probe >= LEADER_RENEW_SECONDS:
+                    am_leader = await self._try_acquire_or_renew_leadership()
+                    last_leader_probe = now
 
-                # Periodic log buffer flush to Supabase (every 5 minutes)
-                if time.time() - last_flush >= 300:
-                    await self._flush_log_buffer()
-                    last_flush = time.time()
+                if am_leader:
+                    await self._promote_delayed_jobs()
+                    if now - last_flush >= 300:
+                        await self._flush_log_buffer()
+                        last_flush = now
 
                 entry = await self.redis.blpop(QUEUE_KEY, timeout=2)
                 if not entry:

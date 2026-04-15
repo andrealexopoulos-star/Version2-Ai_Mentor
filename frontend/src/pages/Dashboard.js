@@ -80,11 +80,15 @@ const Dashboard = () => {
     }
   };
 
+  // Core = everything needed for Ask BIQc to give real value.
+  // Enhanced = integrations that unlock real-time signals + alerts.
+  // A freshly-signed-up user should see "Core ready, ask anything" immediately.
   const setupSteps = [
-    { label: 'Account created', done: true, icon: CheckCircle2 },
-    { label: 'Business profile', done: !!user?.business_name, path: '/business-profile', icon: Building2 },
-    { label: 'Upload documents', done: stats?.total_documents > 0, path: '/data-center', icon: FolderOpen },
-    { label: 'Connect integrations', done: outlookConnected, path: '/integrations', icon: Plug },
+    { label: 'Account created', done: true, icon: CheckCircle2, group: 'core' },
+    { label: 'Business profile', done: !!user?.business_name, path: '/business-profile', icon: Building2, group: 'core' },
+    { label: 'Ask BIQc ready', done: true, path: '/soundboard', icon: MessageSquare, group: 'core', hint: 'Use right now — no setup needed' },
+    { label: 'Upload documents', done: stats?.total_documents > 0, path: '/data-center', icon: FolderOpen, group: 'enhanced', hint: 'Optional — boosts context depth' },
+    { label: 'Connect integrations', done: outlookConnected, path: '/integrations', icon: Plug, group: 'enhanced', hint: 'Optional — unlocks live alerts & Board Room signals' },
   ];
 
   const setupOptions = [
@@ -200,38 +204,57 @@ const Dashboard = () => {
               border: '1px solid var(--border-light)'
             }}
           >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                  Setup Progress
+                  Setup progress — Ask BIQc works now; the rest unlocks more depth
                 </span>
-                <div className="flex gap-3">
-                  {setupSteps.map((step, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
-                      {step.done ? (
-                        <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--accent-success)' }} />
-                      ) : (
-                        <Circle className="w-4 h-4" style={{ color: 'var(--border-medium)' }} />
-                      )}
-                      <span 
-                        className="text-xs hidden sm:inline"
-                        style={{ 
-                          color: step.done ? 'var(--text-primary)' : 'var(--text-muted)'
-                        }}
-                      >
-                        {step.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <Button
+                  onClick={() => setShowSetupOptions(true)}
+                  className="btn-secondary text-sm"
+                >
+                  Continue setup
+                  <ArrowRight className="w-3 h-3" />
+                </Button>
               </div>
-              <Button 
-                onClick={() => setShowSetupOptions(true)}
-                className="btn-secondary text-sm"
-              >
-                Continue Setup
-                <ArrowRight className="w-3 h-3" />
-              </Button>
+              {['core', 'enhanced'].map((group) => {
+                const steps = setupSteps.filter((s) => (s.group || 'core') === group);
+                if (steps.length === 0) return null;
+                return (
+                  <div key={group} className="flex flex-col gap-2">
+                    <div
+                      className="text-[10px] uppercase tracking-wider"
+                      style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '0.08em' }}
+                    >
+                      {group === 'core' ? 'Core — ready to use' : 'Enhanced — optional upgrades'}
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {steps.map((step, i) => (
+                        <button
+                          key={`${group}-${i}`}
+                          type="button"
+                          onClick={() => step.path && navigate(step.path)}
+                          className="flex items-center gap-1.5 text-left"
+                          style={{ background: 'transparent', border: 'none', padding: 0, cursor: step.path ? 'pointer' : 'default' }}
+                          title={step.hint || ''}
+                        >
+                          {step.done ? (
+                            <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--accent-success)' }} />
+                          ) : (
+                            <Circle className="w-4 h-4" style={{ color: 'var(--border-medium)' }} />
+                          )}
+                          <span
+                            className="text-xs"
+                            style={{ color: step.done ? 'var(--text-primary)' : 'var(--text-muted)' }}
+                          >
+                            {step.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
