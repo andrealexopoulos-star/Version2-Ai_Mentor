@@ -83,7 +83,18 @@ def test_update_conversation_status_validation():
 @pytest.mark.skipif(brc is None, reason="DAL module import unavailable in sandbox")
 def test_list_conversations_clamps_limit():
     sb = MagicMock()
-    call_chain = sb.table.return_value.select.return_value.eq.return_value.eq.return_value.order.return_value
+    # DAL chains three .eq() filters: user_id, mode, status.
+    # If the DAL ever drops the status filter this mock will over-specify —
+    # fix that by removing one .eq.return_value rather than re-silencing the
+    # mismatch. See backend/boardroom_conversations.py::list_conversations.
+    call_chain = (
+        sb.table.return_value
+        .select.return_value
+        .eq.return_value
+        .eq.return_value
+        .eq.return_value
+        .order.return_value
+    )
     call_chain.limit.return_value.execute.return_value.data = []
     out = brc.list_conversations(sb, "u1", "boardroom", limit=999)
     assert out == []
